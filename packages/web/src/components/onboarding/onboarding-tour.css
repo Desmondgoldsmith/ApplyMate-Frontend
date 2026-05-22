@@ -1,0 +1,200 @@
+/* ApplyMate feature tours — driver.js overrides */
+
+.driver-overlay {
+  backdrop-filter: blur(2px) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
+}
+
+/* Crisp spotlight ring — no heavy outer glow */
+.driver-active-element,
+.driver-active-element * {
+  opacity: 1 !important;
+  mix-blend-mode: normal !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  text-shadow: none !important;
+}
+
+.driver-active-element {
+  position: relative !important;
+  z-index: 100001 !important;
+  border-radius: inherit !important;
+  outline: 2px solid #00c9b1 !important;
+  outline-offset: 3px !important;
+  box-shadow:
+    0 0 0 1px rgba(0, 201, 177, 0.35),
+    0 12px 40px -16px rgba(0, 201, 177, 0.45) !important;
+}
+
+.driver-popover {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+}
+
+.applymate-tour-popover.driver-popover {
+  background: linear-gradient(165deg, #161b1b 0%, #101414 100%) !important;
+  border: 1px solid rgba(0, 201, 177, 0.28) !important;
+  border-radius: 18px !important;
+  padding: 18px 20px 16px !important;
+  max-width: min(340px, calc(100vw - 32px)) !important;
+  min-width: min(280px, calc(100vw - 32px)) !important;
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.applymate-tour-popover .driver-popover-arrow {
+  border-color: #121616 !important;
+}
+
+.applymate-tour-popover .driver-popover-arrow-side-left {
+  border-left-color: transparent !important;
+  border-right-color: #121616 !important;
+}
+
+.applymate-tour-popover .driver-popover-arrow-side-right {
+  border-right-color: transparent !important;
+  border-left-color: #121616 !important;
+}
+
+.applymate-tour-popover .driver-popover-arrow-side-top {
+  border-top-color: transparent !important;
+  border-bottom-color: #121616 !important;
+}
+
+.applymate-tour-popover .driver-popover-arrow-side-bottom {
+  border-bottom-color: transparent !important;
+  border-top-color: #121616 !important;
+}
+
+.applymate-tour-meta {
+  margin-bottom: 14px;
+}
+
+.applymate-tour-kicker {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #00c9b1;
+  margin-bottom: 6px;
+}
+
+.applymate-tour-progress-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.38);
+  margin-bottom: 8px;
+}
+
+.applymate-tour-progress-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.applymate-tour-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #00a896, #00c9b1);
+  transition: width 220ms ease;
+}
+
+.applymate-tour-popover .driver-popover-title {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  margin-bottom: 8px !important;
+  line-height: 1.35 !important;
+  letter-spacing: -0.02em !important;
+}
+
+.applymate-tour-popover .driver-popover-description {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  color: rgba(255, 255, 255, 0.62) !important;
+  line-height: 1.65 !important;
+  margin-bottom: 16px !important;
+}
+
+.applymate-tour-popover .driver-popover-footer {
+  margin-top: 0 !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+}
+
+.applymate-tour-popover .driver-popover-navigation-btns {
+  flex-grow: 0 !important;
+  width: 100% !important;
+  justify-content: stretch !important;
+}
+
+.applymate-tour-popover .driver-popover-navigation-btns button {
+  width: 100% !important;
+  background: linear-gradient(135deg, #00c9b1 0%, #00a896 100%) !important;
+  color: #080a0a !important;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 11px 20px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  text-shadow: none !important;
+  box-shadow: 0 6px 20px rgba(0, 201, 177, 0.28) !important;
+  transition:
+    filter 150ms ease,
+    transform 150ms ease !important;
+}
+
+.applymate-tour-popover .driver-popover-navigation-btns button:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.applymate-tour-skip {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.32);
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-top: 10px;
+  width: 100%;
+  text-align: center;
+  padding: 10px 8px;
+  min-height: 44px;
+  transition: color 150ms;
+}
+
+.applymate-tour-skip:hover {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+@media (max-width: 767px) {
+  .applymate-tour-popover.driver-popover {
+    max-width: calc(100vw - 24px) !important;
+    min-width: calc(100vw - 24px) !important;
+    padding: 16px 18px 14px !important;
+  }
+
+  .applymate-tour-skip {
+    min-height: 44px;
+    padding: 12px 8px;
+  }
+
+  /* Keep spotlight visible above bottom nav */
+  .driver-active-element {
+    outline-offset: 2px !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .applymate-tour-skip {
+    min-height: 0;
+    padding: 8px;
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@applymate/extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node ./scripts/build.mjs --watch",
+    "build": "node ./scripts/build.mjs"
+  },
+  "dependencies": {
+    "@applymate/shared": "*",
+    "axios": "^1.14.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.309",
+    "@types/node": "^20",
+    "esbuild": "^0.25.4",
+    "typescript": "^5",
+    "tailwindcss": "^4"
+  }
+}

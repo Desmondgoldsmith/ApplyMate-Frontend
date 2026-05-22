@@ -1,26 +1,40 @@
 {
-  "name": "applymate-frontend",
+  "name": "applymate-monorepo",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "packages/*",
+    "shared"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "dev": "npm run dev --workspace=@applymate/web",
+    "dev:web": "npm run dev --workspace=@applymate/web",
+    "dev:extension": "npm run dev --workspace=@applymate/extension",
+    "build": "npm run build --workspaces --if-present",
+    "build:web": "npm run build --workspace=@applymate/web",
+    "build:extension": "npm run build --workspace=@applymate/extension",
+    "lint": "eslint packages shared",
+    "format": "prettier --write .",
+    "prepare": "husky install"
   },
-  "dependencies": {
-    "next": "16.2.2",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,md}": [
+      "prettier --write"
+    ]
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@eslint/js": "^9.21.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^8.0.0",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.1",
+    "typescript": "^5",
+    "typescript-eslint": "^8.24.0"
   }
 }

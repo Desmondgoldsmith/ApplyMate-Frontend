@@ -1,0 +1,498 @@
+@import 'tailwindcss';
+@import 'lenis/dist/lenis.css';
+@import '../styles/dashboard-premium.css';
+
+/* ApplyMate landing — design tokens */
+:root {
+  --ai-bg: #060a0a;
+  --ai-teal: #00aeaf;
+  --ai-teal-light: #00d4d4;
+  --ai-teal-dark: #007a7b;
+  --ai-text: #ffffff;
+  --ai-text-secondary: rgba(255, 255, 255, 0.5);
+  --ai-text-muted: rgba(255, 255, 255, 0.25);
+  --ai-card: rgba(255, 255, 255, 0.03);
+  --ai-card-border: rgba(0, 174, 175, 0.15);
+  --ai-nav-glass: rgba(8, 10, 10, 0.8);
+  --ai-cta-bg: #ffffff;
+  --ai-cta-text: #080a0a;
+  --background: #060a0a;
+  --foreground: #ffffff;
+}
+
+@theme inline {
+  --color-ai-bg: #060a0a;
+  --color-ai-teal: #00aeaf;
+  --color-ai-teal-light: #00d4d4;
+  --color-ai-teal-dark: #007a7b;
+  --color-ai-card: rgba(255, 255, 255, 0.03);
+  --font-sans: var(--font-plus-jakarta-sans), system-ui, sans-serif;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
+@keyframes float-y {
+  0% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(8px);
+  }
+}
+
+.animate-float-y {
+  animation: float-y 3s ease-in-out infinite alternate;
+}
+
+@keyframes cursor-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-cursor {
+  animation: cursor-blink 1s step-end infinite;
+}
+
+/* Opacity-only: filter/brightness on the pin caused visible page jitter next to the CV preview. */
+@keyframes cv-assistant-pin {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.82;
+  }
+}
+
+.animate-cv-assistant-pin {
+  animation: cv-assistant-pin 1.8s ease-in-out infinite;
+}
+
+@keyframes cta-glow-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 30px rgba(0, 174, 175, 0.3),
+      0 0 0 0 rgba(0, 174, 175, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 40px rgba(0, 174, 175, 0.45),
+      0 0 60px rgba(0, 174, 175, 0.15);
+  }
+}
+
+.cta-glow-hover:hover {
+  animation: cta-glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes career-rail-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(0, 201, 177, 0.2);
+    border-color: rgba(0, 201, 177, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(0, 201, 177, 0.5);
+    border-color: rgba(0, 201, 177, 0.65);
+  }
+}
+
+.animate-career-rail-pulse {
+  animation: career-rail-glow 2.2s ease-in-out infinite;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 201, 177, 0.25) transparent;
+}
+
+html::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+html::-webkit-scrollbar-thumb {
+  background: rgba(0, 201, 177, 0.25);
+  border-radius: 100px;
+  transition: background 200ms ease;
+}
+html::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 201, 177, 0.5);
+}
+html::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Lenis adds .lenis to <html>; avoid stacking CSS smooth + JS smooth */
+html.lenis {
+  scroll-behavior: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  background: transparent;
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes border-rotate {
+  to {
+    --angle: 360deg;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes rotateBorder {
+  from {
+    --angle: 0deg;
+  }
+  to {
+    --angle: 360deg;
+  }
+}
+
+.glow-cta-rotating {
+  background: conic-gradient(
+    from var(--angle),
+    transparent 70%,
+    #007a7b 80%,
+    #00aeaf 85%,
+    #00d4d4 87%,
+    #00aeaf 90%,
+    transparent 100%
+  );
+  animation: rotateBorder 4s linear infinite;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.glow-cta-wrap:hover .glow-cta-rotating {
+  opacity: 1;
+}
+
+.animated-border-card {
+  position: relative;
+  isolation: isolate;
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+  --rotate-duration: 6s;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.animated-border-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 0 0 1px rgba(0, 174, 175, 0.2),
+    0 0 30px rgba(0, 174, 175, 0.06);
+}
+
+.animated-border-card .animated-border-rotating {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--angle),
+    transparent 68%,
+    rgba(0, 174, 175, 0.42) 78%,
+    rgba(0, 212, 212, 0.75) 85%,
+    rgba(0, 174, 175, 0.42) 92%,
+    transparent 100%
+  );
+  animation: border-rotate var(--rotate-duration) linear infinite;
+}
+
+.animated-border-card .animated-border-mouse-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: radial-gradient(
+    380px circle at var(--mouse-x) var(--mouse-y),
+    rgba(0, 212, 212, 0.72),
+    rgba(0, 174, 175, 0.35) 42%,
+    transparent 58%
+  );
+}
+
+.animated-border-card:hover .animated-border-mouse-glow {
+  opacity: 1;
+}
+
+.animated-border-card .card-content {
+  position: relative;
+  z-index: 2;
+  margin: 1px;
+  height: calc(100% - 2px);
+  min-height: calc(100% - 2px);
+  background: #0c0f0f;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(0, 174, 175, 0.2);
+}
+
+/** CV Clinic mobile header — dropdowns must escape the card (see globals .card-content overflow). */
+.animated-border-card.cv-mobile-top-chrome .card-content {
+  overflow: visible;
+}
+
+/* Same animated border style, but more visible for notification-targeted application cards. */
+.animated-border-card.notification-card-highlight .animated-border-rotating {
+  background: conic-gradient(
+    from var(--angle),
+    transparent 66%,
+    rgba(0, 174, 175, 0.58) 76%,
+    rgba(0, 244, 244, 0.95) 84%,
+    rgba(0, 174, 175, 0.58) 92%,
+    transparent 100%
+  );
+}
+
+.animated-border-card.notification-card-highlight .animated-border-mouse-glow {
+  opacity: 0.42;
+  background: radial-gradient(
+    420px circle at var(--mouse-x) var(--mouse-y),
+    rgba(0, 240, 240, 0.84),
+    rgba(0, 174, 175, 0.46) 45%,
+    transparent 63%
+  );
+}
+
+.animated-border-card.notification-card-highlight .card-content {
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 214, 214, 0.42),
+    inset 0 0 24px rgba(0, 174, 175, 0.12);
+}
+
+/* Auth / dark inputs: keep background dark on focus + Chrome autofill */
+input.auth-input:-webkit-autofill,
+input.auth-input:-webkit-autofill:hover,
+input.auth-input:-webkit-autofill:focus,
+input.auth-input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff;
+  caret-color: #ffffff;
+  box-shadow: 0 0 0 1000px #111616 inset !important;
+  transition: background-color 99999s ease-out;
+}
+
+.bento-corner-glow {
+  pointer-events: none;
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(0, 174, 175, 0.12),
+    transparent 70%
+  );
+  transition: opacity 0.4s ease;
+}
+
+.group:hover .bento-corner-glow {
+  opacity: 0.28 !important;
+}
+
+@keyframes key-teal-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 4px 0 rgba(0, 0, 0, 0.5),
+      0 0 12px rgba(0, 174, 175, 0.35);
+    border-color: rgba(0, 174, 175, 0.25);
+  }
+  50% {
+    box-shadow:
+      0 4px 0 rgba(0, 0, 0, 0.5),
+      0 0 22px rgba(0, 174, 175, 0.55);
+    border-color: rgba(0, 212, 212, 0.5);
+  }
+}
+
+.bento-key-glow {
+  animation: key-teal-glow 2.5s ease-in-out infinite;
+}
+
+.bento-key-glow-delay-1 {
+  animation-delay: 0.2s;
+}
+
+.bento-key-glow-delay-2 {
+  animation-delay: 0.4s;
+}
+
+/* CV builder / panels — hide scrollbars, keep scrolling (wheel / trackpad still works) */
+.cv-scroll-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.cv-scroll-hide::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Styled scrollbar — dashboards, job board, analyzer panels */
+.app-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 201, 177, 0.25) transparent;
+}
+.app-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.app-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.app-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 201, 177, 0.25);
+  border-radius: 100px;
+  transition: background 200ms ease;
+}
+.app-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 201, 177, 0.5);
+}
+.app-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Job Hub pipeline strip — chevron segments */
+.pipeline-chevron {
+  display: flex;
+  flex-direction: column;
+  min-width: 88px;
+  height: 52px;
+  clip-path: polygon(
+    0 0,
+    calc(100% - 14px) 0,
+    100% 50%,
+    calc(100% - 14px) 100%,
+    0 100%,
+    14px 50%
+  );
+  cursor: pointer;
+}
+@media (min-width: 1024px) {
+  .pipeline-chevron {
+    height: 64px;
+    min-width: 100px;
+    clip-path: polygon(
+      0 0,
+      calc(100% - 16px) 0,
+      100% 50%,
+      calc(100% - 16px) 100%,
+      0 100%,
+      16px 50%
+    );
+  }
+}
+
+@keyframes dashboard-ai-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.55);
+  }
+}
+
+@keyframes tailor-accept-flash-keyframes {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(0, 201, 177, 0.65),
+      inset 0 0 0 2px rgba(0, 201, 177, 0.55);
+    background-color: rgba(0, 201, 177, 0.12);
+  }
+  45% {
+    box-shadow:
+      0 0 0 10px rgba(0, 201, 177, 0),
+      inset 0 0 0 2px rgba(0, 201, 177, 0.35);
+    background-color: rgba(0, 201, 177, 0.06);
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(0, 201, 177, 0),
+      inset 0 0 0 0 rgba(0, 201, 177, 0);
+    background-color: transparent;
+  }
+}
+
+#cv-section-personal.tailor-accept-flash,
+[id^='cv-section-'].tailor-accept-flash {
+  animation: tailor-accept-flash-keyframes 2.4s ease-out;
+  border-radius: 12px;
+  scroll-margin-top: 5rem;
+}
+
+@keyframes tailor-revert-flash-keyframes {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(245, 158, 11, 0.55),
+      inset 0 0 0 2px rgba(245, 158, 11, 0.45);
+    background-color: rgba(245, 158, 11, 0.1);
+  }
+  45% {
+    box-shadow:
+      0 0 0 10px rgba(245, 158, 11, 0),
+      inset 0 0 0 2px rgba(245, 158, 11, 0.25);
+    background-color: rgba(245, 158, 11, 0.04);
+  }
+  100% {
+    box-shadow: none;
+    background-color: transparent;
+  }
+}
+
+#cv-section-personal.tailor-revert-flash,
+[id^='cv-section-'].tailor-revert-flash {
+  animation: tailor-revert-flash-keyframes 2.4s ease-out;
+  border-radius: 12px;
+  scroll-margin-top: 5rem;
+}

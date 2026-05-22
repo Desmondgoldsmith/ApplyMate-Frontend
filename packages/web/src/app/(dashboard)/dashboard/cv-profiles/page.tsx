@@ -1,0 +1,193 @@
+'use client';
+
+import { motion } from 'framer-motion';
+import { FileDown, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+
+import { CreateCVProfileModal } from '@/components/dashboard/CreateCVProfileModal';
+import { DashboardCvProfilesPanel } from '@/components/dashboard/DashboardCvProfilesPanel';
+import { Button } from '@/components/ui/Button';
+import { GlowCard } from '@/components/ui/GlowCard';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { useToast } from '@/components/ui/Toast';
+import { useCVProfileById } from '@/hooks/useCVProfileById';
+import { useCvProfileRowsDisplay } from '@/hooks/useCvProfileRowsDisplay';
+import { openCvPdfInNewTab } from '@/lib/cv-open-pdf-tab';
+import { getApiErrorMessage } from '@/lib/axios';
+import { formatRelativeEdited } from '@/lib/format-relative-edited';
+import { cn } from '@/lib/utils';
+
+function CvProfilesPageInner() {
+  const toast = useToast();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [pdfPending, setPdfPending] = useState(false);
+  const { displayRows, listInconsistent, isBootstrapping } = useCvProfileRowsDisplay();
+  const totalShown = displayRows.length;
+  const search = useSearchParams();
+  const requestedId = search.get('profileId')?.trim() || null;
+
+  useEffect(() => {
+    if (!displayRows.length) {
+      setSelectedId(null);
+      return;
+    }
+    setSelectedId((prev) => {
+      if (requestedId && displayRows.some((r) => r.id === requestedId)) return requestedId;
+      if (prev && displayRows.some((r) => r.id === prev)) return prev;
+      return displayRows.find((r) => r.isDefault)?.id ?? displayRows[0]!.id;
+    });
+  }, [displayRows, requestedId]);
+
+  const detailQ = useCVProfileById(selectedId);
+  const summaryRow = displayRows.find((r) => r.id === selectedId) ?? null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+      className="mx-auto max-w-3xl space-y-6"
+    >
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#00C9B1]">CV profiles</p>
+          <h2 className="mt-1 text-2xl font-extrabold text-white">All your CVs</h2>
+          <p className="mt-1 text-sm text-white/50">
+            {isBootstrapping
+              ? 'Loading…'
+              : totalShown > 0
+                ? `${totalShown} profile${totalShown === 1 ? '' : 's'} — pick one to preview, then edit or manage below.`
+                : 'Create a profile for each role or industry you target.'}
+          </p>
+        </div>
+        <Button type="button" className="h-9 gap-1.5 px-3 text-xs" onClick={() => setCreateOpen(true)}>
+          + New CV
+        </Button>
+      </div>
+
+      {listInconsistent ? (
+        <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-xs leading-relaxed text-amber-100/90">
+          <p className="font-semibold text-amber-50">List mismatch</p>
+          <p className="mt-1 text-amber-100/80">
+            GET <code className="rounded bg-black/30 px-1 py-0.5 text-[11px]">/cv/profiles</code> returned no rows, but
+            your primary CV exists. Re-running onboarding is not required — fix API URL, auth, or server list behavior.
+            You can still edit in{' '}
+            <Link href="/dashboard/cv" className="font-semibold text-[#00C9B1] hover:underline">
+              CV Clinic
+            </Link>
+            .
+          </p>
+        </div>
+      ) : null}
+
+      {!isBootstrapping && totalShown > 1 ? (
+        <div className="flex flex-wrap gap-2">
+          {displayRows.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setSelectedId(p.id)}
+              className={cn(
+                'rounded-full border px-3 py-1.5 text-xs font-semibold transition',
+                selectedId === p.id
+                  ? 'border-[#00C9B1] bg-[#00C9B1]/15 text-[#00C9B1]'
+                  : 'border-white/15 text-white/55 hover:border-[#00C9B1]/40 hover:text-white',
+              )}
+            >
+              {p.name}
+              {p.isDefault ? ' ★' : ''}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {!isBootstrapping && totalShown > 1 && selectedId && summaryRow ? (
+        <GlowCard className="border border-[rgba(0,201,177,0.15)]" contentClassName="p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-white/45">Preview</p>
+          {detailQ.isLoading && !detailQ.data ? (
+            <div className="mt-3 space-y-2">
+              <Skeleton height={20} width="70%" borderRadius={6} />
+              <Skeleton height={14} width="50%" borderRadius={6} />
+            </div>
+          ) : (
+            <>
+              <p className="mt-2 text-lg font-bold text-white">{summaryRow.name}</p>
+              <p className="mt-1 text-sm text-white/55">
+                {detailQ.data?.profile?.headline?.trim() ||
+                  summaryRow.headline?.trim() ||
+                  'No headline yet'}
+              </p>
+              {(detailQ.data?.profile?.location ?? summaryRow.location)?.trim() ? (
+                <p className="mt-1 text-xs text-white/45">
+                  {(detailQ.data?.profile?.location ?? summaryRow.location)!.trim()}
+                </p>
+              ) : null}
+              <p className="mt-2 text-xs text-white/45">
+                {summaryRow.score != null && Number.isFinite(summaryRow.score)
+                  ? `Score ${summaryRow.score}/100`
+                  : 'Not scored yet'}
+                {' · '}
+                Template: <span className="text-white/70">{summaryRow.template ?? '—'}</span>
+                {' · '}
+                Sections:{' '}
+                <span className="text-white/70">{detailQ.data?.sections?.length ?? '—'}</span>
+                {' · '}
+                Updated {formatRelativeEdited(summaryRow.updatedAt)}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  href={`/dashboard/cv?profileId=${encodeURIComponent(selectedId)}`}
+                  className="inline-flex items-center justify-center rounded-xl bg-[#00C9B1] px-4 py-2.5 text-xs font-semibold text-[#080A0A] transition hover:bg-[#00C9B1]"
+                >
+                  Open in CV builder →
+                </Link>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={pdfPending}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[rgba(0,201,177,0.35)] px-4 py-2.5 text-xs font-semibold text-[#00C9B1] hover:bg-[rgba(0,201,177,0.12)]"
+                  onClick={() => {
+                    setPdfPending(true);
+                    void openCvPdfInNewTab(selectedId, summaryRow.template ?? undefined).catch((e: unknown) =>
+                      toast.error(getApiErrorMessage(e)),
+                    )
+                      .finally(() => setPdfPending(false));
+                  }}
+                >
+                  {pdfPending ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <FileDown className="h-3.5 w-3.5" />
+                  )}
+                  View PDF
+                </Button>
+              </div>
+            </>
+          )}
+        </GlowCard>
+      ) : null}
+
+      <DashboardCvProfilesPanel profiles={displayRows} isLoading={isBootstrapping} onNewCv={() => setCreateOpen(true)} />
+
+      <CreateCVProfileModal open={createOpen} onOpenChange={setCreateOpen} />
+    </motion.div>
+  );
+}
+
+export default function CvProfilesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-3xl space-y-6">
+          <Skeleton height={28} width={200} borderRadius={8} />
+          <Skeleton height={120} width="100%" borderRadius={12} />
+        </div>
+      }
+    >
+      <CvProfilesPageInner />
+    </Suspense>
+  );
+}

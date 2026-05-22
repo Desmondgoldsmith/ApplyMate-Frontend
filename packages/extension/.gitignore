@@ -1,0 +1,6 @@
+# Package-local ignores
+
+dist/
+.env
+.env.*
+!.env.example

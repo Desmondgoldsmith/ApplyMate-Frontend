@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ApplyMate monorepo
 
-## Getting Started
+Production-oriented workspace for **ApplyMate**: a Next.js marketing/product web app, a Chrome extension, and shared TypeScript packages.
 
-First, run the development server:
+## Layout
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+.
+├── packages/
+│   ├── web/           # Next.js (App Router) — landing + app shell
+│   └── extension/     # Chrome MV3 extension (TypeScript + esbuild)
+├── shared/            # @applymate/shared — types, cn(), cross-app hooks/components
+├── package.json       # npm workspaces + root scripts
+├── tsconfig.base.json # shared TS defaults (packages extend this)
+└── eslint.config.mjs  # ESLint flat config (web + extension + shared)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Package | Description |
+| ------- | ----------- |
+| **@applymate/web** | Next.js, Tailwind v4, shadcn/ui (configured), React Query, Zustand, Axios, Zod, NextAuth placeholder, Sentry + PostHog stubs. |
+| **@applymate/extension** | TypeScript + esbuild build → `dist/` (content script, background, side panel, popup). |
+| **@applymate/shared** | Shared `User` type, `cn()` utility, and future hooks/components. |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Absolute imports:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- In **web**: `@/*` → `packages/web/src/*`; import shared code with `@applymate/shared`.
+- In **extension**: `@/*` → `packages/extension/*` (package root); shared the same as web.
 
-## Learn More
+## Setup
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm install
+cp .env.example packages/web/.env.local
+cp .env.example packages/extension/.env.local
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Edit env files with real URLs and secrets. See `packages/web/.env.example` and `packages/extension/.env.example`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts (run from repo root)
 
-## Deploy on Vercel
+| Script | Purpose |
+| ------ | ------- |
+| `npm run dev` | Next.js dev server (`@applymate/web`) |
+| `npm run dev:extension` | esbuild watch for the extension |
+| `npm run build:web` | Production Next.js build |
+| `npm run build:extension` | esbuild-based build → `packages/extension/dist` |
+| `npm run build` | All workspace `build` scripts |
+| `npm run lint` | ESLint (`packages/**` + `shared/`) |
+| `npm run format` | Prettier |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Extension**: after `npm run build:extension`, load **unpacked** from `packages/extension/dist` in Chrome (`chrome://extensions` → Developer mode → Load unpacked).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Tooling
+
+- **ESLint** + **Prettier** at the repo root  
+- **Husky** + **lint-staged** on commit (`eslint --fix` + `prettier --write`)
+
+## Conventions
+
+- **No product/business logic** in this scaffold beyond stubs — implement features inside `packages/web/src/features/*` and `packages/extension/content|ui/*`.
+- Prefer **`@applymate/shared`** for anything used in both web and extension to avoid drift.

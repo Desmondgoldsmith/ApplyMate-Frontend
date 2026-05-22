@@ -1,0 +1,288 @@
+'use client';
+
+import { Loader2, Send } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { Button } from '@/components/ui/Button';
+import { GlowCard } from '@/components/ui/GlowCard';
+import { api, type ChatConversationHistoryItem, type ChatCreateCVPayload } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/axios';
+import { cn } from '@/lib/utils';
+
+const OPENING =
+  "Hi! I'm going to help you build a great resume. Let's start with the basics — what's your name and what kind of work do you do?";
+
+/**
+ * Splits assistant copy on an em/en dash so the trailing “main question” can be emphasized in teal.
+ * Example: "Intro — What is your name?" → intro + " — " + question (styled).
+ */
+function splitAssistantLeadAndQuestion(content: string): { lead: string; question: string | null } {
+  const parts = content.split(/\s[—–]\s/);
+  if (parts.length < 2) {
+    return { lead: content, question: null };
+  }
+  const question = parts[parts.length - 1]?.trim() ?? '';
+  const lead = parts.slice(0, -1).join(' — ');
+  return { lead, question: question || null };
+}
+
+function AssistantMessageBody({ content }: { content: string }) {
+  const { lead, question } = splitAssistantLeadAndQuestion(content);
+  if (!question) {
+    return <>{content}</>;
+  }
+  return (
+    <>
+      {lead}
+      <span className="font-medium text-[#00C9B1]">
+        {' — '}
+        {question}
+      </span>
+    </>
+  );
+}
+
+type ChatMessage = ChatConversationHistoryItem;
+
+function summarizeExtracted(d: ChatCreateCVPayload): { label: string }[] {
+  const exp = Array.isArray(d.experience)
+    ? d.experience.length
+    : Array.isArray((d as { experiences?: unknown }).experiences)
+      ? ((d as { experiences: unknown[] }).experiences?.length ?? 0)
+      : 0;
+  const edu = Array.isArray(d.education) ? d.education.length : 0;
+  const skills =
+    (Array.isArray(d.skills) ? d.skills.length : 0) +
+    (Array.isArray((d as { primarySkills?: unknown }).primarySkills)
+      ? ((d as { primarySkills: unknown[] }).primarySkills?.length ?? 0)
+      : 0);
+  const lines: { label: string }[] = [];
+  if (exp > 0) lines.push({ label: `Found ${exp} experience ${exp === 1 ? 'entry' : 'entries'}` });
+  if (edu > 0) lines.push({ label: 'Education detected' });
+  if (skills > 0) lines.push({ label: `${skills} skills identified` });
+  if (lines.length === 0) lines.push({ label: 'Resume data captured' });
+  return lines;
+}
+
+function TypingOpening({ text, onDone }: { text: string; onDone: () => void }) {
+  const [shown, setShown] = useState('');
+  const doneRef = useRef(false);
+  useEffect(() => {
+    if (shown.length >= text.length) {
+      if (!doneRef.current) {
+        doneRef.current = true;
+        onDone();
+      }
+      return;
+    }
+    const t = window.setTimeout(() => setShown(text.slice(0, shown.length + 1)), 16);
+    return () => window.clearTimeout(t);
+  }, [shown, text, onDone]);
+  return <AssistantMessageBody content={shown} />;
+}
+
+export type CVChatInterfaceProps = {
+  onComplete: (extractedData: ChatCreateCVPayload) => void;
+  onSkip: () => void;
+  selectedTemplate: string;
+  /** Fires immediately when the AI finishes extracting data (before user clicks "Build"). */
+  onDataExtracted?: (extractedData: ChatCreateCVPayload) => void;
+};
+
+export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataExtracted }: CVChatInterfaceProps) {
+  const [openingDone, setOpeningDone] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [extractedData, setExtractedData] = useState<ChatCreateCVPayload | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (openingDone && messages.length === 0) {
+      setMessages([{ role: 'assistant', content: OPENING }]);
+    }
+  }, [openingDone, messages.length]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+  }, [messages, isTyping, extractedData]);
+
+  const userTurns = messages.filter((m) => m.role === 'user').length;
+  const progressDots = 4;
+  const filledDots = Math.min(progressDots, Math.max(1, userTurns + (isTyping ? 0 : 0)));
+
+  const sendMessage = useCallback(async () => {
+    const trimmed = input.trim();
+    if (!trimmed || isTyping || !openingDone) return;
+    const prior = messages;
+    const userMessage: ChatMessage = { role: 'user', content: trimmed };
+    setMessages((m) => [...m, userMessage]);
+    setInput('');
+    setIsTyping(true);
+    try {
+      const history: ChatConversationHistoryItem[] = prior.map(({ role, content }) => ({ role, content }));
+      const response = await api.cv.chatConversation({
+        message: trimmed,
+        history,
+      });
+      setIsTyping(false);
+      if (response.type === 'complete') {
+        setExtractedData(response.extractedData);
+        onDataExtracted?.(response.extractedData);
+        setMessages((prev) => [...prev, { role: 'assistant', content: response.message }]);
+      } else {
+        setMessages((prev) => [...prev, { role: 'assistant', content: response.message }]);
+      }
+    } catch (e) {
+      setIsTyping(false);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: getApiErrorMessage(e) || 'Sorry, I had trouble processing that. Can you try again?',
+        },
+      ]);
+    }
+  }, [input, isTyping, messages, openingDone]);
+
+  const onOpeningComplete = useCallback(() => setOpeningDone(true), []);
+
+  return (
+    <GlowCard className="min-h-0 border border-[rgba(0,201,177,0.15)]" contentClassName="flex min-h-0 min-w-0 flex-col p-0">
+      <div className="border-b border-[rgba(0,201,177,0.12)] px-4 py-3">
+        <p className="text-center text-[11px] text-white/45">
+          Turn {Math.min(userTurns + 1, progressDots)} of ~{progressDots}
+        </p>
+        <div className="mt-2 flex justify-center gap-1.5">
+          {Array.from({ length: progressDots }, (_, i) => (
+            <span
+              key={i}
+              className={cn(
+                'h-2 w-2 rounded-full transition-colors',
+                i < filledDots ? 'bg-[#00C9B1]' : 'border border-white/25 bg-transparent',
+              )}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div
+        ref={scrollRef}
+        data-lenis-prevent-wheel
+        className="app-scrollbar max-h-[min(52vh,420px)] min-h-0 touch-pan-y space-y-3 overflow-y-auto overscroll-y-contain px-4 py-4 [-webkit-overflow-scrolling:touch]"
+      >
+        {!openingDone ? (
+          <div className="flex justify-start">
+            <div className="max-w-[85%] rounded-[12px] rounded-bl-[4px] border border-[rgba(0,201,177,0.15)] bg-[#111616] px-4 py-3 text-sm text-white">
+              <TypingOpening text={OPENING} onDone={onOpeningComplete} />
+            </div>
+          </div>
+        ) : null}
+
+        {openingDone
+          ? messages.map((m, idx) => (
+              <div key={idx} className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
+                <div
+                  className={cn(
+                    'max-w-[85%] px-4 py-3 text-sm text-white',
+                    m.role === 'user'
+                      ? 'rounded-[12px] rounded-br-[4px] border border-[rgba(0,201,177,0.3)] bg-[rgba(0,201,177,0.15)]'
+                      : 'rounded-[12px] rounded-bl-[4px] border border-[rgba(0,201,177,0.15)] bg-[#111616]',
+                  )}
+                >
+                  {m.role === 'assistant' ? <AssistantMessageBody content={m.content} /> : m.content}
+                </div>
+              </div>
+            ))
+          : null}
+
+        {isTyping ? (
+          <div className="flex justify-start">
+            <div className="flex max-w-[85%] items-center gap-2 rounded-[12px] rounded-bl-[4px] border border-[rgba(0,201,177,0.15)] bg-[#111616] px-4 py-3">
+              <span className="flex gap-1">
+                {[0, 1, 2].map((i) => (
+                  <motion.span
+                    key={i}
+                    className="h-2 w-2 rounded-full bg-[#00C9B1]"
+                    animate={{ opacity: [0.35, 1, 0.35] }}
+                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.15 }}
+                  />
+                ))}
+              </span>
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      {extractedData ? (
+        <div className="border-t border-[rgba(0,201,177,0.12)] bg-[#0C0F0F] px-4 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#00C9B1]">Ready to build</p>
+          <ul className="mt-3 space-y-2 text-sm text-white/80">
+            {summarizeExtracted(extractedData).map((line) => (
+              <li key={line.label} className="flex items-center gap-2">
+                <span className="text-[#22C55E]">✓</span> {line.label}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-[11px] text-white/35">Template: {selectedTemplate}</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button type="button" className="gap-1" onClick={() => onComplete({ ...extractedData, template: selectedTemplate })}>
+              ✨ Build my resume now →
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="border border-white/10"
+              onClick={() => {
+                setExtractedData(null);
+                setMessages((m) => [
+                  ...m,
+                  { role: 'assistant', content: 'Sure — tell me anything else you want on your resume.' },
+                ]);
+              }}
+            >
+              Keep chatting
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="border-t border-[rgba(0,201,177,0.12)] p-4">
+          <div className="flex gap-2">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  void sendMessage();
+                }
+              }}
+              placeholder="Type your answer..."
+              rows={3}
+              disabled={!openingDone || isTyping}
+              data-lenis-prevent-wheel
+              className="min-h-[72px] max-h-[40vh] min-w-0 flex-1 touch-pan-y resize-y overflow-y-auto rounded-xl border border-[rgba(255,255,255,0.10)] bg-[#111616] px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-[#00C9B1]/40 disabled:opacity-50"
+            />
+            <Button
+              type="button"
+              className="h-[48px] shrink-0 px-4"
+              disabled={!openingDone || !input.trim() || isTyping}
+              onClick={() => void sendMessage()}
+              aria-label="Send"
+            >
+              {isTyping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
+          </div>
+          <button
+            type="button"
+            className="mt-3 w-full text-center text-[13px] text-white/45 transition hover:text-white/75"
+            onClick={onSkip}
+          >
+            Skip chat →
+          </button>
+        </div>
+      )}
+    </GlowCard>
+  );
+}

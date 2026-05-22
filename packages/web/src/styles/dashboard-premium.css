@@ -1,0 +1,117 @@
+/**
+ * Full-bleed canvas for dashboard `<main>` (and header tint alignment).
+ * Matches the premium overview surface so there is no banding at the header border.
+ */
+.dashboard-app-canvas-bg {
+  background:
+    radial-gradient(ellipse 60% 40% at 70% 0%, rgba(0, 201, 177, 0.04) 0%, transparent 60%),
+    #080b0a;
+}
+
+/* ApplyMate dashboard premium tokens — scoped to .dashboard-premium */
+.dashboard-premium {
+  --bg-base: #080b0a;
+  --bg-surface: #0f1512;
+  --bg-surface-2: #141c18;
+  --bg-surface-hover: #182019;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-hover: rgba(255, 255, 255, 0.18);
+  --border-teal: rgba(0, 201, 177, 0.3);
+  --border-teal-strong: rgba(0, 201, 177, 0.5);
+  --text-primary: #f0f4f2;
+  --text-secondary: rgba(240, 244, 242, 0.6);
+  --text-muted: rgba(240, 244, 242, 0.35);
+  --text-teal: #00c9b1;
+  --text-amber: #f59e0b;
+  --text-red: #f87171;
+  --text-green: #34d399;
+  --teal: #00c9b1;
+  --teal-10: rgba(0, 201, 177, 0.1);
+  --teal-15: rgba(0, 201, 177, 0.15);
+  --teal-20: rgba(0, 201, 177, 0.2);
+  --status-offer: rgba(52, 211, 153, 0.15);
+  --status-interview: rgba(0, 201, 177, 0.12);
+  --status-applied: rgba(96, 165, 250, 0.12);
+  --status-needs-action: rgba(251, 191, 36, 0.12);
+  --dot-red: #f87171;
+  --dot-amber: #fbbf24;
+  --dot-teal: #00c9b1;
+  --text-2xs: 11px;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 17px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 32px;
+  --text-4xl: 40px;
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --leading-tight: 1.2;
+  --leading-snug: 1.4;
+  --leading-normal: 1.6;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 100px;
+  --card-padding-sm: 16px;
+  --card-padding-md: 20px;
+  --card-padding-lg: 24px;
+  --section-gap: 12px;
+  --page-gap: 24px;
+  /* Canvas is painted on `<main>` (see .dashboard-app-canvas-bg); keep this wrapper transparent. */
+  background: transparent;
+}
+
+@keyframes dashboard-dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.3);
+  }
+}
+
+.dashboard-premium .dashboard-dot-pulse {
+  animation: dashboard-dot-pulse 2s ease-in-out infinite;
+}
+
+.dashboard-premium .dashboard-collapsible-content {
+  overflow: hidden;
+  transition:
+    max-height 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.dashboard-premium .dashboard-collapsible-content[data-expanded='false'] {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dashboard-premium .dashboard-collapsible-content[data-expanded='true'] {
+  max-height: 2400px;
+  opacity: 1;
+}
+
+@keyframes progress-intelligence-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 201, 177, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(0, 201, 177, 0.22);
+  }
+}
+
+.progress-intelligence-pulse {
+  animation: progress-intelligence-pulse 2.4s ease-in-out infinite;
+}

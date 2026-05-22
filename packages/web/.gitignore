@@ -1,0 +1,10 @@
+# Package-local ignores (repo root .gitignore also applies)
+
+.next/
+out/
+.env
+.env.*
+!.env.example
+e2e/.auth/
+test-results/
+playwright-report/

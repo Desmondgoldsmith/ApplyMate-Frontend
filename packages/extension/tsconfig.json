@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "noEmit": true,
+    "paths": {
+      "@/*": ["./*"],
+      "@applymate/shared": ["../../shared/src/index.ts"],
+      "@applymate/shared/*": ["../../shared/src/*"]
+    },
+    "types": ["chrome"]
+  },
+  "include": [
+    "./**/*.ts",
+    "./scripts/**/*.mjs"
+  ],
+  "exclude": ["node_modules", "dist"]
+}
