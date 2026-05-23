@@ -2,6 +2,7 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
 import { readApplymateTokenFromCookie } from '@/lib/authCookie';
 import { CV_PHOTO_TOO_LARGE_USER_MESSAGE } from '@/lib/cvPhotoCompress';
+import { applyNgrokSkipHeaders } from '@/lib/ngrokTunnel';
 import { useAuthStore } from '@/store/useAuthStore';
 
 /**
@@ -25,6 +26,7 @@ export const axiosClient = axios.create({
 });
 
 axiosClient.interceptors.request.use((config) => {
+  applyNgrokSkipHeaders(config, API_BASE_URL);
   if (typeof window !== 'undefined') {
     const fromMemory = useAuthStore.getState().accessToken?.trim();
     const fromCookie = readApplymateTokenFromCookie()?.trim();
@@ -40,7 +42,10 @@ axiosClient.interceptors.request.use((config) => {
 axiosClient.interceptors.request.use((config) => {
   const method = (config.method || 'get').toUpperCase();
   const path = `${config.baseURL ?? ''}${config.url ?? ''}`;
-  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) || !/\/cv\//i.test(path)) {
+  if (
+    !['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) ||
+    !/\/cv\//i.test(path)
+  ) {
     return config;
   }
   const headers = config.headers ?? {};
@@ -101,7 +106,10 @@ export type ErrorBody = {
  * When the backend returns HTTP 200 with `{ success: false, error?: {...} }`, axios does not throw.
  * Call this after `post`/`get` to reject with an AxiosError so `getApiErrorMessage` and mutations work.
  */
-export function throwIfApiFailureResponse(data: unknown, httpStatus?: number): void {
+export function throwIfApiFailureResponse(
+  data: unknown,
+  httpStatus?: number,
+): void {
   if (data === null || typeof data !== 'object') return;
   const o = data as Record<string, unknown>;
   if (o.success !== false) return;
@@ -110,7 +118,8 @@ export function throwIfApiFailureResponse(data: unknown, httpStatus?: number): v
     nested && typeof nested === 'object' && !Array.isArray(nested)
       ? Number((nested as { statusCode?: number }).statusCode)
       : undefined;
-  const status = httpStatus ?? (Number.isFinite(fromNested) ? fromNested : undefined) ?? 500;
+  const status =
+    httpStatus ?? (Number.isFinite(fromNested) ? fromNested : undefined) ?? 500;
   throw new AxiosError<ErrorBody>(
     'API reported failure',
     AxiosError.ERR_BAD_RESPONSE,
@@ -128,7 +137,11 @@ export function throwIfApiFailureResponse(data: unknown, httpStatus?: number): v
 
 function pickMessage(value: unknown): string | undefined {
   if (typeof value === 'string') return value;
-  if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'string') {
+  if (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    typeof value[0] === 'string'
+  ) {
     return value.join(' ');
   }
   return undefined;
@@ -144,7 +157,10 @@ export type NestedApiError = {
   retryAfterSeconds?: number;
 };
 
-function readNumberField(obj: Record<string, unknown>, key: string): number | undefined {
+function readNumberField(
+  obj: Record<string, unknown>,
+  key: string,
+): number | undefined {
   const v = obj[key];
   return typeof v === 'number' && Number.isFinite(v) ? v : undefined;
 }
@@ -153,9 +169,7 @@ function readNestedApiError(data: unknown): NestedApiError {
   if (!data || typeof data !== 'object') return {};
   const root = data as Record<string, unknown>;
   const httpStatus =
-    typeof root.statusCode === 'number'
-      ? root.statusCode
-      : undefined;
+    typeof root.statusCode === 'number' ? root.statusCode : undefined;
   /** Nest / gateway flat shape: `{ code, message }` on the response body. */
   const flatCode = typeof root.code === 'string' ? root.code : undefined;
   const flatMessage = pickMessage(root.message);
@@ -164,7 +178,8 @@ function readNestedApiError(data: unknown): NestedApiError {
     const e = err as Record<string, unknown>;
     return {
       httpStatus,
-      appStatusCode: typeof e.statusCode === 'number' ? e.statusCode : undefined,
+      appStatusCode:
+        typeof e.statusCode === 'number' ? e.statusCode : undefined,
       code: typeof e.code === 'string' ? e.code : flatCode,
       message: pickMessage(e.message) ?? flatMessage,
       used: readNumberField(e, 'used'),
@@ -187,22 +202,28 @@ export type CvImprovementInvalidFieldSelectionDetails = {
   resolvedIndex?: number;
 };
 
-function readCvImprovementDetailsObject(data: unknown): Record<string, unknown> | null {
+function readCvImprovementDetailsObject(
+  data: unknown,
+): Record<string, unknown> | null {
   if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
   const root = data as Record<string, unknown>;
   const d1 = root.details;
-  if (d1 && typeof d1 === 'object' && !Array.isArray(d1)) return d1 as Record<string, unknown>;
+  if (d1 && typeof d1 === 'object' && !Array.isArray(d1))
+    return d1 as Record<string, unknown>;
   const err = root.error;
   if (err && typeof err === 'object' && !Array.isArray(err)) {
     const ed = (err as Record<string, unknown>).details;
-    if (ed && typeof ed === 'object' && !Array.isArray(ed)) return ed as Record<string, unknown>;
+    if (ed && typeof ed === 'object' && !Array.isArray(ed))
+      return ed as Record<string, unknown>;
   }
   return null;
 }
 
 function parseStringIdArray(v: unknown): string[] | undefined {
   if (!Array.isArray(v)) return undefined;
-  const out = v.filter((x): x is string => typeof x === 'string' && x.trim().length > 0).map((s) => s.trim());
+  const out = v
+    .filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+    .map((s) => s.trim());
   return out.length > 0 ? out : undefined;
 }
 
@@ -229,7 +250,10 @@ export function readCvImprovementInvalidFieldSelectionDetails(
   return {
     receivedFields: parseStringIdArray(raw.receivedFields),
     expectedSelectableKeys: parseStringIdArray(raw.expectedSelectableKeys),
-    pointer: typeof raw.pointer === 'string' && raw.pointer.trim() ? raw.pointer.trim() : undefined,
+    pointer:
+      typeof raw.pointer === 'string' && raw.pointer.trim()
+        ? raw.pointer.trim()
+        : undefined,
     resolvedIndex,
   };
 }
@@ -243,7 +267,8 @@ export function getApiErrorCode(error: unknown): string | null {
 }
 
 /** Backend Phase 2 — assistant commit rejected merged patch for factuality / structural safety. */
-export const CV_ASSISTANT_COMMIT_REJECTED_FACTUALITY_CODE = 'CV_ASSISTANT_COMMIT_REJECTED_FACTUALITY' as const;
+export const CV_ASSISTANT_COMMIT_REJECTED_FACTUALITY_CODE =
+  'CV_ASSISTANT_COMMIT_REJECTED_FACTUALITY' as const;
 
 export const CV_ASSISTANT_COMMIT_FACTUALITY_USER_MESSAGE =
   "This change couldn't be applied because it isn't supported by what's saved on your CV. Edit manually or refresh and try again.";
@@ -254,7 +279,9 @@ function extractTruthfulnessWarningsFromApiData(data: unknown): string[] {
   const fromObj = (o: Record<string, unknown>): string[] => {
     const w = o.truthfulnessWarnings ?? o.truthfulness_warnings;
     if (!Array.isArray(w)) return [];
-    return w.filter((x): x is string => typeof x === 'string' && x.trim().length > 0).map((s) => s.trim());
+    return w
+      .filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+      .map((s) => s.trim());
   };
   const err = root.error;
   if (err && typeof err === 'object' && !Array.isArray(err)) {
@@ -264,7 +291,9 @@ function extractTruthfulnessWarningsFromApiData(data: unknown): string[] {
 }
 
 /** True when POST …/assistant/commit returned 422 with factuality rejection (Phase 2 CV). */
-export function isCvAssistantCommitRejectedForFactuality(error: unknown): boolean {
+export function isCvAssistantCommitRejectedForFactuality(
+  error: unknown,
+): boolean {
   if (!axios.isAxiosError(error)) return false;
   const ax = error as AxiosError<ErrorBody>;
   if (ax.response?.status !== 422) return false;
@@ -294,11 +323,16 @@ function isLoginOrRegisterAttemptUrl(url: string | undefined): boolean {
 export function isAuthRateLimitError(error: unknown): boolean {
   if (!axios.isAxiosError(error)) return false;
   const ax = error as AxiosError<ErrorBody>;
-  return ax.response?.status === 429 && isAuthThrottleRequestUrl(ax.config?.url);
+  return (
+    ax.response?.status === 429 && isAuthThrottleRequestUrl(ax.config?.url)
+  );
 }
 
 /** TanStack Query: avoid hammering the API after throttling or auth failures. */
-export function shouldRetryFailedQuery(failureCount: number, error: unknown): boolean {
+export function shouldRetryFailedQuery(
+  failureCount: number,
+  error: unknown,
+): boolean {
   if (failureCount >= 2) return false;
   if (!axios.isAxiosError(error)) return true;
   const s = error.response?.status;
@@ -345,12 +379,18 @@ export function isDailyAiLimitApiError(error: unknown): boolean {
 function formatDailyAiQuotaSuffix(meta: NestedApiError): string {
   const bits: string[] = [];
   const { used, dailyQuota, retryAfterSeconds } = meta;
-  if (typeof used === 'number' && typeof dailyQuota === 'number' && dailyQuota > 0) {
+  if (
+    typeof used === 'number' &&
+    typeof dailyQuota === 'number' &&
+    dailyQuota > 0
+  ) {
     bits.push(`${used} of ${dailyQuota} uses today`);
   }
   if (typeof retryAfterSeconds === 'number' && retryAfterSeconds > 0) {
     const m = Math.ceil(retryAfterSeconds / 60);
-    bits.push(m >= 60 ? `try again in ${Math.ceil(m / 60)}h` : `try again in ${m}m`);
+    bits.push(
+      m >= 60 ? `try again in ${Math.ceil(m / 60)}h` : `try again in ${m}m`,
+    );
   }
   return bits.length ? ` ${bits.join(' · ')}` : '';
 }
@@ -397,7 +437,10 @@ const TRANSIENT_AI_STRUCTURED_OUTPUT_MESSAGE =
   'We could not read the AI response for your CV. This is often temporary—please try again in a few seconds. If it keeps happening, try a shorter excerpt, a smaller file, or PDF instead of DOCX.';
 
 /** TanStack Query `retry` predicate for CV parse uploads (file multipart). */
-export function cvParseMutationShouldRetry(failureCount: number, error: unknown): boolean {
+export function cvParseMutationShouldRetry(
+  failureCount: number,
+  error: unknown,
+): boolean {
   if (failureCount >= 6) return false;
   if (isTransientAiStructuredOutputError(error)) return failureCount < 5;
   return failureCount < 2;
@@ -409,10 +452,16 @@ const SERVICE_UNAVAILABLE_USER_MESSAGE =
 
 /** Avoid echoing vendor names from API payloads in the UI. */
 function mentionsThirdPartyAiVendor(message: string): boolean {
-  return /\bgemini\b/i.test(message) || /\bopenai\b/i.test(message) || /\bclaude\b/i.test(message);
+  return (
+    /\bgemini\b/i.test(message) ||
+    /\bopenai\b/i.test(message) ||
+    /\bclaude\b/i.test(message)
+  );
 }
 
-function userFacingServiceUnavailableMessage(apiMessage: string | undefined): string {
+function userFacingServiceUnavailableMessage(
+  apiMessage: string | undefined,
+): string {
   const trimmed = apiMessage?.trim();
   if (trimmed && !mentionsThirdPartyAiVendor(trimmed)) {
     return trimmed;
@@ -421,7 +470,9 @@ function userFacingServiceUnavailableMessage(apiMessage: string | undefined): st
 }
 
 function scrubVendorNamesFromUserMessage(text: string): string {
-  return mentionsThirdPartyAiVendor(text) ? SERVICE_UNAVAILABLE_USER_MESSAGE : text;
+  return mentionsThirdPartyAiVendor(text)
+    ? SERVICE_UNAVAILABLE_USER_MESSAGE
+    : text;
 }
 
 /** 413 or backend message — oversized JSON body (e.g. base64 photo). */
@@ -430,7 +481,8 @@ export function isPayloadTooLargeError(error: unknown): boolean {
   const ax = error as AxiosError<unknown>;
   if (ax.response?.status === 413) return true;
   const payload = ax.response?.data;
-  const blob = `${ax.message} ${typeof payload === 'string' ? payload : JSON.stringify(payload)}`.toLowerCase();
+  const blob =
+    `${ax.message} ${typeof payload === 'string' ? payload : JSON.stringify(payload)}`.toLowerCase();
   return (
     blob.includes('payload too large') ||
     blob.includes('entity too large') ||
@@ -470,7 +522,10 @@ function getApiErrorMessageBase(error: unknown): string {
 
     if (nested.code === 'RATE_LIMITED') {
       const sec = nested.retryAfterSeconds;
-      const approxMin = typeof sec === 'number' && sec > 0 ? Math.max(1, Math.ceil(sec / 60)) : 1;
+      const approxMin =
+        typeof sec === 'number' && sec > 0
+          ? Math.max(1, Math.ceil(sec / 60))
+          : 1;
       return `Too many requests. Please wait about ${approxMin} minute(s), then try again.`;
     }
 
@@ -482,17 +537,26 @@ function getApiErrorMessageBase(error: unknown): string {
       return CV_AI_TIMEOUT_USER_MESSAGE;
     }
 
-    const staleCodes = new Set(['IMPROVEMENT_STALE_DRAFT', 'IMPROVEMENT_STALE_INDEX', 'STALE_DRAFT']);
+    const staleCodes = new Set([
+      'IMPROVEMENT_STALE_DRAFT',
+      'IMPROVEMENT_STALE_INDEX',
+      'STALE_DRAFT',
+    ]);
     const msgLower = nested.message?.toLowerCase() ?? '';
     if (
       (nested.code && staleCodes.has(nested.code)) ||
       (responseStatus === 409 &&
-        (/\bstale\b/.test(msgLower) || /\bdraft\b/.test(msgLower) || /\brevision\b/.test(msgLower)))
+        (/\bstale\b/.test(msgLower) ||
+          /\bdraft\b/.test(msgLower) ||
+          /\brevision\b/.test(msgLower)))
     ) {
       return 'This suggestion no longer matches your CV (the draft or revision changed). Refresh or reopen it and try again.';
     }
 
-    if (responseStatus === 409 && nested.code === 'IMPROVEMENT_INVALID_FIELD_SELECTION') {
+    if (
+      responseStatus === 409 &&
+      nested.code === 'IMPROVEMENT_INVALID_FIELD_SELECTION'
+    ) {
       const det = readCvImprovementInvalidFieldSelectionDetails(ax);
       const keys = det?.expectedSelectableKeys;
       if (keys?.length) {
@@ -515,7 +579,10 @@ function getApiErrorMessageBase(error: unknown): string {
         return CV_ASSISTANT_COMMIT_FACTUALITY_USER_MESSAGE;
       }
       const detail = nested.message?.trim();
-      if (detail) return scrubVendorNamesFromUserMessage(`We could not validate that: ${detail}`);
+      if (detail)
+        return scrubVendorNamesFromUserMessage(
+          `We could not validate that: ${detail}`,
+        );
       return 'Something in that request could not be validated. Check the form and try again.';
     }
 
@@ -526,11 +593,17 @@ function getApiErrorMessageBase(error: unknown): string {
       }
     }
 
-    if (responseStatus === 500 || responseStatus === 502 || responseStatus === 504) {
+    if (
+      responseStatus === 500 ||
+      responseStatus === 502 ||
+      responseStatus === 504
+    ) {
       const detail = nested.message?.trim();
       const looksUnsafe =
         !detail ||
-        /\b(stack trace|stack:|at\s+\w+\.|debug detail|internal error ref|must not surface)\b/i.test(detail);
+        /\b(stack trace|stack:|at\s+\w+\.|debug detail|internal error ref|must not surface)\b/i.test(
+          detail,
+        );
       if (detail && !looksUnsafe) {
         return scrubVendorNamesFromUserMessage(detail);
       }
@@ -574,7 +647,8 @@ function getApiErrorMessageBase(error: unknown): string {
       const d = data as ErrorBody;
       const top = pickMessage(d.message);
       if (top) return scrubVendorNamesFromUserMessage(top);
-      if (typeof d.error === 'string') return scrubVendorNamesFromUserMessage(d.error);
+      if (typeof d.error === 'string')
+        return scrubVendorNamesFromUserMessage(d.error);
       if (d.error && typeof d.error === 'object') {
         const nestedMsg = pickMessage(d.error.message);
         if (nestedMsg) return scrubVendorNamesFromUserMessage(nestedMsg);

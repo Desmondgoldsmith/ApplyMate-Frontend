@@ -15,11 +15,11 @@ Production-oriented workspace for **ApplyMate**: a Next.js marketing/product web
 └── eslint.config.mjs  # ESLint flat config (web + extension + shared)
 ```
 
-| Package | Description |
-| ------- | ----------- |
-| **@applymate/web** | Next.js, Tailwind v4, shadcn/ui (configured), React Query, Zustand, Axios, Zod, NextAuth placeholder, Sentry + PostHog stubs. |
-| **@applymate/extension** | TypeScript + esbuild build → `dist/` (content script, background, side panel, popup). |
-| **@applymate/shared** | Shared `User` type, `cn()` utility, and future hooks/components. |
+| Package                  | Description                                                                                                                   |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| **@applymate/web**       | Next.js, Tailwind v4, shadcn/ui (configured), React Query, Zustand, Axios, Zod, NextAuth placeholder, Sentry + PostHog stubs. |
+| **@applymate/extension** | TypeScript + esbuild build → `dist/` (content script, background, side panel, popup).                                         |
+| **@applymate/shared**    | Shared `User` type, `cn()` utility, and future hooks/components.                                                              |
 
 Absolute imports:
 
@@ -36,23 +36,33 @@ cp .env.example packages/extension/.env.local
 
 Edit env files with real URLs and secrets. See `packages/web/.env.example` and `packages/extension/.env.example`.
 
+### Vercel UI + local API via ngrok (testing only)
+
+When the web app is on Vercel and the Nest API is on your machine behind **free ngrok** (`*.ngrok-free.dev`):
+
+1. Set Vercel `NEXT_PUBLIC_API_URL` to `https://YOUR-SUBDOMAIN.ngrok-free.dev/api` (include `/api`).
+2. Set `NEXT_PUBLIC_USE_NGROK_TUNNEL=true` and redeploy.
+3. Ensure backend `CORS_ORIGIN` is your exact Vercel origin (no trailing slash).
+
+The app sends `ngrok-skip-browser-warning: true` on API requests only when the base URL is an ngrok free host and the flag is set (or in non-production dev). **Do not enable for production API hosts.**
+
 ## Scripts (run from repo root)
 
-| Script | Purpose |
-| ------ | ------- |
-| `npm run dev` | Next.js dev server (`@applymate/web`) |
-| `npm run dev:extension` | esbuild watch for the extension |
-| `npm run build:web` | Production Next.js build |
+| Script                    | Purpose                                         |
+| ------------------------- | ----------------------------------------------- |
+| `npm run dev`             | Next.js dev server (`@applymate/web`)           |
+| `npm run dev:extension`   | esbuild watch for the extension                 |
+| `npm run build:web`       | Production Next.js build                        |
 | `npm run build:extension` | esbuild-based build → `packages/extension/dist` |
-| `npm run build` | All workspace `build` scripts |
-| `npm run lint` | ESLint (`packages/**` + `shared/`) |
-| `npm run format` | Prettier |
+| `npm run build`           | All workspace `build` scripts                   |
+| `npm run lint`            | ESLint (`packages/**` + `shared/`)              |
+| `npm run format`          | Prettier                                        |
 
 **Extension**: after `npm run build:extension`, load **unpacked** from `packages/extension/dist` in Chrome (`chrome://extensions` → Developer mode → Load unpacked).
 
 ## Tooling
 
-- **ESLint** + **Prettier** at the repo root  
+- **ESLint** + **Prettier** at the repo root
 - **Husky** + **lint-staged** on commit (`eslint --fix` + `prettier --write`)
 
 ## Conventions

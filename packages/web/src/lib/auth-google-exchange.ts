@@ -5,6 +5,7 @@ import {
 import type { AuthUser } from '@/lib/api';
 import { API_BASE_URL } from '@/lib/axios';
 import { GoogleAuthExchangeError } from '@/lib/google-auth-exchange-error';
+import { ngrokSkipHeaders } from '@/lib/ngrokTunnel';
 
 export { GoogleAuthExchangeError };
 
@@ -81,10 +82,13 @@ export async function exchangeGoogleIdTokenWithBackend(
   try {
     res = await fetch(`${API_BASE_URL}auth/google`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
+      headers: ngrokSkipHeaders(
+        {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        API_BASE_URL,
+      ),
       body: JSON.stringify({
         idToken: payload.idToken,
         ...(payload.name ? { name: payload.name } : {}),
