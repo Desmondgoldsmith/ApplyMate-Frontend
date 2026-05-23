@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import {
+  mapNormalizedUserToAuthUser,
   normalizeAuthResponse,
   normalizeRefreshResponse,
 } from './auth-response';
@@ -4335,9 +4336,12 @@ const auth = {
       .data,
   login: async (payload: { email: string; password: string }) => {
     const res = await axiosClient.post<unknown>('/auth/login', payload);
-    return normalizeAuthResponse(res.data, payload.email) as {
-      accessToken: string;
-      user: AuthUser;
+    throwIfApiFailureResponse(res.data, res.status);
+    const normalized = normalizeAuthResponse(res.data, payload.email);
+    return {
+      accessToken: normalized.accessToken,
+      refreshToken: normalized.refreshToken,
+      user: mapNormalizedUserToAuthUser(normalized.user) as AuthUser,
     };
   },
   logout: async () => (await axiosClient.post('/auth/logout')).data,
@@ -4352,9 +4356,15 @@ const auth = {
     image?: string;
   }) => {
     const res = await axiosClient.post<unknown>('/auth/google', payload);
-    return normalizeAuthResponse(res.data) as {
-      accessToken: string;
-      user: AuthUser;
+    throwIfApiFailureResponse(res.data, res.status);
+    const normalized = normalizeAuthResponse(res.data);
+    return {
+      accessToken: normalized.accessToken,
+      refreshToken: normalized.refreshToken,
+      user: mapNormalizedUserToAuthUser(normalized.user, {
+        name: payload.name,
+        image: payload.image,
+      }) as AuthUser,
     };
   },
 };

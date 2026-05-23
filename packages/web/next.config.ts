@@ -1,18 +1,29 @@
-import { withSentryConfig } from "@sentry/nextjs";
-import type { NextConfig } from "next";
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { loadEnvConfig } from '@next/env';
+import { withSentryConfig } from '@sentry/nextjs';
+import type { NextConfig } from 'next';
+
+/** Monorepo: load repo-root `.env` / `.env.local`, then package-local overrides. */
+const webDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.join(webDir, '../..');
+const dev = process.env.NODE_ENV !== 'production';
+loadEnvConfig(repoRoot, dev);
+loadEnvConfig(webDir, dev);
 
 const nextConfig: NextConfig = {
   /** Compile the shared workspace package from source (no pre-build step). */
-  transpilePackages: ["@applymate/shared"],
+  transpilePackages: ['@applymate/shared'],
 };
 
 export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-  org: "mlt-group",
+  org: 'mlt-group',
 
-  project: "javascript-nextjs",
+  project: 'javascript-nextjs',
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
@@ -41,5 +52,5 @@ export default withSentryConfig(nextConfig, {
       // Automatically tree-shake Sentry logger statements to reduce bundle size
       removeDebugLogging: true,
     },
-  }
+  },
 });

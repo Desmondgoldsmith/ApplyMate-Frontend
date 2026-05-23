@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
 import { z } from 'zod';
 
 import { AuthFormCard } from '@/components/auth/AuthFormCard';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import { useGoogleOAuthErrorToast } from '@/components/auth/useGoogleOAuthErrorToast';
 import { AuthPasswordInput, AuthTextInput } from '@/components/auth/AuthInputs';
 import { AppShellBackdrop } from '@/components/layout/AppShellBackdrop';
 import { Button } from '@/components/ui/Button';
@@ -25,20 +26,14 @@ type FormValues = z.infer<typeof schema>;
 
 function LoginPageContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const toast = useToast();
+  useGoogleOAuthErrorToast();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [form, setForm] = useState<FormValues>({ email: '', password: '' });
-  const [errors, setErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof FormValues, string>>
+  >({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    const err = searchParams.get('error');
-    if (err === 'GoogleSignInFailed') {
-      captureEvent('auth_login_failed', { provider: 'google', message: 'Google sign-in failed' });
-      toast.error('Google sign-in failed. Try again or use email and password.');
-    }
-  }, [searchParams, toast]);
 
   const onSubmit = async () => {
     const parsed = schema.safeParse(form);
@@ -79,9 +74,19 @@ function LoginPageContent() {
             <span className="h-5 w-5 rounded-full bg-[#00C9B1]" />
             <span className="font-semibold text-white">ApplyAI</span>
           </div>
-          <h1 className="text-[28px] font-extrabold text-white">Welcome back</h1>
-          <p className="mb-6 text-sm text-white/50">Sign in to your dashboard</p>
-          <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void onSubmit(); }}>
+          <h1 className="text-[28px] font-extrabold text-white">
+            Welcome back
+          </h1>
+          <p className="mb-6 text-sm text-white/50">
+            Sign in to your dashboard
+          </p>
+          <form
+            className="space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void onSubmit();
+            }}
+          >
             <AuthTextInput
               placeholder="Email"
               type="email"
@@ -96,7 +101,9 @@ function LoginPageContent() {
               error={errors.password}
               autoComplete="current-password"
             />
-            <Button fullWidth disabled={isSubmitting}>{isSubmitting ? 'Signing in...' : 'Sign In'}</Button>
+            <Button fullWidth disabled={isSubmitting}>
+              {isSubmitting ? 'Signing in...' : 'Sign In'}
+            </Button>
           </form>
           <div className="my-4 text-center text-xs text-white/40">or</div>
           <GoogleSignInButton mode="login" disabled={isSubmitting} />
@@ -125,4 +132,3 @@ export default function LoginPage() {
     </Suspense>
   );
 }
-

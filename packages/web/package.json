@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "dev:webpack": "next dev --webpack",
+    "dev": "node ./scripts/sync-auth-env.cjs && next dev -p 3001",
+    "dev:webpack": "next dev --webpack -p 3001",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3001",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test"

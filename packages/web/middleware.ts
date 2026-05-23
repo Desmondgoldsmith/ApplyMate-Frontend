@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const PROTECTED_PREFIXES = ['/dashboard', '/onboarding'];
-const PUBLIC_AUTH_PATHS = ['/login', '/register', '/auth/oauth-complete'];
+const PUBLIC_AUTH_PATHS = ['/login', '/register', '/oauth-complete'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -29,6 +29,11 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/onboarding/:path*', '/login', '/register', '/auth/oauth-complete'],
+  matcher: [
+    '/dashboard/:path*',
+    '/onboarding/:path*',
+    '/login',
+    '/register',
+    '/oauth-complete',
+  ],
 };
-

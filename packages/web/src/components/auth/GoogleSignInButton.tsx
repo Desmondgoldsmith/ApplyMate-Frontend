@@ -35,18 +35,28 @@ function GoogleIcon() {
   );
 }
 
-export function GoogleSignInButton({ mode, disabled }: GoogleSignInButtonProps) {
+export function GoogleSignInButton({
+  mode,
+  disabled,
+}: GoogleSignInButtonProps) {
   const toast = useToast();
   const [loading, setLoading] = useState(false);
 
   const handleClick = () => {
     setLoading(true);
-    captureEvent(mode === 'login' ? 'auth_login_started' : 'auth_register_started', {
-      provider: 'google',
-    });
-    void signIn('google', { callbackUrl: '/api/auth/google/finish' }).catch(() => {
+    captureEvent(
+      mode === 'login' ? 'auth_login_started' : 'auth_register_started',
+      {
+        provider: 'google',
+      },
+    );
+    void signIn('google', {
+      callbackUrl: `${window.location.origin}/api/auth/google/finish`,
+    }).catch(() => {
       setLoading(false);
-      toast.error('Could not start Google sign-in. Check your connection and try again.');
+      toast.error(
+        'Could not start Google sign-in. Check your connection and try again.',
+      );
     });
   };
 
