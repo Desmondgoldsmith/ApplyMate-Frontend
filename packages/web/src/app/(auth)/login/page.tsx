@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { captureEvent } from '@/lib/analytics';
 import { api } from '@/lib/api';
-import { getApiErrorMessage } from '@/lib/axios';
+import { getLoginErrorMessage } from '@/lib/auth-login-message';
 import { useAuthStore } from '@/store/useAuthStore';
 
 const schema = z.object({
@@ -54,12 +54,18 @@ function LoginPageContent() {
       setAuth(result.user, result.accessToken);
       captureEvent('auth_login_completed');
       toast.success('Signed in successfully');
-      router.push('/dashboard');
+      let onboardingDone = result.user.onboardingCompleted === true;
+      try {
+        const status = await api.onboarding.getStatus();
+        onboardingDone = status.completed === true;
+      } catch {
+        /* use user flag */
+      }
+      router.push(onboardingDone ? '/dashboard' : '/onboarding');
     } catch (err) {
-      captureEvent('auth_login_failed', {
-        message: getApiErrorMessage(err) || 'Invalid credentials',
-      });
-      toast.error(getApiErrorMessage(err) || 'Invalid credentials');
+      const message = getLoginErrorMessage(err);
+      captureEvent('auth_login_failed', { message });
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

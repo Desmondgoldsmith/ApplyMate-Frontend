@@ -501,7 +501,9 @@ function normalizeUserMe(raw: unknown): AuthUser {
     onboardingCompleted:
       typeof body.onboardingCompleted === 'boolean'
         ? body.onboardingCompleted
-        : undefined,
+        : typeof body.onboarding_completed === 'boolean'
+          ? body.onboarding_completed
+          : undefined,
     selectedFeatures,
     primaryGoal:
       body.primaryGoal === null

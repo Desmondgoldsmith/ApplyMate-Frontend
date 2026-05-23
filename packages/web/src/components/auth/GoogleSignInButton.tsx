@@ -6,9 +6,13 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { captureEvent } from '@/lib/analytics';
+import {
+  googleOAuthFinishCallbackUrl,
+  type GoogleOAuthIntent,
+} from '@/lib/google-oauth-intent';
 
 type GoogleSignInButtonProps = {
-  mode: 'login' | 'register';
+  mode: GoogleOAuthIntent;
   disabled?: boolean;
 };
 
@@ -41,21 +45,23 @@ export function GoogleSignInButton({
 }: GoogleSignInButtonProps) {
   const toast = useToast();
   const [loading, setLoading] = useState(false);
+  const label =
+    mode === 'register' ? 'Sign up with Google' : 'Sign in with Google';
 
   const handleClick = () => {
     setLoading(true);
     captureEvent(
       mode === 'login' ? 'auth_login_started' : 'auth_register_started',
-      {
-        provider: 'google',
-      },
+      { provider: 'google' },
     );
     void signIn('google', {
-      callbackUrl: `${window.location.origin}/api/auth/google/finish`,
+      callbackUrl: googleOAuthFinishCallbackUrl(window.location.origin, mode),
     }).catch(() => {
       setLoading(false);
       toast.error(
-        'Could not start Google sign-in. Check your connection and try again.',
+        mode === 'register'
+          ? 'Could not start Google sign-up. Check your connection and try again.'
+          : 'Could not start Google sign-in. Check your connection and try again.',
       );
     });
   };
@@ -70,7 +76,7 @@ export function GoogleSignInButton({
       className="gap-2.5"
     >
       <GoogleIcon />
-      {loading ? 'Redirecting to Google…' : 'Continue with Google'}
+      {loading ? 'Redirecting to Google…' : label}
     </Button>
   );
 }

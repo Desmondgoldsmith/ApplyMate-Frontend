@@ -12,6 +12,8 @@ type GoogleAuthPayload = {
   idToken: string;
   name?: string;
   image?: string;
+  /** `login` = existing account only; `register` = create account if new. */
+  intent?: 'login' | 'register';
 };
 
 function parseApiErrorMessage(data: unknown, status: number): string {
@@ -34,6 +36,8 @@ function parseApiErrorMessage(data: unknown, status: number): string {
       return 'Google sign-in is not configured on the API';
     case 401:
       return 'Google token rejected by API (invalid or wrong client ID)';
+    case 404:
+      return 'No account found for this Google email';
     case 409:
       return 'An account with this email already exists';
     case 429:
@@ -85,6 +89,7 @@ export async function exchangeGoogleIdTokenWithBackend(
         idToken: payload.idToken,
         ...(payload.name ? { name: payload.name } : {}),
         ...(payload.image ? { image: payload.image } : {}),
+        ...(payload.intent ? { intent: payload.intent } : {}),
       }),
       cache: 'no-store',
     });

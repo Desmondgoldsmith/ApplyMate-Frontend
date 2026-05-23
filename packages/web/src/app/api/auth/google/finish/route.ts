@@ -10,16 +10,22 @@ import {
 import { isGoogleAuthConfigured } from '@/lib/auth-options';
 import { APPLYMATE_AUTH_COOKIE } from '@/lib/authCookie';
 import { googleAuthRedirectErrorParam } from '@/lib/google-auth-errors';
+import {
+  parseGoogleOAuthIntent,
+  type GoogleOAuthIntent,
+} from '@/lib/google-oauth-intent';
 import { API_BASE_URL } from '@/lib/axios';
 
 export const dynamic = 'force-dynamic';
 
-function loginRedirect(
+function authPageRedirect(
   request: NextRequest,
+  intent: GoogleOAuthIntent,
   error: string,
   reason?: string,
 ): NextResponse {
-  const url = new URL('/login', request.url);
+  const path = intent === 'register' ? '/register' : '/login';
+  const url = new URL(path, request.url);
   url.searchParams.set('error', error);
   if (reason?.trim()) {
     url.searchParams.set('errorReason', reason.trim().slice(0, 240));
@@ -42,9 +48,14 @@ async function readGoogleIdToken(request: NextRequest): Promise<string> {
 }
 
 export async function GET(request: NextRequest) {
+  const intent = parseGoogleOAuthIntent(
+    request.nextUrl.searchParams.get('intent'),
+  );
+
   if (!isGoogleAuthConfigured()) {
-    return loginRedirect(
+    return authPageRedirect(
       request,
+      intent,
       'GoogleSignInUnavailable',
       'Missing GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, or NEXTAUTH_SECRET. Restart dev server after updating .env.',
     );
@@ -52,10 +63,11 @@ export async function GET(request: NextRequest) {
 
   const idToken = await readGoogleIdToken(request);
   if (!idToken) {
-    return loginRedirect(
+    return authPageRedirect(
       request,
+      intent,
       'GoogleSignInFailed',
-      'No Google ID token after OAuth. Check NEXTAUTH_SECRET and redirect URI http://localhost:3001/api/auth/callback/google in Google Cloud.',
+      'No Google ID token after OAuth. Check NEXTAUTH_SECRET and redirect URI in Google Cloud Console.',
     );
   }
 
@@ -71,13 +83,14 @@ export async function GET(request: NextRequest) {
   try {
     const { accessToken } = await exchangeGoogleIdTokenWithBackend({
       idToken,
+      intent,
       name: typeof jwt?.name === 'string' ? jwt.name : undefined,
       image: typeof jwt?.picture === 'string' ? jwt.picture : undefined,
     });
 
-    const response = NextResponse.redirect(
-      new URL('/oauth-complete', request.url),
-    );
+    const completeUrl = new URL('/oauth-complete', request.url);
+    completeUrl.searchParams.set('intent', intent);
+    const response = NextResponse.redirect(completeUrl);
     response.cookies.set(APPLYMATE_AUTH_COOKIE, accessToken, {
       path: '/',
       sameSite: 'lax',
@@ -96,12 +109,16 @@ export async function GET(request: NextRequest) {
       if (err.statusCode === 401) {
         reason = `${err.message} — Backend GOOGLE_CLIENT_ID must match your OAuth Web client ID.`;
       }
+      if (err.statusCode === 404 && intent === 'login') {
+        reason =
+          'We did not find an account for this Google email. Use Sign up with Google to create one.';
+      }
     } else if (err instanceof Error) {
       reason = err.message;
     }
     if (!reason?.trim()) {
       reason = `Cannot reach API at ${API_BASE_URL}auth/google`;
     }
-    return loginRedirect(request, code, reason);
+    return authPageRedirect(request, intent, code, reason);
   }
 }

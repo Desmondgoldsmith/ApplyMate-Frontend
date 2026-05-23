@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { z } from 'zod';
 
 import { AuthFormCard } from '@/components/auth/AuthFormCard';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import { useGoogleOAuthErrorToast } from '@/components/auth/useGoogleOAuthErrorToast';
 import { AuthPasswordInput, AuthTextInput } from '@/components/auth/AuthInputs';
 import { AppShellBackdrop } from '@/components/layout/AppShellBackdrop';
 import { Button } from '@/components/ui/Button';
@@ -23,12 +24,15 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export default function RegisterPage() {
+function RegisterPageContent() {
   const router = useRouter();
   const toast = useToast();
+  useGoogleOAuthErrorToast();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [form, setForm] = useState<FormValues>({ email: '', password: '' });
-  const [errors, setErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof FormValues, string>>
+  >({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onSubmit = async () => {
@@ -47,7 +51,10 @@ export default function RegisterPage() {
     captureEvent('auth_register_started');
     try {
       await api.auth.register({ email: form.email, password: form.password });
-      const login = await api.auth.login({ email: form.email, password: form.password });
+      const login = await api.auth.login({
+        email: form.email,
+        password: form.password,
+      });
       setAuth(login.user, login.accessToken);
       captureEvent('auth_register_completed');
       toast.success('Account created');
@@ -71,9 +78,19 @@ export default function RegisterPage() {
             <span className="h-5 w-5 rounded-full bg-[#00C9B1]" />
             <span className="font-semibold text-white">ApplyAI</span>
           </div>
-          <h1 className="text-[28px] font-extrabold text-white">Create your account</h1>
-          <p className="mb-6 text-sm text-white/50">Sign up to start your dashboard</p>
-          <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void onSubmit(); }}>
+          <h1 className="text-[28px] font-extrabold text-white">
+            Create your account
+          </h1>
+          <p className="mb-6 text-sm text-white/50">
+            Sign up to start your dashboard
+          </p>
+          <form
+            className="space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void onSubmit();
+            }}
+          >
             <AuthTextInput
               placeholder="Email"
               type="email"
@@ -88,7 +105,9 @@ export default function RegisterPage() {
               error={errors.password}
               autoComplete="new-password"
             />
-            <Button fullWidth disabled={isSubmitting}>{isSubmitting ? 'Creating account...' : 'Register'}</Button>
+            <Button fullWidth disabled={isSubmitting}>
+              {isSubmitting ? 'Creating account...' : 'Register'}
+            </Button>
           </form>
           <div className="my-4 text-center text-xs text-white/40">or</div>
           <GoogleSignInButton mode="register" disabled={isSubmitting} />
@@ -104,3 +123,16 @@ export default function RegisterPage() {
   );
 }
 
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center text-sm text-white/50">
+          Loading…
+        </div>
+      }
+    >
+      <RegisterPageContent />
+    </Suspense>
+  );
+}

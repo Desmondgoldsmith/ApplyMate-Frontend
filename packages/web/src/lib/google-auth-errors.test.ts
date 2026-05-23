@@ -28,12 +28,23 @@ describe('google-auth-errors', () => {
         new GoogleAuthExchangeError('x', 401, 'GOOGLE_TOKEN_INVALID'),
       ),
     ).toBe('GoogleSignInFailed');
+    expect(
+      googleAuthRedirectErrorParam(
+        new GoogleAuthExchangeError('x', 404, 'GOOGLE_ACCOUNT_NOT_FOUND'),
+      ),
+    ).toBe('GoogleAccountNotFound');
   });
 
   it('returns user-facing toast copy', () => {
-    expect(googleOAuthErrorToastMessage('GoogleAccountExists')).toMatch(
-      /password/i,
+    expect(googleOAuthErrorToastMessage('GoogleAccountNotFound')).toMatch(
+      /sign-up page/i,
     );
+    expect(
+      googleOAuthErrorToastMessage('GoogleAccountExists', null, 'register'),
+    ).toMatch(/sign in instead/i);
+    expect(
+      googleOAuthErrorToastMessage('GoogleAccountExists', null, 'login'),
+    ).toMatch(/password/i);
     expect(googleOAuthErrorToastMessage('GoogleRateLimited')).toMatch(
       /minute/i,
     );

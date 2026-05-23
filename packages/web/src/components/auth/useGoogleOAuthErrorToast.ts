@@ -1,15 +1,16 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
 import { useToast } from '@/components/ui/Toast';
 import { captureEvent } from '@/lib/analytics';
 import { googleOAuthErrorToastMessage } from '@/lib/google-auth-errors';
 
-/** Shows a toast when redirected to `/login?error=…` after Google OAuth failures, then clears the query. */
+/** Shows a toast when redirected to `/login?error=…` or `/register?error=…` after Google OAuth failures. */
 export function useGoogleOAuthErrorToast(): void {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const router = useRouter();
   const toast = useToast();
   const handled = useRef<string | null>(null);
@@ -22,7 +23,8 @@ export function useGoogleOAuthErrorToast(): void {
     if (handled.current === key) return;
     handled.current = key;
 
-    const message = googleOAuthErrorToastMessage(err, reason);
+    const page = pathname.startsWith('/register') ? 'register' : 'login';
+    const message = googleOAuthErrorToastMessage(err, reason, page);
     if (!message) return;
 
     captureEvent('auth_login_failed', {
@@ -32,6 +34,7 @@ export function useGoogleOAuthErrorToast(): void {
       reason: reason ?? undefined,
     });
     toast.error(message);
-    router.replace('/login', { scroll: false });
-  }, [router, searchParams, toast]);
+    const base = pathname.startsWith('/register') ? '/register' : '/login';
+    router.replace(base, { scroll: false });
+  }, [pathname, router, searchParams, toast]);
 }

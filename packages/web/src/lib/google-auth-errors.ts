@@ -4,6 +4,7 @@ import { GoogleAuthExchangeError } from '@/lib/google-auth-exchange-error';
 export type GoogleOAuthErrorParam =
   | 'GoogleSignInFailed'
   | 'GoogleAccountExists'
+  | 'GoogleAccountNotFound'
   | 'GoogleRateLimited'
   | 'GoogleSignInUnavailable';
 
@@ -12,6 +13,7 @@ export type BackendGoogleAuthErrorCode =
   | 'GOOGLE_SIGNIN_UNAVAILABLE'
   | 'GOOGLE_TOKEN_INVALID'
   | 'GOOGLE_ACCOUNT_EXISTS'
+  | 'GOOGLE_ACCOUNT_NOT_FOUND'
   | 'RATE_LIMITED';
 
 export function googleAuthRedirectErrorParam(
@@ -27,9 +29,12 @@ export function googleAuthRedirectErrorParam(
         return 'GoogleSignInUnavailable';
       case 'GOOGLE_TOKEN_INVALID':
         return 'GoogleSignInFailed';
+      case 'GOOGLE_ACCOUNT_NOT_FOUND':
+        return 'GoogleAccountNotFound';
       default:
         break;
     }
+    if (err.statusCode === 404) return 'GoogleAccountNotFound';
     if (err.statusCode === 409) return 'GoogleAccountExists';
     if (err.statusCode === 429) return 'GoogleRateLimited';
     if (err.statusCode === 400) return 'GoogleSignInUnavailable';
@@ -49,6 +54,7 @@ function normalizeOAuthErrorCode(error: string | null): string | null {
 export function googleOAuthErrorToastMessage(
   error: string | null,
   reason?: string | null,
+  page?: 'login' | 'register',
 ): string | null {
   const code = normalizeOAuthErrorCode(error);
   if (!code) return null;
@@ -57,10 +63,20 @@ export function googleOAuthErrorToastMessage(
   const withDetail = (base: string) => (detail ? `${base} ${detail}` : base);
 
   switch (code) {
+    case 'GoogleAccountNotFound':
+    case 'GOOGLE_ACCOUNT_NOT_FOUND':
+      return withDetail(
+        'No account for this Google email. Create an account on the sign-up page.',
+      );
     case 'GoogleAccountExists':
     case 'GOOGLE_ACCOUNT_EXISTS':
+      if (page === 'register') {
+        return withDetail(
+          'This email already has an account — sign in instead.',
+        );
+      }
       return withDetail(
-        'An account with this email already exists. Sign in with your password.',
+        'An account with this email already exists. Sign in with your password or Google.',
       );
     case 'GoogleRateLimited':
     case 'RATE_LIMITED':

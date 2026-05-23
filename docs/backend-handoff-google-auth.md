@@ -1,6 +1,6 @@
 # Backend handoff: Google sign-in (`POST /api/auth/google`)
 
-**Status: backend implemented — frontend wired.**
+**Status: backend + frontend complete** (contract: `intent`, `GOOGLE_ACCOUNT_NOT_FOUND`, onboarding routing).
 
 NextAuth handles the Google OAuth redirect on the Next.js app. After Google returns an ID token, the finish route calls **`POST /api/auth/google`** and returns the same session as email login.
 
@@ -17,9 +17,13 @@ Content-Type: application/json
 {
   "idToken": "<Google ID token JWT>",
   "name": "Optional display name from Google profile",
-  "image": "Optional avatar URL from Google profile"
+  "image": "Optional avatar URL from Google profile",
+  "intent": "login | register"
 }
 ```
+
+- **`intent: "register"`** — create account if new; return tokens + `onboardingCompleted: false` for new users.
+- **`intent: "login"`** — only sign in existing Google-linked users; return **404** / `GOOGLE_ACCOUNT_NOT_FOUND` if no account (do not auto-create).
 
 ### Success response (200)
 
@@ -51,6 +55,7 @@ Normalized in `packages/web/src/lib/auth-response.ts` (supports snake_case and n
 | ---- | --------------------------- | ------------------------- |
 | 400  | `GOOGLE_SIGNIN_UNAVAILABLE` | `GoogleSignInUnavailable` |
 | 401  | `GOOGLE_TOKEN_INVALID`      | `GoogleSignInFailed`      |
+| 404  | `GOOGLE_ACCOUNT_NOT_FOUND`  | `GoogleAccountNotFound`   |
 | 409  | `GOOGLE_ACCOUNT_EXISTS`     | `GoogleAccountExists`     |
 | 429  | `RATE_LIMITED`              | `GoogleRateLimited`       |
 
@@ -61,7 +66,9 @@ Error body: `{ success: false, requestId, error: { statusCode, message, code? } 
 1. **Continue with Google** on `/login` or `/register`.
 2. NextAuth → Google → `/api/auth/callback/google`.
 3. `GET /api/auth/google/finish` → `POST {API}/auth/google` with `idToken`.
-4. Sets `applymate_token` cookie → `/oauth-complete` → `GET /users/me` → `/dashboard` or `/onboarding`.
+4. Sets `applymate_token` cookie → `/oauth-complete` → `GET /users/me` + `GET /onboarding/status` → `/dashboard` or `/onboarding`.
+
+**Backend prompt (sign-up vs sign-in / onboarding):** [`prompt-backend-google-auth-signup-onboarding.md`](./prompt-backend-google-auth-signup-onboarding.md)
 
 Email/password login unchanged.
 
@@ -102,8 +109,11 @@ Copy [`prompt-backend-google-signin-debug.md`](./prompt-backend-google-signin-de
 
 ## QA checklist
 
-- [ ] New Google account → **onboarding**, API calls work
+- [ ] `intent: "register"` creates user with `onboardingCompleted: false` and `onboarding/status.completed: false`
+- [ ] `intent: "login"` with unknown Google user → **404** `GOOGLE_ACCOUNT_NOT_FOUND` (no auto-create)
+- [ ] New Google account (register) → **onboarding** in browser, API calls work
 - [ ] Returning Google user (onboarding done) → **dashboard**
+- [ ] `users/me` and `onboarding/status` agree on `completed` / `onboardingCompleted`
 - [ ] Same email, password account → **409** / password message
 - [ ] Email login still works
 - [ ] `GOOGLE_CLIENT_ID` matches frontend OAuth client and backend `.env`
