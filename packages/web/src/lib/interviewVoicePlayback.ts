@@ -33,7 +33,9 @@ export const INTERVIEW_BROWSER_VOICE_FALLBACK_MESSAGE =
   "Premium voice wasn't available — we're using your device's voice so you can keep going.";
 
 /** Backend sometimes returns cacheHit with a tiny ID3-only stub — not playable speech. */
-export function isPlayableInterviewSpeechBase64(audioBase64: string | undefined | null): boolean {
+export function isPlayableInterviewSpeechBase64(
+  audioBase64: string | undefined | null,
+): boolean {
   const trimmed = audioBase64?.trim() ?? '';
   if (trimmed.length < 256) return false;
   try {
@@ -48,7 +50,7 @@ export function decodeInterviewSpeechBase64(
   audioBase64: string,
   contentType: string,
 ): Blob {
-  const binary = atob(base64);
+  const binary = atob(audioBase64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i += 1) {
     bytes[i] = binary.charCodeAt(i);

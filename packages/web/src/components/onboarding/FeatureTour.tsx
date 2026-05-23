@@ -1,7 +1,12 @@
 'use client';
 
 import confetti from 'canvas-confetti';
-import { driver, type Config, type DriveStep, type PopoverDOM } from 'driver.js';
+import {
+  driver,
+  type Config,
+  type DriveStep,
+  type PopoverDOM,
+} from 'driver.js';
 import 'driver.js/dist/driver.css';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePathname } from 'next/navigation';
@@ -43,10 +48,15 @@ function readTourCompleteLocal(storageKey: string): boolean {
 }
 
 function dashboardTourFinished(
-  user: { uiPrefs?: { tourCompleted?: boolean } | null } | null | undefined,
+  user:
+    | { id?: string; uiPrefs?: { tourCompleted?: boolean } | null }
+    | null
+    | undefined,
   storageKey: string,
 ): boolean {
-  const legacyKey = user?.id ? `${LEGACY_DASHBOARD_KEY}:${user.id}` : LEGACY_DASHBOARD_KEY;
+  const legacyKey = user?.id
+    ? `${LEGACY_DASHBOARD_KEY}:${user.id}`
+    : LEGACY_DASHBOARD_KEY;
   return (
     user?.uiPrefs?.tourCompleted === true ||
     readTourCompleteLocal(storageKey) ||
@@ -69,16 +79,24 @@ function collectSteps(defs: TourStepDef[], narrow: boolean): DriveStep[] {
         align: row.align ?? 'center',
         showButtons: ['next'],
         popoverOffset: row.popoverOffset ?? 16,
-      },
+      } as DriveStep['popover'],
       onHighlightStarted: (element) => {
         if (row.beforeHighlight) {
           row.beforeHighlight();
           window.setTimeout(() => {
-            element?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+            element?.scrollIntoView({
+              block: 'center',
+              inline: 'nearest',
+              behavior: 'smooth',
+            });
           }, 150);
           return;
         }
-        element?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+        element?.scrollIntoView({
+          block: 'center',
+          inline: 'nearest',
+          behavior: 'smooth',
+        });
       },
     });
   }
@@ -111,7 +129,11 @@ export function FeatureTour() {
       if (!storageKey) return;
       markTourCompleteLocal(storageKey);
       if (tourId === 'dashboard') {
-        markTourCompleteLocal(user?.id ? `${LEGACY_DASHBOARD_KEY}:${user.id}` : LEGACY_DASHBOARD_KEY);
+        markTourCompleteLocal(
+          user?.id
+            ? `${LEGACY_DASHBOARD_KEY}:${user.id}`
+            : LEGACY_DASHBOARD_KEY,
+        );
       }
       if (tourId !== 'dashboard') return;
       void (async () => {
@@ -119,7 +141,9 @@ export function FeatureTour() {
         tourCompletionSyncedRef.current = true;
         try {
           await api.users.updateMe({ tourCompleted: true });
-          await queryClient.invalidateQueries({ queryKey: ['me', accessToken ?? ''] });
+          await queryClient.invalidateQueries({
+            queryKey: ['me', accessToken ?? ''],
+          });
         } catch {
           tourCompletionSyncedRef.current = false;
         }
@@ -128,7 +152,11 @@ export function FeatureTour() {
   }, [accessToken, queryClient, storageKey, tourId, user?.id]);
 
   useEffect(() => {
-    if (user?.uiPrefs?.tourCompleted === true && tourId === 'dashboard' && storageKey) {
+    if (
+      user?.uiPrefs?.tourCompleted === true &&
+      tourId === 'dashboard' &&
+      storageKey
+    ) {
       markTourCompleteLocal(storageKey);
     }
   }, [user?.uiPrefs?.tourCompleted, storageKey, tourId]);
@@ -185,7 +213,8 @@ export function FeatureTour() {
     const meta = tourMeta(tourId);
 
     const attachPopoverChrome =
-      (totalSteps: number, id: TourId) => (popover: PopoverDOM, opts: { driver: ReturnType<typeof driver> }) => {
+      (totalSteps: number, id: TourId) =>
+      (popover: PopoverDOM, opts: { driver: ReturnType<typeof driver> }) => {
         const wrap = popover.wrapper;
         wrap.classList.add('applymate-tour-popover');
         wrap.dataset.applymateTour = id;
@@ -208,7 +237,9 @@ export function FeatureTour() {
           </div>
         `;
 
-        let skip = wrap.querySelector<HTMLButtonElement>('[data-applymate-tour-skip-btn]');
+        let skip = wrap.querySelector<HTMLButtonElement>(
+          '[data-applymate-tour-skip-btn]',
+        );
         if (!skip) {
           skip = document.createElement('button');
           skip.type = 'button';
@@ -234,7 +265,9 @@ export function FeatureTour() {
           onNextClick: (
             _el: Element | undefined,
             _step: DriveStep,
-            { driver: drv }: { driver: { isLastStep: () => boolean; moveNext: () => void } },
+            {
+              driver: drv,
+            }: { driver: { isLastStep: () => boolean; moveNext: () => void } },
           ) => {
             if (drv.isLastStep()) celebrateRef.current = meta.celebrate;
             drv.moveNext();
@@ -294,10 +327,13 @@ export function FeatureTour() {
       }, 600);
     };
 
-    const timer = window.setTimeout(() => {
-      if (cancelled) return;
-      scheduleStart();
-    }, tourId === 'dashboard' ? 800 : 500);
+    const timer = window.setTimeout(
+      () => {
+        if (cancelled) return;
+        scheduleStart();
+      },
+      tourId === 'dashboard' ? 800 : 500,
+    );
 
     return () => {
       cancelled = true;

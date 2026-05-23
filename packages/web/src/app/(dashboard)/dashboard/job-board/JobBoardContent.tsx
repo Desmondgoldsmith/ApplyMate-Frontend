@@ -1,13 +1,23 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, ChevronLeft, ChevronRight, Loader2, Search, X } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Search,
+  X,
+} from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { JobBoardAlertsBar } from '@/components/job-board/JobBoardAlertsBar';
-import { JobBoardFilters, type JobBoardFiltersState } from '@/components/job-board/JobBoardFilters';
+import {
+  JobBoardFilters,
+  type JobBoardFiltersState,
+} from '@/components/job-board/JobBoardFilters';
 import { JobDetailPanel } from '@/components/job-board/JobDetailPanel';
 import { JobListingCard } from '@/components/job-board/JobListingCard';
 import { Button } from '@/components/ui/Button';
@@ -60,10 +70,14 @@ export default function JobBoardContent() {
     remoteFirst: false,
   });
 
-  const [dismissedLocationFallbackBanner, setDismissedLocationFallbackBanner] = useState(false);
-  const [dismissedRemoteFirstBanner, setDismissedRemoteFirstBanner] = useState(false);
-  const [dismissedFreshnessBanner, setDismissedFreshnessBanner] = useState(false);
-  const [dismissedSearchContextBanner, setDismissedSearchContextBanner] = useState(false);
+  const [dismissedLocationFallbackBanner, setDismissedLocationFallbackBanner] =
+    useState(false);
+  const [dismissedRemoteFirstBanner, setDismissedRemoteFirstBanner] =
+    useState(false);
+  const [dismissedFreshnessBanner, setDismissedFreshnessBanner] =
+    useState(false);
+  const [dismissedSearchContextBanner, setDismissedSearchContextBanner] =
+    useState(false);
   const [hideLowMatch, setHideLowMatch] = useState(true);
   const queryClient = useQueryClient();
   const [filtersCollapsed, setFiltersCollapsed] = useState(true);
@@ -111,9 +125,14 @@ export default function JobBoardContent() {
       /* ignore */
     }
 
-    const uiPrefs = me.data?.uiPrefs as { jobSearchLocation?: string } | null | undefined;
+    const uiPrefs = me.data?.uiPrefs as
+      | { jobSearchLocation?: string }
+      | null
+      | undefined;
     const savedPref =
-      typeof uiPrefs?.jobSearchLocation === 'string' ? uiPrefs.jobSearchLocation.trim() : '';
+      typeof uiPrefs?.jobSearchLocation === 'string'
+        ? uiPrefs.jobSearchLocation.trim()
+        : '';
     const accountLoc = me.data?.location?.trim();
     const profLoc = profile?.location?.trim();
     const effective = resolveEffectiveLocationClient({
@@ -157,9 +176,12 @@ export default function JobBoardContent() {
     me.data?.uiPrefs,
   ]);
 
-  const patchImmediateFilter = useCallback((key: ImmediateFilterKey, value: string) => {
-    setAppliedFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
-  }, []);
+  const patchImmediateFilter = useCallback(
+    (key: ImmediateFilterKey, value: string) => {
+      setAppliedFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
+    },
+    [],
+  );
 
   const applySearch = useCallback(() => {
     const nextLoc = appliedFilters.remoteFirst ? '' : locationInput.trim();
@@ -175,10 +197,17 @@ export default function JobBoardContent() {
         .updateMe({ uiPrefs: { jobSearchLocation: nextLoc } })
         .then(() => queryClient.invalidateQueries({ queryKey: ['me'] }))
         .catch(() => {
-          toast.error('Location saved locally but could not sync to your account.');
+          toast.error(
+            'Location saved locally but could not sync to your account.',
+          );
         });
     }
-    setAppliedFilters((prev) => ({ ...prev, q: nextQ, location: nextLoc, page: 1 }));
+    setAppliedFilters((prev) => ({
+      ...prev,
+      q: nextQ,
+      location: nextLoc,
+      page: 1,
+    }));
   }, [
     qInput,
     locationInput,
@@ -211,9 +240,17 @@ export default function JobBoardContent() {
   const collapsedLocationHint = useMemo(() => {
     if (appliedFilters.remoteFirst) return 'Remote-first';
     return compactLocationForJobSearch(
-      appliedFilters.location.trim() || locationInput.trim() || me.data?.location?.trim() || '',
+      appliedFilters.location.trim() ||
+        locationInput.trim() ||
+        me.data?.location?.trim() ||
+        '',
     );
-  }, [appliedFilters.remoteFirst, appliedFilters.location, locationInput, me.data?.location]);
+  }, [
+    appliedFilters.remoteFirst,
+    appliedFilters.location,
+    locationInput,
+    me.data?.location,
+  ]);
 
   const collapsedCvLabel = useMemo(() => {
     const p =
@@ -238,12 +275,16 @@ export default function JobBoardContent() {
 
   const params = useMemo(() => {
     /** Keyword override only — omit for default list; backend builds JSearch query from CV + location. */
-    const q = appliedFilters.q.trim() ? appliedFilters.q.trim().slice(0, 500) : undefined;
+    const q = appliedFilters.q.trim()
+      ? appliedFilters.q.trim().slice(0, 500)
+      : undefined;
     return {
       ...(q ? { q } : {}),
       workMode: appliedFilters.workMode || undefined,
       employmentType: appliedFilters.employmentType || undefined,
-      location: appliedFilters.remoteFirst ? undefined : appliedFilters.location || undefined,
+      location: appliedFilters.remoteFirst
+        ? undefined
+        : appliedFilters.location || undefined,
       datePosted: appliedFilters.datePosted || undefined,
       page: appliedFilters.page,
       pageSize: DEFAULT_PAGE_SIZE,
@@ -253,13 +294,11 @@ export default function JobBoardContent() {
   }, [appliedFilters, cvProfileIdForDiscover]);
 
   const discoverEnabled =
-    profilesQ.isFetched && (profiles.length === 0 || Boolean(cvProfileIdForDiscover));
+    profilesQ.isFetched &&
+    (profiles.length === 0 || Boolean(cvProfileIdForDiscover));
 
   const jobs = useJobDiscovery(params, discoverEnabled);
-  const items = useMemo(
-    () => jobs.data?.items ?? [],
-    [jobs.data?.items],
-  );
+  const items = useMemo(() => jobs.data?.items ?? [], [jobs.data?.items]);
   const displayItems = useMemo(() => {
     if (!hideLowMatch) return items;
     return items.filter((j) => j.ranking?.tier !== 'LOW_MATCH');
@@ -282,13 +321,17 @@ export default function JobBoardContent() {
   const locationFallback = jobs.data?.locationFallback === true;
   const remoteFirstResponse = jobs.data?.remoteFirst === true;
   const locationLabel =
-    appliedFilters.location.trim() || locationInput.trim() || me.data?.location?.trim() || 'your area';
+    appliedFilters.location.trim() ||
+    locationInput.trim() ||
+    me.data?.location?.trim() ||
+    'your area';
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const rangeStart = total === 0 ? 0 : (appliedFilters.page - 1) * pageSize + 1;
   const rangeEnd = Math.min(appliedFilters.page * pageSize, total);
   const showPagination = total > 0 && totalPages > 1;
   const userCommittedSearch = appliedFilters.q.trim().length > 0;
-  const showListRefetchOverlay = jobs.isFetching && jobs.data !== undefined && !jobs.isError;
+  const showListRefetchOverlay =
+    jobs.isFetching && jobs.data !== undefined && !jobs.isError;
   const freshness = jobs.data?.freshness;
   const qualityState = jobs.data?.qualityState;
   const hasLocationContext =
@@ -307,7 +350,10 @@ export default function JobBoardContent() {
   const showJobListSkeleton =
     !profilesQ.isFetched ||
     (profiles.length > 0 && !cvProfileIdForDiscover) ||
-    (discoverEnabled && jobs.isFetching && jobs.data === undefined && !jobs.isError);
+    (discoverEnabled &&
+      jobs.isFetching &&
+      jobs.data === undefined &&
+      !jobs.isError);
 
   const prefetchListing = useCallback(
     (job: JobListingDto) => {
@@ -322,7 +368,10 @@ export default function JobBoardContent() {
   );
   const handleSuggestedAction = useCallback(
     (action: { type: string; route: string; label: string }) => {
-      trackFunnelEvent('jobboard_empty_guidance_clicked', { type: action.type, route: action.route });
+      trackFunnelEvent('jobboard_empty_guidance_clicked', {
+        type: action.type,
+        route: action.route,
+      });
       if (action.type === 'expand_location') {
         setFiltersCollapsed(false);
         if (!appliedFilters.remoteFirst) setRemoteFirst(true);
@@ -348,7 +397,12 @@ export default function JobBoardContent() {
       action?: { label: string; onClick: () => void };
       onDismiss: () => void;
     }> = [];
-    if (!dismissedFreshnessBanner && freshness && (freshness.newSinceLastVisitCount > 0 || freshness.updatedSinceLastVisitCount > 0)) {
+    if (
+      !dismissedFreshnessBanner &&
+      freshness &&
+      (freshness.newSinceLastVisitCount > 0 ||
+        freshness.updatedSinceLastVisitCount > 0)
+    ) {
       list.push({
         id: 'freshness',
         tone: 'teal',
@@ -359,7 +413,11 @@ export default function JobBoardContent() {
         onDismiss: () => setDismissedFreshnessBanner(true),
       });
     }
-    if (!dismissedSearchContextBanner && searchContextBanner && !appliedFilters.remoteFirst) {
+    if (
+      !dismissedSearchContextBanner &&
+      searchContextBanner &&
+      !appliedFilters.remoteFirst
+    ) {
       list.push({
         id: 'search-context',
         tone: 'neutral',
@@ -399,7 +457,9 @@ export default function JobBoardContent() {
           label: 'Set location',
           onClick: () => {
             setFiltersCollapsed(false);
-            toast.info('Add your location in Search & Filters, then click Search.');
+            toast.info(
+              'Add your location in Search & Filters, then click Search.',
+            );
           },
         },
         onDismiss: () => {},
@@ -440,19 +500,29 @@ export default function JobBoardContent() {
 
   useEffect(() => {
     for (const row of items) {
-      const refined = row.matchPreview?.refinedReady === true && typeof row.matchPreview?.refinedScore === 'number';
+      const refined =
+        row.matchPreview?.refinedReady === true &&
+        typeof row.matchPreview?.refinedScore === 'number';
       if (!refined) continue;
       const key = `${row.id}:${Math.round(row.matchPreview!.refinedScore!)}`;
       if (refinedTrackedRef.current.has(key)) continue;
       refinedTrackedRef.current.add(key);
-      trackFunnelEvent('jobboard_refined_score_ready', { jobListingId: row.id, score: row.matchPreview?.refinedScore });
+      trackFunnelEvent('jobboard_refined_score_ready', {
+        jobListingId: row.id,
+        score: row.matchPreview?.refinedScore,
+      });
     }
   }, [items]);
 
   useEffect(() => {
     if (seenMarkedRef.current) return;
     if (!jobs.isSuccess || items.length === 0) return;
-    if (!freshness || (freshness.newSinceLastVisitCount <= 0 && freshness.updatedSinceLastVisitCount <= 0)) return;
+    if (
+      !freshness ||
+      (freshness.newSinceLastVisitCount <= 0 &&
+        freshness.updatedSinceLastVisitCount <= 0)
+    )
+      return;
     seenMarkedRef.current = true;
     void api.jobDiscovery.markSeen();
   }, [jobs.isSuccess, items.length, freshness]);
@@ -464,11 +534,15 @@ export default function JobBoardContent() {
       return;
     }
     if (isMaxLg) {
-      setActiveJobId((prev) => (prev && displayItems.some((j) => j.id === prev) ? prev : null));
+      setActiveJobId((prev) =>
+        prev && displayItems.some((j) => j.id === prev) ? prev : null,
+      );
       return;
     }
     setActiveJobId((prev) =>
-      prev && displayItems.some((j) => j.id === prev) ? prev : (displayItems[0]?.id ?? null),
+      prev && displayItems.some((j) => j.id === prev)
+        ? prev
+        : (displayItems[0]?.id ?? null),
     );
   }, [items.length, displayItems, isMaxLg]);
 
@@ -501,7 +575,10 @@ export default function JobBoardContent() {
       .then((resolved) => {
         const id = resolved.jobListingId?.trim();
         if (!id) return;
-        trackFunnelEvent('jobboard_focus_opened', { focusToken: focusTokenFromUrl, jobListingId: id });
+        trackFunnelEvent('jobboard_focus_opened', {
+          focusToken: focusTokenFromUrl,
+          jobListingId: id,
+        });
         setActiveJobId(id);
         if (isMaxLg) setMobileDetailOpen(true);
       })
@@ -547,7 +624,10 @@ export default function JobBoardContent() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-white/10 bg-[#0C0F0F] p-2" data-tour="job-board-filters">
+      <div
+        className="rounded-2xl border border-white/10 bg-[#0C0F0F] p-2"
+        data-tour="job-board-filters"
+      >
         <button
           type="button"
           onClick={() => setFiltersCollapsed((v) => !v)}
@@ -564,7 +644,13 @@ export default function JobBoardContent() {
               <span className="text-white/45"> · {collapsedCvLabel}</span>
             ) : null}
           </span>
-          <ChevronDown className={filtersCollapsed ? 'h-4 w-4 shrink-0 -rotate-90' : 'h-4 w-4 shrink-0'} />
+          <ChevronDown
+            className={
+              filtersCollapsed
+                ? 'h-4 w-4 shrink-0 -rotate-90'
+                : 'h-4 w-4 shrink-0'
+            }
+          />
         </button>
         {!filtersCollapsed ? (
           <div className="mt-2">
@@ -602,12 +688,16 @@ export default function JobBoardContent() {
           className="flex min-h-[280px] w-full min-w-0 shrink-0 flex-col overflow-hidden border-b border-white/[0.06] max-lg:flex-1 max-lg:min-h-0 lg:min-h-0 lg:w-[min(52%,520px)] lg:max-w-[520px] lg:border-b-0 lg:border-r lg:border-white/[0.06]"
         >
           <div className="shrink-0 space-y-2 px-3 pt-3">
-            {false && !dismissedFreshnessBanner && freshness && (freshness.newSinceLastVisitCount > 0 || freshness.updatedSinceLastVisitCount > 0) ? (
+            {false &&
+            !dismissedFreshnessBanner &&
+            freshness != null &&
+            ((freshness?.newSinceLastVisitCount ?? 0) > 0 ||
+              (freshness?.updatedSinceLastVisitCount ?? 0) > 0) ? (
               <div className="mb-2 flex items-start gap-2 rounded-xl border border-[#00C9B1]/25 bg-[#00C9B1]/10 px-3 py-2.5 text-sm text-white/90">
                 <p className="min-w-0 flex-1 leading-snug">
-                  {freshness.newSinceLastVisitCount > 0
-                    ? `${freshness.newSinceLastVisitCount} new jobs since your last visit`
-                    : `${freshness.updatedSinceLastVisitCount} jobs updated since your last visit`}
+                  {(freshness?.newSinceLastVisitCount ?? 0) > 0
+                    ? `${freshness?.newSinceLastVisitCount} new jobs since your last visit`
+                    : `${freshness?.updatedSinceLastVisitCount} jobs updated since your last visit`}
                 </p>
                 <button
                   type="button"
@@ -619,14 +709,22 @@ export default function JobBoardContent() {
                 </button>
               </div>
             ) : null}
-            {false && !dismissedSearchContextBanner && searchContextBanner && !appliedFilters.remoteFirst ? (
+            {false &&
+            !dismissedSearchContextBanner &&
+            searchContextBanner &&
+            !appliedFilters.remoteFirst ? (
               <div className="flex items-start gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-3 py-2.5 text-sm text-white/85">
-                <p className="min-w-0 flex-1 leading-snug">{searchContextBanner}</p>
+                <p className="min-w-0 flex-1 leading-snug">
+                  {searchContextBanner}
+                </p>
                 <button
                   type="button"
                   onClick={() => {
                     setFiltersCollapsed(false);
-                    window.setTimeout(() => locationInputRef.current?.focus(), 80);
+                    window.setTimeout(
+                      () => locationInputRef.current?.focus(),
+                      80,
+                    );
                   }}
                   className="shrink-0 rounded-md border border-[#00C9B1]/35 bg-[#00C9B1]/10 px-2 py-1 text-xs font-semibold text-[#7ef4e6] hover:bg-[#00C9B1]/15"
                 >
@@ -644,7 +742,9 @@ export default function JobBoardContent() {
             ) : null}
             {false && !dismissedRemoteFirstBanner && remoteFirstResponse ? (
               <div className="flex items-start gap-2 rounded-xl border border-[#00C9B1]/25 bg-[#00C9B1]/10 px-3 py-2.5 text-sm text-white/90">
-                <p className="min-w-0 flex-1 leading-snug">Showing international remote roles - apply from anywhere</p>
+                <p className="min-w-0 flex-1 leading-snug">
+                  Showing international remote roles - apply from anywhere
+                </p>
                 <button
                   type="button"
                   onClick={() => setDismissedRemoteFirstBanner(true)}
@@ -657,7 +757,10 @@ export default function JobBoardContent() {
             ) : null}
             {false && !dismissedLocationFallbackBanner && locationFallback ? (
               <div className="flex items-start gap-2 rounded-xl border border-amber-400/25 bg-amber-500/[0.08] px-3 py-2.5 text-sm text-amber-100/95">
-                <p className="min-w-0 flex-1 leading-snug">No jobs found in {locationLabel}. Showing remote roles instead.</p>
+                <p className="min-w-0 flex-1 leading-snug">
+                  No jobs found in {locationLabel}. Showing remote roles
+                  instead.
+                </p>
                 <button
                   type="button"
                   onClick={() => setDismissedLocationFallbackBanner(true)}
@@ -670,14 +773,18 @@ export default function JobBoardContent() {
             ) : null}
             {!appliedFilters.remoteFirst && !hasLocationContext ? (
               <div className="rounded-xl border border-white/12 bg-white/[0.03] px-3 py-2.5 text-sm text-white/85">
-                <p className="leading-snug">Set your location to get stronger local matches.</p>
+                <p className="leading-snug">
+                  Set your location to get stronger local matches.
+                </p>
                 <div className="mt-2">
                   <button
                     type="button"
                     className="rounded-lg border border-[#00C9B1]/35 bg-[#00C9B1]/10 px-2.5 py-1 text-xs font-semibold text-[#7ef4e6] hover:bg-[#00C9B1]/15"
                     onClick={() => {
                       setFiltersCollapsed(false);
-                      toast.info('Add your location in Search & Filters, then click Search.');
+                      toast.info(
+                        'Add your location in Search & Filters, then click Search.',
+                      );
                     }}
                   >
                     Set location
@@ -687,7 +794,9 @@ export default function JobBoardContent() {
             ) : null}
             {false && shouldShowLowQualityBanner ? (
               <div className="rounded-xl border border-amber-400/25 bg-amber-500/[0.08] px-3 py-2.5 text-sm text-amber-100/95">
-                <p className="leading-snug">Results are currently low quality. Try one of these:</p>
+                <p className="leading-snug">
+                  Results are currently low quality. Try one of these:
+                </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {qualityState!.suggestedActions.slice(0, 3).map((a) => (
                     <button
@@ -705,7 +814,10 @@ export default function JobBoardContent() {
             {items.length > 0 ? (
               <div className="flex items-center justify-between gap-2 px-0.5 pb-1">
                 <p className="text-[11px] text-white/40">
-                  Ranked by fit{hiddenLowMatchCount > 0 && hideLowMatch ? ` · ${hiddenLowMatchCount} low-match hidden` : ''}
+                  Ranked by fit
+                  {hiddenLowMatchCount > 0 && hideLowMatch
+                    ? ` · ${hiddenLowMatchCount} low-match hidden`
+                    : ''}
                 </p>
                 <label className="inline-flex cursor-pointer items-center gap-2 text-[11px] text-white/55">
                   <input
@@ -734,13 +846,22 @@ export default function JobBoardContent() {
             {showJobListSkeleton ? (
               <>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="h-28 animate-pulse rounded-2xl bg-white/[0.04]" />
+                  <div
+                    key={i}
+                    className="h-28 animate-pulse rounded-2xl bg-white/[0.04]"
+                  />
                 ))}
               </>
             ) : jobs.isError ? (
               <div className="rounded-2xl border border-rose-400/20 bg-rose-500/[0.08] p-4">
-                <p className="text-sm font-semibold text-rose-200">Could not load job listings.</p>
-                <Button type="button" className="mt-3" onClick={() => jobs.refetch()}>
+                <p className="text-sm font-semibold text-rose-200">
+                  Could not load job listings.
+                </p>
+                <Button
+                  type="button"
+                  className="mt-3"
+                  onClick={() => jobs.refetch()}
+                >
                   Retry
                 </Button>
               </div>
@@ -802,7 +923,10 @@ export default function JobBoardContent() {
               <p className="text-center text-[11px] text-white/45 sm:text-left">
                 {rangeStart}-{rangeEnd} of {total}
                 {totalPages > 1 ? (
-                  <span className="text-white/35"> · Page {appliedFilters.page} of {totalPages}</span>
+                  <span className="text-white/35">
+                    {' '}
+                    · Page {appliedFilters.page} of {totalPages}
+                  </span>
                 ) : null}
               </p>
               <div className="flex items-center justify-center gap-2">
@@ -811,7 +935,12 @@ export default function JobBoardContent() {
                   variant="ghost"
                   className="border border-white/10 px-2"
                   disabled={appliedFilters.page <= 1 || jobs.isFetching}
-                  onClick={() => setAppliedFilters((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                  onClick={() =>
+                    setAppliedFilters((prev) => ({
+                      ...prev,
+                      page: Math.max(1, prev.page - 1),
+                    }))
+                  }
                   aria-label="Previous page"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -820,8 +949,15 @@ export default function JobBoardContent() {
                   type="button"
                   variant="ghost"
                   className="border border-white/10 px-2"
-                  disabled={appliedFilters.page >= totalPages || jobs.isFetching}
-                  onClick={() => setAppliedFilters((prev) => ({ ...prev, page: Math.min(totalPages, prev.page + 1) }))}
+                  disabled={
+                    appliedFilters.page >= totalPages || jobs.isFetching
+                  }
+                  onClick={() =>
+                    setAppliedFilters((prev) => ({
+                      ...prev,
+                      page: Math.min(totalPages, prev.page + 1),
+                    }))
+                  }
                   aria-label="Next page"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -837,13 +973,20 @@ export default function JobBoardContent() {
         >
           {activeJobId ? (
             <div className="app-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
-              <JobDetailPanel jobId={activeJobId} cvProfileId={cvProfileIdForDiscover} />
+              <JobDetailPanel
+                jobId={activeJobId}
+                cvProfileId={cvProfileIdForDiscover}
+              />
             </div>
           ) : (
             <div className="flex min-h-[280px] flex-col items-center justify-center p-6 text-center lg:min-h-0 lg:flex-1">
               <Search className="h-10 w-10 text-[#00C9B1]" />
-              <p className="mt-3 text-sm font-semibold text-white">Select a job to see details</p>
-              <p className="mt-1 text-xs text-white/50">Choose any listing from the left panel.</p>
+              <p className="mt-3 text-sm font-semibold text-white">
+                Select a job to see details
+              </p>
+              <p className="mt-1 text-xs text-white/50">
+                Choose any listing from the left panel.
+              </p>
             </div>
           )}
         </div>
@@ -894,7 +1037,10 @@ export default function JobBoardContent() {
                   </button>
                 </div>
                 <div className="app-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y [webkit-overflow-scrolling:touch] px-3 pb-24 pt-1 lg:pb-4">
-                  <JobDetailPanel jobId={activeJobId} cvProfileId={cvProfileIdForDiscover} />
+                  <JobDetailPanel
+                    jobId={activeJobId}
+                    cvProfileId={cvProfileIdForDiscover}
+                  />
                 </div>
               </motion.div>
             </>

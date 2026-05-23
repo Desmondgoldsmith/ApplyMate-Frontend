@@ -2,7 +2,11 @@
 
 import { useMemo } from 'react';
 
-import type { SimulationState, TurnAnswerResponse } from '@/lib/interview-prep-types';
+import type {
+  SimulationSignal,
+  SimulationState,
+  TurnAnswerResponse,
+} from '@/lib/interview-prep-types';
 import { isSimulationMode } from '@/lib/interview-prep-types';
 import {
   mergeSimulationSnapshot,
@@ -20,7 +24,9 @@ export function useInterviewSimulation(options: {
   simState?: SimulationState | null;
 }) {
   const { prepMode, enabled = true, lastFeedback, simState } = options;
-  const active = enabled && isSimulationMode(prepMode as Parameters<typeof isSimulationMode>[0]);
+  const active =
+    enabled &&
+    isSimulationMode(prepMode as Parameters<typeof isSimulationMode>[0]);
 
   return useMemo(() => {
     if (!active) {
@@ -30,7 +36,7 @@ export function useInterviewSimulation(options: {
         pressureTier: 'low' as const,
         pacingMultiplier: 1,
         nextQuestionDifficulty: 3,
-        signals: [] as const,
+        signals: [] as SimulationSignal[],
         reactionText: null as string | null,
         nudgeMessage: null as string | null,
         avatarDemeanor: 'neutral' as AvatarDemeanor,
@@ -42,7 +48,9 @@ export function useInterviewSimulation(options: {
       turn: lastFeedback?.simulation ?? null,
       live: simState?.simulation ?? null,
       pressureLevel: simState?.pressureLevel,
-      prepMode: prepMode as Parameters<typeof mergeSimulationSnapshot>[0]['prepMode'],
+      prepMode: prepMode as Parameters<
+        typeof mergeSimulationSnapshot
+      >[0]['prepMode'],
     });
 
     const microReactions = resolveMicroReactions(
@@ -53,7 +61,10 @@ export function useInterviewSimulation(options: {
     return {
       active: true as const,
       emotion: normalizeEmotion(merged.emotion),
-      pressureTier: normalizePressureTier(merged.pressureTier, simState?.pressureLevel),
+      pressureTier: normalizePressureTier(
+        merged.pressureTier,
+        simState?.pressureLevel,
+      ),
       pacingMultiplier: merged.pacingMultiplier,
       nextQuestionDifficulty: merged.nextQuestionDifficulty,
       signals: merged.signals,

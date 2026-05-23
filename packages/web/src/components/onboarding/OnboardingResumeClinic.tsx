@@ -36,7 +36,10 @@ import {
   type CvDiffPreviewOpenParams,
 } from '@/lib/api';
 import { getApiErrorCode, getApiErrorMessage } from '@/lib/axios';
-import { assistantChangedFieldLabel, assistantDiffDisplayStrings } from '@/lib/cvAssistantDiffDisplay';
+import {
+  assistantChangedFieldLabel,
+  assistantDiffDisplayStrings,
+} from '@/lib/cvAssistantDiffDisplay';
 import { refetchCvProfileAndSectionsAfterBackgroundWork } from '@/lib/cvBackgroundSectionSync';
 import { filterPendingSuggestionsForDisplay } from '@/lib/cv-improvement-merge';
 import { compactDiffPreviewPerformance } from '@/lib/cvApplyPerformanceDev';
@@ -45,14 +48,20 @@ import {
   type CvDiffPreviewMap,
   cvDiffPreviewStorageKey,
 } from '@/lib/cvDiffPreviewMap';
-import { isCvApplyImprovementTerminalNoDiff, toastCopyForTerminalNoDiffApply } from '@/lib/cvApplyImprovementQueue';
+import {
+  isCvApplyImprovementTerminalNoDiff,
+  toastCopyForTerminalNoDiffApply,
+} from '@/lib/cvApplyImprovementQueue';
 import { logCvSuggestionMutationClientPerf } from '@/lib/cvSuggestionMutationReconcile';
 import {
   applySuggestionAcceptToImprovementsCache,
   applySuggestionRejectToImprovementsCache,
 } from '@/lib/cvSuggestionsMutationApply';
 import { commitAcceptedStructuredDraft } from '@/lib/cvStructuredDraftCommit';
-import { CV_SUGGESTIONS_QUERY_ROOT, cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
+import {
+  CV_SUGGESTIONS_QUERY_ROOT,
+  cvSuggestionsQueryKey,
+} from '@/lib/cvSuggestionsQuery';
 import {
   transformSectionsToCVBuilderData,
   type CVBuilderData,
@@ -78,27 +87,31 @@ function getFormatRecommendation(expCount: number): {
     return {
       label: 'Student / No Experience',
       recommended: 'modern',
-      reason: 'The Modern template leads with skills and education — ideal when experience is limited',
+      reason:
+        'The Modern template leads with skills and education — ideal when experience is limited',
     };
   }
   if (expCount <= 2) {
     return {
       label: 'Early Career (0-3 years)',
       recommended: 'modern',
-      reason: 'Hybrid format recommended — showcase skills prominently alongside your experience',
+      reason:
+        'Hybrid format recommended — showcase skills prominently alongside your experience',
     };
   }
   if (expCount <= 5) {
     return {
       label: 'Mid Career (3-8 years)',
       recommended: 'classic',
-      reason: 'Chronological format — your experience depth is your strongest asset',
+      reason:
+        'Chronological format — your experience depth is your strongest asset',
     };
   }
   return {
     label: 'Senior (8+ years)',
     recommended: 'professional',
-    reason: 'Professional format — structured layout that showcases seniority and specialisation',
+    reason:
+      'Professional format — structured layout that showcases seniority and specialisation',
   };
 }
 
@@ -142,70 +155,94 @@ export function OnboardingResumeClinic({
   const score = useCVScore(true, profileId);
   const improvements = useCVImprovements(true, profileId);
 
-  const [tripleRightTab, setTripleRightTab] = useState<'analysis' | 'improvements'>('analysis');
+  const [tripleRightTab, setTripleRightTab] = useState<
+    'analysis' | 'improvements'
+  >('analysis');
   const triplePanelContainerRef = useRef<HTMLDivElement>(null);
   const [tripleRightPct, setTripleRightPct] = useState(24);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const [sectionModalOpen, setSectionModalOpen] = useState(false);
-  const [builderSaveStatus, setBuilderSaveStatus] = useState<CvBuilderSaveStatus>('idle');
+  const [builderSaveStatus, setBuilderSaveStatus] =
+    useState<CvBuilderSaveStatus>('idle');
   const [spellCheckTrigger, setSpellCheckTrigger] = useState(0);
   const [spellFixAllTrigger, setSpellFixAllTrigger] = useState(0);
-  const [qualitySignals, setQualitySignals] = useState<CVBuilderQualitySignals>({
-    incompleteSectionIds: [],
-    incompleteCount: 0,
-    missingFields: [],
-    sectionLabels: {},
-    spellIssuesBySection: {},
-    spellIssueEntriesBySection: {},
-    spellIssuesByField: {},
-    spellIssueCount: 0,
-    grammarIssueCount: 0,
-    isSpellChecking: false,
-  });
-  const [completeness, setCompleteness] = useState<CvCompletenessResult | null>(null);
-  const [cvDataSnapshot, setCvDataSnapshot] = useState<CVBuilderData | null>(null);
+  const [qualitySignals, setQualitySignals] = useState<CVBuilderQualitySignals>(
+    {
+      incompleteSectionIds: [],
+      incompleteCount: 0,
+      missingFields: [],
+      sectionLabels: {},
+      spellIssuesBySection: {},
+      spellIssueEntriesBySection: {},
+      spellIssuesByField: {},
+      spellIssueCount: 0,
+      grammarIssueCount: 0,
+      isSpellChecking: false,
+    },
+  );
+  const [completeness, setCompleteness] = useState<CvCompletenessResult | null>(
+    null,
+  );
+  const [cvDataSnapshot, setCvDataSnapshot] = useState<CVBuilderData | null>(
+    null,
+  );
 
   const [diffPreviews, setDiffPreviews] = useState<CvDiffPreviewMap>({});
-  const [activeDiffPreviewKey, setActiveDiffPreviewKey] = useState<string | null>(null);
+  const [activeDiffPreviewKey, setActiveDiffPreviewKey] = useState<
+    string | null
+  >(null);
   const diffPreview = useMemo(() => {
     if (!activeDiffPreviewKey) return null;
     return diffPreviews[activeDiffPreviewKey] ?? null;
   }, [activeDiffPreviewKey, diffPreviews]);
 
-  const closeDiffPreviewForKey = useCallback((key: string | null | undefined) => {
-    if (!key) return;
-    setDiffPreviews((prev) => {
-      if (!(key in prev)) return prev;
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
-    setActiveDiffPreviewKey((cur) => (cur === key ? null : cur));
-  }, []);
+  const closeDiffPreviewForKey = useCallback(
+    (key: string | null | undefined) => {
+      if (!key) return;
+      setDiffPreviews((prev) => {
+        if (!(key in prev)) return prev;
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+      setActiveDiffPreviewKey((cur) => (cur === key ? null : cur));
+    },
+    [],
+  );
 
-  const mergeDiffPreviewOpen = useCallback((params: CvDiffPreviewOpenParams | null) => {
-    setAssistantPreviewMode(false);
-    setAssistantPendingPatch(null);
-    if (!params) {
-      setActiveDiffPreviewKey(null);
-      return;
-    }
-    const key = cvDiffPreviewStorageKey(params);
-    setDiffPreviews((prev) => ({ ...prev, [key]: params }));
-    setActiveDiffPreviewKey(key);
-  }, []);
+  const mergeDiffPreviewOpen = useCallback(
+    (params: CvDiffPreviewOpenParams | null) => {
+      setAssistantPreviewMode(false);
+      setAssistantPendingPatch(null);
+      if (!params) {
+        setActiveDiffPreviewKey(null);
+        return;
+      }
+      const key = cvDiffPreviewStorageKey(params);
+      setDiffPreviews((prev) => ({ ...prev, [key]: params }));
+      setActiveDiffPreviewKey(key);
+    },
+    [],
+  );
   const cvImprovementDiffInFlightRef = useRef(false);
   const [cvServerHydrateNonce, setCvServerHydrateNonce] = useState(0);
-  const [cvImprovementDiffActionsPending, setCvImprovementDiffActionsPending] = useState(false);
+  const [cvImprovementDiffActionsPending, setCvImprovementDiffActionsPending] =
+    useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
-  const [assistantSeedCommand, setAssistantSeedCommand] = useState<string | null>(null);
+  const [assistantSeedCommand, setAssistantSeedCommand] = useState<
+    string | null
+  >(null);
   const [assistantBusy, setAssistantBusy] = useState(false);
   const [assistantPreviewMode, setAssistantPreviewMode] = useState(false);
-  const [assistantPendingPatch, setAssistantPendingPatch] = useState<Record<string, unknown> | null>(null);
+  const [assistantPendingPatch, setAssistantPendingPatch] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
   const assistantCommandIdRef = useRef('');
   const [assistantPatchNonce, setAssistantPatchNonce] = useState(0);
-  const [instantPreviewPatch, setInstantPreviewPatch] = useState<Partial<CVBuilderData> | null>(null);
+  const [instantPreviewPatch, setInstantPreviewPatch] =
+    useState<Partial<CVBuilderData> | null>(null);
   const [instantPreviewPatchNonce, setInstantPreviewPatchNonce] = useState(0);
   const [mobileInsightsOpen, setMobileInsightsOpen] = useState(false);
   const [showOnboardingEditHint, setShowOnboardingEditHint] = useState(() => {
@@ -231,9 +268,10 @@ export function OnboardingResumeClinic({
     setAssistantOpen(true);
   }, []);
 
-  const jumpToSectionRef = useRef<((sid: string, itemId?: string, opts?: { scrollForm?: boolean }) => void) | null>(
-    null,
-  );
+  const jumpToSectionRef = useRef<
+    | ((sid: string, itemId?: string, opts?: { scrollForm?: boolean }) => void)
+    | null
+  >(null);
 
   const resolveImprovementPointerByField = useCallback(
     async (fieldPath: string): Promise<string | null> => {
@@ -258,9 +296,13 @@ export function OnboardingResumeClinic({
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      const r = parseFloat(localStorage.getItem(CV_CLINIC_RIGHT_PCT_KEY) ?? '24');
+      const r = parseFloat(
+        localStorage.getItem(CV_CLINIC_RIGHT_PCT_KEY) ?? '24',
+      );
       if (Number.isFinite(r)) setTripleRightPct(Math.min(34, Math.max(20, r)));
-      setRightPanelCollapsed(localStorage.getItem(CV_RIGHT_PANEL_COLLAPSED_KEY) === '1');
+      setRightPanelCollapsed(
+        localStorage.getItem(CV_RIGHT_PANEL_COLLAPSED_KEY) === '1',
+      );
     } catch {
       /* ignore */
     }
@@ -278,7 +320,10 @@ export function OnboardingResumeClinic({
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      localStorage.setItem(CV_RIGHT_PANEL_COLLAPSED_KEY, rightPanelCollapsed ? '1' : '0');
+      localStorage.setItem(
+        CV_RIGHT_PANEL_COLLAPSED_KEY,
+        rightPanelCollapsed ? '1' : '0',
+      );
     } catch {
       /* ignore */
     }
@@ -328,7 +373,12 @@ export function OnboardingResumeClinic({
   );
 
   const visibleSectionTypes = useMemo(
-    () => new Set(sections.filter((s) => s.hidden !== true).map((s) => s.type.toLowerCase())),
+    () =>
+      new Set(
+        sections
+          .filter((s) => s.hidden !== true)
+          .map((s) => s.type.toLowerCase()),
+      ),
     [sections],
   );
 
@@ -346,13 +396,22 @@ export function OnboardingResumeClinic({
   const completenessGroups = useMemo(() => {
     const map = new Map<
       string,
-      { sectionKey: string; sectionLabel: string; fields: Array<{ fieldPath: string; fieldLabel: string }> }
+      {
+        sectionKey: string;
+        sectionLabel: string;
+        fields: Array<{ fieldPath: string; fieldLabel: string }>;
+      }
     >();
     const norm = (v: string) => v.trim().toLowerCase();
     const skipPlaceholder = (label: string, fieldPath: string) => {
       const l = norm(label);
       const p = norm(fieldPath);
-      return l === 'sectionitem' || l === 'add section' || l === 'click to add section' || p === 'sectionitem';
+      return (
+        l === 'sectionitem' ||
+        l === 'add section' ||
+        l === 'click to add section' ||
+        p === 'sectionitem'
+      );
     };
     const localMissingBySection = new Map<string, Set<string>>();
     for (const f of qualitySignals.missingFields) {
@@ -367,14 +426,19 @@ export function OnboardingResumeClinic({
         entry.fields.push({ fieldPath: f.fieldPath, fieldLabel: f.fieldLabel });
       }
       map.set(key, entry);
-      const set = localMissingBySection.get(entry.sectionKey) ?? new Set<string>();
+      const set =
+        localMissingBySection.get(entry.sectionKey) ?? new Set<string>();
       set.add(norm(f.fieldPath));
       localMissingBySection.set(entry.sectionKey, set);
     }
     if (completeness?.sections) {
       for (const sec of completeness.sections) {
         if ((sec.missingFields?.length ?? 0) === 0) continue;
-        const sectionKey = (sec.sectionType?.trim().toLowerCase() || sec.sectionId || '').toLowerCase();
+        const sectionKey = (
+          sec.sectionType?.trim().toLowerCase() ||
+          sec.sectionId ||
+          ''
+        ).toLowerCase();
         if (!sectionKey) continue;
         if (
           sectionKey !== 'personal' &&
@@ -387,12 +451,15 @@ export function OnboardingResumeClinic({
         const key = norm(sec.label || sectionKey);
         const entry = map.get(key) ?? {
           sectionKey,
-          sectionLabel: qualitySignals.sectionLabels[sectionKey] ?? sec.label ?? sectionKey,
+          sectionLabel:
+            qualitySignals.sectionLabels[sectionKey] ?? sec.label ?? sectionKey,
           fields: [],
         };
-        const localSet = localMissingBySection.get(sectionKey) ?? new Set<string>();
+        const localSet =
+          localMissingBySection.get(sectionKey) ?? new Set<string>();
         for (const f of sec.missingFields) {
-          if (skipPlaceholder(String(f.label ?? ''), String(f.fieldPath ?? ''))) continue;
+          if (skipPlaceholder(String(f.label ?? ''), String(f.fieldPath ?? '')))
+            continue;
           const fp = norm(String(f.fieldPath ?? ''));
           const fl = norm(String(f.label ?? ''));
           if (sectionKey === 'personal') {
@@ -401,26 +468,46 @@ export function OnboardingResumeClinic({
             const hasEmail = Boolean(snap?.personal?.email?.trim());
             const hasLoc = Boolean(snap?.personal?.location?.trim());
             const showEmail = snap ? snap.personal != null : true;
-            if ((fp.includes('name') || fl.includes('name')) && hasName) continue;
-            if ((fp.includes('email') || fl.includes('email')) && hasEmail) continue;
-            if ((fp.includes('location') || fl.includes('location')) && hasLoc) continue;
-            if ((fp.includes('email') || fl.includes('email')) && !showEmail) continue;
+            if ((fp.includes('name') || fl.includes('name')) && hasName)
+              continue;
+            if ((fp.includes('email') || fl.includes('email')) && hasEmail)
+              continue;
+            if ((fp.includes('location') || fl.includes('location')) && hasLoc)
+              continue;
+            if ((fp.includes('email') || fl.includes('email')) && !showEmail)
+              continue;
           }
           if (localSet.size > 0 && !localSet.has(fp)) continue;
           if (entry.fields.some((x) => x.fieldPath === f.fieldPath)) continue;
-          entry.fields.push({ fieldPath: f.fieldPath, fieldLabel: f.label || f.fieldPath });
+          entry.fields.push({
+            fieldPath: f.fieldPath,
+            fieldLabel: f.label || f.fieldPath,
+          });
         }
         if (entry.fields.length > 0) map.set(key, entry);
       }
     }
     return [...map.values()];
-  }, [qualitySignals.missingFields, qualitySignals.sectionLabels, completeness?.sections, visibleSectionTypes, cvDataSnapshot, initialData]);
+  }, [
+    qualitySignals.missingFields,
+    qualitySignals.sectionLabels,
+    completeness?.sections,
+    visibleSectionTypes,
+    cvDataSnapshot,
+    initialData,
+  ]);
 
   const resolveJumpSectionKey = useCallback(
     (rawKey: string): string => {
       const key = rawKey.trim().toLowerCase();
       if (!key) return rawKey;
-      if (key === 'personal' || key === 'summary' || key === 'experience' || key === 'education' || key === 'skills')
+      if (
+        key === 'personal' ||
+        key === 'summary' ||
+        key === 'experience' ||
+        key === 'education' ||
+        key === 'skills'
+      )
         return key;
       if (
         key === 'projects' ||
@@ -430,7 +517,11 @@ export function OnboardingResumeClinic({
         key === 'references'
       )
         return key;
-      const row = sections.find((s) => s.type.toLowerCase() === key || s.type.toLowerCase() === `custom_${key}`);
+      const row = sections.find(
+        (s) =>
+          s.type.toLowerCase() === key ||
+          s.type.toLowerCase() === `custom_${key}`,
+      );
       if (!row) return key;
       const t = row.type.toLowerCase();
       if (t.startsWith('custom_')) return `parsed-${row.id}`;
@@ -441,11 +532,15 @@ export function OnboardingResumeClinic({
 
   const applySpell = useCallback((issue: CvSpellIssue) => {
     if (typeof window === 'undefined') return;
-    window.dispatchEvent(new CustomEvent('cv:spell-issue:apply', { detail: { issue } }));
+    window.dispatchEvent(
+      new CustomEvent('cv:spell-issue:apply', { detail: { issue } }),
+    );
   }, []);
   const dismissSpell = useCallback((issue: CvSpellIssue) => {
     if (typeof window === 'undefined') return;
-    window.dispatchEvent(new CustomEvent('cv:spell-issue:dismiss', { detail: { issue } }));
+    window.dispatchEvent(
+      new CustomEvent('cv:spell-issue:dismiss', { detail: { issue } }),
+    );
   }, []);
 
   const improvementsBadgeCount = useMemo(() => {
@@ -468,8 +563,12 @@ export function OnboardingResumeClinic({
     return Array.isArray(items) ? items.length : 0;
   }, [sections]);
 
-  const formatRecommendation = useMemo(() => getFormatRecommendation(experienceItemCount), [experienceItemCount]);
-  const isOnRecommendedTemplate = selectedTemplate === formatRecommendation.recommended;
+  const formatRecommendation = useMemo(
+    () => getFormatRecommendation(experienceItemCount),
+    [experienceItemCount],
+  );
+  const isOnRecommendedTemplate =
+    selectedTemplate === formatRecommendation.recommended;
 
   const onTemplateChangeApi = useCallback(
     async (t: string) => {
@@ -478,15 +577,23 @@ export function OnboardingResumeClinic({
       onTemplateIdChange(next);
       try {
         await api.cv.updateTemplate(next, profileId);
-        await queryClient.invalidateQueries({ queryKey: ['cv-profile', profileId] });
+        await queryClient.invalidateQueries({
+          queryKey: ['cv-profile', profileId],
+        });
         await queryClient.invalidateQueries({ queryKey: ['cv-profiles'] });
         void queryClient.invalidateQueries({ queryKey: ['cv', 'score'] });
-        void queryClient.invalidateQueries({ queryKey: CV_SUGGESTIONS_QUERY_ROOT });
-        void queryClient.refetchQueries({ queryKey: ['cv-profile', profileId] });
+        void queryClient.invalidateQueries({
+          queryKey: CV_SUGGESTIONS_QUERY_ROOT,
+        });
+        void queryClient.refetchQueries({
+          queryKey: ['cv-profile', profileId],
+        });
         toast.success('Template updated');
         window.setTimeout(() => {
           void queryClient.invalidateQueries({ queryKey: ['cv', 'score'] });
-          void queryClient.invalidateQueries({ queryKey: CV_SUGGESTIONS_QUERY_ROOT });
+          void queryClient.invalidateQueries({
+            queryKey: CV_SUGGESTIONS_QUERY_ROOT,
+          });
         }, 2500);
       } catch (e) {
         toast.error(getApiErrorMessage(e));
@@ -500,7 +607,10 @@ export function OnboardingResumeClinic({
       if (result?.sections && result.sections.length > 0) {
         queryClient.setQueryData(['cv-sections', profileId], result.sections);
       }
-      void queryClient.invalidateQueries({ queryKey: ['cv-profile', profileId], refetchType: 'none' });
+      void queryClient.invalidateQueries({
+        queryKey: ['cv-profile', profileId],
+        refetchType: 'none',
+      });
       void queryClient.invalidateQueries({ queryKey: ['cv-profiles'] });
       onDashboardSaved?.();
 
@@ -544,7 +654,7 @@ export function OnboardingResumeClinic({
   const commitAcceptDiff = useCallback(
     async (changeIndex?: number) => {
       const opKey = activeDiffPreviewKey;
-      const diffPreview = opKey ? diffPreviews[opKey] ?? null : null;
+      const diffPreview = opKey ? (diffPreviews[opKey] ?? null) : null;
       if (!diffPreview) return;
       if (assistantPreviewMode && diffPreview.pointer === '__assistant__') {
         const id = profileId.trim();
@@ -559,7 +669,9 @@ export function OnboardingResumeClinic({
             profileId: id,
             mutation: () =>
               api.cv.assistantCommit(id, {
-                patch: (patch && typeof patch === 'object' ? patch : {}) as Record<string, unknown>,
+                patch: (patch && typeof patch === 'object'
+                  ? patch
+                  : {}) as Record<string, unknown>,
                 ...(assistantCommandIdRef.current.trim()
                   ? { commandId: assistantCommandIdRef.current.trim() }
                   : {}),
@@ -576,457 +688,667 @@ export function OnboardingResumeClinic({
           assistantCommandIdRef.current = '';
           toast.success('Assistant changes saved to your CV.');
         } catch (e) {
-          toast.error(getApiErrorMessage(e) || 'Could not save assistant changes. Try again.');
+          toast.error(
+            getApiErrorMessage(e) ||
+              'Could not save assistant changes. Try again.',
+          );
         } finally {
           cvImprovementDiffInFlightRef.current = false;
           setCvImprovementDiffActionsPending(false);
         }
         return;
       }
-    if (cvImprovementDiffInFlightRef.current) return;
-    cvImprovementDiffInFlightRef.current = true;
-    setCvImprovementDiffActionsPending(true);
-    const wasAcceptAll = changeIndex == null;
-    const improvementsKey = cvSuggestionsQueryKey(profileId);
-    const prevImprovementsPayload = wasAcceptAll ? queryClient.getQueryData(improvementsKey) : undefined;
-    const selectedField =
-      changeIndex != null && changeIndex >= 0
-        ? (diffPreview.changedFields[changeIndex]?.fieldPath ?? '').trim()
-        : '';
-    try {
-      const requestPointer =
-        selectedField.length > 0
-          ? ((await resolveImprovementPointerByField(selectedField)) ?? diffPreview.pointer)
-          : diffPreview.pointer;
-      if (wasAcceptAll) {
-        queryClient.setQueryData<CvImprovementsPayload>(improvementsKey, (prev) => {
-          if (!prev || !Array.isArray(prev.improvements)) return prev;
-          return {
-            ...prev,
-            improvements: prev.improvements.filter((it) => (it?.id ?? '').trim() !== String(requestPointer).trim()),
-          };
-        });
-      }
-      if (selectedField.length === 0) {
-        const t0 = Date.now();
-        let cacheWrites = 0;
-        const product = await api.cv.acceptSuggestion(String(requestPointer), profileId);
-        cacheWrites += 1;
-        queryClient.setQueryData<CvImprovementsPayload>(improvementsKey, (prev) =>
-          applySuggestionAcceptToImprovementsCache(prev, String(requestPointer).trim(), product) ?? prev,
-        );
-        cacheWrites += 1;
-        if (diffPreview.after && typeof diffPreview.after === 'object' && !Array.isArray(diffPreview.after)) {
-          setInstantPreviewPatch(diffPreview.after as Partial<CVBuilderData>);
-          setInstantPreviewPatchNonce((n) => n + 1);
-        }
-        closeDiffPreviewForKey(opKey);
-        toast.success('Suggestion applied successfully.');
-        await Promise.all([
-          queryClient.refetchQueries({ queryKey: ['cv-profile', profileId] }),
-          queryClient.refetchQueries({ queryKey: ['cv-sections', profileId], exact: true }),
-        ]);
-        const inv = reconcileAfterMutation(profileId, 'structuralAccept');
-        logCvSuggestionMutationClientPerf('onboarding.commitAcceptDiff.acceptSuggestion', t0, {
-          invalidations: inv,
-          cacheWrites,
-        });
-        return;
-      }
-
-      const result = await api.cv.acceptImprovement(requestPointer, profileId, {
-        acceptedFields: [selectedField],
-        ...(diffPreview.draftHash ? { draftHash: diffPreview.draftHash } : {}),
-      });
-      if (result.partial) {
-        const nextPointer = result.improvementId ?? diffPreview.pointer;
-        const freshNext = await api.cv.applyImprovement(nextPointer, profileId);
-        const nextHash = result.draftHash ?? freshNext.draftHash;
-        setDiffPreviews((prev) => {
-          const cur = opKey ? prev[opKey] : null;
-          if (!cur) return prev;
-          return {
-            ...prev,
-            [opKey]: {
-              ...cur,
-              pointer: nextPointer,
-              draftHash: nextHash,
-              before: freshNext.before ?? cur.before,
-              after: freshNext.after ?? cur.after,
-              changedFields: freshNext.changedFields ?? cur.changedFields,
-              ...truthfulnessFieldsFromResponse(freshNext),
-              performance: compactDiffPreviewPerformance(freshNext),
+      if (cvImprovementDiffInFlightRef.current) return;
+      cvImprovementDiffInFlightRef.current = true;
+      setCvImprovementDiffActionsPending(true);
+      const wasAcceptAll = changeIndex == null;
+      const improvementsKey = cvSuggestionsQueryKey(profileId);
+      const prevImprovementsPayload = wasAcceptAll
+        ? queryClient.getQueryData(improvementsKey)
+        : undefined;
+      const selectedField =
+        changeIndex != null && changeIndex >= 0
+          ? (diffPreview.changedFields[changeIndex]?.fieldPath ?? '').trim()
+          : '';
+      try {
+        const requestPointer =
+          selectedField.length > 0
+            ? ((await resolveImprovementPointerByField(selectedField)) ??
+              diffPreview.pointer)
+            : diffPreview.pointer;
+        if (wasAcceptAll) {
+          queryClient.setQueryData<CvImprovementsPayload>(
+            improvementsKey,
+            (prev) => {
+              if (!prev || !Array.isArray(prev.improvements)) return prev;
+              return {
+                ...prev,
+                improvements: prev.improvements.filter(
+                  (it) =>
+                    (it?.id ?? '').trim() !== String(requestPointer).trim(),
+                ),
+              };
             },
-          };
-        });
-        void queryClient.invalidateQueries({ queryKey: cvSuggestionsQueryKey(profileId) });
-        toast.success('Change accepted.');
-        return;
-      }
-      queryClient.setQueryData<CvImprovementsPayload>(
-        cvSuggestionsQueryKey(profileId),
-        (prev) => {
-          if (!prev || !Array.isArray(prev.improvements)) return prev;
-          const acceptedKey = selectedField.trim();
-          const nextImprovements = prev.improvements.filter((item) => {
-            if (result.improvementId && item?.id === result.improvementId) return false;
-            if (
-              acceptedKey.length > 0 &&
-              Array.isArray(item?.pendingFieldPaths) &&
-              item.pendingFieldPaths.some((p) => p.trim() === acceptedKey)
-            ) {
-              return false;
-            }
-            return true;
-          });
-          return {
-            ...prev,
-            improvements: nextImprovements,
-            pendingSuggestionsCount:
-              result.pendingSuggestionsCount ?? Math.max(0, nextImprovements.length),
-            cvRevisionId:
-              result.cvRevisionId !== undefined ? result.cvRevisionId : (prev.cvRevisionId ?? null),
-            structuredRevisionHash:
-              result.structuredRevisionHash !== undefined
-                ? result.structuredRevisionHash
-                : prev.structuredRevisionHash,
-          };
-        },
-      );
-      if (diffPreview.after && typeof diffPreview.after === 'object' && !Array.isArray(diffPreview.after)) {
-        setInstantPreviewPatch(diffPreview.after as Partial<CVBuilderData>);
-        setInstantPreviewPatchNonce((n) => n + 1);
-      }
-      closeDiffPreviewForKey(opKey);
-      toast.success('Suggestion applied successfully.');
-      const t0Field = Date.now();
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: ['cv-profile', profileId] }),
-        queryClient.refetchQueries({ queryKey: ['cv-sections', profileId], exact: true }),
-      ]);
-      const inv = reconcileAfterMutation(profileId, 'structuralAccept');
-      logCvSuggestionMutationClientPerf('onboarding.commitAcceptDiff.acceptImprovement', t0Field, {
-        invalidations: inv,
-        cacheWrites: 1,
-      });
-    } catch (e) {
-      if (wasAcceptAll && prevImprovementsPayload !== undefined) {
-        queryClient.setQueryData(improvementsKey, prevImprovementsPayload);
-      }
-      const code = getApiErrorCode(e);
-      if (
-        code === 'IMPROVEMENT_STALE_DRAFT' ||
-        code === 'IMPROVEMENT_INVALID_FIELD_SELECTION' ||
-        code === 'IMPROVEMENT_STALE_INDEX'
-      ) {
-        try {
-          let pointerForRefresh = diffPreview.pointer;
-          if (code === 'IMPROVEMENT_STALE_INDEX' && selectedField) {
-            const resolvedId = await resolveImprovementPointerByField(selectedField);
-            if (resolvedId) pointerForRefresh = resolvedId;
-          }
-          const fresh = await api.cv.applyImprovement(pointerForRefresh, profileId);
-          const freshPreview = {
-            ...diffPreview,
-            pointer: pointerForRefresh,
-            draftHash: fresh.draftHash,
-            changedFields: fresh.changedFields,
-          };
-          const selectedStillExists =
-            selectedField.length > 0 &&
-            freshPreview.changedFields.some((cf) => (cf.fieldPath ?? '').trim() === selectedField);
-          if (selectedField && selectedStillExists) {
-            const retry = await api.cv.acceptImprovement(pointerForRefresh, profileId, {
-              acceptedFields: [selectedField],
-              ...(fresh.draftHash ? { draftHash: fresh.draftHash } : {}),
-            });
-            if (retry.partial) {
-              const nextPointer = retry.improvementId ?? pointerForRefresh;
-              const freshNext = await api.cv.applyImprovement(nextPointer, profileId);
-              setDiffPreviews((prev) => {
-                const cur = opKey ? prev[opKey] : null;
-                if (!cur) return prev;
-                return {
-                  ...prev,
-                  [opKey]: {
-                    ...freshPreview,
-                    pointer: nextPointer,
-                    draftHash: retry.draftHash ?? freshNext.draftHash,
-                    before: freshNext.before ?? freshPreview.before,
-                    after: freshNext.after ?? freshPreview.after,
-                    changedFields: freshNext.changedFields ?? freshPreview.changedFields,
-                    ...truthfulnessFieldsFromResponse(freshNext),
-                    performance: compactDiffPreviewPerformance(freshNext),
-                  },
-                };
-              });
-              toast.success('Change accepted.');
-              return;
-            }
-            if (fresh.after && typeof fresh.after === 'object' && !Array.isArray(fresh.after)) {
-              setInstantPreviewPatch(fresh.after as Partial<CVBuilderData>);
-              setInstantPreviewPatchNonce((n) => n + 1);
-            }
-            closeDiffPreviewForKey(opKey);
-            toast.success('Suggestion applied successfully.');
-            return;
-          }
-          if (selectedField.length === 0) {
-            const t0Stale = Date.now();
-            const product = await api.cv.acceptSuggestion(String(pointerForRefresh), profileId);
-            queryClient.setQueryData<CvImprovementsPayload>(improvementsKey, (prev) =>
-              applySuggestionAcceptToImprovementsCache(prev, String(pointerForRefresh).trim(), product) ?? prev,
-            );
-            if (fresh.after && typeof fresh.after === 'object' && !Array.isArray(fresh.after)) {
-              setInstantPreviewPatch(fresh.after as Partial<CVBuilderData>);
-              setInstantPreviewPatchNonce((n) => n + 1);
-            }
-            closeDiffPreviewForKey(opKey);
-            toast.success('Suggestion applied successfully.');
-            await Promise.all([
-              queryClient.refetchQueries({ queryKey: ['cv-profile', profileId] }),
-              queryClient.refetchQueries({ queryKey: ['cv-sections', profileId], exact: true }),
-            ]);
-            const inv = reconcileAfterMutation(profileId, 'structuralAccept');
-            logCvSuggestionMutationClientPerf('onboarding.commitAcceptDiff.staleAcceptSuggestion', t0Stale, {
-              invalidations: inv,
-              cacheWrites: 2,
-            });
-            return;
-          }
-          setDiffPreviews((prev) => (opKey ? { ...prev, [opKey]: freshPreview } : prev));
-          toast.info('Suggestion changed. Review updated fields and try again.');
-          return;
-        } catch (refreshErr) {
-          toast.error(getApiErrorMessage(refreshErr) || 'Could not refresh this suggestion. Please try again.');
-          return;
+          );
         }
-      }
-      const msg = (getApiErrorMessage(e) || '').toLowerCase();
-      const missingDraft = msg.includes('no draft found') || msg.includes('run apply first');
-      if (missingDraft) {
-        try {
-          const prep = await api.cv.applyImprovement(diffPreview.pointer, profileId);
-          if (isCvApplyImprovementTerminalNoDiff(prep)) {
-            const rid = String(
-              prep.suggestionId || prep.improvementId || prep.pointer || diffPreview.pointer,
-            ).trim();
-            queryClient.setQueryData<CvImprovementsPayload>(improvementsKey, (prev) =>
-              applySuggestionAcceptToImprovementsCache(prev, rid, {
-                pendingSuggestionsCount:
-                  prep.pendingSuggestionsCount ??
-                  Math.max(0, (prev?.improvements ?? []).filter((it) => (it?.id ?? '').trim() !== rid).length),
-                cvRevisionId: prep.cvRevisionId ?? null,
-                alreadyApplied: true,
-                acceptedSuggestionIds: [rid],
-              }) ?? prev,
-            );
-            closeDiffPreviewForKey(opKey);
-            toast.success(toastCopyForTerminalNoDiffApply(prep));
-            const t0Term = Date.now();
-            await Promise.all([
-              queryClient.refetchQueries({ queryKey: ['cv-profile', profileId] }),
-              queryClient.refetchQueries({ queryKey: ['cv-sections', profileId], exact: true }),
-            ]);
-            const inv = reconcileAfterMutation(profileId, 'queueOnly');
-            logCvSuggestionMutationClientPerf('onboarding.commitAcceptDiff.missingDraft.terminalNoDiff', t0Term, {
-              invalidations: inv,
-              cacheWrites: 1,
-            });
-            return;
-          }
-          const sf =
-            changeIndex != null && changeIndex >= 0
-              ? (diffPreview.changedFields[changeIndex]?.fieldPath ?? '').trim()
-              : '';
-          const t0Md = Date.now();
-          if (sf) {
-            await api.cv.acceptImprovement(diffPreview.pointer, profileId, {
-              acceptedFields: [sf],
-              ...(prep.draftHash ? { draftHash: prep.draftHash } : {}),
-            });
-          } else {
-            const prodMissing = await api.cv.acceptSuggestion(String(diffPreview.pointer), profileId);
-            queryClient.setQueryData<CvImprovementsPayload>(improvementsKey, (prev) =>
-              applySuggestionAcceptToImprovementsCache(prev, String(diffPreview.pointer).trim(), prodMissing) ??
-              prev,
-            );
-          }
-          if (prep.after && typeof prep.after === 'object' && !Array.isArray(prep.after)) {
-            setInstantPreviewPatch(prep.after as Partial<CVBuilderData>);
+        if (selectedField.length === 0) {
+          const t0 = Date.now();
+          let cacheWrites = 0;
+          const product = await api.cv.acceptSuggestion(
+            String(requestPointer),
+            profileId,
+          );
+          cacheWrites += 1;
+          queryClient.setQueryData<CvImprovementsPayload>(
+            improvementsKey,
+            (prev) =>
+              applySuggestionAcceptToImprovementsCache(
+                prev,
+                String(requestPointer).trim(),
+                product,
+              ) ?? prev,
+          );
+          cacheWrites += 1;
+          if (
+            diffPreview.after &&
+            typeof diffPreview.after === 'object' &&
+            !Array.isArray(diffPreview.after)
+          ) {
+            setInstantPreviewPatch(diffPreview.after as Partial<CVBuilderData>);
             setInstantPreviewPatchNonce((n) => n + 1);
           }
           closeDiffPreviewForKey(opKey);
           toast.success('Suggestion applied successfully.');
           await Promise.all([
             queryClient.refetchQueries({ queryKey: ['cv-profile', profileId] }),
-            queryClient.refetchQueries({ queryKey: ['cv-sections', profileId], exact: true }),
+            queryClient.refetchQueries({
+              queryKey: ['cv-sections', profileId],
+              exact: true,
+            }),
           ]);
           const inv = reconcileAfterMutation(profileId, 'structuralAccept');
-          logCvSuggestionMutationClientPerf('onboarding.commitAcceptDiff.missingDraft', t0Md, {
-            invalidations: inv,
-            cacheWrites: sf ? 1 : 2,
-          });
+          logCvSuggestionMutationClientPerf(
+            'onboarding.commitAcceptDiff.acceptSuggestion',
+            t0,
+            {
+              invalidations: inv,
+              cacheWrites,
+            },
+          );
           return;
-        } catch (retryErr) {
-          toast.error(getApiErrorMessage(retryErr) || 'Could not apply this improvement. Please try again.');
         }
-      } else {
-        toast.error(getApiErrorMessage(e) || 'Could not apply this improvement. Please try again.');
-      }
-    } finally {
-      cvImprovementDiffInFlightRef.current = false;
-      setCvImprovementDiffActionsPending(false);
-    }
-  }, [
-    assistantPendingPatch,
-    assistantPreviewMode,
-    activeDiffPreviewKey,
-    diffPreviews,
-    profileId,
-    queryClient,
-    toast,
-    resolveImprovementPointerByField,
-    closeDiffPreviewForKey,
-    reconcileAfterMutation,
-  ]);
 
-  const commitRejectDiff = useCallback(async (changeIndex?: number) => {
+        const result = await api.cv.acceptImprovement(
+          requestPointer,
+          profileId,
+          {
+            acceptedFields: [selectedField],
+            ...(diffPreview.draftHash
+              ? { draftHash: diffPreview.draftHash }
+              : {}),
+          },
+        );
+        if (result.partial) {
+          const nextPointer = result.improvementId ?? diffPreview.pointer;
+          const freshNext = await api.cv.applyImprovement(
+            nextPointer,
+            profileId,
+          );
+          const nextHash = result.draftHash ?? freshNext.draftHash;
+          setDiffPreviews((prev) => {
+            if (!opKey) return prev;
+            const cur = prev[opKey];
+            if (!cur) return prev;
+            return {
+              ...prev,
+              [opKey]: {
+                ...cur,
+                pointer: nextPointer,
+                draftHash: nextHash,
+                before: freshNext.before ?? cur.before,
+                after: freshNext.after ?? cur.after,
+                changedFields: freshNext.changedFields ?? cur.changedFields,
+                ...truthfulnessFieldsFromResponse(freshNext),
+                performance: compactDiffPreviewPerformance(freshNext),
+              },
+            };
+          });
+          void queryClient.invalidateQueries({
+            queryKey: cvSuggestionsQueryKey(profileId),
+          });
+          toast.success('Change accepted.');
+          return;
+        }
+        queryClient.setQueryData<CvImprovementsPayload>(
+          cvSuggestionsQueryKey(profileId),
+          (prev) => {
+            if (!prev || !Array.isArray(prev.improvements)) return prev;
+            const acceptedKey = selectedField.trim();
+            const nextImprovements = prev.improvements.filter((item) => {
+              if (result.improvementId && item?.id === result.improvementId)
+                return false;
+              if (
+                acceptedKey.length > 0 &&
+                Array.isArray(item?.pendingFieldPaths) &&
+                item.pendingFieldPaths.some((p) => p.trim() === acceptedKey)
+              ) {
+                return false;
+              }
+              return true;
+            });
+            return {
+              ...prev,
+              improvements: nextImprovements,
+              pendingSuggestionsCount:
+                result.pendingSuggestionsCount ??
+                Math.max(0, nextImprovements.length),
+              cvRevisionId:
+                result.cvRevisionId !== undefined
+                  ? result.cvRevisionId
+                  : (prev.cvRevisionId ?? null),
+              structuredRevisionHash:
+                result.structuredRevisionHash !== undefined
+                  ? result.structuredRevisionHash
+                  : prev.structuredRevisionHash,
+            };
+          },
+        );
+        if (
+          diffPreview.after &&
+          typeof diffPreview.after === 'object' &&
+          !Array.isArray(diffPreview.after)
+        ) {
+          setInstantPreviewPatch(diffPreview.after as Partial<CVBuilderData>);
+          setInstantPreviewPatchNonce((n) => n + 1);
+        }
+        closeDiffPreviewForKey(opKey);
+        toast.success('Suggestion applied successfully.');
+        const t0Field = Date.now();
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: ['cv-profile', profileId] }),
+          queryClient.refetchQueries({
+            queryKey: ['cv-sections', profileId],
+            exact: true,
+          }),
+        ]);
+        const inv = reconcileAfterMutation(profileId, 'structuralAccept');
+        logCvSuggestionMutationClientPerf(
+          'onboarding.commitAcceptDiff.acceptImprovement',
+          t0Field,
+          {
+            invalidations: inv,
+            cacheWrites: 1,
+          },
+        );
+      } catch (e) {
+        if (wasAcceptAll && prevImprovementsPayload !== undefined) {
+          queryClient.setQueryData(improvementsKey, prevImprovementsPayload);
+        }
+        const code = getApiErrorCode(e);
+        if (
+          code === 'IMPROVEMENT_STALE_DRAFT' ||
+          code === 'IMPROVEMENT_INVALID_FIELD_SELECTION' ||
+          code === 'IMPROVEMENT_STALE_INDEX'
+        ) {
+          try {
+            let pointerForRefresh = diffPreview.pointer;
+            if (code === 'IMPROVEMENT_STALE_INDEX' && selectedField) {
+              const resolvedId =
+                await resolveImprovementPointerByField(selectedField);
+              if (resolvedId) pointerForRefresh = resolvedId;
+            }
+            const fresh = await api.cv.applyImprovement(
+              pointerForRefresh,
+              profileId,
+            );
+            const freshPreview = {
+              ...diffPreview,
+              pointer: pointerForRefresh,
+              draftHash: fresh.draftHash,
+              changedFields: fresh.changedFields,
+            };
+            const selectedStillExists =
+              selectedField.length > 0 &&
+              freshPreview.changedFields.some(
+                (cf) => (cf.fieldPath ?? '').trim() === selectedField,
+              );
+            if (selectedField && selectedStillExists) {
+              const retry = await api.cv.acceptImprovement(
+                pointerForRefresh,
+                profileId,
+                {
+                  acceptedFields: [selectedField],
+                  ...(fresh.draftHash ? { draftHash: fresh.draftHash } : {}),
+                },
+              );
+              if (retry.partial) {
+                const nextPointer = retry.improvementId ?? pointerForRefresh;
+                const freshNext = await api.cv.applyImprovement(
+                  nextPointer,
+                  profileId,
+                );
+                setDiffPreviews((prev) => {
+                  if (!opKey) return prev;
+                  const cur = prev[opKey];
+                  if (!cur) return prev;
+                  return {
+                    ...prev,
+                    [opKey]: {
+                      ...freshPreview,
+                      pointer: nextPointer,
+                      draftHash: retry.draftHash ?? freshNext.draftHash,
+                      before: freshNext.before ?? freshPreview.before,
+                      after: freshNext.after ?? freshPreview.after,
+                      changedFields:
+                        freshNext.changedFields ?? freshPreview.changedFields,
+                      ...truthfulnessFieldsFromResponse(freshNext),
+                      performance: compactDiffPreviewPerformance(freshNext),
+                    },
+                  };
+                });
+                toast.success('Change accepted.');
+                return;
+              }
+              if (
+                fresh.after &&
+                typeof fresh.after === 'object' &&
+                !Array.isArray(fresh.after)
+              ) {
+                setInstantPreviewPatch(fresh.after as Partial<CVBuilderData>);
+                setInstantPreviewPatchNonce((n) => n + 1);
+              }
+              closeDiffPreviewForKey(opKey);
+              toast.success('Suggestion applied successfully.');
+              return;
+            }
+            if (selectedField.length === 0) {
+              const t0Stale = Date.now();
+              const product = await api.cv.acceptSuggestion(
+                String(pointerForRefresh),
+                profileId,
+              );
+              queryClient.setQueryData<CvImprovementsPayload>(
+                improvementsKey,
+                (prev) =>
+                  applySuggestionAcceptToImprovementsCache(
+                    prev,
+                    String(pointerForRefresh).trim(),
+                    product,
+                  ) ?? prev,
+              );
+              if (
+                fresh.after &&
+                typeof fresh.after === 'object' &&
+                !Array.isArray(fresh.after)
+              ) {
+                setInstantPreviewPatch(fresh.after as Partial<CVBuilderData>);
+                setInstantPreviewPatchNonce((n) => n + 1);
+              }
+              closeDiffPreviewForKey(opKey);
+              toast.success('Suggestion applied successfully.');
+              await Promise.all([
+                queryClient.refetchQueries({
+                  queryKey: ['cv-profile', profileId],
+                }),
+                queryClient.refetchQueries({
+                  queryKey: ['cv-sections', profileId],
+                  exact: true,
+                }),
+              ]);
+              const inv = reconcileAfterMutation(profileId, 'structuralAccept');
+              logCvSuggestionMutationClientPerf(
+                'onboarding.commitAcceptDiff.staleAcceptSuggestion',
+                t0Stale,
+                {
+                  invalidations: inv,
+                  cacheWrites: 2,
+                },
+              );
+              return;
+            }
+            setDiffPreviews((prev) => {
+              if (!opKey) return prev;
+              return { ...prev, [opKey]: freshPreview };
+            });
+            toast.info(
+              'Suggestion changed. Review updated fields and try again.',
+            );
+            return;
+          } catch (refreshErr) {
+            toast.error(
+              getApiErrorMessage(refreshErr) ||
+                'Could not refresh this suggestion. Please try again.',
+            );
+            return;
+          }
+        }
+        const msg = (getApiErrorMessage(e) || '').toLowerCase();
+        const missingDraft =
+          msg.includes('no draft found') || msg.includes('run apply first');
+        if (missingDraft) {
+          try {
+            const prep = await api.cv.applyImprovement(
+              diffPreview.pointer,
+              profileId,
+            );
+            if (isCvApplyImprovementTerminalNoDiff(prep)) {
+              const rid = String(
+                prep.suggestionId ||
+                  prep.improvementId ||
+                  prep.pointer ||
+                  diffPreview.pointer,
+              ).trim();
+              queryClient.setQueryData<CvImprovementsPayload>(
+                improvementsKey,
+                (prev) =>
+                  applySuggestionAcceptToImprovementsCache(prev, rid, {
+                    pendingSuggestionsCount:
+                      prep.pendingSuggestionsCount ??
+                      Math.max(
+                        0,
+                        (prev?.improvements ?? []).filter(
+                          (it) => (it?.id ?? '').trim() !== rid,
+                        ).length,
+                      ),
+                    cvRevisionId: prep.cvRevisionId ?? null,
+                    alreadyApplied: true,
+                    acceptedSuggestionIds: [rid],
+                  }) ?? prev,
+              );
+              closeDiffPreviewForKey(opKey);
+              toast.success(toastCopyForTerminalNoDiffApply(prep));
+              const t0Term = Date.now();
+              await Promise.all([
+                queryClient.refetchQueries({
+                  queryKey: ['cv-profile', profileId],
+                }),
+                queryClient.refetchQueries({
+                  queryKey: ['cv-sections', profileId],
+                  exact: true,
+                }),
+              ]);
+              const inv = reconcileAfterMutation(profileId, 'queueOnly');
+              logCvSuggestionMutationClientPerf(
+                'onboarding.commitAcceptDiff.missingDraft.terminalNoDiff',
+                t0Term,
+                {
+                  invalidations: inv,
+                  cacheWrites: 1,
+                },
+              );
+              return;
+            }
+            const sf =
+              changeIndex != null && changeIndex >= 0
+                ? (
+                    diffPreview.changedFields[changeIndex]?.fieldPath ?? ''
+                  ).trim()
+                : '';
+            const t0Md = Date.now();
+            if (sf) {
+              await api.cv.acceptImprovement(diffPreview.pointer, profileId, {
+                acceptedFields: [sf],
+                ...(prep.draftHash ? { draftHash: prep.draftHash } : {}),
+              });
+            } else {
+              const prodMissing = await api.cv.acceptSuggestion(
+                String(diffPreview.pointer),
+                profileId,
+              );
+              queryClient.setQueryData<CvImprovementsPayload>(
+                improvementsKey,
+                (prev) =>
+                  applySuggestionAcceptToImprovementsCache(
+                    prev,
+                    String(diffPreview.pointer).trim(),
+                    prodMissing,
+                  ) ?? prev,
+              );
+            }
+            if (
+              prep.after &&
+              typeof prep.after === 'object' &&
+              !Array.isArray(prep.after)
+            ) {
+              setInstantPreviewPatch(prep.after as Partial<CVBuilderData>);
+              setInstantPreviewPatchNonce((n) => n + 1);
+            }
+            closeDiffPreviewForKey(opKey);
+            toast.success('Suggestion applied successfully.');
+            await Promise.all([
+              queryClient.refetchQueries({
+                queryKey: ['cv-profile', profileId],
+              }),
+              queryClient.refetchQueries({
+                queryKey: ['cv-sections', profileId],
+                exact: true,
+              }),
+            ]);
+            const inv = reconcileAfterMutation(profileId, 'structuralAccept');
+            logCvSuggestionMutationClientPerf(
+              'onboarding.commitAcceptDiff.missingDraft',
+              t0Md,
+              {
+                invalidations: inv,
+                cacheWrites: sf ? 1 : 2,
+              },
+            );
+            return;
+          } catch (retryErr) {
+            toast.error(
+              getApiErrorMessage(retryErr) ||
+                'Could not apply this improvement. Please try again.',
+            );
+          }
+        } else {
+          toast.error(
+            getApiErrorMessage(e) ||
+              'Could not apply this improvement. Please try again.',
+          );
+        }
+      } finally {
+        cvImprovementDiffInFlightRef.current = false;
+        setCvImprovementDiffActionsPending(false);
+      }
+    },
+    [
+      assistantPendingPatch,
+      assistantPreviewMode,
+      activeDiffPreviewKey,
+      diffPreviews,
+      profileId,
+      queryClient,
+      toast,
+      resolveImprovementPointerByField,
+      closeDiffPreviewForKey,
+      reconcileAfterMutation,
+    ],
+  );
+
+  const commitRejectDiff = useCallback(
+    async (changeIndex?: number) => {
       const opKey = activeDiffPreviewKey;
-      const diffPreview = opKey ? diffPreviews[opKey] ?? null : null;
+      const diffPreview = opKey ? (diffPreviews[opKey] ?? null) : null;
       if (!diffPreview) return;
       if (assistantPreviewMode && diffPreview.pointer === '__assistant__') {
         closeDiffPreviewForKey(CV_ASSISTANT_DIFF_PREVIEW_KEY);
         setAssistantPreviewMode(false);
         setAssistantPendingPatch(null);
-        void queryClient.refetchQueries({ queryKey: ['cv-profile', profileId] });
-        return;
-      }
-    if (cvImprovementDiffInFlightRef.current) return;
-    cvImprovementDiffInFlightRef.current = true;
-    setCvImprovementDiffActionsPending(true);
-    const wasRejectAll = changeIndex == null;
-    const improvementsKey = cvSuggestionsQueryKey(profileId);
-    const prevImprovementsPayload = wasRejectAll ? queryClient.getQueryData(improvementsKey) : undefined;
-    let shouldClosePreview = true;
-    const selectedField =
-      changeIndex != null && changeIndex >= 0
-        ? (diffPreview.changedFields[changeIndex]?.fieldPath ?? '').trim()
-        : '';
-    try {
-      const requestPointer =
-        selectedField.length > 0
-          ? ((await resolveImprovementPointerByField(selectedField)) ?? diffPreview.pointer)
-          : diffPreview.pointer;
-      if (wasRejectAll) {
-        queryClient.setQueryData<CvImprovementsPayload>(improvementsKey, (prev) => {
-          if (!prev || !Array.isArray(prev.improvements)) return prev;
-          return {
-            ...prev,
-            improvements: prev.improvements.filter((it) => (it?.id ?? '').trim() !== String(requestPointer).trim()),
-          };
-        });
-      }
-      if (selectedField.length === 0) {
-        const t0Rj = Date.now();
-        const product = await api.cv.rejectSuggestion(String(requestPointer), profileId);
-        queryClient.setQueryData<CvImprovementsPayload>(improvementsKey, (prev) =>
-          applySuggestionRejectToImprovementsCache(prev, String(requestPointer).trim(), product) ?? prev,
-        );
-        toast.success('Suggestion dismissed.');
-        const inv = reconcileAfterMutation(profileId, 'queueOnly');
-        logCvSuggestionMutationClientPerf('onboarding.commitRejectDiff.rejectSuggestion', t0Rj, {
-          invalidations: inv,
-          cacheWrites: 1,
+        void queryClient.refetchQueries({
+          queryKey: ['cv-profile', profileId],
         });
         return;
       }
-      const result = await api.cv.rejectImprovement(requestPointer, profileId, {
-        rejectedFields: [selectedField],
-        ...(diffPreview.draftHash ? { draftHash: diffPreview.draftHash } : {}),
-      });
-      if (result.partial) {
-        const nextPointer = result.improvementId ?? diffPreview.pointer;
-        const freshNext = await api.cv.applyImprovement(nextPointer, profileId);
-        setDiffPreviews((prev) => {
-          const cur = opKey ? prev[opKey] : null;
-          if (!cur) return prev;
-          return {
-            ...prev,
-            [opKey]: {
-              ...cur,
-              pointer: nextPointer,
-              draftHash: result.draftHash ?? freshNext.draftHash,
-              before: freshNext.before ?? cur.before,
-              after: freshNext.after ?? cur.after,
-              changedFields: freshNext.changedFields ?? cur.changedFields,
-              ...truthfulnessFieldsFromResponse(freshNext),
-              performance: compactDiffPreviewPerformance(freshNext),
+      if (cvImprovementDiffInFlightRef.current) return;
+      cvImprovementDiffInFlightRef.current = true;
+      setCvImprovementDiffActionsPending(true);
+      const wasRejectAll = changeIndex == null;
+      const improvementsKey = cvSuggestionsQueryKey(profileId);
+      const prevImprovementsPayload = wasRejectAll
+        ? queryClient.getQueryData(improvementsKey)
+        : undefined;
+      let shouldClosePreview = true;
+      const selectedField =
+        changeIndex != null && changeIndex >= 0
+          ? (diffPreview.changedFields[changeIndex]?.fieldPath ?? '').trim()
+          : '';
+      try {
+        const requestPointer =
+          selectedField.length > 0
+            ? ((await resolveImprovementPointerByField(selectedField)) ??
+              diffPreview.pointer)
+            : diffPreview.pointer;
+        if (wasRejectAll) {
+          queryClient.setQueryData<CvImprovementsPayload>(
+            improvementsKey,
+            (prev) => {
+              if (!prev || !Array.isArray(prev.improvements)) return prev;
+              return {
+                ...prev,
+                improvements: prev.improvements.filter(
+                  (it) =>
+                    (it?.id ?? '').trim() !== String(requestPointer).trim(),
+                ),
+              };
             },
-          };
-        });
-        void queryClient.invalidateQueries({ queryKey: cvSuggestionsQueryKey(profileId) });
-        toast.info('Change rejected.');
-        shouldClosePreview = false;
-        return;
-      }
-      toast.success('Suggestion dismissed.');
-    } catch (e) {
-      if (wasRejectAll && prevImprovementsPayload !== undefined) {
-        queryClient.setQueryData(improvementsKey, prevImprovementsPayload);
-      }
-      const code = getApiErrorCode(e);
-      if (
-        code === 'IMPROVEMENT_STALE_DRAFT' ||
-        code === 'IMPROVEMENT_INVALID_FIELD_SELECTION' ||
-        code === 'IMPROVEMENT_STALE_INDEX'
-      ) {
-        try {
-          let pointerForRefresh = diffPreview.pointer;
-          if (code === 'IMPROVEMENT_STALE_INDEX' && selectedField) {
-            const resolvedId = await resolveImprovementPointerByField(selectedField);
-            if (resolvedId) pointerForRefresh = resolvedId;
-          }
-          const fresh = await api.cv.applyImprovement(pointerForRefresh, profileId);
+          );
+        }
+        if (selectedField.length === 0) {
+          const t0Rj = Date.now();
+          const product = await api.cv.rejectSuggestion(
+            String(requestPointer),
+            profileId,
+          );
+          queryClient.setQueryData<CvImprovementsPayload>(
+            improvementsKey,
+            (prev) =>
+              applySuggestionRejectToImprovementsCache(
+                prev,
+                String(requestPointer).trim(),
+                product,
+              ) ?? prev,
+          );
+          toast.success('Suggestion dismissed.');
+          const inv = reconcileAfterMutation(profileId, 'queueOnly');
+          logCvSuggestionMutationClientPerf(
+            'onboarding.commitRejectDiff.rejectSuggestion',
+            t0Rj,
+            {
+              invalidations: inv,
+              cacheWrites: 1,
+            },
+          );
+          return;
+        }
+        const result = await api.cv.rejectImprovement(
+          requestPointer,
+          profileId,
+          {
+            rejectedFields: [selectedField],
+            ...(diffPreview.draftHash
+              ? { draftHash: diffPreview.draftHash }
+              : {}),
+          },
+        );
+        if (result.partial) {
+          const nextPointer = result.improvementId ?? diffPreview.pointer;
+          const freshNext = await api.cv.applyImprovement(
+            nextPointer,
+            profileId,
+          );
           setDiffPreviews((prev) => {
             if (!opKey) return prev;
+            const cur = prev[opKey];
+            if (!cur) return prev;
             return {
               ...prev,
               [opKey]: {
-                ...diffPreview,
-                pointer: pointerForRefresh,
-                draftHash: fresh.draftHash,
-                changedFields: fresh.changedFields,
-                ...truthfulnessFieldsFromResponse(fresh),
-                performance: compactDiffPreviewPerformance(fresh),
+                ...cur,
+                pointer: nextPointer,
+                draftHash: result.draftHash ?? freshNext.draftHash,
+                before: freshNext.before ?? cur.before,
+                after: freshNext.after ?? cur.after,
+                changedFields: freshNext.changedFields ?? cur.changedFields,
+                ...truthfulnessFieldsFromResponse(freshNext),
+                performance: compactDiffPreviewPerformance(freshNext),
               },
             };
           });
-          toast.info('Suggestion changed. Review updated fields and try again.');
+          void queryClient.invalidateQueries({
+            queryKey: cvSuggestionsQueryKey(profileId),
+          });
+          toast.info('Change rejected.');
           shouldClosePreview = false;
           return;
-        } catch {
-          /* swallow */
-          return;
         }
+        toast.success('Suggestion dismissed.');
+      } catch (e) {
+        if (wasRejectAll && prevImprovementsPayload !== undefined) {
+          queryClient.setQueryData(improvementsKey, prevImprovementsPayload);
+        }
+        const code = getApiErrorCode(e);
+        if (
+          code === 'IMPROVEMENT_STALE_DRAFT' ||
+          code === 'IMPROVEMENT_INVALID_FIELD_SELECTION' ||
+          code === 'IMPROVEMENT_STALE_INDEX'
+        ) {
+          try {
+            let pointerForRefresh = diffPreview.pointer;
+            if (code === 'IMPROVEMENT_STALE_INDEX' && selectedField) {
+              const resolvedId =
+                await resolveImprovementPointerByField(selectedField);
+              if (resolvedId) pointerForRefresh = resolvedId;
+            }
+            const fresh = await api.cv.applyImprovement(
+              pointerForRefresh,
+              profileId,
+            );
+            setDiffPreviews((prev) => {
+              if (!opKey) return prev;
+              return {
+                ...prev,
+                [opKey]: {
+                  ...diffPreview,
+                  pointer: pointerForRefresh,
+                  draftHash: fresh.draftHash,
+                  changedFields: fresh.changedFields,
+                  ...truthfulnessFieldsFromResponse(fresh),
+                  performance: compactDiffPreviewPerformance(fresh),
+                },
+              };
+            });
+            toast.info(
+              'Suggestion changed. Review updated fields and try again.',
+            );
+            shouldClosePreview = false;
+            return;
+          } catch {
+            /* swallow */
+            return;
+          }
+        }
+        toast.error(
+          getApiErrorMessage(e) ||
+            'Could not reject this improvement. Please try again.',
+        );
+      } finally {
+        cvImprovementDiffInFlightRef.current = false;
+        setCvImprovementDiffActionsPending(false);
+        if (shouldClosePreview) closeDiffPreviewForKey(opKey);
       }
-      toast.error(getApiErrorMessage(e) || 'Could not reject this improvement. Please try again.');
-    } finally {
-      cvImprovementDiffInFlightRef.current = false;
-      setCvImprovementDiffActionsPending(false);
-      if (shouldClosePreview) closeDiffPreviewForKey(opKey);
-    }
-  }, [
-    assistantPreviewMode,
-    activeDiffPreviewKey,
-    diffPreviews,
-    profileId,
-    queryClient,
-    toast,
-    resolveImprovementPointerByField,
-    closeDiffPreviewForKey,
-    reconcileAfterMutation,
-  ]);
+    },
+    [
+      assistantPreviewMode,
+      activeDiffPreviewKey,
+      diffPreviews,
+      profileId,
+      queryClient,
+      toast,
+      resolveImprovementPointerByField,
+      closeDiffPreviewForKey,
+      reconcileAfterMutation,
+    ],
+  );
 
   const runAssistantCommand = useCallback(
     async (
@@ -1039,15 +1361,24 @@ export function OnboardingResumeClinic({
       try {
         const mergedClarifications =
           clarifications && clarifications.length > 0
-            ? [...(assistantClarification?.clarifications ?? []), ...clarifications]
+            ? [
+                ...(assistantClarification?.clarifications ?? []),
+                ...clarifications,
+              ]
             : assistantClarification?.clarifications;
         const ts = targetSection?.trim();
-        const res: CvAssistantCommandResponse = await api.cv.assistantCommand(profileId, {
-          command,
-          cvData: (cvDataSnapshot ?? initialData) as unknown as Record<string, unknown>,
-          clarifications: mergedClarifications,
-          ...(ts ? { targetSection: ts } : {}),
-        });
+        const res: CvAssistantCommandResponse = await api.cv.assistantCommand(
+          profileId,
+          {
+            command,
+            cvData: (cvDataSnapshot ?? initialData) as unknown as Record<
+              string,
+              unknown
+            >,
+            clarifications: mergedClarifications,
+            ...(ts ? { targetSection: ts } : {}),
+          },
+        );
         if (res.type === 'clarify') {
           setAssistantClarification({
             command,
@@ -1062,11 +1393,8 @@ export function OnboardingResumeClinic({
         setAssistantPendingPatch(res.patch);
         assistantCommandIdRef.current = res.commandId?.trim() ?? '';
         const target = (res.targetSection ?? 'summary').trim() || 'summary';
-        const { before: beforeDisplay, after: afterDisplay } = assistantDiffDisplayStrings(
-          target,
-          res.diff.before,
-          res.diff.after,
-        );
+        const { before: beforeDisplay, after: afterDisplay } =
+          assistantDiffDisplayStrings(target, res.diff.before, res.diff.after);
         setDiffPreviews((prev) => ({
           ...prev,
           [CV_ASSISTANT_DIFF_PREVIEW_KEY]: {
@@ -1089,7 +1417,9 @@ export function OnboardingResumeClinic({
         setActiveDiffPreviewKey(CV_ASSISTANT_DIFF_PREVIEW_KEY);
         setAssistantOpen(false);
         // res.diff.summary = one-line blurb only (not summary body); body is in diff.after.summary.text
-        toast.success(res.diff.summary || 'Assistant suggestion ready for review');
+        toast.success(
+          res.diff.summary || 'Assistant suggestion ready for review',
+        );
         return 'ok';
       } catch (e) {
         toast.error(getApiErrorMessage(e) || 'Assistant command failed');
@@ -1098,7 +1428,13 @@ export function OnboardingResumeClinic({
         setAssistantBusy(false);
       }
     },
-    [assistantClarification?.clarifications, cvDataSnapshot, initialData, profileId, toast],
+    [
+      assistantClarification?.clarifications,
+      cvDataSnapshot,
+      initialData,
+      profileId,
+      toast,
+    ],
   );
 
   const handleAcceptDiff = useCallback(
@@ -1116,10 +1452,14 @@ export function OnboardingResumeClinic({
   );
 
   const effectiveExternalPatch = useMemo<Partial<CVBuilderData> | null>(
-    () => instantPreviewPatch ?? (assistantPendingPatch as Partial<CVBuilderData> | null),
+    () =>
+      instantPreviewPatch ??
+      (assistantPendingPatch as Partial<CVBuilderData> | null),
     [instantPreviewPatch, assistantPendingPatch],
   );
-  const effectiveExternalPatchNonce = instantPreviewPatch ? instantPreviewPatchNonce : assistantPatchNonce;
+  const effectiveExternalPatchNonce = instantPreviewPatch
+    ? instantPreviewPatchNonce
+    : assistantPatchNonce;
 
   const runToolbarAtsCheck = useCallback(async () => {
     try {
@@ -1159,7 +1499,8 @@ export function OnboardingResumeClinic({
       e.preventDefault();
       const startX = e.clientX;
       const startPct = tripleRightPct;
-      const totalW = triplePanelContainerRef.current?.offsetWidth ?? window.innerWidth;
+      const totalW =
+        triplePanelContainerRef.current?.offsetWidth ?? window.innerWidth;
 
       const onMove = (ev: PointerEvent) => {
         const delta = ((startX - ev.clientX) / totalW) * 100;
@@ -1184,7 +1525,12 @@ export function OnboardingResumeClinic({
       onRightResizePointerDown: onTripleRightResizePointerDown,
       centerHeaderActions: null,
     }),
-    [rightPanelCollapsed, onToggleRightInsightsCollapsed, onTripleRightResizePointerDown, tripleRightPct],
+    [
+      rightPanelCollapsed,
+      onToggleRightInsightsCollapsed,
+      onTripleRightResizePointerDown,
+      tripleRightPct,
+    ],
   );
 
   const scoreCardMode = tripleRightPct < 23 ? 'compact' : 'full';
@@ -1196,7 +1542,10 @@ export function OnboardingResumeClinic({
     pdfDocx: false,
   } as const;
 
-  const existingSectionTypes = useMemo(() => new Set(sections.map((s) => s.type)), [sections]);
+  const existingSectionTypes = useMemo(
+    () => new Set(sections.map((s) => s.type)),
+    [sections],
+  );
 
   const toolbarLeftSlot = (
     <button
@@ -1204,7 +1553,10 @@ export function OnboardingResumeClinic({
       className="group flex shrink-0 cursor-pointer items-center gap-1.5 text-left text-[13px] text-[rgba(255,255,255,0.45)] transition-colors duration-200 hover:text-[rgba(255,255,255,0.8)]"
       onClick={onBack}
     >
-      <ArrowLeft className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:-translate-x-0.5" strokeWidth={2} />
+      <ArrowLeft
+        className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:-translate-x-0.5"
+        strokeWidth={2}
+      />
       Back
     </button>
   );
@@ -1335,7 +1687,12 @@ export function OnboardingResumeClinic({
               onClick={() => setMobileInsightsOpen((v) => !v)}
             >
               Insights
-              <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', mobileInsightsOpen ? 'rotate-180' : '')} />
+              <ChevronDown
+                className={cn(
+                  'h-3.5 w-3.5 transition-transform',
+                  mobileInsightsOpen ? 'rotate-180' : '',
+                )}
+              />
             </button>
           </div>
           <AnimatePresence initial={false}>
@@ -1348,7 +1705,9 @@ export function OnboardingResumeClinic({
                 transition={{ duration: 0.2, ease: 'easeOut' }}
                 className="mt-2 overflow-hidden rounded-xl border border-white/[0.08]"
               >
-                <div className="flex h-[min(58vh,520px)] min-h-0 flex-col p-2">{renderInsightsPanel()}</div>
+                <div className="flex h-[min(58vh,520px)] min-h-0 flex-col p-2">
+                  {renderInsightsPanel()}
+                </div>
               </motion.div>
             ) : null}
           </AnimatePresence>
@@ -1366,7 +1725,9 @@ export function OnboardingResumeClinic({
               <p className="text-[13px] font-medium leading-snug text-white">
                 Click anywhere on the CV to start editing
               </p>
-              <p className="mt-1 text-[11px] text-[rgba(255,255,255,0.45)]">We&apos;ll highlight incomplete sections after you begin.</p>
+              <p className="mt-1 text-[11px] text-[rgba(255,255,255,0.45)]">
+                We&apos;ll highlight incomplete sections after you begin.
+              </p>
             </motion.div>
           ) : null}
           <CVBuilder
@@ -1406,11 +1767,15 @@ export function OnboardingResumeClinic({
             }}
             cvAssistantCommand={runAssistantCommand}
             cvAssistantBusy={assistantBusy}
-            cvAssistantClarificationQuestion={assistantClarification?.question ?? null}
+            cvAssistantClarificationQuestion={
+              assistantClarification?.question ?? null
+            }
             externalPatch={effectiveExternalPatch}
             externalPatchNonce={effectiveExternalPatchNonce}
             serverHydrateNonce={cvServerHydrateNonce}
-            onAiStructuredPersisted={() => setCvServerHydrateNonce((n) => n + 1)}
+            onAiStructuredPersisted={() =>
+              setCvServerHydrateNonce((n) => n + 1)
+            }
           />
         </div>
       </div>

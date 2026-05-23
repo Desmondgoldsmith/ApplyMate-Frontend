@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { coerceStructuredTextInCvBuilderData, ensureCvPreviewData, type CVBuilderData } from './cvBuilder';
+import {
+  coerceStructuredTextInCvBuilderData,
+  ensureCvPreviewData,
+  type CVBuilderData,
+} from './cvBuilder';
 
 describe('ensureCvPreviewData', () => {
   it('coerces summary text from nested objects (no [object Object])', () => {
@@ -51,7 +55,7 @@ describe('coerceStructuredTextInCvBuilderData', () => {
       references: [],
       customSections: [],
       parsedCustomSections: [],
-    } as CVBuilderData);
+    } as unknown as CVBuilderData);
     expect(d.experience.items[0]?.title).toBe('Dev');
   });
 });

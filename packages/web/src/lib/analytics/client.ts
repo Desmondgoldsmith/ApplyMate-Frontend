@@ -44,7 +44,6 @@ export function identifyUser(user: AuthUser): void {
   client.identify(user.id, {
     email: user.email,
     onboarding_completed: user.onboardingCompleted ?? false,
-    plan: user.plan ?? undefined,
     primary_goal: user.primaryGoal ?? undefined,
   });
 }

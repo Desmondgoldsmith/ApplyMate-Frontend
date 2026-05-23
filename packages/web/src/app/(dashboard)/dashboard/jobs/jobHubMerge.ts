@@ -5,7 +5,15 @@ import type {
   JobHistoryItem,
 } from '@/lib/api';
 
-export type HubStage = 'bookmarked' | 'analyzed' | 'applied' | 'interviewing' | 'negotiating' | 'accepted';
+export type HubStage =
+  | 'bookmarked'
+  | 'analyzed'
+  | 'applied'
+  | 'interviewing'
+  | 'offered'
+  | 'negotiating'
+  | 'accepted'
+  | 'rejected';
 export type HubOrigin = 'job_board' | 'analysis' | 'application' | 'mixed';
 export type HubState = 'bookmarked' | 'analyzed' | 'applied';
 
@@ -14,8 +22,10 @@ export const HUB_STAGES: HubStage[] = [
   'analyzed',
   'applied',
   'interviewing',
+  'offered',
   'negotiating',
   'accepted',
+  'rejected',
 ];
 
 export const HUB_STAGE_LABELS: Record<HubStage, string> = {
@@ -23,8 +33,10 @@ export const HUB_STAGE_LABELS: Record<HubStage, string> = {
   analyzed: 'Analyzed',
   applied: 'Applied',
   interviewing: 'Interviewing',
+  offered: 'Offer',
   negotiating: 'Negotiating',
   accepted: 'Accepted',
+  rejected: 'Rejected',
 };
 
 /** Compact label for sidebar / dense UI. */
@@ -33,8 +45,10 @@ export const HUB_STAGE_SHORT_LABELS: Record<HubStage, string> = {
   analyzed: 'Analyzed',
   applied: 'Applied',
   interviewing: 'Interview',
-  negotiating: 'Offer',
+  offered: 'Offer',
+  negotiating: 'Negotiating',
   accepted: 'Accepted',
+  rejected: 'Rejected',
 };
 
 export type TrackedJob = {
@@ -126,13 +140,13 @@ export function hubPipelineStageToHubStage(
     case 'interviewing':
       return 'interviewing';
     case 'offered':
-      return 'negotiating';
+      return 'offered';
     case 'negotiating':
       return 'negotiating';
     case 'accepted':
       return 'accepted';
     case 'rejected':
-      return 'bookmarked';
+      return 'rejected';
     default:
       return opts.hasJobAnalysis ? 'analyzed' : 'bookmarked';
   }
@@ -148,10 +162,14 @@ export function hubStageToHubPipelineStage(stage: HubStage): HubPipelineStage {
       return 'applied';
     case 'interviewing':
       return 'interviewing';
+    case 'offered':
+      return 'offered';
     case 'negotiating':
       return 'negotiating';
     case 'accepted':
       return 'accepted';
+    case 'rejected':
+      return 'rejected';
     default:
       return 'saved';
   }
@@ -207,8 +225,13 @@ function inferOriginAndState(input: {
 }): { origin: HubOrigin; state: HubState; isApplied: boolean } {
   const hasApp = Boolean(input.app);
   const isApplied = hasApp && input.app?.status === 'applied';
-  const state: HubState = isApplied ? 'applied' : input.hasAnalysis ? 'analyzed' : 'bookmarked';
-  const sourceCount = Number(hasApp) + Number(input.hasAnalysis) + Number(input.hasBookmark);
+  const state: HubState = isApplied
+    ? 'applied'
+    : input.hasAnalysis
+      ? 'analyzed'
+      : 'bookmarked';
+  const sourceCount =
+    Number(hasApp) + Number(input.hasAnalysis) + Number(input.hasBookmark);
   const origin: HubOrigin =
     sourceCount > 1
       ? 'mixed'
@@ -228,7 +251,9 @@ function normHubText(s: string) {
  * Merge orphan application buckets (`app:*` with no `jobAnalysisId`) into a history bucket when
  * title + company match uniquely — fixes duplicate rows for the same role.
  */
-function mergeOrphanApplicationBuckets(buckets: Map<string, { hist?: JobHistoryItem; app?: ApplicationItem }>) {
+function mergeOrphanApplicationBuckets(
+  buckets: Map<string, { hist?: JobHistoryItem; app?: ApplicationItem }>,
+) {
   const toDelete: string[] = [];
   for (const [key, bucket] of buckets) {
     if (!key.startsWith('app:')) continue;
@@ -287,8 +312,11 @@ export function mergeTrackedJobs(
 
   for (const [key, { hist, app }] of buckets) {
     const jobAnalysisId =
-      hist?.id ?? app?.jobAnalysisId?.trim() ?? (key.startsWith('app:') ? null : key);
-    const title = hist?.jobTitle || hist?.title || app?.title || 'Untitled role';
+      hist?.id ??
+      app?.jobAnalysisId?.trim() ??
+      (key.startsWith('app:') ? null : key);
+    const title =
+      hist?.jobTitle || hist?.title || app?.title || 'Untitled role';
     const company = hist?.company || app?.company || '—';
     const matchScore =
       typeof hist?.matchScore === 'number'
@@ -307,7 +335,9 @@ export function mergeTrackedJobs(
     const overrideKey = jobAnalysisId ?? app?.id ?? key;
     const overrideStage = overrides[overrideKey] ?? overrides[key];
     const fromServer = hist?.pipelineStatus
-      ? hubPipelineStageToHubStage(hist.pipelineStatus, { hasJobAnalysis: true })
+      ? hubPipelineStageToHubStage(hist.pipelineStatus, {
+          hasJobAnalysis: true,
+        })
       : null;
     let stage: HubStage;
     if (fromServer === 'accepted' || fromServer === 'negotiating') {
@@ -344,14 +374,19 @@ export function mergeTrackedJobs(
       state: sem.state,
       isApplied: sem.isApplied,
       lastActivityAt: hist?.lastActivityAt ?? app?.lastActivityAt ?? null,
-      nextRecommendedAction: hist?.nextRecommendedAction ?? app?.nextRecommendedAction ?? null,
+      nextRecommendedAction:
+        hist?.nextRecommendedAction ?? app?.nextRecommendedAction ?? null,
       reasonText: hist?.reasonText ?? app?.reasonText ?? null,
       applicationAssist: hist?.applicationAssist ?? app?.applicationAssist,
     });
   }
 
-  const seenAppIds = new Set(rows.map((r) => r.applicationId).filter(Boolean) as string[]);
-  const seenAnalysisIds = new Set(rows.map((r) => r.jobAnalysisId).filter(Boolean) as string[]);
+  const seenAppIds = new Set(
+    rows.map((r) => r.applicationId).filter(Boolean) as string[],
+  );
+  const seenAnalysisIds = new Set(
+    rows.map((r) => r.jobAnalysisId).filter(Boolean) as string[],
+  );
 
   for (const b of serverBookmarks) {
     if (b.applicationId && seenAppIds.has(b.applicationId)) continue;
@@ -366,7 +401,9 @@ export function mergeTrackedJobs(
       hasBookmark: true,
     });
     const stage = explicitBm
-      ? hubPipelineStageToHubStage(b.hubPipelineStage!, { hasJobAnalysis: Boolean(b.jobAnalysisId) })
+      ? hubPipelineStageToHubStage(b.hubPipelineStage!, {
+          hasJobAnalysis: Boolean(b.jobAnalysisId),
+        })
       : (overrides[overrideKey] ?? fallback);
     rows.push({
       key: overrideKey,
@@ -380,7 +417,9 @@ export function mergeTrackedJobs(
       hasAnalysis: Boolean(b.jobAnalysisId),
       boardDiscoveryId: b.jobListingId || null,
       applyUrl: b.url?.trim() || null,
-      boardDescription: b.descriptionSnippet?.trim() ? b.descriptionSnippet : null,
+      boardDescription: b.descriptionSnippet?.trim()
+        ? b.descriptionSnippet
+        : null,
       applicationNotes: null,
       hubBookmarkId: b.id,
       origin: sem.origin,
@@ -428,7 +467,11 @@ export function hubStageToApplicationStatus(stage: HubStage): string | null {
 /** Payload for POST /jobs/archive — prefer bookmark, then analysis, then application. */
 export function archivePayloadForTrackedJob(
   job: TrackedJob,
-): { bookmarkId?: string; jobAnalysisId?: string; applicationId?: string } | null {
+): {
+  bookmarkId?: string;
+  jobAnalysisId?: string;
+  applicationId?: string;
+} | null {
   const bid = job.hubBookmarkId?.trim();
   if (bid) return { bookmarkId: bid };
   const jid = job.jobAnalysisId?.trim();

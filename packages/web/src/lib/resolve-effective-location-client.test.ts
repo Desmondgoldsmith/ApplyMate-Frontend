@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import { resolveEffectiveLocationClient } from './resolve-effective-location-client';
 
 describe('resolveEffectiveLocationClient', () => {

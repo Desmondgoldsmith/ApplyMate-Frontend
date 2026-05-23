@@ -1,16 +1,35 @@
-import type { InterviewPersonality, InterviewResult, InterviewSession, InterviewType } from '@/lib/api';
-import type { InterviewPersonaId, PersonalityPresentation } from '@/lib/interviewPersonas';
+import type {
+  InterviewPersonality,
+  InterviewResult,
+  InterviewSession,
+  InterviewType,
+} from '@/lib/api';
+import type {
+  InterviewPersonaId,
+  PersonalityPresentation,
+} from '@/lib/interviewPersonas';
 
 /** Coaching tone — separate from avatar `personality`. */
-export type CoachPersonality = 'friendly' | 'professional' | 'strict' | 'fast_paced';
+export type CoachPersonality =
+  | 'friendly'
+  | 'professional'
+  | 'strict'
+  | 'fast_paced';
 
 export type InterviewMode = 'job_based' | 'role_based';
 
-export type PrepMode = 'standard' | 'hr_simulation' | 'senior_interviewer_simulation';
+export type PrepMode =
+  | 'standard'
+  | 'hr_simulation'
+  | 'senior_interviewer_simulation';
 
 export type DifficultyLevel = 'easy' | 'medium' | 'hard' | 'adaptive';
 
-export type InterviewerBehavior = 'neutral' | 'friendly' | 'strict' | 'interrupting';
+export type InterviewerBehavior =
+  | 'neutral'
+  | 'friendly'
+  | 'strict'
+  | 'interrupting';
 
 export type StarMissingPart = 'situation' | 'task' | 'action' | 'result';
 
@@ -104,7 +123,11 @@ export type InterviewTurn = {
 
 export type AnswerSource = 'typed' | 'browser_stt' | 'whisper' | 'manual';
 
-export type FollowUpReason = 'vague' | 'missing_example' | 'missing_star' | 'short';
+export type FollowUpReason =
+  | 'vague'
+  | 'missing_example'
+  | 'missing_star'
+  | 'short';
 
 export type TurnAnswerScores = {
   clarityScore: number;
@@ -186,7 +209,12 @@ export type CoachInsight = {
 
 export type TurnCoachingStatus = 'idle' | 'loading' | 'ready';
 
-export type InterviewEmotion = 'neutral' | 'impressed' | 'concerned' | 'curious' | 'strict';
+export type InterviewEmotion =
+  | 'neutral'
+  | 'impressed'
+  | 'concerned'
+  | 'curious'
+  | 'strict';
 
 export type PressureTier = 'low' | 'medium' | 'high';
 
@@ -218,7 +246,11 @@ export type SimulationQuestionStyle =
   | 'multi_part'
   | 'behavioral_deep';
 
-export type SimulationPersonaTone = 'friendly' | 'neutral' | 'aggressive' | 'fast-paced';
+export type SimulationPersonaTone =
+  | 'friendly'
+  | 'neutral'
+  | 'aggressive'
+  | 'fast-paced';
 
 export type SimulationPersonaBehavior = {
   tone: SimulationPersonaTone;
@@ -533,10 +565,11 @@ export type AdaptiveProfile = {
   lastWeaknesses?: string[];
 };
 
-export type EnrichedPrepSession = InterviewSession & InterviewSessionPrepFields & {
-  previousSessionComparison?: PreviousSessionComparison;
-  adaptation?: SessionAdaptation;
-};
+export type EnrichedPrepSession = InterviewSession &
+  InterviewSessionPrepFields & {
+    previousSessionComparison?: PreviousSessionComparison;
+    adaptation?: SessionAdaptation;
+  };
 
 export type SimulationState = {
   timer: {
@@ -570,6 +603,9 @@ export type SimulateSessionBody = {
   interviewPersona?: InterviewPersonaId;
   coachPersonality?: CoachPersonality;
   speakingSpeed?: number;
+  coachingEnabled?: boolean;
+  coachingIntensity?: CoachingIntensity;
+  coachingMode?: CoachingMode;
 };
 
 export type RealityScoreBreakdown = {
@@ -621,7 +657,8 @@ export type InterviewSessionPrepFields = {
   coachingSettings?: CoachingSettings;
 };
 
-export type InterviewSessionWithPrep = InterviewSession & InterviewSessionPrepFields;
+export type InterviewSessionWithPrep = InterviewSession &
+  InterviewSessionPrepFields;
 
 export type InterviewResultWithPrep = InterviewResult & {
   readinessScore?: number;
@@ -701,7 +738,9 @@ export const SUGGESTED_MODE_LABELS: Record<string, string> = {
 };
 
 export function isSimulationMode(prepMode?: PrepMode): boolean {
-  return prepMode === 'hr_simulation' || prepMode === 'senior_interviewer_simulation';
+  return (
+    prepMode === 'hr_simulation' || prepMode === 'senior_interviewer_simulation'
+  );
 }
 
 export function formatCategoryLabel(category: string): string {

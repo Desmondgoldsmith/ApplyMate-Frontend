@@ -8,7 +8,10 @@ import { VoiceCaptureStatus } from '@/components/interview/VoiceCaptureStatus';
 import { VoiceHealthIndicator } from '@/components/interview/VoiceHealthIndicator';
 import { VoiceProcessingBanner } from '@/components/interview/VoiceProcessingBanner';
 import { useInterviewVoiceTranscript } from '@/contexts/InterviewVoiceContext';
-import { isTurnAnswerLongEnough, type VoiceProcessingStatus } from '@/lib/interviewSpeech';
+import {
+  isTurnAnswerLongEnough,
+  type VoiceProcessingStatus,
+} from '@/lib/interviewSpeech';
 import { cn } from '@/lib/utils';
 import type { InterviewPhase } from './sessionTypes';
 
@@ -63,8 +66,7 @@ export const AnswerPanel = memo(function AnswerPanel({
   const isActivelyRecording = recordingState === 'recording';
   const isFinalizingCapture = recordingState === 'finalizing';
   const isProcessingCapture =
-    recordingState === 'transcribing' ||
-    transcriptionState === 'processing';
+    recordingState === 'transcribing' || transcriptionState === 'processing';
   const voiceProcessing =
     voice.isTranscribing || isProcessingCapture
       ? ('whisper' as const)
@@ -91,7 +93,10 @@ export const AnswerPanel = memo(function AnswerPanel({
               if (voice.inputMode === 'voice') return;
               voice.setInputMode('voice');
             }}
-            className={cn('ip-voice-tab', voice.inputMode === 'voice' && 'ip-voice-tab-active')}
+            className={cn(
+              'ip-voice-tab',
+              voice.inputMode === 'voice' && 'ip-voice-tab-active',
+            )}
           >
             Voice
           </button>
@@ -111,7 +116,10 @@ export const AnswerPanel = memo(function AnswerPanel({
               }
               voice.setInputMode('type');
             }}
-            className={cn('ip-voice-tab', voice.inputMode === 'type' && 'ip-voice-tab-active')}
+            className={cn(
+              'ip-voice-tab',
+              voice.inputMode === 'type' && 'ip-voice-tab-active',
+            )}
           >
             Type
           </button>
@@ -124,8 +132,7 @@ export const AnswerPanel = memo(function AnswerPanel({
         </p>
       )}
 
-      {answerPipelineLabel &&
-      (phase === 'answering' || phase === 'answer_feedback' || interviewerThinking) ? (
+      {answerPipelineLabel && (phase === 'answering' || interviewerThinking) ? (
         <p
           className="mx-5 mt-2 text-xs font-medium text-[var(--text-teal)]"
           role="status"
@@ -171,8 +178,15 @@ export const AnswerPanel = memo(function AnswerPanel({
                 </p>
               </div>
             ) : null}
-            {transcriptionState === 'processing' && transcriptionMessage && !isArmingMic && !isFinalizingCapture ? (
-              <p className="text-xs font-medium text-[var(--text-teal)]" role="status" aria-live="polite">
+            {transcriptionState === 'processing' &&
+            transcriptionMessage &&
+            !isArmingMic &&
+            !isFinalizingCapture ? (
+              <p
+                className="text-xs font-medium text-[var(--text-teal)]"
+                role="status"
+                aria-live="polite"
+              >
                 {transcriptionMessage}
               </p>
             ) : null}
@@ -182,7 +196,8 @@ export const AnswerPanel = memo(function AnswerPanel({
                 role="alert"
               >
                 <p className="text-xs leading-relaxed text-amber-100">
-                  {transcriptionMessage ?? 'Could not understand clearly. Try again or type.'}
+                  {transcriptionMessage ??
+                    'Could not understand clearly. Try again or type.'}
                 </p>
                 <button
                   type="button"
@@ -239,7 +254,7 @@ export const AnswerPanel = memo(function AnswerPanel({
               <textarea
                 value={
                   transcriptionState === 'processing'
-                    ? transcriptionMessage ?? 'Transcribing your answer…'
+                    ? (transcriptionMessage ?? 'Transcribing your answer…')
                     : transcriptionState === 'failed'
                       ? ''
                       : voice.transcript
@@ -257,7 +272,9 @@ export const AnswerPanel = memo(function AnswerPanel({
           </>
         ) : (
           <div className="flex min-h-0 flex-1 flex-col gap-2">
-            {voice.fellBackToManual ? <VoiceHealthIndicator health="fallback" /> : null}
+            {voice.fellBackToManual ? (
+              <VoiceHealthIndicator health="fallback" />
+            ) : null}
             <div className="flex min-h-0 flex-1 rounded-xl border border-white/10 bg-[#111616] p-3">
               <textarea
                 value={typedAnswer}
@@ -277,7 +294,11 @@ export const AnswerPanel = memo(function AnswerPanel({
           className="inline-flex items-center gap-1.5 border-none bg-transparent text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
           title="Mute or unmute the interviewer's voice (does not affect your microphone)"
         >
-          {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          {isMuted ? (
+            <VolumeX className="h-4 w-4" />
+          ) : (
+            <Volume2 className="h-4 w-4" />
+          )}
           {isMuted ? 'Interviewer muted' : 'Interviewer audio'}
         </button>
         <button
@@ -287,14 +308,13 @@ export const AnswerPanel = memo(function AnswerPanel({
             submitTurnPending ||
             answerPipelineStatus === 'submitting' ||
             answerPipelineStatus === 'analyzing' ||
-            (!(phase === 'answering' || inIntroSelf) ||
-              !isTurnAnswerLongEnough(effectiveAnswer) ||
-              (voice.inputMode === 'voice' && !isTranscriptReady) ||
-              isArmingMic ||
-              isFinalizingCapture ||
-              isProcessingCapture ||
-              transcriptionState === 'processing' ||
-              (voice.inputMode === 'voice' && transcriptionState === 'failed'))
+            !(phase === 'answering' || inIntroSelf) ||
+            !isTurnAnswerLongEnough(effectiveAnswer) ||
+            (voice.inputMode === 'voice' && !isTranscriptReady) ||
+            isArmingMic ||
+            isFinalizingCapture ||
+            isProcessingCapture ||
+            (voice.inputMode === 'voice' && transcriptionState === 'failed')
           }
           onClick={onSubmit}
         >

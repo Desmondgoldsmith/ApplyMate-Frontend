@@ -95,7 +95,10 @@ import {
   isNoValidTranscriptError,
   NO_VALID_TRANSCRIPT_USER_MESSAGE,
 } from '@/lib/interviewTranscriptionErrors';
-import { resolveCoachPersonality, COACH_PERSONALITIES } from '@/lib/coachPersonalities';
+import {
+  resolveCoachPersonality,
+  COACH_PERSONALITIES,
+} from '@/lib/coachPersonalities';
 import { getApiErrorCode, getApiErrorMessage } from '@/lib/axios';
 import {
   buildSubmitAnswersFromTurns,
@@ -132,7 +135,10 @@ import {
   markInterviewPendingResult,
 } from '@/lib/interviewPendingResult';
 import { resolveProcessingInsights } from '@/lib/interviewProcessingInsights';
-import { normalizeInterviewPersonalityId, PERSONALITIES } from '@/lib/interviewPersonalities';
+import {
+  normalizeInterviewPersonalityId,
+  PERSONALITIES,
+} from '@/lib/interviewPersonalities';
 import { cn } from '@/lib/utils';
 
 function simulationPressureLabel(
@@ -228,11 +234,20 @@ function shouldRetryInterviewSubmit(error: unknown): boolean {
   if (!axios.isAxiosError(error)) return true;
   const status = error.response?.status;
   if (status === undefined) return true;
-  return status === 408 || status === 409 || status === 425 || status === 429 || status >= 500;
+  return (
+    status === 408 ||
+    status === 409 ||
+    status === 425 ||
+    status === 429 ||
+    status >= 500
+  );
 }
 
 function computeSubmitRetryDelayMs(attempt: number): number {
-  const exponential = Math.min(SUBMIT_RETRY_MAX_DELAY_MS, SUBMIT_RETRY_BASE_DELAY_MS * 2 ** Math.max(0, attempt - 1));
+  const exponential = Math.min(
+    SUBMIT_RETRY_MAX_DELAY_MS,
+    SUBMIT_RETRY_BASE_DELAY_MS * 2 ** Math.max(0, attempt - 1),
+  );
   const jitter = Math.floor(Math.random() * 1200);
   return exponential + jitter;
 }
@@ -241,7 +256,8 @@ export default function InterviewSessionPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const params = useParams<{ sessionId: string }>();
-  const sessionId = typeof params.sessionId === 'string' ? params.sessionId : '';
+  const sessionId =
+    typeof params.sessionId === 'string' ? params.sessionId : '';
 
   const sessionQ = useInterviewSession(sessionId || null);
   const submitAnswers = useSubmitInterviewAnswers(sessionId);
@@ -252,7 +268,9 @@ export default function InterviewSessionPage() {
   const [answers, setAnswers] = useState<LocalAnswer[]>([]);
   const [typedAnswer, setTypedAnswer] = useState('');
   const [introText, setIntroText] = useState('');
-  const [spokenCharIndex, setSpokenCharIndex] = useState<number | undefined>(undefined);
+  const [spokenCharIndex, setSpokenCharIndex] = useState<number | undefined>(
+    undefined,
+  );
   const [isMuted, setIsMuted] = useState(false);
   const [interviewerThinking, setInterviewerThinking] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
@@ -267,8 +285,12 @@ export default function InterviewSessionPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [submitRetryAttempt, setSubmitRetryAttempt] = useState(0);
-  const [submitRetryCountdown, setSubmitRetryCountdown] = useState<number | null>(null);
-  const [retryEvaluationError, setRetryEvaluationError] = useState<string | null>(null);
+  const [submitRetryCountdown, setSubmitRetryCountdown] = useState<
+    number | null
+  >(null);
+  const [retryEvaluationError, setRetryEvaluationError] = useState<
+    string | null
+  >(null);
   const hasAnnouncedScoringEtaRef = useRef(false);
   const hydratedPendingSubmissionRef = useRef(false);
   const submitRetryTimeoutRef = useRef<number | null>(null);
@@ -284,13 +306,11 @@ export default function InterviewSessionPage() {
   const lastSimulationSignalsRef = useRef<SimulationSignal[]>([]);
 
   const [mobileResponseOpen, setMobileResponseOpen] = useState(false);
-  const [answerPipelineStatus, setAnswerPipelineStatus] = useState<AnswerPipelineStatus>('idle');
+  const [answerPipelineStatus, setAnswerPipelineStatus] =
+    useState<AnswerPipelineStatus>('idle');
   const submitAnswerInFlightRef = useRef(false);
   const finishingInterviewRef = useRef(false);
-  const resultQ = useInterviewResult(
-    sessionId || null,
-    phase === 'processing',
-  );
+  const resultQ = useInterviewResult(sessionId || null, phase === 'processing');
 
   const session = sessionQ.data;
   const sessionPersona = useMemo(
@@ -299,10 +319,16 @@ export default function InterviewSessionPage() {
   );
   const prepMode = session?.prepMode;
   const usePrepSession = Boolean(session?.turns?.length);
-  const enrichedQ = useEnrichedPrepSession(sessionId, Boolean(sessionId) && usePrepSession);
+  const enrichedQ = useEnrichedPrepSession(
+    sessionId,
+    Boolean(sessionId) && usePrepSession,
+  );
   const turnsQ = useInterviewTurns(
     sessionId,
-    Boolean(sessionId) && usePrepSession && phase !== 'loading' && phase !== 'results',
+    Boolean(sessionId) &&
+      usePrepSession &&
+      phase !== 'loading' &&
+      phase !== 'results',
   );
   const submitPracticeCoaching = useSubmitPracticeCoaching(sessionId || '');
   const coaching = useCoachingSettings(
@@ -318,28 +344,40 @@ export default function InterviewSessionPage() {
   const isSimSession = isSimulationMode(prepMode);
   const simStateQ = useSimulationState(
     sessionId,
-    Boolean(sessionId) && isSimSession && phase !== 'loading' && phase !== 'results',
+    Boolean(sessionId) &&
+      isSimSession &&
+      phase !== 'loading' &&
+      phase !== 'results',
   );
   const questionTimeLimitSec =
-    session?.questionTimeLimitSec ?? simStateQ.data?.timer.questionTimeLimitSec ?? 0;
+    session?.questionTimeLimitSec ??
+    simStateQ.data?.timer.questionTimeLimitSec ??
+    0;
   const timerResetKey = prep.currentTurn?.id ?? currentQuestionIndex;
   const simTimer = useSimulationTimer(
     questionTimeLimitSec,
     isSimSession && (phase === 'answering' || phase === 'questioning'),
     timerResetKey,
   );
-  const interviewPersonalityId = session ? normalizeInterviewPersonalityId(session.personality) : null;
-  const personality = interviewPersonalityId ? PERSONALITIES[interviewPersonalityId] : null;
+  const interviewPersonalityId = session
+    ? normalizeInterviewPersonalityId(session.personality)
+    : null;
+  const personality = interviewPersonalityId
+    ? PERSONALITIES[interviewPersonalityId]
+    : null;
   const sessionGreetingMessage = useMemo(
     () =>
       sessionPersona
         ? interviewerGreetingMessage(sessionPersona)
-        : personality?.greetingMessage ?? PERSONALITIES.alex.greetingMessage,
+        : (personality?.greetingMessage ?? PERSONALITIES.alex.greetingMessage),
     [personality?.greetingMessage, sessionPersona],
   );
   const coachId = session ? resolveCoachPersonality(session) : 'professional';
   const coachCfg = COACH_PERSONALITIES[coachId];
-  const questionRows = session?.questions && Array.isArray(session.questions) ? session.questions : [];
+  const questionRows =
+    session?.questions && Array.isArray(session.questions)
+      ? session.questions
+      : [];
   const currentQuestion = prep.usePrep
     ? prep.currentTurn
       ? {
@@ -353,7 +391,8 @@ export default function InterviewSessionPage() {
 
   /** Whisper upload only during active answer — not intro (avoids wrong turnId). */
   const whisperTurnId = useMemo(() => {
-    if (!prep.usePrep || phase !== 'answering' || prep.activePracticeChip) return null;
+    if (!prep.usePrep || phase !== 'answering' || prep.activePracticeChip)
+      return null;
     return prep.currentTurn?.id ?? null;
   }, [phase, prep.activePracticeChip, prep.currentTurn?.id, prep.usePrep]);
 
@@ -398,7 +437,9 @@ export default function InterviewSessionPage() {
       buildLearningMoments(
         prep.evolutionHistory,
         prep.lastPersonalization,
-        personaMemory.previousComparison ?? enrichedQ.data?.previousSessionComparison ?? null,
+        personaMemory.previousComparison ??
+          enrichedQ.data?.previousSessionComparison ??
+          null,
       ),
     [
       enrichedQ.data?.previousSessionComparison,
@@ -443,10 +484,12 @@ export default function InterviewSessionPage() {
 
   const [lastPracticeQuestionText, setLastPracticeQuestionText] = useState('');
   const [lastPracticeAnswerText, setLastPracticeAnswerText] = useState('');
-  const [answeredSideQuestions, setAnsweredSideQuestions] = useState<string[]>([]);
-  const feedbackBeforePracticeRef = useRef<import('@/lib/interview-prep-types').TurnAnswerResponse | null>(
-    null,
+  const [answeredSideQuestions, setAnsweredSideQuestions] = useState<string[]>(
+    [],
   );
+  const feedbackBeforePracticeRef = useRef<
+    import('@/lib/interview-prep-types').TurnAnswerResponse | null
+  >(null);
 
   const sideQuestionOnDisplay = useMemo(() => {
     const active = prep.activePracticeChip?.questionText?.trim();
@@ -455,13 +498,22 @@ export default function InterviewSessionPage() {
       return lastPracticeQuestionText.trim();
     }
     return '';
-  }, [lastPracticeQuestionText, prep.activePracticeChip?.questionText, prep.practiceFeedback]);
+  }, [
+    lastPracticeQuestionText,
+    prep.activePracticeChip?.questionText,
+    prep.practiceFeedback,
+  ]);
 
   const interviewerQuestionText = useMemo(() => {
     if (phase === 'intro') {
-      return introStage === 'greeting' ? sessionGreetingMessage : 'Introduce yourself';
+      return introStage === 'greeting'
+        ? sessionGreetingMessage
+        : 'Introduce yourself';
     }
-    if (sideQuestionOnDisplay && (phase === 'answering' || phase === 'answer_feedback')) {
+    if (
+      sideQuestionOnDisplay &&
+      (phase === 'answering' || phase === 'answer_feedback')
+    ) {
       return sideQuestionOnDisplay;
     }
     if (phase === 'answer_feedback') {
@@ -492,7 +544,9 @@ export default function InterviewSessionPage() {
   const registerAnsweredSideQuestion = useCallback((questionText: string) => {
     const key = normalizeQuestionText(questionText);
     if (!key) return;
-    setAnsweredSideQuestions((prev) => (prev.includes(key) ? prev : [...prev, key]));
+    setAnsweredSideQuestions((prev) =>
+      prev.includes(key) ? prev : [...prev, key],
+    );
   }, []);
 
   const sidePracticeAnsweredCount = answeredSideQuestions.length;
@@ -561,7 +615,9 @@ export default function InterviewSessionPage() {
     if (!session?.id) return;
     const base = session.speakingSpeed ?? 1;
     try {
-      const stored = window.localStorage.getItem(speakingSpeedStorageKey(session.id));
+      const stored = window.localStorage.getItem(
+        speakingSpeedStorageKey(session.id),
+      );
       const parsed = stored ? Number(stored) : base;
       setSpeakingSpeed(Number.isFinite(parsed) ? parsed : base);
     } catch {
@@ -572,7 +628,10 @@ export default function InterviewSessionPage() {
   useEffect(() => {
     if (!session?.id) return;
     try {
-      window.localStorage.setItem(speakingSpeedStorageKey(session.id), String(speakingSpeed));
+      window.localStorage.setItem(
+        speakingSpeedStorageKey(session.id),
+        String(speakingSpeed),
+      );
     } catch {
       /* ignore */
     }
@@ -612,7 +671,13 @@ export default function InterviewSessionPage() {
       effect,
       turnId,
     });
-  }, [prep.followUpReason, prep.lastFeedback, session?.id, session?.prepMode, sessionPersona]);
+  }, [
+    prep.followUpReason,
+    prep.lastFeedback,
+    session?.id,
+    session?.prepMode,
+    sessionPersona,
+  ]);
 
   useEffect(() => {
     const followUpQ = prep.followUpReason?.question?.trim();
@@ -623,13 +688,22 @@ export default function InterviewSessionPage() {
 
   /** Prefetch Q1 only after intro — avoids extra /speech while greeting plays. */
   useEffect(() => {
-    if (!ttsSessionId || phase !== 'intro' || introStage !== 'self_intro') return;
+    if (!ttsSessionId || phase !== 'intro' || introStage !== 'self_intro')
+      return;
     const firstQ = prep.currentQuestionText.trim();
     if (firstQ) interviewTTS.prefetch(firstQ);
-  }, [introStage, interviewTTS.prefetch, phase, prep.currentQuestionText, ttsSessionId]);
+  }, [
+    introStage,
+    interviewTTS.prefetch,
+    phase,
+    prep.currentQuestionText,
+    ttsSessionId,
+  ]);
 
   const currentQuestionSectionTitle =
-    currentQuestion && 'sectionTitle' in currentQuestion && typeof currentQuestion.sectionTitle === 'string'
+    currentQuestion &&
+    'sectionTitle' in currentQuestion &&
+    typeof currentQuestion.sectionTitle === 'string'
       ? currentQuestion.sectionTitle
       : '';
   const sessionStatus = (session?.status ?? '') as string;
@@ -648,13 +722,19 @@ export default function InterviewSessionPage() {
     }
   }, [answerPipelineStatus]);
 
-  const persistPendingSubmission = useCallback((payload: PendingInterviewSubmission) => {
-    try {
-      window.localStorage.setItem(PENDING_SUBMISSION_STORAGE_KEY, JSON.stringify(payload));
-    } catch {
-      // Ignore storage write errors; submit still proceeds.
-    }
-  }, []);
+  const persistPendingSubmission = useCallback(
+    (payload: PendingInterviewSubmission) => {
+      try {
+        window.localStorage.setItem(
+          PENDING_SUBMISSION_STORAGE_KEY,
+          JSON.stringify(payload),
+        );
+      } catch {
+        // Ignore storage write errors; submit still proceeds.
+      }
+    },
+    [],
+  );
 
   const clearPendingSubmission = useCallback((expectedSessionId?: string) => {
     try {
@@ -699,7 +779,8 @@ export default function InterviewSessionPage() {
       void interviewTTS.speak(slice, {
         leadPauseMs,
         advanceOnUnavailable: true,
-        onBoundary: (charIndex) => setSpokenCharIndex(fromCharIndex + charIndex),
+        onBoundary: (charIndex) =>
+          setSpokenCharIndex(fromCharIndex + charIndex),
         onEnd: () => {
           speakingOnEndRef.current?.();
           setPhase('answering');
@@ -713,7 +794,8 @@ export default function InterviewSessionPage() {
   const beginQuestion = useCallback(
     (questionText?: string) => {
       if (!session) return;
-      const text = questionText?.trim() ?? currentQuestion?.question?.trim() ?? '';
+      const text =
+        questionText?.trim() ?? currentQuestion?.question?.trim() ?? '';
       if (!text) return;
       setDisplayedQuestionText(text);
       setSpokenCharIndex(undefined);
@@ -732,7 +814,11 @@ export default function InterviewSessionPage() {
     stopVoiceCapture();
     speakingOnEndRef.current = null;
 
-    if (phase === 'intro' && introStage === 'greeting' && sessionGreetingMessage) {
+    if (
+      phase === 'intro' &&
+      introStage === 'greeting' &&
+      sessionGreetingMessage
+    ) {
       interviewTTS.stop();
       void (async () => {
         await interviewTTS.speak(sessionGreetingMessage, {
@@ -834,11 +920,17 @@ export default function InterviewSessionPage() {
       setSubmitRetryCountdown(null);
     }
 
-    if ((sessionStatus === 'completed' || sessionStatus === 'evaluation_failed') && session.result) {
+    if (
+      (sessionStatus === 'completed' ||
+        sessionStatus === 'evaluation_failed') &&
+      session.result
+    ) {
       clearPendingSubmission(session.id);
       clearInterviewPendingResult(session.id);
       const resultKey = ['interview-result', session.id] as const;
-      const cached = queryClient.getQueryData(resultKey) as { status?: string } | undefined;
+      const cached = queryClient.getQueryData(resultKey) as
+        | { status?: string }
+        | undefined;
       if (cached?.status !== 'completed') {
         queryClient.setQueryData(resultKey, {
           status: 'completed',
@@ -904,7 +996,15 @@ export default function InterviewSessionPage() {
       setPhase('intro');
       hasAnnouncedScoringEtaRef.current = false;
     }
-  }, [clearPendingSubmission, phase, prep, prep.syncQueueFromSession, queryClient, session, sessionStatus]);
+  }, [
+    clearPendingSubmission,
+    phase,
+    prep,
+    prep.syncQueueFromSession,
+    queryClient,
+    session,
+    sessionStatus,
+  ]);
 
   useEffect(() => {
     if (sessionQ.isError && isInterviewSessionExpired(sessionQ.error)) {
@@ -918,7 +1018,10 @@ export default function InterviewSessionPage() {
     const currentSessionId = session?.id;
     if (!currentSessionId || hydratedPendingSubmissionRef.current) return;
     hydratedPendingSubmissionRef.current = true;
-    if (sessionStatus === 'completed' || sessionStatus === 'evaluation_failed') {
+    if (
+      sessionStatus === 'completed' ||
+      sessionStatus === 'evaluation_failed'
+    ) {
       clearPendingSubmission(currentSessionId);
       return;
     }
@@ -947,7 +1050,13 @@ export default function InterviewSessionPage() {
   }, [clearPendingSubmission, session?.id, sessionStatus]);
 
   useEffect(() => {
-    if (phase !== 'intro' || introStage !== 'greeting' || !session || !sessionPersona || !ttsSessionId) {
+    if (
+      phase !== 'intro' ||
+      introStage !== 'greeting' ||
+      !session ||
+      !sessionPersona ||
+      !ttsSessionId
+    ) {
       return;
     }
     if (!interviewTTS.speechApisReady) return;
@@ -987,7 +1096,15 @@ export default function InterviewSessionPage() {
     return () => {
       cancelled = true;
     };
-  }, [introStage, interviewTTS.speechApisReady, isMuted, phase, session, sessionPersona, ttsSessionId]);
+  }, [
+    introStage,
+    interviewTTS.speechApisReady,
+    isMuted,
+    phase,
+    session,
+    sessionPersona,
+    ttsSessionId,
+  ]);
 
   const feedbackLineForAnswer = useCallback(
     (answer: string) => {
@@ -1001,9 +1118,15 @@ export default function InterviewSessionPage() {
         normalized.includes('impact') ||
         normalized.includes('improved');
       if (answer.trim().length > 120 || hasConcreteSignals) {
-        return randomItem(personality?.encouragementPhrases ?? []) ?? 'Great answer. That was clear and detailed.';
+        return (
+          randomItem(personality?.encouragementPhrases ?? []) ??
+          'Great answer. That was clear and detailed.'
+        );
       }
-      return randomItem(personality?.encouragementPhrases ?? []) ?? 'Nice start. Let us build on that with the next question.';
+      return (
+        randomItem(personality?.encouragementPhrases ?? []) ??
+        'Nice start. Let us build on that with the next question.'
+      );
     },
     [personality],
   );
@@ -1012,7 +1135,8 @@ export default function InterviewSessionPage() {
     if (phase !== 'transitioning' || !personality) return;
     const latestAnswer = answers[answers.length - 1]?.answerText ?? '';
     const feedbackLine: string = feedbackLineForAnswer(latestAnswer);
-    const phrase = randomItem(personality.transitionPhrases) ?? 'Next question.';
+    const phrase =
+      randomItem(personality.transitionPhrases) ?? 'Next question.';
 
     if (isMuted) {
       const t = window.setTimeout(() => beginQuestion(), 700);
@@ -1022,10 +1146,21 @@ export default function InterviewSessionPage() {
     void interviewTTS.speak(feedbackLine, {
       advanceOnUnavailable: true,
       onEnd: () => {
-        void interviewTTS.speak(phrase, { advanceOnUnavailable: true, onEnd: beginQuestion });
+        void interviewTTS.speak(phrase, {
+          advanceOnUnavailable: true,
+          onEnd: beginQuestion,
+        });
       },
     });
-  }, [answers, beginQuestion, feedbackLineForAnswer, interviewTTS.speak, isMuted, personality, phase]);
+  }, [
+    answers,
+    beginQuestion,
+    feedbackLineForAnswer,
+    interviewTTS.speak,
+    isMuted,
+    personality,
+    phase,
+  ]);
 
   useEffect(() => {
     if (phase === 'intro' && introStage === 'self_intro') {
@@ -1034,20 +1169,31 @@ export default function InterviewSessionPage() {
   }, [introStage, phase]);
 
   useEffect(() => {
-    if (phase !== 'processing' || !resultQ.data || promotedInterviewToResultsRef.current) return;
+    if (
+      phase !== 'processing' ||
+      !resultQ.data ||
+      promotedInterviewToResultsRef.current
+    )
+      return;
     if (resultQ.data.status === 'failed') {
       setRetryEvaluationError(resultQ.data.message);
       return;
     }
     if (resultQ.data.status !== 'completed') return;
-    if (phase === 'results') return;
     promotedInterviewToResultsRef.current = true;
     clearInterviewPendingResult(sessionId);
     setPhase('results');
     queueMicrotask(() => {
-      void queryClient.invalidateQueries({ queryKey: ['interview-session', sessionId], exact: true });
-      void queryClient.invalidateQueries({ queryKey: INTERVIEW_ADAPTIVE_PROFILE_KEY });
-      void queryClient.invalidateQueries({ queryKey: INTERVIEW_PREP_PROGRESS_KEY });
+      void queryClient.invalidateQueries({
+        queryKey: ['interview-session', sessionId],
+        exact: true,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: INTERVIEW_ADAPTIVE_PROFILE_KEY,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: INTERVIEW_PREP_PROGRESS_KEY,
+      });
     });
   }, [phase, queryClient, resultQ.data, sessionId]);
 
@@ -1087,86 +1233,94 @@ export default function InterviewSessionPage() {
     submitAnswers.mutate(
       { answers, idempotencyKey: `finish-${session.id}` },
       {
-      onSuccess: () => {
-        submitInterviewInFlightRef.current = false;
-        if (submitRetryTimeoutRef.current) {
-          window.clearTimeout(submitRetryTimeoutRef.current);
-          submitRetryTimeoutRef.current = null;
-        }
-        if (submitRetryCountdownIntervalRef.current) {
-          window.clearInterval(submitRetryCountdownIntervalRef.current);
-          submitRetryCountdownIntervalRef.current = null;
-        }
-        clearPendingSubmission(session.id);
-        setSubmitRetryAttempt(0);
-        setSubmitRetryCountdown(null);
-        markInterviewPendingResult(
-          session.id,
-          session.jobTitle ?? session.company ?? undefined,
-        );
-        pendingSpeakNextRef.current = false;
-        finishingInterviewRef.current = true;
-        interviewTtsStopRef.current();
-        setPhase('processing');
-      },
-      onError: (err) => {
-        submitInterviewInFlightRef.current = false;
-        const canRetry = shouldRetryInterviewSubmit(err);
-        const nextAttempt = submitRetryAttempt + 1;
-        if (canRetry && nextAttempt <= MAX_SUBMIT_RETRY_ATTEMPTS) {
-          const delayMs = computeSubmitRetryDelayMs(nextAttempt);
-          const delaySeconds = Math.max(1, Math.ceil(delayMs / 1000));
-          setSubmitRetryAttempt(nextAttempt);
-          setSubmitRetryCountdown(delaySeconds);
-          setSubmitError(
-            `Temporary network or service limit reached. Retrying submission automatically in ${delaySeconds}s (attempt ${nextAttempt}/${MAX_SUBMIT_RETRY_ATTEMPTS}).`,
-          );
-          if (submitRetryCountdownIntervalRef.current) {
-            window.clearInterval(submitRetryCountdownIntervalRef.current);
-          }
-          submitRetryCountdownIntervalRef.current = window.setInterval(() => {
-            setSubmitRetryCountdown((prev) => {
-              if (prev === null || prev <= 1) return 0;
-              return prev - 1;
-            });
-          }, 1000);
+        onSuccess: () => {
+          submitInterviewInFlightRef.current = false;
           if (submitRetryTimeoutRef.current) {
             window.clearTimeout(submitRetryTimeoutRef.current);
+            submitRetryTimeoutRef.current = null;
           }
-          submitRetryTimeoutRef.current = window.setTimeout(() => {
+          if (submitRetryCountdownIntervalRef.current) {
+            window.clearInterval(submitRetryCountdownIntervalRef.current);
+            submitRetryCountdownIntervalRef.current = null;
+          }
+          clearPendingSubmission(session.id);
+          setSubmitRetryAttempt(0);
+          setSubmitRetryCountdown(null);
+          markInterviewPendingResult(
+            session.id,
+            session.jobTitle ?? session.company ?? undefined,
+          );
+          pendingSpeakNextRef.current = false;
+          finishingInterviewRef.current = true;
+          interviewTtsStopRef.current();
+          setPhase('processing');
+        },
+        onError: (err) => {
+          submitInterviewInFlightRef.current = false;
+          const canRetry = shouldRetryInterviewSubmit(err);
+          const nextAttempt = submitRetryAttempt + 1;
+          if (canRetry && nextAttempt <= MAX_SUBMIT_RETRY_ATTEMPTS) {
+            const delayMs = computeSubmitRetryDelayMs(nextAttempt);
+            const delaySeconds = Math.max(1, Math.ceil(delayMs / 1000));
+            setSubmitRetryAttempt(nextAttempt);
+            setSubmitRetryCountdown(delaySeconds);
+            setSubmitError(
+              `Temporary network or service limit reached. Retrying submission automatically in ${delaySeconds}s (attempt ${nextAttempt}/${MAX_SUBMIT_RETRY_ATTEMPTS}).`,
+            );
             if (submitRetryCountdownIntervalRef.current) {
               window.clearInterval(submitRetryCountdownIntervalRef.current);
-              submitRetryCountdownIntervalRef.current = null;
             }
-            setSubmitRetryCountdown(null);
-            setPhase('submitting');
-          }, delayMs);
-          setPhase('submit_retry_wait');
-          return;
-        }
-        if (submitRetryCountdownIntervalRef.current) {
-          window.clearInterval(submitRetryCountdownIntervalRef.current);
-          submitRetryCountdownIntervalRef.current = null;
-        }
-        setSubmitRetryCountdown(null);
-        if (isInterviewSessionExpired(err)) {
-          setSessionExpired(true);
-          finishingInterviewRef.current = false;
-          return;
-        }
-        finishingInterviewRef.current = true;
-        setSubmitError(getApiErrorMessage(err));
-        setPhase('answer_feedback');
+            submitRetryCountdownIntervalRef.current = window.setInterval(() => {
+              setSubmitRetryCountdown((prev) => {
+                if (prev === null || prev <= 1) return 0;
+                return prev - 1;
+              });
+            }, 1000);
+            if (submitRetryTimeoutRef.current) {
+              window.clearTimeout(submitRetryTimeoutRef.current);
+            }
+            submitRetryTimeoutRef.current = window.setTimeout(() => {
+              if (submitRetryCountdownIntervalRef.current) {
+                window.clearInterval(submitRetryCountdownIntervalRef.current);
+                submitRetryCountdownIntervalRef.current = null;
+              }
+              setSubmitRetryCountdown(null);
+              setPhase('submitting');
+            }, delayMs);
+            setPhase('submit_retry_wait');
+            return;
+          }
+          if (submitRetryCountdownIntervalRef.current) {
+            window.clearInterval(submitRetryCountdownIntervalRef.current);
+            submitRetryCountdownIntervalRef.current = null;
+          }
+          setSubmitRetryCountdown(null);
+          if (isInterviewSessionExpired(err)) {
+            setSessionExpired(true);
+            finishingInterviewRef.current = false;
+            return;
+          }
+          finishingInterviewRef.current = true;
+          setSubmitError(getApiErrorMessage(err));
+          setPhase('answer_feedback');
+        },
       },
-    },
     );
-  }, [answers, clearPendingSubmission, persistPendingSubmission, phase, session?.id, submitAnswers, submitRetryAttempt]);
+  }, [
+    answers,
+    clearPendingSubmission,
+    persistPendingSubmission,
+    phase,
+    session?.id,
+    submitAnswers,
+    submitRetryAttempt,
+  ]);
 
   const postInterviewThankYouScript = useMemo(
     () =>
       sessionPersona
         ? postInterviewThankYouMessage(sessionPersona)
-        : personality?.postInterviewThankYou ?? '',
+        : (personality?.postInterviewThankYou ?? ''),
     [personality?.postInterviewThankYou, sessionPersona],
   );
 
@@ -1212,13 +1366,23 @@ export default function InterviewSessionPage() {
 
   const leaveWhileScoring = useCallback(() => {
     if (!session?.id) return;
-    markInterviewPendingResult(session.id, session.jobTitle ?? session.company ?? undefined);
+    markInterviewPendingResult(
+      session.id,
+      session.jobTitle ?? session.company ?? undefined,
+    );
     pendingSpeakNextRef.current = false;
     finishingInterviewRef.current = true;
     interviewTTS.stop();
     stopVoiceCapture();
     router.push('/dashboard');
-  }, [interviewTTS, router, session?.company, session?.id, session?.jobTitle, stopVoiceCapture]);
+  }, [
+    interviewTTS,
+    router,
+    session?.company,
+    session?.id,
+    session?.jobTitle,
+    stopVoiceCapture,
+  ]);
 
   const onRetryScoring = useCallback(() => {
     setRetryEvaluationError(null);
@@ -1226,8 +1390,13 @@ export default function InterviewSessionPage() {
     promotedInterviewToResultsRef.current = false;
     retryEvaluation.mutate(undefined, {
       onSuccess: () => {
-        void queryClient.invalidateQueries({ queryKey: ['interview-result', sessionId] });
-        void queryClient.invalidateQueries({ queryKey: ['interview-session', sessionId], exact: true });
+        void queryClient.invalidateQueries({
+          queryKey: ['interview-result', sessionId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ['interview-session', sessionId],
+          exact: true,
+        });
         void resultQ.refetch();
       },
       onError: (err) => {
@@ -1250,12 +1419,20 @@ export default function InterviewSessionPage() {
 
     const localMap = new Map(answers.map((a) => [a.questionId, a]));
     let turns = session.turns ?? [];
-    let payload = buildSubmitAnswersFromTurns(turns, localMap, session.questions);
+    let payload = buildSubmitAnswersFromTurns(
+      turns,
+      localMap,
+      session.questions,
+    );
 
     if (payload.length === 0) {
       const fresh = await sessionQ.refetch();
       turns = fresh.data?.turns ?? turns;
-      payload = buildSubmitAnswersFromTurns(turns, localMap, fresh.data?.questions ?? session.questions);
+      payload = buildSubmitAnswersFromTurns(
+        turns,
+        localMap,
+        fresh.data?.questions ?? session.questions,
+      );
     }
 
     if (payload.length === 0) {
@@ -1274,7 +1451,14 @@ export default function InterviewSessionPage() {
     });
     setAnswers(payload);
     setPhase('submitting');
-  }, [answers, interviewTTS, persistPendingSubmission, prep, session, sessionQ]);
+  }, [
+    answers,
+    interviewTTS,
+    persistPendingSubmission,
+    prep,
+    session,
+    sessionQ,
+  ]);
 
   const goToPrepQuestion = useCallback(
     (nav: { questionText?: string } | null | undefined) => {
@@ -1328,9 +1512,14 @@ export default function InterviewSessionPage() {
         return;
       }
 
-      const navPayload = resolveAnswerNavigationForChip(prep.lastFeedback, item.question);
+      const navPayload = resolveAnswerNavigationForChip(
+        prep.lastFeedback,
+        item.question,
+      );
       if (!navPayload?.turnId) {
-        setSubmitError('Could not start that follow-up. Try Next question or continue.');
+        setSubmitError(
+          'Could not start that follow-up. Try Next question or continue.',
+        );
         return;
       }
 
@@ -1369,7 +1558,10 @@ export default function InterviewSessionPage() {
       ? personaMemory.toneAdjustments.transitionPauseMs
       : INTERVIEW_NEXT_QUESTION_PAUSE_MS;
     const transitionPauseMs = isSimSession
-      ? transitionPauseWithSimulation(basePauseMs, lastSimulationSignalsRef.current)
+      ? transitionPauseWithSimulation(
+          basePauseMs,
+          lastSimulationSignalsRef.current,
+        )
       : basePauseMs;
     void sleep(transitionPauseMs).then(() => {
       setInterviewerThinking(false);
@@ -1379,7 +1571,8 @@ export default function InterviewSessionPage() {
         if (!adv || adv.done) {
           if (canEndInterviewSession(prep.questionProgress, feedbackSnapshot)) {
             setPhase('answer_feedback');
-            if (feedbackSnapshot) prep.restoreFeedbackSnapshot(feedbackSnapshot);
+            if (feedbackSnapshot)
+              prep.restoreFeedbackSnapshot(feedbackSnapshot);
             return;
           }
           finishingInterviewRef.current = true;
@@ -1424,7 +1617,7 @@ export default function InterviewSessionPage() {
     if (phase !== 'questioning' && phase !== 'answering') return;
     const text = prep.usePrep
       ? displayedQuestionText.trim() || prep.currentQuestionText
-      : questionRows[currentQuestionIndex]?.question ?? '';
+      : (questionRows[currentQuestionIndex]?.question ?? '');
     if (!text.trim()) return;
     pendingSpeakNextRef.current = false;
     const typingDelay = isSimSession
@@ -1462,13 +1655,16 @@ export default function InterviewSessionPage() {
   /** Live speed while the interviewer reads — Edge may not update rate in place, so restart from char offset. */
   useEffect(() => {
     const interviewerSpeaking =
-      phase === 'questioning' || (phase === 'intro' && introStage === 'greeting');
+      phase === 'questioning' ||
+      (phase === 'intro' && introStage === 'greeting');
     const v = voiceBridgeRef.current;
-    if (!interviewerSpeaking || isMuted || v?.isRecording || v?.isListening) return;
+    if (!interviewerSpeaking || isMuted || v?.isRecording || v?.isListening)
+      return;
     if (Math.abs(lastSpeakingSpeedRef.current - voiceRate) < 0.01) return;
     const full = speakingFullTextRef.current;
     if (!full) return;
-    const synthActive = interviewTTS.isSpeaking || interviewTTS.isSynthesisActive();
+    const synthActive =
+      interviewTTS.isSpeaking || interviewTTS.isSynthesisActive();
     if (!synthActive) {
       lastSpeakingSpeedRef.current = voiceRate;
       return;
@@ -1486,14 +1682,7 @@ export default function InterviewSessionPage() {
       speakQuestionText(full, resumeAt);
     }, 50);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    introStage,
-    interviewTTS,
-    isMuted,
-    phase,
-    speakQuestionText,
-    voiceRate,
-  ]);
+  }, [introStage, interviewTTS, isMuted, phase, speakQuestionText, voiceRate]);
 
   const submitCurrentAnswer = () => {
     if (!session) return;
@@ -1538,7 +1727,8 @@ export default function InterviewSessionPage() {
         setTypedAnswer('');
         setCurrentQuestionIndex(0);
         prep.syncQueueFromSession();
-        const firstQ = prep.currentQuestionText.trim() || currentQuestion?.question?.trim();
+        const firstQ =
+          prep.currentQuestionText.trim() || currentQuestion?.question?.trim();
         beginQuestion(firstQ || undefined);
       };
       if (isMuted) {
@@ -1549,15 +1739,21 @@ export default function InterviewSessionPage() {
         begin();
         return;
       }
-      void interviewTTS.speak("Great, thank you for sharing. Let's get started with the interview.", {
-        advanceOnUnavailable: true,
-        onEnd: begin,
-      });
+      void interviewTTS.speak(
+        "Great, thank you for sharing. Let's get started with the interview.",
+        {
+          advanceOnUnavailable: true,
+          onEnd: begin,
+        },
+      );
       return;
     }
 
     if (!currentQuestion) return;
-    const durationSeconds = Math.max(1, Math.round((Date.now() - startTime.getTime()) / 1000));
+    const durationSeconds = Math.max(
+      1,
+      Math.round((Date.now() - startTime.getTime()) / 1000),
+    );
 
     if (prep.usePrep && prep.activePracticeChip && phase === 'answering') {
       interviewTTS.stop();
@@ -1641,7 +1837,8 @@ export default function InterviewSessionPage() {
           setTypedAnswer('');
           setAnswerPipelineStatus('analyzing');
           if (res.simulation) {
-            pendingQuestionDifficultyRef.current = res.simulation.nextQuestionDifficulty;
+            pendingQuestionDifficultyRef.current =
+              res.simulation.nextQuestionDifficulty;
             lastSimulationSignalsRef.current = res.simulation.signals;
           }
           const thinkingDelay = isSimSession
@@ -1677,7 +1874,9 @@ export default function InterviewSessionPage() {
             return;
           }
           if (code === 'TURN_ALREADY_ANSWERED') {
-            setSubmitError('This question was already submitted. Continue to the next step.');
+            setSubmitError(
+              'This question was already submitted. Continue to the next step.',
+            );
             return;
           }
           setSubmitError(getApiErrorMessage(err));
@@ -1685,7 +1884,10 @@ export default function InterviewSessionPage() {
       return;
     }
 
-    const nextAnswers = [...answers, { questionId: currentQuestion.id, answerText, durationSeconds }];
+    const nextAnswers = [
+      ...answers,
+      { questionId: currentQuestion.id, answerText, durationSeconds },
+    ];
     setAnswers(nextAnswers);
     voiceBridgeRef.current?.reset();
     setTypedAnswer('');
@@ -1718,15 +1920,27 @@ export default function InterviewSessionPage() {
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           {isInterviewSessionExpired(sessionQ.error) ? (
-            <Button type="button" variant="primary" onClick={() => router.push('/dashboard/interview')}>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => router.push('/dashboard/interview')}
+            >
               Start new interview
             </Button>
           ) : (
-            <Button type="button" variant="primary" onClick={() => void sessionQ.refetch()}>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => void sessionQ.refetch()}
+            >
               Try again
             </Button>
           )}
-          <Button type="button" variant="ghost" onClick={() => router.push('/dashboard/interview/history')}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => router.push('/dashboard/interview/history')}
+          >
             Back to history
           </Button>
         </div>
@@ -1751,16 +1965,28 @@ export default function InterviewSessionPage() {
   ) {
     return (
       <div className="mx-auto flex max-w-md flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 bg-[#0C0F0F] px-6 py-12 text-center">
-        <p className="text-sm font-semibold text-white">Interview not ready yet</p>
+        <p className="text-sm font-semibold text-white">
+          Interview not ready yet
+        </p>
         <p className="text-xs text-white/55">
-          The server has not attached questions to this session. That often happens for a short time right after the
-          session is created. Try refreshing—if it persists, start a new practice interview from Interview preparation.
+          The server has not attached questions to this session. That often
+          happens for a short time right after the session is created. Try
+          refreshing—if it persists, start a new practice interview from
+          Interview preparation.
         </p>
         <div className="flex flex-wrap justify-center gap-2">
-          <Button type="button" variant="primary" onClick={() => void sessionQ.refetch()}>
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => void sessionQ.refetch()}
+          >
             Refresh
           </Button>
-          <Button type="button" variant="ghost" onClick={() => router.push('/dashboard/interview/history')}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => router.push('/dashboard/interview/history')}
+          >
             Back to history
           </Button>
         </div>
@@ -1774,12 +2000,17 @@ export default function InterviewSessionPage() {
       : session.totalQuestions;
   const total = prep.usePrep ? Math.max(prepMainTotal, 1) : questionRows.length;
   const questionCounter = prep.usePrep
-    ? Math.min(prep.answeredCount + (phase === 'answer_feedback' ? 0 : 1), total)
+    ? Math.min(
+        prep.answeredCount + (phase === 'answer_feedback' ? 0 : 1),
+        total,
+      )
     : Math.min(currentQuestionIndex + 1, total);
   const progress =
     prep.usePrep && prep.questionProgress && prep.questionProgress.mainTotal > 0
       ? Math.round(
-          (prep.questionProgress.mainAnswered / prep.questionProgress.mainTotal) * 100,
+          (prep.questionProgress.mainAnswered /
+            prep.questionProgress.mainTotal) *
+            100,
         )
       : total > 0
         ? Math.round((questionCounter / total) * 100)
@@ -1792,9 +2023,10 @@ export default function InterviewSessionPage() {
     ? 'Side question (practice)'
     : prep.practiceFeedback && lastPracticeQuestionText
       ? 'Side question (practice)'
-      : prep.currentTurn?.label ?? null;
+      : (prep.currentTurn?.label ?? null);
   const inIntroSelf = phase === 'intro' && introStage === 'self_intro';
-  const showAdaptiveBadge = session.adaptiveDifficulty !== false && !isSimSession;
+  const showAdaptiveBadge =
+    session.adaptiveDifficulty !== false && !isSimSession;
   const liveCoachMessage =
     (phase === 'answering'
       ? (interviewSim.nudgeMessage ?? simStateQ.data?.nudgeMessage)
@@ -1803,8 +2035,8 @@ export default function InterviewSessionPage() {
     '';
   const interruptionBannerVisible = Boolean(
     interviewSim.active &&
-      (interviewSim.interruptionAlert ||
-        (phase === 'questioning' && prep.isFollowUp)),
+    (interviewSim.interruptionAlert ||
+      (phase === 'questioning' && prep.isFollowUp)),
   );
   const interruptionBannerMessage =
     interviewSim.interruptionAlert ??
@@ -1819,7 +2051,7 @@ export default function InterviewSessionPage() {
 
   const resultForView: InterviewResult | null | undefined =
     phase === 'results'
-      ? interviewResultFromPoll(resultQ.data) ?? session.result
+      ? (interviewResultFromPoll(resultQ.data) ?? session.result)
       : null;
 
   if (phase === 'results' && resultForView) {
@@ -1827,7 +2059,9 @@ export default function InterviewSessionPage() {
       <InterviewResultView
         result={resultForView}
         session={session}
-        onBackToInterviewList={() => router.push('/dashboard/interview/history')}
+        onBackToInterviewList={() =>
+          router.push('/dashboard/interview/history')
+        }
         onPracticeAgain={() => router.push('/dashboard/interview')}
         onDone={() => router.push('/dashboard')}
       />
@@ -1845,7 +2079,9 @@ export default function InterviewSessionPage() {
           : null
       : null;
   const showExpiredSession =
-    phase === 'processing' && resultQ.isError && httpStatusFromUnknown(resultQ.error) === 410;
+    phase === 'processing' &&
+    resultQ.isError &&
+    httpStatusFromUnknown(resultQ.error) === 410;
   const showEvaluationFailedWithoutResult =
     phase === 'processing' &&
     (sessionStatus === 'evaluation_failed' || evaluationPollFailed) &&
@@ -1881,13 +2117,18 @@ export default function InterviewSessionPage() {
 
   const jobTitle = (session.jobTitle ?? '').trim();
   const company = (session.company ?? '').trim();
-  const jobDescription = (session as { jobDescription?: string }).jobDescription?.trim() ?? '';
+  const jobDescription =
+    (session as { jobDescription?: string }).jobDescription?.trim() ?? '';
   const hasJobContext = Boolean(jobTitle || company || jobDescription);
 
-  const interviewerDisplayName = sessionPersona?.personName?.trim() || 'Interviewer';
-  const interviewerFirstName = interviewerDisplayName.split(/\s+/)[0] ?? 'Interviewer';
+  const interviewerDisplayName =
+    sessionPersona?.personName?.trim() || 'Interviewer';
+  const interviewerFirstName =
+    interviewerDisplayName.split(/\s+/)[0] ?? 'Interviewer';
   const isScoringPhase =
-    phase === 'submitting' || phase === 'submit_retry_wait' || phase === 'processing';
+    phase === 'submitting' ||
+    phase === 'submit_retry_wait' ||
+    phase === 'processing';
 
   const networkNotice =
     sessionQ.isFetching && session
@@ -1905,610 +2146,713 @@ export default function InterviewSessionPage() {
       turnId={whisperTurnId}
       blocked={sessionExpired}
     >
-    <IntroMicPrimeEffect
-      phase={phase}
-      introStage={introStage}
-      interviewerAudioBusy={
-        interviewTTS.isSpeaking || interviewTTS.isInterviewerAudioActive
-      }
-      voiceBridgeRef={voiceBridgeRef}
-    />
-    <div
-      className={cn(
-        'ip-page relative mx-auto flex w-full max-w-[1400px] min-h-[calc(100dvh-3.5rem)] max-h-[calc(100dvh-3.5rem)] flex-col overflow-hidden',
-        isScoringPhase && 'ip-page--scoring',
-      )}
-    >
-    <InterviewRoomAtmosphereLayer
-      active={isSimSession && interviewSim.active}
-      atmosphere={interviewSim.atmosphere ?? 'calm'}
-      pressureTier={interviewSim.pressureTier}
-      className="ip-session-shell min-h-0 flex-1 overflow-hidden"
-    >
-      {sessionExpired ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4 backdrop-blur-sm"
-          role="dialog"
-          aria-labelledby="session-expired-title"
+      <IntroMicPrimeEffect
+        phase={phase}
+        introStage={introStage}
+        interviewerAudioBusy={
+          interviewTTS.isSpeaking || interviewTTS.isInterviewerAudioActive
+        }
+        voiceBridgeRef={voiceBridgeRef}
+      />
+      <div
+        className={cn(
+          'ip-page relative mx-auto flex w-full max-w-[1400px] min-h-[calc(100dvh-3.5rem)] max-h-[calc(100dvh-3.5rem)] flex-col overflow-hidden',
+          isScoringPhase && 'ip-page--scoring',
+        )}
+      >
+        <InterviewRoomAtmosphereLayer
+          active={isSimSession && interviewSim.active}
+          atmosphere={interviewSim.atmosphere ?? 'calm'}
+          pressureTier={interviewSim.pressureTier}
+          className="ip-session-shell min-h-0 flex-1 overflow-hidden"
         >
-          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#0C0F0F] p-6 shadow-2xl">
-            <h3 id="session-expired-title" className="text-lg font-semibold text-white">
-              This practice session has expired
-            </h3>
-            <p className="mt-2 text-sm leading-relaxed text-white/60">
-              The server no longer accepts answers for this session — that usually happens after the session
-              times out or the tab was left open a long time. Your work on this device is not lost if you still
-              see your transcript; start a new interview to continue practicing.
-            </p>
-            <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-              <Button
-                type="button"
-                variant="primary"
-                className="flex-1"
-                onClick={() => router.push('/dashboard/interview')}
-              >
-                Start new interview
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="flex-1"
-                onClick={() => router.push('/dashboard/interview/history')}
-              >
-                View history
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-      <InterviewNetworkNotice message={networkNotice} visible={Boolean(networkNotice)} />
-      {submitError && !sessionExpired ? (
-        <div className="shrink-0 rounded-t-2xl border-b border-amber-500/20 bg-amber-500/10 px-4 py-2 text-sm text-amber-100/95">
-          {submitError}
-        </div>
-      ) : null}
-
-      {(phase === 'submitting' || phase === 'submit_retry_wait' || phase === 'processing') &&
-      !showExpiredSession &&
-      !showEvaluationFailedWithoutResult ? (
-        <div className="ip-scoring-overlay absolute inset-0 rounded-2xl">
-          <InterviewScoringCelebrationPanel
-            phase={phase === 'submit_retry_wait' ? 'submit_retry_wait' : phase}
-            interviewerName={interviewerDisplayName}
-            thankYouMessage={
-              postInterviewThankYouScript ||
-              `Thank you for completing the interview. Your personalised results are being prepared — usually within a minute. You can stay here or go to your dashboard and we will alert you when they are ready.`
-            }
-            sessionPersona={sessionPersona}
-            processingTitle={phase === 'processing' ? waitStateTitle : undefined}
-            processingDescription={phase === 'processing' ? waitStateBody : undefined}
-            processingSteps={
-              phase === 'processing'
-                ? [
-                    'Reviewing clarity, structure, and relevance across your answers',
-                    'Building your readiness score and improvement plan',
-                    'Saving results so you can review them anytime',
-                  ]
-                : undefined
-            }
-            onLeaveToDashboard={leaveWhileScoring}
-            footer={
-              <>
-                {phase === 'processing' && resultPollError && !showExpiredSession ? (
-                  <p className="text-center text-xs text-amber-100/90">{resultPollError}</p>
-                ) : null}
-                {phase === 'processing' && retryEvaluationError ? (
-                  <p className="text-center text-xs text-amber-100/90">{retryEvaluationError}</p>
-                ) : null}
-                {phase === 'processing' && showRetryScoring ? (
+          {sessionExpired ? (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4 backdrop-blur-sm"
+              role="dialog"
+              aria-labelledby="session-expired-title"
+            >
+              <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#0C0F0F] p-6 shadow-2xl">
+                <h3
+                  id="session-expired-title"
+                  className="text-lg font-semibold text-white"
+                >
+                  This practice session has expired
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-white/60">
+                  The server no longer accepts answers for this session — that
+                  usually happens after the session times out or the tab was
+                  left open a long time. Your work on this device is not lost if
+                  you still see your transcript; start a new interview to
+                  continue practicing.
+                </p>
+                <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="flex-1"
+                    onClick={() => router.push('/dashboard/interview')}
+                  >
+                    Start new interview
+                  </Button>
                   <Button
                     type="button"
                     variant="ghost"
-                    className="w-full"
+                    className="flex-1"
+                    onClick={() => router.push('/dashboard/interview/history')}
+                  >
+                    View history
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+          <InterviewNetworkNotice
+            message={networkNotice}
+            visible={Boolean(networkNotice)}
+          />
+          {submitError && !sessionExpired ? (
+            <div className="shrink-0 rounded-t-2xl border-b border-amber-500/20 bg-amber-500/10 px-4 py-2 text-sm text-amber-100/95">
+              {submitError}
+            </div>
+          ) : null}
+
+          {(phase === 'submitting' ||
+            phase === 'submit_retry_wait' ||
+            phase === 'processing') &&
+          !showExpiredSession &&
+          !showEvaluationFailedWithoutResult ? (
+            <div className="ip-scoring-overlay absolute inset-0 rounded-2xl">
+              <InterviewScoringCelebrationPanel
+                phase={
+                  phase === 'submit_retry_wait' ? 'submit_retry_wait' : phase
+                }
+                interviewerName={interviewerDisplayName}
+                thankYouMessage={
+                  postInterviewThankYouScript ||
+                  `Thank you for completing the interview. Your personalised results are being prepared — usually within a minute. You can stay here or go to your dashboard and we will alert you when they are ready.`
+                }
+                sessionPersona={sessionPersona}
+                processingTitle={
+                  phase === 'processing' ? waitStateTitle : undefined
+                }
+                processingDescription={
+                  phase === 'processing' ? waitStateBody : undefined
+                }
+                processingSteps={
+                  phase === 'processing'
+                    ? [
+                        'Reviewing clarity, structure, and relevance across your answers',
+                        'Building your readiness score and improvement plan',
+                        'Saving results so you can review them anytime',
+                      ]
+                    : undefined
+                }
+                onLeaveToDashboard={leaveWhileScoring}
+                footer={
+                  <>
+                    {phase === 'processing' &&
+                    resultPollError &&
+                    !showExpiredSession ? (
+                      <p className="text-center text-xs text-amber-100/90">
+                        {resultPollError}
+                      </p>
+                    ) : null}
+                    {phase === 'processing' && retryEvaluationError ? (
+                      <p className="text-center text-xs text-amber-100/90">
+                        {retryEvaluationError}
+                      </p>
+                    ) : null}
+                    {phase === 'processing' && showRetryScoring ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="w-full"
+                        disabled={retryEvaluation.isPending}
+                        onClick={() => onRetryScoring()}
+                      >
+                        {retryEvaluation.isPending
+                          ? 'Retrying…'
+                          : 'Retry scoring'}
+                      </Button>
+                    ) : null}
+                    {phase === 'processing' &&
+                    waitSeconds > scoringPollMaxSeconds ? (
+                      <button
+                        type="button"
+                        className="text-xs text-[#00C9B1] underline-offset-2 hover:underline"
+                        onClick={() =>
+                          router.push('/dashboard/interview/history')
+                        }
+                      >
+                        Check interview history →
+                      </button>
+                    ) : null}
+                  </>
+                }
+              />
+            </div>
+          ) : null}
+
+          {(phase === 'submitting' ||
+            phase === 'submit_retry_wait' ||
+            phase === 'processing') &&
+          (showExpiredSession || showEvaluationFailedWithoutResult) ? (
+            <div className="ip-scoring-overlay absolute inset-0 rounded-2xl">
+              {showExpiredSession ? (
+                <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+                  <p className="max-w-sm text-sm font-semibold text-white">
+                    {resultPollError}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="mt-1"
+                    onClick={() => router.push('/dashboard/interview')}
+                  >
+                    Start a new interview
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+                  <p className="max-w-sm text-sm font-semibold text-white">
+                    We had trouble scoring your interview. Please try again.
+                  </p>
+                  {retryEvaluationError ? (
+                    <p className="max-w-sm text-xs text-amber-100/90">
+                      {retryEvaluationError}
+                    </p>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="mt-1"
                     disabled={retryEvaluation.isPending}
                     onClick={() => onRetryScoring()}
                   >
-                    {retryEvaluation.isPending ? 'Retrying…' : 'Retry scoring'}
+                    {retryEvaluation.isPending
+                      ? 'Retrying…'
+                      : 'Retry Evaluation →'}
                   </Button>
-                ) : null}
-                {phase === 'processing' && waitSeconds > scoringPollMaxSeconds ? (
-                  <button
-                    type="button"
-                    className="text-xs text-[#00C9B1] underline-offset-2 hover:underline"
-                    onClick={() => router.push('/dashboard/interview/history')}
-                  >
-                    Check interview history →
-                  </button>
-                ) : null}
-              </>
-            }
-          />
-        </div>
-      ) : null}
-
-      {(phase === 'submitting' || phase === 'submit_retry_wait' || phase === 'processing') &&
-      (showExpiredSession || showEvaluationFailedWithoutResult) ? (
-        <div className="ip-scoring-overlay absolute inset-0 rounded-2xl">
-          {showExpiredSession ? (
-            <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
-              <p className="max-w-sm text-sm font-semibold text-white">{resultPollError}</p>
-              <Button type="button" variant="primary" className="mt-1" onClick={() => router.push('/dashboard/interview')}>
-                Start a new interview
-              </Button>
-            </div>
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
-              <p className="max-w-sm text-sm font-semibold text-white">
-                We had trouble scoring your interview. Please try again.
-              </p>
-              {retryEvaluationError ? (
-                <p className="max-w-sm text-xs text-amber-100/90">{retryEvaluationError}</p>
-              ) : null}
-              <Button
-                type="button"
-                variant="primary"
-                className="mt-1"
-                disabled={retryEvaluation.isPending}
-                onClick={() => onRetryScoring()}
-              >
-                {retryEvaluation.isPending ? 'Retrying…' : 'Retry Evaluation →'}
-              </Button>
-            </div>
-          )}
-        </div>
-      ) : null}
-
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:h-full lg:min-h-0 lg:flex-row">
-        {/* Main stage (Meet: primary video area) */}
-        <div className="ip-panel-left ip-live-split-left relative flex min-h-0 flex-1 flex-col overflow-hidden border-b border-[var(--border-subtle)] lg:min-h-0 lg:border-b-0 lg:border-r">
-          <button
-            type="button"
-            className="ip-close-btn"
-            aria-label="Leave interview"
-            onClick={() => setShowExitModal(true)}
-          >
-            <X className="h-4 w-4" />
-          </button>
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-y-contain pb-4 pt-12">
-            {phase === 'intro' ? (
-              <div
-                className="mx-5 mb-2 rounded-[var(--radius-lg)] border border-[rgba(245,158,11,0.25)] bg-[rgba(245,158,11,0.08)] px-4 py-3"
-                role="note"
-              >
-                <p className="text-[13px] leading-relaxed text-[var(--text-secondary)]">
-                  <span className="font-semibold text-[var(--text-primary)]">Quiet space recommended.</span>{' '}
-                  Voice answers work best without background noise. If you are not in a quiet place, switch to{' '}
-                  <span className="font-medium text-[var(--text-teal)]">Type</span> in the response panel.
-                </p>
-              </div>
-            ) : null}
-            <div className="px-5">
-              {inIntroSelf ? (
-                <p className="pr-10 text-[13px] font-medium text-[var(--text-muted)]">Introduction</p>
-              ) : (
-                <>
-                  <div className="flex flex-wrap items-center gap-2 pr-10">
-                    {prep.usePrep ? (
-                      <PrepQuestionProgress
-                        progress={prep.questionProgress}
-                        currentMainQuestionNumber={currentMainQuestionNumber}
-                        sidePracticeAnsweredCount={sidePracticeAnsweredCount}
-                        turnLabel={activeTurnLabel}
-                      />
-                    ) : (
-                      <p className="text-[13px] font-medium text-[var(--text-muted)]">
-                        Question {questionCounter} of {total}
-                      </p>
-                    )}
-                    {prep.usePrep && phase === 'answering' && !inIntroSelf ? (
-                      <QuestionStyleBadge
-                        hint={prep.pendingQuestionStyle}
-                        fading={prep.questionStyleFading}
-                      />
-                    ) : null}
-                  </div>
-                  <div className="ip-progress-bar mt-2">
-                    <div
-                      className="ip-progress-fill"
-                      style={{
-                        width: `${phase === 'intro' ? (introStage === 'greeting' ? 10 : 22) : progress}%`,
-                      }}
-                    />
-                  </div>
-                </>
+                </div>
               )}
             </div>
+          ) : null}
 
-            <div className="mx-5 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6">
-              {sessionPersona ? (
-                <div className="mb-3.5 flex items-center gap-2">
-                  <div className="relative">
-                    <InterviewAvatar
-                      personality={personaAvatarKey(sessionPersona)}
-                      isSpeaking={interviewTTS.isSpeaking && !isMuted}
-                      isListening={false}
-                      size="sm"
-                      demeanor={interviewSim.active ? interviewSim.avatarDemeanor : 'neutral'}
-                    />
-                    {interviewSim.active ? (
-                      <InterviewEmotionIndicator
-                        emotion={interviewSim.emotion}
-                        compact
-                        className="absolute -bottom-1 -right-1 shadow-sm"
-                      />
-                    ) : null}
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:h-full lg:min-h-0 lg:flex-row">
+            {/* Main stage (Meet: primary video area) */}
+            <div className="ip-panel-left ip-live-split-left relative flex min-h-0 flex-1 flex-col overflow-hidden border-b border-[var(--border-subtle)] lg:min-h-0 lg:border-b-0 lg:border-r">
+              <button
+                type="button"
+                className="ip-close-btn"
+                aria-label="Leave interview"
+                onClick={() => setShowExitModal(true)}
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-y-contain pb-4 pt-12">
+                {phase === 'intro' ? (
+                  <div
+                    className="mx-5 mb-2 rounded-[var(--radius-lg)] border border-[rgba(245,158,11,0.25)] bg-[rgba(245,158,11,0.08)] px-4 py-3"
+                    role="note"
+                  >
+                    <p className="text-[13px] leading-relaxed text-[var(--text-secondary)]">
+                      <span className="font-semibold text-[var(--text-primary)]">
+                        Quiet space recommended.
+                      </span>{' '}
+                      Voice answers work best without background noise. If you
+                      are not in a quiet place, switch to{' '}
+                      <span className="font-medium text-[var(--text-teal)]">
+                        Type
+                      </span>{' '}
+                      in the response panel.
+                    </p>
                   </div>
-                  <p className="text-xs text-[var(--text-muted)]">
-                    {interviewerDisplayName} {phase === 'intro' ? 'says:' : 'asks:'}
-                    {isSimSession && interviewSim.active ? (
-                      <span className="ml-1.5 text-[10px] text-[var(--text-muted)]">
-                        · adapted to your progress
-                      </span>
-                    ) : null}
-                  </p>
-                </div>
-              ) : null}
-              <TypingText
-                text={interviewerQuestionText}
-                isActive={phase === 'questioning' || (phase === 'intro' && introStage === 'greeting')}
-                charIndex={spokenCharIndex}
-                className="text-left text-base font-medium leading-relaxed text-[var(--text-primary)]"
-              />
-              <QuestionReplayButton
-                visible={
-                  (phase === 'answering' ||
-                    inIntroSelf ||
-                    (phase === 'intro' && introStage === 'greeting')) &&
-                  Boolean(
-                    displayedQuestionText.trim() ||
-                      currentQuestion?.question?.trim() ||
-                      sessionGreetingMessage,
-                  )
-                }
-                onReplay={replayQuestion}
-                interviewerSpeaking={interviewTTS.isSpeaking}
-              />
-            </div>
-
-            {hasJobContext ? (
-              <div className="mx-5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] px-4 py-3.5">
-                <p className="ip-section-label">Interview context</p>
-                <p className="mt-1.5 text-sm font-semibold text-[var(--text-primary)]">
-                  {jobTitle || 'Interview practice'}
-                  {company ? <span className="text-white/55"> · {company}</span> : null}
-                </p>
-                {jobDescription ? (
-                  <details className="mt-2 rounded-xl border border-white/10 bg-[#0B1010] px-3 py-2">
-                    <summary className="cursor-pointer select-none text-xs font-semibold text-white/70">
-                      Job description
-                      <span className="ml-2 text-[11px] font-normal text-white/40">(collapsed)</span>
-                    </summary>
-                    <div className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-white/55">
-                      {jobDescription}
-                    </div>
-                  </details>
                 ) : null}
-              </div>
-            ) : null}
-
-            {sessionPersona ? (
-              <SessionPersonaHeaderLive
-                persona={sessionPersona}
-                isSpeaking={interviewTTS.isSpeaking && !isMuted}
-                phase={phase}
-                prepMode={prepMode}
-                adaptiveOn={showAdaptiveBadge}
-              />
-            ) : null}
-
-            <SimulationPanel
-              isSimSession={isSimSession}
-              showAdaptiveBadge={showAdaptiveBadge}
-              interviewSim={interviewSim}
-              interruptionBannerVisible={interruptionBannerVisible}
-              interruptionBannerMessage={interruptionBannerMessage}
-              pressureLabel={pressureLabel}
-            />
-
-            {adaptationNote && !prep.adaptiveSnapshot.session?.adaptationReason ? (
-              <p className="mx-5 text-[12px] italic text-[var(--text-muted)]">{adaptationNote}</p>
-            ) : prep.adaptiveSnapshot.session?.adaptationReason ? (
-              <p className="mx-5 text-[12px] italic text-[var(--text-muted)]">
-                {prep.adaptiveSnapshot.session.adaptationReason}
-              </p>
-            ) : null}
-            {showAdaptiveBadge && personaMemory.toneAdjustments.moodHint ? (
-              <p className="mx-5 text-[11px] text-[var(--text-muted)]">
-                {personaMemory.toneAdjustments.moodHint}
-              </p>
-            ) : null}
-            {isSimSession && pressureLabel ? (
-              <p className="text-center text-[11px] font-semibold text-amber-200/90">{pressureLabel}</p>
-            ) : null}
-
-            {prep.isFollowUp && !prep.activePracticeChip && phase !== 'answer_feedback' ? (
-              <FollowUpBanner reason={prep.followUpReason?.reason} />
-            ) : null}
-
-            {!isMuted ? (
-              <InterviewVoiceBanner
-                issue={interviewTTS.playbackIssue}
-                onDismiss={interviewTTS.clearPlaybackIssue}
-                onRetryPremium={interviewTTS.retryLastSpeech}
-                onUseDeviceVoice={interviewTTS.useDeviceVoiceForLastLine}
-                deviceVoiceAvailable={interviewTTS.isSpeechSynthesisSupported}
-              />
-            ) : null}
-
-            {interviewerThinking ? (
-              <InterviewerThinkingIndicator
-                interviewerName={interviewerFirstName}
-                message={
-                  isSimSession && phase === 'questioning'
-                    ? `${interviewerFirstName} is preparing the next question…`
-                    : isSimSession
-                      ? `${interviewerFirstName} is thinking…`
-                      : undefined
-                }
-              />
-            ) : null}
-          </div>
-        </div>
-
-        {/* Side panel: answer + actions (Meet: chat / controls rail) */}
-        <div
-          className={cn(
-            'ip-panel-right ip-live-split-right flex min-h-0 w-full min-w-0 shrink-0 flex-col overflow-hidden border-t border-[var(--border-subtle)] lg:min-h-0 lg:border-l lg:border-t-0',
-            'max-sm:ip-panel-right-sheet',
-            mobileResponseOpen && 'max-sm:ip-panel-right-sheet-open',
-          )}
-        >
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            {prep.usePrep && phase !== 'loading' && phase !== 'results' ? (
-              <div className="sticky top-0 z-10 flex justify-end border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]/95 px-4 py-2 backdrop-blur-sm">
-                <CoachingStickyToggle
-                  settings={coaching.settings}
-                  disabled={coaching.isUpdating}
-                  onToggle={() => coaching.setEnabled(!coaching.settings.enabled)}
-                />
-              </div>
-            ) : null}
-            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain px-0 pb-2">
-            {prep.usePrep && phase !== 'results' ? (
-              <GrowthMiniPanel
-                skills={growthSkills}
-                improvementTrend={
-                  skillProfileQ.data?.improvementTrend ??
-                  prep.lastPersonalization?.weaknessProfile?.trend
-                }
-                weaknessTrend={
-                  prep.lastPersonalization?.weaknessProfile?.trend ??
-                  adaptiveProfileQ.data?.weaknessTrend
-                }
-                topWeaknesses={
-                  prep.lastPersonalization?.weaknessProfile?.topWeaknesses ??
-                  skillProfileQ.data?.weaknessProfile?.topWeaknesses ??
-                  adaptiveProfileQ.data?.lastWeaknesses
-                }
-              />
-            ) : null}
-
-            {coaching.settings.enabled &&
-            prep.coachHints.length > 0 &&
-            (phase === 'answer_feedback' || phase === 'answering') ? (
-              <CoachHintToasts hints={prep.coachHints} urgency={coachHintUrgency} />
-            ) : null}
-
-            {isSimSession &&
-            simTimer.active &&
-            prep.adaptiveSnapshot.session?.recommendedDifficulty !== 'easy' ? (
-              <PressureTimerBar
-                remainingSec={simTimer.remaining}
-                limitSec={simTimer.limit}
-                ratio={simTimer.ratio}
-                isLow={simTimer.isLow || interviewSim.signals.includes('TIME_DELAY_HIGH')}
-                pressureLabel={pressureLabel}
-              />
-            ) : null}
-
-            {showAdaptiveBadge && prep.usePrep && (phase === 'answering' || phase === 'answer_feedback') ? (
-              <SessionAdaptiveRail
-                snapshot={prep.adaptiveSnapshot}
-                evolutionHistory={prep.evolutionHistory}
-                showEvolution={false}
-                difficultyPulse={prep.difficultyPulse}
-                className="border-b border-[var(--border-subtle)] pb-3"
-              />
-            ) : null}
-
-            {prep.usePrep &&
-            sessionId &&
-            prep.currentTurn?.id &&
-            !prep.activePracticeChip &&
-            !prep.practiceFeedback ? (
-              <InterviewCoachingLayer
-                sessionId={sessionId}
-                turnId={prep.currentTurn.id}
-                questionContext={prep.currentTurn.context}
-                phase={phase}
-                typedAnswer={typedAnswer}
-                elapsedSeconds={Math.max(
-                  0,
-                  Math.round((Date.now() - startTime.getTime()) / 1000),
-                )}
-                enabled={prep.usePrep && coaching.settings.enabled}
-                coachingRef={engineCoachingRef}
-              />
-            ) : null}
-
-            {sessionPersona && liveCoachMessage && phase === 'answering' ? (
-              <InterviewerNudgeBanner persona={sessionPersona} message={liveCoachMessage} />
-            ) : null}
-
-            {phase === 'answering' || inIntroSelf || (phase === 'intro' && introStage === 'greeting') ? (
-            <div className="border-b border-[var(--border-subtle)] px-5 py-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="ip-section-label">Your response</p>
-                  <p className="mt-1 text-[15px] font-semibold text-[var(--text-primary)]">
-                    {inIntroSelf ? 'Introduce yourself' : 'Answer this question'}
-                  </p>
+                <div className="px-5">
+                  {inIntroSelf ? (
+                    <p className="pr-10 text-[13px] font-medium text-[var(--text-muted)]">
+                      Introduction
+                    </p>
+                  ) : (
+                    <>
+                      <div className="flex flex-wrap items-center gap-2 pr-10">
+                        {prep.usePrep ? (
+                          <PrepQuestionProgress
+                            progress={prep.questionProgress}
+                            currentMainQuestionNumber={
+                              currentMainQuestionNumber
+                            }
+                            sidePracticeAnsweredCount={
+                              sidePracticeAnsweredCount
+                            }
+                            turnLabel={activeTurnLabel}
+                          />
+                        ) : (
+                          <p className="text-[13px] font-medium text-[var(--text-muted)]">
+                            Question {questionCounter} of {total}
+                          </p>
+                        )}
+                        {prep.usePrep &&
+                        phase === 'answering' &&
+                        !inIntroSelf ? (
+                          <QuestionStyleBadge
+                            hint={prep.pendingQuestionStyle}
+                            fading={prep.questionStyleFading}
+                          />
+                        ) : null}
+                      </div>
+                      <div className="ip-progress-bar mt-2">
+                        <div
+                          className="ip-progress-fill"
+                          style={{
+                            width: `${phase === 'intro' ? (introStage === 'greeting' ? 10 : 22) : progress}%`,
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
-                <QuestionReplayButton
-                  visible={
-                    (phase === 'answering' ||
-                      inIntroSelf ||
-                      (phase === 'intro' && introStage === 'greeting')) &&
-                    Boolean(
-                      displayedQuestionText.trim() ||
+
+                <div className="mx-5 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6">
+                  {sessionPersona ? (
+                    <div className="mb-3.5 flex items-center gap-2">
+                      <div className="relative">
+                        <InterviewAvatar
+                          personality={personaAvatarKey(sessionPersona)}
+                          isSpeaking={interviewTTS.isSpeaking && !isMuted}
+                          isListening={false}
+                          size="sm"
+                          demeanor={
+                            interviewSim.active
+                              ? interviewSim.avatarDemeanor
+                              : 'neutral'
+                          }
+                        />
+                        {interviewSim.active ? (
+                          <InterviewEmotionIndicator
+                            emotion={interviewSim.emotion}
+                            compact
+                            className="absolute -bottom-1 -right-1 shadow-sm"
+                          />
+                        ) : null}
+                      </div>
+                      <p className="text-xs text-[var(--text-muted)]">
+                        {interviewerDisplayName}{' '}
+                        {phase === 'intro' ? 'says:' : 'asks:'}
+                        {isSimSession && interviewSim.active ? (
+                          <span className="ml-1.5 text-[10px] text-[var(--text-muted)]">
+                            · adapted to your progress
+                          </span>
+                        ) : null}
+                      </p>
+                    </div>
+                  ) : null}
+                  <TypingText
+                    text={interviewerQuestionText}
+                    isActive={
+                      phase === 'questioning' ||
+                      (phase === 'intro' && introStage === 'greeting')
+                    }
+                    charIndex={spokenCharIndex}
+                    className="text-left text-base font-medium leading-relaxed text-[var(--text-primary)]"
+                  />
+                  <QuestionReplayButton
+                    visible={
+                      (phase === 'answering' ||
+                        inIntroSelf ||
+                        (phase === 'intro' && introStage === 'greeting')) &&
+                      Boolean(
+                        displayedQuestionText.trim() ||
                         currentQuestion?.question?.trim() ||
                         sessionGreetingMessage,
-                    )
-                  }
-                  onReplay={replayQuestion}
-                  interviewerSpeaking={interviewTTS.isSpeaking}
+                      )
+                    }
+                    onReplay={replayQuestion}
+                    interviewerSpeaking={interviewTTS.isSpeaking}
+                  />
+                </div>
+
+                {hasJobContext ? (
+                  <div className="mx-5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] px-4 py-3.5">
+                    <p className="ip-section-label">Interview context</p>
+                    <p className="mt-1.5 text-sm font-semibold text-[var(--text-primary)]">
+                      {jobTitle || 'Interview practice'}
+                      {company ? (
+                        <span className="text-white/55"> · {company}</span>
+                      ) : null}
+                    </p>
+                    {jobDescription ? (
+                      <details className="mt-2 rounded-xl border border-white/10 bg-[#0B1010] px-3 py-2">
+                        <summary className="cursor-pointer select-none text-xs font-semibold text-white/70">
+                          Job description
+                          <span className="ml-2 text-[11px] font-normal text-white/40">
+                            (collapsed)
+                          </span>
+                        </summary>
+                        <div className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-white/55">
+                          {jobDescription}
+                        </div>
+                      </details>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {sessionPersona ? (
+                  <SessionPersonaHeaderLive
+                    persona={sessionPersona}
+                    isSpeaking={interviewTTS.isSpeaking && !isMuted}
+                    phase={phase}
+                    prepMode={prepMode}
+                    adaptiveOn={showAdaptiveBadge}
+                  />
+                ) : null}
+
+                <SimulationPanel
+                  isSimSession={isSimSession}
+                  showAdaptiveBadge={showAdaptiveBadge}
+                  interviewSim={interviewSim}
+                  interruptionBannerVisible={interruptionBannerVisible}
+                  interruptionBannerMessage={interruptionBannerMessage}
+                  pressureLabel={pressureLabel}
+                />
+
+                {adaptationNote &&
+                !prep.adaptiveSnapshot.session?.adaptationReason ? (
+                  <p className="mx-5 text-[12px] italic text-[var(--text-muted)]">
+                    {adaptationNote}
+                  </p>
+                ) : prep.adaptiveSnapshot.session?.adaptationReason ? (
+                  <p className="mx-5 text-[12px] italic text-[var(--text-muted)]">
+                    {prep.adaptiveSnapshot.session.adaptationReason}
+                  </p>
+                ) : null}
+                {showAdaptiveBadge && personaMemory.toneAdjustments.moodHint ? (
+                  <p className="mx-5 text-[11px] text-[var(--text-muted)]">
+                    {personaMemory.toneAdjustments.moodHint}
+                  </p>
+                ) : null}
+                {isSimSession && pressureLabel ? (
+                  <p className="text-center text-[11px] font-semibold text-amber-200/90">
+                    {pressureLabel}
+                  </p>
+                ) : null}
+
+                {prep.isFollowUp &&
+                !prep.activePracticeChip &&
+                phase !== 'answer_feedback' ? (
+                  <FollowUpBanner reason={prep.followUpReason?.reason} />
+                ) : null}
+
+                {!isMuted ? (
+                  <InterviewVoiceBanner
+                    issue={interviewTTS.playbackIssue}
+                    onDismiss={interviewTTS.clearPlaybackIssue}
+                    onRetryPremium={interviewTTS.retryLastSpeech}
+                    onUseDeviceVoice={interviewTTS.useDeviceVoiceForLastLine}
+                    deviceVoiceAvailable={
+                      interviewTTS.isSpeechSynthesisSupported
+                    }
+                  />
+                ) : null}
+
+                {interviewerThinking ? (
+                  <InterviewerThinkingIndicator
+                    interviewerName={interviewerFirstName}
+                    message={
+                      isSimSession && phase === 'questioning'
+                        ? `${interviewerFirstName} is preparing the next question…`
+                        : isSimSession
+                          ? `${interviewerFirstName} is thinking…`
+                          : undefined
+                    }
+                  />
+                ) : null}
+              </div>
+            </div>
+
+            {/* Side panel: answer + actions (Meet: chat / controls rail) */}
+            <div
+              className={cn(
+                'ip-panel-right ip-live-split-right flex min-h-0 w-full min-w-0 shrink-0 flex-col overflow-hidden border-t border-[var(--border-subtle)] lg:min-h-0 lg:border-l lg:border-t-0',
+                'max-sm:ip-panel-right-sheet',
+                mobileResponseOpen && 'max-sm:ip-panel-right-sheet-open',
+              )}
+            >
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+                {prep.usePrep && phase !== 'results' ? (
+                  <div className="sticky top-0 z-10 flex justify-end border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]/95 px-4 py-2 backdrop-blur-sm">
+                    <CoachingStickyToggle
+                      settings={coaching.settings}
+                      disabled={coaching.isUpdating}
+                      onToggle={() =>
+                        coaching.setEnabled(!coaching.settings.enabled)
+                      }
+                    />
+                  </div>
+                ) : null}
+                <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain px-0 pb-2">
+                  {prep.usePrep && phase !== 'results' ? (
+                    <GrowthMiniPanel
+                      skills={growthSkills}
+                      improvementTrend={
+                        skillProfileQ.data?.improvementTrend ??
+                        prep.lastPersonalization?.weaknessProfile?.trend
+                      }
+                      weaknessTrend={
+                        prep.lastPersonalization?.weaknessProfile?.trend ??
+                        adaptiveProfileQ.data?.weaknessTrend
+                      }
+                      topWeaknesses={
+                        prep.lastPersonalization?.weaknessProfile
+                          ?.topWeaknesses ??
+                        skillProfileQ.data?.weaknessProfile?.topWeaknesses ??
+                        adaptiveProfileQ.data?.lastWeaknesses
+                      }
+                    />
+                  ) : null}
+
+                  {coaching.settings.enabled &&
+                  prep.coachHints.length > 0 &&
+                  (phase === 'answer_feedback' || phase === 'answering') ? (
+                    <CoachHintToasts
+                      hints={prep.coachHints}
+                      urgency={coachHintUrgency}
+                    />
+                  ) : null}
+
+                  {isSimSession &&
+                  simTimer.active &&
+                  prep.adaptiveSnapshot.session?.recommendedDifficulty !==
+                    'easy' ? (
+                    <PressureTimerBar
+                      remainingSec={simTimer.remaining}
+                      limitSec={simTimer.limit}
+                      ratio={simTimer.ratio}
+                      isLow={
+                        simTimer.isLow ||
+                        interviewSim.signals.includes('TIME_DELAY_HIGH')
+                      }
+                      pressureLabel={pressureLabel}
+                    />
+                  ) : null}
+
+                  {showAdaptiveBadge &&
+                  prep.usePrep &&
+                  (phase === 'answering' || phase === 'answer_feedback') ? (
+                    <SessionAdaptiveRail
+                      snapshot={prep.adaptiveSnapshot}
+                      evolutionHistory={prep.evolutionHistory}
+                      showEvolution={false}
+                      difficultyPulse={prep.difficultyPulse}
+                      className="border-b border-[var(--border-subtle)] pb-3"
+                    />
+                  ) : null}
+
+                  {prep.usePrep &&
+                  sessionId &&
+                  prep.currentTurn?.id &&
+                  !prep.activePracticeChip &&
+                  !prep.practiceFeedback ? (
+                    <InterviewCoachingLayer
+                      sessionId={sessionId}
+                      turnId={prep.currentTurn.id}
+                      questionContext={prep.currentTurn.context}
+                      phase={phase}
+                      typedAnswer={typedAnswer}
+                      elapsedSeconds={Math.max(
+                        0,
+                        Math.round((Date.now() - startTime.getTime()) / 1000),
+                      )}
+                      enabled={prep.usePrep && coaching.settings.enabled}
+                      coachingRef={engineCoachingRef}
+                    />
+                  ) : null}
+
+                  {sessionPersona &&
+                  liveCoachMessage &&
+                  phase === 'answering' ? (
+                    <InterviewerNudgeBanner
+                      persona={sessionPersona}
+                      message={liveCoachMessage}
+                    />
+                  ) : null}
+
+                  {phase === 'answering' ||
+                  inIntroSelf ||
+                  (phase === 'intro' && introStage === 'greeting') ? (
+                    <div className="border-b border-[var(--border-subtle)] px-5 py-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="ip-section-label">Your response</p>
+                          <p className="mt-1 text-[15px] font-semibold text-[var(--text-primary)]">
+                            {inIntroSelf
+                              ? 'Introduce yourself'
+                              : 'Answer this question'}
+                          </p>
+                        </div>
+                        <QuestionReplayButton
+                          visible={
+                            (phase === 'answering' ||
+                              inIntroSelf ||
+                              (phase === 'intro' &&
+                                introStage === 'greeting')) &&
+                            Boolean(
+                              displayedQuestionText.trim() ||
+                              currentQuestion?.question?.trim() ||
+                              sessionGreetingMessage,
+                            )
+                          }
+                          onReplay={replayQuestion}
+                          interviewerSpeaking={interviewTTS.isSpeaking}
+                        />
+                      </div>
+                      {inIntroSelf && introText ? (
+                        <p className="mt-1 text-xs text-white/40">
+                          Intro captured: {introText.slice(0, 80)}
+                          {introText.length > 80 ? '...' : ''}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  <CoachingPanel
+                    visible={Boolean(
+                      phase === 'answer_feedback' &&
+                      sessionPersona &&
+                      coaching.showCoachingPanel &&
+                      (prep.feedbackTurnId ||
+                        coachingAnswerProcessing ||
+                        prep.practiceFeedback),
+                    )}
+                    isSimSession={isSimSession}
+                    interviewSim={interviewSim}
+                    simReactionVisible={simReactionVisible}
+                    prep={prep}
+                    coaching={coaching}
+                    sessionPersona={sessionPersona!}
+                    lastFeedback={prep.lastFeedback}
+                    feedbackTurnId={
+                      prep.feedbackTurnId ?? prep.currentTurn?.id ?? 'coaching'
+                    }
+                    isProcessingAnswer={coachingAnswerProcessing}
+                    processingInsights={answerProcessingInsights}
+                    onContinue={continueAfterFeedback}
+                    onContinueFromPractice={continueFromPractice}
+                    onEndInterview={() => void finishPrepAndSubmit()}
+                    answeredSideQuestions={answeredSideQuestions}
+                    onAnswerFollowUp={handleAnswerFollowUp}
+                    onAnswerNextPlanned={handleAnswerNextPlanned}
+                    learningMoments={learningMoments}
+                    practiceFeedback={prep.practiceFeedback}
+                    practiceQuestionText={
+                      prep.activePracticeChip?.questionText ||
+                      lastPracticeQuestionText
+                    }
+                    practiceAnswerText={lastPracticeAnswerText}
+                    onDismissPractice={() => {
+                      prep.clearPractice();
+                      setLastPracticeQuestionText('');
+                      setLastPracticeAnswerText('');
+                    }}
+                  />
+
+                  <AnswerPanel
+                    phase={phase}
+                    inIntroSelf={inIntroSelf}
+                    typedAnswer={typedAnswer}
+                    onTypedAnswerChange={setTypedAnswer}
+                    answerPipelineLabel={answerPipelineLabel}
+                    showSubmitSkeleton={false}
+                    interviewerThinking={interviewerThinking}
+                    submitTurnPending={prep.submitTurnPending}
+                    answerPipelineStatus={answerPipelineStatus}
+                    onSubmit={submitCurrentAnswer}
+                    isMuted={isMuted}
+                    onToggleMute={() => {
+                      if (isMuted) {
+                        setIsMuted(false);
+                        return;
+                      }
+                      setIsMuted(true);
+                      interviewTTS.stop();
+                    }}
+                    voiceProcessingStatus={
+                      voiceBridgeRef.current?.isTranscribing
+                        ? 'whisper'
+                        : interviewTTS.isGeneratingVoice
+                          ? 'generating_voice'
+                          : 'idle'
+                    }
+                    interviewerAudioBusy={
+                      interviewTTS.isSpeaking ||
+                      interviewTTS.isSynthesisActive()
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {phase === 'answer_feedback' &&
+          turnCoaching &&
+          !prep.getCoachingForTurn(prep.feedbackTurnId) ? (
+            <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-4 sm:pb-6">
+              <div className="pointer-events-auto w-full max-w-lg">
+                <InterviewCoachTip
+                  coaching={turnCoaching}
+                  personaName={interviewerFirstName}
+                  defaultOpen={false}
                 />
               </div>
-              {inIntroSelf && introText ? (
-                <p className="mt-1 text-xs text-white/40">
-                  Intro captured: {introText.slice(0, 80)}
-                  {introText.length > 80 ? '...' : ''}
+            </div>
+          ) : null}
+
+          {showExitModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+              <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#0C0F0F] p-6 shadow-2xl">
+                <h3 className="text-lg font-semibold text-white">
+                  Leave the interview?
+                </h3>
+                <p className="mt-2 text-sm text-white/60">
+                  Your progress will be lost and this session cannot be resumed.
+                  Are you sure you want to leave?
                 </p>
-              ) : null}
+
+                <div className="mt-6 flex gap-3">
+                  <Button
+                    variant="ghost"
+                    className="flex-1"
+                    onClick={() => setShowExitModal(false)}
+                  >
+                    Continue interview
+                  </Button>
+                  <Button
+                    variant="primary"
+                    className="flex-1 border-red-500/30 bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                    onClick={() => {
+                      setShowExitModal(false);
+                      leaveInterview();
+                    }}
+                  >
+                    Yes, leave
+                  </Button>
+                </div>
+              </div>
             </div>
-            ) : null}
+          )}
 
-            <CoachingPanel
-              visible={Boolean(
-                phase === 'answer_feedback' &&
-                  sessionPersona &&
-                  coaching.showCoachingPanel &&
-                  (prep.feedbackTurnId ||
-                    coachingAnswerProcessing ||
-                    prep.practiceFeedback),
-              )}
-              isSimSession={isSimSession}
-              interviewSim={interviewSim}
-              simReactionVisible={simReactionVisible}
-              prep={prep}
-              coaching={coaching}
-              sessionPersona={sessionPersona!}
-              lastFeedback={prep.lastFeedback}
-              feedbackTurnId={prep.feedbackTurnId ?? prep.currentTurn?.id ?? 'coaching'}
-              isProcessingAnswer={coachingAnswerProcessing}
-              processingInsights={answerProcessingInsights}
-              onContinue={continueAfterFeedback}
-              onContinueFromPractice={continueFromPractice}
-              onEndInterview={() => void finishPrepAndSubmit()}
-              answeredSideQuestions={answeredSideQuestions}
-              onAnswerFollowUp={handleAnswerFollowUp}
-              onAnswerNextPlanned={handleAnswerNextPlanned}
-              learningMoments={learningMoments}
-              practiceFeedback={prep.practiceFeedback}
-              practiceQuestionText={
-                prep.activePracticeChip?.questionText || lastPracticeQuestionText
-              }
-              practiceAnswerText={lastPracticeAnswerText}
-              onDismissPractice={() => {
-                prep.clearPractice();
-                setLastPracticeQuestionText('');
-                setLastPracticeAnswerText('');
-              }}
-            />
-
-            <AnswerPanel
-              phase={phase}
-              inIntroSelf={inIntroSelf}
-              typedAnswer={typedAnswer}
-              onTypedAnswerChange={setTypedAnswer}
-              answerPipelineLabel={answerPipelineLabel}
-              showSubmitSkeleton={false}
-              interviewerThinking={interviewerThinking}
-              submitTurnPending={prep.submitTurnPending}
-              answerPipelineStatus={answerPipelineStatus}
-              onSubmit={submitCurrentAnswer}
-              isMuted={isMuted}
-              onToggleMute={() => {
-                if (isMuted) {
-                  setIsMuted(false);
-                  return;
-                }
-                setIsMuted(true);
-                interviewTTS.stop();
-              }}
-              voiceProcessingStatus={
-                voiceBridgeRef.current?.isTranscribing
-                  ? 'whisper'
-                  : interviewTTS.isGeneratingVoice
-                    ? 'generating_voice'
-                    : 'idle'
-              }
-              interviewerAudioBusy={
-                interviewTTS.isSpeaking || interviewTTS.isSynthesisActive()
-              }
-            />
-
-            </div>
-          </div>
-        </div>
+          {!mobileResponseOpen && (phase === 'answering' || inIntroSelf) ? (
+            <button
+              type="button"
+              className="ip-fab-answer sm:hidden"
+              onClick={() => setMobileResponseOpen(true)}
+            >
+              Answer
+            </button>
+          ) : null}
+        </InterviewRoomAtmosphereLayer>
       </div>
-
-      {phase === 'answer_feedback' &&
-      turnCoaching &&
-      !prep.getCoachingForTurn(prep.feedbackTurnId) ? (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-4 sm:pb-6">
-          <div className="pointer-events-auto w-full max-w-lg">
-            <InterviewCoachTip
-              coaching={turnCoaching}
-              personaName={interviewerFirstName}
-              defaultOpen={false}
-            />
-          </div>
-        </div>
-      ) : null}
-
-      {showExitModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#0C0F0F] p-6 shadow-2xl">
-            <h3 className="text-lg font-semibold text-white">Leave the interview?</h3>
-            <p className="mt-2 text-sm text-white/60">
-              Your progress will be lost and this session cannot be resumed. Are you sure you want to leave?
-            </p>
-
-            <div className="mt-6 flex gap-3">
-              <Button
-                variant="ghost"
-                className="flex-1"
-                onClick={() => setShowExitModal(false)}
-              >
-                Continue interview
-              </Button>
-              <Button
-                variant="primary"
-                className="flex-1 border-red-500/30 bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                onClick={() => {
-                  setShowExitModal(false);
-                  leaveInterview();
-                }}
-              >
-                Yes, leave
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {!mobileResponseOpen && (phase === 'answering' || inIntroSelf) ? (
-        <button
-          type="button"
-          className="ip-fab-answer sm:hidden"
-          onClick={() => setMobileResponseOpen(true)}
-        >
-          Answer
-        </button>
-      ) : null}
-    </InterviewRoomAtmosphereLayer>
-    </div>
     </InterviewVoiceProvider>
   );
 }

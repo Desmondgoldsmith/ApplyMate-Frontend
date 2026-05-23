@@ -1,5 +1,12 @@
+type InterviewAnalyticsEventName =
+  | 'interview_started'
+  | 'interview_answer_submitted'
+  | 'interview_followup_triggered'
+  | 'interview_completed'
+  | 'interview_weakness_detected';
+
 type QueuedEvent = {
-  eventName: string;
+  eventName: InterviewAnalyticsEventName;
   sessionId?: string;
   context?: Record<string, unknown>;
 };
@@ -38,13 +45,5 @@ function scheduleFlush(): void {
 /** Non-blocking analytics — debounced batch, never awaited on hot path. */
 export function enqueueInterviewAnalyticsEvent(evt: QueuedEvent): void {
   queue.push(evt);
-  if (queue.length >= MAX_BATCH) {
-    if (flushTimer) {
-      clearTimeout(flushTimer);
-      flushTimer = null;
-    }
-    void flushQueue();
-    return;
-  }
   scheduleFlush();
 }

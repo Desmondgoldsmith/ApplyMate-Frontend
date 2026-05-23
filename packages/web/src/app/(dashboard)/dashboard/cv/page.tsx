@@ -27,7 +27,11 @@ import type { CvAssistantRunResult } from '@/components/cv/CVEditContext';
 import { AddSectionModal } from '@/components/cv/AddSectionModal';
 import { AIChatDrawer } from '@/components/cv/AIChatDrawer';
 import { AISectionAssistantPanel } from '@/components/cv/AISectionAssistantPanel';
-import { CVBuilder, type CVBuilderQualitySignals, type CVBuilderTripleColumnConfig } from '@/components/cv/CVBuilder';
+import {
+  CVBuilder,
+  type CVBuilderQualitySignals,
+  type CVBuilderTripleColumnConfig,
+} from '@/components/cv/CVBuilder';
 import { TailorChangePanel } from '@/components/cv/TailorChangePanel';
 import { CvClinicToolbar } from '@/components/cv/CvClinicToolbar';
 import { CvClinicTripleRightPanel } from '@/components/cv/CvClinicTripleRightPanel';
@@ -69,7 +73,10 @@ import {
 import { parseCvMode } from '@/lib/cv-mode.types';
 import { inferCvProfileNameFromProfile } from '@/lib/infer-cv-profile-name';
 import { buildCvNamingForExport } from '@/lib/cv-profile-naming';
-import { assistantChangedFieldLabel, assistantDiffDisplayStrings } from '@/lib/cvAssistantDiffDisplay';
+import {
+  assistantChangedFieldLabel,
+  assistantDiffDisplayStrings,
+} from '@/lib/cvAssistantDiffDisplay';
 import {
   isCvTemplateId,
   transformSectionsToCVBuilderData,
@@ -90,19 +97,28 @@ import {
 } from '@/lib/cvApplyPerformanceDev';
 import { refetchCvProfileAndSectionsAfterBackgroundWork } from '@/lib/cvBackgroundSectionSync';
 import { logCvMutationCommitDev } from '@/lib/cvMutationCommitDev';
-import { shouldShowTruthfulnessAdjustNotice, truthfulnessFieldsFromResponse } from '@/lib/cvTruthfulnessUi';
+import {
+  shouldShowTruthfulnessAdjustNotice,
+  truthfulnessFieldsFromResponse,
+} from '@/lib/cvTruthfulnessUi';
 import {
   CV_ASSISTANT_DIFF_PREVIEW_KEY,
   type CvDiffPreviewMap,
   cvDiffPreviewStorageKey,
 } from '@/lib/cvDiffPreviewMap';
-import { isCvApplyImprovementTerminalNoDiff, toastCopyForTerminalNoDiffApply } from '@/lib/cvApplyImprovementQueue';
+import {
+  isCvApplyImprovementTerminalNoDiff,
+  toastCopyForTerminalNoDiffApply,
+} from '@/lib/cvApplyImprovementQueue';
 import { commitAcceptedStructuredDraft } from '@/lib/cvStructuredDraftCommit';
 import { cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
 import { coreCvContentPresentInSections } from '@/lib/cv-sections-content';
 import { getApiErrorCode, getApiErrorMessage } from '@/lib/axios';
 import { logCvMutationErrorDev } from '@/lib/cvMutationDevLog';
-import { canonicalWorkflowEntityId, recordExecutionCheckpoint } from '@/lib/executionMemory';
+import {
+  canonicalWorkflowEntityId,
+  recordExecutionCheckpoint,
+} from '@/lib/executionMemory';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCvBuilderHydration } from '@/hooks/useCvBuilderHydration';
@@ -122,12 +138,15 @@ const cvProfileSelectClassName = cn(
   '[&>option]:bg-[#0C0F0F] [&>option]:text-white',
 );
 
-const cvDashboardTemplateStorageKey = (profileId: string) => `applymate:cvDashboardTemplate:${profileId}`;
+const cvDashboardTemplateStorageKey = (profileId: string) =>
+  `applymate:cvDashboardTemplate:${profileId}`;
 
 function readCvDashboardTemplate(profileId: string): CvTemplateId | null {
   if (typeof window === 'undefined') return null;
   try {
-    const v = window.sessionStorage.getItem(cvDashboardTemplateStorageKey(profileId));
+    const v = window.sessionStorage.getItem(
+      cvDashboardTemplateStorageKey(profileId),
+    );
     return isCvTemplateId(v) ? v : null;
   } catch {
     return null;
@@ -152,27 +171,31 @@ function getFormatRecommendation(expCount: number): {
     return {
       label: 'Student / No Experience',
       recommended: 'modern',
-      reason: 'The Modern template leads with skills and education — ideal when experience is limited',
+      reason:
+        'The Modern template leads with skills and education — ideal when experience is limited',
     };
   }
   if (expCount <= 2) {
     return {
       label: 'Early Career (0-3 years)',
       recommended: 'modern',
-      reason: 'Hybrid format recommended — showcase skills prominently alongside your experience',
+      reason:
+        'Hybrid format recommended — showcase skills prominently alongside your experience',
     };
   }
   if (expCount <= 5) {
     return {
       label: 'Mid Career (3-8 years)',
       recommended: 'classic',
-      reason: 'Chronological format — your experience depth is your strongest asset',
+      reason:
+        'Chronological format — your experience depth is your strongest asset',
     };
   }
   return {
     label: 'Senior (8+ years)',
     recommended: 'professional',
-    reason: 'Professional format — structured layout that showcases seniority and specialisation',
+    reason:
+      'Professional format — structured layout that showcases seniority and specialisation',
   };
 }
 
@@ -228,7 +251,8 @@ function CVPageContent() {
   }, [profiles, legacyCv.data]);
 
   const initializing =
-    profilesQuery.isPending || (profilesQuery.isSuccess && profiles.length === 0 && legacyCv.isPending);
+    profilesQuery.isPending ||
+    (profilesQuery.isSuccess && profiles.length === 0 && legacyCv.isPending);
 
   const targetId = useMemo(() => {
     const param = profileIdParam?.trim();
@@ -237,7 +261,11 @@ function CVPageContent() {
     return def?.id ?? legacyCv.data?.id ?? null;
   }, [profileIdParam, profileOptions, legacyCv.data?.id]);
 
-  const { data: detail, isLoading: detailLoading, isFetching: detailFetching } = useCVProfileById(targetId);
+  const {
+    data: detail,
+    isLoading: detailLoading,
+    isFetching: detailFetching,
+  } = useCVProfileById(targetId);
   const profile = detail?.profile ?? null;
   const sectionsQuery = useQuery({
     queryKey: ['cv-sections', targetId],
@@ -261,7 +289,8 @@ function CVPageContent() {
 
   const [template, setTemplate] = useState<CvTemplateId>(() => {
     if (typeof window === 'undefined') return 'modern';
-    if (profileIdParam?.trim()) return readCvDashboardTemplate(profileIdParam) ?? 'modern';
+    if (profileIdParam?.trim())
+      return readCvDashboardTemplate(profileIdParam) ?? 'modern';
     return 'modern';
   });
   const [templateReady, setTemplateReady] = useState(false);
@@ -274,71 +303,94 @@ function CVPageContent() {
   const [insightsOpen, setInsightsOpen] = useState(false);
   const triplePanelContainerRef = useRef<HTMLDivElement>(null);
   const [tripleRightPct, setTripleRightPct] = useState(28);
-  const [tripleRightTab, setTripleRightTab] = useState<'analysis' | 'improvements'>('analysis');
+  const [tripleRightTab, setTripleRightTab] = useState<
+    'analysis' | 'improvements'
+  >('analysis');
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
-  const [improvementsAttentionPulse, setImprovementsAttentionPulse] = useState(false);
+  const [improvementsAttentionPulse, setImprovementsAttentionPulse] =
+    useState(false);
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const [sectionModalOpen, setSectionModalOpen] = useState(false);
   const [aiChatOpen, setAiChatOpen] = useState(false);
-  const [builderSaveStatus, setBuilderSaveStatus] = useState<CvBuilderSaveStatus>('idle');
+  const [builderSaveStatus, setBuilderSaveStatus] =
+    useState<CvBuilderSaveStatus>('idle');
   const [reorderPending, setReorderPending] = useState(false);
   const [spellCheckTrigger, setSpellCheckTrigger] = useState(0);
   const [spellFixAllTrigger, setSpellFixAllTrigger] = useState(0);
-  const [qualitySignals, setQualitySignals] = useState<CVBuilderQualitySignals>({
-    incompleteSectionIds: [],
-    incompleteCount: 0,
-    missingFields: [],
-    sectionLabels: {},
-    spellIssuesBySection: {},
-    spellIssueEntriesBySection: {},
-    spellIssuesByField: {},
-    spellIssueCount: 0,
-    grammarIssueCount: 0,
-    isSpellChecking: false,
-  });
-  const [completeness, setCompleteness] = useState<CvCompletenessResult | null>(null);
+  const [qualitySignals, setQualitySignals] = useState<CVBuilderQualitySignals>(
+    {
+      incompleteSectionIds: [],
+      incompleteCount: 0,
+      missingFields: [],
+      sectionLabels: {},
+      spellIssuesBySection: {},
+      spellIssueEntriesBySection: {},
+      spellIssuesByField: {},
+      spellIssueCount: 0,
+      grammarIssueCount: 0,
+      isSpellChecking: false,
+    },
+  );
+  const [completeness, setCompleteness] = useState<CvCompletenessResult | null>(
+    null,
+  );
   const reorderPendingRef = useRef(false);
   reorderPendingRef.current = reorderPending;
 
   const [diffPreviews, setDiffPreviews] = useState<CvDiffPreviewMap>({});
-  const [activeDiffPreviewKey, setActiveDiffPreviewKey] = useState<string | null>(null);
+  const [activeDiffPreviewKey, setActiveDiffPreviewKey] = useState<
+    string | null
+  >(null);
   const diffPreview = useMemo(() => {
     if (!activeDiffPreviewKey) return null;
     return diffPreviews[activeDiffPreviewKey] ?? null;
   }, [activeDiffPreviewKey, diffPreviews]);
 
-  const closeDiffPreviewForKey = useCallback((key: string | null | undefined) => {
-    if (!key) return;
-    setDiffPreviews((prev) => {
-      if (!(key in prev)) return prev;
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
-    setActiveDiffPreviewKey((cur) => (cur === key ? null : cur));
-  }, []);
+  const closeDiffPreviewForKey = useCallback(
+    (key: string | null | undefined) => {
+      if (!key) return;
+      setDiffPreviews((prev) => {
+        if (!(key in prev)) return prev;
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+      setActiveDiffPreviewKey((cur) => (cur === key ? null : cur));
+    },
+    [],
+  );
 
-  const mergeDiffPreviewOpen = useCallback((params: CvDiffPreviewOpenParams | null) => {
-    setAssistantPreviewMode(false);
-    setAssistantPendingPatch(null);
-    if (!params) {
-      setActiveDiffPreviewKey(null);
-      return;
-    }
-    const key = cvDiffPreviewStorageKey(params);
-    setDiffPreviews((prev) => ({ ...prev, [key]: params }));
-    setActiveDiffPreviewKey(key);
-  }, []);
+  const mergeDiffPreviewOpen = useCallback(
+    (params: CvDiffPreviewOpenParams | null) => {
+      setAssistantPreviewMode(false);
+      setAssistantPendingPatch(null);
+      if (!params) {
+        setActiveDiffPreviewKey(null);
+        return;
+      }
+      const key = cvDiffPreviewStorageKey(params);
+      setDiffPreviews((prev) => ({ ...prev, [key]: params }));
+      setActiveDiffPreviewKey(key);
+    },
+    [],
+  );
   const cvImprovementDiffInFlightRef = useRef(false);
-  const [cvImprovementDiffActionsPending, setCvImprovementDiffActionsPending] = useState(false);
+  const [cvImprovementDiffActionsPending, setCvImprovementDiffActionsPending] =
+    useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
-  const [assistantSeedCommand, setAssistantSeedCommand] = useState<string | null>(null);
+  const [assistantSeedCommand, setAssistantSeedCommand] = useState<
+    string | null
+  >(null);
   const [assistantBusy, setAssistantBusy] = useState(false);
   const [assistantPreviewMode, setAssistantPreviewMode] = useState(false);
-  const [assistantPendingPatch, setAssistantPendingPatch] = useState<Record<string, unknown> | null>(null);
+  const [assistantPendingPatch, setAssistantPendingPatch] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
   const assistantCommandIdRef = useRef('');
   const [assistantPatchNonce, setAssistantPatchNonce] = useState(0);
-  const [instantPreviewPatch, setInstantPreviewPatch] = useState<Partial<CVBuilderData> | null>(null);
+  const [instantPreviewPatch, setInstantPreviewPatch] =
+    useState<Partial<CVBuilderData> | null>(null);
   const [instantPreviewPatchNonce, setInstantPreviewPatchNonce] = useState(0);
   /** Incremented after server mutations so CVBuilder replaces local state from refetched `initialData`. */
   const [cvServerHydrateNonce, setCvServerHydrateNonce] = useState(0);
@@ -355,22 +407,26 @@ function CVPageContent() {
     setAssistantSeedCommand(prompt);
     setAssistantOpen(true);
   }, []);
-  const { rehydrateFromServer: syncCvBuilderFromServer, refreshCvState } = useCvBuilderHydration({
-    profileId: targetId,
-    bumpHydrateNonce: bumpCvServerHydrateNonce,
-    clearInstantPreview: clearInstantPreviewBeforeHydrate,
-  });
+  const { rehydrateFromServer: syncCvBuilderFromServer, refreshCvState } =
+    useCvBuilderHydration({
+      profileId: targetId,
+      bumpHydrateNonce: bumpCvServerHydrateNonce,
+      clearInstantPreview: clearInstantPreviewBeforeHydrate,
+    });
   const { reconcileAfterMutation } = useCvSuggestionMutations();
-  const [cvDataSnapshot, setCvDataSnapshot] = useState<CVBuilderData | null>(null);
+  const [cvDataSnapshot, setCvDataSnapshot] = useState<CVBuilderData | null>(
+    null,
+  );
   const [tailorDraft, setTailorDraft] = useState<CvTailorDraft | null>(null);
   const [assistantClarification, setAssistantClarification] = useState<{
     command: string;
     question: string;
     clarifications: Array<{ question: string; answer: string }>;
   } | null>(null);
-  const jumpToSectionRef = useRef<((sid: string, itemId?: string, opts?: { scrollForm?: boolean }) => void) | null>(
-    null,
-  );
+  const jumpToSectionRef = useRef<
+    | ((sid: string, itemId?: string, opts?: { scrollForm?: boolean }) => void)
+    | null
+  >(null);
 
   const resolveImprovementPointerByField = useCallback(
     async (fieldPath: string): Promise<string | null> => {
@@ -442,7 +498,11 @@ function CVPageContent() {
     if (!targetId?.trim()) return;
     if (builderSaveStatus !== 'saved') return;
     const entityId = canonicalWorkflowEntityId('cv', targetId);
-    const pct = typeof completeness?.score === 'number' && Number.isFinite(completeness.score) ? completeness.score : 50;
+    const pct =
+      typeof completeness?.score === 'number' &&
+      Number.isFinite(completeness.score)
+        ? completeness.score
+        : 50;
     const key = `${entityId}|saved|${pct}`;
     if (lastCvCheckpointRef.current === key) return;
     lastCvCheckpointRef.current = key;
@@ -497,7 +557,9 @@ function CVPageContent() {
     void (async () => {
       try {
         await runScan.mutateAsync(targetId);
-        await queryClient.invalidateQueries({ queryKey: cvSuggestionsQueryKey(targetId) });
+        await queryClient.invalidateQueries({
+          queryKey: cvSuggestionsQueryKey(targetId),
+        });
       } catch {
         /* Keep autoRescoreMarkerRef set for this marker so a failing detailed score does not loop POSTs while needsScoring stays true. User can run Scan from the toolbar to retry. */
       }
@@ -559,7 +621,10 @@ function CVPageContent() {
     setRightPanelCollapsed(false);
     setInsightsOpen(true);
     setImprovementsAttentionPulse(true);
-    const t = window.setTimeout(() => setImprovementsAttentionPulse(false), 2800);
+    const t = window.setTimeout(
+      () => setImprovementsAttentionPulse(false),
+      2800,
+    );
     return () => window.clearTimeout(t);
   }, [focusParam, targetId]);
 
@@ -577,13 +642,24 @@ function CVPageContent() {
     [sections],
   );
   const visibleSectionTypes = useMemo(
-    () => new Set(sections.filter((s) => s.hidden !== true).map((s) => s.type.toLowerCase())),
+    () =>
+      new Set(
+        sections
+          .filter((s) => s.hidden !== true)
+          .map((s) => s.type.toLowerCase()),
+      ),
     [sections],
   );
 
-  const displayScoreValue = useMemo(() => score.data?.score, [score.data?.score]);
+  const displayScoreValue = useMemo(
+    () => score.data?.score,
+    [score.data?.score],
+  );
 
-  const displayScoreBreakdown = useMemo(() => score.data?.breakdown, [score.data?.breakdown]);
+  const displayScoreBreakdown = useMemo(
+    () => score.data?.breakdown,
+    [score.data?.breakdown],
+  );
 
   const improvementList = useMemo(
     () => filterPendingSuggestionsForDisplay(improvements.data?.improvements),
@@ -606,7 +682,11 @@ function CVPageContent() {
   const completenessGroups = useMemo(() => {
     const map = new Map<
       string,
-      { sectionKey: string; sectionLabel: string; fields: Array<{ fieldPath: string; fieldLabel: string }> }
+      {
+        sectionKey: string;
+        sectionLabel: string;
+        fields: Array<{ fieldPath: string; fieldLabel: string }>;
+      }
     >();
     const norm = (v: string) => v.trim().toLowerCase();
     const skipPlaceholder = (label: string, fieldPath: string) => {
@@ -632,14 +712,19 @@ function CVPageContent() {
         entry.fields.push({ fieldPath: f.fieldPath, fieldLabel: f.fieldLabel });
       }
       map.set(key, entry);
-      const set = localMissingBySection.get(entry.sectionKey) ?? new Set<string>();
+      const set =
+        localMissingBySection.get(entry.sectionKey) ?? new Set<string>();
       set.add(norm(f.fieldPath));
       localMissingBySection.set(entry.sectionKey, set);
     }
     if (completeness?.sections) {
       for (const sec of completeness.sections) {
         if ((sec.missingFields?.length ?? 0) === 0) continue;
-        const sectionKey = (sec.sectionType?.trim().toLowerCase() || sec.sectionId || '').toLowerCase();
+        const sectionKey = (
+          sec.sectionType?.trim().toLowerCase() ||
+          sec.sectionId ||
+          ''
+        ).toLowerCase();
         if (!sectionKey) continue;
         if (
           sectionKey !== 'personal' &&
@@ -652,12 +737,15 @@ function CVPageContent() {
         const key = norm(sec.label || sectionKey);
         const entry = map.get(key) ?? {
           sectionKey,
-          sectionLabel: qualitySignals.sectionLabels[sectionKey] ?? sec.label ?? sectionKey,
+          sectionLabel:
+            qualitySignals.sectionLabels[sectionKey] ?? sec.label ?? sectionKey,
           fields: [],
         };
-        const localSet = localMissingBySection.get(sectionKey) ?? new Set<string>();
+        const localSet =
+          localMissingBySection.get(sectionKey) ?? new Set<string>();
         for (const f of sec.missingFields) {
-          if (skipPlaceholder(String(f.label ?? ''), String(f.fieldPath ?? ''))) continue;
+          if (skipPlaceholder(String(f.label ?? ''), String(f.fieldPath ?? '')))
+            continue;
           const fp = norm(String(f.fieldPath ?? ''));
           const fl = norm(String(f.label ?? ''));
           // Avoid stale backend false-positives for personal fields that are already present locally.
@@ -667,29 +755,61 @@ function CVPageContent() {
             const hasEmail = Boolean(snap?.personal?.email?.trim());
             const hasLoc = Boolean(snap?.personal?.location?.trim());
             const showEmail = snap ? snap.personal != null : true;
-            if ((fp.includes('name') || fl.includes('name')) && hasName) continue;
-            if ((fp.includes('email') || fl.includes('email')) && hasEmail) continue;
-            if ((fp.includes('location') || fl.includes('location')) && hasLoc) continue;
-            if ((fp.includes('email') || fl.includes('email')) && !showEmail) continue;
+            if ((fp.includes('name') || fl.includes('name')) && hasName)
+              continue;
+            if ((fp.includes('email') || fl.includes('email')) && hasEmail)
+              continue;
+            if ((fp.includes('location') || fl.includes('location')) && hasLoc)
+              continue;
+            if ((fp.includes('email') || fl.includes('email')) && !showEmail)
+              continue;
           }
           // If local heuristic already says this field is complete, don't duplicate stale server rows.
           if (localSet.size > 0 && !localSet.has(fp)) continue;
           if (entry.fields.some((x) => x.fieldPath === f.fieldPath)) continue;
-          entry.fields.push({ fieldPath: f.fieldPath, fieldLabel: f.label || f.fieldPath });
+          entry.fields.push({
+            fieldPath: f.fieldPath,
+            fieldLabel: f.label || f.fieldPath,
+          });
         }
         if (entry.fields.length > 0) map.set(key, entry);
       }
     }
     return [...map.values()];
-  }, [qualitySignals.missingFields, qualitySignals.sectionLabels, completeness?.sections, visibleSectionTypes, cvDataSnapshot, initialData]);
+  }, [
+    qualitySignals.missingFields,
+    qualitySignals.sectionLabels,
+    completeness?.sections,
+    visibleSectionTypes,
+    cvDataSnapshot,
+    initialData,
+  ]);
 
   const resolveJumpSectionKey = useCallback(
     (rawKey: string): string => {
       const key = rawKey.trim().toLowerCase();
       if (!key) return rawKey;
-      if (key === 'personal' || key === 'summary' || key === 'experience' || key === 'education' || key === 'skills') return key;
-      if (key === 'projects' || key === 'certifications' || key === 'languages' || key === 'achievements' || key === 'references') return key;
-      const row = sections.find((s) => s.type.toLowerCase() === key || s.type.toLowerCase() === `custom_${key}`);
+      if (
+        key === 'personal' ||
+        key === 'summary' ||
+        key === 'experience' ||
+        key === 'education' ||
+        key === 'skills'
+      )
+        return key;
+      if (
+        key === 'projects' ||
+        key === 'certifications' ||
+        key === 'languages' ||
+        key === 'achievements' ||
+        key === 'references'
+      )
+        return key;
+      const row = sections.find(
+        (s) =>
+          s.type.toLowerCase() === key ||
+          s.type.toLowerCase() === `custom_${key}`,
+      );
       if (!row) return key;
       const t = row.type.toLowerCase();
       if (t.startsWith('custom_')) return `parsed-${row.id}`;
@@ -700,11 +820,15 @@ function CVPageContent() {
 
   const onApplySpellIssue = useCallback((issue: CvSpellIssue) => {
     if (typeof window === 'undefined') return;
-    window.dispatchEvent(new CustomEvent('cv:spell-issue:apply', { detail: { issue } }));
+    window.dispatchEvent(
+      new CustomEvent('cv:spell-issue:apply', { detail: { issue } }),
+    );
   }, []);
   const onDismissSpellIssue = useCallback((issue: CvSpellIssue) => {
     if (typeof window === 'undefined') return;
-    window.dispatchEvent(new CustomEvent('cv:spell-issue:dismiss', { detail: { issue } }));
+    window.dispatchEvent(
+      new CustomEvent('cv:spell-issue:dismiss', { detail: { issue } }),
+    );
   }, []);
 
   const improvementsBadgeCount = useMemo(() => {
@@ -734,7 +858,10 @@ function CVPageContent() {
     return isPartialCvExtractionFromStructured(profile?.structured);
   }, [profile?.originalTemplate, profile?.structured, sections]);
 
-  const formatRecommendation = useMemo(() => getFormatRecommendation(experienceItemCount), [experienceItemCount]);
+  const formatRecommendation = useMemo(
+    () => getFormatRecommendation(experienceItemCount),
+    [experienceItemCount],
+  );
   const isOnRecommendedTemplate = template === formatRecommendation.recommended;
 
   const onTemplateChange = useCallback(
@@ -765,7 +892,10 @@ function CVPageContent() {
       if (result?.sections && result.sections.length > 0) {
         queryClient.setQueryData(['cv-sections', targetId], result.sections);
       }
-      void queryClient.invalidateQueries({ queryKey: ['cv-profile', targetId], refetchType: 'none' });
+      void queryClient.invalidateQueries({
+        queryKey: ['cv-profile', targetId],
+        refetchType: 'none',
+      });
       void queryClient.invalidateQueries({ queryKey: ['cv-profiles'] });
 
       const likelyContentChanged =
@@ -788,15 +918,15 @@ function CVPageContent() {
         void (async () => {
           if (runScan.isPending) {
             if (process.env.NODE_ENV === 'development') {
-              // eslint-disable-next-line no-console -- intentional dev diagnostics
-              console.info('[cv:builder-save]', { label: 'score.detailed.afterAutosave.skippedInFlight' });
+              console.info('[cv:builder-save]', {
+                label: 'score.detailed.afterAutosave.skippedInFlight',
+              });
             }
             return;
           }
           try {
             await runScan.mutateAsync(targetId);
             if (process.env.NODE_ENV === 'development') {
-              // eslint-disable-next-line no-console -- intentional dev diagnostics
               console.info('[cv:builder-save]', {
                 label: 'score.detailed.afterAutosave',
                 ms: Math.round(performance.now() - tScore),
@@ -829,22 +959,27 @@ function CVPageContent() {
       if (isPartialExtractionBanner) {
         const ok = window.confirm(
           'Your CV appears to be missing experience and skills data. ' +
-          'The exported file may be incomplete.\n\n' +
-          'Download anyway?',
+            'The exported file may be incomplete.\n\n' +
+            'Download anyway?',
         );
         if (!ok) return;
       }
       try {
         await waitForReorderToSettle();
         if (targetId?.trim()) {
-          await queryClient.refetchQueries({ queryKey: ['cv-sections', targetId], exact: true });
+          await queryClient.refetchQueries({
+            queryKey: ['cv-sections', targetId],
+            exact: true,
+          });
         }
         await api.cv.updateTemplate(template, targetId ?? undefined);
         await exportCv.mutateAsync({
           format,
           template,
           cvProfileId: targetId ?? undefined,
-          jobAnalysisId: isTailorMode ? jobAnalysisIdParam || undefined : undefined,
+          jobAnalysisId: isTailorMode
+            ? jobAnalysisIdParam || undefined
+            : undefined,
           profileForNaming: profile,
           profileDisplayName:
             profileOptions.find((p) => p.id === targetId)?.name ??
@@ -857,13 +992,27 @@ function CVPageContent() {
                 {
                   tailored: isTailorMode && Boolean(jobAnalysisIdParam),
                   company:
-                    (linkedJobQ.data as { company?: string; job?: { company?: string } } | undefined)
-                      ?.company ??
-                    (linkedJobQ.data as { job?: { company?: string } } | undefined)?.job?.company,
+                    (
+                      linkedJobQ.data as
+                        | { company?: string; job?: { company?: string } }
+                        | undefined
+                    )?.company ??
+                    (
+                      linkedJobQ.data as
+                        | { job?: { company?: string } }
+                        | undefined
+                    )?.job?.company,
                   role:
-                    (linkedJobQ.data as { jobTitle?: string; job?: { title?: string } } | undefined)
-                      ?.jobTitle ??
-                    (linkedJobQ.data as { job?: { title?: string } } | undefined)?.job?.title,
+                    (
+                      linkedJobQ.data as
+                        | { jobTitle?: string; job?: { title?: string } }
+                        | undefined
+                    )?.jobTitle ??
+                    (
+                      linkedJobQ.data as
+                        | { job?: { title?: string } }
+                        | undefined
+                    )?.job?.title,
                 },
               )
             : undefined,
@@ -914,7 +1063,10 @@ function CVPageContent() {
         'Your changes are saved. Core sections may refresh in a moment while we finish syncing in the background.',
       );
       void (async () => {
-        await refetchCvProfileAndSectionsAfterBackgroundWork(queryClient, targetId);
+        await refetchCvProfileAndSectionsAfterBackgroundWork(
+          queryClient,
+          targetId,
+        );
         setCvServerHydrateNonce((n) => n + 1);
       })();
     },
@@ -924,7 +1076,7 @@ function CVPageContent() {
   const commitAcceptDiff = useCallback(
     async (changeIndex?: number) => {
       const opKey = activeDiffPreviewKey;
-      const diffPreview = opKey ? diffPreviews[opKey] ?? null : null;
+      const diffPreview = opKey ? (diffPreviews[opKey] ?? null) : null;
       if (!diffPreview) return;
       if (assistantPreviewMode && diffPreview.pointer === '__assistant__') {
         const id = targetId?.trim();
@@ -939,7 +1091,9 @@ function CVPageContent() {
             profileId: id,
             mutation: () =>
               api.cv.assistantCommit(id, {
-                patch: (patch && typeof patch === 'object' ? patch : {}) as Record<string, unknown>,
+                patch: (patch && typeof patch === 'object'
+                  ? patch
+                  : {}) as Record<string, unknown>,
                 ...(assistantCommandIdRef.current.trim()
                   ? { commandId: assistantCommandIdRef.current.trim() }
                   : {}),
@@ -956,380 +1110,541 @@ function CVPageContent() {
           assistantCommandIdRef.current = '';
           toast.success('Assistant changes saved to your CV.');
         } catch (e) {
-          toast.error(getApiErrorMessage(e) || 'Could not save assistant changes. Try again.');
+          toast.error(
+            getApiErrorMessage(e) ||
+              'Could not save assistant changes. Try again.',
+          );
         } finally {
           cvImprovementDiffInFlightRef.current = false;
           setCvImprovementDiffActionsPending(false);
         }
         return;
       }
-    if (cvImprovementDiffInFlightRef.current) return;
-    cvImprovementDiffInFlightRef.current = true;
-    setCvImprovementDiffActionsPending(true);
-    const wasAcceptAll = changeIndex == null;
-    const improvementsKey = cvSuggestionsQueryKey(targetId);
-    const prevImprovementsPayload = wasAcceptAll ? queryClient.getQueryData(improvementsKey) : undefined;
-    const selectedField =
-      changeIndex != null && changeIndex >= 0
-        ? (diffPreview.changedFields[changeIndex]?.fieldPath ?? '').trim()
-        : '';
-    try {
-      const requestPointer =
-        selectedField.length > 0
-          ? ((await resolveImprovementPointerByField(selectedField)) ?? diffPreview.pointer)
-          : diffPreview.pointer;
-      if (wasAcceptAll) {
-        queryClient.setQueryData<CvImprovementsPayload>(improvementsKey, (prev) => {
-          if (!prev || !Array.isArray(prev.improvements)) return prev;
-          return {
-            ...prev,
-            improvements: prev.improvements.filter((it) => (it?.id ?? '').trim() !== String(requestPointer).trim()),
-          };
-        });
-      }
-      /** Full suggestion accept/reject — product route (no per-field body). */
-      if (selectedField.length === 0) {
-        const t0 = Date.now();
-        let cacheWrites = 0;
-        const product = await api.cv.acceptSuggestion(String(requestPointer), targetId ?? undefined);
-        logCvMutationCommitDev('cvPage.commitAcceptDiff.acceptSuggestion', product);
-        cacheWrites += 1;
-        queryClient.setQueryData<CvImprovementsPayload>(improvementsKey, (prev) =>
-          applySuggestionAcceptToImprovementsCache(prev, String(requestPointer).trim(), product) ?? prev,
-        );
-        cacheWrites += 1;
-        closeDiffPreviewForKey(opKey);
-        if (product.alreadyApplied) {
-          toast.success('This suggestion was already applied.');
-        } else if (product.idempotent) {
-          toast.success('Already up to date.');
-        } else {
-          toast.success('Suggestion applied successfully.');
+      if (cvImprovementDiffInFlightRef.current) return;
+      cvImprovementDiffInFlightRef.current = true;
+      setCvImprovementDiffActionsPending(true);
+      const wasAcceptAll = changeIndex == null;
+      const improvementsKey = cvSuggestionsQueryKey(targetId);
+      const prevImprovementsPayload = wasAcceptAll
+        ? queryClient.getQueryData(improvementsKey)
+        : undefined;
+      const selectedField =
+        changeIndex != null && changeIndex >= 0
+          ? (diffPreview.changedFields[changeIndex]?.fieldPath ?? '').trim()
+          : '';
+      try {
+        const requestPointer =
+          selectedField.length > 0
+            ? ((await resolveImprovementPointerByField(selectedField)) ??
+              diffPreview.pointer)
+            : diffPreview.pointer;
+        if (wasAcceptAll) {
+          queryClient.setQueryData<CvImprovementsPayload>(
+            improvementsKey,
+            (prev) => {
+              if (!prev || !Array.isArray(prev.improvements)) return prev;
+              return {
+                ...prev,
+                improvements: prev.improvements.filter(
+                  (it) =>
+                    (it?.id ?? '').trim() !== String(requestPointer).trim(),
+                ),
+              };
+            },
+          );
         }
-        if (shouldShowTruthfulnessAdjustNotice(product)) {
+        /** Full suggestion accept/reject — product route (no per-field body). */
+        if (selectedField.length === 0) {
+          const t0 = Date.now();
+          let cacheWrites = 0;
+          const product = await api.cv.acceptSuggestion(
+            String(requestPointer),
+            targetId ?? undefined,
+          );
+          logCvMutationCommitDev(
+            'cvPage.commitAcceptDiff.acceptSuggestion',
+            product,
+          );
+          cacheWrites += 1;
+          queryClient.setQueryData<CvImprovementsPayload>(
+            improvementsKey,
+            (prev) =>
+              applySuggestionAcceptToImprovementsCache(
+                prev,
+                String(requestPointer).trim(),
+                product,
+              ) ?? prev,
+          );
+          cacheWrites += 1;
+          closeDiffPreviewForKey(opKey);
+          if (product.alreadyApplied) {
+            toast.success('This suggestion was already applied.');
+          } else if (product.idempotent) {
+            toast.success('Already up to date.');
+          } else {
+            toast.success('Suggestion applied successfully.');
+          }
+          if (shouldShowTruthfulnessAdjustNotice(product)) {
+            toast.info(
+              product.truthfulnessWarnings?.find((w) => w.trim())?.trim() ??
+                'Some edits were checked against your CV and adjusted before applying.',
+            );
+          }
+          await syncCvBuilderFromServer();
+          scheduleSectionResyncIfBackgroundTasks(product);
+          const inv = reconcileAfterMutation(targetId, 'structuralAccept');
+          logCvSuggestionMutationClientPerf(
+            'commitAcceptDiff.acceptSuggestion',
+            t0,
+            {
+              invalidations: inv,
+              cacheWrites,
+            },
+          );
+          return;
+        }
+
+        /** Field-level accept after Apply-with-AI preview — POST /cv/improvements/:id/accept + draftHash (backend partial queue). */
+        const result = await api.cv.acceptImprovement(
+          requestPointer,
+          targetId ?? undefined,
+          {
+            ...(selectedField ? { acceptedFields: [selectedField] } : {}),
+            ...(diffPreview.draftHash
+              ? { draftHash: diffPreview.draftHash }
+              : {}),
+          },
+        );
+        if (result.partial) {
+          const nextPointer = result.improvementId ?? diffPreview.pointer;
+          const freshNext = await api.cv.applyImprovement(
+            nextPointer,
+            targetId ?? undefined,
+          );
+          logCvMaterializePerformanceDev(
+            'cvPage.commitAcceptDiff.partialContinue',
+            freshNext,
+          );
+          const nextHash = result.draftHash ?? freshNext.draftHash;
+          setDiffPreviews((prev) => {
+            if (!opKey) return prev;
+            const cur = prev[opKey];
+            if (!cur) return prev;
+            return {
+              ...prev,
+              [opKey]: {
+                ...cur,
+                pointer: nextPointer,
+                draftHash: nextHash,
+                before: freshNext.before ?? cur.before,
+                after: freshNext.after ?? cur.after,
+                changedFields: freshNext.changedFields ?? cur.changedFields,
+                ...truthfulnessFieldsFromResponse(freshNext),
+                performance: compactDiffPreviewPerformance(freshNext),
+              },
+            };
+          });
+          void queryClient.invalidateQueries({
+            queryKey: cvSuggestionsQueryKey(targetId),
+          });
+          toast.success('Change accepted.');
+          return;
+        }
+        queryClient.setQueryData<CvImprovementsPayload>(
+          cvSuggestionsQueryKey(targetId),
+          (prev) => {
+            if (!prev || !Array.isArray(prev.improvements)) return prev;
+            const acceptedKey = selectedField.trim();
+            const nextImprovements = prev.improvements.filter((item) => {
+              if (result.improvementId && item?.id === result.improvementId)
+                return false;
+              if (
+                acceptedKey.length > 0 &&
+                Array.isArray(item?.pendingFieldPaths) &&
+                item.pendingFieldPaths.some((p) => p.trim() === acceptedKey)
+              ) {
+                return false;
+              }
+              return true;
+            });
+            return {
+              ...prev,
+              improvements: nextImprovements,
+              pendingSuggestionsCount:
+                result.pendingSuggestionsCount ??
+                Math.max(0, nextImprovements.length),
+              cvRevisionId:
+                result.cvRevisionId !== undefined
+                  ? result.cvRevisionId
+                  : (prev.cvRevisionId ?? null),
+              structuredRevisionHash:
+                result.structuredRevisionHash !== undefined
+                  ? result.structuredRevisionHash
+                  : prev.structuredRevisionHash,
+            };
+          },
+        );
+        closeDiffPreviewForKey(opKey);
+        toast.success('Suggestion applied successfully.');
+        if (shouldShowTruthfulnessAdjustNotice(result)) {
           toast.info(
-            product.truthfulnessWarnings?.find((w) => w.trim())?.trim() ??
+            result.truthfulnessWarnings?.find((w) => w.trim())?.trim() ??
               'Some edits were checked against your CV and adjusted before applying.',
           );
         }
-        await syncCvBuilderFromServer();
-        scheduleSectionResyncIfBackgroundTasks(product);
-        const inv = reconcileAfterMutation(targetId, 'structuralAccept');
-        logCvSuggestionMutationClientPerf('commitAcceptDiff.acceptSuggestion', t0, {
-          invalidations: inv,
-          cacheWrites,
-        });
-        return;
-      }
-
-      /** Field-level accept after Apply-with-AI preview — POST /cv/improvements/:id/accept + draftHash (backend partial queue). */
-      const result = await api.cv.acceptImprovement(requestPointer, targetId ?? undefined, {
-        ...(selectedField ? { acceptedFields: [selectedField] } : {}),
-        ...(diffPreview.draftHash ? { draftHash: diffPreview.draftHash } : {}),
-      });
-      if (result.partial) {
-        const nextPointer = result.improvementId ?? diffPreview.pointer;
-        const freshNext = await api.cv.applyImprovement(nextPointer, targetId ?? undefined);
-        logCvMaterializePerformanceDev('cvPage.commitAcceptDiff.partialContinue', freshNext);
-        const nextHash = result.draftHash ?? freshNext.draftHash;
-        setDiffPreviews((prev) => {
-          const cur = opKey ? prev[opKey] : null;
-          if (!cur) return prev;
-          return {
-            ...prev,
-            [opKey]: {
-              ...cur,
-              pointer: nextPointer,
-              draftHash: nextHash,
-              before: freshNext.before ?? cur.before,
-              after: freshNext.after ?? cur.after,
-              changedFields: freshNext.changedFields ?? cur.changedFields,
-              ...truthfulnessFieldsFromResponse(freshNext),
-              performance: compactDiffPreviewPerformance(freshNext),
-            },
-          };
-        });
-        void queryClient.invalidateQueries({ queryKey: cvSuggestionsQueryKey(targetId) });
-        toast.success('Change accepted.');
-        return;
-      }
-      queryClient.setQueryData<CvImprovementsPayload>(
-        cvSuggestionsQueryKey(targetId),
-        (prev) => {
-          if (!prev || !Array.isArray(prev.improvements)) return prev;
-          const acceptedKey = selectedField.trim();
-          const nextImprovements = prev.improvements.filter((item) => {
-            if (result.improvementId && item?.id === result.improvementId) return false;
-            if (
-              acceptedKey.length > 0 &&
-              Array.isArray(item?.pendingFieldPaths) &&
-              item.pendingFieldPaths.some((p) => p.trim() === acceptedKey)
-            ) {
-              return false;
-            }
-            return true;
-          });
-          return {
-            ...prev,
-            improvements: nextImprovements,
-            pendingSuggestionsCount:
-              result.pendingSuggestionsCount ?? Math.max(0, nextImprovements.length),
-            cvRevisionId:
-              result.cvRevisionId !== undefined ? result.cvRevisionId : (prev.cvRevisionId ?? null),
-            structuredRevisionHash:
-              result.structuredRevisionHash !== undefined
-                ? result.structuredRevisionHash
-                : prev.structuredRevisionHash,
-          };
-        },
-      );
-      closeDiffPreviewForKey(opKey);
-      toast.success('Suggestion applied successfully.');
-      if (shouldShowTruthfulnessAdjustNotice(result)) {
-        toast.info(
-          result.truthfulnessWarnings?.find((w) => w.trim())?.trim() ??
-            'Some edits were checked against your CV and adjusted before applying.',
+        logCvMutationCommitDev(
+          'cvPage.commitAcceptDiff.acceptImprovement',
+          result,
         );
-      }
-      logCvMutationCommitDev('cvPage.commitAcceptDiff.acceptImprovement', result);
-      const t0 = Date.now();
-      await syncCvBuilderFromServer();
-      scheduleSectionResyncIfBackgroundTasks(result);
-      const inv = reconcileAfterMutation(targetId, 'structuralAccept');
-      logCvSuggestionMutationClientPerf('commitAcceptDiff.acceptImprovement', t0, {
-        invalidations: inv,
-        cacheWrites: 1,
-      });
-    } catch (e) {
-      if (wasAcceptAll && prevImprovementsPayload !== undefined) {
-        queryClient.setQueryData(improvementsKey, prevImprovementsPayload);
-      }
-      const code = getApiErrorCode(e);
-      if (
-        code === 'IMPROVEMENT_STALE_DRAFT' ||
-        code === 'IMPROVEMENT_INVALID_FIELD_SELECTION' ||
-        code === 'IMPROVEMENT_STALE_INDEX'
-      ) {
-        try {
-          let pointerForRefresh = diffPreview.pointer;
-          if (code === 'IMPROVEMENT_STALE_INDEX' && selectedField) {
-            const resolvedId = await resolveImprovementPointerByField(selectedField);
-            if (resolvedId) pointerForRefresh = resolvedId;
-          }
-          const fresh = await api.cv.applyImprovement(pointerForRefresh, targetId ?? undefined);
-          logCvMaterializePerformanceDev('cvPage.commitAcceptDiff.staleRefresh', fresh);
-          const freshPreview = {
-            ...diffPreview,
-            pointer: pointerForRefresh,
-            draftHash: fresh.draftHash,
-            changedFields: fresh.changedFields,
-            ...truthfulnessFieldsFromResponse(fresh),
-            performance: compactDiffPreviewPerformance(fresh),
-          };
-          const selectedStillExists =
-            selectedField.length > 0 &&
-            freshPreview.changedFields.some(
-              (cf) => (cf.fieldPath ?? '').trim() === selectedField,
+        const t0 = Date.now();
+        await syncCvBuilderFromServer();
+        scheduleSectionResyncIfBackgroundTasks(result);
+        const inv = reconcileAfterMutation(targetId, 'structuralAccept');
+        logCvSuggestionMutationClientPerf(
+          'commitAcceptDiff.acceptImprovement',
+          t0,
+          {
+            invalidations: inv,
+            cacheWrites: 1,
+          },
+        );
+      } catch (e) {
+        if (wasAcceptAll && prevImprovementsPayload !== undefined) {
+          queryClient.setQueryData(improvementsKey, prevImprovementsPayload);
+        }
+        const code = getApiErrorCode(e);
+        if (
+          code === 'IMPROVEMENT_STALE_DRAFT' ||
+          code === 'IMPROVEMENT_INVALID_FIELD_SELECTION' ||
+          code === 'IMPROVEMENT_STALE_INDEX'
+        ) {
+          try {
+            let pointerForRefresh = diffPreview.pointer;
+            if (code === 'IMPROVEMENT_STALE_INDEX' && selectedField) {
+              const resolvedId =
+                await resolveImprovementPointerByField(selectedField);
+              if (resolvedId) pointerForRefresh = resolvedId;
+            }
+            const fresh = await api.cv.applyImprovement(
+              pointerForRefresh,
+              targetId ?? undefined,
             );
-          if (selectedField && selectedStillExists) {
-            const retry = await api.cv.acceptImprovement(pointerForRefresh, targetId ?? undefined, {
-              acceptedFields: [selectedField],
-              ...(fresh.draftHash ? { draftHash: fresh.draftHash } : {}),
-            });
-            if (retry.partial) {
-              const nextPointer = retry.improvementId ?? pointerForRefresh;
-              const freshNext = await api.cv.applyImprovement(nextPointer, targetId ?? undefined);
-              logCvMaterializePerformanceDev('cvPage.commitAcceptDiff.staleRetryPartial', freshNext);
-              setDiffPreviews((prev) => {
-                const cur = opKey ? prev[opKey] : null;
-                if (!cur) return prev;
-                return {
-                  ...prev,
-                  [opKey]: {
-                    ...freshPreview,
-                    pointer: nextPointer,
-                    draftHash: retry.draftHash ?? freshNext.draftHash,
-                    before: freshNext.before ?? freshPreview.before,
-                    after: freshNext.after ?? freshPreview.after,
-                    changedFields: freshNext.changedFields ?? freshPreview.changedFields,
-                    ...truthfulnessFieldsFromResponse(freshNext),
-                    ...truthfulnessFieldsFromResponse(retry),
-                    performance: compactDiffPreviewPerformance(freshNext),
-                  },
-                };
-              });
-              toast.success('Change accepted.');
+            logCvMaterializePerformanceDev(
+              'cvPage.commitAcceptDiff.staleRefresh',
+              fresh,
+            );
+            const freshPreview = {
+              ...diffPreview,
+              pointer: pointerForRefresh,
+              draftHash: fresh.draftHash,
+              changedFields: fresh.changedFields,
+              ...truthfulnessFieldsFromResponse(fresh),
+              performance: compactDiffPreviewPerformance(fresh),
+            };
+            const selectedStillExists =
+              selectedField.length > 0 &&
+              freshPreview.changedFields.some(
+                (cf) => (cf.fieldPath ?? '').trim() === selectedField,
+              );
+            if (selectedField && selectedStillExists) {
+              const retry = await api.cv.acceptImprovement(
+                pointerForRefresh,
+                targetId ?? undefined,
+                {
+                  acceptedFields: [selectedField],
+                  ...(fresh.draftHash ? { draftHash: fresh.draftHash } : {}),
+                },
+              );
+              if (retry.partial) {
+                const nextPointer = retry.improvementId ?? pointerForRefresh;
+                const freshNext = await api.cv.applyImprovement(
+                  nextPointer,
+                  targetId ?? undefined,
+                );
+                logCvMaterializePerformanceDev(
+                  'cvPage.commitAcceptDiff.staleRetryPartial',
+                  freshNext,
+                );
+                setDiffPreviews((prev) => {
+                  if (!opKey) return prev;
+                  const cur = prev[opKey];
+                  if (!cur) return prev;
+                  return {
+                    ...prev,
+                    [opKey]: {
+                      ...freshPreview,
+                      pointer: nextPointer,
+                      draftHash: retry.draftHash ?? freshNext.draftHash,
+                      before: freshNext.before ?? freshPreview.before,
+                      after: freshNext.after ?? freshPreview.after,
+                      changedFields:
+                        freshNext.changedFields ?? freshPreview.changedFields,
+                      ...truthfulnessFieldsFromResponse(freshNext),
+                      ...truthfulnessFieldsFromResponse(retry),
+                      performance: compactDiffPreviewPerformance(freshNext),
+                    },
+                  };
+                });
+                toast.success('Change accepted.');
+                return;
+              }
+              closeDiffPreviewForKey(opKey);
+              if (retry.alreadyApplied) {
+                toast.success('This suggestion was already applied.');
+              } else if (retry.idempotent) {
+                toast.success('Already up to date.');
+              } else {
+                toast.success('Suggestion applied successfully.');
+              }
+              if (shouldShowTruthfulnessAdjustNotice(retry)) {
+                toast.info(
+                  retry.truthfulnessWarnings?.find((w) => w.trim())?.trim() ??
+                    'Some edits were checked against your CV and adjusted before applying.',
+                );
+              }
+              logCvMutationCommitDev(
+                'cvPage.commitAcceptDiff.staleRetryAcceptImprovement',
+                retry,
+              );
+              const t0Retry = Date.now();
+              await syncCvBuilderFromServer();
+              scheduleSectionResyncIfBackgroundTasks(retry);
+              const inv = reconcileAfterMutation(targetId, 'structuralAccept');
+              logCvSuggestionMutationClientPerf(
+                'commitAcceptDiff.staleRetryAcceptImprovement',
+                t0Retry,
+                {
+                  invalidations: inv,
+                  cacheWrites: 1,
+                },
+              );
               return;
             }
-            closeDiffPreviewForKey(opKey);
-            if (retry.alreadyApplied) {
-              toast.success('This suggestion was already applied.');
-            } else if (retry.idempotent) {
-              toast.success('Already up to date.');
-            } else {
-              toast.success('Suggestion applied successfully.');
-            }
-            if (shouldShowTruthfulnessAdjustNotice(retry)) {
-              toast.info(
-                retry.truthfulnessWarnings?.find((w) => w.trim())?.trim() ??
-                  'Some edits were checked against your CV and adjusted before applying.',
+            if (selectedField.length === 0) {
+              const t0 = Date.now();
+              const product = await api.cv.acceptSuggestion(
+                String(pointerForRefresh),
+                targetId ?? undefined,
               );
+              logCvMutationCommitDev(
+                'cvPage.commitAcceptDiff.staleRefreshAcceptSuggestion',
+                product,
+              );
+              queryClient.setQueryData<CvImprovementsPayload>(
+                improvementsKey,
+                (prev) =>
+                  applySuggestionAcceptToImprovementsCache(
+                    prev,
+                    String(pointerForRefresh).trim(),
+                    product,
+                  ) ?? prev,
+              );
+              closeDiffPreviewForKey(opKey);
+              if (product.alreadyApplied) {
+                toast.success('This suggestion was already applied.');
+              } else if (product.idempotent) {
+                toast.success('Already up to date.');
+              } else {
+                toast.success('Suggestion applied successfully.');
+              }
+              if (shouldShowTruthfulnessAdjustNotice(product)) {
+                toast.info(
+                  product.truthfulnessWarnings?.find((w) => w.trim())?.trim() ??
+                    'Some edits were checked against your CV and adjusted before applying.',
+                );
+              }
+              await syncCvBuilderFromServer();
+              scheduleSectionResyncIfBackgroundTasks(product);
+              const inv = reconcileAfterMutation(targetId, 'structuralAccept');
+              logCvSuggestionMutationClientPerf(
+                'commitAcceptDiff.staleRefreshAcceptSuggestion',
+                t0,
+                {
+                  invalidations: inv,
+                  cacheWrites: 2,
+                },
+              );
+              return;
             }
-            logCvMutationCommitDev('cvPage.commitAcceptDiff.staleRetryAcceptImprovement', retry);
-            const t0Retry = Date.now();
-            await syncCvBuilderFromServer();
-            scheduleSectionResyncIfBackgroundTasks(retry);
-            const inv = reconcileAfterMutation(targetId, 'structuralAccept');
-            logCvSuggestionMutationClientPerf('commitAcceptDiff.staleRetryAcceptImprovement', t0Retry, {
-              invalidations: inv,
-              cacheWrites: 1,
+            setDiffPreviews((prev) => {
+              if (!opKey) return prev;
+              return { ...prev, [opKey]: freshPreview };
             });
-            return;
-          }
-          if (selectedField.length === 0) {
-            const t0 = Date.now();
-            const product = await api.cv.acceptSuggestion(String(pointerForRefresh), targetId ?? undefined);
-            logCvMutationCommitDev('cvPage.commitAcceptDiff.staleRefreshAcceptSuggestion', product);
-            queryClient.setQueryData<CvImprovementsPayload>(improvementsKey, (prev) =>
-              applySuggestionAcceptToImprovementsCache(prev, String(pointerForRefresh).trim(), product) ?? prev,
+            toast.info(
+              'Suggestion changed. Review updated fields and try again.',
             );
-            closeDiffPreviewForKey(opKey);
-            if (product.alreadyApplied) {
-              toast.success('This suggestion was already applied.');
-            } else if (product.idempotent) {
-              toast.success('Already up to date.');
-            } else {
-              toast.success('Suggestion applied successfully.');
-            }
-            if (shouldShowTruthfulnessAdjustNotice(product)) {
-              toast.info(
-                product.truthfulnessWarnings?.find((w) => w.trim())?.trim() ??
-                  'Some edits were checked against your CV and adjusted before applying.',
-              );
-            }
-            await syncCvBuilderFromServer();
-            scheduleSectionResyncIfBackgroundTasks(product);
-            const inv = reconcileAfterMutation(targetId, 'structuralAccept');
-            logCvSuggestionMutationClientPerf('commitAcceptDiff.staleRefreshAcceptSuggestion', t0, {
-              invalidations: inv,
-              cacheWrites: 2,
-            });
+            return;
+          } catch (refreshErr) {
+            logCvMutationErrorDev('commitAcceptDiff.refresh', refreshErr);
+            toast.error(
+              getApiErrorMessage(refreshErr) ||
+                'Could not refresh this suggestion. Please try again.',
+            );
             return;
           }
-          setDiffPreviews((prev) => (opKey ? { ...prev, [opKey]: freshPreview } : prev));
-          toast.info('Suggestion changed. Review updated fields and try again.');
-          return;
-        } catch (refreshErr) {
-          logCvMutationErrorDev('commitAcceptDiff.refresh', refreshErr);
-          toast.error(getApiErrorMessage(refreshErr) || 'Could not refresh this suggestion. Please try again.');
-          return;
         }
-      }
-      const msg = (getApiErrorMessage(e) || '').toLowerCase();
-      const missingDraft = msg.includes('no draft found') || msg.includes('run apply first');
-      if (missingDraft) {
-        try {
-          const prep = await api.cv.applyImprovement(diffPreview.pointer, targetId ?? undefined);
-          logCvMaterializePerformanceDev('cvPage.commitAcceptDiff.missingDraftPrep', prep);
-          if (isCvApplyImprovementTerminalNoDiff(prep)) {
-            const rid = String(
-              prep.suggestionId || prep.improvementId || prep.pointer || diffPreview.pointer,
-            ).trim();
-            queryClient.setQueryData<CvImprovementsPayload>(improvementsKey, (prev) =>
-              applySuggestionAcceptToImprovementsCache(prev, rid, {
-                pendingSuggestionsCount:
-                  prep.pendingSuggestionsCount ??
-                  Math.max(0, (prev?.improvements ?? []).filter((it) => (it?.id ?? '').trim() !== rid).length),
-                cvRevisionId: prep.cvRevisionId ?? null,
-                alreadyApplied: true,
-                acceptedSuggestionIds: [rid],
-              }) ?? prev,
+        const msg = (getApiErrorMessage(e) || '').toLowerCase();
+        const missingDraft =
+          msg.includes('no draft found') || msg.includes('run apply first');
+        if (missingDraft) {
+          try {
+            const prep = await api.cv.applyImprovement(
+              diffPreview.pointer,
+              targetId ?? undefined,
             );
-            closeDiffPreviewForKey(opKey);
-            toast.success(toastCopyForTerminalNoDiffApply(prep));
-            const t0Term = Date.now();
-            await syncCvBuilderFromServer();
-            const inv = reconcileAfterMutation(targetId, 'queueOnly');
-            logCvSuggestionMutationClientPerf('cvPage.commitAcceptDiff.missingDraft.terminalNoDiff', t0Term, {
-              invalidations: inv,
-              cacheWrites: 1,
-            });
-            return;
-          }
-          const sf =
-            changeIndex != null && changeIndex >= 0
-              ? (diffPreview.changedFields[changeIndex]?.fieldPath ?? '').trim()
-              : '';
-          if (sf) {
-            const acceptRes = await api.cv.acceptImprovement(diffPreview.pointer, targetId ?? undefined, {
-              acceptedFields: [sf],
-              ...(prep.draftHash ? { draftHash: prep.draftHash } : {}),
-            });
-            logCvMutationCommitDev('cvPage.commitAcceptDiff.missingDraftAcceptImprovement', acceptRes);
-            closeDiffPreviewForKey(opKey);
-            toast.success('Suggestion applied successfully.');
-            const t0Md = Date.now();
-            await syncCvBuilderFromServer();
-            scheduleSectionResyncIfBackgroundTasks(acceptRes);
-            const inv = reconcileAfterMutation(targetId, 'structuralAccept');
-            logCvSuggestionMutationClientPerf('commitAcceptDiff.missingDraftAcceptImprovement', t0Md, {
-              invalidations: inv,
-              cacheWrites: 1,
-            });
-          } else {
-            const t0Md = Date.now();
-            const prodMissing = await api.cv.acceptSuggestion(String(diffPreview.pointer), targetId ?? undefined);
-            logCvMutationCommitDev('cvPage.commitAcceptDiff.missingDraftAcceptSuggestion', prodMissing);
-            queryClient.setQueryData<CvImprovementsPayload>(improvementsKey, (prev) =>
-              applySuggestionAcceptToImprovementsCache(
-                prev,
-                String(diffPreview.pointer).trim(),
+            logCvMaterializePerformanceDev(
+              'cvPage.commitAcceptDiff.missingDraftPrep',
+              prep,
+            );
+            if (isCvApplyImprovementTerminalNoDiff(prep)) {
+              const rid = String(
+                prep.suggestionId ||
+                  prep.improvementId ||
+                  prep.pointer ||
+                  diffPreview.pointer,
+              ).trim();
+              queryClient.setQueryData<CvImprovementsPayload>(
+                improvementsKey,
+                (prev) =>
+                  applySuggestionAcceptToImprovementsCache(prev, rid, {
+                    pendingSuggestionsCount:
+                      prep.pendingSuggestionsCount ??
+                      Math.max(
+                        0,
+                        (prev?.improvements ?? []).filter(
+                          (it) => (it?.id ?? '').trim() !== rid,
+                        ).length,
+                      ),
+                    cvRevisionId: prep.cvRevisionId ?? null,
+                    alreadyApplied: true,
+                    acceptedSuggestionIds: [rid],
+                  }) ?? prev,
+              );
+              closeDiffPreviewForKey(opKey);
+              toast.success(toastCopyForTerminalNoDiffApply(prep));
+              const t0Term = Date.now();
+              await syncCvBuilderFromServer();
+              const inv = reconcileAfterMutation(targetId, 'queueOnly');
+              logCvSuggestionMutationClientPerf(
+                'cvPage.commitAcceptDiff.missingDraft.terminalNoDiff',
+                t0Term,
+                {
+                  invalidations: inv,
+                  cacheWrites: 1,
+                },
+              );
+              return;
+            }
+            const sf =
+              changeIndex != null && changeIndex >= 0
+                ? (
+                    diffPreview.changedFields[changeIndex]?.fieldPath ?? ''
+                  ).trim()
+                : '';
+            if (sf) {
+              const acceptRes = await api.cv.acceptImprovement(
+                diffPreview.pointer,
+                targetId ?? undefined,
+                {
+                  acceptedFields: [sf],
+                  ...(prep.draftHash ? { draftHash: prep.draftHash } : {}),
+                },
+              );
+              logCvMutationCommitDev(
+                'cvPage.commitAcceptDiff.missingDraftAcceptImprovement',
+                acceptRes,
+              );
+              closeDiffPreviewForKey(opKey);
+              toast.success('Suggestion applied successfully.');
+              const t0Md = Date.now();
+              await syncCvBuilderFromServer();
+              scheduleSectionResyncIfBackgroundTasks(acceptRes);
+              const inv = reconcileAfterMutation(targetId, 'structuralAccept');
+              logCvSuggestionMutationClientPerf(
+                'commitAcceptDiff.missingDraftAcceptImprovement',
+                t0Md,
+                {
+                  invalidations: inv,
+                  cacheWrites: 1,
+                },
+              );
+            } else {
+              const t0Md = Date.now();
+              const prodMissing = await api.cv.acceptSuggestion(
+                String(diffPreview.pointer),
+                targetId ?? undefined,
+              );
+              logCvMutationCommitDev(
+                'cvPage.commitAcceptDiff.missingDraftAcceptSuggestion',
                 prodMissing,
-              ) ?? prev,
+              );
+              queryClient.setQueryData<CvImprovementsPayload>(
+                improvementsKey,
+                (prev) =>
+                  applySuggestionAcceptToImprovementsCache(
+                    prev,
+                    String(diffPreview.pointer).trim(),
+                    prodMissing,
+                  ) ?? prev,
+              );
+              closeDiffPreviewForKey(opKey);
+              toast.success('Suggestion applied successfully.');
+              await syncCvBuilderFromServer();
+              scheduleSectionResyncIfBackgroundTasks(prodMissing);
+              const inv = reconcileAfterMutation(targetId, 'structuralAccept');
+              logCvSuggestionMutationClientPerf(
+                'commitAcceptDiff.missingDraftAcceptSuggestion',
+                t0Md,
+                {
+                  invalidations: inv,
+                  cacheWrites: 2,
+                },
+              );
+            }
+            return;
+          } catch (retryErr) {
+            logCvMutationErrorDev(
+              'commitAcceptDiff.missingDraftRetry',
+              retryErr,
             );
-            closeDiffPreviewForKey(opKey);
-            toast.success('Suggestion applied successfully.');
-            await syncCvBuilderFromServer();
-            scheduleSectionResyncIfBackgroundTasks(prodMissing);
-            const inv = reconcileAfterMutation(targetId, 'structuralAccept');
-            logCvSuggestionMutationClientPerf('commitAcceptDiff.missingDraftAcceptSuggestion', t0Md, {
-              invalidations: inv,
-              cacheWrites: 2,
-            });
+            toast.error(
+              getApiErrorMessage(retryErr) ||
+                'Could not apply this improvement. Please try again.',
+            );
           }
-          return;
-        } catch (retryErr) {
-          logCvMutationErrorDev('commitAcceptDiff.missingDraftRetry', retryErr);
-          toast.error(getApiErrorMessage(retryErr) || 'Could not apply this improvement. Please try again.');
+        } else {
+          logCvMutationErrorDev('commitAcceptDiff', e);
+          toast.error(
+            getApiErrorMessage(e) ||
+              'Could not apply this improvement. Please try again.',
+          );
         }
-      } else {
-        logCvMutationErrorDev('commitAcceptDiff', e);
-        toast.error(getApiErrorMessage(e) || 'Could not apply this improvement. Please try again.');
+        /* keep diffPreview so user can retry */
+      } finally {
+        cvImprovementDiffInFlightRef.current = false;
+        setCvImprovementDiffActionsPending(false);
       }
-      /* keep diffPreview so user can retry */
-    } finally {
-      cvImprovementDiffInFlightRef.current = false;
-      setCvImprovementDiffActionsPending(false);
-    }
-  }, [
-    assistantPendingPatch,
-    assistantPreviewMode,
-    activeDiffPreviewKey,
-    diffPreviews,
-    targetId,
-    queryClient,
-    toast,
-    resolveImprovementPointerByField,
-    syncCvBuilderFromServer,
-    scheduleSectionResyncIfBackgroundTasks,
-    closeDiffPreviewForKey,
-    reconcileAfterMutation,
-  ]);
+    },
+    [
+      assistantPendingPatch,
+      assistantPreviewMode,
+      activeDiffPreviewKey,
+      diffPreviews,
+      targetId,
+      queryClient,
+      toast,
+      resolveImprovementPointerByField,
+      syncCvBuilderFromServer,
+      scheduleSectionResyncIfBackgroundTasks,
+      closeDiffPreviewForKey,
+      reconcileAfterMutation,
+    ],
+  );
 
   const commitRejectDiff = useCallback(
     async (changeIndex?: number) => {
       const opKey = activeDiffPreviewKey;
-      const diffPreview = opKey ? diffPreviews[opKey] ?? null : null;
+      const diffPreview = opKey ? (diffPreviews[opKey] ?? null) : null;
       if (!diffPreview) return;
       if (assistantPreviewMode && diffPreview.pointer === '__assistant__') {
         closeDiffPreviewForKey(CV_ASSISTANT_DIFF_PREVIEW_KEY);
@@ -1338,144 +1653,201 @@ function CVPageContent() {
         void queryClient.refetchQueries({ queryKey: ['cv-profile', targetId] });
         return;
       }
-    if (cvImprovementDiffInFlightRef.current) return;
-    cvImprovementDiffInFlightRef.current = true;
-    setCvImprovementDiffActionsPending(true);
-    const wasRejectAll = changeIndex == null;
-    const improvementsKey = cvSuggestionsQueryKey(targetId);
-    const prevImprovementsPayload = wasRejectAll ? queryClient.getQueryData(improvementsKey) : undefined;
-    let shouldClosePreview = true;
-    const selectedField =
-      changeIndex != null && changeIndex >= 0
-        ? (diffPreview.changedFields[changeIndex]?.fieldPath ?? '').trim()
-        : '';
-    try {
-      const requestPointer =
-        selectedField.length > 0
-          ? ((await resolveImprovementPointerByField(selectedField)) ?? diffPreview.pointer)
-          : diffPreview.pointer;
-      if (wasRejectAll) {
-        queryClient.setQueryData<CvImprovementsPayload>(improvementsKey, (prev) => {
-          if (!prev || !Array.isArray(prev.improvements)) return prev;
-          return {
-            ...prev,
-            improvements: prev.improvements.filter((it) => (it?.id ?? '').trim() !== String(requestPointer).trim()),
-          };
-        });
-      }
-      if (selectedField.length === 0) {
-        const product = await api.cv.rejectSuggestion(String(requestPointer), targetId ?? undefined);
-        logCvMutationCommitDev('cvPage.commitRejectDiff.rejectSuggestion', product);
-        queryClient.setQueryData<CvImprovementsPayload>(improvementsKey, (prev) =>
-          applySuggestionRejectToImprovementsCache(prev, String(requestPointer).trim(), product) ?? prev,
-        );
-        if (product.idempotent) {
-          toast.success('Already dismissed.');
-        } else if (product.alreadyApplied) {
-          toast.success('This suggestion was already applied.');
-        } else {
-          toast.success('Suggestion dismissed.');
-        }
-        const t0Rj = Date.now();
-        const inv = reconcileAfterMutation(targetId, 'queueOnly');
-        logCvSuggestionMutationClientPerf('commitRejectDiff.rejectSuggestion', t0Rj, {
-          invalidations: inv,
-          cacheWrites: 1,
-        });
-        return;
-      }
-
-      /** Field-level reject on preview — POST /cv/improvements/:id/reject + draftHash. */
-      const result = await api.cv.rejectImprovement(requestPointer, targetId ?? undefined, {
-        ...(selectedField ? { rejectedFields: [selectedField] } : {}),
-        ...(diffPreview.draftHash ? { draftHash: diffPreview.draftHash } : {}),
-      });
-      if (result.partial) {
-        const nextPointer = result.improvementId ?? diffPreview.pointer;
-        const freshNext = await api.cv.applyImprovement(nextPointer, targetId ?? undefined);
-        logCvMaterializePerformanceDev('cvPage.commitRejectDiff.partialContinue', freshNext);
-        setDiffPreviews((prev) => {
-          const cur = opKey ? prev[opKey] : null;
-          if (!cur) return prev;
-          return {
-            ...prev,
-            [opKey]: {
-              ...cur,
-              pointer: nextPointer,
-              draftHash: result.draftHash ?? freshNext.draftHash,
-              before: freshNext.before ?? cur.before,
-              after: freshNext.after ?? cur.after,
-              changedFields: freshNext.changedFields ?? cur.changedFields,
-              ...truthfulnessFieldsFromResponse(freshNext),
-              performance: compactDiffPreviewPerformance(freshNext),
+      if (cvImprovementDiffInFlightRef.current) return;
+      cvImprovementDiffInFlightRef.current = true;
+      setCvImprovementDiffActionsPending(true);
+      const wasRejectAll = changeIndex == null;
+      const improvementsKey = cvSuggestionsQueryKey(targetId);
+      const prevImprovementsPayload = wasRejectAll
+        ? queryClient.getQueryData(improvementsKey)
+        : undefined;
+      let shouldClosePreview = true;
+      const selectedField =
+        changeIndex != null && changeIndex >= 0
+          ? (diffPreview.changedFields[changeIndex]?.fieldPath ?? '').trim()
+          : '';
+      try {
+        const requestPointer =
+          selectedField.length > 0
+            ? ((await resolveImprovementPointerByField(selectedField)) ??
+              diffPreview.pointer)
+            : diffPreview.pointer;
+        if (wasRejectAll) {
+          queryClient.setQueryData<CvImprovementsPayload>(
+            improvementsKey,
+            (prev) => {
+              if (!prev || !Array.isArray(prev.improvements)) return prev;
+              return {
+                ...prev,
+                improvements: prev.improvements.filter(
+                  (it) =>
+                    (it?.id ?? '').trim() !== String(requestPointer).trim(),
+                ),
+              };
             },
-          };
-        });
-        void queryClient.invalidateQueries({ queryKey: cvSuggestionsQueryKey(targetId) });
-        toast.info('Change rejected.');
-        shouldClosePreview = false;
-        return;
-      }
-      toast.success('Suggestion dismissed.');
-    } catch (e) {
-      if (wasRejectAll && prevImprovementsPayload !== undefined) {
-        queryClient.setQueryData(improvementsKey, prevImprovementsPayload);
-      }
-      const code = getApiErrorCode(e);
-      if (
-        code === 'IMPROVEMENT_STALE_DRAFT' ||
-        code === 'IMPROVEMENT_INVALID_FIELD_SELECTION' ||
-        code === 'IMPROVEMENT_STALE_INDEX'
-      ) {
-        try {
-          let pointerForRefresh = diffPreview.pointer;
-          if (code === 'IMPROVEMENT_STALE_INDEX' && selectedField) {
-            const resolvedId = await resolveImprovementPointerByField(selectedField);
-            if (resolvedId) pointerForRefresh = resolvedId;
+          );
+        }
+        if (selectedField.length === 0) {
+          const product = await api.cv.rejectSuggestion(
+            String(requestPointer),
+            targetId ?? undefined,
+          );
+          logCvMutationCommitDev(
+            'cvPage.commitRejectDiff.rejectSuggestion',
+            product,
+          );
+          queryClient.setQueryData<CvImprovementsPayload>(
+            improvementsKey,
+            (prev) =>
+              applySuggestionRejectToImprovementsCache(
+                prev,
+                String(requestPointer).trim(),
+                product,
+              ) ?? prev,
+          );
+          if (product.idempotent) {
+            toast.success('Already dismissed.');
+          } else if (product.alreadyApplied) {
+            toast.success('This suggestion was already applied.');
+          } else {
+            toast.success('Suggestion dismissed.');
           }
-          const fresh = await api.cv.applyImprovement(pointerForRefresh, targetId ?? undefined);
-          logCvMaterializePerformanceDev('cvPage.commitRejectDiff.staleRefresh', fresh);
+          const t0Rj = Date.now();
+          const inv = reconcileAfterMutation(targetId, 'queueOnly');
+          logCvSuggestionMutationClientPerf(
+            'commitRejectDiff.rejectSuggestion',
+            t0Rj,
+            {
+              invalidations: inv,
+              cacheWrites: 1,
+            },
+          );
+          return;
+        }
+
+        /** Field-level reject on preview — POST /cv/improvements/:id/reject + draftHash. */
+        const result = await api.cv.rejectImprovement(
+          requestPointer,
+          targetId ?? undefined,
+          {
+            ...(selectedField ? { rejectedFields: [selectedField] } : {}),
+            ...(diffPreview.draftHash
+              ? { draftHash: diffPreview.draftHash }
+              : {}),
+          },
+        );
+        if (result.partial) {
+          const nextPointer = result.improvementId ?? diffPreview.pointer;
+          const freshNext = await api.cv.applyImprovement(
+            nextPointer,
+            targetId ?? undefined,
+          );
+          logCvMaterializePerformanceDev(
+            'cvPage.commitRejectDiff.partialContinue',
+            freshNext,
+          );
           setDiffPreviews((prev) => {
             if (!opKey) return prev;
+            const cur = prev[opKey];
+            if (!cur) return prev;
             return {
               ...prev,
               [opKey]: {
-                ...diffPreview,
-                pointer: pointerForRefresh,
-                draftHash: fresh.draftHash,
-                changedFields: fresh.changedFields,
-                ...truthfulnessFieldsFromResponse(fresh),
-                performance: compactDiffPreviewPerformance(fresh),
+                ...cur,
+                pointer: nextPointer,
+                draftHash: result.draftHash ?? freshNext.draftHash,
+                before: freshNext.before ?? cur.before,
+                after: freshNext.after ?? cur.after,
+                changedFields: freshNext.changedFields ?? cur.changedFields,
+                ...truthfulnessFieldsFromResponse(freshNext),
+                performance: compactDiffPreviewPerformance(freshNext),
               },
             };
           });
-          toast.info('Suggestion changed. Review updated fields and try again.');
+          void queryClient.invalidateQueries({
+            queryKey: cvSuggestionsQueryKey(targetId),
+          });
+          toast.info('Change rejected.');
           shouldClosePreview = false;
           return;
-        } catch (refreshErr) {
-          logCvMutationErrorDev('commitRejectDiff.refresh', refreshErr);
-          toast.error(getApiErrorMessage(refreshErr) || 'Could not refresh this suggestion. Please try again.');
-          return;
         }
+        toast.success('Suggestion dismissed.');
+      } catch (e) {
+        if (wasRejectAll && prevImprovementsPayload !== undefined) {
+          queryClient.setQueryData(improvementsKey, prevImprovementsPayload);
+        }
+        const code = getApiErrorCode(e);
+        if (
+          code === 'IMPROVEMENT_STALE_DRAFT' ||
+          code === 'IMPROVEMENT_INVALID_FIELD_SELECTION' ||
+          code === 'IMPROVEMENT_STALE_INDEX'
+        ) {
+          try {
+            let pointerForRefresh = diffPreview.pointer;
+            if (code === 'IMPROVEMENT_STALE_INDEX' && selectedField) {
+              const resolvedId =
+                await resolveImprovementPointerByField(selectedField);
+              if (resolvedId) pointerForRefresh = resolvedId;
+            }
+            const fresh = await api.cv.applyImprovement(
+              pointerForRefresh,
+              targetId ?? undefined,
+            );
+            logCvMaterializePerformanceDev(
+              'cvPage.commitRejectDiff.staleRefresh',
+              fresh,
+            );
+            setDiffPreviews((prev) => {
+              if (!opKey) return prev;
+              return {
+                ...prev,
+                [opKey]: {
+                  ...diffPreview,
+                  pointer: pointerForRefresh,
+                  draftHash: fresh.draftHash,
+                  changedFields: fresh.changedFields,
+                  ...truthfulnessFieldsFromResponse(fresh),
+                  performance: compactDiffPreviewPerformance(fresh),
+                },
+              };
+            });
+            toast.info(
+              'Suggestion changed. Review updated fields and try again.',
+            );
+            shouldClosePreview = false;
+            return;
+          } catch (refreshErr) {
+            logCvMutationErrorDev('commitRejectDiff.refresh', refreshErr);
+            toast.error(
+              getApiErrorMessage(refreshErr) ||
+                'Could not refresh this suggestion. Please try again.',
+            );
+            return;
+          }
+        }
+        logCvMutationErrorDev('commitRejectDiff', e);
+        toast.error(
+          getApiErrorMessage(e) ||
+            'Could not reject this improvement. Please try again.',
+        );
+      } finally {
+        cvImprovementDiffInFlightRef.current = false;
+        setCvImprovementDiffActionsPending(false);
+        if (shouldClosePreview) closeDiffPreviewForKey(opKey);
       }
-      logCvMutationErrorDev('commitRejectDiff', e);
-      toast.error(getApiErrorMessage(e) || 'Could not reject this improvement. Please try again.');
-    } finally {
-      cvImprovementDiffInFlightRef.current = false;
-      setCvImprovementDiffActionsPending(false);
-      if (shouldClosePreview) closeDiffPreviewForKey(opKey);
-    }
-  }, [
-    assistantPreviewMode,
-    activeDiffPreviewKey,
-    diffPreviews,
-    targetId,
-    queryClient,
-    toast,
-    resolveImprovementPointerByField,
-    closeDiffPreviewForKey,
-    reconcileAfterMutation,
-  ]);
+    },
+    [
+      assistantPreviewMode,
+      activeDiffPreviewKey,
+      diffPreviews,
+      targetId,
+      queryClient,
+      toast,
+      resolveImprovementPointerByField,
+      closeDiffPreviewForKey,
+      reconcileAfterMutation,
+    ],
+  );
 
   const runAssistantCommand = useCallback(
     async (
@@ -1488,15 +1860,24 @@ function CVPageContent() {
       try {
         const mergedClarifications =
           clarifications && clarifications.length > 0
-            ? [...(assistantClarification?.clarifications ?? []), ...clarifications]
+            ? [
+                ...(assistantClarification?.clarifications ?? []),
+                ...clarifications,
+              ]
             : assistantClarification?.clarifications;
         const ts = targetSection?.trim();
-        const res: CvAssistantCommandResponse = await api.cv.assistantCommand(targetId, {
-          command,
-          cvData: (cvDataSnapshot ?? initialData) as unknown as Record<string, unknown>,
-          clarifications: mergedClarifications,
-          ...(ts ? { targetSection: ts } : {}),
-        });
+        const res: CvAssistantCommandResponse = await api.cv.assistantCommand(
+          targetId,
+          {
+            command,
+            cvData: (cvDataSnapshot ?? initialData) as unknown as Record<
+              string,
+              unknown
+            >,
+            clarifications: mergedClarifications,
+            ...(ts ? { targetSection: ts } : {}),
+          },
+        );
         if (res.type === 'clarify') {
           setAssistantClarification({
             command,
@@ -1511,11 +1892,8 @@ function CVPageContent() {
         setAssistantPendingPatch(res.patch);
         assistantCommandIdRef.current = res.commandId?.trim() ?? '';
         const target = (res.targetSection ?? 'summary').trim() || 'summary';
-        const { before: beforeDisplay, after: afterDisplay } = assistantDiffDisplayStrings(
-          target,
-          res.diff.before,
-          res.diff.after,
-        );
+        const { before: beforeDisplay, after: afterDisplay } =
+          assistantDiffDisplayStrings(target, res.diff.before, res.diff.after);
         setDiffPreviews((prev) => ({
           ...prev,
           [CV_ASSISTANT_DIFF_PREVIEW_KEY]: {
@@ -1538,7 +1916,9 @@ function CVPageContent() {
         setActiveDiffPreviewKey(CV_ASSISTANT_DIFF_PREVIEW_KEY);
         setAssistantOpen(false);
         // res.diff.summary = one-line blurb only (not summary body); body is in diff.after.summary.text
-        toast.success(res.diff.summary || 'Assistant suggestion ready for review');
+        toast.success(
+          res.diff.summary || 'Assistant suggestion ready for review',
+        );
         return 'ok';
       } catch (e) {
         toast.error(getApiErrorMessage(e) || 'Assistant command failed');
@@ -1547,25 +1927,43 @@ function CVPageContent() {
         setAssistantBusy(false);
       }
     },
-    [assistantClarification?.clarifications, cvDataSnapshot, initialData, targetId, toast],
+    [
+      assistantClarification?.clarifications,
+      cvDataSnapshot,
+      initialData,
+      targetId,
+      toast,
+    ],
   );
 
-  const handleAcceptDiff = useCallback(async (changeIndex?: number) => {
-    await commitAcceptDiff(changeIndex);
-  }, [commitAcceptDiff]);
+  const handleAcceptDiff = useCallback(
+    async (changeIndex?: number) => {
+      await commitAcceptDiff(changeIndex);
+    },
+    [commitAcceptDiff],
+  );
 
-  const handleRejectDiff = useCallback(async (changeIndex?: number) => {
-    await commitRejectDiff(changeIndex);
-  }, [commitRejectDiff]);
+  const handleRejectDiff = useCallback(
+    async (changeIndex?: number) => {
+      await commitRejectDiff(changeIndex);
+    },
+    [commitRejectDiff],
+  );
 
   const effectiveExternalPatch = useMemo<Partial<CVBuilderData> | null>(
-    () => instantPreviewPatch ?? (assistantPendingPatch as Partial<CVBuilderData> | null),
+    () =>
+      instantPreviewPatch ??
+      (assistantPendingPatch as Partial<CVBuilderData> | null),
     [instantPreviewPatch, assistantPendingPatch],
   );
-  const effectiveExternalPatchNonce = instantPreviewPatch ? instantPreviewPatchNonce : assistantPatchNonce;
+  const effectiveExternalPatchNonce = instantPreviewPatch
+    ? instantPreviewPatchNonce
+    : assistantPatchNonce;
 
   const improvementDiffTruthPanel = Boolean(
-    diffPreview && diffPreview.pointer !== '__assistant__' && Boolean(diffPreview.section?.trim()),
+    diffPreview &&
+    diffPreview.pointer !== '__assistant__' &&
+    Boolean(diffPreview.section?.trim()),
   );
   const improvementDiffTruthfulness = useMemo(() => {
     if (!diffPreview || diffPreview.pointer === '__assistant__') return null;
@@ -1601,7 +1999,12 @@ function CVPageContent() {
         )}
       </button>
     );
-  }, [profile?.originalTemplate, template, restoreMutation.isPending, handleRestoreOriginal]);
+  }, [
+    profile?.originalTemplate,
+    template,
+    restoreMutation.isPending,
+    handleRestoreOriginal,
+  ]);
 
   const dashboardTemplateMeta = useMemo(() => {
     const d = profile?.detectedLayout?.trim();
@@ -1639,9 +2042,13 @@ function CVPageContent() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      const r = parseFloat(localStorage.getItem(CV_CLINIC_RIGHT_PCT_KEY) ?? '28');
+      const r = parseFloat(
+        localStorage.getItem(CV_CLINIC_RIGHT_PCT_KEY) ?? '28',
+      );
       if (Number.isFinite(r)) setTripleRightPct(Math.min(38, Math.max(22, r)));
-      setRightPanelCollapsed(localStorage.getItem(CV_RIGHT_PANEL_COLLAPSED_KEY) === '1');
+      setRightPanelCollapsed(
+        localStorage.getItem(CV_RIGHT_PANEL_COLLAPSED_KEY) === '1',
+      );
     } catch {
       /* ignore */
     }
@@ -1659,7 +2066,10 @@ function CVPageContent() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      localStorage.setItem(CV_RIGHT_PANEL_COLLAPSED_KEY, rightPanelCollapsed ? '1' : '0');
+      localStorage.setItem(
+        CV_RIGHT_PANEL_COLLAPSED_KEY,
+        rightPanelCollapsed ? '1' : '0',
+      );
     } catch {
       /* ignore */
     }
@@ -1674,7 +2084,8 @@ function CVPageContent() {
       e.preventDefault();
       const startX = e.clientX;
       const startPct = tripleRightPct;
-      const totalW = triplePanelContainerRef.current?.offsetWidth ?? window.innerWidth;
+      const totalW =
+        triplePanelContainerRef.current?.offsetWidth ?? window.innerWidth;
 
       const onMove = (ev: PointerEvent) => {
         const delta = ((startX - ev.clientX) / totalW) * 100;
@@ -1713,7 +2124,8 @@ function CVPageContent() {
             </Link>
             {profileOptions.length === 1 && profiles.length === 0 ? (
               <p className="min-w-0 flex-1 text-[10px] leading-snug text-amber-100/90">
-                Profile list empty but this CV loaded — check API URL if you expect multiple profiles.
+                Profile list empty but this CV loaded — check API URL if you
+                expect multiple profiles.
               </p>
             ) : profileOptions.length >= 1 ? (
               <>
@@ -1772,15 +2184,22 @@ function CVPageContent() {
 
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 sm:gap-x-3">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-white/35">Score</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-white/35">
+                Score
+              </span>
               {score.isLoading ? (
                 <Skeleton height={22} width={44} borderRadius={6} />
-              ) : displayScoreValue === null || displayScoreValue === undefined ? (
-                <span className="animate-pulse text-sm font-semibold text-white/45 sm:text-base">Calculating…</span>
+              ) : displayScoreValue === null ||
+                displayScoreValue === undefined ? (
+                <span className="animate-pulse text-sm font-semibold text-white/45 sm:text-base">
+                  Calculating…
+                </span>
               ) : (
                 <span className="text-sm font-extrabold tabular-nums text-[#00C9B1] sm:text-base">
                   {displayScoreValue}
-                  <span className="text-xs font-medium text-white/45">/100</span>
+                  <span className="text-xs font-medium text-white/45">
+                    /100
+                  </span>
                 </span>
               )}
             </div>
@@ -1794,9 +2213,11 @@ function CVPageContent() {
                   await runScan.mutateAsync(targetId);
                   const impr = await queryClient.fetchQuery({
                     queryKey: cvSuggestionsQueryKey(targetId),
-                    queryFn: () => api.cv.getSuggestions(targetId ?? undefined, false),
+                    queryFn: () =>
+                      api.cv.getSuggestions(targetId ?? undefined, false),
                   });
-                  const n = impr.pendingSuggestionsCount ?? impr.improvements.length;
+                  const n =
+                    impr.pendingSuggestionsCount ?? impr.improvements.length;
                   toast.success(`Scan complete — ${n} suggestions found`);
                 } catch (e) {
                   toast.error(getApiErrorMessage(e));
@@ -1814,13 +2235,21 @@ function CVPageContent() {
               )}
             </Button>
             {improvements.data?.needsScoring ? (
-              <span className="text-[10px] text-amber-200/80">Updating tips…</span>
+              <span className="text-[10px] text-amber-200/80">
+                Updating tips…
+              </span>
             ) : pendingSuggestionsCountResolved > 0 ? (
-              <span className="text-[10px] text-white/40">{pendingSuggestionsCountResolved} tips</span>
+              <span className="text-[10px] text-white/40">
+                {pendingSuggestionsCountResolved} tips
+              </span>
             ) : null}
-            <span className="hidden h-5 w-px shrink-0 bg-white/10 sm:block" aria-hidden />
+            <span
+              className="hidden h-5 w-px shrink-0 bg-white/10 sm:block"
+              aria-hidden
+            />
             <span className="hidden text-[10px] text-white/35 sm:inline">
-              Export <span className="capitalize text-white/50">({template})</span>
+              Export{' '}
+              <span className="capitalize text-white/50">({template})</span>
             </span>
             <div className="flex flex-wrap items-center gap-1.5 sm:ml-auto">
               <Button
@@ -1829,7 +2258,11 @@ function CVPageContent() {
                 disabled={exportCv.isPending}
                 onClick={() => void handleExport('pdf')}
               >
-                {exportCv.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'PDF'}
+                {exportCv.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  'PDF'
+                )}
               </Button>
               <Button
                 type="button"
@@ -1912,7 +2345,9 @@ function CVPageContent() {
       <CvClinicToolbar
         targetId={targetId}
         profileOptions={profileOptions}
-        onProfileChange={(id) => router.push(`/dashboard/cv?profileId=${encodeURIComponent(id)}`)}
+        onProfileChange={(id) =>
+          router.push(`/dashboard/cv?profileId=${encodeURIComponent(id)}`)
+        }
         onNewCv={() => setCreateCvOpen(true)}
         onOpenTemplatePicker={() => setTemplatePickerOpen(true)}
         onOpenSectionModal={() => setSectionModalOpen(true)}
@@ -1947,7 +2382,9 @@ function CVPageContent() {
     ],
   );
 
-  const cvClinicTripleLayout = useMemo((): CVBuilderTripleColumnConfig | undefined => {
+  const cvClinicTripleLayout = useMemo(():
+    | CVBuilderTripleColumnConfig
+    | undefined => {
     if (!targetId) return undefined;
     return {
       containerRef: triplePanelContainerRef,
@@ -1957,7 +2394,13 @@ function CVPageContent() {
       onRightResizePointerDown: onTripleRightResizePointerDown,
       centerHeaderActions: null,
     };
-  }, [targetId, tripleRightPct, rightPanelCollapsed, onToggleRightInsightsCollapsed, onTripleRightResizePointerDown]);
+  }, [
+    targetId,
+    tripleRightPct,
+    rightPanelCollapsed,
+    onToggleRightInsightsCollapsed,
+    onTripleRightResizePointerDown,
+  ]);
 
   useEffect(() => {
     if (!isTailorMode) {
@@ -2071,11 +2514,19 @@ function CVPageContent() {
         className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center"
       >
         <FileText className="h-12 w-12 text-[#00C9B1]" />
-        <h2 className="mt-4 text-2xl font-extrabold text-white">You don&apos;t have a CV yet</h2>
-        <p className="mt-2 max-w-md text-sm text-white/50">Upload an existing CV or build one from scratch.</p>
+        <h2 className="mt-4 text-2xl font-extrabold text-white">
+          You don&apos;t have a CV yet
+        </h2>
+        <p className="mt-2 max-w-md text-sm text-white/50">
+          Upload an existing CV or build one from scratch.
+        </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Button onClick={() => setShowUpload(true)}>Upload my CV</Button>
-          <Button variant="ghost" className="border border-[rgba(0,201,177,0.35)]" onClick={() => setPickTemplate(true)}>
+          <Button
+            variant="ghost"
+            className="border border-[rgba(0,201,177,0.35)]"
+            onClick={() => setPickTemplate(true)}
+          >
             Build from scratch
           </Button>
         </div>
@@ -2086,15 +2537,26 @@ function CVPageContent() {
               <CVUploadZone
                 cvProfileId={targetId}
                 onSuccess={async ({ profile }) => {
-                  void queryClient.invalidateQueries({ queryKey: ['cv-profiles'] });
-                  void queryClient.invalidateQueries({ queryKey: ['cv-profile'] });
-                  await queryClient.refetchQueries({ queryKey: ['cv-profiles'] });
+                  void queryClient.invalidateQueries({
+                    queryKey: ['cv-profiles'],
+                  });
+                  void queryClient.invalidateQueries({
+                    queryKey: ['cv-profile'],
+                  });
+                  await queryClient.refetchQueries({
+                    queryKey: ['cv-profiles'],
+                  });
                   const id = profile.id?.trim();
                   if (id) {
-                    await queryClient.refetchQueries({ queryKey: ['cv-profile', id] });
+                    await queryClient.refetchQueries({
+                      queryKey: ['cv-profile', id],
+                    });
                   }
                   setShowUpload(false);
-                  if (id) router.replace(`/dashboard/cv?profileId=${encodeURIComponent(id)}`);
+                  if (id)
+                    router.replace(
+                      `/dashboard/cv?profileId=${encodeURIComponent(id)}`,
+                    );
                 }}
               />
             </GlowCard>
@@ -2105,11 +2567,18 @@ function CVPageContent() {
           <div className="mt-10 w-full max-w-3xl space-y-4">
             <p className="text-sm font-semibold text-white">Pick a template</p>
             <div className="flex flex-wrap justify-center gap-2">
-              {(['classic', 'modern', 'creative', 'professional'] as const).map((t) => (
-                <Button key={t} variant="ghost" className="capitalize" onClick={() => void createBlank(t)}>
-                  {t}
-                </Button>
-              ))}
+              {(['classic', 'modern', 'creative', 'professional'] as const).map(
+                (t) => (
+                  <Button
+                    key={t}
+                    variant="ghost"
+                    className="capitalize"
+                    onClick={() => void createBlank(t)}
+                  >
+                    {t}
+                  </Button>
+                ),
+              )}
             </div>
           </div>
         ) : null}
@@ -2134,8 +2603,16 @@ function CVPageContent() {
         transition={{ duration: 0.35 }}
         className="-mx-4 px-4 pb-8 pt-1 sm:-mx-5 sm:px-5"
       >
-        <CreateCVProfileModal open={createCvOpen} onOpenChange={setCreateCvOpen} />
-        <Modal open={showUpload} onOpenChange={setShowUpload} title="Upload your CV" className="max-w-lg">
+        <CreateCVProfileModal
+          open={createCvOpen}
+          onOpenChange={setCreateCvOpen}
+        />
+        <Modal
+          open={showUpload}
+          onOpenChange={setShowUpload}
+          title="Upload your CV"
+          className="max-w-lg"
+        >
           <CVUploadZone
             cvProfileId={null}
             ensureNewProfileBeforeParse
@@ -2145,10 +2622,15 @@ function CVPageContent() {
               await queryClient.refetchQueries({ queryKey: ['cv-profiles'] });
               const id = profile.id?.trim();
               if (id) {
-                await queryClient.refetchQueries({ queryKey: ['cv-profile', id] });
+                await queryClient.refetchQueries({
+                  queryKey: ['cv-profile', id],
+                });
               }
               setShowUpload(false);
-              if (id) router.replace(`/dashboard/cv?profileId=${encodeURIComponent(id)}`);
+              if (id)
+                router.replace(
+                  `/dashboard/cv?profileId=${encodeURIComponent(id)}`,
+                );
             }}
           />
         </Modal>
@@ -2157,7 +2639,9 @@ function CVPageContent() {
           loading={profilesQuery.isFetching && profileOptions.length === 0}
           onNewCv={() => setCreateCvOpen(true)}
           onOpenUpload={() => setShowUpload(true)}
-          onOpenCv={(id) => router.push(`/dashboard/cv?profileId=${encodeURIComponent(id)}`)}
+          onOpenCv={(id) =>
+            router.push(`/dashboard/cv?profileId=${encodeURIComponent(id)}`)
+          }
           onOpenJobs={() => router.push('/dashboard/jobs')}
         />
       </motion.div>
@@ -2179,7 +2663,10 @@ function CVPageContent() {
       animate={{ opacity: 1, y: 0 }}
       className="-mt-3 flex min-h-0 w-full min-w-0 max-w-full flex-col gap-1.5 pb-0 pt-1 max-lg:overflow-visible md:-mt-4 md:pt-0 lg:h-full lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:pt-0"
     >
-      <CreateCVProfileModal open={createCvOpen} onOpenChange={setCreateCvOpen} />
+      <CreateCVProfileModal
+        open={createCvOpen}
+        onOpenChange={setCreateCvOpen}
+      />
       {targetId ? (
         <AISectionAssistantPanel
           open={assistantOpen}
@@ -2240,12 +2727,19 @@ function CVPageContent() {
             placeholder="e.g. Frontend engineer CV"
           />
           <div className="flex flex-wrap justify-end gap-2">
-            <Button type="button" variant="ghost" className="border border-white/10" onClick={() => setRenameOpen(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="border border-white/10"
+              onClick={() => setRenameOpen(false)}
+            >
               Cancel
             </Button>
             <Button
               type="button"
-              disabled={!targetId || !renameValue.trim() || renameProfile.isPending}
+              disabled={
+                !targetId || !renameValue.trim() || renameProfile.isPending
+              }
               onClick={() => {
                 if (!targetId) return;
                 const name = renameValue.trim().slice(0, 100);
@@ -2256,8 +2750,12 @@ function CVPageContent() {
                     onSuccess: () => {
                       toast.success('CV renamed');
                       setRenameOpen(false);
-                      void queryClient.invalidateQueries({ queryKey: ['cv-profiles'] });
-                      void queryClient.invalidateQueries({ queryKey: ['cv-profile', targetId] });
+                      void queryClient.invalidateQueries({
+                        queryKey: ['cv-profiles'],
+                      });
+                      void queryClient.invalidateQueries({
+                        queryKey: ['cv-profile', targetId],
+                      });
                     },
                     onError: (e) => toast.error(getApiErrorMessage(e)),
                   },
@@ -2298,7 +2796,10 @@ function CVPageContent() {
       <div className="lg:hidden">{cvTopChrome}</div>
 
       {isPartialExtractionBanner ? (
-        <GlowCard className="border border-[rgba(245,158,11,0.2)]" contentClassName="px-5 py-3.5">
+        <GlowCard
+          className="border border-[rgba(245,158,11,0.2)]"
+          contentClassName="px-5 py-3.5"
+        >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-[#F59E0B]">
@@ -2321,7 +2822,10 @@ function CVPageContent() {
       ) : null}
 
       {targetId ? (
-        <GlowCard className="border border-[rgba(0,201,177,0.12)] lg:hidden" contentClassName="p-0">
+        <GlowCard
+          className="border border-[rgba(0,201,177,0.12)] lg:hidden"
+          contentClassName="p-0"
+        >
           <button
             type="button"
             onClick={() => setInsightsOpen((v) => !v)}
@@ -2330,7 +2834,10 @@ function CVPageContent() {
             <span className="text-xs font-semibold text-white/70">
               Score breakdown & tips
             </span>
-            {!score.isLoading && score.data && score.data.score !== null && score.data.score !== undefined ? (
+            {!score.isLoading &&
+            score.data &&
+            score.data.score !== null &&
+            score.data.score !== undefined ? (
               <span className="rounded-full bg-[rgba(0,201,177,0.12)] px-2 py-0.5 text-[10px] font-bold tabular-nums text-[#00C9B1]">
                 {score.data.score}/100
               </span>
@@ -2341,11 +2848,14 @@ function CVPageContent() {
             ) : null}
             {pendingSuggestionsCountResolved > 0 ? (
               <span className="text-[10px] text-white/35">
-                · {pendingSuggestionsCountResolved} tip{pendingSuggestionsCountResolved === 1 ? '' : 's'}
+                · {pendingSuggestionsCountResolved} tip
+                {pendingSuggestionsCountResolved === 1 ? '' : 's'}
               </span>
             ) : null}
             {!isOnRecommendedTemplate ? (
-              <span className="text-[10px] text-[#00C9B1]/60">· format suggestion</span>
+              <span className="text-[10px] text-[#00C9B1]/60">
+                · format suggestion
+              </span>
             ) : null}
             <ChevronDown
               className={`ml-auto h-4 w-4 shrink-0 text-white/30 transition-transform duration-200 ${insightsOpen ? 'rotate-180' : ''}`}
@@ -2366,7 +2876,9 @@ function CVPageContent() {
                   <div className="flex shrink-0 border-b border-white/[0.06]">
                     <button
                       type="button"
-                      onClick={() => startTransition(() => setTripleRightTab('analysis'))}
+                      onClick={() =>
+                        startTransition(() => setTripleRightTab('analysis'))
+                      }
                       className={cn(
                         'flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-widest transition',
                         tripleRightTab === 'analysis'
@@ -2378,7 +2890,9 @@ function CVPageContent() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => startTransition(() => setTripleRightTab('improvements'))}
+                      onClick={() =>
+                        startTransition(() => setTripleRightTab('improvements'))
+                      }
                       className={cn(
                         'relative flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-widest transition',
                         tripleRightTab === 'improvements'
@@ -2391,11 +2905,14 @@ function CVPageContent() {
                         <span
                           className={cn(
                             'pointer-events-none absolute right-1 top-0.5 z-10 inline-flex h-4 min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold leading-none text-white shadow',
-                            tripleRightTab !== 'improvements' && 'animate-pulse',
+                            tripleRightTab !== 'improvements' &&
+                              'animate-pulse',
                           )}
                           aria-label={`${improvementsBadgeCount} pending fixes`}
                         >
-                          {improvementsBadgeCount > 99 ? '99+' : improvementsBadgeCount}
+                          {improvementsBadgeCount > 99
+                            ? '99+'
+                            : improvementsBadgeCount}
                         </span>
                       ) : null}
                     </button>
@@ -2404,7 +2921,8 @@ function CVPageContent() {
                     {tripleRightTab === 'analysis' ? (
                       <>
                         {!score.isLoading ? (
-                          displayScoreValue !== null && displayScoreValue !== undefined ? (
+                          displayScoreValue !== null &&
+                          displayScoreValue !== undefined ? (
                             <CVScoreCard
                               mode="compact"
                               score={displayScoreValue}
@@ -2421,10 +2939,18 @@ function CVPageContent() {
                                   await runScan.mutateAsync(targetId);
                                   const impr = await queryClient.fetchQuery({
                                     queryKey: cvSuggestionsQueryKey(targetId),
-                                    queryFn: () => api.cv.getSuggestions(targetId ?? undefined, false),
+                                    queryFn: () =>
+                                      api.cv.getSuggestions(
+                                        targetId ?? undefined,
+                                        false,
+                                      ),
                                   });
-                                  const n = impr.pendingSuggestionsCount ?? impr.improvements.length;
-                                  toast.success(`Scan complete — ${n} suggestions found`);
+                                  const n =
+                                    impr.pendingSuggestionsCount ??
+                                    impr.improvements.length;
+                                  toast.success(
+                                    `Scan complete — ${n} suggestions found`,
+                                  );
                                 } catch (e) {
                                   toast.error(getApiErrorMessage(e));
                                 }
@@ -2432,11 +2958,13 @@ function CVPageContent() {
                             >
                               {runScan.isPending ? (
                                 <>
-                                  <Loader2 className="h-4 w-4 animate-spin" /> Scan…
+                                  <Loader2 className="h-4 w-4 animate-spin" />{' '}
+                                  Scan…
                                 </>
                               ) : (
                                 <>
-                                  <Sparkles className="h-4 w-4" /> Analyze this CV
+                                  <Sparkles className="h-4 w-4" /> Analyze this
+                                  CV
                                 </>
                               )}
                             </Button>
@@ -2448,13 +2976,20 @@ function CVPageContent() {
                           <div className="flex flex-col gap-3 rounded-xl border border-[rgba(0,201,177,0.15)] bg-white/[0.02] p-4">
                             <div className="min-w-0">
                               <p className="text-xs font-semibold text-[#00C9B1]">
-                                Format suggestion for {formatRecommendation.label}
+                                Format suggestion for{' '}
+                                {formatRecommendation.label}
                               </p>
-                              <p className="mt-1 text-[11px] leading-relaxed text-white/50">{formatRecommendation.reason}</p>
+                              <p className="mt-1 text-[11px] leading-relaxed text-white/50">
+                                {formatRecommendation.reason}
+                              </p>
                             </div>
                             <button
                               type="button"
-                              onClick={() => void onTemplateChange(formatRecommendation.recommended)}
+                              onClick={() =>
+                                void onTemplateChange(
+                                  formatRecommendation.recommended,
+                                )
+                              }
                               className="inline-flex shrink-0 items-center justify-center rounded-full border border-[rgba(0,201,177,0.3)] bg-[rgba(0,201,177,0.12)] px-4 py-1.5 text-xs font-semibold text-[#00C9B1] transition hover:border-[#00C9B1]/50"
                             >
                               Try {formatRecommendation.recommended}
@@ -2468,11 +3003,15 @@ function CVPageContent() {
                           <div className="rounded-xl border border-[rgba(245,158,11,0.22)] bg-[rgba(245,158,11,0.06)] p-3">
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
-                                <p className="text-xs font-semibold text-amber-300">Sections to complete</p>
+                                <p className="text-xs font-semibold text-amber-300">
+                                  Sections to complete
+                                </p>
                                 <p className="mt-1 text-[11px] text-white/55">
                                   {completeness?.score != null
                                     ? `Completeness ${completeness.score}% · ${completenessGroups.length} section${
-                                        completenessGroups.length === 1 ? '' : 's'
+                                        completenessGroups.length === 1
+                                          ? ''
+                                          : 's'
                                       } need details`
                                     : `${completenessGroups.length} section${completenessGroups.length === 1 ? '' : 's'} need details`}
                                 </p>
@@ -2482,14 +3021,20 @@ function CVPageContent() {
                               {completenessGroups.map((sec) => (
                                 <li key={sec.sectionKey}>
                                   <div className="flex items-center justify-between gap-2">
-                                    <span className="font-semibold text-white/85">{sec.sectionLabel}</span>
+                                    <span className="font-semibold text-white/85">
+                                      {sec.sectionLabel}
+                                    </span>
                                     <button
                                       type="button"
                                       className="shrink-0 rounded-md border border-amber-300/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-200 transition hover:border-amber-200/55"
                                       onClick={() =>
-                                        jumpToSectionRef.current?.(resolveJumpSectionKey(sec.sectionKey), undefined, {
-                                          scrollForm: false,
-                                        })
+                                        jumpToSectionRef.current?.(
+                                          resolveJumpSectionKey(sec.sectionKey),
+                                          undefined,
+                                          {
+                                            scrollForm: false,
+                                          },
+                                        )
                                       }
                                     >
                                       Open
@@ -2497,7 +3042,11 @@ function CVPageContent() {
                                   </div>
                                   <ul className="mt-0.5 list-disc space-y-0.5 pl-4 text-[10px] text-white/60">
                                     {sec.fields.map((f) => (
-                                      <li key={`${sec.sectionKey}-${f.fieldPath}`}>{f.fieldLabel}</li>
+                                      <li
+                                        key={`${sec.sectionKey}-${f.fieldPath}`}
+                                      >
+                                        {f.fieldLabel}
+                                      </li>
                                     ))}
                                   </ul>
                                 </li>
@@ -2505,13 +3054,15 @@ function CVPageContent() {
                             </ul>
                           </div>
                         ) : null}
-                        {(qualitySignals.spellIssueCount > 0 ||
-                          qualitySignals.grammarIssueCount > 0 ||
-                          qualitySignals.isSpellChecking) ? (
+                        {qualitySignals.spellIssueCount > 0 ||
+                        qualitySignals.grammarIssueCount > 0 ||
+                        qualitySignals.isSpellChecking ? (
                           <div className="rounded-xl border border-[rgba(244,63,94,0.22)] bg-[rgba(244,63,94,0.05)] p-3">
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
-                                <p className="text-xs font-semibold text-rose-200">Spelling & grammar</p>
+                                <p className="text-xs font-semibold text-rose-200">
+                                  Spelling & grammar
+                                </p>
                                 <p className="mt-1 text-[11px] text-white/55">
                                   {qualitySignals.isSpellChecking
                                     ? 'Checking…'
@@ -2523,8 +3074,13 @@ function CVPageContent() {
                                   type="button"
                                   title="Apply every spelling suggestion"
                                   className="rounded-md border border-emerald-300/40 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
-                                  disabled={qualitySignals.spellIssueCount <= 0 || qualitySignals.isSpellChecking}
-                                  onClick={() => setSpellFixAllTrigger((n) => n + 1)}
+                                  disabled={
+                                    qualitySignals.spellIssueCount <= 0 ||
+                                    qualitySignals.isSpellChecking
+                                  }
+                                  onClick={() =>
+                                    setSpellFixAllTrigger((n) => n + 1)
+                                  }
                                 >
                                   Fix all
                                 </button>
@@ -2533,30 +3089,44 @@ function CVPageContent() {
                                   title="Re-run spell + grammar check"
                                   className="rounded-md border border-white/[0.12] bg-white/[0.04] px-2 py-1 text-[10px] font-semibold text-white/70 disabled:cursor-not-allowed disabled:opacity-40"
                                   disabled={qualitySignals.isSpellChecking}
-                                  onClick={() => setSpellCheckTrigger((n) => n + 1)}
+                                  onClick={() =>
+                                    setSpellCheckTrigger((n) => n + 1)
+                                  }
                                 >
                                   Re-check
                                 </button>
                               </div>
                             </div>
                             {qualitySignals.isSpellChecking ? (
-                              <p className="mt-2 text-[10px] text-white/40">Looking through your CV…</p>
+                              <p className="mt-2 text-[10px] text-white/40">
+                                Looking through your CV…
+                              </p>
                             ) : (
                               <div className="mt-2 space-y-3">
-                                {Object.entries(qualitySignals.spellIssueEntriesBySection).map(([sectionKey, issues]) => {
+                                {Object.entries(
+                                  qualitySignals.spellIssueEntriesBySection,
+                                ).map(([sectionKey, issues]) => {
                                   if (!issues.length) return null;
-                                  const sectionLabel = qualitySignals.sectionLabels[sectionKey] ?? sectionKey;
+                                  const sectionLabel =
+                                    qualitySignals.sectionLabels[sectionKey] ??
+                                    sectionKey;
                                   return (
                                     <div key={sectionKey}>
                                       <div className="flex items-center justify-between gap-2">
-                                        <p className="text-[11px] font-semibold text-white/85">{sectionLabel}</p>
+                                        <p className="text-[11px] font-semibold text-white/85">
+                                          {sectionLabel}
+                                        </p>
                                         <button
                                           type="button"
                                           className="rounded-md border border-white/[0.12] bg-white/[0.04] px-1.5 py-0.5 text-[9px] font-semibold text-white/60 transition hover:border-white/[0.2]"
                                           onClick={() =>
-                                            jumpToSectionRef.current?.(resolveJumpSectionKey(sectionKey), undefined, {
-                                              scrollForm: false,
-                                            })
+                                            jumpToSectionRef.current?.(
+                                              resolveJumpSectionKey(sectionKey),
+                                              undefined,
+                                              {
+                                                scrollForm: false,
+                                              },
+                                            )
                                           }
                                         >
                                           Open
@@ -2565,9 +3135,16 @@ function CVPageContent() {
                                       <ul className="mt-1 space-y-1.5">
                                         {issues.map((issue, idx) => {
                                           const kind =
-                                            issue.type === 'grammar' || issue.type === 'style' ? 'grammar' : 'spelling';
-                                          const original = (issue.original ?? '').trim();
-                                          const suggestion = (issue.suggestion ?? '').trim();
+                                            issue.type === 'grammar' ||
+                                            issue.type === 'style'
+                                              ? 'grammar'
+                                              : 'spelling';
+                                          const original = (
+                                            issue.original ?? ''
+                                          ).trim();
+                                          const suggestion = (
+                                            issue.suggestion ?? ''
+                                          ).trim();
                                           return (
                                             <li
                                               key={
@@ -2588,7 +3165,9 @@ function CVPageContent() {
                                                     </span>
                                                     {suggestion ? (
                                                       <>
-                                                        <span className="mx-1 text-white/40">→</span>
+                                                        <span className="mx-1 text-white/40">
+                                                          →
+                                                        </span>
                                                         <span className="rounded bg-emerald-500/15 px-1 text-emerald-200">
                                                           {suggestion}
                                                         </span>
@@ -2596,7 +3175,9 @@ function CVPageContent() {
                                                     ) : null}
                                                   </p>
                                                   {issue.message ? (
-                                                    <p className="mt-1 text-[10px] text-white/50">{issue.message}</p>
+                                                    <p className="mt-1 text-[10px] text-white/50">
+                                                      {issue.message}
+                                                    </p>
                                                   ) : null}
                                                 </div>
                                                 <div className="flex shrink-0 items-center gap-1.5">
@@ -2604,7 +3185,9 @@ function CVPageContent() {
                                                     <button
                                                       type="button"
                                                       className="rounded-md border border-emerald-300/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300"
-                                                      onClick={() => onApplySpellIssue(issue)}
+                                                      onClick={() =>
+                                                        onApplySpellIssue(issue)
+                                                      }
                                                     >
                                                       Apply
                                                     </button>
@@ -2612,7 +3195,9 @@ function CVPageContent() {
                                                   <button
                                                     type="button"
                                                     className="rounded-md border border-white/[0.12] bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold text-white/60"
-                                                    onClick={() => onDismissSpellIssue(issue)}
+                                                    onClick={() =>
+                                                      onDismissSpellIssue(issue)
+                                                    }
                                                   >
                                                     Dismiss
                                                   </button>
@@ -2632,15 +3217,20 @@ function CVPageContent() {
                           <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
-                                <p className="text-xs font-semibold text-white/80">Spelling & grammar</p>
+                                <p className="text-xs font-semibold text-white/80">
+                                  Spelling & grammar
+                                </p>
                                 <p className="mt-1 text-[11px] text-white/45">
-                                  Run Re-check to scan this CV for spelling and grammar. No issues right now.
+                                  Run Re-check to scan this CV for spelling and
+                                  grammar. No issues right now.
                                 </p>
                               </div>
                               <button
                                 type="button"
                                 className="shrink-0 rounded-md border border-white/[0.12] bg-white/[0.04] px-2 py-1 text-[10px] font-semibold text-white/70"
-                                onClick={() => setSpellCheckTrigger((n) => n + 1)}
+                                onClick={() =>
+                                  setSpellCheckTrigger((n) => n + 1)
+                                }
                                 disabled={qualitySignals.isSpellChecking}
                               >
                                 Re-check
@@ -2664,55 +3254,63 @@ function CVPageContent() {
       ) : null}
 
       <div className="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col lg:max-h-[calc(100vh-52px)] lg:min-h-0 lg:overflow-hidden">
-        {targetId ? <div className="hidden shrink-0 lg:block">{cvClinicToolbar}</div> : null}
+        {targetId ? (
+          <div className="hidden shrink-0 lg:block">{cvClinicToolbar}</div>
+        ) : null}
         <div className="min-h-0 w-full min-w-0 flex-1 overflow-visible lg:flex lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:flex-col">
-        {templateReady ? (
-        <CVBuilder
-          key={`${targetId ?? 'cv'}-${cvMode}`}
-          mode="dashboard"
-          cvMode={cvMode}
-          profileId={targetId}
-          initialData={initialData}
-          selectedTemplate={template}
-          onTemplateChange={onTemplateChange}
-          existingSections={sections}
-          onDashboardSaved={onDashboardSaved}
-          dashboardTemplateExtras={dashboardTemplateExtras}
-          dashboardTemplateMeta={dashboardTemplateMeta}
-          uploadedCvHint={Boolean(profile?.originalTemplate)}
-          onRequestReparse={() => setShowReuploadModal(true)}
-          onJumpToSectionReady={(fn) => { jumpToSectionRef.current = fn; }}
-          diffSection={diffPreview?.section ?? null}
-          diffBefore={diffPreview?.before ?? null}
-          diffAfter={diffPreview?.after ?? null}
-          diffChangedFields={diffPreview?.changedFields ?? null}
-          improvementDiffTruthPanel={improvementDiffTruthPanel}
-          improvementDiffTruthfulness={improvementDiffTruthfulness}
-          improvementDiffPerformance={improvementDiffPerformance}
-          onAcceptDiff={(changeIndex) => void handleAcceptDiff(changeIndex)}
-          onRejectDiff={(changeIndex) => void handleRejectDiff(changeIndex)}
-          diffActionsDisabled={cvImprovementDiffActionsPending}
-          tripleColumn={cvClinicTripleLayout}
-          tripleColumnRightSlot={cvClinicTripleInsightsSlot}
-          onSaveStatusChange={setBuilderSaveStatus}
-          onReorderPendingChange={setReorderPending}
-          spellCheckTrigger={spellCheckTrigger}
-          onQualitySignalsChange={setQualitySignals}
-          spellFixAllTrigger={spellFixAllTrigger}
-          externalPatch={effectiveExternalPatch}
-          externalPatchNonce={effectiveExternalPatchNonce}
-          serverHydrateNonce={cvServerHydrateNonce}
-          onAiStructuredPersisted={() => setCvServerHydrateNonce((n) => n + 1)}
-          onDataSnapshotChange={setCvDataSnapshot}
-          cvAssistantCommand={runAssistantCommand}
-          cvAssistantBusy={assistantBusy}
-          cvAssistantClarificationQuestion={assistantClarification?.question ?? null}
-        />
-        ) : (
-          <div className="flex h-full min-h-0 items-center justify-center text-sm text-white/45">
-            Loading template…
-          </div>
-        )}
+          {templateReady ? (
+            <CVBuilder
+              key={`${targetId ?? 'cv'}-${cvMode}`}
+              mode="dashboard"
+              cvMode={cvMode}
+              profileId={targetId}
+              initialData={initialData}
+              selectedTemplate={template}
+              onTemplateChange={onTemplateChange}
+              existingSections={sections}
+              onDashboardSaved={onDashboardSaved}
+              dashboardTemplateExtras={dashboardTemplateExtras}
+              dashboardTemplateMeta={dashboardTemplateMeta}
+              uploadedCvHint={Boolean(profile?.originalTemplate)}
+              onRequestReparse={() => setShowReuploadModal(true)}
+              onJumpToSectionReady={(fn) => {
+                jumpToSectionRef.current = fn;
+              }}
+              diffSection={diffPreview?.section ?? null}
+              diffBefore={diffPreview?.before ?? null}
+              diffAfter={diffPreview?.after ?? null}
+              diffChangedFields={diffPreview?.changedFields ?? null}
+              improvementDiffTruthPanel={improvementDiffTruthPanel}
+              improvementDiffTruthfulness={improvementDiffTruthfulness}
+              improvementDiffPerformance={improvementDiffPerformance}
+              onAcceptDiff={(changeIndex) => void handleAcceptDiff(changeIndex)}
+              onRejectDiff={(changeIndex) => void handleRejectDiff(changeIndex)}
+              diffActionsDisabled={cvImprovementDiffActionsPending}
+              tripleColumn={cvClinicTripleLayout}
+              tripleColumnRightSlot={cvClinicTripleInsightsSlot}
+              onSaveStatusChange={setBuilderSaveStatus}
+              onReorderPendingChange={setReorderPending}
+              spellCheckTrigger={spellCheckTrigger}
+              onQualitySignalsChange={setQualitySignals}
+              spellFixAllTrigger={spellFixAllTrigger}
+              externalPatch={effectiveExternalPatch}
+              externalPatchNonce={effectiveExternalPatchNonce}
+              serverHydrateNonce={cvServerHydrateNonce}
+              onAiStructuredPersisted={() =>
+                setCvServerHydrateNonce((n) => n + 1)
+              }
+              onDataSnapshotChange={setCvDataSnapshot}
+              cvAssistantCommand={runAssistantCommand}
+              cvAssistantBusy={assistantBusy}
+              cvAssistantClarificationQuestion={
+                assistantClarification?.question ?? null
+              }
+            />
+          ) : (
+            <div className="flex h-full min-h-0 items-center justify-center text-sm text-white/45">
+              Loading template…
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
@@ -2734,4 +3332,3 @@ export default function CVPage() {
     </Suspense>
   );
 }
-

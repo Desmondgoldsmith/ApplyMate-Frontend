@@ -1,13 +1,26 @@
 import axios from 'axios';
 
-import { normalizeAuthResponse, normalizeRefreshResponse } from './auth-response';
+import {
+  normalizeAuthResponse,
+  normalizeRefreshResponse,
+} from './auth-response';
 import { axiosClient, throwIfApiFailureResponse } from './axios';
 import { ensureArray } from './ensure-array';
-import { normalizeDashboardFocus, normalizeSinceLastVisit, normalizeTodayPlan } from './today-plan';
+import {
+  normalizeDashboardFocus,
+  normalizeSinceLastVisit,
+  normalizeTodayPlan,
+} from './today-plan';
 import type { AtsSimulationReport } from './atsSimulation';
-import { clampWeeklyStallLimit, normalizeWeeklyStallSummary } from './weekly-stall-summary';
+import {
+  clampWeeklyStallLimit,
+  normalizeWeeklyStallSummary,
+} from './weekly-stall-summary';
 import { parseJobAnalysisV2 } from './jobAnalysisV2';
-import { parseScoreImprovementGuide, type ScoreImprovementGuide } from './scoreImprovement';
+import {
+  parseScoreImprovementGuide,
+  type ScoreImprovementGuide,
+} from './scoreImprovement';
 import { pickApplyUrlFromRecord } from './jobApplyUrlPick';
 import {
   normalizeCareerDashboard,
@@ -15,7 +28,10 @@ import {
   parseVerificationSubmitResult,
 } from './career';
 import { interviewPrepApi as interviewPrepApiClient } from './interview-prep-api';
-import { parseInterviewResultPoll, type InterviewEvaluationPollState } from './interviewEvaluationPoll';
+import {
+  parseInterviewResultPoll,
+  type InterviewEvaluationPollState,
+} from './interviewEvaluationPoll';
 import { resolveExportFilename } from './exportFilenameFromResponse';
 
 export type JobSearchUrgency = 'asap' | 'few_months' | 'exploring';
@@ -118,7 +134,11 @@ export type GrowthImmediateFeedback = {
 
 export type GrowthAchievement = {
   id: string;
-  type: 'high_match_reached' | 'cv_improvement_completed' | 'momentum_streak' | 'pipeline_progress';
+  type:
+    | 'high_match_reached'
+    | 'cv_improvement_completed'
+    | 'momentum_streak'
+    | 'pipeline_progress';
   title: string;
   subtitle: string;
   metricValue: number | null;
@@ -223,6 +243,8 @@ export type CVProfile = {
   location?: string | null;
   phone?: string | null;
   website?: string | null;
+  /** Display label from API when present (e.g. "Name — Role"). */
+  name?: string | null;
 };
 
 /** Lightweight row from GET /cv/profiles */
@@ -252,15 +274,19 @@ function unwrapApiDataEnvelope(raw: unknown): Record<string, unknown> {
       return o.data as Record<string, unknown>;
     }
   }
-  return raw !== null && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+  return raw !== null && typeof raw === 'object'
+    ? (raw as Record<string, unknown>)
+    : {};
 }
 
 /** True when structured has no experience and no education rows (parse may be incomplete). */
 export function isPartialCvExtractionFromStructured(
   structured: CVProfile['structured'] | undefined,
 ): boolean {
-  const hasExp = Array.isArray(structured?.experience) && structured!.experience!.length > 0;
-  const hasEdu = Array.isArray(structured?.education) && structured!.education!.length > 0;
+  const hasExp =
+    Array.isArray(structured?.experience) && structured!.experience!.length > 0;
+  const hasEdu =
+    Array.isArray(structured?.education) && structured!.education!.length > 0;
   return !hasExp && !hasEdu;
 }
 
@@ -327,19 +353,35 @@ function normalizeCvProfileResponse(raw: unknown): CVProfile {
 }
 
 function normalizeCvProfileSummary(raw: unknown): CvProfileSummary {
-  const o = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+  const o =
+    raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+      ? (raw as Record<string, unknown>)
+      : {};
   const id = String(o.id ?? o.cvProfileId ?? '').trim();
   const scoreRaw = o.score;
   const score =
     typeof scoreRaw === 'number' && Number.isFinite(scoreRaw) ? scoreRaw : null;
   const headline =
-    o.headline === null ? null : typeof o.headline === 'string' ? o.headline : undefined;
+    o.headline === null
+      ? null
+      : typeof o.headline === 'string'
+        ? o.headline
+        : undefined;
   const location =
-    o.location === null ? null : typeof o.location === 'string' ? o.location : undefined;
-  const lastScoredAt = typeof o.lastScoredAt === 'string' ? o.lastScoredAt : undefined;
+    o.location === null
+      ? null
+      : typeof o.location === 'string'
+        ? o.location
+        : undefined;
+  const lastScoredAt =
+    typeof o.lastScoredAt === 'string' ? o.lastScoredAt : undefined;
   let sectionCount: number | undefined;
   const rawCount = o._count;
-  if (rawCount !== null && typeof rawCount === 'object' && !Array.isArray(rawCount)) {
+  if (
+    rawCount !== null &&
+    typeof rawCount === 'object' &&
+    !Array.isArray(rawCount)
+  ) {
     const sec = (rawCount as Record<string, unknown>).sections;
     if (typeof sec === 'number' && Number.isFinite(sec)) sectionCount = sec;
   }
@@ -429,7 +471,9 @@ function normalizeUserMe(raw: unknown): AuthUser {
   const aiDailyLimit = pickNullableNumber(body.aiDailyLimit);
   const aiUsesRemaining = pickNullableNumber(body.aiUsesRemaining);
   const rawFeatures = Array.isArray(body.selectedFeatures)
-    ? (body.selectedFeatures as unknown[]).filter((x): x is string => typeof x === 'string')
+    ? (body.selectedFeatures as unknown[]).filter(
+        (x): x is string => typeof x === 'string',
+      )
     : undefined;
   const selectedFeatures =
     rawFeatures && rawFeatures.length > 0
@@ -438,7 +482,8 @@ function normalizeUserMe(raw: unknown): AuthUser {
         : [...rawFeatures, 'cv']
       : undefined;
 
-  const locationRaw = body.location ?? body.city ?? body.homeLocation ?? body.home_location;
+  const locationRaw =
+    body.location ?? body.city ?? body.homeLocation ?? body.home_location;
   const location =
     locationRaw === null
       ? null
@@ -452,7 +497,10 @@ function normalizeUserMe(raw: unknown): AuthUser {
     name: typeof body.name === 'string' ? body.name : undefined,
     image: typeof body.image === 'string' ? body.image : undefined,
     ...(location !== undefined ? { location } : {}),
-    onboardingCompleted: typeof body.onboardingCompleted === 'boolean' ? body.onboardingCompleted : undefined,
+    onboardingCompleted:
+      typeof body.onboardingCompleted === 'boolean'
+        ? body.onboardingCompleted
+        : undefined,
     selectedFeatures,
     primaryGoal:
       body.primaryGoal === null
@@ -465,24 +513,35 @@ function normalizeUserMe(raw: unknown): AuthUser {
         ? body.aiUsesToday
         : undefined,
     aiDailyLimit: aiDailyLimit === undefined ? undefined : aiDailyLimit,
-    aiUsesRemaining: aiUsesRemaining === undefined ? undefined : aiUsesRemaining,
+    aiUsesRemaining:
+      aiUsesRemaining === undefined ? undefined : aiUsesRemaining,
     aiUsageResetsAt:
-      typeof body.aiUsageResetsAt === 'string' ? body.aiUsageResetsAt : undefined,
+      typeof body.aiUsageResetsAt === 'string'
+        ? body.aiUsageResetsAt
+        : undefined,
     aiUsageTimezone:
-      typeof body.aiUsageTimezone === 'string' ? body.aiUsageTimezone : undefined,
+      typeof body.aiUsageTimezone === 'string'
+        ? body.aiUsageTimezone
+        : undefined,
     ...(() => {
       const ju = pickUserJobSearchUrgency(body);
-      const tr = normalizeTargetRolesField(body.targetRoles ?? body.target_roles);
-      const out: Partial<Pick<AuthUser, 'jobSearchUrgency' | 'targetRoles'>> = {};
+      const tr = normalizeTargetRolesField(
+        body.targetRoles ?? body.target_roles,
+      );
+      const out: Partial<Pick<AuthUser, 'jobSearchUrgency' | 'targetRoles'>> =
+        {};
       if (ju !== undefined) out.jobSearchUrgency = ju;
       if (tr !== undefined) out.targetRoles = tr;
       return out;
     })(),
     ...(() => {
-      const extra: Partial<Pick<AuthUser, 'notificationPrefs' | 'nudgePausedUntil' | 'uiPrefs'>> = {};
+      const extra: Partial<
+        Pick<AuthUser, 'notificationPrefs' | 'nudgePausedUntil' | 'uiPrefs'>
+      > = {};
       if ('notificationPrefs' in body || 'notification_prefs' in body) {
         const raw = body.notificationPrefs ?? body.notification_prefs;
-        extra.notificationPrefs = raw === null ? null : normalizeNotificationPrefs(raw);
+        extra.notificationPrefs =
+          raw === null ? null : normalizeNotificationPrefs(raw);
       }
       if ('nudgePausedUntil' in body || 'nudge_paused_until' in body) {
         const raw = body.nudgePausedUntil ?? body.nudge_paused_until;
@@ -498,9 +557,14 @@ function normalizeUserMe(raw: unknown): AuthUser {
   };
 }
 
-function pickUserJobSearchUrgency(body: Record<string, unknown>): JobSearchUrgency | null | undefined {
-  if (!('jobSearchUrgency' in body) && !('job_search_urgency' in body)) return undefined;
-  return parseJobSearchUrgency(body.jobSearchUrgency ?? body.job_search_urgency);
+function pickUserJobSearchUrgency(
+  body: Record<string, unknown>,
+): JobSearchUrgency | null | undefined {
+  if (!('jobSearchUrgency' in body) && !('job_search_urgency' in body))
+    return undefined;
+  return parseJobSearchUrgency(
+    body.jobSearchUrgency ?? body.job_search_urgency,
+  );
 }
 
 /** Server Job Hub pipeline — bookmark `hubPipelineStage` and JobAnalysis `status`. */
@@ -593,8 +657,10 @@ function looksLikeJobAnalysisRow(o: Record<string, unknown>): boolean {
   if (o.matchScore != null && o.matchScore !== '') return true;
   if (typeof o.jobListingId === 'string' && o.jobListingId.trim()) return true;
   if (typeof o.title === 'string' && typeof o.id === 'string') return true;
-  if (o.salaryEstimate !== null && typeof o.salaryEstimate === 'object') return true;
-  if (o.salary_estimate !== null && typeof o.salary_estimate === 'object') return true;
+  if (o.salaryEstimate !== null && typeof o.salaryEstimate === 'object')
+    return true;
+  if (o.salary_estimate !== null && typeof o.salary_estimate === 'object')
+    return true;
   if (o.analysisV2 != null || o.analysis_v2 != null) return true;
   return false;
 }
@@ -641,7 +707,14 @@ function drillToJobAnalysisRow(raw: unknown): Record<string, unknown> {
     }
 
     let advanced = false;
-    for (const key of ['result', 'analysis', 'job', 'record', 'payload', 'item']) {
+    for (const key of [
+      'result',
+      'analysis',
+      'job',
+      'record',
+      'payload',
+      'item',
+    ]) {
       const v = o[key];
       if (v != null && typeof v === 'object') {
         cur = v;
@@ -657,7 +730,9 @@ function drillToJobAnalysisRow(raw: unknown): Record<string, unknown> {
   return {};
 }
 
-function parseSkillImportance(v: unknown): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
+function parseSkillImportance(
+  v: unknown,
+): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
   const s = String(v ?? 'LOW').toUpperCase();
   if (s === 'CRITICAL') return 'CRITICAL';
   if (s === 'HIGH') return 'HIGH';
@@ -667,7 +742,12 @@ function parseSkillImportance(v: unknown): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW
 
 function parseOptionalNumberField(v: unknown): number | null {
   if (v === null || v === undefined) return null;
-  const n = typeof v === 'number' ? v : typeof v === 'string' ? parseFloat(v) : Number(v);
+  const n =
+    typeof v === 'number'
+      ? v
+      : typeof v === 'string'
+        ? parseFloat(v)
+        : Number(v);
   return Number.isFinite(n) ? n : null;
 }
 
@@ -676,10 +756,20 @@ function normalizeStrengthsList(raw: unknown): string[] {
   return raw
     .map((x) => {
       if (typeof x === 'string') return x;
-      if (x && typeof x === 'object' && 'text' in x && typeof (x as { text?: string }).text === 'string') {
+      if (
+        x &&
+        typeof x === 'object' &&
+        'text' in x &&
+        typeof (x as { text?: string }).text === 'string'
+      ) {
         return (x as { text: string }).text;
       }
-      if (x && typeof x === 'object' && 'strength' in x && typeof (x as { strength?: string }).strength === 'string') {
+      if (
+        x &&
+        typeof x === 'object' &&
+        'strength' in x &&
+        typeof (x as { strength?: string }).strength === 'string'
+      ) {
         return (x as { strength: string }).strength;
       }
       return null;
@@ -701,34 +791,70 @@ function pickJobAnalysisId(body: Record<string, unknown>): string | undefined {
     if (typeof v === 'string' && v.trim()) return v.trim();
   }
   const nestedJob = body.job;
-  if (nestedJob !== null && typeof nestedJob === 'object' && !Array.isArray(nestedJob)) {
+  if (
+    nestedJob !== null &&
+    typeof nestedJob === 'object' &&
+    !Array.isArray(nestedJob)
+  ) {
     const j = nestedJob as Record<string, unknown>;
-    const jid = typeof j.id === 'string' ? j.id : typeof j.jobId === 'string' ? j.jobId : '';
+    const jid =
+      typeof j.id === 'string'
+        ? j.id
+        : typeof j.jobId === 'string'
+          ? j.jobId
+          : '';
     if (jid.trim()) return jid.trim();
   }
   const nestedAnalysis = body.analysis;
-  if (nestedAnalysis !== null && typeof nestedAnalysis === 'object' && !Array.isArray(nestedAnalysis)) {
+  if (
+    nestedAnalysis !== null &&
+    typeof nestedAnalysis === 'object' &&
+    !Array.isArray(nestedAnalysis)
+  ) {
     const a = nestedAnalysis as Record<string, unknown>;
-    const aid = typeof a.id === 'string' ? a.id : typeof a.jobId === 'string' ? a.jobId : '';
+    const aid =
+      typeof a.id === 'string'
+        ? a.id
+        : typeof a.jobId === 'string'
+          ? a.jobId
+          : '';
     if (aid.trim()) return aid.trim();
   }
   return undefined;
 }
 
 /** Shared parsing for salary blocks on job analysis payloads (nested or top-level). */
-function parseSalaryEstimateFromUnknown(seRaw: unknown): JobSalaryEstimate | null | undefined {
+function parseSalaryEstimateFromUnknown(
+  seRaw: unknown,
+): JobSalaryEstimate | null | undefined {
   if (seRaw === null || seRaw === undefined) return undefined;
   if (typeof seRaw !== 'object' || Array.isArray(seRaw)) return null;
   const se = seRaw as Record<string, unknown>;
   const currency = typeof se.currency === 'string' ? se.currency.trim() : '';
-  const min = typeof se.min === 'number' ? se.min : typeof se.min === 'string' ? parseFloat(se.min) : NaN;
-  const max = typeof se.max === 'number' ? se.max : typeof se.max === 'string' ? parseFloat(se.max) : NaN;
+  const min =
+    typeof se.min === 'number'
+      ? se.min
+      : typeof se.min === 'string'
+        ? parseFloat(se.min)
+        : NaN;
+  const max =
+    typeof se.max === 'number'
+      ? se.max
+      : typeof se.max === 'string'
+        ? parseFloat(se.max)
+        : NaN;
   const median =
-    typeof se.median === 'number' ? se.median : typeof se.median === 'string' ? parseFloat(se.median) : NaN;
+    typeof se.median === 'number'
+      ? se.median
+      : typeof se.median === 'string'
+        ? parseFloat(se.median)
+        : NaN;
   const basis = typeof se.basis === 'string' ? se.basis : 'annual';
   const confRaw = String(se.confidence ?? '').toLowerCase();
   const confidence =
-    confRaw === 'high' || confRaw === 'medium' || confRaw === 'low' ? confRaw : ('medium' as const);
+    confRaw === 'high' || confRaw === 'medium' || confRaw === 'low'
+      ? confRaw
+      : ('medium' as const);
   const note = typeof se.note === 'string' ? se.note : '';
   if (currency && Number.isFinite(min) && Number.isFinite(max)) {
     return {
@@ -763,10 +889,7 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
 
   const missing: NonNullable<JobAnalysis['missingSkills']> = [];
   const ms =
-    body.missingSkills ??
-    body.missing_skills ??
-    body.gaps ??
-    body.skillGaps;
+    body.missingSkills ?? body.missing_skills ?? body.gaps ?? body.skillGaps;
   if (Array.isArray(ms)) {
     for (const item of ms) {
       if (!item || typeof item !== 'object') continue;
@@ -795,10 +918,14 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
     null;
 
   const sourceCvProfileIdLegacy =
-    (typeof body.sourceCvProfileId === 'string' && body.sourceCvProfileId.trim()) ||
-    (typeof body.source_cv_profile_id === 'string' && body.source_cv_profile_id.trim()) ||
-    (typeof body.matchedCvProfileId === 'string' && body.matchedCvProfileId.trim()) ||
-    (typeof body.matched_cv_profile_id === 'string' && body.matched_cv_profile_id.trim()) ||
+    (typeof body.sourceCvProfileId === 'string' &&
+      body.sourceCvProfileId.trim()) ||
+    (typeof body.source_cv_profile_id === 'string' &&
+      body.source_cv_profile_id.trim()) ||
+    (typeof body.matchedCvProfileId === 'string' &&
+      body.matchedCvProfileId.trim()) ||
+    (typeof body.matched_cv_profile_id === 'string' &&
+      body.matched_cv_profile_id.trim()) ||
     null;
 
   const sourceCvProfileId = sourceCvProfileIdLegacy ?? cvProfileIdTrim;
@@ -809,8 +936,10 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
     null;
 
   const jobListingSourceHash =
-    (typeof body.jobListingSourceHash === 'string' && body.jobListingSourceHash.trim()) ||
-    (typeof body.job_listing_source_hash === 'string' && body.job_listing_source_hash.trim()) ||
+    (typeof body.jobListingSourceHash === 'string' &&
+      body.jobListingSourceHash.trim()) ||
+    (typeof body.job_listing_source_hash === 'string' &&
+      body.job_listing_source_hash.trim()) ||
     null;
 
   const applyUrlRaw = pickApplyUrlFromRecord(body);
@@ -850,7 +979,12 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
 
   let tailorDraft: CvTailorDraft | null | undefined;
   const tdRaw = body.tailorDraft ?? body.tailor_draft;
-  if (tdRaw !== null && tdRaw !== undefined && typeof tdRaw === 'object' && !Array.isArray(tdRaw)) {
+  if (
+    tdRaw !== null &&
+    tdRaw !== undefined &&
+    typeof tdRaw === 'object' &&
+    !Array.isArray(tdRaw)
+  ) {
     const td = normalizeCvTailorDraft(tdRaw);
     tailorDraft = td.id.trim() ? td : null;
   } else {
@@ -873,7 +1007,9 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
     title: typeof body.title === 'string' ? body.title : undefined,
     company: typeof body.company === 'string' ? body.company : undefined,
     matchScore,
-    scoreBeforeTailoring: parseOptionalNumberField(body.scoreBeforeTailoring ?? body.score_before_tailoring),
+    scoreBeforeTailoring: parseOptionalNumberField(
+      body.scoreBeforeTailoring ?? body.score_before_tailoring,
+    ),
     ...(cvProfileIdTrim ? { cvProfileId: cvProfileIdTrim } : {}),
     ...(sourceCvProfileId ? { sourceCvProfileId } : {}),
     ...(jobListingId ? { jobListingId } : {}),
@@ -908,7 +1044,10 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
 
 export type CvTailorDraftSectionStatus = 'pending' | 'accepted' | 'rejected';
 
-export type CvTailorDraftStatus = 'pending' | 'partially_accepted' | 'completed';
+export type CvTailorDraftStatus =
+  | 'pending'
+  | 'partially_accepted'
+  | 'completed';
 
 export type CvTailorDraftEntry = {
   sectionId: string;
@@ -984,6 +1123,7 @@ export type JobHistoryItem = {
     missingFields: string[];
     suggestedNextStep?: string | null;
   };
+  analysisV2?: JobAnalysisV2;
 };
 
 /** Paginated `GET /jobs/history` (items + total for UI paging). */
@@ -1112,14 +1252,21 @@ export type JobDetailForForm = {
   hubReminders?: HubReminderItem[];
 };
 
-function normalizeJobDetailForForm(raw: unknown, fallbackId: string): JobDetailForForm {
+function normalizeJobDetailForForm(
+  raw: unknown,
+  fallbackId: string,
+): JobDetailForForm {
   const analysis = normalizeJobAnalysis(raw);
   const body = unwrapApiDataEnvelope(raw);
   const o = body as Record<string, unknown>;
   const nestedJob =
-    o.job !== null && typeof o.job === 'object' && !Array.isArray(o.job) ? (o.job as Record<string, unknown>) : null;
+    o.job !== null && typeof o.job === 'object' && !Array.isArray(o.job)
+      ? (o.job as Record<string, unknown>)
+      : null;
   const nestedAnalysis =
-    o.analysis !== null && typeof o.analysis === 'object' && !Array.isArray(o.analysis)
+    o.analysis !== null &&
+    typeof o.analysis === 'object' &&
+    !Array.isArray(o.analysis)
       ? (o.analysis as Record<string, unknown>)
       : null;
 
@@ -1128,10 +1275,14 @@ function normalizeJobDetailForForm(raw: unknown, fallbackId: string): JobDetailF
     mergedSalary =
       parseSalaryEstimateFromUnknown(o.salaryEstimate ?? o.salary_estimate) ??
       (nestedJob
-        ? parseSalaryEstimateFromUnknown(nestedJob.salaryEstimate ?? nestedJob.salary_estimate)
+        ? parseSalaryEstimateFromUnknown(
+            nestedJob.salaryEstimate ?? nestedJob.salary_estimate,
+          )
         : undefined) ??
       (nestedAnalysis
-        ? parseSalaryEstimateFromUnknown(nestedAnalysis.salaryEstimate ?? nestedAnalysis.salary_estimate)
+        ? parseSalaryEstimateFromUnknown(
+            nestedAnalysis.salaryEstimate ?? nestedAnalysis.salary_estimate,
+          )
         : undefined);
   }
 
@@ -1143,32 +1294,48 @@ function normalizeJobDetailForForm(raw: unknown, fallbackId: string): JobDetailF
         : typeof o.job_description === 'string'
           ? o.job_description
           : '';
-  const na = nestedAnalysis !== null ? (nestedAnalysis as Record<string, unknown>) : null;
+  const na =
+    nestedAnalysis !== null
+      ? (nestedAnalysis as Record<string, unknown>)
+      : null;
   const topJobListingId =
     (typeof o.jobListingId === 'string' && o.jobListingId.trim()) ||
     (typeof o.job_listing_id === 'string' && o.job_listing_id.trim()) ||
-    (nestedJob && typeof nestedJob.jobListingId === 'string' && nestedJob.jobListingId.trim()) ||
+    (nestedJob &&
+      typeof nestedJob.jobListingId === 'string' &&
+      nestedJob.jobListingId.trim()) ||
     (na && typeof na.jobListingId === 'string' && na.jobListingId.trim()) ||
-    (na && typeof na.job_listing_id === 'string' && String(na.job_listing_id).trim()) ||
+    (na &&
+      typeof na.job_listing_id === 'string' &&
+      String(na.job_listing_id).trim()) ||
     null;
   const topJobListingHash =
-    (typeof o.jobListingSourceHash === 'string' && o.jobListingSourceHash.trim()) ||
-    (typeof o.job_listing_source_hash === 'string' && o.job_listing_source_hash.trim()) ||
+    (typeof o.jobListingSourceHash === 'string' &&
+      o.jobListingSourceHash.trim()) ||
+    (typeof o.job_listing_source_hash === 'string' &&
+      o.job_listing_source_hash.trim()) ||
     (nestedJob &&
       typeof nestedJob.jobListingSourceHash === 'string' &&
       nestedJob.jobListingSourceHash.trim()) ||
-    (na && typeof na.jobListingSourceHash === 'string' && na.jobListingSourceHash.trim()) ||
+    (na &&
+      typeof na.jobListingSourceHash === 'string' &&
+      na.jobListingSourceHash.trim()) ||
     null;
 
   const hubRemindersRaw =
     o.hubReminders ??
     o.hub_reminders ??
-    (nestedJob ? nestedJob.hubReminders ?? nestedJob.hub_reminders : undefined) ??
-    (na ? na.hubReminders ?? na.hub_reminders : undefined);
+    (nestedJob
+      ? (nestedJob.hubReminders ?? nestedJob.hub_reminders)
+      : undefined) ??
+    (na ? (na.hubReminders ?? na.hub_reminders) : undefined);
   const hubRemindersParsed =
     Array.isArray(hubRemindersRaw) && hubRemindersRaw.length > 0
       ? hubRemindersRaw
-          .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
+          .filter(
+            (x): x is Record<string, unknown> =>
+              x !== null && typeof x === 'object' && !Array.isArray(x),
+          )
           .map((x) => normalizeHubReminderItem(x))
       : undefined;
 
@@ -1187,7 +1354,9 @@ function normalizeJobDetailForForm(raw: unknown, fallbackId: string): JobDetailF
         : typeof g.cover_letter === 'string' && g.cover_letter.trim()
           ? g.cover_letter
           : undefined;
-    const answers = Array.isArray(g.answers) ? (g.answers as GeneratedContent['answers']) : undefined;
+    const answers = Array.isArray(g.answers)
+      ? (g.answers as GeneratedContent['answers'])
+      : undefined;
     if (coverLetter || answers) {
       generatedContent = {
         jobId: fallbackId,
@@ -1199,17 +1368,23 @@ function normalizeJobDetailForForm(raw: unknown, fallbackId: string): JobDetailF
 
   return {
     title: (typeof o.title === 'string' ? o.title : analysis.title) ?? '',
-    company: (typeof o.company === 'string' ? o.company : analysis.company) ?? '',
+    company:
+      (typeof o.company === 'string' ? o.company : analysis.company) ?? '',
     description: desc,
     analysis: {
       ...analysis,
       id: analysis.id ?? (typeof o.id === 'string' ? o.id : fallbackId),
-      salaryEstimate: mergedSalary !== undefined ? mergedSalary : analysis.salaryEstimate,
-      ...(topJobListingId && !analysis.jobListingId ? { jobListingId: topJobListingId } : {}),
+      salaryEstimate:
+        mergedSalary !== undefined ? mergedSalary : analysis.salaryEstimate,
+      ...(topJobListingId && !analysis.jobListingId
+        ? { jobListingId: topJobListingId }
+        : {}),
       ...(topJobListingHash && !analysis.jobListingSourceHash
         ? { jobListingSourceHash: topJobListingHash }
         : {}),
-      ...(hubPipelineStage && !analysis.status ? { status: hubPipelineStage } : {}),
+      ...(hubPipelineStage && !analysis.status
+        ? { status: hubPipelineStage }
+        : {}),
       ...(typeof o.hasCoverLetter === 'boolean'
         ? { hasCoverLetter: o.hasCoverLetter }
         : typeof o.has_cover_letter === 'boolean'
@@ -1314,7 +1489,11 @@ export interface DiscoverJobsResponse {
     mode: 'healthy' | 'low_quality' | 'empty';
     reasonCodes: string[];
     suggestedActions: Array<{
-      type: 'improve_cv' | 'expand_location' | 'adjust_filters' | 'refresh_preferences';
+      type:
+        | 'improve_cv'
+        | 'expand_location'
+        | 'adjust_filters'
+        | 'refresh_preferences';
       label: string;
       route: string;
       impactHint: string | null;
@@ -1339,11 +1518,16 @@ export type JobDiscoveryQuickActionResult = {
 };
 
 function parseJobRanking(raw: unknown): JobListingRanking | undefined {
-  if (raw == null || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  if (raw == null || typeof raw !== 'object' || Array.isArray(raw))
+    return undefined;
   const r = raw as Record<string, unknown>;
-  const tierRaw = String(r.tier ?? '').toUpperCase().trim();
+  const tierRaw = String(r.tier ?? '')
+    .toUpperCase()
+    .trim();
   const tier: JobRankingTier | null =
-    tierRaw === 'APPLY_NOW' || tierRaw === 'CONSIDER' || tierRaw === 'LOW_MATCH' ? (tierRaw as JobRankingTier) : null;
+    tierRaw === 'APPLY_NOW' || tierRaw === 'CONSIDER' || tierRaw === 'LOW_MATCH'
+      ? (tierRaw as JobRankingTier)
+      : null;
   const scoreNum = Number(r.score);
   if (!tier || !Number.isFinite(scoreNum)) return undefined;
   const rec = String(r.recommendation ?? '').trim();
@@ -1355,11 +1539,18 @@ function parseJobRanking(raw: unknown): JobListingRanking | undefined {
 }
 
 function parseJobExplanation(raw: unknown): JobListingExplanation | undefined {
-  if (raw == null || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  if (raw == null || typeof raw !== 'object' || Array.isArray(raw))
+    return undefined;
   const e = raw as Record<string, unknown>;
   const strArr = (v: unknown) =>
-    Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && x.trim().length > 0) : [];
-  const sm = String(e.seniorityMismatch ?? e.seniority_mismatch ?? 'none').toLowerCase();
+    Array.isArray(v)
+      ? v.filter(
+          (x): x is string => typeof x === 'string' && x.trim().length > 0,
+        )
+      : [];
+  const sm = String(
+    e.seniorityMismatch ?? e.seniority_mismatch ?? 'none',
+  ).toLowerCase();
   const seniorityMismatch: JobListingExplanation['seniorityMismatch'] =
     sm === 'under' || sm === 'over' || sm === 'unknown' ? sm : 'none';
   return {
@@ -1427,40 +1618,60 @@ export function normalizeJobListingDto(raw: unknown): JobListingDto {
         : typeof rawScore === 'string'
           ? parseFloat(rawScore)
           : Number(rawScore);
-    if (Number.isFinite(scoreNum)) matchScore = Math.max(0, Math.min(100, scoreNum));
+    if (Number.isFinite(scoreNum))
+      matchScore = Math.max(0, Math.min(100, scoreNum));
   }
   const whyThisJobSignalsRaw = o.whyThisJobSignals ?? o.why_this_job_signals;
   const whyThisJobSignals = Array.isArray(whyThisJobSignalsRaw)
-    ? whyThisJobSignalsRaw.filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+    ? whyThisJobSignalsRaw.filter(
+        (x): x is string => typeof x === 'string' && x.trim().length > 0,
+      )
     : [];
   const previewRaw =
-    o.matchPreview !== null && typeof o.matchPreview === 'object' && !Array.isArray(o.matchPreview)
+    o.matchPreview !== null &&
+    typeof o.matchPreview === 'object' &&
+    !Array.isArray(o.matchPreview)
       ? (o.matchPreview as Record<string, unknown>)
-      : o.match_preview !== null && typeof o.match_preview === 'object' && !Array.isArray(o.match_preview)
+      : o.match_preview !== null &&
+          typeof o.match_preview === 'object' &&
+          !Array.isArray(o.match_preview)
         ? (o.match_preview as Record<string, unknown>)
         : null;
   const noveltyRaw =
-    o.novelty !== null && typeof o.novelty === 'object' && !Array.isArray(o.novelty)
+    o.novelty !== null &&
+    typeof o.novelty === 'object' &&
+    !Array.isArray(o.novelty)
       ? (o.novelty as Record<string, unknown>)
       : null;
   const journeyRaw =
-    o.journey !== null && typeof o.journey === 'object' && !Array.isArray(o.journey)
+    o.journey !== null &&
+    typeof o.journey === 'object' &&
+    !Array.isArray(o.journey)
       ? (o.journey as Record<string, unknown>)
       : null;
   const highlightRaw =
-    o.highlight !== null && typeof o.highlight === 'object' && !Array.isArray(o.highlight)
+    o.highlight !== null &&
+    typeof o.highlight === 'object' &&
+    !Array.isArray(o.highlight)
       ? (o.highlight as Record<string, unknown>)
       : null;
-  const locationStrategyRaw = String(o.locationStrategy ?? o.location_strategy ?? '').toLowerCase().trim();
+  const locationStrategyRaw = String(
+    o.locationStrategy ?? o.location_strategy ?? '',
+  )
+    .toLowerCase()
+    .trim();
   const locationStrategy: 'local' | 'remote_fallback' | null =
-    locationStrategyRaw === 'local' || locationStrategyRaw === 'remote_fallback' ? locationStrategyRaw : null;
+    locationStrategyRaw === 'local' || locationStrategyRaw === 'remote_fallback'
+      ? locationStrategyRaw
+      : null;
   return {
     id: String(o.id ?? ''),
     title: typeof o.title === 'string' ? o.title : '',
     company: typeof o.company === 'string' ? o.company : '',
     location: typeof o.location === 'string' ? o.location : undefined,
     workMode: typeof o.workMode === 'string' ? o.workMode : undefined,
-    employmentType: typeof o.employmentType === 'string' ? o.employmentType : undefined,
+    employmentType:
+      typeof o.employmentType === 'string' ? o.employmentType : undefined,
     datePosted: typeof o.datePosted === 'string' ? o.datePosted : undefined,
     url: typeof o.url === 'string' ? o.url : undefined,
     description,
@@ -1478,28 +1689,38 @@ export function normalizeJobListingDto(raw: unknown): JobListingDto {
       ? {
           matchPreview: {
             instantScore:
-              typeof previewRaw.instantScore === 'number' && Number.isFinite(previewRaw.instantScore)
+              typeof previewRaw.instantScore === 'number' &&
+              Number.isFinite(previewRaw.instantScore)
                 ? Math.max(0, Math.min(100, previewRaw.instantScore))
-                : typeof previewRaw.instant_score === 'number' && Number.isFinite(previewRaw.instant_score)
+                : typeof previewRaw.instant_score === 'number' &&
+                    Number.isFinite(previewRaw.instant_score)
                   ? Math.max(0, Math.min(100, Number(previewRaw.instant_score)))
                   : null,
             instantBand: (() => {
-              const s = String(previewRaw.instantBand ?? previewRaw.instant_band ?? '')
+              const s = String(
+                previewRaw.instantBand ?? previewRaw.instant_band ?? '',
+              )
                 .trim()
                 .toLowerCase();
               return s === 'high' || s === 'medium' || s === 'low' ? s : null;
             })(),
             refinedScore:
-              typeof previewRaw.refinedScore === 'number' && Number.isFinite(previewRaw.refinedScore)
+              typeof previewRaw.refinedScore === 'number' &&
+              Number.isFinite(previewRaw.refinedScore)
                 ? Math.max(0, Math.min(100, previewRaw.refinedScore))
-                : typeof previewRaw.refined_score === 'number' && Number.isFinite(previewRaw.refined_score)
+                : typeof previewRaw.refined_score === 'number' &&
+                    Number.isFinite(previewRaw.refined_score)
                   ? Math.max(0, Math.min(100, Number(previewRaw.refined_score)))
                   : null,
-            refinedReady: previewRaw.refinedReady === true || previewRaw.refined_ready === true,
+            refinedReady:
+              previewRaw.refinedReady === true ||
+              previewRaw.refined_ready === true,
             refinedEtaMs:
-              typeof previewRaw.refinedEtaMs === 'number' && Number.isFinite(previewRaw.refinedEtaMs)
+              typeof previewRaw.refinedEtaMs === 'number' &&
+              Number.isFinite(previewRaw.refinedEtaMs)
                 ? previewRaw.refinedEtaMs
-                : typeof previewRaw.refined_eta_ms === 'number' && Number.isFinite(previewRaw.refined_eta_ms)
+                : typeof previewRaw.refined_eta_ms === 'number' &&
+                    Number.isFinite(previewRaw.refined_eta_ms)
                   ? Number(previewRaw.refined_eta_ms)
                   : null,
             version:
@@ -1515,7 +1736,8 @@ export function normalizeJobListingDto(raw: unknown): JobListingDto {
       ? {
           novelty: {
             isNewSinceLastVisit:
-              noveltyRaw.isNewSinceLastVisit === true || noveltyRaw.is_new_since_last_visit === true,
+              noveltyRaw.isNewSinceLastVisit === true ||
+              noveltyRaw.is_new_since_last_visit === true,
             firstSeenAt:
               typeof noveltyRaw.firstSeenAt === 'string'
                 ? noveltyRaw.firstSeenAt
@@ -1540,13 +1762,12 @@ export function normalizeJobListingDto(raw: unknown): JobListingDto {
                 : typeof journeyRaw.focus_token === 'string'
                   ? String(journeyRaw.focus_token)
                   : null,
-            jobListingId:
-              (typeof journeyRaw.jobListingId === 'string'
-                ? journeyRaw.jobListingId
-                : typeof journeyRaw.job_listing_id === 'string'
-                  ? String(journeyRaw.job_listing_id)
-                  : String(o.id ?? '')
-              ).trim(),
+            jobListingId: (typeof journeyRaw.jobListingId === 'string'
+              ? journeyRaw.jobListingId
+              : typeof journeyRaw.job_listing_id === 'string'
+                ? String(journeyRaw.job_listing_id)
+                : String(o.id ?? '')
+            ).trim(),
             returnRoute:
               typeof journeyRaw.returnRoute === 'string'
                 ? journeyRaw.returnRoute
@@ -1559,12 +1780,18 @@ export function normalizeJobListingDto(raw: unknown): JobListingDto {
     ...(highlightRaw
       ? {
           highlight: {
-            isTopMatch: highlightRaw.isTopMatch === true || highlightRaw.is_top_match === true,
+            isTopMatch:
+              highlightRaw.isTopMatch === true ||
+              highlightRaw.is_top_match === true,
             emphasisLevel: (() => {
-              const s = String(highlightRaw.emphasisLevel ?? highlightRaw.emphasis_level ?? '')
+              const s = String(
+                highlightRaw.emphasisLevel ?? highlightRaw.emphasis_level ?? '',
+              )
                 .trim()
                 .toLowerCase();
-              return s === 'none' || s === 'subtle' || s === 'strong' ? s : 'none';
+              return s === 'none' || s === 'subtle' || s === 'strong'
+                ? s
+                : 'none';
             })(),
             label:
               typeof highlightRaw.label === 'string'
@@ -1586,16 +1813,19 @@ export function normalizeJobListingDto(raw: unknown): JobListingDto {
       : typeof o.fallback_reason === 'string'
         ? { fallbackReason: String(o.fallback_reason) }
         : {}),
-    ...(typeof o.postedAgeHours === 'number' && Number.isFinite(o.postedAgeHours)
+    ...(typeof o.postedAgeHours === 'number' &&
+    Number.isFinite(o.postedAgeHours)
       ? { postedAgeHours: o.postedAgeHours }
-      : typeof o.posted_age_hours === 'number' && Number.isFinite(o.posted_age_hours)
+      : typeof o.posted_age_hours === 'number' &&
+          Number.isFinite(o.posted_age_hours)
         ? { postedAgeHours: Number(o.posted_age_hours) }
         : {}),
     ...(isBookmarked !== undefined ? { isBookmarked } : {}),
     ...(bookmarkRowId?.trim() ? { bookmarkRowId: bookmarkRowId.trim() } : {}),
     ...(typeof o.jobAnalysisId === 'string' && o.jobAnalysisId.trim()
       ? { jobAnalysisId: o.jobAnalysisId.trim() }
-      : typeof o.job_analysis_id === 'string' && String(o.job_analysis_id).trim()
+      : typeof o.job_analysis_id === 'string' &&
+          String(o.job_analysis_id).trim()
         ? { jobAnalysisId: String(o.job_analysis_id).trim() }
         : {}),
     ...(typeof o.applicationId === 'string' && o.applicationId.trim()
@@ -1603,8 +1833,12 @@ export function normalizeJobListingDto(raw: unknown): JobListingDto {
       : typeof o.application_id === 'string' && String(o.application_id).trim()
         ? { applicationId: String(o.application_id).trim() }
         : {}),
-    ...(parseJobRanking(o.ranking) ? { ranking: parseJobRanking(o.ranking) } : {}),
-    ...(parseJobExplanation(o.explanation) ? { explanation: parseJobExplanation(o.explanation) } : {}),
+    ...(parseJobRanking(o.ranking)
+      ? { ranking: parseJobRanking(o.ranking) }
+      : {}),
+    ...(parseJobExplanation(o.explanation)
+      ? { explanation: parseJobExplanation(o.explanation) }
+      : {}),
   };
 }
 
@@ -1678,7 +1912,8 @@ function parseApplicationAssist(raw: unknown):
       suggestedNextStep?: string | null;
     }
   | undefined {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return undefined;
   const o = raw as Record<string, unknown>;
   const missingRaw = o.missingFields ?? o.missing_fields;
   const missingFields = Array.isArray(missingRaw)
@@ -1687,7 +1922,8 @@ function parseApplicationAssist(raw: unknown):
   return {
     hasCvReady: o.hasCvReady === true || o.has_cv_ready === true,
     hasTailoredCv: o.hasTailoredCv === true || o.has_tailored_cv === true,
-    hasCoverLetterDraft: o.hasCoverLetterDraft === true || o.has_cover_letter_draft === true,
+    hasCoverLetterDraft:
+      o.hasCoverLetterDraft === true || o.has_cover_letter_draft === true,
     missingFields,
     suggestedNextStep:
       typeof o.suggestedNextStep === 'string'
@@ -1819,8 +2055,12 @@ function normalizeHubBookmarkItem(o: Record<string, unknown>): HubBookmarkItem {
         : typeof o.discoveryId === 'string'
           ? o.discoveryId
           : '';
-  const hubPs = parseHubPipelineStage(o.hubPipelineStage ?? o.hub_pipeline_stage);
-  const applicationAssist = parseApplicationAssist(o.applicationAssist ?? o.application_assist);
+  const hubPs = parseHubPipelineStage(
+    o.hubPipelineStage ?? o.hub_pipeline_stage,
+  );
+  const applicationAssist = parseApplicationAssist(
+    o.applicationAssist ?? o.application_assist,
+  );
   return {
     id,
     jobListingId,
@@ -1858,7 +2098,9 @@ function normalizeHubBookmarkItem(o: Record<string, unknown>): HubBookmarkItem {
     ...(hubPs ? { hubPipelineStage: hubPs } : {}),
     ...(typeof o.origin === 'string' ? { origin: o.origin } : {}),
     ...(typeof o.state === 'string' ? { state: o.state } : {}),
-    ...(o.isApplied === true || o.is_applied === true ? { isApplied: true } : {}),
+    ...(o.isApplied === true || o.is_applied === true
+      ? { isApplied: true }
+      : {}),
     ...(typeof o.lastActivityAt === 'string'
       ? { lastActivityAt: o.lastActivityAt }
       : typeof o.last_activity_at === 'string'
@@ -1891,11 +2133,18 @@ function extractHubNotesArrayFromResponse(raw: unknown): unknown[] {
 }
 
 function sortHubNotesNewestFirst(rows: HubNoteEntry[]): HubNoteEntry[] {
-  return [...rows].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return [...rows].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
 }
 
 /** @deprecated Prefer {@link ApplicationTrackerStatus} — kept for older callers */
-export type ApplicationStatus = ApplicationTrackerStatus | 'APPLIED' | 'INTERVIEW' | 'REJECTED' | 'OFFER';
+export type ApplicationStatus =
+  | ApplicationTrackerStatus
+  | 'APPLIED'
+  | 'INTERVIEW'
+  | 'REJECTED'
+  | 'OFFER';
 
 export type ApplicationItem = {
   id: string;
@@ -2068,6 +2317,7 @@ export interface InterviewSession {
   stressMode?: boolean;
   questionTimeLimitSec?: number;
   realityScore?: import('@/lib/interview-prep-types').RealityScoreBreakdown;
+  coachingSettings?: import('@/lib/interview-prep-types').CoachingSettings;
   /** Optional telemetry (e.g. question generation v2). */
   setupMetadataJson?: import('@/lib/interview-prep-types').InterviewSetupMetadata;
 }
@@ -2146,7 +2396,8 @@ export function pickCvSectionRowsForEditor(
   detailRows: CVSectionRecord[] | undefined,
 ): CVSectionRecord[] {
   const hasRowIds = (rows: CVSectionRecord[] | undefined) =>
-    Array.isArray(rows) && rows.some((r) => typeof r.id === 'string' && r.id.trim().length > 0);
+    Array.isArray(rows) &&
+    rows.some((r) => typeof r.id === 'string' && r.id.trim().length > 0);
   if (hasRowIds(queryRows)) return queryRows!;
   if (hasRowIds(detailRows)) return detailRows!;
   if (Array.isArray(queryRows) && queryRows.length > 0) return queryRows;
@@ -2278,17 +2529,17 @@ export type CvDiffPreviewOpenParams = CvTruthfulnessMeta & {
 export type CvSuggestionMutationResult = CvTruthfulnessMeta &
   CvPerformanceMeta &
   CvMutationCommitMeta & {
-  suggestion?: CVImprovementItem;
-  pendingSuggestionsCount: number;
-  cvRevisionId: string | null;
-  legacy?: Record<string, unknown>;
-  idempotent?: boolean;
-  /** Server already applied this change — treat as success for queue UX. */
-  alreadyApplied?: boolean;
-  duplicateSuppressed?: boolean;
-  /** Draft preview slots still stored on profile after accept (Phase 4.5). */
-  remainingDraftPreviews?: number;
-};
+    suggestion?: CVImprovementItem;
+    pendingSuggestionsCount: number;
+    cvRevisionId: string | null;
+    legacy?: Record<string, unknown>;
+    idempotent?: boolean;
+    /** Server already applied this change — treat as success for queue UX. */
+    alreadyApplied?: boolean;
+    duplicateSuppressed?: boolean;
+    /** Draft preview slots still stored on profile after accept (Phase 4.5). */
+    remainingDraftPreviews?: number;
+  };
 
 /** POST /cv/suggestions/accept-all — optional additive batch summary (Phase 5). */
 export type CvAcceptAllSummary = {
@@ -2305,75 +2556,76 @@ export type CvAcceptAllSummary = {
 export type CvSuggestionsBulkMutationResult = CvTruthfulnessMeta &
   CvPerformanceMeta &
   CvMutationCommitMeta & {
-  acceptedCount?: number;
-  rejectedCount?: number;
-  remainingPendingCount?: number;
-  pendingSuggestionsCount?: number;
-  cvRevisionId?: string | null;
-  idempotent?: boolean;
-  duplicateSuppressed?: boolean;
-  alreadyApplied?: boolean;
-  /** When false, server skipped scheduling a score job (no meaningful structured change). */
-  scoringTriggered?: boolean;
-  /** Human-readable server message (e.g. Accept All caps / limits). */
-  message?: string;
-  acceptAllQueueOverflow?: boolean;
-  acceptAllSkippedForAiLimit?: boolean;
-  acceptAllDraftReuseCount?: number;
-  acceptAllMaxSuggestions?: number;
-  acceptAllMaxAiCalls?: number;
-  cacheHit?: boolean;
-  /** Suggestions skipped because the AI draft failed truthfulness / structure checks. */
-  failedTruthfulnessCount?: number;
-  /** Structured accept-all rollup when provided (camel or snake from API). */
-  acceptAllSummary?: CvAcceptAllSummary;
-};
+    acceptedCount?: number;
+    rejectedCount?: number;
+    remainingPendingCount?: number;
+    pendingSuggestionsCount?: number;
+    cvRevisionId?: string | null;
+    idempotent?: boolean;
+    duplicateSuppressed?: boolean;
+    alreadyApplied?: boolean;
+    /** When false, server skipped scheduling a score job (no meaningful structured change). */
+    scoringTriggered?: boolean;
+    /** Human-readable server message (e.g. Accept All caps / limits). */
+    message?: string;
+    acceptAllQueueOverflow?: boolean;
+    acceptAllSkippedForAiLimit?: boolean;
+    acceptAllDraftReuseCount?: number;
+    acceptAllMaxSuggestions?: number;
+    acceptAllMaxAiCalls?: number;
+    cacheHit?: boolean;
+    /** Suggestions skipped because the AI draft failed truthfulness / structure checks. */
+    failedTruthfulnessCount?: number;
+    /** Structured accept-all rollup when provided (camel or snake from API). */
+    acceptAllSummary?: CvAcceptAllSummary;
+  };
 
 /** POST /cv/improvements/:id/apply — preview / draft (may reuse draft without second AI call). */
-export type CvApplyImprovementResult = CvTruthfulnessMeta & CvPerformanceMeta & {
-  success: boolean;
-  pointer: string;
-  improvementId: string | null;
-  /** Stable suggestion id for multi-preview maps (same as improvement row id when present). */
-  suggestionId?: string | null;
-  section: string;
-  before: unknown;
-  after: unknown;
-  changedFields: Array<{
-    field: string;
-    fieldPath: string;
-    fieldLabel?: string;
-    before: string;
-    after: string;
-    type: 'added' | 'removed' | 'changed';
-  }>;
-  draftHash: string | null;
-  message: string;
-  duplicateSuppressed?: boolean;
-  alreadyApplied?: boolean;
-  /** Server resolved the suggestion without a new preview (treat like already on CV). */
-  autoResolved?: boolean;
-  idempotent?: boolean;
-  pendingSuggestionsCount?: number;
-  cvRevisionId?: string | null;
-  remainingDraftPreviews?: number;
-};
+export type CvApplyImprovementResult = CvTruthfulnessMeta &
+  CvPerformanceMeta & {
+    success: boolean;
+    pointer: string;
+    improvementId: string | null;
+    /** Stable suggestion id for multi-preview maps (same as improvement row id when present). */
+    suggestionId?: string | null;
+    section: string;
+    before: unknown;
+    after: unknown;
+    changedFields: Array<{
+      field: string;
+      fieldPath: string;
+      fieldLabel?: string;
+      before: string;
+      after: string;
+      type: 'added' | 'removed' | 'changed';
+    }>;
+    draftHash: string | null;
+    message: string;
+    duplicateSuppressed?: boolean;
+    alreadyApplied?: boolean;
+    /** Server resolved the suggestion without a new preview (treat like already on CV). */
+    autoResolved?: boolean;
+    idempotent?: boolean;
+    pendingSuggestionsCount?: number;
+    cvRevisionId?: string | null;
+    remainingDraftPreviews?: number;
+  };
 
 /** POST /cv/improvements/:id/accept|reject — partial field flows. */
 export type CvImprovementPartialMutationResult = CvTruthfulnessMeta &
   CvPerformanceMeta &
   CvMutationCommitMeta & {
-  partial: boolean;
-  draftHash: string | null;
-  remainingChangedFields: string[];
-  improvementId: string | null;
-  appliedChangedFields?: string[];
-  pendingSuggestionsCount?: number;
-  cvRevisionId?: string | null;
-  idempotent?: boolean;
-  alreadyApplied?: boolean;
-  duplicateSuppressed?: boolean;
-};
+    partial: boolean;
+    draftHash: string | null;
+    remainingChangedFields: string[];
+    improvementId: string | null;
+    appliedChangedFields?: string[];
+    pendingSuggestionsCount?: number;
+    cvRevisionId?: string | null;
+    idempotent?: boolean;
+    alreadyApplied?: boolean;
+    duplicateSuppressed?: boolean;
+  };
 
 /** ATS block nested under score `breakdown` when the API provides it. */
 export type ATSCompatibility = {
@@ -2448,7 +2700,10 @@ export type CvScoreJobContextParams = {
 /** POST /cv/chat-create body — extend as backend adds fields. */
 export type ChatCreateCVPayload = Record<string, unknown>;
 
-export type ChatConversationHistoryItem = { role: 'user' | 'assistant'; content: string };
+export type ChatConversationHistoryItem = {
+  role: 'user' | 'assistant';
+  content: string;
+};
 
 export type ChatConversationResponse =
   | { type: 'message'; message: string }
@@ -2482,7 +2737,14 @@ export type CvSpellcheckFieldResult = {
 };
 
 export type CvSpellcheckBulkResult = {
-  results: Record<string, Array<{ fieldPath: string; sourceTextHash?: string; issues: CvSpellIssue[] }>>;
+  results: Record<
+    string,
+    Array<{
+      fieldPath: string;
+      sourceTextHash?: string;
+      issues: CvSpellIssue[];
+    }>
+  >;
 };
 
 export type CvSpellcheckApplyPayload = {
@@ -2514,7 +2776,11 @@ export type CvCompletenessResult = {
     sectionId: string;
     sectionType: string;
     label: string;
-    missingFields: Array<{ fieldPath: string; label: string; required: boolean }>;
+    missingFields: Array<{
+      fieldPath: string;
+      label: string;
+      required: boolean;
+    }>;
   }>;
 };
 
@@ -2533,19 +2799,36 @@ export type CvAssistantCommandResponse =
       diff: { before: unknown; after: unknown; summary: string };
     };
 
-function normalizeChatConversationResponse(raw: unknown): ChatConversationResponse {
+function normalizeChatConversationResponse(
+  raw: unknown,
+): ChatConversationResponse {
   const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
   const complete =
-    body.type === 'complete' || body.done === true || body.status === 'complete' || body.phase === 'complete';
+    body.type === 'complete' ||
+    body.done === true ||
+    body.status === 'complete' ||
+    body.phase === 'complete';
   const message = String(body.message ?? body.content ?? body.text ?? '');
   if (complete) {
     let extracted: Record<string, unknown> = {};
-    if (body.extractedData !== null && typeof body.extractedData === 'object' && !Array.isArray(body.extractedData)) {
+    if (
+      body.extractedData !== null &&
+      typeof body.extractedData === 'object' &&
+      !Array.isArray(body.extractedData)
+    ) {
       extracted = body.extractedData as Record<string, unknown>;
-    } else if (body.payload !== null && typeof body.payload === 'object' && !Array.isArray(body.payload)) {
+    } else if (
+      body.payload !== null &&
+      typeof body.payload === 'object' &&
+      !Array.isArray(body.payload)
+    ) {
       extracted = body.payload as Record<string, unknown>;
     }
-    return { type: 'complete', message, extractedData: extracted as ChatCreateCVPayload };
+    return {
+      type: 'complete',
+      message,
+      extractedData: extracted as ChatCreateCVPayload,
+    };
   }
   return { type: 'message', message };
 }
@@ -2559,7 +2842,9 @@ export type ParseTextCvResult = {
 function normalizeParseTextCvResult(raw: unknown): ParseTextCvResult {
   const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
   const profile = mapBodyToCvProfile(body);
-  const profileId = String(body.profileId ?? body.cvProfileId ?? profile.id ?? '').trim();
+  const profileId = String(
+    body.profileId ?? body.cvProfileId ?? profile.id ?? '',
+  ).trim();
   return { profile, profileId: profileId || profile.id };
 }
 
@@ -2584,8 +2869,11 @@ export type AnalyticsOverview = {
   aiUsageTimezone?: string;
 };
 
-function normalizeAnalyticsCvProfileRow(raw: unknown): AnalyticsCvProfileRow | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+function normalizeAnalyticsCvProfileRow(
+  raw: unknown,
+): AnalyticsCvProfileRow | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const id = String(o.id ?? o.cvProfileId ?? '').trim();
   if (!id) return null;
@@ -2611,24 +2899,34 @@ function normalizeAnalyticsOverview(raw: unknown): AnalyticsOverview {
   const rawProfiles = body.cvProfiles;
   const cvProfiles =
     Array.isArray(rawProfiles) && rawProfiles.length
-      ? (rawProfiles.map(normalizeAnalyticsCvProfileRow).filter(Boolean) as AnalyticsCvProfileRow[])
+      ? (rawProfiles
+          .map(normalizeAnalyticsCvProfileRow)
+          .filter(Boolean) as AnalyticsCvProfileRow[])
       : undefined;
   return {
     jobsAnalyzed: Number(body.totalJobsAnalyzed ?? body.jobsAnalyzed ?? 0),
     averageMatchScore: Number(body.averageMatchScore ?? 0),
-    applicationsSent: Number(body.totalApplications ?? body.applicationsSent ?? 0),
+    applicationsSent: Number(
+      body.totalApplications ?? body.applicationsSent ?? 0,
+    ),
     cvProfiles,
-    cvUploaded: typeof body.cvUploaded === 'boolean' ? body.cvUploaded : undefined,
+    cvUploaded:
+      typeof body.cvUploaded === 'boolean' ? body.cvUploaded : undefined,
     aiUsesToday:
       typeof body.aiUsesToday === 'number' && Number.isFinite(body.aiUsesToday)
         ? body.aiUsesToday
         : undefined,
     aiDailyLimit: aiDailyLimit === undefined ? undefined : aiDailyLimit,
-    aiUsesRemaining: aiUsesRemaining === undefined ? undefined : aiUsesRemaining,
+    aiUsesRemaining:
+      aiUsesRemaining === undefined ? undefined : aiUsesRemaining,
     aiUsageResetsAt:
-      typeof body.aiUsageResetsAt === 'string' ? body.aiUsageResetsAt : undefined,
+      typeof body.aiUsageResetsAt === 'string'
+        ? body.aiUsageResetsAt
+        : undefined,
     aiUsageTimezone:
-      typeof body.aiUsageTimezone === 'string' ? body.aiUsageTimezone : undefined,
+      typeof body.aiUsageTimezone === 'string'
+        ? body.aiUsageTimezone
+        : undefined,
   };
 }
 
@@ -2649,9 +2947,11 @@ function parseApplicationStatus(v: unknown): ApplicationTrackerStatus {
     'withdrawn',
     'ghosted',
   ];
-  if (map.includes(s as ApplicationTrackerStatus)) return s as ApplicationTrackerStatus;
+  if (map.includes(s as ApplicationTrackerStatus))
+    return s as ApplicationTrackerStatus;
   const u = raw.toUpperCase();
-  if (u === 'INTERVIEW' || u === 'INTERVIEW_SCHEDULED') return 'interview_scheduled';
+  if (u === 'INTERVIEW' || u === 'INTERVIEW_SCHEDULED')
+    return 'interview_scheduled';
   if (u === 'OFFER' || u === 'OFFER_RECEIVED') return 'offer_received';
   if (u === 'REJECTED') return 'rejected';
   if (u === 'WITHDRAWN') return 'withdrawn';
@@ -2672,14 +2972,18 @@ function normalizeApplicationItem(raw: unknown): ApplicationItem {
         : undefined;
   const interviewPrepAvailable =
     o.interviewPrepAvailable === true || o.interview_prep_available === true;
-  const applicationAssist = parseApplicationAssist(o.applicationAssist ?? o.application_assist);
+  const applicationAssist = parseApplicationAssist(
+    o.applicationAssist ?? o.application_assist,
+  );
   return {
     id: String(o.id ?? ''),
     title: String(o.title ?? 'Untitled role'),
     company: String(o.company ?? 'Unknown company'),
     url: typeof o.url === 'string' ? o.url : undefined,
     matchScore:
-      typeof o.matchScore === 'number' && Number.isFinite(o.matchScore) ? o.matchScore : undefined,
+      typeof o.matchScore === 'number' && Number.isFinite(o.matchScore)
+        ? o.matchScore
+        : undefined,
     status: parseApplicationStatus(o.status),
     notes: typeof o.notes === 'string' ? o.notes : undefined,
     createdAt: typeof o.createdAt === 'string' ? o.createdAt : undefined,
@@ -2730,8 +3034,18 @@ function normalizeNotificationItem(raw: unknown): NotificationItem {
       'jobApplicationId',
       'job_application_id',
     );
-    const jobAnalysisId = pickString('jobAnalysisId', 'job_analysis_id', 'jobId', 'job_id');
-    const bookmarkId = pickString('bookmarkId', 'bookmark_id', 'hubBookmarkId', 'hub_bookmark_id');
+    const jobAnalysisId = pickString(
+      'jobAnalysisId',
+      'job_analysis_id',
+      'jobId',
+      'job_id',
+    );
+    const bookmarkId = pickString(
+      'bookmarkId',
+      'bookmark_id',
+      'hubBookmarkId',
+      'hub_bookmark_id',
+    );
     const href = pickString('href', 'deepLink', 'url', 'route');
     const ctaHref = pickString('ctaHref', 'cta_href');
     const focus = pickString('focus');
@@ -2758,7 +3072,8 @@ function normalizeNotificationItem(raw: unknown): NotificationItem {
     id: String(o.id ?? ''),
     message,
     read: o.read === true || o.isRead === true || o.is_read === true,
-    createdAt: typeof o.createdAt === 'string' ? o.createdAt : new Date().toISOString(),
+    createdAt:
+      typeof o.createdAt === 'string' ? o.createdAt : new Date().toISOString(),
     metadata,
   };
 }
@@ -2766,9 +3081,13 @@ function normalizeNotificationItem(raw: unknown): NotificationItem {
 function normalizeDiscoverJobsResponse(raw: unknown): DiscoverJobsResponse {
   const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
   const qualityRaw =
-    body.qualityState !== null && typeof body.qualityState === 'object' && !Array.isArray(body.qualityState)
+    body.qualityState !== null &&
+    typeof body.qualityState === 'object' &&
+    !Array.isArray(body.qualityState)
       ? (body.qualityState as Record<string, unknown>)
-      : body.quality_state !== null && typeof body.quality_state === 'object' && !Array.isArray(body.quality_state)
+      : body.quality_state !== null &&
+          typeof body.quality_state === 'object' &&
+          !Array.isArray(body.quality_state)
         ? (body.quality_state as Record<string, unknown>)
         : null;
   const base = body as unknown as DiscoverJobsResponse;
@@ -2780,28 +3099,47 @@ function normalizeDiscoverJobsResponse(raw: unknown): DiscoverJobsResponse {
     total: typeof base.total === 'number' ? base.total : items.length,
     page: typeof base.page === 'number' ? base.page : 1,
     pageSize: typeof base.pageSize === 'number' ? base.pageSize : 20,
-    locationFallback: body.locationFallback === true || body.location_fallback === true,
+    locationFallback:
+      body.locationFallback === true || body.location_fallback === true,
     remoteFirst: body.remoteFirst === true || body.remote_first === true,
-    ...(body.freshness !== null && typeof body.freshness === 'object' && !Array.isArray(body.freshness)
+    ...(body.freshness !== null &&
+    typeof body.freshness === 'object' &&
+    !Array.isArray(body.freshness)
       ? {
           freshness: {
             newSinceLastVisitCount:
-              typeof (body.freshness as Record<string, unknown>).newSinceLastVisitCount === 'number'
-                ? ((body.freshness as Record<string, unknown>).newSinceLastVisitCount as number)
-                : typeof (body.freshness as Record<string, unknown>).new_since_last_visit_count === 'number'
-                  ? Number((body.freshness as Record<string, unknown>).new_since_last_visit_count)
+              typeof (body.freshness as Record<string, unknown>)
+                .newSinceLastVisitCount === 'number'
+                ? ((body.freshness as Record<string, unknown>)
+                    .newSinceLastVisitCount as number)
+                : typeof (body.freshness as Record<string, unknown>)
+                      .new_since_last_visit_count === 'number'
+                  ? Number(
+                      (body.freshness as Record<string, unknown>)
+                        .new_since_last_visit_count,
+                    )
                   : 0,
             updatedSinceLastVisitCount:
-              typeof (body.freshness as Record<string, unknown>).updatedSinceLastVisitCount === 'number'
-                ? ((body.freshness as Record<string, unknown>).updatedSinceLastVisitCount as number)
-                : typeof (body.freshness as Record<string, unknown>).updated_since_last_visit_count === 'number'
-                  ? Number((body.freshness as Record<string, unknown>).updated_since_last_visit_count)
+              typeof (body.freshness as Record<string, unknown>)
+                .updatedSinceLastVisitCount === 'number'
+                ? ((body.freshness as Record<string, unknown>)
+                    .updatedSinceLastVisitCount as number)
+                : typeof (body.freshness as Record<string, unknown>)
+                      .updated_since_last_visit_count === 'number'
+                  ? Number(
+                      (body.freshness as Record<string, unknown>)
+                        .updated_since_last_visit_count,
+                    )
                   : 0,
             lastSeenAt:
-              typeof (body.freshness as Record<string, unknown>).lastSeenAt === 'string'
+              typeof (body.freshness as Record<string, unknown>).lastSeenAt ===
+              'string'
                 ? String((body.freshness as Record<string, unknown>).lastSeenAt)
-                : typeof (body.freshness as Record<string, unknown>).last_seen_at === 'string'
-                  ? String((body.freshness as Record<string, unknown>).last_seen_at)
+                : typeof (body.freshness as Record<string, unknown>)
+                      .last_seen_at === 'string'
+                  ? String(
+                      (body.freshness as Record<string, unknown>).last_seen_at,
+                    )
                   : null,
           },
         }
@@ -2813,7 +3151,9 @@ function normalizeDiscoverJobsResponse(raw: unknown): DiscoverJobsResponse {
               const s = String(qualityRaw.mode ?? '')
                 .trim()
                 .toLowerCase();
-              return s === 'healthy' || s === 'low_quality' || s === 'empty' ? s : 'healthy';
+              return s === 'healthy' || s === 'low_quality' || s === 'empty'
+                ? s
+                : 'healthy';
             })(),
             reasonCodes: Array.isArray(qualityRaw.reasonCodes)
               ? (qualityRaw.reasonCodes as unknown[]).filter(
@@ -2822,16 +3162,24 @@ function normalizeDiscoverJobsResponse(raw: unknown): DiscoverJobsResponse {
               : [],
             suggestedActions: Array.isArray(qualityRaw.suggestedActions)
               ? (qualityRaw.suggestedActions as unknown[])
-                  .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
+                  .filter(
+                    (x): x is Record<string, unknown> =>
+                      x !== null && typeof x === 'object' && !Array.isArray(x),
+                  )
                   .map((x) => ({
                     type: String(x.type ?? '').trim() as
                       | 'improve_cv'
                       | 'expand_location'
                       | 'adjust_filters'
                       | 'refresh_preferences',
-                    label: typeof x.label === 'string' ? x.label : 'Take action',
-                    route: typeof x.route === 'string' ? x.route : '/dashboard/job-board',
-                    impactHint: typeof x.impactHint === 'string' ? x.impactHint : null,
+                    label:
+                      typeof x.label === 'string' ? x.label : 'Take action',
+                    route:
+                      typeof x.route === 'string'
+                        ? x.route
+                        : '/dashboard/job-board',
+                    impactHint:
+                      typeof x.impactHint === 'string' ? x.impactHint : null,
                   }))
               : [],
           },
@@ -2842,10 +3190,21 @@ function normalizeDiscoverJobsResponse(raw: unknown): DiscoverJobsResponse {
     !Array.isArray(body.searchContext)
       ? {
           searchContext: {
-            locationLabel: String((body.searchContext as Record<string, unknown>).locationLabel ?? ''),
-            locationSource: String((body.searchContext as Record<string, unknown>).locationSource ?? ''),
-            countryCode: String((body.searchContext as Record<string, unknown>).countryCode ?? 'US'),
-            roleQuery: String((body.searchContext as Record<string, unknown>).roleQuery ?? ''),
+            locationLabel: String(
+              (body.searchContext as Record<string, unknown>).locationLabel ??
+                '',
+            ),
+            locationSource: String(
+              (body.searchContext as Record<string, unknown>).locationSource ??
+                '',
+            ),
+            countryCode: String(
+              (body.searchContext as Record<string, unknown>).countryCode ??
+                'US',
+            ),
+            roleQuery: String(
+              (body.searchContext as Record<string, unknown>).roleQuery ?? '',
+            ),
           },
         }
       : body.search_context !== null &&
@@ -2853,10 +3212,22 @@ function normalizeDiscoverJobsResponse(raw: unknown): DiscoverJobsResponse {
           !Array.isArray(body.search_context)
         ? {
             searchContext: {
-              locationLabel: String((body.search_context as Record<string, unknown>).locationLabel ?? ''),
-              locationSource: String((body.search_context as Record<string, unknown>).locationSource ?? ''),
-              countryCode: String((body.search_context as Record<string, unknown>).countryCode ?? 'US'),
-              roleQuery: String((body.search_context as Record<string, unknown>).roleQuery ?? ''),
+              locationLabel: String(
+                (body.search_context as Record<string, unknown>)
+                  .locationLabel ?? '',
+              ),
+              locationSource: String(
+                (body.search_context as Record<string, unknown>)
+                  .locationSource ?? '',
+              ),
+              countryCode: String(
+                (body.search_context as Record<string, unknown>).countryCode ??
+                  'US',
+              ),
+              roleQuery: String(
+                (body.search_context as Record<string, unknown>).roleQuery ??
+                  '',
+              ),
             },
           }
         : {}),
@@ -2872,7 +3243,9 @@ function parseOnboardingStep(v: unknown): number | undefined {
   return undefined;
 }
 
-function parseJobSearchUrgency(raw: unknown): JobSearchUrgency | null | undefined {
+function parseJobSearchUrgency(
+  raw: unknown,
+): JobSearchUrgency | null | undefined {
   if (raw === undefined) return undefined;
   if (raw === null) return null;
   if (raw === 'asap' || raw === 'few_months' || raw === 'exploring') return raw;
@@ -2892,7 +3265,8 @@ function normalizeOnboardingStatus(raw: unknown): OnboardingStatus {
   const body = unwrapApiDataEnvelope(raw);
   const o = body as Record<string, unknown>;
   const focusGetHired = o.focusGetHired ?? o.focus_get_hired;
-  const focusStudentLaunchpad = o.focusStudentLaunchpad ?? o.focus_student_launchpad;
+  const focusStudentLaunchpad =
+    o.focusStudentLaunchpad ?? o.focus_student_launchpad;
   const jobUrgencyRaw = o.jobSearchUrgency ?? o.job_search_urgency;
   const targetRolesRaw = o.targetRoles ?? o.target_roles;
   const referralSourceRaw = o.referralSource ?? o.referral_source;
@@ -2901,12 +3275,18 @@ function normalizeOnboardingStatus(raw: unknown): OnboardingStatus {
     completed: o.completed === true,
     step: parseOnboardingStep(o.step ?? o.currentStep),
     selectedFeatures: Array.isArray(o.selectedFeatures)
-      ? (o.selectedFeatures as unknown[]).filter((x): x is string => typeof x === 'string')
+      ? (o.selectedFeatures as unknown[]).filter(
+          (x): x is string => typeof x === 'string',
+        )
       : undefined,
     primaryGoal: typeof o.primaryGoal === 'string' ? o.primaryGoal : undefined,
     hasCV: typeof o.hasCV === 'boolean' ? o.hasCV : undefined,
-    focusGetHired: typeof focusGetHired === 'boolean' ? focusGetHired : undefined,
-    focusStudentLaunchpad: typeof focusStudentLaunchpad === 'boolean' ? focusStudentLaunchpad : undefined,
+    focusGetHired:
+      typeof focusGetHired === 'boolean' ? focusGetHired : undefined,
+    focusStudentLaunchpad:
+      typeof focusStudentLaunchpad === 'boolean'
+        ? focusStudentLaunchpad
+        : undefined,
     jobSearchUrgency: parseJobSearchUrgency(jobUrgencyRaw),
     targetRoles: normalizeTargetRolesField(targetRolesRaw),
     referralSource:
@@ -2928,16 +3308,32 @@ function normalizeOnboardingStatus(raw: unknown): OnboardingStatus {
 const CV_SECTION_ROW_UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-function findIdLikeUuidInRecord(o: Record<string, unknown>, depth: number): string {
+function findIdLikeUuidInRecord(
+  o: Record<string, unknown>,
+  depth: number,
+): string {
   if (depth > 3) return '';
   for (const [k, v] of Object.entries(o)) {
     const kl = k.toLowerCase();
     if (typeof v === 'string') {
       const t = v.trim();
-      if (t && CV_SECTION_ROW_UUID_RE.test(t) && (kl.includes('id') || kl === 'uuid')) return t;
+      if (
+        t &&
+        CV_SECTION_ROW_UUID_RE.test(t) &&
+        (kl.includes('id') || kl === 'uuid')
+      )
+        return t;
     }
-    if (v && typeof v === 'object' && !Array.isArray(v) && (kl === 'data' || kl === 'meta' || kl === 'section')) {
-      const inner = findIdLikeUuidInRecord(v as Record<string, unknown>, depth + 1);
+    if (
+      v &&
+      typeof v === 'object' &&
+      !Array.isArray(v) &&
+      (kl === 'data' || kl === 'meta' || kl === 'section')
+    ) {
+      const inner = findIdLikeUuidInRecord(
+        v as Record<string, unknown>,
+        depth + 1,
+      );
       if (inner) return inner;
     }
   }
@@ -2945,7 +3341,9 @@ function findIdLikeUuidInRecord(o: Record<string, unknown>, depth: number): stri
 }
 
 /** Flatten common Nest/Prisma shapes where the row id sits on the root, under `data`, or under `section`. */
-function cvSectionRecordLayers(body: Record<string, unknown>): Record<string, unknown>[] {
+function cvSectionRecordLayers(
+  body: Record<string, unknown>,
+): Record<string, unknown>[] {
   const layers: Record<string, unknown>[] = [body];
   const data = body.data;
   if (data !== null && typeof data === 'object' && !Array.isArray(data)) {
@@ -2960,7 +3358,15 @@ function cvSectionRecordLayers(body: Record<string, unknown>): Record<string, un
 
 /** Prisma / Nest may expose the row primary key under several names or nested objects. */
 function resolveCvSectionRowId(body: Record<string, unknown>): string {
-  const keys = ['id', 'sectionId', 'section_id', 'cvSectionId', 'cv_section_id', 'uuid', 'pk'] as const;
+  const keys = [
+    'id',
+    'sectionId',
+    'section_id',
+    'cvSectionId',
+    'cv_section_id',
+    'uuid',
+    'pk',
+  ] as const;
   for (const layer of cvSectionRecordLayers(body)) {
     for (const k of keys) {
       const c = layer[k];
@@ -2987,7 +3393,9 @@ function normalizeCVSection(raw: unknown): CVSectionRecord {
   }
   const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
   const hidden =
-    typeof body.visible === 'boolean' ? body.visible !== true : body.hidden === true;
+    typeof body.visible === 'boolean'
+      ? body.visible !== true
+      : body.hidden === true;
   const orderRaw = body.order;
   const orderNum =
     typeof orderRaw === 'number' && Number.isFinite(orderRaw)
@@ -3002,7 +3410,9 @@ function normalizeCVSection(raw: unknown): CVSectionRecord {
     order: orderNum,
     hidden,
     data:
-      body.data !== null && typeof body.data === 'object' && !Array.isArray(body.data)
+      body.data !== null &&
+      typeof body.data === 'object' &&
+      !Array.isArray(body.data)
         ? (body.data as Record<string, unknown>)
         : undefined,
   };
@@ -3015,7 +3425,10 @@ function normalizeCvProfileDetail(raw: unknown): CvProfileDetail {
   if (Array.isArray(sectionsRaw)) {
     sectionsArr = sectionsRaw as unknown[];
   } else if (sectionsRaw !== null && typeof sectionsRaw === 'object') {
-    sectionsArr = extractCvSectionRowList({ sections: sectionsRaw } as Record<string, unknown>);
+    sectionsArr = extractCvSectionRowList({ sections: sectionsRaw } as Record<
+      string,
+      unknown
+    >);
   }
   const sections = sectionsArr.map(normalizeCVSection);
   const profileBody: Record<string, unknown> = { ...body };
@@ -3026,7 +3439,9 @@ function normalizeCvProfileDetail(raw: unknown): CvProfileDetail {
   };
 }
 
-function normalizeCvReorderSectionsResult(raw: unknown): CvReorderSectionsResult {
+function normalizeCvReorderSectionsResult(
+  raw: unknown,
+): CvReorderSectionsResult {
   const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
   const sectionsRaw = body.sections;
   const sections = Array.isArray(sectionsRaw)
@@ -3035,7 +3450,9 @@ function normalizeCvReorderSectionsResult(raw: unknown): CvReorderSectionsResult
   return { sections };
 }
 
-function normalizeCvBatchUpsertSectionsResult(raw: unknown): CvBatchUpsertSectionsResult {
+function normalizeCvBatchUpsertSectionsResult(
+  raw: unknown,
+): CvBatchUpsertSectionsResult {
   const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
   const sectionsRaw = body.sections;
   const sections = Array.isArray(sectionsRaw)
@@ -3044,9 +3461,13 @@ function normalizeCvBatchUpsertSectionsResult(raw: unknown): CvBatchUpsertSectio
   return {
     success: body.success === true,
     updated:
-      typeof body.updated === 'number' && Number.isFinite(body.updated) ? Math.max(0, body.updated) : 0,
+      typeof body.updated === 'number' && Number.isFinite(body.updated)
+        ? Math.max(0, body.updated)
+        : 0,
     unchanged:
-      typeof body.unchanged === 'number' && Number.isFinite(body.unchanged) ? Math.max(0, body.unchanged) : 0,
+      typeof body.unchanged === 'number' && Number.isFinite(body.unchanged)
+        ? Math.max(0, body.unchanged)
+        : 0,
     sections,
   };
 }
@@ -3059,12 +3480,14 @@ function normalizeCVScore(raw: unknown): CVScorePayload {
     const improvements = normalizeCVImprovementsFromDetailedEnvelope(raw);
     return {
       score: null,
-      lastScoredAt: typeof o.lastScoredAt === 'string' ? o.lastScoredAt : undefined,
+      lastScoredAt:
+        typeof o.lastScoredAt === 'string' ? o.lastScoredAt : undefined,
       breakdown: (() => {
         if (
           o.breakdown !== null &&
           typeof o.breakdown === 'object' &&
-          typeof (o.breakdown as Record<string, unknown>).sections === 'object' &&
+          typeof (o.breakdown as Record<string, unknown>).sections ===
+            'object' &&
           (o.breakdown as Record<string, unknown>).sections !== null
         ) {
           return o.breakdown as Record<string, unknown>;
@@ -3072,7 +3495,8 @@ function normalizeCVScore(raw: unknown): CVScorePayload {
         if (
           o.evaluation !== null &&
           typeof o.evaluation === 'object' &&
-          typeof (o.evaluation as Record<string, unknown>).sections === 'object' &&
+          typeof (o.evaluation as Record<string, unknown>).sections ===
+            'object' &&
           (o.evaluation as Record<string, unknown>).sections !== null
         ) {
           return o.evaluation as Record<string, unknown>;
@@ -3094,7 +3518,8 @@ function normalizeCVScore(raw: unknown): CVScorePayload {
   const improvements = normalizeCVImprovementsFromDetailedEnvelope(raw);
   return {
     score: Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : null,
-    lastScoredAt: typeof o.lastScoredAt === 'string' ? o.lastScoredAt : undefined,
+    lastScoredAt:
+      typeof o.lastScoredAt === 'string' ? o.lastScoredAt : undefined,
     breakdown: (() => {
       if (
         o.breakdown !== null &&
@@ -3107,7 +3532,8 @@ function normalizeCVScore(raw: unknown): CVScorePayload {
       if (
         o.evaluation !== null &&
         typeof o.evaluation === 'object' &&
-        typeof (o.evaluation as Record<string, unknown>).sections === 'object' &&
+        typeof (o.evaluation as Record<string, unknown>).sections ===
+          'object' &&
         (o.evaluation as Record<string, unknown>).sections !== null
       ) {
         return o.evaluation as Record<string, unknown>;
@@ -3164,7 +3590,12 @@ function normalizeCVImprovements(raw: unknown): CVImprovementItem[] {
                 : typeof x.tip === 'string'
                   ? x.tip
                   : suggestionRaw;
-    const exampleRaw = typeof x.example === 'string' ? x.example : typeof x.sample === 'string' ? x.sample : undefined;
+    const exampleRaw =
+      typeof x.example === 'string'
+        ? x.example
+        : typeof x.sample === 'string'
+          ? x.sample
+          : undefined;
     const priorityNum =
       typeof x.priority === 'number' && Number.isFinite(x.priority)
         ? x.priority
@@ -3177,16 +3608,25 @@ function normalizeCVImprovements(raw: unknown): CVImprovementItem[] {
               : undefined;
     const primaryMsg = issueRaw ?? messageRaw;
     const acceptedFieldPaths = Array.isArray(x.acceptedFieldPaths)
-      ? x.acceptedFieldPaths.filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+      ? x.acceptedFieldPaths.filter(
+          (v): v is string => typeof v === 'string' && v.trim().length > 0,
+        )
       : Array.isArray(x.accepted_field_paths)
-        ? x.accepted_field_paths.filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+        ? x.accepted_field_paths.filter(
+            (v): v is string => typeof v === 'string' && v.trim().length > 0,
+          )
         : [];
     const pendingFieldPaths = Array.isArray(x.pendingFieldPaths)
-      ? x.pendingFieldPaths.filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+      ? x.pendingFieldPaths.filter(
+          (v): v is string => typeof v === 'string' && v.trim().length > 0,
+        )
       : Array.isArray(x.pending_field_paths)
-        ? x.pending_field_paths.filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+        ? x.pending_field_paths.filter(
+            (v): v is string => typeof v === 'string' && v.trim().length > 0,
+          )
         : [];
-    const statusRaw = typeof x.status === 'string' ? x.status.trim().toLowerCase() : '';
+    const statusRaw =
+      typeof x.status === 'string' ? x.status.trim().toLowerCase() : '';
     const legacyResolved =
       x.resolved === true || x.isResolved === true || x.is_resolved === true;
     let normalizedStatus: NonNullable<CVImprovementItem['status']>;
@@ -3211,7 +3651,8 @@ function normalizeCVImprovements(raw: unknown): CVImprovementItem[] {
         : typeof x.resolved_at === 'string'
           ? x.resolved_at
           : undefined;
-    const resolutionRaw = typeof x.resolution === 'string' ? x.resolution.trim().toLowerCase() : '';
+    const resolutionRaw =
+      typeof x.resolution === 'string' ? x.resolution.trim().toLowerCase() : '';
     const resolution: CVImprovementItem['resolution'] =
       resolutionRaw === 'already_applied'
         ? 'already_applied'
@@ -3219,7 +3660,9 @@ function normalizeCVImprovements(raw: unknown): CVImprovementItem[] {
           ? (resolutionRaw as 'accepted' | 'rejected')
           : undefined;
     const resolvedCompat =
-      legacyResolved || normalizedStatus === 'accepted' || normalizedStatus === 'rejected';
+      legacyResolved ||
+      normalizedStatus === 'accepted' ||
+      normalizedStatus === 'rejected';
     return {
       id: typeof x.id === 'string' ? x.id : undefined,
       status: normalizedStatus,
@@ -3244,14 +3687,19 @@ function normalizeCVImprovements(raw: unknown): CVImprovementItem[] {
       resolved: resolvedCompat,
     };
   });
-  return rows.filter((row) => (row.message ?? row.suggestion ?? '').trim().length > 0);
+  return rows.filter(
+    (row) => (row.message ?? row.suggestion ?? '').trim().length > 0,
+  );
 }
 
-export function normalizeCvImprovementsGetResponse(raw: unknown): CvImprovementsPayload {
+export function normalizeCvImprovementsGetResponse(
+  raw: unknown,
+): CvImprovementsPayload {
   const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
   const needsScoring = body.needsScoring === true;
   const pendingSuggestionsCount =
-    typeof body.pendingSuggestionsCount === 'number' && Number.isFinite(body.pendingSuggestionsCount)
+    typeof body.pendingSuggestionsCount === 'number' &&
+    Number.isFinite(body.pendingSuggestionsCount)
       ? body.pendingSuggestionsCount
       : undefined;
   const score =
@@ -3260,7 +3708,8 @@ export function normalizeCvImprovementsGetResponse(raw: unknown): CvImprovements
       : typeof body.score === 'number' && Number.isFinite(body.score)
         ? Math.max(0, Math.min(100, body.score))
         : undefined;
-  const lastScoredAt = typeof body.lastScoredAt === 'string' ? body.lastScoredAt : undefined;
+  const lastScoredAt =
+    typeof body.lastScoredAt === 'string' ? body.lastScoredAt : undefined;
   const cvRevisionId =
     body.cvRevisionId === null
       ? null
@@ -3291,11 +3740,18 @@ async function fetchCvSuggestionsList(
   return normalizeCvImprovementsGetResponse(res.data);
 }
 
-function parseTruthfulnessFields(body: Record<string, unknown>): CvTruthfulnessMeta {
+function parseTruthfulnessFields(
+  body: Record<string, unknown>,
+): CvTruthfulnessMeta {
   const factualityValidated =
-    body.factualityValidated === true ? true : body.factualityValidated === false ? false : undefined;
+    body.factualityValidated === true
+      ? true
+      : body.factualityValidated === false
+        ? false
+        : undefined;
   const unsupportedChangesDetected =
-    typeof body.unsupportedChangesDetected === 'number' && Number.isFinite(body.unsupportedChangesDetected)
+    typeof body.unsupportedChangesDetected === 'number' &&
+    Number.isFinite(body.unsupportedChangesDetected)
       ? body.unsupportedChangesDetected
       : undefined;
   const tw = body.truthfulnessWarnings;
@@ -3304,15 +3760,29 @@ function parseTruthfulnessFields(body: Record<string, unknown>): CvTruthfulnessM
         .map((x) => (typeof x === 'string' ? x.trim() : String(x)))
         .filter((s) => s.length > 0)
     : undefined;
-  return { factualityValidated, unsupportedChangesDetected, truthfulnessWarnings };
+  return {
+    factualityValidated,
+    unsupportedChangesDetected,
+    truthfulnessWarnings,
+  };
 }
 
-function parseAcceptAllSummary(src: Record<string, unknown>): CvAcceptAllSummary | undefined {
+function parseAcceptAllSummary(
+  src: Record<string, unknown>,
+): CvAcceptAllSummary | undefined {
   const raw = src.acceptAllSummary ?? src.accept_all_summary;
-  if (raw === null || raw === undefined || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  if (
+    raw === null ||
+    raw === undefined ||
+    typeof raw !== 'object' ||
+    Array.isArray(raw)
+  )
+    return undefined;
   const o = raw as Record<string, unknown>;
   const num = (v: unknown): number | undefined =>
-    typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.floor(v)) : undefined;
+    typeof v === 'number' && Number.isFinite(v)
+      ? Math.max(0, Math.floor(v))
+      : undefined;
   const out: CvAcceptAllSummary = {};
   const applied = num(o.applied);
   if (applied !== undefined) out.applied = applied;
@@ -3321,16 +3791,20 @@ function parseAcceptAllSummary(src: Record<string, unknown>): CvAcceptAllSummary
   const skippedNoop = num(o.skippedNoop ?? o.skipped_noop);
   if (skippedNoop !== undefined) out.skippedNoop = skippedNoop;
   const failedTruthfulness = num(o.failedTruthfulness ?? o.failed_truthfulness);
-  if (failedTruthfulness !== undefined) out.failedTruthfulness = failedTruthfulness;
+  if (failedTruthfulness !== undefined)
+    out.failedTruthfulness = failedTruthfulness;
   const skippedAiBudget = num(o.skippedAiBudget ?? o.skipped_ai_budget);
   if (skippedAiBudget !== undefined) out.skippedAiBudget = skippedAiBudget;
   const leftPending = num(o.leftPending ?? o.left_pending);
   if (leftPending !== undefined) out.leftPending = leftPending;
-  if (o.queueOverflow === true || o.queue_overflow === true) out.queueOverflow = true;
+  if (o.queueOverflow === true || o.queue_overflow === true)
+    out.queueOverflow = true;
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
-function parsePerformanceFields(body: Record<string, unknown>): CvPerformanceMeta {
+function parsePerformanceFields(
+  body: Record<string, unknown>,
+): CvPerformanceMeta {
   const cacheHit =
     body.cacheHit === true ? true : body.cacheHit === false ? false : undefined;
   const usedSectionScopedPrompt =
@@ -3340,43 +3814,62 @@ function parsePerformanceFields(body: Record<string, unknown>): CvPerformanceMet
         ? false
         : undefined;
   const usedFallback =
-    body.usedFallback === true ? true : body.usedFallback === false ? false : undefined;
+    body.usedFallback === true
+      ? true
+      : body.usedFallback === false
+        ? false
+        : undefined;
   const latencyMs =
-    typeof body.latencyMs === 'number' && Number.isFinite(body.latencyMs) ? body.latencyMs : undefined;
+    typeof body.latencyMs === 'number' && Number.isFinite(body.latencyMs)
+      ? body.latencyMs
+      : undefined;
   const inputCharacters =
-    typeof body.inputCharacters === 'number' && Number.isFinite(body.inputCharacters)
+    typeof body.inputCharacters === 'number' &&
+    Number.isFinite(body.inputCharacters)
       ? body.inputCharacters
-      : typeof body.input_characters === 'number' && Number.isFinite(body.input_characters)
+      : typeof body.input_characters === 'number' &&
+          Number.isFinite(body.input_characters)
         ? body.input_characters
         : undefined;
   const outputCharacters =
-    typeof body.outputCharacters === 'number' && Number.isFinite(body.outputCharacters)
+    typeof body.outputCharacters === 'number' &&
+    Number.isFinite(body.outputCharacters)
       ? body.outputCharacters
-      : typeof body.output_characters === 'number' && Number.isFinite(body.output_characters)
+      : typeof body.output_characters === 'number' &&
+          Number.isFinite(body.output_characters)
         ? body.output_characters
         : undefined;
   const promptTokenCount =
-    typeof body.promptTokenCount === 'number' && Number.isFinite(body.promptTokenCount)
+    typeof body.promptTokenCount === 'number' &&
+    Number.isFinite(body.promptTokenCount)
       ? body.promptTokenCount
-      : typeof body.prompt_tokens === 'number' && Number.isFinite(body.prompt_tokens)
+      : typeof body.prompt_tokens === 'number' &&
+          Number.isFinite(body.prompt_tokens)
         ? body.prompt_tokens
-        : typeof body.promptTokens === 'number' && Number.isFinite(body.promptTokens)
+        : typeof body.promptTokens === 'number' &&
+            Number.isFinite(body.promptTokens)
           ? body.promptTokens
           : undefined;
   const completionTokenCount =
-    typeof body.completionTokenCount === 'number' && Number.isFinite(body.completionTokenCount)
+    typeof body.completionTokenCount === 'number' &&
+    Number.isFinite(body.completionTokenCount)
       ? body.completionTokenCount
-      : typeof body.completion_tokens === 'number' && Number.isFinite(body.completion_tokens)
+      : typeof body.completion_tokens === 'number' &&
+          Number.isFinite(body.completion_tokens)
         ? body.completion_tokens
-        : typeof body.completionTokens === 'number' && Number.isFinite(body.completionTokens)
+        : typeof body.completionTokens === 'number' &&
+            Number.isFinite(body.completionTokens)
           ? body.completionTokens
           : undefined;
   const totalTokenCount =
-    typeof body.totalTokenCount === 'number' && Number.isFinite(body.totalTokenCount)
+    typeof body.totalTokenCount === 'number' &&
+    Number.isFinite(body.totalTokenCount)
       ? body.totalTokenCount
-      : typeof body.total_tokens === 'number' && Number.isFinite(body.total_tokens)
+      : typeof body.total_tokens === 'number' &&
+          Number.isFinite(body.total_tokens)
         ? body.total_tokens
-        : typeof body.totalTokens === 'number' && Number.isFinite(body.totalTokens)
+        : typeof body.totalTokens === 'number' &&
+            Number.isFinite(body.totalTokens)
           ? body.totalTokens
           : undefined;
   return {
@@ -3400,10 +3893,14 @@ function parseOptionalStringIdArray(
   const raw = body[camelKey] ?? body[snakeKey];
   if (raw === undefined) return undefined;
   if (!Array.isArray(raw)) return undefined;
-  return raw.map((x) => (typeof x === 'string' ? x.trim() : String(x))).filter((s) => s.length > 0);
+  return raw
+    .map((x) => (typeof x === 'string' ? x.trim() : String(x)))
+    .filter((s) => s.length > 0);
 }
 
-function parseMutationCommitMeta(body: Record<string, unknown>): CvMutationCommitMeta {
+function parseMutationCommitMeta(
+  body: Record<string, unknown>,
+): CvMutationCommitMeta {
   const backgroundTasksScheduled =
     body.backgroundTasksScheduled === true
       ? true
@@ -3415,9 +3912,11 @@ function parseMutationCommitMeta(body: Record<string, unknown>): CvMutationCommi
             ? false
             : undefined;
   const transactionLatencyMs =
-    typeof body.transactionLatencyMs === 'number' && Number.isFinite(body.transactionLatencyMs)
+    typeof body.transactionLatencyMs === 'number' &&
+    Number.isFinite(body.transactionLatencyMs)
       ? body.transactionLatencyMs
-      : typeof body.transaction_latency_ms === 'number' && Number.isFinite(body.transaction_latency_ms)
+      : typeof body.transaction_latency_ms === 'number' &&
+          Number.isFinite(body.transaction_latency_ms)
         ? body.transaction_latency_ms
         : undefined;
   const acceptedSuggestionIds = parseOptionalStringIdArray(
@@ -3431,8 +3930,13 @@ function parseMutationCommitMeta(body: Record<string, unknown>): CvMutationCommi
     'rejected_suggestion_ids',
   );
   const scoringTriggered =
-    body.scoringTriggered === true ? true : body.scoringTriggered === false ? false : undefined;
-  const structuredRevisionHashRaw = body.structuredRevisionHash ?? body.structured_revision_hash;
+    body.scoringTriggered === true
+      ? true
+      : body.scoringTriggered === false
+        ? false
+        : undefined;
+  const structuredRevisionHashRaw =
+    body.structuredRevisionHash ?? body.structured_revision_hash;
   const structuredRevisionHash =
     structuredRevisionHashRaw === null
       ? null
@@ -3449,18 +3953,26 @@ function parseMutationCommitMeta(body: Record<string, unknown>): CvMutationCommi
   };
 }
 
-function parseCvSuggestionMutationEnvelope(raw: unknown): CvSuggestionMutationResult {
+function parseCvSuggestionMutationEnvelope(
+  raw: unknown,
+): CvSuggestionMutationResult {
   const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
   const nestedData =
-    body.data !== null && typeof body.data === 'object' && !Array.isArray(body.data)
+    body.data !== null &&
+    typeof body.data === 'object' &&
+    !Array.isArray(body.data)
       ? (body.data as Record<string, unknown>)
       : null;
-  const src: Record<string, unknown> = nestedData ? { ...body, ...nestedData } : body;
+  const src: Record<string, unknown> = nestedData
+    ? { ...body, ...nestedData }
+    : body;
   const pendingSuggestionsCount =
-    typeof src.pendingSuggestionsCount === 'number' && Number.isFinite(src.pendingSuggestionsCount)
+    typeof src.pendingSuggestionsCount === 'number' &&
+    Number.isFinite(src.pendingSuggestionsCount)
       ? src.pendingSuggestionsCount
       : 0;
-  const cvRevisionId = typeof src.cvRevisionId === 'string' ? src.cvRevisionId : null;
+  const cvRevisionId =
+    typeof src.cvRevisionId === 'string' ? src.cvRevisionId : null;
   const idempotent = src.idempotent === true;
   const alreadyApplied = src.alreadyApplied === true;
   const duplicateSuppressed = src.duplicateSuppressed === true;
@@ -3471,10 +3983,13 @@ function parseCvSuggestionMutationEnvelope(raw: unknown): CvSuggestionMutationRe
   const suggestionRow = src.suggestion;
   const suggestion =
     suggestionRow !== null && typeof suggestionRow === 'object'
-      ? normalizeCVImprovements({ suggestions: [suggestionRow as Record<string, unknown>] })[0]
+      ? normalizeCVImprovements({
+          suggestions: [suggestionRow as Record<string, unknown>],
+        })[0]
       : undefined;
   const remainingDraftPreviews =
-    typeof src.remainingDraftPreviews === 'number' && Number.isFinite(src.remainingDraftPreviews)
+    typeof src.remainingDraftPreviews === 'number' &&
+    Number.isFinite(src.remainingDraftPreviews)
       ? src.remainingDraftPreviews
       : undefined;
   return {
@@ -3492,29 +4007,37 @@ function parseCvSuggestionMutationEnvelope(raw: unknown): CvSuggestionMutationRe
   };
 }
 
-function parseCvSuggestionsBulkEnvelope(raw: unknown): CvSuggestionsBulkMutationResult {
+function parseCvSuggestionsBulkEnvelope(
+  raw: unknown,
+): CvSuggestionsBulkMutationResult {
   const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
   const nested =
-    body.data !== null && typeof body.data === 'object' && !Array.isArray(body.data)
+    body.data !== null &&
+    typeof body.data === 'object' &&
+    !Array.isArray(body.data)
       ? (body.data as Record<string, unknown>)
       : null;
   const src = nested ? { ...body, ...nested } : body;
   const acceptAllSummary = parseAcceptAllSummary(src);
   return {
     acceptedCount:
-      typeof src.acceptedCount === 'number' && Number.isFinite(src.acceptedCount)
+      typeof src.acceptedCount === 'number' &&
+      Number.isFinite(src.acceptedCount)
         ? src.acceptedCount
         : undefined,
     rejectedCount:
-      typeof src.rejectedCount === 'number' && Number.isFinite(src.rejectedCount)
+      typeof src.rejectedCount === 'number' &&
+      Number.isFinite(src.rejectedCount)
         ? src.rejectedCount
         : undefined,
     remainingPendingCount:
-      typeof src.remainingPendingCount === 'number' && Number.isFinite(src.remainingPendingCount)
+      typeof src.remainingPendingCount === 'number' &&
+      Number.isFinite(src.remainingPendingCount)
         ? src.remainingPendingCount
         : undefined,
     pendingSuggestionsCount:
-      typeof src.pendingSuggestionsCount === 'number' && Number.isFinite(src.pendingSuggestionsCount)
+      typeof src.pendingSuggestionsCount === 'number' &&
+      Number.isFinite(src.pendingSuggestionsCount)
         ? src.pendingSuggestionsCount
         : undefined,
     cvRevisionId:
@@ -3527,22 +4050,29 @@ function parseCvSuggestionsBulkEnvelope(raw: unknown): CvSuggestionsBulkMutation
     duplicateSuppressed: src.duplicateSuppressed === true,
     alreadyApplied: src.alreadyApplied === true,
     failedTruthfulnessCount:
-      typeof src.failedTruthfulnessCount === 'number' && Number.isFinite(src.failedTruthfulnessCount)
+      typeof src.failedTruthfulnessCount === 'number' &&
+      Number.isFinite(src.failedTruthfulnessCount)
         ? src.failedTruthfulnessCount
         : undefined,
-    message: typeof src.message === 'string' && src.message.trim() ? src.message.trim() : undefined,
+    message:
+      typeof src.message === 'string' && src.message.trim()
+        ? src.message.trim()
+        : undefined,
     acceptAllQueueOverflow: src.acceptAllQueueOverflow === true,
     acceptAllSkippedForAiLimit: src.acceptAllSkippedForAiLimit === true,
     acceptAllDraftReuseCount:
-      typeof src.acceptAllDraftReuseCount === 'number' && Number.isFinite(src.acceptAllDraftReuseCount)
+      typeof src.acceptAllDraftReuseCount === 'number' &&
+      Number.isFinite(src.acceptAllDraftReuseCount)
         ? src.acceptAllDraftReuseCount
         : undefined,
     acceptAllMaxSuggestions:
-      typeof src.acceptAllMaxSuggestions === 'number' && Number.isFinite(src.acceptAllMaxSuggestions)
+      typeof src.acceptAllMaxSuggestions === 'number' &&
+      Number.isFinite(src.acceptAllMaxSuggestions)
         ? src.acceptAllMaxSuggestions
         : undefined,
     acceptAllMaxAiCalls:
-      typeof src.acceptAllMaxAiCalls === 'number' && Number.isFinite(src.acceptAllMaxAiCalls)
+      typeof src.acceptAllMaxAiCalls === 'number' &&
+      Number.isFinite(src.acceptAllMaxAiCalls)
         ? src.acceptAllMaxAiCalls
         : undefined,
     cacheHit: src.cacheHit === true,
@@ -3554,7 +4084,9 @@ function parseCvSuggestionsBulkEnvelope(raw: unknown): CvSuggestionsBulkMutation
 }
 
 /** Pull improvement rows from detailed score response (path-scoped or legacy global POST) when not on GET /cv/improvements yet. */
-function normalizeCVImprovementsFromDetailedEnvelope(raw: unknown): CVImprovementItem[] {
+function normalizeCVImprovementsFromDetailedEnvelope(
+  raw: unknown,
+): CVImprovementItem[] {
   const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
   const direct = normalizeCVImprovements(raw);
   if (direct.length > 0) return direct;
@@ -3571,34 +4103,66 @@ function normalizeCVImprovementsFromDetailedEnvelope(raw: unknown): CVImprovemen
   return [];
 }
 
-function tryPickJobAnalysisFromMutationBody(o: Record<string, unknown>): unknown | null {
+function tryPickJobAnalysisFromMutationBody(
+  o: Record<string, unknown>,
+): unknown | null {
   const direct = o.jobAnalysis ?? o.job_analysis;
-  if (direct !== null && direct !== undefined && typeof direct === 'object' && !Array.isArray(direct)) {
+  if (
+    direct !== null &&
+    direct !== undefined &&
+    typeof direct === 'object' &&
+    !Array.isArray(direct)
+  ) {
     return direct;
   }
   const nested = o.analysis;
-  if (nested !== null && nested !== undefined && typeof nested === 'object' && !Array.isArray(nested)) {
+  if (
+    nested !== null &&
+    nested !== undefined &&
+    typeof nested === 'object' &&
+    !Array.isArray(nested)
+  ) {
     const a = nested as Record<string, unknown>;
-    if (typeof a.matchScore === 'number' || Array.isArray(a.missingSkills) || Array.isArray(a.strengths)) {
+    if (
+      typeof a.matchScore === 'number' ||
+      Array.isArray(a.missingSkills) ||
+      Array.isArray(a.strengths)
+    ) {
       return nested;
     }
   }
   return null;
 }
 
-function tryPickDraftPayloadFromMutationBody(o: Record<string, unknown>): unknown {
+function tryPickDraftPayloadFromMutationBody(
+  o: Record<string, unknown>,
+): unknown {
   const nested =
-    o.tailorDraft ?? o.tailor_draft ?? o.draft ?? o.cvTailorDraft ?? o.cv_tailor_draft;
-  if (nested !== null && nested !== undefined && typeof nested === 'object' && !Array.isArray(nested)) {
+    o.tailorDraft ??
+    o.tailor_draft ??
+    o.draft ??
+    o.cvTailorDraft ??
+    o.cv_tailor_draft;
+  if (
+    nested !== null &&
+    nested !== undefined &&
+    typeof nested === 'object' &&
+    !Array.isArray(nested)
+  ) {
     return nested;
   }
-  if (Array.isArray(o.drafts) && (typeof o.id === 'string' || typeof o.id === 'number')) {
+  if (
+    Array.isArray(o.drafts) &&
+    (typeof o.id === 'string' || typeof o.id === 'number')
+  ) {
     return o;
   }
   return o;
 }
 
-export function normalizeTailorMutationResponse(raw: unknown): TailorMutationResponse {
+export function normalizeTailorMutationResponse(
+  raw: unknown,
+): TailorMutationResponse {
   const body = unwrapApiDataEnvelope(raw);
   if (body !== null && typeof body === 'object' && !Array.isArray(body)) {
     const o = body as Record<string, unknown>;
@@ -3632,7 +4196,10 @@ function normalizeCvTailorDraft(raw: unknown): CvTailorDraft {
 
   const draftsRaw = Array.isArray(row.drafts) ? row.drafts : [];
   const drafts: CvTailorDraftEntry[] = draftsRaw
-    .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
+    .filter(
+      (x): x is Record<string, unknown> =>
+        x !== null && typeof x === 'object' && !Array.isArray(x),
+    )
     .map((d) => {
       const cfRaw = d.changedFields ?? d.changed_fields;
       const cf = Array.isArray(cfRaw)
@@ -3640,9 +4207,14 @@ function normalizeCvTailorDraft(raw: unknown): CvTailorDraft {
         : [];
       const st = d.status;
       const status: CvTailorDraftSectionStatus =
-        st === 'accepted' || st === 'rejected' || st === 'pending' ? st : 'pending';
+        st === 'accepted' || st === 'rejected' || st === 'pending'
+          ? st
+          : 'pending';
       const patchIdRaw = d.patchId ?? d.patch_id;
-      const patchId = typeof patchIdRaw === 'string' && patchIdRaw.trim() ? patchIdRaw.trim() : null;
+      const patchId =
+        typeof patchIdRaw === 'string' && patchIdRaw.trim()
+          ? patchIdRaw.trim()
+          : null;
       const sectionId = String(d.sectionId ?? d.section_id ?? '').trim();
       const sectionType = String(d.sectionType ?? d.section_type ?? '').trim();
       return {
@@ -3657,18 +4229,23 @@ function normalizeCvTailorDraft(raw: unknown): CvTailorDraft {
     });
   const top = row.status;
   const status: CvTailorDraftStatus =
-    top === 'pending' || top === 'partially_accepted' || top === 'completed' ? top : 'pending';
+    top === 'pending' || top === 'partially_accepted' || top === 'completed'
+      ? top
+      : 'pending';
   const skillsRaw = row.selectedSkills ?? row.selected_skills;
   const skills = Array.isArray(skillsRaw)
     ? skillsRaw.filter((x): x is string => typeof x === 'string')
     : [];
   const tailoredCvNameRaw = row.tailoredCvName ?? row.tailored_cv_name;
-  const tailoredCvName = typeof tailoredCvNameRaw === 'string' ? tailoredCvNameRaw : null;
+  const tailoredCvName =
+    typeof tailoredCvNameRaw === 'string' ? tailoredCvNameRaw : null;
 
   return {
     id: String(row.id ?? '').trim(),
     cvProfileId: String(row.cvProfileId ?? row.cv_profile_id ?? '').trim(),
-    jobAnalysisId: String(row.jobAnalysisId ?? row.job_analysis_id ?? '').trim(),
+    jobAnalysisId: String(
+      row.jobAnalysisId ?? row.job_analysis_id ?? '',
+    ).trim(),
     selectedSkills: skills,
     status,
     drafts,
@@ -3679,7 +4256,8 @@ function normalizeCvTailorDraft(raw: unknown): CvTailorDraft {
 /** Optional tailor draft on GET /jobs/:id (several plausible Nest DTO shapes). */
 function tryPickTailorDraftPayload(raw: unknown): unknown | null {
   const body = unwrapApiDataEnvelope(raw);
-  if (body === null || typeof body !== 'object' || Array.isArray(body)) return null;
+  if (body === null || typeof body !== 'object' || Array.isArray(body))
+    return null;
   const o = body as Record<string, unknown>;
   const direct =
     o.tailorDraft ??
@@ -3688,7 +4266,12 @@ function tryPickTailorDraftPayload(raw: unknown): unknown | null {
     o.cv_tailor_draft ??
     o.tailoringDraft ??
     o.tailoring_draft;
-  if (direct !== null && direct !== undefined && typeof direct === 'object' && !Array.isArray(direct)) {
+  if (
+    direct !== null &&
+    direct !== undefined &&
+    typeof direct === 'object' &&
+    !Array.isArray(direct)
+  ) {
     return direct;
   }
   const job = o.job;
@@ -3700,27 +4283,45 @@ function tryPickTailorDraftPayload(raw: unknown): unknown | null {
       j.cvTailorDraft ??
       j.activeTailorDraft ??
       j.active_tailor_draft;
-    if (nested !== null && nested !== undefined && typeof nested === 'object' && !Array.isArray(nested)) {
+    if (
+      nested !== null &&
+      nested !== undefined &&
+      typeof nested === 'object' &&
+      !Array.isArray(nested)
+    ) {
       return nested;
     }
   }
   const analysis = o.analysis;
-  if (analysis !== null && typeof analysis === 'object' && !Array.isArray(analysis)) {
+  if (
+    analysis !== null &&
+    typeof analysis === 'object' &&
+    !Array.isArray(analysis)
+  ) {
     const a = analysis as Record<string, unknown>;
     const nested = a.tailorDraft ?? a.tailor_draft ?? a.cvTailorDraft;
-    if (nested !== null && nested !== undefined && typeof nested === 'object' && !Array.isArray(nested)) {
+    if (
+      nested !== null &&
+      nested !== undefined &&
+      typeof nested === 'object' &&
+      !Array.isArray(nested)
+    ) {
       return nested;
     }
   }
   return null;
 }
 
-function mergeJobDetailWithTailorDraft(detail: JobDetailForForm, rawResponse: unknown): JobDetailForForm {
+function mergeJobDetailWithTailorDraft(
+  detail: JobDetailForForm,
+  rawResponse: unknown,
+): JobDetailForForm {
   const draftRaw = tryPickTailorDraftPayload(rawResponse);
   if (!draftRaw) return detail;
   const tailorDraft = normalizeCvTailorDraft(draftRaw);
   if (!tailorDraft.id.trim()) return detail;
-  const analysisId = (detail.analysis.id ?? '').trim() || tailorDraft.jobAnalysisId;
+  const analysisId =
+    (detail.analysis.id ?? '').trim() || tailorDraft.jobAnalysisId;
   return {
     ...detail,
     tailorDraft: { ...tailorDraft, jobAnalysisId: analysisId },
@@ -3730,7 +4331,8 @@ function mergeJobDetailWithTailorDraft(detail: JobDetailForForm, rawResponse: un
 const auth = {
   /** Backend DTO allows only email + password (extra fields return 400). */
   register: async (payload: { email: string; password: string }) =>
-    (await axiosClient.post<{ user?: AuthUser }>('/auth/register', payload)).data,
+    (await axiosClient.post<{ user?: AuthUser }>('/auth/register', payload))
+      .data,
   login: async (payload: { email: string; password: string }) => {
     const res = await axiosClient.post<unknown>('/auth/login', payload);
     return normalizeAuthResponse(res.data, payload.email) as {
@@ -3744,7 +4346,11 @@ const auth = {
     return normalizeRefreshResponse(res.data);
   },
   /** Google OAuth — same response shape as login; creates user on first sign-in. */
-  google: async (payload: { idToken: string; name?: string; image?: string }) => {
+  google: async (payload: {
+    idToken: string;
+    name?: string;
+    image?: string;
+  }) => {
     const res = await axiosClient.post<unknown>('/auth/google', payload);
     return normalizeAuthResponse(res.data) as {
       accessToken: string;
@@ -3764,11 +4370,15 @@ const users = {
     return normalizeUserMe(res.data);
   },
   updateFeatures: async (selectedFeatures: string[]) => {
-    const res = await axiosClient.patch<unknown>('/users/me/features', { selectedFeatures });
+    const res = await axiosClient.patch<unknown>('/users/me/features', {
+      selectedFeatures,
+    });
     throwIfApiFailureResponse(res.data, res.status);
     const body = unwrapApiDataEnvelope(res.data);
     const arr = Array.isArray(body.selectedFeatures)
-      ? (body.selectedFeatures as unknown[]).filter((x): x is string => typeof x === 'string')
+      ? (body.selectedFeatures as unknown[]).filter(
+          (x): x is string => typeof x === 'string',
+        )
       : [];
     return { selectedFeatures: arr.includes('cv') ? arr : [...arr, 'cv'] };
   },
@@ -3776,13 +4386,19 @@ const users = {
    * Opt-in cloud reminder from Job Hub (local-first UI). Call only when the user enables sync.
    * POST /users/me/local-reminders — 201; body per SyncLocalReminderDto.
    */
-  syncLocalReminder: async (payload: SyncLocalReminderPayload): Promise<SyncLocalReminderResponse> => {
-    const res = await axiosClient.post<unknown>('/users/me/local-reminders', payload);
+  syncLocalReminder: async (
+    payload: SyncLocalReminderPayload,
+  ): Promise<SyncLocalReminderResponse> => {
+    const res = await axiosClient.post<unknown>(
+      '/users/me/local-reminders',
+      payload,
+    );
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data) as Record<string, unknown>;
     return {
       id: typeof raw.id === 'string' ? raw.id : '',
-      applicationId: typeof raw.applicationId === 'string' ? raw.applicationId : '',
+      applicationId:
+        typeof raw.applicationId === 'string' ? raw.applicationId : '',
     };
   },
   /**
@@ -3806,7 +4422,9 @@ const users = {
     throwIfApiFailureResponse(res.data, res.status);
     const unwrapped = unwrapApiDataEnvelope(res.data);
     const raw =
-      unwrapped !== null && typeof unwrapped === 'object' && !Array.isArray(unwrapped)
+      unwrapped !== null &&
+      typeof unwrapped === 'object' &&
+      !Array.isArray(unwrapped)
         ? (unwrapped as Record<string, unknown>)
         : {};
     const itemsRaw = Array.isArray(raw.items)
@@ -3815,9 +4433,13 @@ const users = {
         ? raw.rows
         : [];
     const items = ensureArray<unknown>(itemsRaw)
-      .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
+      .filter(
+        (x): x is Record<string, unknown> =>
+          x !== null && typeof x === 'object' && !Array.isArray(x),
+      )
       .map((x) => normalizeUserReminderItem(x));
-    const page = typeof raw.page === 'number' && Number.isFinite(raw.page) ? raw.page : 1;
+    const page =
+      typeof raw.page === 'number' && Number.isFinite(raw.page) ? raw.page : 1;
     const pageSize =
       typeof raw.pageSize === 'number' && Number.isFinite(raw.pageSize)
         ? raw.pageSize
@@ -3825,13 +4447,18 @@ const users = {
           ? raw.page_size
           : 20;
     const total =
-      typeof raw.total === 'number' && Number.isFinite(raw.total) ? raw.total : items.length;
+      typeof raw.total === 'number' && Number.isFinite(raw.total)
+        ? raw.total
+        : items.length;
     return { items, page, pageSize, total };
   },
   /**
    * GET /users/me/hub-notes — global note feed (cursor pagination).
    */
-  listHubNotes: async (params?: { limit?: number; cursor?: string | null }): Promise<HubNotesGlobalPage> => {
+  listHubNotes: async (params?: {
+    limit?: number;
+    cursor?: string | null;
+  }): Promise<HubNotesGlobalPage> => {
     const res = await axiosClient.get<unknown>('/users/me/hub-notes', {
       params: {
         limit: params?.limit,
@@ -3840,10 +4467,20 @@ const users = {
     });
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data);
-    const o = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
-    const itemsRaw = Array.isArray(o.items) ? o.items : Array.isArray(o.rows) ? o.rows : [];
+    const o =
+      raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+        ? (raw as Record<string, unknown>)
+        : {};
+    const itemsRaw = Array.isArray(o.items)
+      ? o.items
+      : Array.isArray(o.rows)
+        ? o.rows
+        : [];
     const items = ensureArray<unknown>(itemsRaw)
-      .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
+      .filter(
+        (x): x is Record<string, unknown> =>
+          x !== null && typeof x === 'object' && !Array.isArray(x),
+      )
       .map((x) => {
         const n = normalizeHubNoteEntry(x);
         return {
@@ -3851,7 +4488,12 @@ const users = {
           snippet: n.snippet || n.body.slice(0, 120),
           body: n.body,
           createdAt: n.createdAt,
-          jobTitle: typeof x.jobTitle === 'string' ? x.jobTitle : typeof x.job_title === 'string' ? x.job_title : null,
+          jobTitle:
+            typeof x.jobTitle === 'string'
+              ? x.jobTitle
+              : typeof x.job_title === 'string'
+                ? x.job_title
+                : null,
           jobCompany:
             typeof x.jobCompany === 'string'
               ? x.jobCompany
@@ -3901,7 +4543,10 @@ const users = {
     );
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data);
-    const o = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+    const o =
+      raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+        ? (raw as Record<string, unknown>)
+        : {};
     return normalizeHubBookmarkItem(o);
   },
 };
@@ -3916,10 +4561,20 @@ function mapCvSpellcheckIssue(
       : typeof x.id === 'string' && x.id.trim()
         ? x.id
         : undefined;
-  const typ = x.type === 'spelling' || x.type === 'grammar' || x.type === 'style' ? x.type : undefined;
-  const sev = x.severity === 'high' || x.severity === 'medium' || x.severity === 'low' ? x.severity : undefined;
+  const typ =
+    x.type === 'spelling' || x.type === 'grammar' || x.type === 'style'
+      ? x.type
+      : undefined;
+  const sev =
+    x.severity === 'high' || x.severity === 'medium' || x.severity === 'low'
+      ? x.severity
+      : undefined;
   const origText =
-    typeof x.originalText === 'string' ? x.originalText : typeof x.original === 'string' ? x.original : undefined;
+    typeof x.originalText === 'string'
+      ? x.originalText
+      : typeof x.original === 'string'
+        ? x.original
+        : undefined;
   const srcHash =
     typeof x.sourceTextHash === 'string'
       ? x.sourceTextHash
@@ -3940,7 +4595,12 @@ function mapCvSpellcheckIssue(
       : undefined,
     confidence: typeof x.confidence === 'number' ? x.confidence : undefined,
     original: typeof x.original === 'string' ? x.original : origText,
-    originalText: typeof x.originalText === 'string' ? x.originalText : typeof x.original === 'string' ? x.original : undefined,
+    originalText:
+      typeof x.originalText === 'string'
+        ? x.originalText
+        : typeof x.original === 'string'
+          ? x.original
+          : undefined,
     suggestion: typeof x.suggestion === 'string' ? x.suggestion : undefined,
     sourceTextHash: srcHash,
     message:
@@ -3962,13 +4622,20 @@ function extractCvSectionRowList(rawEnvelope: unknown): unknown[] {
   const sec = envelope.sections;
   if (sec !== null && typeof sec === 'object' && !Array.isArray(sec)) {
     const o = sec as Record<string, unknown>;
-    const nested = ensureArray<unknown>(o.rows ?? o.items ?? o.records ?? o.list ?? o.data ?? o);
+    const nested = ensureArray<unknown>(
+      o.rows ?? o.items ?? o.records ?? o.list ?? o.data ?? o,
+    );
     if (nested.length > 0) return nested;
     const edges = o.edges;
     if (Array.isArray(edges)) {
       const nodes: unknown[] = [];
       for (const e of edges) {
-        if (e && typeof e === 'object' && !Array.isArray(e) && 'node' in (e as Record<string, unknown>)) {
+        if (
+          e &&
+          typeof e === 'object' &&
+          !Array.isArray(e) &&
+          'node' in (e as Record<string, unknown>)
+        ) {
           nodes.push((e as Record<string, unknown>).node);
         }
       }
@@ -3979,7 +4646,9 @@ function extractCvSectionRowList(rawEnvelope: unknown): unknown[] {
 }
 
 /** Trim paths and drop blanks for POST …/cv/improvements/:id/accept|reject (use `changedFields[].fieldPath` from apply preview). */
-function sanitizeCvImprovementFieldPaths(fields?: string[] | null): string[] | undefined {
+function sanitizeCvImprovementFieldPaths(
+  fields?: string[] | null,
+): string[] | undefined {
   if (fields == null || !Array.isArray(fields)) return undefined;
   const out: string[] = [];
   for (const f of fields) {
@@ -4000,10 +4669,14 @@ const cv = {
     opts?: { rebuildSections?: boolean; cvProfileId?: string },
   ) => {
     const id = opts?.cvProfileId?.trim();
-    const url = id ? `/cv/profiles/${encodeURIComponent(id)}/parse` : '/cv/parse';
+    const url = id
+      ? `/cv/profiles/${encodeURIComponent(id)}/parse`
+      : '/cv/parse';
     const res = await axiosClient.post<unknown>(url, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      ...(opts?.rebuildSections === true ? { params: { rebuildSections: 1 } } : {}),
+      ...(opts?.rebuildSections === true
+        ? { params: { rebuildSections: 1 } }
+        : {}),
     });
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeCvParseResponse(res.data);
@@ -4012,7 +4685,9 @@ const cv = {
    * POST /cv/profiles/:id/sync-sections-from-structured — rebuild four core sections from stored `structured` (no file).
    * After success, invalidate/refetch `['cv-profile', cvProfileId]` and improvements so client state matches merged `structured`.
    */
-  syncCoreSectionsFromStructured: async (cvProfileId: string): Promise<void> => {
+  syncCoreSectionsFromStructured: async (
+    cvProfileId: string,
+  ): Promise<void> => {
     const res = await axiosClient.post<unknown>(
       `/cv/profiles/${encodeURIComponent(cvProfileId)}/sync-sections-from-structured`,
     );
@@ -4032,7 +4707,13 @@ const cv = {
     const res = await axiosClient.post<unknown>('/cv/chat-create', data);
     throwIfApiFailureResponse(res.data, res.status);
     const body = unwrapApiDataEnvelope(res.data);
-    if (body !== null && typeof body === 'object' && 'profile' in body && body.profile !== null && typeof body.profile === 'object') {
+    if (
+      body !== null &&
+      typeof body === 'object' &&
+      'profile' in body &&
+      body.profile !== null &&
+      typeof body.profile === 'object'
+    ) {
       return mapBodyToCvProfile(body.profile as Record<string, unknown>);
     }
     return mapBodyToCvProfile(body as Record<string, unknown>);
@@ -4064,7 +4745,9 @@ const cv = {
       commandId: String(body.commandId ?? ''),
       targetSection: String(body.targetSection ?? 'summary'),
       patch:
-        body.patch && typeof body.patch === 'object' && !Array.isArray(body.patch)
+        body.patch &&
+        typeof body.patch === 'object' &&
+        !Array.isArray(body.patch)
           ? (body.patch as Record<string, unknown>)
           : {},
       diff:
@@ -4072,7 +4755,9 @@ const cv = {
           ? {
               before: (body.diff as Record<string, unknown>).before ?? null,
               after: (body.diff as Record<string, unknown>).after ?? null,
-              summary: String((body.diff as Record<string, unknown>).summary ?? ''),
+              summary: String(
+                (body.diff as Record<string, unknown>).summary ?? '',
+              ),
             }
           : { before: null, after: null, summary: '' },
     };
@@ -4094,7 +4779,10 @@ const cv = {
     unwrapApiDataEnvelope(res.data);
   },
   /** POST /cv/profiles/:id/generators/summary/accept — persist chosen summary text. */
-  acceptGeneratorSummary: async (cvProfileId: string, body: { text: string }): Promise<void> => {
+  acceptGeneratorSummary: async (
+    cvProfileId: string,
+    body: { text: string },
+  ): Promise<void> => {
     const res = await axiosClient.post<unknown>(
       `/cv/profiles/${encodeURIComponent(cvProfileId)}/generators/summary/accept`,
       body,
@@ -4116,7 +4804,12 @@ const cv = {
   },
   checkSpellingField: async (
     cvProfileId: string,
-    payload: { sectionId: string; fieldPath: string; text: string; language?: string },
+    payload: {
+      sectionId: string;
+      fieldPath: string;
+      text: string;
+      language?: string;
+    },
   ): Promise<CvSpellcheckFieldResult> => {
     const res = await axiosClient.post<unknown>(
       `/cv/profiles/${encodeURIComponent(cvProfileId)}/spellcheck/field`,
@@ -4127,10 +4820,20 @@ const cv = {
     const rawIssues = Array.isArray(body.issues) ? body.issues : [];
     const sectionId = String(body.sectionId ?? payload.sectionId);
     const fieldPath = String(body.fieldPath ?? payload.fieldPath);
-    const sourceTextHash = typeof body.sourceTextHash === 'string' ? body.sourceTextHash : undefined;
+    const sourceTextHash =
+      typeof body.sourceTextHash === 'string' ? body.sourceTextHash : undefined;
     const issues = rawIssues
-      .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object')
-      .map((x) => mapCvSpellcheckIssue(x, { sectionId, fieldPath, defaultSourceTextHash: sourceTextHash }));
+      .filter(
+        (x): x is Record<string, unknown> =>
+          x !== null && typeof x === 'object',
+      )
+      .map((x) =>
+        mapCvSpellcheckIssue(x, {
+          sectionId,
+          fieldPath,
+          defaultSourceTextHash: sourceTextHash,
+        }),
+      );
     return {
       sectionId,
       fieldPath,
@@ -4149,21 +4852,39 @@ const cv = {
     throwIfApiFailureResponse(res.data, res.status);
     const body = unwrapApiDataEnvelope(res.data) as Record<string, unknown>;
     const rawResults =
-      body.results && typeof body.results === 'object' && !Array.isArray(body.results)
+      body.results &&
+      typeof body.results === 'object' &&
+      !Array.isArray(body.results)
         ? (body.results as Record<string, unknown>)
         : {};
     const results: CvSpellcheckBulkResult['results'] = {};
     for (const [sectionId, rows] of Object.entries(rawResults)) {
       const list = Array.isArray(rows) ? rows : [];
       results[sectionId] = list
-        .filter((row): row is Record<string, unknown> => row !== null && typeof row === 'object')
+        .filter(
+          (row): row is Record<string, unknown> =>
+            row !== null && typeof row === 'object',
+        )
         .map((row) => {
-          const fieldPath = typeof row.fieldPath === 'string' ? row.fieldPath : 'text';
-          const rowSourceTextHash = typeof row.sourceTextHash === 'string' ? row.sourceTextHash : undefined;
+          const fieldPath =
+            typeof row.fieldPath === 'string' ? row.fieldPath : 'text';
+          const rowSourceTextHash =
+            typeof row.sourceTextHash === 'string'
+              ? row.sourceTextHash
+              : undefined;
           const rawIssues = Array.isArray(row.issues) ? row.issues : [];
           const issues = rawIssues
-            .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object')
-            .map((x) => mapCvSpellcheckIssue(x, { sectionId, fieldPath, defaultSourceTextHash: rowSourceTextHash }));
+            .filter(
+              (x): x is Record<string, unknown> =>
+                x !== null && typeof x === 'object',
+            )
+            .map((x) =>
+              mapCvSpellcheckIssue(x, {
+                sectionId,
+                fieldPath,
+                defaultSourceTextHash: rowSourceTextHash,
+              }),
+            );
           return { fieldPath, sourceTextHash: rowSourceTextHash, issues };
         });
     }
@@ -4182,19 +4903,38 @@ const cv = {
     const rawIssues = Array.isArray(body.issues) ? body.issues : [];
     const sectionId = String(body.sectionId ?? payload.sectionId);
     const fieldPath = String(body.fieldPath ?? payload.fieldPath);
-    const sourceTextHash = typeof body.sourceTextHash === 'string' ? String(body.sourceTextHash) : '';
+    const sourceTextHash =
+      typeof body.sourceTextHash === 'string'
+        ? String(body.sourceTextHash)
+        : '';
     const issues = rawIssues
-      .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object')
-      .map((x) => mapCvSpellcheckIssue(x, { sectionId, fieldPath, defaultSourceTextHash: sourceTextHash || undefined }));
+      .filter(
+        (x): x is Record<string, unknown> =>
+          x !== null && typeof x === 'object',
+      )
+      .map((x) =>
+        mapCvSpellcheckIssue(x, {
+          sectionId,
+          fieldPath,
+          defaultSourceTextHash: sourceTextHash || undefined,
+        }),
+      );
     return {
       issues,
       sourceTextHash,
-      applied: body.applied === true ? true : body.applied === false ? false : undefined,
+      applied:
+        body.applied === true
+          ? true
+          : body.applied === false
+            ? false
+            : undefined,
       alreadyApplied: body.alreadyApplied === true,
       text: typeof body.text === 'string' ? body.text : undefined,
     };
   },
-  getCompleteness: async (cvProfileId: string): Promise<CvCompletenessResult> => {
+  getCompleteness: async (
+    cvProfileId: string,
+  ): Promise<CvCompletenessResult> => {
     const res = await axiosClient.get<unknown>(
       `/cv/profiles/${encodeURIComponent(cvProfileId)}/completeness`,
     );
@@ -4204,16 +4944,23 @@ const cv = {
     return {
       score: typeof body.score === 'number' ? body.score : 0,
       totalFields: typeof body.totalFields === 'number' ? body.totalFields : 0,
-      filledFields: typeof body.filledFields === 'number' ? body.filledFields : 0,
+      filledFields:
+        typeof body.filledFields === 'number' ? body.filledFields : 0,
       sections: rawSections
-        .filter((s): s is Record<string, unknown> => s !== null && typeof s === 'object')
+        .filter(
+          (s): s is Record<string, unknown> =>
+            s !== null && typeof s === 'object',
+        )
         .map((s) => ({
           sectionId: String(s.sectionId ?? ''),
           sectionType: String(s.sectionType ?? ''),
           label: String(s.label ?? s.sectionType ?? 'Section'),
           missingFields: Array.isArray(s.missingFields)
             ? s.missingFields
-                .filter((f): f is Record<string, unknown> => f !== null && typeof f === 'object')
+                .filter(
+                  (f): f is Record<string, unknown> =>
+                    f !== null && typeof f === 'object',
+                )
                 .map((f) => ({
                   fieldPath: String(f.fieldPath ?? ''),
                   label: String(f.label ?? 'Missing field'),
@@ -4224,7 +4971,10 @@ const cv = {
     };
   },
 
-  parseTextCV: async (data: { rawText: string; template?: string }): Promise<ParseTextCvResult> => {
+  parseTextCV: async (data: {
+    rawText: string;
+    template?: string;
+  }): Promise<ParseTextCvResult> => {
     const res = await axiosClient.post<unknown>('/cv/parse-text', data);
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeParseTextCvResult(res.data);
@@ -4234,8 +4984,10 @@ const cv = {
     const res = await axiosClient.get<unknown>('/cv/profile');
     return normalizeCvProfileResponse(res.data);
   },
-  updateProfile: async (payload: { structured?: CVProfile['structured']; rawText?: string }) =>
-    (await axiosClient.patch<CVProfile>('/cv/profile', payload)).data,
+  updateProfile: async (payload: {
+    structured?: CVProfile['structured'];
+    rawText?: string;
+  }) => (await axiosClient.patch<CVProfile>('/cv/profile', payload)).data,
   /** PATCH /cv/profile — matches UpdateCvProfileDto (Nest). */
   patchProfile: async (payload: {
     structured?: CVProfile['structured'];
@@ -4265,7 +5017,9 @@ const cv = {
       Array.isArray((envelope as { data: unknown }).data)
         ? ((envelope as { data: unknown[] }).data as unknown[])
         : ensureArray<unknown>(envelope);
-    const mapped = rawList.map(normalizeCvProfileSummary).filter((p) => p.id !== '');
+    const mapped = rawList
+      .map(normalizeCvProfileSummary)
+      .filter((p) => p.id !== '');
     /** Dedupe by id if the API ever returns duplicates (should not after client-side upload fix). */
     const byId = new Map<string, (typeof mapped)[0]>();
     for (const p of mapped) {
@@ -4273,7 +5027,10 @@ const cv = {
     }
     return [...byId.values()];
   },
-  createProfile: async (data: { name?: string; template?: string }): Promise<CvProfileSummary> => {
+  createProfile: async (data: {
+    name?: string;
+    template?: string;
+  }): Promise<CvProfileSummary> => {
     const res = await axiosClient.post<unknown>('/cv/profiles', data);
     throwIfApiFailureResponse(res.data, res.status);
     const body = unwrapApiDataEnvelope(res.data);
@@ -4284,8 +5041,13 @@ const cv = {
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeCvProfileDetail(res.data);
   },
-  updateProfileName: async (id: string, name: string): Promise<CvProfileSummary> => {
-    const res = await axiosClient.patch<unknown>(`/cv/profiles/${id}`, { name });
+  updateProfileName: async (
+    id: string,
+    name: string,
+  ): Promise<CvProfileSummary> => {
+    const res = await axiosClient.patch<unknown>(`/cv/profiles/${id}`, {
+      name,
+    });
     throwIfApiFailureResponse(res.data, res.status);
     const body = unwrapApiDataEnvelope(res.data);
     return normalizeCvProfileSummary(body);
@@ -4369,8 +5131,14 @@ const cv = {
       throwIfApiFailureResponse(res.data, res.status);
       return normalizeCvProfileResponse(res.data);
     } catch (e) {
-      if (axios.isAxiosError(e) && e.response?.status === 409 && data.template != null) {
-        const res = await axiosClient.patch<unknown>('/cv/template', { template: data.template });
+      if (
+        axios.isAxiosError(e) &&
+        e.response?.status === 409 &&
+        data.template != null
+      ) {
+        const res = await axiosClient.patch<unknown>('/cv/template', {
+          template: data.template,
+        });
         throwIfApiFailureResponse(res.data, res.status);
         return normalizeCvProfileResponse(res.data);
       }
@@ -4390,8 +5158,10 @@ const cv = {
   getScore: async (cvProfileId?: string, jobCtx?: CvScoreJobContextParams) => {
     const params: Record<string, string> = {};
     if (cvProfileId?.trim()) params.cvProfileId = cvProfileId.trim();
-    if (jobCtx?.jobDescription?.trim()) params.jobDescription = jobCtx.jobDescription.trim();
-    if (jobCtx?.targetRole?.trim()) params.targetRole = jobCtx.targetRole.trim();
+    if (jobCtx?.jobDescription?.trim())
+      params.jobDescription = jobCtx.jobDescription.trim();
+    if (jobCtx?.targetRole?.trim())
+      params.targetRole = jobCtx.targetRole.trim();
     const res = await axiosClient.get<unknown>('/cv/score', {
       params: Object.keys(params).length ? params : undefined,
     });
@@ -4399,13 +5169,21 @@ const cv = {
     return normalizeCVScore(res.data);
   },
   /** GET /cv/profiles/:id/score — optional job context as query params (short JDs). */
-  getProfileScore: async (profileId: string, jobCtx?: CvScoreJobContextParams) => {
+  getProfileScore: async (
+    profileId: string,
+    jobCtx?: CvScoreJobContextParams,
+  ) => {
     const params: Record<string, string> = {};
-    if (jobCtx?.jobDescription?.trim()) params.jobDescription = jobCtx.jobDescription.trim();
-    if (jobCtx?.targetRole?.trim()) params.targetRole = jobCtx.targetRole.trim();
-    const res = await axiosClient.get<unknown>(`/cv/profiles/${encodeURIComponent(profileId)}/score`, {
-      params: Object.keys(params).length ? params : undefined,
-    });
+    if (jobCtx?.jobDescription?.trim())
+      params.jobDescription = jobCtx.jobDescription.trim();
+    if (jobCtx?.targetRole?.trim())
+      params.targetRole = jobCtx.targetRole.trim();
+    const res = await axiosClient.get<unknown>(
+      `/cv/profiles/${encodeURIComponent(profileId)}/score`,
+      {
+        params: Object.keys(params).length ? params : undefined,
+      },
+    );
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeCVScore(res.data);
   },
@@ -4417,22 +5195,34 @@ const cv = {
    */
   getScoreDetailed: async (
     _legacyUnusedProfileId?: string,
-    config?: { signal?: AbortSignal; jobDescription?: string; targetRole?: string },
+    config?: {
+      signal?: AbortSignal;
+      jobDescription?: string;
+      targetRole?: string;
+    },
   ) => {
     const body: Record<string, unknown> = {};
-    if (config?.jobDescription?.trim()) body.jobDescription = config.jobDescription.trim();
+    if (config?.jobDescription?.trim())
+      body.jobDescription = config.jobDescription.trim();
     if (config?.targetRole?.trim()) body.targetRole = config.targetRole.trim();
-    const res = await axiosClient.post<unknown>('/cv/score/detailed', body, { signal: config?.signal });
+    const res = await axiosClient.post<unknown>('/cv/score/detailed', body, {
+      signal: config?.signal,
+    });
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeCVScore(res.data);
   },
   /** Scoped detailed score: `POST /cv/profiles/:cvProfileId/score/detailed` with optional `{ jobDescription, targetRole }` in the body (canonical for a specific CV). */
   getProfileScoreDetailed: async (
     profileId: string,
-    config?: { signal?: AbortSignal; jobDescription?: string; targetRole?: string },
+    config?: {
+      signal?: AbortSignal;
+      jobDescription?: string;
+      targetRole?: string;
+    },
   ) => {
     const body: Record<string, unknown> = {};
-    if (config?.jobDescription?.trim()) body.jobDescription = config.jobDescription.trim();
+    if (config?.jobDescription?.trim())
+      body.jobDescription = config.jobDescription.trim();
     if (config?.targetRole?.trim()) body.targetRole = config.targetRole.trim();
     const res = await axiosClient.post<unknown>(
       `/cv/profiles/${encodeURIComponent(profileId)}/score/detailed`,
@@ -4446,9 +5236,12 @@ const cv = {
   getSuggestions: async (
     cvProfileId?: string,
     includeResolved?: boolean,
-  ): Promise<CvImprovementsPayload> => fetchCvSuggestionsList(cvProfileId, Boolean(includeResolved)),
+  ): Promise<CvImprovementsPayload> =>
+    fetchCvSuggestionsList(cvProfileId, Boolean(includeResolved)),
   /** @alias {@link fetchCvSuggestionsList} pending-only — same as {@link getSuggestions}(cvProfileId, false). */
-  getImprovements: async (cvProfileId?: string): Promise<CvImprovementsPayload> =>
+  getImprovements: async (
+    cvProfileId?: string,
+  ): Promise<CvImprovementsPayload> =>
     fetchCvSuggestionsList(cvProfileId, false),
   /** POST /cv/suggestions/:suggestionId/accept — full suggestion (no per-field body). */
   acceptSuggestion: async (
@@ -4479,7 +5272,9 @@ const cv = {
     return parseCvSuggestionMutationEnvelope(res.data);
   },
   /** POST /cv/suggestions/accept-all */
-  acceptAllSuggestions: async (cvProfileId?: string): Promise<CvSuggestionsBulkMutationResult> => {
+  acceptAllSuggestions: async (
+    cvProfileId?: string,
+  ): Promise<CvSuggestionsBulkMutationResult> => {
     const res = await axiosClient.post<unknown>(
       '/cv/suggestions/accept-all',
       {},
@@ -4489,7 +5284,9 @@ const cv = {
     return parseCvSuggestionsBulkEnvelope(res.data);
   },
   /** POST /cv/suggestions/reject-all */
-  rejectAllSuggestions: async (cvProfileId?: string): Promise<CvSuggestionsBulkMutationResult> => {
+  rejectAllSuggestions: async (
+    cvProfileId?: string,
+  ): Promise<CvSuggestionsBulkMutationResult> => {
     const res = await axiosClient.post<unknown>(
       '/cv/suggestions/reject-all',
       {},
@@ -4498,7 +5295,10 @@ const cv = {
     throwIfApiFailureResponse(res.data, res.status);
     return parseCvSuggestionsBulkEnvelope(res.data);
   },
-  markImprovementResolved: async (pointer: string | number, cvProfileId?: string) => {
+  markImprovementResolved: async (
+    pointer: string | number,
+    cvProfileId?: string,
+  ) => {
     const ref = encodeURIComponent(String(pointer));
     const res = await axiosClient.patch<unknown>(
       `/cv/improvements/${ref}`,
@@ -4520,13 +5320,22 @@ const cv = {
     throwIfApiFailureResponse(res.data, res.status);
     const body = unwrapApiDataEnvelope(res.data) as Record<string, unknown>;
     const nestedData =
-      body.data !== null && typeof body.data === 'object' && !Array.isArray(body.data)
+      body.data !== null &&
+      typeof body.data === 'object' &&
+      !Array.isArray(body.data)
         ? (body.data as Record<string, unknown>)
         : null;
-    const src: Record<string, unknown> = nestedData ? { ...body, ...nestedData } : body;
-    const rawChanged = Array.isArray(src.changedFields) ? src.changedFields : [];
+    const src: Record<string, unknown> = nestedData
+      ? { ...body, ...nestedData }
+      : body;
+    const rawChanged = Array.isArray(src.changedFields)
+      ? src.changedFields
+      : [];
     const changedFields = rawChanged
-      .filter((f): f is Record<string, unknown> => f !== null && typeof f === 'object')
+      .filter(
+        (f): f is Record<string, unknown> =>
+          f !== null && typeof f === 'object',
+      )
       .map((f) => {
         const fieldPathCandidates = [
           f.fieldPath,
@@ -4541,30 +5350,35 @@ const cv = {
           f.field,
         ];
         const fieldPathRaw =
-          fieldPathCandidates.find((x): x is string => typeof x === 'string' && x.trim().length > 0) ?? '';
+          fieldPathCandidates.find(
+            (x): x is string => typeof x === 'string' && x.trim().length > 0,
+          ) ?? '';
         const fieldPath = fieldPathRaw.trim();
         const fieldLabel =
           typeof f.fieldLabel === 'string'
             ? f.fieldLabel
             : typeof f.field_label === 'string'
               ? f.field_label
-            : typeof f.field === 'string'
-              ? f.field
+              : typeof f.field === 'string'
+                ? f.field
                 : fieldPath;
         return {
           field: fieldLabel,
           fieldPath,
           fieldLabel,
-        before: typeof f.before === 'string' ? f.before : '',
-        after: typeof f.after === 'string' ? f.after : '',
-        type: (f.type === 'added' || f.type === 'removed' || f.type === 'changed'
-          ? f.type
-          : 'changed') as 'added' | 'removed' | 'changed',
+          before: typeof f.before === 'string' ? f.before : '',
+          after: typeof f.after === 'string' ? f.after : '',
+          type: (f.type === 'added' ||
+          f.type === 'removed' ||
+          f.type === 'changed'
+            ? f.type
+            : 'changed') as 'added' | 'removed' | 'changed',
         };
       });
     return {
       success: src.success !== false,
-      pointer: typeof src.id === 'string' && src.id.trim() ? src.id : String(pointer),
+      pointer:
+        typeof src.id === 'string' && src.id.trim() ? src.id : String(pointer),
       improvementId:
         typeof src.improvementId === 'string'
           ? src.improvementId
@@ -4585,14 +5399,25 @@ const cv = {
       changedFields,
       draftHash: typeof src.draftHash === 'string' ? src.draftHash : null,
       message: typeof src.message === 'string' ? src.message : '',
-      duplicateSuppressed: src.duplicateSuppressed === true || src.duplicateSuppressed === 1,
+      duplicateSuppressed:
+        src.duplicateSuppressed === true || src.duplicateSuppressed === 1,
       alreadyApplied: src.alreadyApplied === true,
       autoResolved: src.autoResolved === true || src.auto_resolved === true,
       idempotent: src.idempotent === true,
-      pendingSuggestionsCount: typeof src.pendingSuggestionsCount === 'number' ? src.pendingSuggestionsCount : undefined,
-      cvRevisionId: src.cvRevisionId === null ? null : typeof src.cvRevisionId === 'string' ? src.cvRevisionId : undefined,
+      pendingSuggestionsCount:
+        typeof src.pendingSuggestionsCount === 'number'
+          ? src.pendingSuggestionsCount
+          : undefined,
+      cvRevisionId:
+        src.cvRevisionId === null
+          ? null
+          : typeof src.cvRevisionId === 'string'
+            ? src.cvRevisionId
+            : undefined,
       remainingDraftPreviews:
-        typeof src.remainingDraftPreviews === 'number' ? src.remainingDraftPreviews : undefined,
+        typeof src.remainingDraftPreviews === 'number'
+          ? src.remainingDraftPreviews
+          : undefined,
       ...parseTruthfulnessFields(src),
       ...parsePerformanceFields(src),
     };
@@ -4607,7 +5432,9 @@ const cv = {
     },
   ): Promise<CvImprovementPartialMutationResult> => {
     const ref = encodeURIComponent(String(pointer));
-    const acceptedFields = sanitizeCvImprovementFieldPaths(options?.acceptedFields);
+    const acceptedFields = sanitizeCvImprovementFieldPaths(
+      options?.acceptedFields,
+    );
     const res = await axiosClient.post<unknown>(
       `/cv/improvements/${ref}/accept`,
       {
@@ -4625,10 +5452,18 @@ const cv = {
     const remainingChangedFields = remainingRaw
       .map((x) => {
         if (typeof x === 'string') return x;
-        if (x && typeof x === 'object' && typeof (x as Record<string, unknown>).fieldPath === 'string') {
+        if (
+          x &&
+          typeof x === 'object' &&
+          typeof (x as Record<string, unknown>).fieldPath === 'string'
+        ) {
           return (x as Record<string, unknown>).fieldPath as string;
         }
-        if (x && typeof x === 'object' && typeof (x as Record<string, unknown>).field === 'string') {
+        if (
+          x &&
+          typeof x === 'object' &&
+          typeof (x as Record<string, unknown>).field === 'string'
+        ) {
           return (x as Record<string, unknown>).field as string;
         }
         return '';
@@ -4654,7 +5489,8 @@ const cv = {
             : null,
       appliedChangedFields,
       pendingSuggestionsCount:
-        typeof body.pendingSuggestionsCount === 'number' && Number.isFinite(body.pendingSuggestionsCount)
+        typeof body.pendingSuggestionsCount === 'number' &&
+        Number.isFinite(body.pendingSuggestionsCount)
           ? body.pendingSuggestionsCount
           : undefined,
       cvRevisionId:
@@ -4681,7 +5517,9 @@ const cv = {
     },
   ): Promise<CvImprovementPartialMutationResult> => {
     const ref = encodeURIComponent(String(pointer));
-    const rejectedFields = sanitizeCvImprovementFieldPaths(options?.rejectedFields);
+    const rejectedFields = sanitizeCvImprovementFieldPaths(
+      options?.rejectedFields,
+    );
     const res = await axiosClient.post<unknown>(
       `/cv/improvements/${ref}/reject`,
       {
@@ -4699,10 +5537,18 @@ const cv = {
     const remainingChangedFields = remainingRaw
       .map((x) => {
         if (typeof x === 'string') return x;
-        if (x && typeof x === 'object' && typeof (x as Record<string, unknown>).fieldPath === 'string') {
+        if (
+          x &&
+          typeof x === 'object' &&
+          typeof (x as Record<string, unknown>).fieldPath === 'string'
+        ) {
           return (x as Record<string, unknown>).fieldPath as string;
         }
-        if (x && typeof x === 'object' && typeof (x as Record<string, unknown>).field === 'string') {
+        if (
+          x &&
+          typeof x === 'object' &&
+          typeof (x as Record<string, unknown>).field === 'string'
+        ) {
           return (x as Record<string, unknown>).field as string;
         }
         return '';
@@ -4719,7 +5565,8 @@ const cv = {
             ? (body.improvement_id as string)
             : null,
       pendingSuggestionsCount:
-        typeof body.pendingSuggestionsCount === 'number' && Number.isFinite(body.pendingSuggestionsCount)
+        typeof body.pendingSuggestionsCount === 'number' &&
+        Number.isFinite(body.pendingSuggestionsCount)
           ? body.pendingSuggestionsCount
           : undefined,
       cvRevisionId:
@@ -4746,7 +5593,10 @@ const cv = {
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeTailorMutationResponse(res.data);
   },
-  acceptTailorSection: async (draftId: string, sectionId: string): Promise<TailorMutationResponse> => {
+  acceptTailorSection: async (
+    draftId: string,
+    sectionId: string,
+  ): Promise<TailorMutationResponse> => {
     const res = await axiosClient.post<unknown>(
       `/cv/tailor-draft/${encodeURIComponent(draftId)}/accept-section`,
       { sectionId },
@@ -4754,7 +5604,10 @@ const cv = {
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeTailorMutationResponse(res.data);
   },
-  rejectTailorSection: async (draftId: string, sectionId: string): Promise<TailorMutationResponse> => {
+  rejectTailorSection: async (
+    draftId: string,
+    sectionId: string,
+  ): Promise<TailorMutationResponse> => {
     const res = await axiosClient.post<unknown>(
       `/cv/tailor-draft/${encodeURIComponent(draftId)}/reject-section`,
       { sectionId },
@@ -4762,7 +5615,9 @@ const cv = {
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeTailorMutationResponse(res.data);
   },
-  acceptAllTailorSections: async (draftId: string): Promise<TailorMutationResponse> => {
+  acceptAllTailorSections: async (
+    draftId: string,
+  ): Promise<TailorMutationResponse> => {
     const res = await axiosClient.post<unknown>(
       `/cv/tailor-draft/${encodeURIComponent(draftId)}/accept-all`,
       {},
@@ -4777,24 +5632,43 @@ const cv = {
     });
     throwIfApiFailureResponse(res.data, res.status);
     const body = unwrapApiDataEnvelope(res.data);
-    const rows = Array.isArray(body) ? body : Array.isArray(body.patches) ? body.patches : [];
+    const rows = Array.isArray(body)
+      ? body
+      : Array.isArray(body.patches)
+        ? body.patches
+        : [];
     return rows
-      .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
-      .map((row) => ({
-        patchId: String(row.patchId ?? row.patch_id ?? ''),
-        sectionId: String(row.sectionId ?? row.section_id ?? ''),
-        sectionType: String(row.sectionType ?? row.section_type ?? ''),
-        status:
-          row.status === 'accepted' || row.status === 'rejected' || row.status === 'pending'
-            ? row.status
-            : 'pending',
-        createdAt: typeof row.createdAt === 'string' ? row.createdAt : undefined,
-      }))
+      .filter(
+        (x): x is Record<string, unknown> =>
+          x !== null && typeof x === 'object' && !Array.isArray(x),
+      )
+      .map((row): CvPatchRecord => {
+        const rawStatus = row.status;
+        let status: CvPatchRecord['status'] = 'pending';
+        if (
+          rawStatus === 'accepted' ||
+          rawStatus === 'rejected' ||
+          rawStatus === 'pending'
+        ) {
+          status = rawStatus;
+        }
+        return {
+          patchId: String(row.patchId ?? row.patch_id ?? ''),
+          sectionId: String(row.sectionId ?? row.section_id ?? ''),
+          sectionType: String(row.sectionType ?? row.section_type ?? ''),
+          status,
+          createdAt:
+            typeof row.createdAt === 'string' ? row.createdAt : undefined,
+        };
+      })
       .filter((p) => p.patchId.trim().length > 0);
   },
 
   revertPatch: async (patchId: string): Promise<TailorMutationResponse> => {
-    const res = await axiosClient.post<unknown>(`/cv/patches/${encodeURIComponent(patchId)}/revert`, {});
+    const res = await axiosClient.post<unknown>(
+      `/cv/patches/${encodeURIComponent(patchId)}/revert`,
+      {},
+    );
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeTailorMutationResponse(res.data);
   },
@@ -4802,12 +5676,17 @@ const cv = {
   rewriteBullet: async (payload: { bullet: string; context?: string }) => {
     const bullet = payload.bullet.trim().slice(0, 500);
     const context = payload.context?.trim().slice(0, 100);
-    const res = await axiosClient.post<unknown>('/cv/improve/bullet', { bullet, context });
+    const res = await axiosClient.post<unknown>('/cv/improve/bullet', {
+      bullet,
+      context,
+    });
     throwIfApiFailureResponse(res.data, res.status);
     const body = unwrapApiDataEnvelope(res.data);
     const raw = body.suggestions ?? body.options ?? body.variants;
     if (Array.isArray(raw)) {
-      return raw.filter((x): x is string => typeof x === 'string' && x.trim() !== '');
+      return raw.filter(
+        (x): x is string => typeof x === 'string' && x.trim() !== '',
+      );
     }
     if (typeof body.improved === 'string') return [body.improved];
     if (typeof body.text === 'string') return [body.text];
@@ -4817,12 +5696,17 @@ const cv = {
   improveSummary: async (payload: { summary: string; context?: string }) => {
     const summary = payload.summary.trim().slice(0, 2000);
     const context = payload.context?.trim().slice(0, 100);
-    const res = await axiosClient.post<unknown>('/cv/improve/summary', { summary, context });
+    const res = await axiosClient.post<unknown>('/cv/improve/summary', {
+      summary,
+      context,
+    });
     throwIfApiFailureResponse(res.data, res.status);
     const body = unwrapApiDataEnvelope(res.data);
     const raw = body.suggestions ?? body.options ?? body.variants;
     if (Array.isArray(raw)) {
-      const strings = raw.filter((x): x is string => typeof x === 'string' && x.trim() !== '');
+      const strings = raw.filter(
+        (x): x is string => typeof x === 'string' && x.trim() !== '',
+      );
       if (strings.length) return strings[0]!.trim();
     }
     const t = body.summary ?? body.text ?? body.improved;
@@ -4833,15 +5717,22 @@ const cv = {
     const id = cvProfileId?.trim();
     if (id) {
       try {
-        const scoped = await axiosClient.get<unknown>(`/cv/profiles/${encodeURIComponent(id)}/sections`, {
-          params: includeHidden ? { includeHidden: true } : undefined,
-        });
+        const scoped = await axiosClient.get<unknown>(
+          `/cv/profiles/${encodeURIComponent(id)}/sections`,
+          {
+            params: includeHidden ? { includeHidden: true } : undefined,
+          },
+        );
         throwIfApiFailureResponse(scoped.data, scoped.status);
         const scopedBody = unwrapApiDataEnvelope(scoped.data);
         const scopedArr = extractCvSectionRowList(scopedBody);
         return scopedArr.map(normalizeCVSection);
       } catch (e) {
-        if (!axios.isAxiosError(e) || (e.response?.status !== 404 && e.response?.status !== 405)) throw e;
+        if (
+          !axios.isAxiosError(e) ||
+          (e.response?.status !== 404 && e.response?.status !== 405)
+        )
+          throw e;
       }
     }
     const res = await axiosClient.get<unknown>('/cv/sections', {
@@ -4855,7 +5746,11 @@ const cv = {
     const arr = extractCvSectionRowList(body);
     return arr.map(normalizeCVSection);
   },
-  updateSection: async (sectionId: string, data: object, cvProfileId?: string) => {
+  updateSection: async (
+    sectionId: string,
+    data: object,
+    cvProfileId?: string,
+  ) => {
     const id = cvProfileId?.trim();
     if (id) {
       try {
@@ -4866,12 +5761,20 @@ const cv = {
         throwIfApiFailureResponse(scoped.data, scoped.status);
         return normalizeCVSection(scoped.data);
       } catch (e) {
-        if (!axios.isAxiosError(e) || (e.response?.status !== 404 && e.response?.status !== 405)) throw e;
+        if (
+          !axios.isAxiosError(e) ||
+          (e.response?.status !== 404 && e.response?.status !== 405)
+        )
+          throw e;
       }
     }
-    const res = await axiosClient.patch<unknown>(`/cv/sections/${sectionId}`, data, {
-      params: id ? { cvProfileId: id } : {},
-    });
+    const res = await axiosClient.patch<unknown>(
+      `/cv/sections/${sectionId}`,
+      data,
+      {
+        params: id ? { cvProfileId: id } : {},
+      },
+    );
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeCVSection(res.data);
   },
@@ -4888,7 +5791,10 @@ const cv = {
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeCvBatchUpsertSectionsResult(res.data);
   },
-  addSection: async (data: { type: string; order?: number }, cvProfileId?: string) => {
+  addSection: async (
+    data: { type: string; order?: number },
+    cvProfileId?: string,
+  ) => {
     const id = cvProfileId?.trim();
     if (id) {
       try {
@@ -4899,7 +5805,11 @@ const cv = {
         throwIfApiFailureResponse(scoped.data, scoped.status);
         return normalizeCVSection(scoped.data);
       } catch (e) {
-        if (!axios.isAxiosError(e) || (e.response?.status !== 404 && e.response?.status !== 405)) throw e;
+        if (
+          !axios.isAxiosError(e) ||
+          (e.response?.status !== 404 && e.response?.status !== 405)
+        )
+          throw e;
       }
     }
     const res = await axiosClient.post<unknown>('/cv/sections', data, {
@@ -4915,12 +5825,20 @@ const cv = {
         const scoped = await axiosClient.delete<unknown>(
           `/cv/profiles/${encodeURIComponent(id)}/sections/${encodeURIComponent(sectionId)}`,
         );
-        if (scoped.data !== undefined && scoped.data !== null && scoped.data !== '') {
+        if (
+          scoped.data !== undefined &&
+          scoped.data !== null &&
+          scoped.data !== ''
+        ) {
           throwIfApiFailureResponse(scoped.data, scoped.status);
         }
         return;
       } catch (e) {
-        if (!axios.isAxiosError(e) || (e.response?.status !== 404 && e.response?.status !== 405)) throw e;
+        if (
+          !axios.isAxiosError(e) ||
+          (e.response?.status !== 404 && e.response?.status !== 405)
+        )
+          throw e;
       }
     }
     const res = await axiosClient.delete<unknown>(`/cv/sections/${sectionId}`, {
@@ -4930,7 +5848,10 @@ const cv = {
       throwIfApiFailureResponse(res.data, res.status);
     }
   },
-  reorderSections: async (sectionIds: string[], cvProfileId?: string): Promise<CvReorderSectionsResult> => {
+  reorderSections: async (
+    sectionIds: string[],
+    cvProfileId?: string,
+  ): Promise<CvReorderSectionsResult> => {
     const id = cvProfileId?.trim();
     const ids = sectionIds.map((x) => x.trim()).filter((x) => x.length > 0);
     if (ids.length === 0) {
@@ -4945,7 +5866,9 @@ const cv = {
      * Legacy route: optional `profileId` in body to pick a non-default profile.
      */
     const scopedPayload = { sectionIds: ids };
-    const legacyPayload = id ? { profileId: id, sectionIds: ids } : { sectionIds: ids };
+    const legacyPayload = id
+      ? { profileId: id, sectionIds: ids }
+      : { sectionIds: ids };
     if (id) {
       try {
         const scoped = await axiosClient.patch<unknown>(
@@ -4955,19 +5878,29 @@ const cv = {
         throwIfApiFailureResponse(scoped.data, scoped.status);
         return normalizeCvReorderSectionsResult(scoped.data);
       } catch (e) {
-        if (!axios.isAxiosError(e) || (e.response?.status !== 404 && e.response?.status !== 405)) throw e;
+        if (
+          !axios.isAxiosError(e) ||
+          (e.response?.status !== 404 && e.response?.status !== 405)
+        )
+          throw e;
       }
     }
-    const res = await axiosClient.patch<unknown>('/cv/sections/reorder', legacyPayload, {
-      params: id ? { cvProfileId: id } : {},
-    });
+    const res = await axiosClient.patch<unknown>(
+      '/cv/sections/reorder',
+      legacyPayload,
+      {
+        params: id ? { cvProfileId: id } : {},
+      },
+    );
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeCvReorderSectionsResult(res.data);
   },
   optimize: async (payload: { jobDescriptionHint: string }) =>
-    (await axiosClient.post<{ optimizedText: string }>('/cv/optimize', payload)).data,
+    (await axiosClient.post<{ optimizedText: string }>('/cv/optimize', payload))
+      .data,
   tailor: async (payload: { cvProfileId: string; jobDescription: string }) =>
-    (await axiosClient.post<{ tailoredText: string }>('/cv/tailor', payload)).data,
+    (await axiosClient.post<{ tailoredText: string }>('/cv/tailor', payload))
+      .data,
 };
 
 export type CvExportRequestOpts = {
@@ -4983,7 +5916,9 @@ export type CvExportDownload = {
   filename: string;
 };
 
-function cvExportQueryParams(opts: CvExportRequestOpts): Record<string, string> {
+function cvExportQueryParams(
+  opts: CvExportRequestOpts,
+): Record<string, string> {
   const params: Record<string, string> = {};
   if (opts.template?.trim()) params.template = opts.template.trim();
   const jobId = opts.jobAnalysisId?.trim();
@@ -5029,9 +5964,15 @@ const cvExport = {
         /* 404 or pre-path API — use legacy */
       }
     }
-    return cvExportDownload('/cv/export/pdf', { ...params, ...(id ? { cvProfileId: id } : {}) }, fallback);
+    return cvExportDownload(
+      '/cv/export/pdf',
+      { ...params, ...(id ? { cvProfileId: id } : {}) },
+      fallback,
+    );
   },
-  downloadDocx: async (opts: CvExportRequestOpts): Promise<CvExportDownload> => {
+  downloadDocx: async (
+    opts: CvExportRequestOpts,
+  ): Promise<CvExportDownload> => {
     const { cvProfileId } = opts;
     const id = cvProfileId?.trim();
     const params = cvExportQueryParams(opts);
@@ -5048,7 +5989,11 @@ const cvExport = {
         /* fall through */
       }
     }
-    return cvExportDownload('/cv/export/docx', { ...params, ...(id ? { cvProfileId: id } : {}) }, fallback);
+    return cvExportDownload(
+      '/cv/export/docx',
+      { ...params, ...(id ? { cvProfileId: id } : {}) },
+      fallback,
+    );
   },
 };
 
@@ -5082,7 +6027,9 @@ const onboarding = {
 
 function normalizeJobHistoryItem(raw: unknown): JobHistoryItem {
   const o =
-    raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+    raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+      ? (raw as Record<string, unknown>)
+      : {};
   const id = typeof o.id === 'string' ? o.id : '';
   const jobTitle =
     (typeof o.jobTitle === 'string' && o.jobTitle.trim()) ||
@@ -5099,14 +6046,20 @@ function normalizeJobHistoryItem(raw: unknown): JobHistoryItem {
   const matchScore = Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0;
   const rec = o.recommendation;
   const recommendation =
-    typeof rec === 'string' ? rec : rec != null && typeof rec === 'object' ? JSON.stringify(rec) : '';
+    typeof rec === 'string'
+      ? rec
+      : rec != null && typeof rec === 'object'
+        ? JSON.stringify(rec)
+        : '';
   const createdAt =
     typeof o.createdAt === 'string'
       ? o.createdAt
       : typeof o.created_at === 'string'
         ? o.created_at
         : '';
-  const scoreBeforeTailoring = parseOptionalNumberField(o.scoreBeforeTailoring ?? o.score_before_tailoring);
+  const scoreBeforeTailoring = parseOptionalNumberField(
+    o.scoreBeforeTailoring ?? o.score_before_tailoring,
+  );
   const tailoredCvProfileId =
     typeof o.tailoredCvProfileId === 'string'
       ? o.tailoredCvProfileId
@@ -5131,7 +6084,9 @@ function normalizeJobHistoryItem(raw: unknown): JobHistoryItem {
       : typeof o.has_cover_letter === 'boolean'
         ? o.has_cover_letter
         : false;
-  const salaryEstimate = parseSalaryEstimateFromUnknown(o.salaryEstimate ?? o.salary_estimate);
+  const salaryEstimate = parseSalaryEstimateFromUnknown(
+    o.salaryEstimate ?? o.salary_estimate,
+  );
   const cvProfileIdRaw =
     o.cvProfileId ??
     o.cv_profile_id ??
@@ -5140,7 +6095,9 @@ function normalizeJobHistoryItem(raw: unknown): JobHistoryItem {
     o.matchedCvProfileId ??
     o.matched_cv_profile_id;
   const cvProfileId =
-    typeof cvProfileIdRaw === 'string' && cvProfileIdRaw.trim() ? cvProfileIdRaw.trim() : null;
+    typeof cvProfileIdRaw === 'string' && cvProfileIdRaw.trim()
+      ? cvProfileIdRaw.trim()
+      : null;
   const sourceCvProfileIdRaw = o.sourceCvProfileId ?? o.source_cv_profile_id;
   const sourceCvProfileId =
     typeof sourceCvProfileIdRaw === 'string' && sourceCvProfileIdRaw.trim()
@@ -5152,11 +6109,15 @@ function normalizeJobHistoryItem(raw: unknown): JobHistoryItem {
     (typeof o.job_listing_id === 'string' && o.job_listing_id.trim()) ||
     null;
   const jobListingSourceHashHist =
-    (typeof o.jobListingSourceHash === 'string' && o.jobListingSourceHash.trim()) ||
-    (typeof o.job_listing_source_hash === 'string' && o.job_listing_source_hash.trim()) ||
+    (typeof o.jobListingSourceHash === 'string' &&
+      o.jobListingSourceHash.trim()) ||
+    (typeof o.job_listing_source_hash === 'string' &&
+      o.job_listing_source_hash.trim()) ||
     null;
   const pipelineStatus = parseHubPipelineStage(o.status);
-  const applicationAssist = parseApplicationAssist(o.applicationAssist ?? o.application_assist);
+  const applicationAssist = parseApplicationAssist(
+    o.applicationAssist ?? o.application_assist,
+  );
   const applyUrlHist = pickApplyUrlFromRecord(o);
   return {
     id,
@@ -5174,12 +6135,16 @@ function normalizeJobHistoryItem(raw: unknown): JobHistoryItem {
     ...(sourceCvProfileId ? { sourceCvProfileId } : {}),
     ...(analysisV2Hist ? { analysisV2: analysisV2Hist } : {}),
     ...(jobListingIdHist ? { jobListingId: jobListingIdHist } : {}),
-    ...(jobListingSourceHashHist ? { jobListingSourceHash: jobListingSourceHashHist } : {}),
+    ...(jobListingSourceHashHist
+      ? { jobListingSourceHash: jobListingSourceHashHist }
+      : {}),
     ...(applyUrlHist ? { applyUrl: applyUrlHist } : {}),
     ...(pipelineStatus ? { pipelineStatus } : {}),
     ...(typeof o.origin === 'string' ? { origin: o.origin } : {}),
     ...(typeof o.state === 'string' ? { state: o.state } : {}),
-    ...(o.isApplied === true || o.is_applied === true ? { isApplied: true } : {}),
+    ...(o.isApplied === true || o.is_applied === true
+      ? { isApplied: true }
+      : {}),
     ...(typeof o.lastActivityAt === 'string'
       ? { lastActivityAt: o.lastActivityAt }
       : typeof o.last_activity_at === 'string'
@@ -5198,7 +6163,8 @@ function normalizeJobHistoryItem(raw: unknown): JobHistoryItem {
     ...(applicationAssist ? { applicationAssist } : {}),
     title: typeof o.title === 'string' ? o.title : undefined,
     description: typeof o.description === 'string' ? o.description : undefined,
-    jobDescription: typeof o.jobDescription === 'string' ? o.jobDescription : undefined,
+    jobDescription:
+      typeof o.jobDescription === 'string' ? o.jobDescription : undefined,
     salaryEstimate,
   };
 }
@@ -5250,7 +6216,9 @@ function normalizeJobAnalysisSummary(raw: unknown): JobAnalysisSummary {
       : rec != null && typeof rec === 'object'
         ? JSON.stringify(rec)
         : undefined;
-  const salaryEstimate = parseSalaryEstimateFromUnknown(o.salaryEstimate ?? o.salary_estimate);
+  const salaryEstimate = parseSalaryEstimateFromUnknown(
+    o.salaryEstimate ?? o.salary_estimate,
+  );
   const tailoredCvProfileId =
     typeof o.tailoredCvProfileId === 'string'
       ? o.tailoredCvProfileId.trim() || null
@@ -5262,8 +6230,10 @@ function normalizeJobAnalysisSummary(raw: unknown): JobAnalysisSummary {
     (typeof o.job_listing_id === 'string' && o.job_listing_id.trim()) ||
     null;
   const jobListingSourceHash =
-    (typeof o.jobListingSourceHash === 'string' && o.jobListingSourceHash.trim()) ||
-    (typeof o.job_listing_source_hash === 'string' && o.job_listing_source_hash.trim()) ||
+    (typeof o.jobListingSourceHash === 'string' &&
+      o.jobListingSourceHash.trim()) ||
+    (typeof o.job_listing_source_hash === 'string' &&
+      o.job_listing_source_hash.trim()) ||
     null;
   const applyUrlSummary = pickApplyUrlFromRecord(o);
   return {
@@ -5299,20 +6269,30 @@ async function fetchJobHistoryPage(params?: {
   throwIfApiFailureResponse(res.data, res.status);
   const normalized = unwrapApiDataEnvelope(res.data);
   const payload =
-    normalized !== null && typeof normalized === 'object' && !Array.isArray(normalized)
+    normalized !== null &&
+    typeof normalized === 'object' &&
+    !Array.isArray(normalized)
       ? (normalized as Record<string, unknown>)
       : null;
   if (payload && Array.isArray(payload.items)) {
     const items = payload.items.map(normalizeJobHistoryItem);
     const total =
-      typeof payload.total === 'number' && Number.isFinite(payload.total) ? payload.total : items.length;
+      typeof payload.total === 'number' && Number.isFinite(payload.total)
+        ? payload.total
+        : items.length;
     const limit =
-      typeof payload.limit === 'number' && Number.isFinite(payload.limit) ? payload.limit : items.length;
+      typeof payload.limit === 'number' && Number.isFinite(payload.limit)
+        ? payload.limit
+        : items.length;
     const offset =
-      typeof payload.offset === 'number' && Number.isFinite(payload.offset) ? payload.offset : (params?.offset ?? 0);
+      typeof payload.offset === 'number' && Number.isFinite(payload.offset)
+        ? payload.offset
+        : (params?.offset ?? 0);
     return { items, total, limit, offset };
   }
-  const items = ensureArray<unknown>(normalized ?? res.data).map(normalizeJobHistoryItem);
+  const items = ensureArray<unknown>(normalized ?? res.data).map(
+    normalizeJobHistoryItem,
+  );
   return {
     items,
     total: items.length,
@@ -5322,7 +6302,7 @@ async function fetchJobHistoryPage(params?: {
 }
 
 function strPrim(o: Record<string, unknown>, a: string, b?: string): string {
-  const v = (b ? o[a] ?? o[b] : o[a]) as unknown;
+  const v = (b ? (o[a] ?? o[b]) : o[a]) as unknown;
   return typeof v === 'string' ? v.trim() : '';
 }
 
@@ -5345,12 +6325,17 @@ function normalizeJobArchiveListResponse(raw: unknown): JobArchiveListResponse {
       : [];
 
   const bookmarks: ArchivedBookmarkCard[] = bm
-    .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
+    .filter(
+      (x): x is Record<string, unknown> =>
+        x !== null && typeof x === 'object' && !Array.isArray(x),
+    )
     .map((x) => ({
       kind: 'bookmark' as const,
       id: strPrim(x, 'id'),
       archivedAt: strPrim(x, 'archivedAt', 'archived_at'),
-      restorePlacementHint: strPrim(x, 'restorePlacementHint', 'restore_placement_hint') || 'bookmarked',
+      restorePlacementHint:
+        strPrim(x, 'restorePlacementHint', 'restore_placement_hint') ||
+        'bookmarked',
       jobListingId: (() => {
         const s = strPrim(x, 'jobListingId', 'job_listing_id');
         return s || null;
@@ -5363,16 +6348,21 @@ function normalizeJobArchiveListResponse(raw: unknown): JobArchiveListResponse {
         const s = strPrim(x, 'applicationId', 'application_id');
         return s || null;
       })(),
-      hubPipelineStage: strPrim(x, 'hubPipelineStage', 'hub_pipeline_stage') || 'saved',
+      hubPipelineStage:
+        strPrim(x, 'hubPipelineStage', 'hub_pipeline_stage') || 'saved',
       title: strPrim(x, 'title') || '—',
       company: strPrim(x, 'company') || '—',
-      descriptionSnippet: strPrim(x, 'descriptionSnippet', 'description_snippet') || undefined,
+      descriptionSnippet:
+        strPrim(x, 'descriptionSnippet', 'description_snippet') || undefined,
       url: typeof x.url === 'string' ? x.url : null,
     }))
     .filter((r) => Boolean(r.id));
 
   const orphanJobAnalyses: ArchivedJobAnalysisCard[] = oa
-    .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
+    .filter(
+      (x): x is Record<string, unknown> =>
+        x !== null && typeof x === 'object' && !Array.isArray(x),
+    )
     .map((x) => {
       const sc = x.matchScore ?? x.match_score;
       const score =
@@ -5385,7 +6375,9 @@ function normalizeJobArchiveListResponse(raw: unknown): JobArchiveListResponse {
         kind: 'job_analysis' as const,
         id: strPrim(x, 'id'),
         archivedAt: strPrim(x, 'archivedAt', 'archived_at'),
-        restorePlacementHint: strPrim(x, 'restorePlacementHint', 'restore_placement_hint') || 'analyzed',
+        restorePlacementHint:
+          strPrim(x, 'restorePlacementHint', 'restore_placement_hint') ||
+          'analyzed',
         jobListingId: (() => {
           const s = strPrim(x, 'jobListingId', 'job_listing_id');
           return s || null;
@@ -5399,7 +6391,10 @@ function normalizeJobArchiveListResponse(raw: unknown): JobArchiveListResponse {
     .filter((r) => Boolean(r.id));
 
   const applications: ArchivedApplicationCard[] = apps
-    .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
+    .filter(
+      (x): x is Record<string, unknown> =>
+        x !== null && typeof x === 'object' && !Array.isArray(x),
+    )
     .map((x) => {
       const sc = x.matchScore ?? x.match_score;
       const score =
@@ -5412,7 +6407,9 @@ function normalizeJobArchiveListResponse(raw: unknown): JobArchiveListResponse {
         kind: 'application' as const,
         id: strPrim(x, 'id'),
         archivedAt: strPrim(x, 'archivedAt', 'archived_at'),
-        restorePlacementHint: strPrim(x, 'restorePlacementHint', 'restore_placement_hint') || 'application',
+        restorePlacementHint:
+          strPrim(x, 'restorePlacementHint', 'restore_placement_hint') ||
+          'application',
         jobAnalysisId: (() => {
           const s = strPrim(x, 'jobAnalysisId', 'job_analysis_id');
           return s || null;
@@ -5427,11 +6424,16 @@ function normalizeJobArchiveListResponse(raw: unknown): JobArchiveListResponse {
   return { bookmarks, orphanJobAnalyses, applications };
 }
 
-function normalizeJobArchiveMutationResult(raw: unknown): JobArchiveMutationResult {
+function normalizeJobArchiveMutationResult(
+  raw: unknown,
+): JobArchiveMutationResult {
   const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
-  const a = body.archived !== null && typeof body.archived === 'object' && !Array.isArray(body.archived)
-    ? (body.archived as Record<string, unknown>)
-    : {};
+  const a =
+    body.archived !== null &&
+    typeof body.archived === 'object' &&
+    !Array.isArray(body.archived)
+      ? (body.archived as Record<string, unknown>)
+      : {};
   const bid = Array.isArray(a.bookmarkIds)
     ? a.bookmarkIds
     : Array.isArray(a.bookmark_ids)
@@ -5453,15 +6455,21 @@ function normalizeJobArchiveMutationResult(raw: unknown): JobArchiveMutationResu
       jobAnalysisIds: jid.map((x) => String(x).trim()).filter(Boolean),
       applicationIds: app.map((x) => String(x).trim()).filter(Boolean),
     },
-    archivedAt: strPrim(body, 'archivedAt', 'archived_at') || new Date().toISOString(),
+    archivedAt:
+      strPrim(body, 'archivedAt', 'archived_at') || new Date().toISOString(),
   };
 }
 
-function normalizeJobArchiveRestoreResult(raw: unknown): JobArchiveRestoreResult {
+function normalizeJobArchiveRestoreResult(
+  raw: unknown,
+): JobArchiveRestoreResult {
   const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
-  const r = body.restored !== null && typeof body.restored === 'object' && !Array.isArray(body.restored)
-    ? (body.restored as Record<string, unknown>)
-    : {};
+  const r =
+    body.restored !== null &&
+    typeof body.restored === 'object' &&
+    !Array.isArray(body.restored)
+      ? (body.restored as Record<string, unknown>)
+      : {};
   const bid = Array.isArray(r.bookmarkIds)
     ? r.bookmarkIds
     : Array.isArray(r.bookmark_ids)
@@ -5483,7 +6491,9 @@ function normalizeJobArchiveRestoreResult(raw: unknown): JobArchiveRestoreResult
       jobAnalysisIds: jid.map((x) => String(x).trim()).filter(Boolean),
       applicationIds: app.map((x) => String(x).trim()).filter(Boolean),
     },
-    restorePlacementHint: strPrim(body, 'restorePlacementHint', 'restore_placement_hint') || 'analyzed',
+    restorePlacementHint:
+      strPrim(body, 'restorePlacementHint', 'restore_placement_hint') ||
+      'analyzed',
     message: strPrim(body, 'message') || 'Restored.',
   };
 }
@@ -5538,10 +6548,14 @@ const jobs = {
         ...(useAi === true ? { useAi: true } : {}),
         ...(useAi === false ? { useAi: false } : {}),
         ...(persistAnalysis === false ? { persistAnalysis: false } : {}),
-        ...(forceRefreshAnalyzeWithAi === true ? { forceRefreshAnalyzeWithAi: true } : {}),
+        ...(forceRefreshAnalyzeWithAi === true
+          ? { forceRefreshAnalyzeWithAi: true }
+          : {}),
         ...(cvProfileId?.trim() ? { cvProfileId: cvProfileId.trim() } : {}),
         ...(jobListingId?.trim() ? { jobListingId: jobListingId.trim() } : {}),
-        ...(jobListingSourceHash?.trim() ? { jobListingSourceHash: jobListingSourceHash.trim() } : {}),
+        ...(jobListingSourceHash?.trim()
+          ? { jobListingSourceHash: jobListingSourceHash.trim() }
+          : {}),
         ...(applyUrlTrimmed ? { applyUrl: applyUrlTrimmed } : {}),
       },
       {
@@ -5565,11 +6579,15 @@ const jobs = {
       description: payload.description,
       ...(payload.title?.trim() ? { title: payload.title.trim() } : {}),
       ...(payload.company?.trim() ? { company: payload.company.trim() } : {}),
-      ...(payload.cvProfileId?.trim() ? { cvProfileId: payload.cvProfileId.trim() } : {}),
+      ...(payload.cvProfileId?.trim()
+        ? { cvProfileId: payload.cvProfileId.trim() }
+        : {}),
     });
     throwIfApiFailureResponse(res.data, res.status);
     const data = unwrapApiDataEnvelope(res.data);
-    const raw = (data as Record<string, unknown>).matchScore ?? (data as Record<string, unknown>).score;
+    const raw =
+      (data as Record<string, unknown>).matchScore ??
+      (data as Record<string, unknown>).score;
     const n =
       typeof raw === 'number'
         ? raw
@@ -5596,7 +6614,11 @@ const jobs = {
     return body as GeneratedContent;
   },
   /** Same as GET /jobs/history — returns items only (backward compatible with dashboards). */
-  getHistory: async (params?: { limit?: number; offset?: number; includeAccepted?: boolean }) => {
+  getHistory: async (params?: {
+    limit?: number;
+    offset?: number;
+    includeAccepted?: boolean;
+  }) => {
     const page = await fetchJobHistoryPage(params);
     return page.items;
   },
@@ -5608,10 +6630,13 @@ const jobs = {
   }): Promise<JobHistoryPageResult> => {
     return fetchJobHistoryPage(params);
   },
-  listAnalyses: async (params?: { jobListingId?: string }): Promise<JobAnalysisSummary[]> => {
+  listAnalyses: async (params?: {
+    jobListingId?: string;
+  }): Promise<JobAnalysisSummary[]> => {
     const res = await axiosClient.get<unknown>('/jobs/analyses', {
       params:
-        params?.jobListingId?.trim() != null && params.jobListingId.trim() !== ''
+        params?.jobListingId?.trim() != null &&
+        params.jobListingId.trim() !== ''
           ? { jobListingId: params.jobListingId.trim() }
           : undefined,
     });
@@ -5647,10 +6672,13 @@ const jobs = {
     const body = unwrapApiDataEnvelope(raw);
     const partial = body as Partial<GeneratedContent>;
     const coverLetter =
-      typeof partial.coverLetter === 'string' && partial.coverLetter.trim() !== ''
+      typeof partial.coverLetter === 'string' &&
+      partial.coverLetter.trim() !== ''
         ? partial.coverLetter
         : undefined;
-    const answers = Array.isArray(partial.answers) ? partial.answers : undefined;
+    const answers = Array.isArray(partial.answers)
+      ? partial.answers
+      : undefined;
     return {
       jobId: typeof partial.jobId === 'string' ? partial.jobId : jobId,
       coverLetter,
@@ -5666,10 +6694,13 @@ const jobs = {
     const id = jobId.trim();
     const text = coverLetter.trim();
     if (!id || !text) return;
-    const res = await axiosClient.patch<unknown>(`/jobs/generated/${encodeURIComponent(id)}`, {
-      coverLetter: text,
-      ...(answers ? { answers } : {}),
-    });
+    const res = await axiosClient.patch<unknown>(
+      `/jobs/generated/${encodeURIComponent(id)}`,
+      {
+        coverLetter: text,
+        ...(answers ? { answers } : {}),
+      },
+    );
     throwIfApiFailureResponse(res.data, res.status);
   },
   /** PATCH /jobs/:jobAnalysisId/pipeline — canonical Job Hub stage moves. */
@@ -5711,30 +6742,48 @@ const jobs = {
   },
   /** GET /jobs/:jobId/notes — jobId is JobAnalysis id; newest first. */
   listNotes: async (jobId: string): Promise<HubNoteEntry[]> => {
-    const res = await axiosClient.get<unknown>(`/jobs/${encodeURIComponent(jobId)}/notes`);
+    const res = await axiosClient.get<unknown>(
+      `/jobs/${encodeURIComponent(jobId)}/notes`,
+    );
     throwIfApiFailureResponse(res.data, res.status);
     const arr = extractHubNotesArrayFromResponse(res.data);
     return sortHubNotesNewestFirst(
       arr
-        .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
+        .filter(
+          (x): x is Record<string, unknown> =>
+            x !== null && typeof x === 'object' && !Array.isArray(x),
+        )
         .map((x) => normalizeHubNoteEntry(x)),
     );
   },
   createNote: async (jobId: string, body: string): Promise<HubNoteEntry> => {
-    const res = await axiosClient.post<unknown>(`/jobs/${encodeURIComponent(jobId)}/notes`, { body });
+    const res = await axiosClient.post<unknown>(
+      `/jobs/${encodeURIComponent(jobId)}/notes`,
+      { body },
+    );
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data);
-    const o = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+    const o =
+      raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+        ? (raw as Record<string, unknown>)
+        : {};
     return normalizeHubNoteEntry(o);
   },
-  updateNote: async (jobId: string, noteId: string, body: string): Promise<HubNoteEntry> => {
+  updateNote: async (
+    jobId: string,
+    noteId: string,
+    body: string,
+  ): Promise<HubNoteEntry> => {
     const res = await axiosClient.patch<unknown>(
       `/jobs/${encodeURIComponent(jobId)}/notes/${encodeURIComponent(noteId)}`,
       { body },
     );
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data);
-    const o = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+    const o =
+      raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+        ? (raw as Record<string, unknown>)
+        : {};
     return normalizeHubNoteEntry(o);
   },
   deleteNote: async (jobId: string, noteId: string): Promise<void> => {
@@ -5748,7 +6797,10 @@ const jobs = {
     jobId: string,
     payload: { status: HubPipelineStage },
   ): Promise<void> => {
-    const res = await axiosClient.patch<unknown>(`/jobs/${encodeURIComponent(jobId)}/status`, payload);
+    const res = await axiosClient.patch<unknown>(
+      `/jobs/${encodeURIComponent(jobId)}/status`,
+      payload,
+    );
     throwIfApiFailureResponse(res.data, res.status);
   },
   /** Phase 5 — user confirms offer accepted (job analysis id). */
@@ -5767,11 +6819,16 @@ const jobs = {
     jobBookmarkId?: string;
     jobAnalysisId?: string;
   }): Promise<HubReminderItem[]> => {
-    const res = await axiosClient.get<unknown>('/jobs/hub-reminders', { params });
+    const res = await axiosClient.get<unknown>('/jobs/hub-reminders', {
+      params,
+    });
     throwIfApiFailureResponse(res.data, res.status);
     const arr = extractHubNotesArrayFromResponse(res.data);
     return arr
-      .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
+      .filter(
+        (x): x is Record<string, unknown> =>
+          x !== null && typeof x === 'object' && !Array.isArray(x),
+      )
       .map((x) => normalizeHubReminderItem(x));
   },
   createHubReminder: async (payload: {
@@ -5784,12 +6841,20 @@ const jobs = {
     const res = await axiosClient.post<unknown>('/jobs/hub-reminders', payload);
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data);
-    const o = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+    const o =
+      raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+        ? (raw as Record<string, unknown>)
+        : {};
     return normalizeHubReminderItem(o);
   },
   patchHubReminder: async (
     reminderId: string,
-    payload: { remindAt?: string; title?: string; note?: string; status?: HubReminderStatus },
+    payload: {
+      remindAt?: string;
+      title?: string;
+      note?: string;
+      status?: HubReminderStatus;
+    },
   ): Promise<HubReminderItem> => {
     const res = await axiosClient.patch<unknown>(
       `/jobs/hub-reminders/${encodeURIComponent(reminderId)}`,
@@ -5797,11 +6862,16 @@ const jobs = {
     );
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data);
-    const o = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+    const o =
+      raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+        ? (raw as Record<string, unknown>)
+        : {};
     return normalizeHubReminderItem(o);
   },
   deleteHubReminder: async (reminderId: string): Promise<void> => {
-    const res = await axiosClient.delete<unknown>(`/jobs/hub-reminders/${encodeURIComponent(reminderId)}`);
+    const res = await axiosClient.delete<unknown>(
+      `/jobs/hub-reminders/${encodeURIComponent(reminderId)}`,
+    );
     throwIfApiFailureResponse(res.data, res.status);
   },
 
@@ -5820,7 +6890,10 @@ const jobs = {
     jobAnalysisId?: string;
     applicationId?: string;
   }): Promise<JobArchiveRestoreResult> => {
-    const res = await axiosClient.post<unknown>('/jobs/archive/restore', payload);
+    const res = await axiosClient.post<unknown>(
+      '/jobs/archive/restore',
+      payload,
+    );
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeJobArchiveRestoreResult(res.data);
   },
@@ -5832,17 +6905,23 @@ const jobs = {
   },
 
   deleteArchivedBookmark: async (bookmarkId: string): Promise<void> => {
-    const res = await axiosClient.delete<unknown>(`/jobs/archive/bookmark/${encodeURIComponent(bookmarkId)}`);
+    const res = await axiosClient.delete<unknown>(
+      `/jobs/archive/bookmark/${encodeURIComponent(bookmarkId)}`,
+    );
     throwIfApiFailureResponse(res.data, res.status);
   },
 
   deleteArchivedAnalysis: async (jobAnalysisId: string): Promise<void> => {
-    const res = await axiosClient.delete<unknown>(`/jobs/archive/analysis/${encodeURIComponent(jobAnalysisId)}`);
+    const res = await axiosClient.delete<unknown>(
+      `/jobs/archive/analysis/${encodeURIComponent(jobAnalysisId)}`,
+    );
     throwIfApiFailureResponse(res.data, res.status);
   },
 
   deleteArchivedApplication: async (applicationId: string): Promise<void> => {
-    const res = await axiosClient.delete<unknown>(`/jobs/archive/application/${encodeURIComponent(applicationId)}`);
+    const res = await axiosClient.delete<unknown>(
+      `/jobs/archive/application/${encodeURIComponent(applicationId)}`,
+    );
     throwIfApiFailureResponse(res.data, res.status);
   },
 };
@@ -5860,7 +6939,10 @@ function parseJobDiscoveryBookmarkCreateResponse(
   const row = unwrapApiDataEnvelope(body) as Record<string, unknown>;
   const bookmarkId = String(row.id ?? row.bookmarkId ?? '').trim();
   const jobListingId = String(
-    row.jobListingId ?? row.job_listing_id ?? row.jobListing_id ?? routeJobListingId,
+    row.jobListingId ??
+      row.job_listing_id ??
+      row.jobListing_id ??
+      routeJobListingId,
   ).trim();
   return {
     bookmarkId,
@@ -5904,17 +6986,29 @@ const jobDiscovery = {
     return normalizeDiscoverJobsResponse(res.data);
   },
   getDetail: async (id: string) => {
-    const res = await axiosClient.get<unknown>(`/job-discovery/${encodeURIComponent(id)}`);
+    const res = await axiosClient.get<unknown>(
+      `/job-discovery/${encodeURIComponent(id)}`,
+    );
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeJobListingDto(res.data);
   },
-  bookmark: async (jobListingId: string): Promise<JobDiscoveryBookmarkResult> => {
-    const res = await axiosClient.post<unknown>(`/job-discovery/${encodeURIComponent(jobListingId)}/bookmark`);
+  bookmark: async (
+    jobListingId: string,
+  ): Promise<JobDiscoveryBookmarkResult> => {
+    const res = await axiosClient.post<unknown>(
+      `/job-discovery/${encodeURIComponent(jobListingId)}/bookmark`,
+    );
     const body = res.data;
-    return parseJobDiscoveryBookmarkCreateResponse(body, res.status, jobListingId);
+    return parseJobDiscoveryBookmarkCreateResponse(
+      body,
+      res.status,
+      jobListingId,
+    );
   },
   removeBookmark: async (jobListingId: string): Promise<void> => {
-    const res = await axiosClient.delete<unknown>(`/job-discovery/${encodeURIComponent(jobListingId)}/bookmark`);
+    const res = await axiosClient.delete<unknown>(
+      `/job-discovery/${encodeURIComponent(jobListingId)}/bookmark`,
+    );
     const body = res.data;
     throwIfApiFailureResponse(body, res.status);
   },
@@ -5922,16 +7016,24 @@ const jobDiscovery = {
     const res = await axiosClient.post<unknown>('/job-discovery/mark-seen', {});
     throwIfApiFailureResponse(res.data, res.status);
   },
-  focusResolve: async (focusToken: string): Promise<{
+  focusResolve: async (
+    focusToken: string,
+  ): Promise<{
     jobListingId: string;
     indexHint: number | null;
     filtersContext: Record<string, unknown> | null;
     expiresAt: string | null;
   }> => {
-    const res = await axiosClient.post<unknown>('/job-discovery/focus-resolve', { focusToken });
+    const res = await axiosClient.post<unknown>(
+      '/job-discovery/focus-resolve',
+      { focusToken },
+    );
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data);
-    const o = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+    const o =
+      raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+        ? (raw as Record<string, unknown>)
+        : {};
     return {
       jobListingId: String(o.jobListingId ?? o.job_listing_id ?? '').trim(),
       indexHint:
@@ -5941,9 +7043,13 @@ const jobDiscovery = {
             ? Number(o.index_hint)
             : null,
       filtersContext:
-        o.filtersContext !== null && typeof o.filtersContext === 'object' && !Array.isArray(o.filtersContext)
+        o.filtersContext !== null &&
+        typeof o.filtersContext === 'object' &&
+        !Array.isArray(o.filtersContext)
           ? (o.filtersContext as Record<string, unknown>)
-          : o.filters_context !== null && typeof o.filters_context === 'object' && !Array.isArray(o.filters_context)
+          : o.filters_context !== null &&
+              typeof o.filters_context === 'object' &&
+              !Array.isArray(o.filters_context)
             ? (o.filters_context as Record<string, unknown>)
             : null,
       expiresAt:
@@ -5954,14 +7060,25 @@ const jobDiscovery = {
             : null,
     };
   },
-  analyzeStart: async (jobListingId: string): Promise<JobDiscoveryQuickActionResult> => {
-    const res = await axiosClient.post<unknown>(`/job-discovery/${encodeURIComponent(jobListingId)}/analyze-start`, {});
+  analyzeStart: async (
+    jobListingId: string,
+  ): Promise<JobDiscoveryQuickActionResult> => {
+    const res = await axiosClient.post<unknown>(
+      `/job-discovery/${encodeURIComponent(jobListingId)}/analyze-start`,
+      {},
+    );
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data);
-    const o = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
-    const next = o.nextAction !== null && typeof o.nextAction === 'object' && !Array.isArray(o.nextAction)
-      ? (o.nextAction as Record<string, unknown>)
-      : null;
+    const o =
+      raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+        ? (raw as Record<string, unknown>)
+        : {};
+    const next =
+      o.nextAction !== null &&
+      typeof o.nextAction === 'object' &&
+      !Array.isArray(o.nextAction)
+        ? (o.nextAction as Record<string, unknown>)
+        : null;
     return {
       ok: o.ok === true,
       nextAction: next
@@ -5977,9 +7094,13 @@ const jobDiscovery = {
           }
         : null,
       stateSnapshot:
-        o.stateSnapshot !== null && typeof o.stateSnapshot === 'object' && !Array.isArray(o.stateSnapshot)
+        o.stateSnapshot !== null &&
+        typeof o.stateSnapshot === 'object' &&
+        !Array.isArray(o.stateSnapshot)
           ? (o.stateSnapshot as Record<string, unknown>)
-          : o.state_snapshot !== null && typeof o.state_snapshot === 'object' && !Array.isArray(o.state_snapshot)
+          : o.state_snapshot !== null &&
+              typeof o.state_snapshot === 'object' &&
+              !Array.isArray(o.state_snapshot)
             ? (o.state_snapshot as Record<string, unknown>)
             : null,
     };
@@ -5988,9 +7109,12 @@ const jobDiscovery = {
     jobListingId: string,
     decision: 'APPLY' | 'MAYBE' | 'SKIP',
   ): Promise<{ id: string; decision: string }> => {
-    const res = await axiosClient.post<unknown>(`/job-discovery/${encodeURIComponent(jobListingId)}/decision`, {
-      decision,
-    });
+    const res = await axiosClient.post<unknown>(
+      `/job-discovery/${encodeURIComponent(jobListingId)}/decision`,
+      {
+        decision,
+      },
+    );
     throwIfApiFailureResponse(res.data, res.status);
     const o = unwrapApiDataEnvelope(res.data) as Record<string, unknown>;
     return {
@@ -5998,14 +7122,25 @@ const jobDiscovery = {
       decision: String(o.decision ?? decision),
     };
   },
-  tailorStart: async (jobListingId: string): Promise<JobDiscoveryQuickActionResult> => {
-    const res = await axiosClient.post<unknown>(`/job-discovery/${encodeURIComponent(jobListingId)}/tailor-start`, {});
+  tailorStart: async (
+    jobListingId: string,
+  ): Promise<JobDiscoveryQuickActionResult> => {
+    const res = await axiosClient.post<unknown>(
+      `/job-discovery/${encodeURIComponent(jobListingId)}/tailor-start`,
+      {},
+    );
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data);
-    const o = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
-    const next = o.nextAction !== null && typeof o.nextAction === 'object' && !Array.isArray(o.nextAction)
-      ? (o.nextAction as Record<string, unknown>)
-      : null;
+    const o =
+      raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+        ? (raw as Record<string, unknown>)
+        : {};
+    const next =
+      o.nextAction !== null &&
+      typeof o.nextAction === 'object' &&
+      !Array.isArray(o.nextAction)
+        ? (o.nextAction as Record<string, unknown>)
+        : null;
     return {
       ok: o.ok === true,
       nextAction: next
@@ -6021,9 +7156,13 @@ const jobDiscovery = {
           }
         : null,
       stateSnapshot:
-        o.stateSnapshot !== null && typeof o.stateSnapshot === 'object' && !Array.isArray(o.stateSnapshot)
+        o.stateSnapshot !== null &&
+        typeof o.stateSnapshot === 'object' &&
+        !Array.isArray(o.stateSnapshot)
           ? (o.stateSnapshot as Record<string, unknown>)
-          : o.state_snapshot !== null && typeof o.state_snapshot === 'object' && !Array.isArray(o.state_snapshot)
+          : o.state_snapshot !== null &&
+              typeof o.state_snapshot === 'object' &&
+              !Array.isArray(o.state_snapshot)
             ? (o.state_snapshot as Record<string, unknown>)
             : null,
     };
@@ -6034,7 +7173,10 @@ const jobDiscovery = {
     throwIfApiFailureResponse(res.data, res.status);
     const arr = extractHubNotesArrayFromResponse(res.data);
     return arr
-      .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
+      .filter(
+        (x): x is Record<string, unknown> =>
+          x !== null && typeof x === 'object' && !Array.isArray(x),
+      )
       .map((x) => normalizeHubBookmarkItem(x));
   },
   /**
@@ -6055,7 +7197,10 @@ const jobDiscovery = {
     );
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data);
-    const o = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+    const o =
+      raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+        ? (raw as Record<string, unknown>)
+        : {};
     return normalizeHubBookmarkItem(o);
   },
   listBookmarkNotes: async (bookmarkId: string): Promise<HubNoteEntry[]> => {
@@ -6066,31 +7211,50 @@ const jobDiscovery = {
     const arr = extractHubNotesArrayFromResponse(res.data);
     return sortHubNotesNewestFirst(
       arr
-        .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
+        .filter(
+          (x): x is Record<string, unknown> =>
+            x !== null && typeof x === 'object' && !Array.isArray(x),
+        )
         .map((x) => normalizeHubNoteEntry(x)),
     );
   },
-  createBookmarkNote: async (bookmarkId: string, body: string): Promise<HubNoteEntry> => {
+  createBookmarkNote: async (
+    bookmarkId: string,
+    body: string,
+  ): Promise<HubNoteEntry> => {
     const res = await axiosClient.post<unknown>(
       `/job-discovery/bookmarks/${encodeURIComponent(bookmarkId)}/notes`,
       { body },
     );
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data);
-    const o = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+    const o =
+      raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+        ? (raw as Record<string, unknown>)
+        : {};
     return normalizeHubNoteEntry(o);
   },
-  updateBookmarkNote: async (bookmarkId: string, noteId: string, body: string): Promise<HubNoteEntry> => {
+  updateBookmarkNote: async (
+    bookmarkId: string,
+    noteId: string,
+    body: string,
+  ): Promise<HubNoteEntry> => {
     const res = await axiosClient.patch<unknown>(
       `/job-discovery/bookmarks/${encodeURIComponent(bookmarkId)}/notes/${encodeURIComponent(noteId)}`,
       { body },
     );
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data);
-    const o = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+    const o =
+      raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+        ? (raw as Record<string, unknown>)
+        : {};
     return normalizeHubNoteEntry(o);
   },
-  deleteBookmarkNote: async (bookmarkId: string, noteId: string): Promise<void> => {
+  deleteBookmarkNote: async (
+    bookmarkId: string,
+    noteId: string,
+  ): Promise<void> => {
     const res = await axiosClient.delete<unknown>(
       `/job-discovery/bookmarks/${encodeURIComponent(bookmarkId)}/notes/${encodeURIComponent(noteId)}`,
     );
@@ -6098,18 +7262,29 @@ const jobDiscovery = {
   },
 };
 
-function coerceApplicationReminderStatus(x: unknown): ApplicationReminderStatus {
+function coerceApplicationReminderStatus(
+  x: unknown,
+): ApplicationReminderStatus {
   const s = typeof x === 'string' ? x : '';
-  if (s === 'pending' || s === 'processing' || s === 'sent' || s === 'cancelled' || s === 'failed') {
+  if (
+    s === 'pending' ||
+    s === 'processing' ||
+    s === 'sent' ||
+    s === 'cancelled' ||
+    s === 'failed'
+  ) {
     return s;
   }
   return 'pending';
 }
 
-function normalizeApplicationReminderItem(raw: Record<string, unknown>): ApplicationReminderItem {
+function normalizeApplicationReminderItem(
+  raw: Record<string, unknown>,
+): ApplicationReminderItem {
   return {
     id: typeof raw.id === 'string' ? raw.id : '',
-    applicationId: typeof raw.applicationId === 'string' ? raw.applicationId : '',
+    applicationId:
+      typeof raw.applicationId === 'string' ? raw.applicationId : '',
     remindAt: typeof raw.remindAt === 'string' ? raw.remindAt : '',
     message: typeof raw.message === 'string' ? raw.message : '',
     status: coerceApplicationReminderStatus(raw.status),
@@ -6117,11 +7292,14 @@ function normalizeApplicationReminderItem(raw: Record<string, unknown>): Applica
     updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : null,
     sentAt: typeof raw.sentAt === 'string' ? raw.sentAt : null,
     failedAt: typeof raw.failedAt === 'string' ? raw.failedAt : null,
-    failureReason: typeof raw.failureReason === 'string' ? raw.failureReason : null,
+    failureReason:
+      typeof raw.failureReason === 'string' ? raw.failureReason : null,
   };
 }
 
-function normalizeUserReminderItem(raw: Record<string, unknown>): UserReminderItem {
+function normalizeUserReminderItem(
+  raw: Record<string, unknown>,
+): UserReminderItem {
   const base = normalizeApplicationReminderItem(raw);
   return {
     ...base,
@@ -6151,13 +7329,20 @@ const applications = {
     const raw = unwrapApiDataEnvelope(res.data);
     return ensureArray<unknown>(raw).map(normalizeApplicationItem);
   },
-  updateStatus: async (id: string, status: ApplicationTrackerStatus | ApplicationStatus | string) => {
-    const res = await axiosClient.patch<unknown>(`/applications/${id}/status`, { status });
+  updateStatus: async (
+    id: string,
+    status: ApplicationTrackerStatus | ApplicationStatus | string,
+  ) => {
+    const res = await axiosClient.patch<unknown>(`/applications/${id}/status`, {
+      status,
+    });
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeApplicationItem(res.data);
   },
   getFollowUpDraft: async (id: string): Promise<FollowUpEmailDraft> => {
-    const res = await axiosClient.post<unknown>(`/applications/${id}/follow-up-draft`);
+    const res = await axiosClient.post<unknown>(
+      `/applications/${id}/follow-up-draft`,
+    );
     throwIfApiFailureResponse(res.data, res.status);
     const body = unwrapApiDataEnvelope(res.data) as Record<string, unknown>;
     return {
@@ -6173,37 +7358,60 @@ const applications = {
     };
   },
   updateNotes: async (id: string, notes: string) => {
-    const res = await axiosClient.patch<unknown>(`/applications/${id}/notes`, { notes });
+    const res = await axiosClient.patch<unknown>(`/applications/${id}/notes`, {
+      notes,
+    });
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeApplicationItem(res.data);
   },
   listNotes: async (applicationId: string): Promise<HubNoteEntry[]> => {
-    const res = await axiosClient.get<unknown>(`/applications/${encodeURIComponent(applicationId)}/notes`);
+    const res = await axiosClient.get<unknown>(
+      `/applications/${encodeURIComponent(applicationId)}/notes`,
+    );
     throwIfApiFailureResponse(res.data, res.status);
     const arr = extractHubNotesArrayFromResponse(res.data);
     return sortHubNotesNewestFirst(
       arr
-        .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
+        .filter(
+          (x): x is Record<string, unknown> =>
+            x !== null && typeof x === 'object' && !Array.isArray(x),
+        )
         .map((x) => normalizeHubNoteEntry(x)),
     );
   },
-  createNote: async (applicationId: string, body: string): Promise<HubNoteEntry> => {
-    const res = await axiosClient.post<unknown>(`/applications/${encodeURIComponent(applicationId)}/notes`, {
-      body,
-    });
+  createNote: async (
+    applicationId: string,
+    body: string,
+  ): Promise<HubNoteEntry> => {
+    const res = await axiosClient.post<unknown>(
+      `/applications/${encodeURIComponent(applicationId)}/notes`,
+      {
+        body,
+      },
+    );
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data);
-    const o = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+    const o =
+      raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+        ? (raw as Record<string, unknown>)
+        : {};
     return normalizeHubNoteEntry(o);
   },
-  updateNote: async (applicationId: string, noteId: string, body: string): Promise<HubNoteEntry> => {
+  updateNote: async (
+    applicationId: string,
+    noteId: string,
+    body: string,
+  ): Promise<HubNoteEntry> => {
     const res = await axiosClient.patch<unknown>(
       `/applications/${encodeURIComponent(applicationId)}/notes/${encodeURIComponent(noteId)}`,
       { body },
     );
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data);
-    const o = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+    const o =
+      raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+        ? (raw as Record<string, unknown>)
+        : {};
     return normalizeHubNoteEntry(o);
   },
   deleteNote: async (applicationId: string, noteId: string): Promise<void> => {
@@ -6218,7 +7426,11 @@ const applications = {
    */
   generateEmailTemplate: async (
     id: string,
-    payload: { templateType: string; jobAnalysisId?: string | null; extraContext?: string },
+    payload: {
+      templateType: string;
+      jobAnalysisId?: string | null;
+      extraContext?: string;
+    },
   ): Promise<FollowUpEmailDraft> => {
     const res = await axiosClient.post<unknown>(
       `/applications/${encodeURIComponent(id)}/email-templates/generate`,
@@ -6242,7 +7454,10 @@ const applications = {
    * Schedule a reminder (email + in-app notification at remindAt).
    * POST /applications/:id/reminders
    */
-  createReminder: async (id: string, payload: { remindAt: string; message: string }) => {
+  createReminder: async (
+    id: string,
+    payload: { remindAt: string; message: string },
+  ) => {
     const res = await axiosClient.post<unknown>(
       `/applications/${encodeURIComponent(id)}/reminders`,
       payload,
@@ -6252,7 +7467,9 @@ const applications = {
     return { id: typeof raw.id === 'string' ? raw.id : undefined };
   },
   /** GET /applications/:applicationId/reminders — ascending remindAt. */
-  listReminders: async (applicationId: string): Promise<ApplicationReminderItem[]> => {
+  listReminders: async (
+    applicationId: string,
+  ): Promise<ApplicationReminderItem[]> => {
     const res = await axiosClient.get<unknown>(
       `/applications/${encodeURIComponent(applicationId)}/reminders`,
     );
@@ -6260,15 +7477,23 @@ const applications = {
     const raw = unwrapApiDataEnvelope(res.data);
     const arr = Array.isArray(raw)
       ? raw
-      : raw !== null && typeof raw === 'object' && Array.isArray((raw as Record<string, unknown>).reminders)
+      : raw !== null &&
+          typeof raw === 'object' &&
+          Array.isArray((raw as Record<string, unknown>).reminders)
         ? ((raw as Record<string, unknown>).reminders as unknown[])
         : [];
     return arr
-      .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
+      .filter(
+        (x): x is Record<string, unknown> =>
+          x !== null && typeof x === 'object' && !Array.isArray(x),
+      )
       .map((x) => normalizeApplicationReminderItem(x));
   },
   /** DELETE /applications/:applicationId/reminders/:reminderId — idempotent on backend. */
-  deleteReminder: async (applicationId: string, reminderId: string): Promise<void> => {
+  deleteReminder: async (
+    applicationId: string,
+    reminderId: string,
+  ): Promise<void> => {
     const res = await axiosClient.delete<unknown>(
       `/applications/${encodeURIComponent(applicationId)}/reminders/${encodeURIComponent(reminderId)}`,
     );
@@ -6284,13 +7509,23 @@ const notifications = {
     if (Array.isArray(raw)) {
       return raw.map((x) => normalizeNotificationItem(x));
     }
-    if (raw && typeof raw === 'object' && Array.isArray((raw as Record<string, unknown>).notifications)) {
-      return ((raw as Record<string, unknown>).notifications as unknown[]).map((x) =>
-        normalizeNotificationItem(x),
+    if (
+      raw &&
+      typeof raw === 'object' &&
+      Array.isArray((raw as Record<string, unknown>).notifications)
+    ) {
+      return ((raw as Record<string, unknown>).notifications as unknown[]).map(
+        (x) => normalizeNotificationItem(x),
       );
     }
-    if (raw && typeof raw === 'object' && Array.isArray((raw as Record<string, unknown>).rows)) {
-      return ((raw as Record<string, unknown>).rows as unknown[]).map((x) => normalizeNotificationItem(x));
+    if (
+      raw &&
+      typeof raw === 'object' &&
+      Array.isArray((raw as Record<string, unknown>).rows)
+    ) {
+      return ((raw as Record<string, unknown>).rows as unknown[]).map((x) =>
+        normalizeNotificationItem(x),
+      );
     }
     return [];
   },
@@ -6302,7 +7537,9 @@ const notifications = {
     return typeof n === 'number' && Number.isFinite(n) ? n : 0;
   },
   markRead: async (id: string) => {
-    const res = await axiosClient.patch<unknown>(`/notifications/${encodeURIComponent(id)}/read`);
+    const res = await axiosClient.patch<unknown>(
+      `/notifications/${encodeURIComponent(id)}/read`,
+    );
     throwIfApiFailureResponse(res.data, res.status);
   },
   markAllRead: async () => {
@@ -6312,7 +7549,11 @@ const notifications = {
 };
 
 /** GET/PUT /career-goals — structured job-search preferences (Phase 19A). */
-export type CareerGoalsRemotePreference = 'remote' | 'hybrid' | 'onsite' | 'any';
+export type CareerGoalsRemotePreference =
+  | 'remote'
+  | 'hybrid'
+  | 'onsite'
+  | 'any';
 
 export type CareerGoalsWorkspace = {
   targetRoles: string[];
@@ -6329,38 +7570,62 @@ export type CareerGoalsWorkspace = {
 
 function strArrayFromCareerGoalsBody(v: unknown): string[] {
   if (!Array.isArray(v)) return [];
-  return v
-    .map((x) => (typeof x === 'string' ? x.trim() : ''))
-    .filter(Boolean);
+  return v.map((x) => (typeof x === 'string' ? x.trim() : '')).filter(Boolean);
 }
 
-function normalizeCareerGoalsWorkspace(body: Record<string, unknown>): CareerGoalsWorkspace {
-  const remoteRaw = String(body.remotePreference ?? body.remote_preference ?? '')
+function normalizeCareerGoalsWorkspace(
+  body: Record<string, unknown>,
+): CareerGoalsWorkspace {
+  const remoteRaw = String(
+    body.remotePreference ?? body.remote_preference ?? '',
+  )
     .trim()
     .toLowerCase();
-  const allowed = new Set<CareerGoalsRemotePreference>(['remote', 'hybrid', 'onsite', 'any']);
-  const remote: CareerGoalsRemotePreference | null = allowed.has(remoteRaw as CareerGoalsRemotePreference)
+  const allowed = new Set<CareerGoalsRemotePreference>([
+    'remote',
+    'hybrid',
+    'onsite',
+    'any',
+  ]);
+  const remote: CareerGoalsRemotePreference | null = allowed.has(
+    remoteRaw as CareerGoalsRemotePreference,
+  )
     ? (remoteRaw as CareerGoalsRemotePreference)
     : null;
   const salaryMinRaw = body.salaryMin ?? body.salary_min;
   const salaryMin =
     typeof salaryMinRaw === 'number' && Number.isFinite(salaryMinRaw)
       ? Math.max(0, salaryMinRaw)
-      : typeof salaryMinRaw === 'string' && salaryMinRaw.trim() && Number.isFinite(Number(salaryMinRaw))
+      : typeof salaryMinRaw === 'string' &&
+          salaryMinRaw.trim() &&
+          Number.isFinite(Number(salaryMinRaw))
         ? Math.max(0, Number(salaryMinRaw))
         : null;
   return {
-    targetRoles: strArrayFromCareerGoalsBody(body.targetRoles ?? body.target_roles),
-    targetCompanies: strArrayFromCareerGoalsBody(body.targetCompanies ?? body.target_companies),
-    targetLocations: strArrayFromCareerGoalsBody(body.targetLocations ?? body.target_locations),
-    targetIndustries: strArrayFromCareerGoalsBody(body.targetIndustries ?? body.target_industries),
-    targetSkills: strArrayFromCareerGoalsBody(body.targetSkills ?? body.target_skills),
-    employmentTypes: strArrayFromCareerGoalsBody(body.employmentTypes ?? body.employment_types),
+    targetRoles: strArrayFromCareerGoalsBody(
+      body.targetRoles ?? body.target_roles,
+    ),
+    targetCompanies: strArrayFromCareerGoalsBody(
+      body.targetCompanies ?? body.target_companies,
+    ),
+    targetLocations: strArrayFromCareerGoalsBody(
+      body.targetLocations ?? body.target_locations,
+    ),
+    targetIndustries: strArrayFromCareerGoalsBody(
+      body.targetIndustries ?? body.target_industries,
+    ),
+    targetSkills: strArrayFromCareerGoalsBody(
+      body.targetSkills ?? body.target_skills,
+    ),
+    employmentTypes: strArrayFromCareerGoalsBody(
+      body.employmentTypes ?? body.employment_types,
+    ),
     salaryMin,
     salaryCurrency:
       body.salaryCurrency != null && typeof body.salaryCurrency === 'string'
         ? body.salaryCurrency.trim() || null
-        : body.salary_currency != null && typeof body.salary_currency === 'string'
+        : body.salary_currency != null &&
+            typeof body.salary_currency === 'string'
           ? String(body.salary_currency).trim() || null
           : null,
     remotePreference: remote,
@@ -6418,14 +7683,20 @@ const dashboard = {
         ...(params?.cvProfileId ? { cvProfileId: params.cvProfileId } : {}),
         ...(params?.timezone ? { timezone: params.timezone } : {}),
         ...(params?.locale ? { locale: params.locale } : {}),
-        ...(params?.includeHiddenDashboardCards ? { includeHiddenDashboardCards: true } : {}),
+        ...(params?.includeHiddenDashboardCards
+          ? { includeHiddenDashboardCards: true }
+          : {}),
         ...(ffm != null ? { focusFeedMaxItems: ffm } : {}),
       },
     });
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeTodayPlan(res.data);
   },
-  getDashboardFocus: async (params?: { cvProfileId?: string; timezone?: string; locale?: string }) => {
+  getDashboardFocus: async (params?: {
+    cvProfileId?: string;
+    timezone?: string;
+    locale?: string;
+  }) => {
     const res = await axiosClient.get<unknown>('/dashboard/focus', {
       params: {
         ...(params?.cvProfileId ? { cvProfileId: params.cvProfileId } : {}),
@@ -6438,14 +7709,19 @@ const dashboard = {
   },
   getWeeklyStallSummary: async (params?: { limit?: number }) => {
     const limit = clampWeeklyStallLimit(params?.limit);
-    const res = await axiosClient.get<unknown>('/dashboard/weekly-stall-summary', {
-      params: { limit },
-    });
+    const res = await axiosClient.get<unknown>(
+      '/dashboard/weekly-stall-summary',
+      {
+        params: { limit },
+      },
+    );
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeWeeklyStallSummary(res.data);
   },
   getChangesSinceLastVisit: async () => {
-    const res = await axiosClient.get<unknown>('/dashboard/changes-since-last-visit');
+    const res = await axiosClient.get<unknown>(
+      '/dashboard/changes-since-last-visit',
+    );
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeSinceLastVisit(res.data);
   },
@@ -6462,8 +7738,12 @@ const dashboard = {
     const res = await axiosClient.post<unknown>('/dashboard/behavior-event', {
       eventName: body.eventName,
       context: body.context,
-      ...(body.occurredAt != null && body.occurredAt !== '' ? { occurredAt: body.occurredAt } : {}),
-      ...(body.sessionId != null && body.sessionId !== '' ? { sessionId: body.sessionId } : {}),
+      ...(body.occurredAt != null && body.occurredAt !== ''
+        ? { occurredAt: body.occurredAt }
+        : {}),
+      ...(body.sessionId != null && body.sessionId !== ''
+        ? { sessionId: body.sessionId }
+        : {}),
     });
     throwIfApiFailureResponse(res.data, res.status);
   },
@@ -6472,15 +7752,29 @@ const dashboard = {
     jobAnalysisIds?: string[];
     jobListingIds?: string[];
   }) => {
-    const priorityIds = (args.priorityIds ?? []).map((x) => x.trim()).filter(Boolean);
-    const jobAnalysisIds = (args.jobAnalysisIds ?? []).map((x) => x.trim()).filter(Boolean);
-    const jobListingIds = (args.jobListingIds ?? []).map((x) => x.trim()).filter(Boolean);
-    if (priorityIds.length === 0 && jobAnalysisIds.length === 0 && jobListingIds.length === 0) return null;
-    const res = await axiosClient.post<unknown>('/dashboard/next-action-prefetch', {
-      ...(priorityIds.length > 0 ? { priorityIds } : {}),
-      ...(jobAnalysisIds.length > 0 ? { jobAnalysisIds } : {}),
-      ...(jobListingIds.length > 0 ? { jobListingIds } : {}),
-    });
+    const priorityIds = (args.priorityIds ?? [])
+      .map((x) => x.trim())
+      .filter(Boolean);
+    const jobAnalysisIds = (args.jobAnalysisIds ?? [])
+      .map((x) => x.trim())
+      .filter(Boolean);
+    const jobListingIds = (args.jobListingIds ?? [])
+      .map((x) => x.trim())
+      .filter(Boolean);
+    if (
+      priorityIds.length === 0 &&
+      jobAnalysisIds.length === 0 &&
+      jobListingIds.length === 0
+    )
+      return null;
+    const res = await axiosClient.post<unknown>(
+      '/dashboard/next-action-prefetch',
+      {
+        ...(priorityIds.length > 0 ? { priorityIds } : {}),
+        ...(jobAnalysisIds.length > 0 ? { jobAnalysisIds } : {}),
+        ...(jobListingIds.length > 0 ? { jobListingIds } : {}),
+      },
+    );
     throwIfApiFailureResponse(res.data, res.status);
     return unwrapApiDataEnvelope(res.data);
   },
@@ -6504,10 +7798,14 @@ const execution = {
     const raw = unwrapApiDataEnvelope(res.data) as Record<string, unknown>;
     return {
       sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : '',
-      checkpointId: typeof raw.checkpointId === 'string' ? raw.checkpointId : '',
+      checkpointId:
+        typeof raw.checkpointId === 'string' ? raw.checkpointId : '',
     };
   },
-  complete: async (body: { workflowEntityId: string; executionType: string }): Promise<void> => {
+  complete: async (body: {
+    workflowEntityId: string;
+    executionType: string;
+  }): Promise<void> => {
     const res = await axiosClient.post<unknown>('/execution/complete', body);
     throwIfApiFailureResponse(res.data, res.status);
   },
@@ -6523,11 +7821,15 @@ const growth = {
         ? (raw.dailyDirection as Record<string, unknown>)
         : {};
     const continuationStateRaw =
-      raw.continuationState !== null && typeof raw.continuationState === 'object'
+      raw.continuationState !== null &&
+      typeof raw.continuationState === 'object'
         ? (raw.continuationState as Record<string, unknown>)
         : {};
     return {
-      generatedAt: typeof raw.generatedAt === 'string' ? raw.generatedAt : new Date().toISOString(),
+      generatedAt:
+        typeof raw.generatedAt === 'string'
+          ? raw.generatedAt
+          : new Date().toISOString(),
       identitySignal:
         typeof raw.identitySignal === 'string' && raw.identitySignal.trim()
           ? raw.identitySignal
@@ -6537,16 +7839,26 @@ const growth = {
           typeof dailyDirectionRaw.primaryPriorityId === 'string'
             ? dailyDirectionRaw.primaryPriorityId
             : null,
-        recommendedPriorityIds: ensureArray<unknown>(dailyDirectionRaw.recommendedPriorityIds).filter(
+        recommendedPriorityIds: ensureArray<unknown>(
+          dailyDirectionRaw.recommendedPriorityIds,
+        ).filter(
           (x): x is string => typeof x === 'string' && x.trim().length > 0,
         ),
         progressContext:
-          typeof dailyDirectionRaw.progressContext === 'string' ? dailyDirectionRaw.progressContext : null,
-        impactLabel: typeof dailyDirectionRaw.impactLabel === 'string' ? dailyDirectionRaw.impactLabel : null,
+          typeof dailyDirectionRaw.progressContext === 'string'
+            ? dailyDirectionRaw.progressContext
+            : null,
+        impactLabel:
+          typeof dailyDirectionRaw.impactLabel === 'string'
+            ? dailyDirectionRaw.impactLabel
+            : null,
       },
       continuationState: {
         hasNew: continuationStateRaw.hasNew === true,
-        message: typeof continuationStateRaw.message === 'string' ? continuationStateRaw.message : null,
+        message:
+          typeof continuationStateRaw.message === 'string'
+            ? continuationStateRaw.message
+            : null,
         suggestedPriorityId:
           typeof continuationStateRaw.suggestedPriorityId === 'string'
             ? continuationStateRaw.suggestedPriorityId
@@ -6561,12 +7873,18 @@ const growth = {
             ? continuationStateRaw.estimatedMinutesLeft
             : null,
         urgencyLabel:
-          typeof continuationStateRaw.urgencyLabel === 'string' ? continuationStateRaw.urgencyLabel : null,
+          typeof continuationStateRaw.urgencyLabel === 'string'
+            ? continuationStateRaw.urgencyLabel
+            : null,
       },
     };
   },
-  getProgress: async (window: GrowthProgressWindow = 'weekly'): Promise<GrowthProgress> => {
-    const res = await axiosClient.get<unknown>('/growth/progress', { params: { window } });
+  getProgress: async (
+    window: GrowthProgressWindow = 'weekly',
+  ): Promise<GrowthProgress> => {
+    const res = await axiosClient.get<unknown>('/growth/progress', {
+      params: { window },
+    });
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data) as Record<string, unknown>;
     const metrics =
@@ -6574,16 +7892,32 @@ const growth = {
         ? (raw.metrics as Record<string, unknown>)
         : {};
     const resolvedWindow =
-      raw.window === 'daily' || raw.window === 'weekly' || raw.window === 'monthly' ? raw.window : window;
+      raw.window === 'daily' ||
+      raw.window === 'weekly' ||
+      raw.window === 'monthly'
+        ? raw.window
+        : window;
     return {
       window: resolvedWindow,
       from: typeof raw.from === 'string' ? raw.from : '',
       to: typeof raw.to === 'string' ? raw.to : '',
       metrics: {
-        jobsProgressed: typeof metrics.jobsProgressed === 'number' ? metrics.jobsProgressed : 0,
-        followUpsCompleted: typeof metrics.followUpsCompleted === 'number' ? metrics.followUpsCompleted : 0,
-        matchQualityAvg: typeof metrics.matchQualityAvg === 'number' ? metrics.matchQualityAvg : 0,
-        matchQualityDelta: typeof metrics.matchQualityDelta === 'number' ? metrics.matchQualityDelta : 0,
+        jobsProgressed:
+          typeof metrics.jobsProgressed === 'number'
+            ? metrics.jobsProgressed
+            : 0,
+        followUpsCompleted:
+          typeof metrics.followUpsCompleted === 'number'
+            ? metrics.followUpsCompleted
+            : 0,
+        matchQualityAvg:
+          typeof metrics.matchQualityAvg === 'number'
+            ? metrics.matchQualityAvg
+            : 0,
+        matchQualityDelta:
+          typeof metrics.matchQualityDelta === 'number'
+            ? metrics.matchQualityDelta
+            : 0,
       },
     };
   },
@@ -6592,23 +7926,34 @@ const growth = {
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data) as Record<string, unknown>;
     const items = ensureArray<unknown>(raw.items)
-      .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
+      .filter(
+        (x): x is Record<string, unknown> =>
+          x !== null && typeof x === 'object' && !Array.isArray(x),
+      )
       .map((item) => ({
         id: typeof item.id === 'string' ? item.id : '',
-        title: typeof item.title === 'string' ? item.title : 'Continue progress',
+        title:
+          typeof item.title === 'string' ? item.title : 'Continue progress',
         message: typeof item.message === 'string' ? item.message : '',
-        actionLabel: typeof item.actionLabel === 'string' ? item.actionLabel : 'Continue',
+        actionLabel:
+          typeof item.actionLabel === 'string' ? item.actionLabel : 'Continue',
         route: typeof item.route === 'string' ? item.route : '/dashboard',
         relevanceScore:
-          typeof item.relevanceScore === 'number' && Number.isFinite(item.relevanceScore)
+          typeof item.relevanceScore === 'number' &&
+          Number.isFinite(item.relevanceScore)
             ? item.relevanceScore
             : 0,
-        updatedAt: typeof item.updatedAt === 'string' ? item.updatedAt : new Date().toISOString(),
+        updatedAt:
+          typeof item.updatedAt === 'string'
+            ? item.updatedAt
+            : new Date().toISOString(),
       }))
       .filter((item) => item.id.trim().length > 0);
     return { items };
   },
-  getImmediateFeedback: async (): Promise<{ feedback: GrowthImmediateFeedback | null }> => {
+  getImmediateFeedback: async (): Promise<{
+    feedback: GrowthImmediateFeedback | null;
+  }> => {
     const res = await axiosClient.get<unknown>('/growth/immediate-feedback');
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data) as Record<string, unknown>;
@@ -6619,9 +7964,14 @@ const growth = {
       feedback: {
         id: typeof feedback.id === 'string' ? feedback.id : '',
         message: typeof feedback.message === 'string' ? feedback.message : '',
-        createdAt: typeof feedback.createdAt === 'string' ? feedback.createdAt : new Date().toISOString(),
+        createdAt:
+          typeof feedback.createdAt === 'string'
+            ? feedback.createdAt
+            : new Date().toISOString(),
         metadata:
-          feedback.metadata !== null && typeof feedback.metadata === 'object' && !Array.isArray(feedback.metadata)
+          feedback.metadata !== null &&
+          typeof feedback.metadata === 'object' &&
+          !Array.isArray(feedback.metadata)
             ? (feedback.metadata as Record<string, unknown>)
             : {},
       },
@@ -6632,7 +7982,10 @@ const growth = {
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data) as Record<string, unknown>;
     const items = ensureArray<unknown>(raw.items)
-      .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
+      .filter(
+        (x): x is Record<string, unknown> =>
+          x !== null && typeof x === 'object' && !Array.isArray(x),
+      )
       .map((item) => {
         const sharePayload =
           item.sharePayload !== null && typeof item.sharePayload === 'object'
@@ -6647,25 +8000,42 @@ const growth = {
             item.type === 'pipeline_progress'
               ? item.type
               : 'pipeline_progress',
-          title: typeof item.title === 'string' ? item.title : 'Achievement unlocked',
+          title:
+            typeof item.title === 'string'
+              ? item.title
+              : 'Achievement unlocked',
           subtitle: typeof item.subtitle === 'string' ? item.subtitle : '',
           metricValue:
-            typeof item.metricValue === 'number' && Number.isFinite(item.metricValue) ? item.metricValue : null,
+            typeof item.metricValue === 'number' &&
+            Number.isFinite(item.metricValue)
+              ? item.metricValue
+              : null,
           sharePayload: {
-            badge: typeof sharePayload.badge === 'string' ? sharePayload.badge : 'Achievement',
+            badge:
+              typeof sharePayload.badge === 'string'
+                ? sharePayload.badge
+                : 'Achievement',
             value:
-              typeof sharePayload.value === 'number' && Number.isFinite(sharePayload.value)
+              typeof sharePayload.value === 'number' &&
+              Number.isFinite(sharePayload.value)
                 ? sharePayload.value
                 : null,
-            note: typeof sharePayload.note === 'string' ? sharePayload.note : '',
+            note:
+              typeof sharePayload.note === 'string' ? sharePayload.note : '',
           },
-          createdAt: typeof item.createdAt === 'string' ? item.createdAt : new Date().toISOString(),
+          createdAt:
+            typeof item.createdAt === 'string'
+              ? item.createdAt
+              : new Date().toISOString(),
         } satisfies GrowthAchievement;
       })
       .filter((item) => item.id.trim().length > 0);
     return { items };
   },
-  trackEvent: async (payload: { eventName: GrowthEventName; context?: Record<string, unknown> }) => {
+  trackEvent: async (payload: {
+    eventName: GrowthEventName;
+    context?: Record<string, unknown>;
+  }) => {
     try {
       const res = await axiosClient.post<unknown>('/growth/events', payload);
       throwIfApiFailureResponse(res.data, res.status);
@@ -6741,7 +8111,9 @@ const analytics = {
     }
   },
   getFunnels: async (action: 'apply' | 'jobboard_discovery' = 'apply') => {
-    const res = await axiosClient.get<unknown>('/analytics/funnels', { params: { action } });
+    const res = await axiosClient.get<unknown>('/analytics/funnels', {
+      params: { action },
+    });
     throwIfApiFailureResponse(res.data, res.status);
     return unwrapApiDataEnvelope(res.data);
   },
@@ -6768,6 +8140,9 @@ const interviews = {
     stressLevel?: number;
     stressMode?: boolean;
     questionTimeLimitSec?: number;
+    coachingEnabled?: boolean;
+    coachingIntensity?: 'light' | 'standard' | 'intensive';
+    coachingMode?: 'real_time' | 'on_demand';
   }): Promise<InterviewSession> => {
     const res = await axiosClient.post<unknown>('/interviews', payload);
     throwIfApiFailureResponse(res.data, res.status);
@@ -6802,10 +8177,15 @@ const interviews = {
     sessionId: string;
     evaluationStatus?: 'queued' | 'processing' | 'completed' | 'failed';
   }> => {
-    const res = await axiosClient.post<unknown>(`/interviews/${sessionId}/submit`, {
-      answers,
-      ...(options?.idempotencyKey ? { idempotencyKey: options.idempotencyKey } : {}),
-    });
+    const res = await axiosClient.post<unknown>(
+      `/interviews/${sessionId}/submit`,
+      {
+        answers,
+        ...(options?.idempotencyKey
+          ? { idempotencyKey: options.idempotencyKey }
+          : {}),
+      },
+    );
     throwIfApiFailureResponse(res.data, res.status);
     return unwrapApiDataEnvelope(res.data) as unknown as {
       message: string;
@@ -6813,10 +8193,15 @@ const interviews = {
       evaluationStatus?: 'queued' | 'processing' | 'completed' | 'failed';
     };
   },
-  getResult: async (sessionId: string): Promise<InterviewEvaluationPollState> => {
-    const res = await axiosClient.get<unknown>(`/interviews/${sessionId}/result`, {
-      validateStatus: (s) => s === 200 || s === 202 || s === 404,
-    });
+  getResult: async (
+    sessionId: string,
+  ): Promise<InterviewEvaluationPollState> => {
+    const res = await axiosClient.get<unknown>(
+      `/interviews/${sessionId}/result`,
+      {
+        validateStatus: (s) => s === 200 || s === 202 || s === 404,
+      },
+    );
     const raw = unwrapApiDataEnvelope(res.data);
     return parseInterviewResultPoll(res.status, raw ?? res.data);
   },
@@ -6828,7 +8213,10 @@ const interviews = {
     sessionId: string;
     message: string;
   }> => {
-    const res = await axiosClient.post<unknown>(`/interviews/${sessionId}/retry-evaluation`, {});
+    const res = await axiosClient.post<unknown>(
+      `/interviews/${sessionId}/retry-evaluation`,
+      {},
+    );
     throwIfApiFailureResponse(res.data, res.status);
     return unwrapApiDataEnvelope(res.data) as unknown as {
       evaluationStatus: 'queued' | 'processing';
@@ -6854,11 +8242,16 @@ const career = {
       const form = new FormData();
       form.append('linkedinPostUrl', payload.linkedinPostUrl);
       if (payload.jobId?.trim()) form.append('jobId', payload.jobId.trim());
-      if (payload.screenshotUrl?.trim()) form.append('screenshotUrl', payload.screenshotUrl.trim());
+      if (payload.screenshotUrl?.trim())
+        form.append('screenshotUrl', payload.screenshotUrl.trim());
       form.append('screenshot', payload.screenshotFile);
-      const res = await axiosClient.post<unknown>('/career/verification/submit', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const res = await axiosClient.post<unknown>(
+        '/career/verification/submit',
+        form,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        },
+      );
       throwIfApiFailureResponse(res.data, res.status);
       return parseVerificationSubmitResult(res.data);
     }
@@ -6892,4 +8285,3 @@ export const api = {
   careerGoals,
   career,
 };
-

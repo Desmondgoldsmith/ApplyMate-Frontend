@@ -39,18 +39,19 @@ export function TailorCvBuilderPane({
   const profileQ = useCVProfileById(profileId);
   const [serverHydrateNonce, setServerHydrateNonce] = useState(0);
   const jumpToSectionRef = useRef<
-    ((sid: string, itemId?: string, opts?: { scrollForm?: boolean }) => void) | null
+    | ((sid: string, itemId?: string, opts?: { scrollForm?: boolean }) => void)
+    | null
   >(null);
 
   const profile = profileQ.data?.profile;
   const sections = useMemo(
-    () => pickCvSectionRowsForEditor(profileQ.data?.sections, profile?.sections),
-    [profileQ.data?.sections, profile?.sections],
+    () => pickCvSectionRowsForEditor(profileQ.data?.sections, undefined),
+    [profileQ.data?.sections],
   );
 
   const initialData = useMemo(
     () =>
-      transformSectionsToCVBuilderData(profile, sections, {
+      transformSectionsToCVBuilderData(profile ?? null, sections, {
         email: user?.email,
         name: user?.name,
       }),

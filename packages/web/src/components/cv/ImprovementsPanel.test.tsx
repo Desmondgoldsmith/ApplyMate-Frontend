@@ -10,7 +10,11 @@ const reconcileAfterMutationFn = vi.hoisted(() => vi.fn(() => 2));
 vi.mock('@/hooks/useCvSuggestionMutations', () => ({
   useCvSuggestionMutations: () => ({
     reconcileAfterMutation: reconcileAfterMutationFn,
-    suggestionsQueryKey: (id: string | null | undefined) => ['cv', 'suggestions', id],
+    suggestionsQueryKey: (id: string | null | undefined) => [
+      'cv',
+      'suggestions',
+      id,
+    ],
   }),
 }));
 
@@ -42,7 +46,9 @@ const { applyImprovement, rejectSuggestion } = vi.hoisted(() => ({
     draftHash: null,
     message: '',
   }),
-  rejectSuggestion: vi.fn().mockResolvedValue({ pendingSuggestionsCount: 0, cvRevisionId: null }),
+  rejectSuggestion: vi
+    .fn()
+    .mockResolvedValue({ pendingSuggestionsCount: 0, cvRevisionId: null }),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -78,12 +84,16 @@ describe('ImprovementsPanel', () => {
   it('Apply with AI calls applyImprovement and opens diff preview', async () => {
     const user = userEvent.setup();
     const onDiffPreview = vi.fn();
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
 
     render(
       <QueryClientProvider client={qc}>
         <ImprovementsPanel
-          improvements={[{ id: 'imp-1', issue: 'Improve headline', resolved: false }]}
+          improvements={[
+            { id: 'imp-1', issue: 'Improve headline', resolved: false },
+          ]}
           onDiffPreview={onDiffPreview}
         />
       </QueryClientProvider>,
@@ -102,7 +112,9 @@ describe('ImprovementsPanel', () => {
 
   it('does not fire a second applyImprovement while the first request is still pending', async () => {
     const user = userEvent.setup();
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     let resolveApply: (value: unknown) => void;
     const applyPromise = new Promise((resolve) => {
       resolveApply = resolve;
@@ -112,7 +124,9 @@ describe('ImprovementsPanel', () => {
     render(
       <QueryClientProvider client={qc}>
         <ImprovementsPanel
-          improvements={[{ id: 'imp-1', issue: 'Improve headline', resolved: false }]}
+          improvements={[
+            { id: 'imp-1', issue: 'Improve headline', resolved: false },
+          ]}
           onDiffPreview={vi.fn()}
         />
       </QueryClientProvider>,
@@ -141,7 +155,9 @@ describe('ImprovementsPanel', () => {
   it('duplicateSuppressed without terminal flags keeps the row pending and opens cached preview', async () => {
     const user = userEvent.setup();
     const onDiffPreview = vi.fn();
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     qc.setQueryData(['cv', 'suggestions', 'p1'], {
       improvements: [
         { id: 'imp-1', issue: 'A', resolved: false },
@@ -179,14 +195,15 @@ describe('ImprovementsPanel', () => {
 
     await user.click(screen.getByRole('button', { name: /apply with ai/i }));
 
-    expect(toastInfo).toHaveBeenCalledWith(expect.stringContaining('saved preview'));
+    expect(toastInfo).toHaveBeenCalledWith(
+      expect.stringContaining('saved preview'),
+    );
     expect(toastSuccess).not.toHaveBeenCalled();
     expect(onDiffPreview).toHaveBeenCalled();
-    const data = qc.getQueryData<{ improvements: { id?: string }[]; pendingSuggestionsCount?: number }>([
-      'cv',
-      'suggestions',
-      'p1',
-    ]);
+    const data = qc.getQueryData<{
+      improvements: { id?: string }[];
+      pendingSuggestionsCount?: number;
+    }>(['cv', 'suggestions', 'p1']);
     expect(data?.improvements?.map((i) => i.id)).toEqual(['imp-1', 'imp-2']);
     expect(data?.pendingSuggestionsCount).toBe(2);
   });
@@ -194,7 +211,9 @@ describe('ImprovementsPanel', () => {
   it('cacheHit without queue-clear flags still opens diff preview', async () => {
     const user = userEvent.setup();
     const onDiffPreview = vi.fn();
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     applyImprovement.mockResolvedValue({
       success: true,
       pointer: 'imp-1',
@@ -211,7 +230,9 @@ describe('ImprovementsPanel', () => {
     render(
       <QueryClientProvider client={qc}>
         <ImprovementsPanel
-          improvements={[{ id: 'imp-1', issue: 'Improve headline', resolved: false }]}
+          improvements={[
+            { id: 'imp-1', issue: 'Improve headline', resolved: false },
+          ]}
           onDiffPreview={onDiffPreview}
         />
       </QueryClientProvider>,
@@ -219,7 +240,9 @@ describe('ImprovementsPanel', () => {
 
     await user.click(screen.getByRole('button', { name: /apply with ai/i }));
 
-    expect(toastInfo).toHaveBeenCalledWith(expect.stringMatching(/previously generated preview/i));
+    expect(toastInfo).toHaveBeenCalledWith(
+      expect.stringMatching(/previously generated preview/i),
+    );
     expect(onDiffPreview).toHaveBeenCalledWith(
       expect.objectContaining({
         performance: expect.objectContaining({ cacheHit: true }),
@@ -236,19 +259,25 @@ describe('ImprovementsPanel', () => {
         }),
     );
     const user = userEvent.setup();
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
 
     render(
       <QueryClientProvider client={qc}>
         <ImprovementsPanel
-          improvements={[{ id: 'imp-1', issue: 'Improve headline', resolved: false }]}
+          improvements={[
+            { id: 'imp-1', issue: 'Improve headline', resolved: false },
+          ]}
           onDiffPreview={vi.fn()}
         />
       </QueryClientProvider>,
     );
 
     await user.click(screen.getByRole('button', { name: /apply with ai/i }));
-    expect(screen.getByRole('button', { name: /Analyzing your experience/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Analyzing your experience/i }),
+    ).toBeInTheDocument();
 
     await act(async () => {
       resolveApply!({
@@ -263,13 +292,17 @@ describe('ImprovementsPanel', () => {
         message: '',
       });
     });
-    expect(screen.getByRole('button', { name: /^apply with ai$/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /^apply with ai$/i }),
+    ).toBeInTheDocument();
   });
 
   it('autoResolved removes the suggestion from cache and skips diff preview', async () => {
     const user = userEvent.setup();
     const onDiffPreview = vi.fn();
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     qc.setQueryData(['cv', 'suggestions', 'p1'], {
       improvements: [{ id: 'imp-1', issue: 'T', resolved: false }],
       pendingSuggestionsCount: 1,
@@ -292,7 +325,9 @@ describe('ImprovementsPanel', () => {
       <QueryClientProvider client={qc}>
         <ImprovementsPanel
           profileId="p1"
-          improvements={[{ id: 'imp-1', issue: 'Improve headline', resolved: false }]}
+          improvements={[
+            { id: 'imp-1', issue: 'Improve headline', resolved: false },
+          ]}
           onDiffPreview={onDiffPreview}
         />
       </QueryClientProvider>,
@@ -300,13 +335,14 @@ describe('ImprovementsPanel', () => {
 
     await user.click(screen.getByRole('button', { name: /apply with ai/i }));
 
-    expect(toastSuccess).toHaveBeenCalledWith('This improvement is already reflected in your CV.');
+    expect(toastSuccess).toHaveBeenCalledWith(
+      'This improvement is already reflected in your CV.',
+    );
     expect(onDiffPreview).not.toHaveBeenCalled();
-    const data = qc.getQueryData<{ improvements: { id?: string }[]; pendingSuggestionsCount?: number }>([
-      'cv',
-      'suggestions',
-      'p1',
-    ]);
+    const data = qc.getQueryData<{
+      improvements: { id?: string }[];
+      pendingSuggestionsCount?: number;
+    }>(['cv', 'suggestions', 'p1']);
     expect(data?.improvements ?? []).toHaveLength(0);
     expect(data?.pendingSuggestionsCount).toBe(0);
   });
@@ -314,7 +350,9 @@ describe('ImprovementsPanel', () => {
   it('alreadyApplied and autoResolved uses handoff success copy and removes the row', async () => {
     const user = userEvent.setup();
     const onDiffPreview = vi.fn();
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     qc.setQueryData(['cv', 'suggestions', 'p1'], {
       improvements: [{ id: 'imp-1', issue: 'T', resolved: false }],
       pendingSuggestionsCount: 1,
@@ -338,7 +376,9 @@ describe('ImprovementsPanel', () => {
       <QueryClientProvider client={qc}>
         <ImprovementsPanel
           profileId="p1"
-          improvements={[{ id: 'imp-1', issue: 'Improve headline', resolved: false }]}
+          improvements={[
+            { id: 'imp-1', issue: 'Improve headline', resolved: false },
+          ]}
           onDiffPreview={onDiffPreview}
         />
       </QueryClientProvider>,
@@ -346,14 +386,18 @@ describe('ImprovementsPanel', () => {
 
     await user.click(screen.getByRole('button', { name: /apply with ai/i }));
 
-    expect(toastSuccess).toHaveBeenCalledWith('Applied — your CV already matched this suggestion.');
+    expect(toastSuccess).toHaveBeenCalledWith(
+      'Applied — your CV already matched this suggestion.',
+    );
     expect(onDiffPreview).not.toHaveBeenCalled();
   });
 
   it('alreadyApplied removes item from cache, updates pending count, shows success toast, skips preview', async () => {
     const user = userEvent.setup();
     const onDiffPreview = vi.fn();
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     qc.setQueryData(['cv', 'suggestions', 'p1'], {
       improvements: [
         { id: 'imp-1', issue: 'T', resolved: false },
@@ -390,20 +434,23 @@ describe('ImprovementsPanel', () => {
 
     await user.click(screen.getByRole('button', { name: /apply with ai/i }));
 
-    expect(toastSuccess).toHaveBeenCalledWith('This improvement is already reflected in your CV.');
+    expect(toastSuccess).toHaveBeenCalledWith(
+      'This improvement is already reflected in your CV.',
+    );
     expect(onDiffPreview).not.toHaveBeenCalled();
-    const data = qc.getQueryData<{ improvements: { id?: string }[]; pendingSuggestionsCount?: number }>([
-      'cv',
-      'suggestions',
-      'p1',
-    ]);
+    const data = qc.getQueryData<{
+      improvements: { id?: string }[];
+      pendingSuggestionsCount?: number;
+    }>(['cv', 'suggestions', 'p1']);
     expect(data?.improvements?.map((i) => i.id)).toEqual(['imp-2']);
     expect(data?.pendingSuggestionsCount).toBe(1);
   });
 
   it('reject idempotent shows neutral success copy', async () => {
     const user = userEvent.setup();
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     const refetchSpy = vi.spyOn(qc, 'refetchQueries');
     qc.setQueryData(['cv', 'suggestions', 'p1'], {
       improvements: [{ id: 'imp-1', issue: 'T', resolved: false }],
@@ -419,7 +466,9 @@ describe('ImprovementsPanel', () => {
       <QueryClientProvider client={qc}>
         <ImprovementsPanel
           profileId="p1"
-          improvements={[{ id: 'imp-1', issue: 'Improve headline', resolved: false }]}
+          improvements={[
+            { id: 'imp-1', issue: 'Improve headline', resolved: false },
+          ]}
         />
       </QueryClientProvider>,
     );
@@ -427,10 +476,16 @@ describe('ImprovementsPanel', () => {
     await user.click(screen.getByRole('button', { name: /mark as done/i }));
 
     expect(toastSuccess).toHaveBeenCalledWith('Already dismissed.');
-    expect(vi.mocked(reconcileAfterMutationFn).mock.calls[0]?.[0]).toBe('p1');
-    expect(vi.mocked(reconcileAfterMutationFn).mock.calls[0]?.[1]).toBe('queueOnly');
+    const reconcileCalls = vi.mocked(reconcileAfterMutationFn).mock
+      .calls as unknown as [string, string][];
+    expect(reconcileCalls[0]?.[0]).toBe('p1');
+    expect(reconcileCalls[0]?.[1]).toBe('queueOnly');
     expect(refetchSpy).not.toHaveBeenCalled();
-    const data = qc.getQueryData<{ improvements: { id?: string }[] }>(['cv', 'suggestions', 'p1']);
+    const data = qc.getQueryData<{ improvements: { id?: string }[] }>([
+      'cv',
+      'suggestions',
+      'p1',
+    ]);
     expect(data?.improvements ?? []).toHaveLength(0);
   });
 });

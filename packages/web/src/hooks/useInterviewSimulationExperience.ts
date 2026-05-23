@@ -2,7 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import type { PrepMode, SimulationState, TurnAnswerResponse } from '@/lib/interview-prep-types';
+import type {
+  PrepMode,
+  SimulationState,
+  TurnAnswerResponse,
+} from '@/lib/interview-prep-types';
 import { isSimulationMode } from '@/lib/interview-prep-types';
 import {
   mergeSimulationSnapshot,
@@ -29,7 +33,13 @@ export function useInterviewSimulationExperience(options: {
   lastFeedback: TurnAnswerResponse | null;
   simState?: SimulationState | null;
 }) {
-  const { sessionId, prepMode, enabled = true, lastFeedback, simState } = options;
+  const {
+    sessionId,
+    prepMode,
+    enabled = true,
+    lastFeedback,
+    simState,
+  } = options;
   const active = enabled && isSimulationMode(prepMode as PrepMode);
 
   const merged = useMemo(() => {
@@ -54,7 +64,9 @@ export function useInterviewSimulationExperience(options: {
 
   const [displayIntensity, setDisplayIntensity] = useState(28);
   const [showPressureMeter, setShowPressureMeter] = useState(false);
-  const [interruptionAlert, setInterruptionAlert] = useState<string | null>(null);
+  const [interruptionAlert, setInterruptionAlert] = useState<string | null>(
+    null,
+  );
 
   const throttleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTargetRef = useRef(28);
@@ -84,7 +96,9 @@ export function useInterviewSimulationExperience(options: {
       lastTargetRef.current = target;
       setDisplayIntensity(target);
       setShowPressureMeter(
-        tier !== 'low' || target >= 38 || Math.abs(target - prev) >= PRESSURE_DELTA_MIN,
+        tier !== 'low' ||
+          target >= 38 ||
+          Math.abs(target - prev) >= PRESSURE_DELTA_MIN,
       );
     };
 
@@ -100,8 +114,7 @@ export function useInterviewSimulationExperience(options: {
     const turnKey = lastFeedback?.turn?.id;
     if (!turnKey || interruptionTurnRef.current === turnKey) return;
     interruptionTurnRef.current = turnKey;
-    const msg =
-      merged.interruption.message ?? 'Interviewer is following up…';
+    const msg = merged.interruption.message ?? 'Interviewer is following up…';
     setInterruptionAlert(msg);
     const t = setTimeout(() => setInterruptionAlert(null), 1200);
     return () => clearTimeout(t);
@@ -123,7 +136,7 @@ export function useInterviewSimulationExperience(options: {
         showPressureMeter: false,
         pacingMultiplier: 1,
         nextQuestionDifficulty: 3,
-        signals: [] as const,
+        signals: [] as import('@/lib/interview-prep-types').SimulationSignal[],
         reactionText: null as string | null,
         nudgeMessage: null as string | null,
         avatarDemeanor: 'neutral' as AvatarDemeanor,
@@ -144,7 +157,10 @@ export function useInterviewSimulationExperience(options: {
     return {
       active: true as const,
       emotion: normalizeEmotion(merged.emotion),
-      pressureTier: normalizePressureTier(merged.pressureTier, simState?.pressureLevel),
+      pressureTier: normalizePressureTier(
+        merged.pressureTier,
+        simState?.pressureLevel,
+      ),
       pressureIntensity: merged.pressureIntensity,
       displayPressureIntensity: displayIntensity,
       showPressureMeter,

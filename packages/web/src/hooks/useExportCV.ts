@@ -36,6 +36,7 @@ export function useExportCV() {
       jobAnalysisId,
       namingFallback,
       profileForNaming,
+      profileDisplayName,
     }: {
       format: 'pdf' | 'docx';
       template?: string;
@@ -65,7 +66,9 @@ export function useExportCV() {
           ? 'application/pdf'
           : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
       const typed =
-        blob.type && blob.type !== 'application/octet-stream' ? blob : new Blob([blob], { type: mime });
+        blob.type && blob.type !== 'application/octet-stream'
+          ? blob
+          : new Blob([blob], { type: mime });
 
       const resolvedNaming =
         namingFallback ??
