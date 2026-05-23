@@ -18,12 +18,21 @@ import { CoachingSetupControls } from '@/components/interview/coaching/CoachingC
 import { SpeakingSpeedSlider } from '@/components/interview/SpeakingSpeedSlider';
 import { ProgressTimeline } from '@/components/interview/results/ProgressTimeline';
 import { useCVProfiles } from '@/hooks/useCVProfiles';
-import { useCreateInterview, useInterviewSessions } from '@/hooks/useInterviews';
-import { useCreateSimulateSession, useInterviewPrepProgress } from '@/hooks/useInterviewPrep';
+import {
+  useCreateInterview,
+  useInterviewSessions,
+} from '@/hooks/useInterviews';
+import {
+  useCreateSimulateSession,
+  useInterviewPrepProgress,
+} from '@/hooks/useInterviewPrep';
 import { api, type InterviewPersonality, type InterviewType } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
 import { PersonaSelectorCard } from '@/components/interview/personality/PersonaSelectorCard';
-import type { CoachingIntensity, InterviewMode } from '@/lib/interview-prep-types';
+import type {
+  CoachingIntensity,
+  InterviewMode,
+} from '@/lib/interview-prep-types';
 import { DEFAULT_COACHING_SETTINGS } from '@/lib/interview-prep-types';
 import { scoreFromSessionWithCachedResult } from '@/lib/interviewDisplayScore';
 import type { InterviewEvaluationPollState } from '@/lib/interviewEvaluationPoll';
@@ -85,23 +94,29 @@ export function InterviewSetupStepper() {
   const [adaptiveDifficulty, setAdaptiveDifficulty] = useState(
     () => params.get('adaptive') !== '0',
   );
-  const [simulationSelection, setSimulationSelection] = useState<SimulationCardMode | null>(null);
+  const [simulationSelection, setSimulationSelection] =
+    useState<SimulationCardMode | null>(null);
   const [simStressLevel, setSimStressLevel] = useState(2);
   const [questionTimeLimitSec, setQuestionTimeLimitSec] = useState(120);
   const [entryMode, setEntryMode] = useState<InterviewMode>('job_based');
   const [personality, setPersonality] = useState<InterviewPersonality>('alex');
-  const [interviewPersona, setInterviewPersona] = useState<InterviewPersonaId>('friendly_coach');
+  const [interviewPersona, setInterviewPersona] =
+    useState<InterviewPersonaId>('friendly_coach');
   const [selectedProfileId, setSelectedProfileId] = useState('');
   const [company, setCompany] = useState(params.get('company') ?? '');
   const [jobDescription, setJobDescription] = useState('');
   const [interviewType, setInterviewType] = useState<InterviewType>('mixed');
   const [totalQuestions, setTotalQuestions] = useState(7);
   const [speakingSpeed, setSpeakingSpeed] = useState(1);
-  const [coachingEnabled, setCoachingEnabled] = useState(DEFAULT_COACHING_SETTINGS.enabled);
+  const [coachingEnabled, setCoachingEnabled] = useState(
+    DEFAULT_COACHING_SETTINGS.enabled,
+  );
   const [coachingIntensity, setCoachingIntensity] = useState<CoachingIntensity>(
     DEFAULT_COACHING_SETTINGS.intensity,
   );
-  const [targetRoleTitle, setTargetRoleTitle] = useState(() => params.get('jobTitle')?.trim() ?? '');
+  const [targetRoleTitle, setTargetRoleTitle] = useState(
+    () => params.get('jobTitle')?.trim() ?? '',
+  );
   const [startError, setStartError] = useState<string | null>(null);
 
   const jobAnalysisId = (params.get('jobAnalysisId') ?? '').trim();
@@ -121,7 +136,10 @@ export function InterviewSetupStepper() {
     interviewPersona === 'silent_observer'
       ? `Hi, I'm ${selectedPersona.personName}. I'll observe while you answer — you'll receive full feedback after the session.`
       : selectedAvatar.greetingMessage;
-  const historyRows = useMemo(() => (sessionsQ.data ?? []).slice(0, 3), [sessionsQ.data]);
+  const historyRows = useMemo(
+    () => (sessionsQ.data ?? []).slice(0, 3),
+    [sessionsQ.data],
+  );
 
   const effectiveCvId = useMemo(() => {
     if (selectedProfileId) return selectedProfileId;
@@ -146,13 +164,28 @@ export function InterviewSetupStepper() {
     if (desc && !jobDescription.trim()) setJobDescription(desc);
     setEntryMode('job_based');
     lastAutoJobContextRef.current = jobAnalysisId;
-  }, [company, jobAnalysisId, jobDescription, linkedJobQ.data, targetRoleTitle]);
+  }, [
+    company,
+    jobAnalysisId,
+    jobDescription,
+    linkedJobQ.data,
+    targetRoleTitle,
+  ]);
 
   useEffect(() => {
-    if (!jobAnalysisId || !linkedJobQ.data || lastAutoSelectedCvRef.current === jobAnalysisId) return;
-    const analysis = linkedJobQ.data.analysis as Record<string, unknown> | undefined;
+    if (
+      !jobAnalysisId ||
+      !linkedJobQ.data ||
+      lastAutoSelectedCvRef.current === jobAnalysisId
+    )
+      return;
+    const analysis = linkedJobQ.data.analysis as
+      | Record<string, unknown>
+      | undefined;
     const fromJob = [
-      typeof analysis?.tailoredCvProfileId === 'string' ? analysis.tailoredCvProfileId : '',
+      typeof analysis?.tailoredCvProfileId === 'string'
+        ? analysis.tailoredCvProfileId
+        : '',
       typeof analysis?.cvProfileId === 'string' ? analysis.cvProfileId : '',
     ]
       .map((s) => s.trim())
@@ -173,7 +206,9 @@ export function InterviewSetupStepper() {
   const startInterview = useCallback(() => {
     setStartError(null);
     if (!effectiveCvId) {
-      setStartError('Add a CV profile first — open CV Builder and create one, then return here.');
+      setStartError(
+        'Add a CV profile first — open CV Builder and create one, then return here.',
+      );
       return;
     }
     const jd =
@@ -192,9 +227,13 @@ export function InterviewSetupStepper() {
           mode: simulationSelection,
           cvProfileId: effectiveCvId || undefined,
           jobAnalysisId: jobAnalysisId || undefined,
-          jobTitle: targetRoleTitle.trim() || linkedJobQ.data?.title?.trim() || undefined,
+          jobTitle:
+            targetRoleTitle.trim() ||
+            linkedJobQ.data?.title?.trim() ||
+            undefined,
           roleTitle: targetRoleTitle.trim() || undefined,
-          company: company.trim() || linkedJobQ.data?.company?.trim() || undefined,
+          company:
+            company.trim() || linkedJobQ.data?.company?.trim() || undefined,
           jobDescription: jd,
           stressLevel: simStressLevel as 1 | 2 | 3 | 4 | 5,
           stressMode: true,
@@ -202,7 +241,9 @@ export function InterviewSetupStepper() {
           totalQuestions: Math.min(12, totalQuestions),
           personality: selectedPersona.legacyAvatar,
           interviewPersona:
-            simulationSelection === 'hr_simulation' ? 'hr_interviewer' : 'strict_interviewer',
+            simulationSelection === 'hr_simulation'
+              ? 'hr_interviewer'
+              : 'strict_interviewer',
           speakingSpeed,
           coachingEnabled,
           coachingIntensity,
@@ -211,11 +252,16 @@ export function InterviewSetupStepper() {
         {
           onSuccess: (session) => {
             if (!session?.id) {
-              setStartError('Interview session was created but no session id was returned. Please try again.');
+              setStartError(
+                'Interview session was created but no session id was returned. Please try again.',
+              );
               return;
             }
             try {
-              sessionStorage.setItem('applymate:interview:user-gesture', String(Date.now()));
+              sessionStorage.setItem(
+                'applymate:interview:user-gesture',
+                String(Date.now()),
+              );
             } catch {
               /* ignore */
             }
@@ -233,9 +279,11 @@ export function InterviewSetupStepper() {
       {
         cvProfileId: effectiveCvId || undefined,
         jobAnalysisId: jobAnalysisId || undefined,
-        jobTitle: targetRoleTitle.trim() || linkedJobQ.data?.title?.trim() || undefined,
+        jobTitle:
+          targetRoleTitle.trim() || linkedJobQ.data?.title?.trim() || undefined,
         roleTitle: targetRoleTitle.trim() || undefined,
-        company: company.trim() || linkedJobQ.data?.company?.trim() || undefined,
+        company:
+          company.trim() || linkedJobQ.data?.company?.trim() || undefined,
         jobDescription: jd,
         interviewMode: inferredMode,
         interviewType,
@@ -252,11 +300,16 @@ export function InterviewSetupStepper() {
       {
         onSuccess: (session) => {
           if (!session?.id) {
-            setStartError('Interview session was created but no session id was returned. Please try again.');
+            setStartError(
+              'Interview session was created but no session id was returned. Please try again.',
+            );
             return;
           }
           try {
-            sessionStorage.setItem('applymate:interview:user-gesture', String(Date.now()));
+            sessionStorage.setItem(
+              'applymate:interview:user-gesture',
+              String(Date.now()),
+            );
           } catch {
             /* ignore */
           }
@@ -300,9 +353,11 @@ export function InterviewSetupStepper() {
   };
 
   return (
-    <div className="ip-page mx-auto max-w-4xl space-y-6 pb-10">
+    <div className="ip-page mx-auto max-w-4xl space-y-6 pb-10 max-lg:px-1 sm:px-0">
       <header>
-        <h1 className="text-[22px] font-bold text-[var(--text-primary)]">Interview Prep</h1>
+        <h1 className="text-[22px] font-bold text-[var(--text-primary)]">
+          Interview Prep
+        </h1>
         <p className="mt-1 text-sm text-[var(--text-secondary)]">
           Practice until interviews feel easy.
         </p>
@@ -317,18 +372,22 @@ export function InterviewSetupStepper() {
           Pressure-based practice that overrides adaptive mode.
         </p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          {(['hr_simulation', 'senior_interviewer_simulation'] as const).map((mode) => (
-            <SimulationModeCard
-              key={mode}
-              mode={mode}
-              selected={simulationSelection === mode}
-              stressLevel={simStressLevel}
-              onSelect={() =>
-                setSimulationSelection((prev) => (prev === mode ? null : mode))
-              }
-              onStressChange={setSimStressLevel}
-            />
-          ))}
+          {(['hr_simulation', 'senior_interviewer_simulation'] as const).map(
+            (mode) => (
+              <SimulationModeCard
+                key={mode}
+                mode={mode}
+                selected={simulationSelection === mode}
+                stressLevel={simStressLevel}
+                onSelect={() =>
+                  setSimulationSelection((prev) =>
+                    prev === mode ? null : mode,
+                  )
+                }
+                onStressChange={setSimStressLevel}
+              />
+            ),
+          )}
         </div>
         {simulationSelection ? (
           <label className="mt-4 block max-w-[560px]">
@@ -348,9 +407,14 @@ export function InterviewSetupStepper() {
         ) : null}
       </section>
 
-      <div id="interview-setup-wizard" className="ip-surface mx-auto max-w-[800px] overflow-hidden">
+      <div
+        id="interview-setup-wizard"
+        className="ip-surface mx-auto max-w-[800px] overflow-hidden max-lg:rounded-2xl"
+      >
         <div className="ip-wizard-header">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Interview preparation</h2>
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+            Interview preparation
+          </h2>
           <p className="mt-1 text-[13px] text-[var(--text-secondary)]">
             Practice with an AI interviewer tailored to your CV.
           </p>
@@ -359,7 +423,10 @@ export function InterviewSetupStepper() {
             Step {step + 1} of {STEPS.length}: {STEPS[step]}
           </p>
 
-          <nav className="ip-wizard-stepper hidden sm:flex" aria-label="Setup steps">
+          <nav
+            className="ip-wizard-stepper hidden sm:flex"
+            aria-label="Setup steps"
+          >
             {STEPS.map((label, i) => {
               const done = i < step;
               const active = i === step;
@@ -381,7 +448,13 @@ export function InterviewSetupStepper() {
                       <Check className="h-3 w-3" strokeWidth={3} />
                     </span>
                   ) : (
-                    <span className={cn('ip-step-dot', active && 'ip-step-dot-active')} aria-hidden>
+                    <span
+                      className={cn(
+                        'ip-step-dot',
+                        active && 'ip-step-dot-active',
+                      )}
+                      aria-hidden
+                    >
                       {i + 1}
                     </span>
                   )}
@@ -394,235 +467,270 @@ export function InterviewSetupStepper() {
         </div>
 
         <div key={step} className="ip-wizard-content ip-wizard-fade">
-        {step === 0 && (
-          <div className="space-y-4">
-            <p className="text-[15px] font-semibold text-[var(--text-primary)]">
-              How should we tailor questions?
-            </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {(
-                [
-                  {
-                    id: 'job_based' as const,
-                    title: 'Job-based interview',
-                    desc: 'Use a job description so questions match a real posting.',
-                    Icon: Briefcase,
-                  },
-                  {
-                    id: 'role_based' as const,
-                    title: 'Role-based interview',
-                    desc: 'Practice for a target role using your CV — no JD required.',
-                    Icon: Target,
-                  },
-                ] as const
-              ).map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => setEntryMode(opt.id)}
-                  className={cn('ip-option-card', entryMode === opt.id && 'ip-option-card-active')}
-                >
-                  {entryMode === opt.id ? (
-                    <span className="ip-option-check" aria-hidden>
-                      <Check className="h-3 w-3 text-[var(--bg-base)]" strokeWidth={3} />
+          {step === 0 && (
+            <div className="space-y-4">
+              <p className="text-[15px] font-semibold text-[var(--text-primary)]">
+                How should we tailor questions?
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {(
+                  [
+                    {
+                      id: 'job_based' as const,
+                      title: 'Job-based interview',
+                      desc: 'Use a job description so questions match a real posting.',
+                      Icon: Briefcase,
+                    },
+                    {
+                      id: 'role_based' as const,
+                      title: 'Role-based interview',
+                      desc: 'Practice for a target role using your CV — no JD required.',
+                      Icon: Target,
+                    },
+                  ] as const
+                ).map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setEntryMode(opt.id)}
+                    className={cn(
+                      'ip-option-card',
+                      entryMode === opt.id && 'ip-option-card-active',
+                    )}
+                  >
+                    {entryMode === opt.id ? (
+                      <span className="ip-option-check" aria-hidden>
+                        <Check
+                          className="h-3 w-3 text-[var(--bg-base)]"
+                          strokeWidth={3}
+                        />
+                      </span>
+                    ) : null}
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--teal-10)] text-[var(--text-teal)]">
+                      <opt.Icon className="h-7 w-7" aria-hidden />
                     </span>
-                  ) : null}
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--teal-10)] text-[var(--text-teal)]">
-                    <opt.Icon className="h-7 w-7" aria-hidden />
-                  </span>
-                  <p className="mt-3 text-sm font-semibold text-[var(--text-primary)]">{opt.title}</p>
-                  <p className="mt-1 text-[13px] leading-relaxed text-[var(--text-secondary)]">{opt.desc}</p>
-                </button>
-              ))}
-            </div>
-            <label className="block">
-              <span className="ip-label-field">Target role</span>
-              <input
-                value={targetRoleTitle}
-                onChange={(e) => setTargetRoleTitle(e.target.value)}
-                className="ip-input"
-              />
-            </label>
-            {entryMode === 'job_based' && (
-              <>
-                <label className="block">
-                  <span className="ip-label-field">Company (optional)</span>
-                  <input
-                    value={company}
-                    onChange={(e) => setCompany(e.target.value)}
-                    className="ip-input"
-                  />
-                </label>
-                {!jobAnalysisId || !linkedJobQ.data?.description ? (
+                    <p className="mt-3 text-sm font-semibold text-[var(--text-primary)]">
+                      {opt.title}
+                    </p>
+                    <p className="mt-1 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+                      {opt.desc}
+                    </p>
+                  </button>
+                ))}
+              </div>
+              <label className="block">
+                <span className="ip-label-field">Target role</span>
+                <input
+                  value={targetRoleTitle}
+                  onChange={(e) => setTargetRoleTitle(e.target.value)}
+                  className="ip-input"
+                />
+              </label>
+              {entryMode === 'job_based' && (
+                <>
                   <label className="block">
-                    <span className="ip-label-field">Job description</span>
-                    <textarea
-                      value={jobDescription}
-                      onChange={(e) => setJobDescription(e.target.value)}
-                      rows={5}
-                      className="ip-textarea mt-1.5"
+                    <span className="ip-label-field">Company (optional)</span>
+                    <input
+                      value={company}
+                      onChange={(e) => setCompany(e.target.value)}
+                      className="ip-input"
                     />
                   </label>
-                ) : (
-                  <p className="text-xs text-[var(--text-muted)]">
-                    Using description from linked job analysis.
-                  </p>
-                )}
-              </>
-            )}
-            <div className="mt-4 flex flex-wrap gap-2">
-              {(['behavioral', 'technical', 'mixed'] as const).map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setInterviewType(id)}
-                  className={cn('ip-chip capitalize', interviewType === id && 'ip-chip-active')}
-                >
-                  {id}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {step === 1 && (
-          <div className="space-y-4">
-            <label className="block">
-              <span className="ip-label-field">CV profile</span>
-              <select
-                value={effectiveCvId}
-                onChange={(e) => setSelectedProfileId(e.target.value)}
-                className="ip-input"
-              >
-                {profiles.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                    {p.isDefault ? ' (default)' : ''}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <p className="text-xs text-[var(--text-muted)]">Default CV is used if none is selected.</p>
-            <label className="block">
-              <div className="mb-2.5 flex max-w-[560px] items-center justify-between">
-                <span className="text-[13px] font-medium text-[var(--text-primary)]">Questions</span>
-                <span className="text-[13px] font-semibold text-[var(--text-teal)]">{totalQuestions}</span>
-              </div>
-              <input
-                type="range"
-                min={5}
-                max={20}
-                value={totalQuestions}
-                onChange={(e) => setTotalQuestions(Number(e.target.value))}
-                className="ip-slider"
-              />
-            </label>
-            <SpeakingSpeedSlider value={speakingSpeed} onChange={setSpeakingSpeed} />
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="space-y-4">
-            <div>
-              <p className="text-[15px] font-semibold text-[var(--text-primary)]">Choose your interviewer</p>
-              <p className="mt-1 text-[13px] text-[var(--text-secondary)]">
-                Personality shapes the session coaching tone and style.
-              </p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {(Object.keys(INTERVIEW_PERSONAS) as InterviewPersonaId[]).map((id) => (
-                  <PersonaSelectorCard
-                    key={id}
-                    personaId={id}
-                    selected={interviewPersona === id}
-                    onSelect={() => {
-                      setInterviewPersona(id);
-                      setPersonality(INTERVIEW_PERSONAS[id].legacyAvatar);
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="mx-auto max-w-[640px] space-y-4">
-            {!simulationSelection ? (
-              <label className="ip-adaptive-card flex cursor-pointer items-start gap-3.5">
-                <input
-                  type="checkbox"
-                  className="sr-only"
-                  checked={adaptiveDifficulty}
-                  onChange={(e) => setAdaptiveDifficulty(e.target.checked)}
-                />
-                <span
-                  className={cn(
-                    'ip-custom-check mt-0.5',
-                    !adaptiveDifficulty && 'ip-custom-check-off',
+                  {!jobAnalysisId || !linkedJobQ.data?.description ? (
+                    <label className="block">
+                      <span className="ip-label-field">Job description</span>
+                      <textarea
+                        value={jobDescription}
+                        onChange={(e) => setJobDescription(e.target.value)}
+                        rows={5}
+                        className="ip-textarea mt-1.5"
+                      />
+                    </label>
+                  ) : (
+                    <p className="text-xs text-[var(--text-muted)]">
+                      Using description from linked job analysis.
+                    </p>
                   )}
-                  aria-hidden
+                </>
+              )}
+              <div className="mt-4 flex flex-wrap gap-2">
+                {(['behavioral', 'technical', 'mixed'] as const).map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setInterviewType(id)}
+                    className={cn(
+                      'ip-chip capitalize',
+                      interviewType === id && 'ip-chip-active',
+                    )}
+                  >
+                    {id}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {step === 1 && (
+            <div className="space-y-4">
+              <label className="block">
+                <span className="ip-label-field">CV profile</span>
+                <select
+                  value={effectiveCvId}
+                  onChange={(e) => setSelectedProfileId(e.target.value)}
+                  className="ip-input"
                 >
-                  {adaptiveDifficulty ? (
-                    <Check className="h-3.5 w-3.5 text-[var(--bg-base)]" strokeWidth={3} />
-                  ) : null}
-                </span>
-                <span>
-                  <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
-                    Adaptive mode
-                    <AdaptiveBadge label="Recommended" />
-                  </span>
-                  <span className="mt-1 block text-[13px] leading-relaxed text-[var(--text-secondary)]">
-                    Difficulty and focus areas adjust from your history — the system targets weak spots.
-                  </span>
-                </span>
+                  {profiles.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                      {p.isDefault ? ' (default)' : ''}
+                    </option>
+                  ))}
+                </select>
               </label>
-            ) : (
-              <p className="text-[13px] text-[var(--text-secondary)]">
-                Simulation mode uses stress settings above. Adaptive difficulty is managed by the simulation
-                engine.
+              <p className="text-xs text-[var(--text-muted)]">
+                Default CV is used if none is selected.
               </p>
-            )}
-            <CoachingSetupControls
-              settings={{
-                enabled: coachingEnabled,
-                intensity: coachingIntensity,
-                mode: 'real_time',
-              }}
-              onEnabledChange={setCoachingEnabled}
-              onIntensityChange={setCoachingIntensity}
-            />
-            <div className="rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] p-5">
-              <div className="flex items-start gap-4">
-                <InterviewAvatar
-                  personality={selectedAvatarKey}
-                  isSpeaking={false}
-                  isListening={false}
-                  size="sm"
+              <label className="block">
+                <div className="mb-2.5 flex max-w-[560px] items-center justify-between">
+                  <span className="text-[13px] font-medium text-[var(--text-primary)]">
+                    Questions
+                  </span>
+                  <span className="text-[13px] font-semibold text-[var(--text-teal)]">
+                    {totalQuestions}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={5}
+                  max={20}
+                  value={totalQuestions}
+                  onChange={(e) => setTotalQuestions(Number(e.target.value))}
+                  className="ip-slider"
                 />
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">
-                    {selectedPersona.personName}
-                  </p>
-                  <p className="mt-0.5 text-xs text-[var(--text-muted)]">{selectedPersona.roleLabel}</p>
-                  <p className="mt-2 text-sm italic leading-relaxed text-[var(--text-secondary)]">
-                    {startTabGreeting}
-                  </p>
+              </label>
+              <SpeakingSpeedSlider
+                value={speakingSpeed}
+                onChange={setSpeakingSpeed}
+              />
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-[15px] font-semibold text-[var(--text-primary)]">
+                  Choose your interviewer
+                </p>
+                <p className="mt-1 text-[13px] text-[var(--text-secondary)]">
+                  Personality shapes the session coaching tone and style.
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {(
+                    Object.keys(INTERVIEW_PERSONAS) as InterviewPersonaId[]
+                  ).map((id) => (
+                    <PersonaSelectorCard
+                      key={id}
+                      personaId={id}
+                      selected={interviewPersona === id}
+                      onSelect={() => {
+                        setInterviewPersona(id);
+                        setPersonality(INTERVIEW_PERSONAS[id].legacyAvatar);
+                      }}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
-            <p className="border-t border-[var(--border-subtle)] pt-3 text-xs text-[var(--text-muted)]">
-              {selectedPersona.personName} · {totalQuestions} questions · {speakingSpeed.toFixed(2)}× speed
-            </p>
-            <div className="rounded-[var(--radius-md)] bg-[var(--bg-surface-2)] px-4 py-3.5">
-              {TIP_LINES.map((tip) => (
-                <div key={tip} className="flex items-start gap-2 py-1.5">
-                  <span className="ip-tip-bullet" aria-hidden />
-                  <p className="text-[13px] leading-relaxed text-[var(--text-secondary)]">{tip}</p>
+          )}
+
+          {step === 3 && (
+            <div className="mx-auto max-w-[640px] space-y-4">
+              {!simulationSelection ? (
+                <label className="ip-adaptive-card flex cursor-pointer items-start gap-3.5">
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={adaptiveDifficulty}
+                    onChange={(e) => setAdaptiveDifficulty(e.target.checked)}
+                  />
+                  <span
+                    className={cn(
+                      'ip-custom-check mt-0.5',
+                      !adaptiveDifficulty && 'ip-custom-check-off',
+                    )}
+                    aria-hidden
+                  >
+                    {adaptiveDifficulty ? (
+                      <Check
+                        className="h-3.5 w-3.5 text-[var(--bg-base)]"
+                        strokeWidth={3}
+                      />
+                    ) : null}
+                  </span>
+                  <span>
+                    <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+                      Adaptive mode
+                      <AdaptiveBadge label="Recommended" />
+                    </span>
+                    <span className="mt-1 block text-[13px] leading-relaxed text-[var(--text-secondary)]">
+                      Difficulty and focus areas adjust from your history — the
+                      system targets weak spots.
+                    </span>
+                  </span>
+                </label>
+              ) : (
+                <p className="text-[13px] text-[var(--text-secondary)]">
+                  Simulation mode uses stress settings above. Adaptive
+                  difficulty is managed by the simulation engine.
+                </p>
+              )}
+              <CoachingSetupControls
+                settings={{
+                  enabled: coachingEnabled,
+                  intensity: coachingIntensity,
+                  mode: 'real_time',
+                }}
+                onEnabledChange={setCoachingEnabled}
+                onIntensityChange={setCoachingIntensity}
+              />
+              <div className="rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] p-5">
+                <div className="flex items-start gap-4">
+                  <InterviewAvatar
+                    personality={selectedAvatarKey}
+                    isSpeaking={false}
+                    isListening={false}
+                    size="sm"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">
+                      {selectedPersona.personName}
+                    </p>
+                    <p className="mt-0.5 text-xs text-[var(--text-muted)]">
+                      {selectedPersona.roleLabel}
+                    </p>
+                    <p className="mt-2 text-sm italic leading-relaxed text-[var(--text-secondary)]">
+                      {startTabGreeting}
+                    </p>
+                  </div>
                 </div>
-              ))}
+              </div>
+              <p className="border-t border-[var(--border-subtle)] pt-3 text-xs text-[var(--text-muted)]">
+                {selectedPersona.personName} · {totalQuestions} questions ·{' '}
+                {speakingSpeed.toFixed(2)}× speed
+              </p>
+              <div className="rounded-[var(--radius-md)] bg-[var(--bg-surface-2)] px-4 py-3.5">
+                {TIP_LINES.map((tip) => (
+                  <div key={tip} className="flex items-start gap-2 py-1.5">
+                    <span className="ip-tip-bullet" aria-hidden />
+                    <p className="text-[13px] leading-relaxed text-[var(--text-secondary)]">
+                      {tip}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
         </div>
 
         {startError ? (
@@ -631,12 +739,17 @@ export function InterviewSetupStepper() {
           </p>
         ) : step === 3 && !profilesQ.isLoading && !effectiveCvId ? (
           <p className="border-t border-[var(--border-subtle)] bg-amber-500/10 px-5 py-3 text-sm text-amber-100">
-            Add a CV profile in CV Builder before starting — the button stays disabled until one is available.
+            Add a CV profile in CV Builder before starting — the button stays
+            disabled until one is available.
           </p>
         ) : null}
         <footer className="ip-wizard-footer">
           {step > 0 ? (
-            <button type="button" className="ip-btn-ghost" onClick={() => setStep(step - 1)}>
+            <button
+              type="button"
+              className="ip-btn-ghost"
+              onClick={() => setStep(step - 1)}
+            >
               Back
             </button>
           ) : (
@@ -646,7 +759,10 @@ export function InterviewSetupStepper() {
             <button
               type="button"
               className="ip-btn-primary"
-              disabled={(step === 0 && !canAdvanceStep0) || (step === 1 && profiles.length === 0)}
+              disabled={
+                (step === 0 && !canAdvanceStep0) ||
+                (step === 1 && profiles.length === 0)
+              }
               onClick={goNext}
             >
               Continue
@@ -676,7 +792,10 @@ export function InterviewSetupStepper() {
       </div>
 
       {progressQ.data ? (
-        <ProgressTimeline progress={progressQ.data} sessions={sessionsQ.data ?? []} />
+        <ProgressTimeline
+          progress={progressQ.data}
+          sessions={sessionsQ.data ?? []}
+        />
       ) : null}
 
       <section>
@@ -691,7 +810,9 @@ export function InterviewSetupStepper() {
           </button>
         </div>
         {historyRows.length === 0 ? (
-          <p className="mt-3 text-sm text-[var(--text-muted)]">No sessions yet.</p>
+          <p className="mt-3 text-sm text-[var(--text-muted)]">
+            No sessions yet.
+          </p>
         ) : (
           <div className="mt-3 space-y-2">
             {historyRows.map((row) => (
@@ -701,12 +822,19 @@ export function InterviewSetupStepper() {
                 onClick={() => router.push(`/dashboard/interview/${row.id}`)}
                 className="ip-session-row"
               >
-                <InterviewAvatar personality={row.personality} isSpeaking={false} isListening={false} size="sm" />
+                <InterviewAvatar
+                  personality={row.personality}
+                  isSpeaking={false}
+                  isListening={false}
+                  size="sm"
+                />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
                     {row.jobTitle || 'Interview'}
                   </p>
-                  <p className="text-xs text-[var(--text-muted)]">{formatWhen(row.createdAt)}</p>
+                  <p className="text-xs text-[var(--text-muted)]">
+                    {formatWhen(row.createdAt)}
+                  </p>
                 </div>
                 <RecentSessionScore row={row} />
               </button>
@@ -717,4 +845,3 @@ export function InterviewSetupStepper() {
     </div>
   );
 }
-

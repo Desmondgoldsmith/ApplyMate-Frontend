@@ -2,10 +2,12 @@
 
 import { Loader2, Sparkles, Wand2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
 import type { CvAssistantRunResult } from '@/components/cv/CVEditContext';
+import { useMobileShell } from '@/components/dashboard/MobileShellContext';
 import { Button } from '@/components/ui/Button';
+import { useDraggableFab } from '@/hooks/useDraggableFab';
 import { cn } from '@/lib/utils';
 
 const QUICK_PROMPTS = [
@@ -24,7 +26,10 @@ function useDesktopLgMedia(): boolean {
       mq.addEventListener('change', onStoreChange);
       return () => mq.removeEventListener('change', onStoreChange);
     },
-    () => (typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : false),
+    () =>
+      typeof window !== 'undefined'
+        ? window.matchMedia('(min-width: 1024px)').matches
+        : false,
     () => false,
   );
 }
@@ -45,24 +50,6 @@ export type AISectionAssistantPanelProps = {
   onSeedCommandConsumed?: () => void;
 };
 
-type FabOffset = { x: number; y: number };
-
-function readStoredFabOffset(): FabOffset {
-  if (typeof window === 'undefined') return { x: 0, y: 0 };
-  try {
-    const raw = window.sessionStorage.getItem(FAB_DRAG_STORAGE_KEY);
-    if (!raw) return { x: 0, y: 0 };
-    const o = JSON.parse(raw) as unknown;
-    if (!o || typeof o !== 'object') return { x: 0, y: 0 };
-    const x = Number((o as FabOffset).x);
-    const y = Number((o as FabOffset).y);
-    if (!Number.isFinite(x) || !Number.isFinite(y)) return { x: 0, y: 0 };
-    return { x, y };
-  } catch {
-    return { x: 0, y: 0 };
-  }
-}
-
 export function AISectionAssistantPanel({
   open,
   onOpenChange,
@@ -74,6 +61,7 @@ export function AISectionAssistantPanel({
   onSeedCommandConsumed,
 }: AISectionAssistantPanelProps) {
   const desktopLg = useDesktopLgMedia();
+  const { navBottomOffset } = useMobileShell();
   const [text, setText] = useState('');
   const [clarifyAnswer, setClarifyAnswer] = useState('');
 
@@ -84,109 +72,58 @@ export function AISectionAssistantPanel({
     setText(s);
     onSeedCommandConsumed?.();
   }, [open, seedCommand, onSeedCommandConsumed]);
-  const [fabOffset, setFabOffset] = useState<FabOffset>(() => readStoredFabOffset());
-  const fabOffsetRef = useRef(fabOffset);
-  useLayoutEffect(() => {
-    fabOffsetRef.current = fabOffset;
-  }, [fabOffset]);
-  const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number; active: boolean } | null>(
-    null,
-  );
-  const justDraggedRef = useRef(false);
+  const desktopDrag = useDraggableFab(FAB_DRAG_STORAGE_KEY);
+  const mobileDrag = useDraggableFab(`${FAB_DRAG_STORAGE_KEY}:mobile`);
+  const drag = desktopLg ? desktopDrag : mobileDrag;
 
-  const persistOffset = useCallback((next: FabOffset) => {
-    setFabOffset(next);
-    try {
-      window.sessionStorage.setItem(FAB_DRAG_STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      /* quota / private mode */
-    }
-  }, []);
-
-  const onFabPointerDown = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
-    if (e.button !== 0) return;
-    justDraggedRef.current = false;
-    dragRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      origX: fabOffsetRef.current.x,
-      origY: fabOffsetRef.current.y,
-      active: false,
-    };
-    e.currentTarget.setPointerCapture(e.pointerId);
-  }, []);
-
-  const onFabPointerMove = useCallback(
-    (e: React.PointerEvent<HTMLButtonElement>) => {
-      const d = dragRef.current;
-      if (!d) return;
-      const dx = e.clientX - d.startX;
-      const dy = e.clientY - d.startY;
-      if (!d.active && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
-        d.active = true;
-      }
-      if (!d.active) return;
-      e.preventDefault();
-      justDraggedRef.current = true;
-      persistOffset({ x: d.origX + dx, y: d.origY + dy });
-    },
-    [persistOffset],
-  );
-
-  const onFabPointerUp = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
-    dragRef.current = null;
-    try {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
-  const onFabClick = useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (justDraggedRef.current) {
-        e.preventDefault();
-        e.stopPropagation();
-        justDraggedRef.current = false;
-        return;
-      }
-      onOpenChange(true);
-    },
-    [onOpenChange],
-  );
+  const mobileFabBottom = `calc(${navBottomOffset} + 0.25rem)`;
 
   return (
     <>
       {showFab ? (
         <button
           type="button"
-          onPointerDown={onFabPointerDown}
-          onPointerMove={onFabPointerMove}
-          onPointerUp={onFabPointerUp}
-          onPointerCancel={onFabPointerUp}
-          onClick={onFabClick}
-          title="AI Section Assistant — drag to move"
+          onPointerDown={drag.onPointerDown}
+          onPointerMove={drag.onPointerMove}
+          onPointerUp={drag.onPointerUp}
+          onPointerCancel={drag.onPointerCancel}
+          onClick={(e) => {
+            if (drag.shouldSuppressClick()) {
+              e.preventDefault();
+              e.stopPropagation();
+              return;
+            }
+            onOpenChange(true);
+          }}
+          title="AI Section Assistant — long-press to drag"
           aria-label="Open AI section assistant"
           style={
             desktopLg
               ? {
                   bottom: '0.75rem',
                   right: 'clamp(5.5rem, 22vw, 17.5rem)',
-                  transform: `translate3d(${fabOffset.x}px, ${fabOffset.y}px, 0)`,
+                  transform: `translate3d(${drag.offset.x}px, ${drag.offset.y}px, 0)`,
                 }
               : {
-                  transform: `translate3d(${fabOffset.x}px, ${fabOffset.y}px, 0)`,
-                  bottom: 'calc(5.75rem + env(safe-area-inset-bottom, 0px))',
+                  transform: `translate3d(${drag.offset.x}px, ${drag.offset.y}px, 0)`,
+                  bottom: mobileFabBottom,
                   right: 'max(0.75rem, env(safe-area-inset-right, 0px))',
                 }
           }
           className={cn(
-            'fixed z-[90] touch-manipulation select-none',
+            'fixed z-[90] touch-none select-none',
             'inline-flex items-center justify-center rounded-full border border-[rgba(16,185,129,0.45)] bg-[#0C0F0F] text-emerald-300 shadow-[0_10px_28px_rgba(0,0,0,0.42)] transition-[border-color,box-shadow] hover:border-emerald-300/75 hover:shadow-[0_12px_32px_rgba(0,0,0,0.5)]',
-            desktopLg ? 'h-10 min-w-0 gap-1.5 px-3 text-xs font-semibold' : 'h-11 w-11',
+            desktopLg
+              ? 'h-10 min-w-0 gap-1.5 px-3 text-xs font-semibold touch-manipulation'
+              : 'h-11 w-11 touch-manipulation',
           )}
         >
-          <Sparkles className={cn('shrink-0', desktopLg ? 'h-4 w-4' : 'h-[18px] w-[18px]')} />
+          <Sparkles
+            className={cn(
+              'shrink-0',
+              desktopLg ? 'h-4 w-4' : 'h-[18px] w-[18px]',
+            )}
+          />
           <span className={cn(desktopLg ? 'inline' : 'hidden')}>Assistant</span>
         </button>
       ) : null}
@@ -206,12 +143,22 @@ export function AISectionAssistantPanel({
               initial={{ opacity: 0, y: 14, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.98 }}
-              className="fixed z-[122] w-[min(92vw,360px)] max-lg:bottom-[calc(5.75rem+env(safe-area-inset-bottom,0px)+0.75rem)] max-lg:right-3 max-lg:left-auto lg:bottom-20 lg:right-6"
+              className="fixed z-[122] w-[min(92vw,360px)] max-lg:right-3 max-lg:left-auto lg:bottom-20 lg:right-6"
+              style={
+                desktopLg
+                  ? undefined
+                  : {
+                      bottom: `calc(${mobileFabBottom} + 3.5rem)`,
+                      right: 'max(0.75rem, env(safe-area-inset-right, 0px))',
+                    }
+              }
               onClick={(e) => e.stopPropagation()}
             >
               <div className="rounded-2xl border border-white/[0.08] bg-[#0C0F0F] p-3 shadow-[0_14px_32px_rgba(0,0,0,0.45)]">
                 <div className="mb-2 flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">AI Section Assistant</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">
+                    AI Section Assistant
+                  </p>
                   <button
                     type="button"
                     className="rounded-md p-1 text-white/50 transition hover:bg-white/[0.06] hover:text-white"
@@ -222,8 +169,12 @@ export function AISectionAssistantPanel({
                 </div>
                 {clarificationQuestion ? (
                   <div className="mb-2 rounded-lg border border-amber-400/35 bg-amber-500/10 p-2">
-                    <p className="text-[11px] font-semibold text-amber-300">Clarification needed</p>
-                    <p className="mt-1 text-xs text-white/80">{clarificationQuestion}</p>
+                    <p className="text-[11px] font-semibold text-amber-300">
+                      Clarification needed
+                    </p>
+                    <p className="mt-1 text-xs text-white/80">
+                      {clarificationQuestion}
+                    </p>
                     <input
                       value={clarifyAnswer}
                       onChange={(e) => setClarifyAnswer(e.target.value)}
@@ -261,15 +212,27 @@ export function AISectionAssistantPanel({
                   onClick={async () => {
                     const command = text.trim();
                     if (command.length < 8) return;
-                    if (clarificationQuestion && clarifyAnswer.trim().length > 0) {
-                      await onSubmit(command, [{ question: clarificationQuestion, answer: clarifyAnswer.trim() }]);
+                    if (
+                      clarificationQuestion &&
+                      clarifyAnswer.trim().length > 0
+                    ) {
+                      await onSubmit(command, [
+                        {
+                          question: clarificationQuestion,
+                          answer: clarifyAnswer.trim(),
+                        },
+                      ]);
                       setClarifyAnswer('');
                       return;
                     }
                     await onSubmit(command);
                   }}
                 >
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+                  {busy ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4" />
+                  )}
                   Run command
                 </Button>
               </div>

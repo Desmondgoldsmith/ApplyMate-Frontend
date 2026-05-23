@@ -623,25 +623,25 @@ export default function JobBoardContent() {
   }, [applicationIdFromUrl, items, isMaxLg, pathname, router]);
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <div
-        className="rounded-2xl border border-white/10 bg-[#0C0F0F] p-2"
+        className="min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-[#0C0F0F] p-2"
         data-tour="job-board-filters"
       >
         <button
           type="button"
           onClick={() => setFiltersCollapsed((v) => !v)}
           title={collapsedSummaryTitle}
-          className="flex w-full items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-[0.08em] text-white/65 hover:bg-white/[0.03]"
+          className="flex w-full min-w-0 items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-[0.08em] text-white/65 hover:bg-white/[0.03]"
         >
-          <span className="min-w-0 truncate normal-case tracking-normal inline-flex items-center gap-1.5">
-            Search & Filters
+          <span className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden normal-case tracking-normal">
+            <span className="shrink-0">Search & Filters</span>
             <InfoHint text="Default results use your selected CV and location. Use Search when you want keyword overrides." />
-            {collapsedLocationHint ? (
-              <span className="text-white/45"> · {collapsedLocationHint}</span>
-            ) : null}
-            {collapsedCvLabel ? (
-              <span className="text-white/45"> · {collapsedCvLabel}</span>
+            {collapsedLocationHint || collapsedCvLabel ? (
+              <span className="min-w-0 truncate text-white/45">
+                {collapsedLocationHint ? ` · ${collapsedLocationHint}` : ''}
+                {collapsedCvLabel ? ` · ${collapsedCvLabel}` : ''}
+              </span>
             ) : null}
           </span>
           <ChevronDown
@@ -653,7 +653,7 @@ export default function JobBoardContent() {
           />
         </button>
         {!filtersCollapsed ? (
-          <div className="mt-2">
+          <div className="mt-2 min-w-0 overflow-hidden">
             <JobBoardFilters
               filters={appliedFilters}
               locationInput={locationInput}

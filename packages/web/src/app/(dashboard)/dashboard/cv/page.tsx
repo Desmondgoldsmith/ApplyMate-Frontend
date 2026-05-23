@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  BarChart3,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -8,6 +9,7 @@ import {
   FileText,
   Loader2,
   RotateCcw,
+  SlidersHorizontal,
   Sparkles,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -44,6 +46,7 @@ import { CreateCVProfileModal } from '@/components/dashboard/CreateCVProfileModa
 import { CvClinicHub } from '@/components/dashboard/CvClinicHub';
 import { Button } from '@/components/ui/Button';
 import { GlowCard } from '@/components/ui/GlowCard';
+import { MobileDockFab } from '@/components/ui/MobileDockFab';
 import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
@@ -301,6 +304,8 @@ function CVPageContent() {
   const [renameValue, setRenameValue] = useState('');
   const [showReuploadModal, setShowReuploadModal] = useState(false);
   const [insightsOpen, setInsightsOpen] = useState(false);
+  const [mobileCvToolsOpen, setMobileCvToolsOpen] = useState(false);
+  const [mobileCvInsightsOpen, setMobileCvInsightsOpen] = useState(false);
   const triplePanelContainerRef = useRef<HTMLDivElement>(null);
   const [tripleRightPct, setTripleRightPct] = useState(28);
   const [tripleRightTab, setTripleRightTab] = useState<
@@ -2282,6 +2287,7 @@ function CVPageContent() {
                 onOpenSectionModal={() => setSectionModalOpen(true)}
                 onOpenAiChat={() => setAiChatOpen(true)}
                 onTriggerSpellCheck={() => setSpellCheckTrigger((n) => n + 1)}
+                inlineMenu
               />
             ) : null}
           </div>
@@ -2589,7 +2595,7 @@ function CVPageContent() {
   if (hasCv && !targetId && profileIdParam?.trim()) {
     return (
       <div className="-mx-4 space-y-3 px-4 sm:-mx-5 sm:px-5">
-        <div className="lg:hidden">{cvTopChrome}</div>
+        <div className="hidden">{cvTopChrome}</div>
         <Skeleton height={420} borderRadius={16} />
       </div>
     );
@@ -2651,7 +2657,7 @@ function CVPageContent() {
   if (detailLoading && !detail) {
     return (
       <div className="-mx-4 space-y-3 px-4 sm:-mx-5 sm:px-5">
-        <div className="lg:hidden">{cvTopChrome}</div>
+        <div className="hidden">{cvTopChrome}</div>
         <Skeleton height={420} borderRadius={16} />
       </div>
     );
@@ -2661,7 +2667,7 @@ function CVPageContent() {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="-mt-3 flex min-h-0 w-full min-w-0 max-w-full flex-col gap-1.5 pb-0 pt-1 max-lg:overflow-visible md:-mt-4 md:pt-0 lg:h-full lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:pt-0"
+      className="-mt-3 flex min-h-0 w-full min-w-0 max-w-full flex-col gap-1.5 pb-0 pt-0 max-lg:h-full max-lg:min-h-0 max-lg:flex-1 max-lg:gap-0 max-lg:overflow-hidden max-lg:px-0 md:-mt-4 lg:-mx-0 lg:h-full lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:pt-0"
     >
       <CreateCVProfileModal
         open={createCvOpen}
@@ -2793,7 +2799,95 @@ function CVPageContent() {
         />
       </Modal>
 
-      <div className="lg:hidden">{cvTopChrome}</div>
+      <div className="hidden">{cvTopChrome}</div>
+
+      {targetId ? (
+        <>
+          <MobileDockFab
+            open={mobileCvToolsOpen}
+            onOpenChange={setMobileCvToolsOpen}
+            icon={SlidersHorizontal}
+            label="CV tools"
+            fabId="cv-tools"
+            stackIndex={0}
+          >
+            {cvTopChrome}
+          </MobileDockFab>
+          <MobileDockFab
+            open={mobileCvInsightsOpen}
+            onOpenChange={setMobileCvInsightsOpen}
+            icon={BarChart3}
+            label="Score and tips"
+            badge={
+              displayScoreValue ??
+              (pendingSuggestionsCountResolved > 0
+                ? pendingSuggestionsCountResolved
+                : undefined)
+            }
+            fabId="cv-insights"
+            stackIndex={1}
+          >
+            <div className="space-y-3 pb-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-white/50">
+                Score breakdown & tips
+              </p>
+              <div className="flex border-b border-white/[0.06]">
+                <button
+                  type="button"
+                  onClick={() =>
+                    startTransition(() => setTripleRightTab('analysis'))
+                  }
+                  className={cn(
+                    'flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-widest transition',
+                    tripleRightTab === 'analysis'
+                      ? 'border-b-2 border-[#00C9B1] text-[#00C9B1]'
+                      : 'text-white/40',
+                  )}
+                >
+                  Analysis
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    startTransition(() => setTripleRightTab('improvements'))
+                  }
+                  className={cn(
+                    'relative flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-widest transition',
+                    tripleRightTab === 'improvements'
+                      ? 'border-b-2 border-[#00C9B1] text-[#00C9B1]'
+                      : 'text-white/40',
+                  )}
+                >
+                  Tips
+                  {improvementsBadgeCount > 0 ? (
+                    <span className="ml-1 rounded-full bg-rose-500 px-1.5 text-[9px] font-bold text-white">
+                      {improvementsBadgeCount}
+                    </span>
+                  ) : null}
+                </button>
+              </div>
+              {tripleRightTab === 'analysis' ? (
+                !score.isLoading && displayScoreValue != null ? (
+                  <CVScoreCard
+                    mode="compact"
+                    score={displayScoreValue}
+                    breakdown={displayScoreBreakdown}
+                    hideJobMatch
+                  />
+                ) : (
+                  <p className="text-sm text-white/45">Calculating score…</p>
+                )
+              ) : (
+                <ImprovementsPanel
+                  improvements={improvementList}
+                  profileId={targetId}
+                  onDiffPreview={mergeDiffPreviewOpen}
+                />
+              )}
+            </div>
+          </MobileDockFab>
+        </>
+      ) : null}
 
       {isPartialExtractionBanner ? (
         <GlowCard
@@ -2823,7 +2917,7 @@ function CVPageContent() {
 
       {targetId ? (
         <GlowCard
-          className="border border-[rgba(0,201,177,0.12)] lg:hidden"
+          className="hidden border border-[rgba(0,201,177,0.12)] lg:hidden"
           contentClassName="p-0"
         >
           <button
@@ -3253,11 +3347,11 @@ function CVPageContent() {
         </GlowCard>
       ) : null}
 
-      <div className="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col lg:max-h-[calc(100vh-52px)] lg:min-h-0 lg:overflow-hidden">
+      <motion.div className="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col max-lg:h-full max-lg:min-h-0 max-lg:overflow-hidden lg:max-h-[calc(100vh-52px)] lg:min-h-0 lg:overflow-hidden">
         {targetId ? (
           <div className="hidden shrink-0 lg:block">{cvClinicToolbar}</div>
         ) : null}
-        <div className="min-h-0 w-full min-w-0 flex-1 overflow-visible lg:flex lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:flex-col">
+        <motion.div className="relative z-0 min-h-0 w-full min-w-0 flex-1 max-lg:flex max-lg:h-full max-lg:min-h-0 max-lg:flex-col max-lg:overflow-hidden lg:flex lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:flex-col">
           {templateReady ? (
             <CVBuilder
               key={`${targetId ?? 'cv'}-${cvMode}`}
@@ -3311,8 +3405,8 @@ function CVPageContent() {
               Loading template…
             </div>
           )}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </motion.div>
   );
 }

@@ -7,6 +7,8 @@ import { BreadcrumbProvider } from '@/components/dashboard/BreadcrumbContext';
 import { DashboardMain } from '@/components/dashboard/DashboardMain';
 import { Header } from '@/components/dashboard/Header';
 import { MobileBottomNav } from '@/components/dashboard/MobileBottomNav';
+import { MobileNavToggleFab } from '@/components/dashboard/MobileNavToggleFab';
+import { MobileShellProvider } from '@/components/dashboard/MobileShellContext';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { AppShellBackdrop } from '@/components/layout/AppShellBackdrop';
 import { LocationBootstrap } from '@/components/location/LocationBootstrap';
@@ -21,13 +23,16 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       <AppShellBackdrop />
       <Sidebar />
       <BreadcrumbProvider>
-        <div className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          <Header />
-          <FeatureTour />
-          <LocationBootstrap enabled={Boolean(accessToken)} />
-          <DashboardMain>{children}</DashboardMain>
-          <MobileBottomNav />
-        </div>
+        <MobileShellProvider>
+          <div className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            <Header />
+            <FeatureTour />
+            <LocationBootstrap enabled={Boolean(accessToken)} />
+            <DashboardMain>{children}</DashboardMain>
+            <MobileBottomNav />
+            <MobileNavToggleFab />
+          </div>
+        </MobileShellProvider>
       </BreadcrumbProvider>
     </div>
   );
