@@ -1,30 +1,72 @@
 /* ApplyMate feature tours — driver.js overrides */
 
+/* Dim only — backdrop blur on the overlay washes out the spotlight cutout */
 .driver-overlay {
-  backdrop-filter: blur(2px) !important;
-  -webkit-backdrop-filter: blur(2px) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
-/* Crisp spotlight ring — no heavy outer glow */
-.driver-active-element,
-.driver-active-element * {
+/* Active tour: lift spotlight above overlay and clear ancestor blur */
+html.applymate-tour-active .driver-active-element,
+html.applymate-tour-active .applymate-tour-target {
+  position: relative !important;
+  z-index: 100003 !important;
+  isolation: isolate !important;
+  transform: translateZ(0);
   opacity: 1 !important;
   mix-blend-mode: normal !important;
   filter: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   text-shadow: none !important;
-}
-
-.driver-active-element {
-  position: relative !important;
-  z-index: 100001 !important;
-  border-radius: inherit !important;
+  border-radius: inherit;
   outline: 2px solid #00c9b1 !important;
   outline-offset: 3px !important;
   box-shadow:
-    0 0 0 1px rgba(0, 201, 177, 0.35),
-    0 12px 40px -16px rgba(0, 201, 177, 0.45) !important;
+    0 0 0 1px rgba(0, 201, 177, 0.45),
+    0 0 0 6px rgba(0, 201, 177, 0.14),
+    0 0 28px rgba(0, 201, 177, 0.55),
+    0 16px 48px -12px rgba(0, 201, 177, 0.4) !important;
+}
+
+html.applymate-tour-active .driver-active-element *,
+html.applymate-tour-active .applymate-tour-target * {
+  opacity: 1 !important;
+  mix-blend-mode: normal !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html.applymate-tour-active .applymate-tour-ancestor,
+html.applymate-tour-active header:has(.driver-active-element),
+html.applymate-tour-active nav:has(.driver-active-element),
+html.applymate-tour-active [class*='backdrop-blur']:has(.driver-active-element),
+html.applymate-tour-active
+  [class*='backdrop-blur']:has(.applymate-tour-target) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+}
+
+html.applymate-tour-active header:has(.driver-active-element),
+html.applymate-tour-active nav:has(.driver-active-element),
+html.applymate-tour-active .applymate-tour-ancestor {
+  z-index: 100002 !important;
+}
+
+html.applymate-tour-active
+  [data-tour='mobile-nav-toggle'].driver-active-element,
+html.applymate-tour-active
+  .driver-active-element[data-tour='mobile-nav-toggle'] {
+  z-index: 100004 !important;
+}
+
+html.applymate-tour-active
+  [data-tour='mobile-bottom-nav'].driver-active-element,
+html.applymate-tour-active
+  .driver-active-element[data-tour='mobile-bottom-nav'] {
+  z-index: 100004 !important;
 }
 
 .driver-popover {
@@ -45,10 +87,12 @@
     0 0 0 1px rgba(255, 255, 255, 0.04),
     inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
   color: rgba(255, 255, 255, 0.92) !important;
+  z-index: 100005 !important;
 }
 
 .applymate-tour-popover .driver-popover-arrow {
   border-color: #121616 !important;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
 }
 
 .applymate-tour-popover .driver-popover-arrow-side-left {
@@ -186,8 +230,8 @@
     padding: 12px 8px;
   }
 
-  /* Keep spotlight visible above bottom nav */
-  .driver-active-element {
+  html.applymate-tour-active .driver-active-element,
+  html.applymate-tour-active .applymate-tour-target {
     outline-offset: 2px !important;
   }
 }

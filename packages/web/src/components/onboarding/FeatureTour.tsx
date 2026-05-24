@@ -31,6 +31,37 @@ import { useAuthStore } from '@/store/useAuthStore';
 import './onboarding-tour.css';
 
 const LEGACY_DASHBOARD_KEY = 'applymate:tour:completed';
+const TOUR_TARGET_CLASS = 'applymate-tour-target';
+const TOUR_ANCESTOR_CLASS = 'applymate-tour-ancestor';
+
+function clearTourSpotlight(): void {
+  if (typeof document === 'undefined') return;
+  document.documentElement.classList.remove('applymate-tour-active');
+  document.querySelectorAll(`.${TOUR_TARGET_CLASS}`).forEach((el) => {
+    el.classList.remove(TOUR_TARGET_CLASS);
+  });
+  document.querySelectorAll(`.${TOUR_ANCESTOR_CLASS}`).forEach((el) => {
+    el.classList.remove(TOUR_ANCESTOR_CLASS);
+  });
+}
+
+function applyTourSpotlight(
+  element: Element | undefined,
+  selector: string,
+): void {
+  if (typeof document === 'undefined') return;
+  clearTourSpotlight();
+  document.documentElement.classList.add('applymate-tour-active');
+  const el = (element ??
+    document.querySelector(selector)) as HTMLElement | null;
+  if (!el) return;
+  el.classList.add(TOUR_TARGET_CLASS);
+  let parent = el.parentElement;
+  while (parent && parent !== document.body) {
+    parent.classList.add(TOUR_ANCESTOR_CLASS);
+    parent = parent.parentElement;
+  }
+}
 
 function markTourCompleteLocal(storageKey: string): void {
   try {
@@ -82,6 +113,7 @@ function collectSteps(defs: TourStepDef[], narrow: boolean): DriveStep[] {
         popoverOffset: row.popoverOffset ?? 16,
       } as DriveStep['popover'],
       onHighlightStarted: (element) => {
+        const spotlight = () => applyTourSpotlight(element, selector);
         const scrollTarget = () => {
           const target = element ?? document.querySelector(selector);
           const block =
@@ -93,11 +125,13 @@ function collectSteps(defs: TourStepDef[], narrow: boolean): DriveStep[] {
             inline: 'nearest',
             behavior: 'smooth',
           });
+          spotlight();
         };
         if (row.beforeHighlight) {
           row.beforeHighlight();
           const delay = narrow && row.revealOnHighlight ? 360 : 150;
           window.setTimeout(scrollTarget, delay);
+          window.setTimeout(spotlight, 40);
           return;
         }
         scrollTarget();
@@ -288,7 +322,7 @@ export function FeatureTour() {
 
       const cfg: Config = {
         animate: true,
-        overlayOpacity: 0.72,
+        overlayOpacity: 0.78,
         overlayColor: '#050808',
         stagePadding: 8,
         stageRadius: 12,
@@ -302,6 +336,7 @@ export function FeatureTour() {
         steps: withButtons,
         onPopoverRender: attachPopoverChrome(withButtons.length, tourId),
         onDestroyed: () => {
+          clearTourSpotlight();
           driverRef.current = null;
           activeTourRef.current = null;
           if (

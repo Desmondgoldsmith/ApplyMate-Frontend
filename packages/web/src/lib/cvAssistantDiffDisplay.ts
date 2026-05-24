@@ -24,7 +24,167 @@ export function readCvDataSummaryText(cv: unknown): string {
   return '';
 }
 
-function readTargetFromBlob(targetSection: string, blob: unknown, maxJson: number): string {
+function trimToMax(text: string, max: number): string {
+  const t = text.trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max)}…`;
+}
+
+function readTextField(value: unknown): string {
+  if (typeof value === 'string') return value.trim();
+  if (value && typeof value === 'object' && 'text' in (value as object)) {
+    const t = (value as { text?: unknown }).text;
+    if (typeof t === 'string') return t.trim();
+  }
+  return '';
+}
+
+function formatExperienceItems(items: unknown[]): string {
+  const lines: string[] = [];
+  for (const raw of items) {
+    if (!raw || typeof raw !== 'object') continue;
+    const it = raw as Record<string, unknown>;
+    const title = String(it.title ?? it.role ?? it.position ?? '').trim();
+    const company = String(
+      it.company ?? it.employer ?? it.organization ?? '',
+    ).trim();
+    const headline = [title, company].filter(Boolean).join(' · ');
+    if (headline) lines.push(headline);
+    const desc = readTextField(it.description) || readTextField(it.summary);
+    if (desc) lines.push(desc);
+    const bullets = it.bullets ?? it.highlights ?? it.achievements;
+    if (Array.isArray(bullets)) {
+      for (const b of bullets) {
+        const s = typeof b === 'string' ? b.trim() : readTextField(b);
+        if (s) lines.push(`• ${s}`);
+      }
+    }
+    if (lines.length) lines.push('');
+  }
+  return lines.join('\n').trim();
+}
+
+function formatEducationItems(items: unknown[]): string {
+  const lines: string[] = [];
+  for (const raw of items) {
+    if (!raw || typeof raw !== 'object') continue;
+    const it = raw as Record<string, unknown>;
+    const school = String(it.school ?? it.institution ?? '').trim();
+    const degree = String(it.degree ?? it.qualification ?? '').trim();
+    const field = String(it.field ?? it.major ?? '').trim();
+    const headline = [degree, field, school].filter(Boolean).join(' · ');
+    if (headline) lines.push(headline);
+    const desc = readTextField(it.description);
+    if (desc) lines.push(desc);
+    if (lines.length) lines.push('');
+  }
+  return lines.join('\n').trim();
+}
+
+function formatSkillsBlob(value: unknown): string {
+  if (!value || typeof value !== 'object') return '';
+  const o = value as Record<string, unknown>;
+  const categories = o.categories;
+  if (Array.isArray(categories)) {
+    return categories
+      .map((cat) => {
+        if (!cat || typeof cat !== 'object') return '';
+        const c = cat as Record<string, unknown>;
+        const name = String(c.name ?? c.category ?? '').trim();
+        const skills = c.skills ?? c.items;
+        const list = Array.isArray(skills)
+          ? skills
+              .map((s) => (typeof s === 'string' ? s.trim() : ''))
+              .filter(Boolean)
+          : [];
+        if (!name && list.length === 0) return '';
+        return list.length ? `${name}: ${list.join(', ')}` : name;
+      })
+      .filter(Boolean)
+      .join('\n');
+  }
+  const flat = o.skills ?? o.items;
+  if (Array.isArray(flat)) {
+    return flat
+      .map((s) => (typeof s === 'string' ? s.trim() : ''))
+      .filter(Boolean)
+      .join(', ');
+  }
+  return '';
+}
+
+function formatGenericItems(items: unknown[]): string {
+  const lines: string[] = [];
+  for (const raw of items) {
+    if (!raw || typeof raw !== 'object') continue;
+    const it = raw as Record<string, unknown>;
+    const title = String(it.title ?? it.name ?? '').trim();
+    if (title) lines.push(title);
+    const body =
+      readTextField(it.body) ||
+      readTextField(it.description) ||
+      readTextField(it.summary);
+    if (body) lines.push(body);
+    if (lines.length) lines.push('');
+  }
+  return lines.join('\n').trim();
+}
+
+function formatSectionBlob(targetSection: string, value: unknown): string {
+  if (value == null) return '';
+  if (typeof value === 'string') return value.trim();
+  if (typeof value !== 'object') return String(value);
+  const o = value as Record<string, unknown>;
+  const ts = targetSection.trim().toLowerCase();
+
+  if (ts === 'summary') {
+    const t = readCvDataSummaryText(value);
+    if (t.trim()) return t.trim();
+  }
+
+  if ('text' in o && typeof o.text === 'string' && Object.keys(o).length <= 2) {
+    return o.text.trim();
+  }
+
+  const items = o.items;
+  if (Array.isArray(items)) {
+    if (ts === 'experience' || ts === 'experiences')
+      return formatExperienceItems(items);
+    if (ts === 'education') return formatEducationItems(items);
+    if (ts === 'skills')
+      return formatSkillsBlob(value) || formatGenericItems(items);
+    return formatGenericItems(items);
+  }
+
+  if (ts === 'skills') {
+    const skills = formatSkillsBlob(value);
+    if (skills) return skills;
+  }
+
+  if (ts === 'personal') {
+    const parts = [
+      o.fullName,
+      o.name,
+      o.email,
+      o.phone,
+      o.location,
+      o.city,
+      o.linkedin,
+      o.website,
+    ]
+      .map((p) => (typeof p === 'string' ? p.trim() : ''))
+      .filter(Boolean);
+    if (parts.length) return parts.join('\n');
+  }
+
+  return '';
+}
+
+function readTargetFromBlob(
+  targetSection: string,
+  blob: unknown,
+  maxJson: number,
+): string {
   const ts = targetSection.trim().toLowerCase();
   if (!ts) return '';
   if (ts === 'summary') {
@@ -32,30 +192,24 @@ function readTargetFromBlob(targetSection: string, blob: unknown, maxJson: numbe
     if (fromSummary.trim()) return fromSummary;
   }
   if (blob == null) return '';
-  if (typeof blob === 'string') return blob.length > maxJson ? `${blob.slice(0, maxJson)}…` : blob;
-  if (typeof blob !== 'object') return String(blob);
+  if (typeof blob === 'string') return trimToMax(blob, maxJson);
+  if (typeof blob !== 'object') return trimToMax(String(blob), maxJson);
   const o = blob as Record<string, unknown>;
   const direct = o[ts];
-  if (typeof direct === 'string') return direct;
-  if (direct != null && typeof direct === 'object') {
-    if ('text' in (direct as object)) {
-      const t = (direct as { text?: unknown }).text;
-      if (typeof t === 'string') return t;
-    }
-    try {
-      const j = JSON.stringify(direct, null, 2);
-      return j.length > maxJson ? `${j.slice(0, maxJson)}…` : j;
-    } catch {
-      return '';
-    }
+  if (typeof direct === 'string') return trimToMax(direct, maxJson);
+  if (direct != null) {
+    const formatted = formatSectionBlob(ts, direct);
+    if (formatted) return trimToMax(formatted, maxJson);
   }
   if (ts === 'summary') {
     const again = readCvDataSummaryText(blob);
-    if (again) return again;
+    if (again) return trimToMax(again, maxJson);
   }
+  const whole = formatSectionBlob(ts, blob);
+  if (whole) return trimToMax(whole, maxJson);
   try {
     const j = JSON.stringify(o, null, 2);
-    return j.length > maxJson ? `${j.slice(0, maxJson)}…` : j;
+    return trimToMax(j, maxJson);
   } catch {
     return '';
   }

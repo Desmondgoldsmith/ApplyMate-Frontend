@@ -42,6 +42,7 @@ import { BuilderRichTextField } from '@/components/cv/BuilderRichTextField';
 import { CategorySkillsInput } from '@/components/cv/CategorySkillsInput';
 import { CvDateField } from '@/components/cv/CvDateField';
 import { CVDocumentPreview } from '@/components/cv/CVDocumentPreview';
+import { CvDiffMobileActionBar } from '@/components/cv/CvDiffMobileActionBar';
 import { CvImprovementDiffTruthPanel } from '@/components/cv/CvImprovementDiffTruthPanel';
 import { CvTripleShellPreviewColumn } from '@/components/cv/CvTripleShellPreviewColumn';
 import {
@@ -5252,14 +5253,30 @@ export function CVBuilder({
     </div>
   );
 
+  const diffActionBar = (
+    <CvDiffMobileActionBar
+      visible={Boolean(diffSection?.trim() && onAcceptDiff && onRejectDiff)}
+      sectionId={diffSection}
+      disabled={diffActionsDisabled}
+      onAccept={() => onAcceptDiff?.()}
+      onReject={() => onRejectDiff?.()}
+    />
+  );
+
   if (isTailorView) {
     return (
       <CvOverlayLayerProvider zIndex={TAILOR_CV_PORTAL_Z}>
         {builderTree}
+        {diffActionBar}
       </CvOverlayLayerProvider>
     );
   }
-  return builderTree;
+  return (
+    <>
+      {builderTree}
+      {diffActionBar}
+    </>
+  );
 }
 
 function Field({

@@ -274,6 +274,21 @@ export function OnboardingResumeClinic({
     | null
   >(null);
 
+  useEffect(() => {
+    if (diffPreview?.section && jumpToSectionRef.current) {
+      const t = window.setTimeout(() => {
+        jumpToSectionRef.current?.(diffPreview.section);
+      }, 350);
+      return () => window.clearTimeout(t);
+    }
+  }, [diffPreview]);
+
+  useEffect(() => {
+    if (diffPreview !== null) {
+      setMobileInsightsOpen(false);
+    }
+  }, [diffPreview]);
+
   const resolveImprovementPointerByField = useCallback(
     async (fieldPath: string): Promise<string | null> => {
       if (!profileId.trim() || !fieldPath.trim()) return null;

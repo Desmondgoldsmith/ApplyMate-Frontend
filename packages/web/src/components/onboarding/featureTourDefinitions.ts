@@ -138,14 +138,17 @@ function dashboardStepsMobile(): TourStepDef[] {
     },
     {
       selector: '[data-tour="mobile-nav-toggle"]',
-      title: 'More options on your phone',
+      narrowSelector: '[data-tour="mobile-bottom-nav"]',
+      title: 'Navigation on your phone',
       description:
-        'Tap this grid button anytime to open the menu bar — Jobs, CV Clinic, Interview Prep, and the rest of the app live there.',
+        'This bar is your hub — Home, Jobs, CV, Profiles, and More. Tap the grid icon (bottom-left) anytime to show or hide it.',
       side: 'top',
+      narrowSide: 'top',
       stagePadding: 8,
       stageRadius: 12,
-      popoverOffset: 16,
-      beforeHighlight: () => closeMobileNavForTour(),
+      popoverOffset: 18,
+      revealOnHighlight: true,
+      beforeHighlight: openMobileNavForTour,
     },
     {
       selector: '[data-tour="recommended-move"]',

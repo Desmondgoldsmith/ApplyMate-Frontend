@@ -254,6 +254,7 @@ export function MobileBottomNav() {
             transition={{ type: 'spring', damping: 28, stiffness: 320 }}
             className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#00C9B1]/20 bg-[#0C0F0F]/95 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-8px_24px_rgba(0,0,0,0.35)] backdrop-blur-md md:hidden"
             aria-label="Main navigation"
+            data-tour="mobile-bottom-nav"
           >
             <div
               className="grid gap-0.5 px-1"
