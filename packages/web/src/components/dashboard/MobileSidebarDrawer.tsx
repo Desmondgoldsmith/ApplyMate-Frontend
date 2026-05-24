@@ -45,7 +45,10 @@ export function MobileSidebarDrawer({ open, onClose }: Props) {
   const jobSuite = items.find((i) => i.id === 'job-workspace');
 
   useEffect(() => {
-    if (jobSuite?.children?.length && isDashboardNavEntryActive(pathname, jobSuite)) {
+    if (
+      jobSuite?.children?.length &&
+      isDashboardNavEntryActive(pathname, jobSuite)
+    ) {
       setJobsOpen(true);
     }
   }, [pathname, jobSuite]);
@@ -70,8 +73,7 @@ export function MobileSidebarDrawer({ open, onClose }: Props) {
     const Icon = item.icon;
     const active = isDashboardNavActive(pathname, item.href);
     const soon = Boolean(item.comingSoon && item.feature);
-    const tourAttr =
-      item.id === 'job-board' ? 'nav-job-board' : item.id === 'job-analyze' ? 'nav-job-analyzer' : undefined;
+    const tourAttr = item.tourAttr;
     return (
       <Link
         key={item.id + item.href}
@@ -86,7 +88,12 @@ export function MobileSidebarDrawer({ open, onClose }: Props) {
             : 'border-l-2 border-transparent text-white/45 hover:bg-white/[0.05] hover:text-white/80',
         )}
       >
-        <Icon className={cn('h-5 w-5 shrink-0', active ? 'text-[#00C9B1]' : 'text-white/45')} />
+        <Icon
+          className={cn(
+            'h-5 w-5 shrink-0',
+            active ? 'text-[#00C9B1]' : 'text-white/45',
+          )}
+        />
         <span className="min-w-0 flex-1 truncate">{item.label}</span>
         {soon ? (
           <span className="shrink-0 rounded-full bg-[#00C9B1]/15 px-1.5 py-px text-[9px] font-semibold uppercase text-[#00C9B1]">
@@ -121,12 +128,18 @@ export function MobileSidebarDrawer({ open, onClose }: Props) {
             initial={{ x: '-100%' }}
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
-            transition={{ type: 'tween', duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            transition={{
+              type: 'tween',
+              duration: 0.28,
+              ease: [0.22, 1, 0.36, 1],
+            }}
           >
             <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
               <div className="flex items-center gap-2">
                 <span className="h-5 w-5 rounded-full bg-[#00C9B1]" />
-                <span className="text-[15px] font-semibold text-white/90">ApplyMate</span>
+                <span className="text-[15px] font-semibold text-white/90">
+                  ApplyMate
+                </span>
               </div>
               <button
                 type="button"
@@ -138,7 +151,10 @@ export function MobileSidebarDrawer({ open, onClose }: Props) {
               </button>
             </div>
 
-            <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3 app-scrollbar" aria-label="Main">
+            <nav
+              className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3 app-scrollbar"
+              aria-label="Main"
+            >
               {items.map((item) => {
                 if (item.id === 'job-workspace' && item.children?.length) {
                   const groupActive = isDashboardNavEntryActive(pathname, item);
@@ -155,15 +171,27 @@ export function MobileSidebarDrawer({ open, onClose }: Props) {
                         )}
                         aria-expanded={jobsOpen}
                       >
-                        <item.icon className={cn('h-5 w-5 shrink-0', groupActive ? 'text-[#00C9B1]' : 'text-white/45')} />
-                        <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                        <item.icon
+                          className={cn(
+                            'h-5 w-5 shrink-0',
+                            groupActive ? 'text-[#00C9B1]' : 'text-white/45',
+                          )}
+                        />
+                        <span className="min-w-0 flex-1 truncate">
+                          {item.label}
+                        </span>
                         <ChevronDown
-                          className={cn('h-4 w-4 shrink-0 text-white/35 transition-transform', jobsOpen && 'rotate-180')}
+                          className={cn(
+                            'h-4 w-4 shrink-0 text-white/35 transition-transform',
+                            jobsOpen && 'rotate-180',
+                          )}
                         />
                       </button>
                       {jobsOpen ? (
                         <div className="space-y-0.5 border-l border-white/[0.06] ml-3 pl-1">
-                          {item.children.map((ch) => renderLeafDrawer(ch, true))}
+                          {item.children.map((ch) =>
+                            renderLeafDrawer(ch, true),
+                          )}
                         </div>
                       ) : null}
                     </div>
@@ -179,8 +207,12 @@ export function MobileSidebarDrawer({ open, onClose }: Props) {
                   {initials}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-[13px] font-medium text-white">{displayName}</p>
-                  <p className="truncate text-xs text-white/40">{user?.email}</p>
+                  <p className="truncate text-[13px] font-medium text-white">
+                    {displayName}
+                  </p>
+                  <p className="truncate text-xs text-white/40">
+                    {user?.email}
+                  </p>
                 </div>
               </div>
               <button

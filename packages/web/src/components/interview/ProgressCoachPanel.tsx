@@ -3,7 +3,10 @@
 import { memo, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Sparkles } from 'lucide-react';
-import { useAdaptiveProfile, useInterviewPrepProgress } from '@/hooks/useInterviewPrep';
+import {
+  useAdaptiveProfile,
+  useInterviewPrepProgress,
+} from '@/hooks/useInterviewPrep';
 import { useInterviewSessions } from '@/hooks/useInterviews';
 import {
   enrichProgressTrendPoints,
@@ -13,7 +16,10 @@ import { SUGGESTED_MODE_LABELS } from '@/lib/interview-prep-types';
 import { cn } from '@/lib/utils';
 
 const GrowthTrendChart = dynamic(
-  () => import('@/components/interview/GrowthTrendChart').then((m) => m.GrowthTrendChart),
+  () =>
+    import('@/components/interview/GrowthTrendChart').then(
+      (m) => m.GrowthTrendChart,
+    ),
   {
     ssr: false,
     loading: () => (
@@ -52,12 +58,15 @@ export const ProgressCoachPanel = memo(function ProgressCoachPanel({
   }, [profileQ.data, progressQ.data, sessionsQ.data]);
 
   const recommended =
-    profileQ.data?.recommendedDifficulty ?? profileQ.data?.recommendedDifficulty ?? 'adaptive';
+    profileQ.data?.recommendedDifficulty ??
+    profileQ.data?.recommendedDifficulty ??
+    'adaptive';
 
   const lastDelta = useMemo(() => {
     if (trendPoints.length < 2) return null;
     const sorted = [...trendPoints].sort(
-      (a, b) => new Date(a.capturedAt).getTime() - new Date(b.capturedAt).getTime(),
+      (a, b) =>
+        new Date(a.capturedAt).getTime() - new Date(b.capturedAt).getTime(),
     );
     const prev = sorted[sorted.length - 2];
     const last = sorted[sorted.length - 1];
@@ -73,13 +82,19 @@ export const ProgressCoachPanel = memo(function ProgressCoachPanel({
 
   if (profileQ.isLoading && progressQ.isLoading) {
     return (
-      <div className={cn('ip-surface h-48 animate-pulse', className)} aria-hidden />
+      <div
+        className={cn('ip-surface h-48 animate-pulse', className)}
+        aria-hidden
+      />
     );
   }
 
   return (
     <section
-      className={cn('ip-surface relative p-6', className)}
+      className={cn(
+        'ip-surface relative min-w-0 max-w-full p-5 sm:p-6',
+        className,
+      )}
       aria-labelledby="progress-coach-heading"
     >
       <span className="ip-badge-training">Training active</span>
@@ -94,7 +109,8 @@ export const ProgressCoachPanel = memo(function ProgressCoachPanel({
             Your progress coach
           </h2>
           <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">
-            The system tracks your patterns and recommends what to practice next.
+            The system tracks your patterns and recommends what to practice
+            next.
           </p>
 
           <p className="ip-section-label mt-5">Since last session</p>
@@ -102,14 +118,20 @@ export const ProgressCoachPanel = memo(function ProgressCoachPanel({
             {lastDelta != null ? (
               <>
                 {lastDelta >= 0 ? 'Improved' : 'Down'}{' '}
-                <span className={lastDelta >= 0 ? 'text-[var(--text-green)]' : 'text-[var(--text-amber)]'}>
+                <span
+                  className={
+                    lastDelta >= 0
+                      ? 'text-[var(--text-green)]'
+                      : 'text-[var(--text-amber)]'
+                  }
+                >
                   {lastDelta >= 0 ? '+' : ''}
                   {lastDelta} pts
                 </span>{' '}
                 on your readiness score.
               </>
             ) : (
-              'Complete your next session to see how you&apos;re improving.'
+              "Complete your next session to see how you're improving."
             )}
           </p>
 

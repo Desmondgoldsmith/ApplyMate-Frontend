@@ -6,7 +6,6 @@ import { Bell, Loader2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { useMobileShell } from '@/components/dashboard/MobileShellContext';
 import {
   invalidateNotificationList,
   NOTIFICATION_UNREAD_COUNT_KEY,
@@ -60,7 +59,6 @@ function formatRelativeTime(iso: string): string {
 export function NotificationBell() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { navVisible, navBottomOffset } = useMobileShell();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -130,10 +128,6 @@ export function NotificationBell() {
   const listError = notifications.isError
     ? getApiErrorMessage(notifications.error)
     : null;
-
-  const sheetBottom = navVisible
-    ? `calc(${navBottomOffset} + 3.25rem)`
-    : navBottomOffset;
 
   const panelHeader = (
     <motion.div className="flex items-center justify-between gap-2 border-b border-white/10 px-3 py-2.5 md:py-2">
@@ -276,16 +270,14 @@ export function NotificationBell() {
             />
             <motion.div
               ref={panelRef}
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 12 }}
+              exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
-              style={{ bottom: sheetBottom }}
-              className="fixed inset-x-0 z-[119] overflow-hidden rounded-t-2xl border border-white/10 bg-[#0C0F0F] pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_rgba(0,0,0,0.45)] md:absolute md:inset-x-auto md:bottom-auto md:right-0 md:top-full md:mt-2 md:w-[min(calc(100vw-1.5rem),22rem)] md:rounded-xl md:pb-0 md:shadow-xl"
+              className="fixed left-3 right-3 top-[calc(3.5rem+env(safe-area-inset-top,0px)+0.35rem)] z-[119] flex max-h-[min(58dvh,520px)] flex-col overflow-hidden rounded-xl border border-white/10 bg-[#0C0F0F] shadow-[0_16px_48px_rgba(0,0,0,0.5)] md:absolute md:inset-x-auto md:left-auto md:right-0 md:top-full md:mt-2 md:w-[min(calc(100vw-1.5rem),22rem)] md:max-h-[min(70vh,360px)]"
               onMouseDownCapture={(e) => e.stopPropagation()}
               onTouchStartCapture={(e) => e.stopPropagation()}
             >
-              <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-white/20 md:hidden" />
               {panelHeader}
               {panelBody}
             </motion.div>

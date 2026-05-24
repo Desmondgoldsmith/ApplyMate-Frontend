@@ -31,7 +31,14 @@ export type DashboardNavItem = {
 };
 
 export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
-  { id: 'overview', label: 'Overview', shortLabel: 'Home', href: '/dashboard', icon: LayoutDashboard, always: true },
+  {
+    id: 'overview',
+    label: 'Overview',
+    shortLabel: 'Home',
+    href: '/dashboard',
+    icon: LayoutDashboard,
+    always: true,
+  },
   {
     id: 'job-workspace',
     label: 'Jobs workspace',
@@ -65,6 +72,7 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
         href: '/dashboard/jobs',
         icon: Briefcase,
         feature: 'jobs',
+        tourAttr: 'nav-job-hub',
       },
       {
         id: 'job-archive',
@@ -84,7 +92,14 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
       },
     ],
   },
-  { id: 'cv', label: 'CV Clinic', shortLabel: 'CV', href: '/dashboard/cv', icon: FileText, always: true },
+  {
+    id: 'cv',
+    label: 'CV Clinic',
+    shortLabel: 'CV',
+    href: '/dashboard/cv',
+    icon: FileText,
+    always: true,
+  },
   {
     id: 'cv-profiles',
     label: 'CV Profiles',
@@ -110,11 +125,20 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
     feature: 'student',
     comingSoon: true,
   },
-  { id: 'settings', label: 'Settings', shortLabel: 'Settings', href: '/dashboard/settings', icon: Settings, always: true },
+  {
+    id: 'settings',
+    label: 'Settings',
+    shortLabel: 'Settings',
+    href: '/dashboard/settings',
+    icon: Settings,
+    always: true,
+  },
 ];
 
 /** Flatten nested nav for consumers that need a linear list (e.g. “extra” items). */
-export function flattenDashboardNavItems(items: DashboardNavItem[]): DashboardNavItem[] {
+export function flattenDashboardNavItems(
+  items: DashboardNavItem[],
+): DashboardNavItem[] {
   const out: DashboardNavItem[] = [];
   for (const item of items) {
     if (item.children?.length) {
@@ -126,7 +150,9 @@ export function flattenDashboardNavItems(items: DashboardNavItem[]): DashboardNa
   return out;
 }
 
-export function getVisibleDashboardNavItems(features: string[]): DashboardNavItem[] {
+export function getVisibleDashboardNavItems(
+  features: string[],
+): DashboardNavItem[] {
   return DASHBOARD_NAV_ITEMS.filter((item) => {
     if (item.always) return true;
     if (!item.feature) return false;
@@ -159,18 +185,27 @@ export function isDashboardNavActive(pathname: string, href: string): boolean {
   if (h === '/dashboard/jobs') {
     if (p === '/dashboard/jobs' || p === '/dashboard/jobs/') return true;
     if (p.startsWith('/dashboard/jobs/')) {
-      return !p.startsWith('/dashboard/jobs/analyze') && !p.startsWith('/dashboard/jobs/archive');
+      return (
+        !p.startsWith('/dashboard/jobs/analyze') &&
+        !p.startsWith('/dashboard/jobs/archive')
+      );
     }
     return false;
   }
   if (h === '/dashboard/jobs/archive') {
-    return p === '/dashboard/jobs/archive' || p.startsWith('/dashboard/jobs/archive/');
+    return (
+      p === '/dashboard/jobs/archive' ||
+      p.startsWith('/dashboard/jobs/archive/')
+    );
   }
   return p === h || p.startsWith(`${h}/`);
 }
 
 /** Active if this entry or any descendant matches pathname. */
-export function isDashboardNavEntryActive(pathname: string, item: DashboardNavItem): boolean {
+export function isDashboardNavEntryActive(
+  pathname: string,
+  item: DashboardNavItem,
+): boolean {
   if (item.children?.length) {
     return item.children.some((c) => isDashboardNavActive(pathname, c.href));
   }

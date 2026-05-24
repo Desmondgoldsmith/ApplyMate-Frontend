@@ -26,6 +26,7 @@ import { InterviewerThinkingIndicator } from '@/components/interview/Interviewer
 import { TypingText } from '@/components/interview/TypingText';
 import { InterviewVoiceBanner } from '@/components/interview/InterviewVoiceBanner';
 import { useInterviewTTS } from '@/hooks/useInterviewTTS';
+import { MobileExperienceBanner } from '@/components/dashboard/MobileExperienceBanner';
 import { Button } from '@/components/ui/Button';
 import {
   useAdaptiveProfile,
@@ -2156,15 +2157,19 @@ export default function InterviewSessionPage() {
       />
       <div
         className={cn(
-          'ip-page relative mx-auto flex w-full max-w-[1400px] min-h-[calc(100dvh-3.5rem)] max-h-[calc(100dvh-3.5rem)] flex-col overflow-hidden',
+          'ip-page relative mx-auto flex h-full min-h-0 w-full min-w-0 max-w-[1400px] flex-col overflow-hidden',
           isScoringPhase && 'ip-page--scoring',
         )}
       >
+        <MobileExperienceBanner
+          surface="interview-prep"
+          className="mx-3 mb-2 shrink-0 lg:mx-4 lg:hidden"
+        />
         <InterviewRoomAtmosphereLayer
           active={isSimSession && interviewSim.active}
           atmosphere={interviewSim.atmosphere ?? 'calm'}
           pressureTier={interviewSim.pressureTier}
-          className="ip-session-shell min-h-0 flex-1 overflow-hidden"
+          className="ip-session-shell min-h-0 min-w-0 flex-1 overflow-hidden"
         >
           {sessionExpired ? (
             <div

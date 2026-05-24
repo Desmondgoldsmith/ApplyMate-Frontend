@@ -744,21 +744,33 @@
 }
 
 @media (max-width: 639px) {
+  .ip-page .ip-live-split-left {
+    flex: 0 0 auto;
+    max-height: min(48dvh, 440px);
+    min-height: 12rem;
+  }
+
   .ip-page .ip-panel-right-sheet {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 30;
-    max-height: 60vh;
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.45);
-    transform: translateY(100%);
-    transition: transform 280ms ease-out;
+    position: relative;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    z-index: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
+    transform: none;
+    transition: none;
   }
 
   .ip-page .ip-panel-right-sheet-open {
-    transform: translateY(0);
+    transform: none;
+  }
+
+  .ip-page .ip-fab-answer {
+    display: none;
   }
 }
 

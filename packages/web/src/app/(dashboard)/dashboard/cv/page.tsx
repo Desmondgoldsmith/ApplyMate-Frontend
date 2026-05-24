@@ -44,6 +44,7 @@ import { ImprovementsPanel } from '@/components/cv/ImprovementsPanel';
 import { CVUploadZone } from '@/components/dashboard/CVUploadZone';
 import { CreateCVProfileModal } from '@/components/dashboard/CreateCVProfileModal';
 import { CvClinicHub } from '@/components/dashboard/CvClinicHub';
+import { MobileExperienceBanner } from '@/components/dashboard/MobileExperienceBanner';
 import { Button } from '@/components/ui/Button';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { MobileDockFab } from '@/components/ui/MobileDockFab';
@@ -2667,12 +2668,18 @@ function CVPageContent() {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="-mt-3 flex min-h-0 w-full min-w-0 max-w-full flex-col gap-1.5 pb-0 pt-0 max-lg:h-full max-lg:min-h-0 max-lg:flex-1 max-lg:gap-0 max-lg:overflow-hidden max-lg:px-0 md:-mt-4 lg:-mx-0 lg:h-full lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:pt-0"
+      className="flex min-h-0 w-full min-w-0 max-w-full flex-col gap-1.5 pb-0 pt-0 max-lg:h-full max-lg:min-h-0 max-lg:flex-1 max-lg:gap-0 max-lg:overflow-hidden max-lg:px-0 md:-mt-2 lg:-mx-0 lg:h-full lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:pt-0"
     >
       <CreateCVProfileModal
         open={createCvOpen}
         onOpenChange={setCreateCvOpen}
       />
+      {targetId ? (
+        <MobileExperienceBanner
+          surface="cv-clinic"
+          className="mx-3 mb-2 max-lg:mx-4 lg:hidden"
+        />
+      ) : null}
       {targetId ? (
         <AISectionAssistantPanel
           open={assistantOpen}

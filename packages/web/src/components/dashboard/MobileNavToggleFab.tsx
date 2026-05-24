@@ -12,6 +12,7 @@ export function MobileNavToggleFab() {
   return (
     <button
       type="button"
+      data-tour="mobile-nav-toggle"
       onClick={toggleNav}
       aria-label={navVisible ? 'Hide navigation' : 'Show navigation'}
       aria-expanded={navVisible}

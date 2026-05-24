@@ -17,6 +17,7 @@ type Props = {
   headerRight?: ReactNode;
   children: ReactNode;
   className?: string;
+  'data-tour'?: string;
 };
 
 export function DashboardCollapsibleSection({
@@ -26,6 +27,7 @@ export function DashboardCollapsibleSection({
   headerRight,
   children,
   className,
+  'data-tour': dataTour,
 }: Props) {
   const lsKey = `${LS_PREFIX}${storageKey}`;
   const [expanded, setExpanded] = useState(true);
@@ -33,7 +35,10 @@ export function DashboardCollapsibleSection({
 
   useEffect(() => {
     try {
-      const v = typeof window !== 'undefined' ? window.localStorage.getItem(lsKey) : null;
+      const v =
+        typeof window !== 'undefined'
+          ? window.localStorage.getItem(lsKey)
+          : null;
       if (v === '1') setExpanded(false);
     } catch {
       /* ignore */
@@ -54,7 +59,10 @@ export function DashboardCollapsibleSection({
   }, [lsKey]);
 
   return (
-    <section className={cn('scroll-mt-4 min-w-0', className)}>
+    <section
+      className={cn('scroll-mt-4 min-w-0', className)}
+      {...(dataTour ? { 'data-tour': dataTour } : {})}
+    >
       <button
         type="button"
         className="flex w-full cursor-pointer select-none items-center gap-2 border-0 bg-transparent p-0 pb-3 text-left"
@@ -68,9 +76,7 @@ export function DashboardCollapsibleSection({
           )}
           aria-hidden
         />
-        <span
-          className="text-[14px] font-semibold leading-snug text-[var(--text-primary)]"
-        >
+        <span className="text-[14px] font-semibold leading-snug text-[var(--text-primary)]">
           {title}
         </span>
         {countBadge ? (

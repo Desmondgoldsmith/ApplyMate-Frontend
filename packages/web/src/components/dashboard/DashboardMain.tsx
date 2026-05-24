@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 
 import { DashboardMainContext } from '@/components/dashboard/DashboardMainContext';
@@ -26,6 +26,10 @@ export function DashboardMain({ children }: { children: ReactNode }) {
   const cvClinicMobile = isCvClinicPath(pathname);
   const { navVisible } = useMobileShell();
 
+  useEffect(() => {
+    mainRef.current?.scrollTo(0, 0);
+  }, [pathname]);
+
   return (
     <DashboardMainContext.Provider value={mainRef}>
       <main
@@ -38,10 +42,10 @@ export function DashboardMain({ children }: { children: ReactNode }) {
             ? 'pb-[max(6.25rem,calc(5.25rem+env(safe-area-inset-bottom)))] sm:pb-28'
             : 'pb-[max(1.25rem,calc(0.75rem+env(safe-area-inset-bottom)))] max-lg:pb-4',
           overviewSplit
-            ? 'overflow-y-auto lg:overflow-hidden'
+            ? 'scroll-content-end-pad overflow-y-auto lg:overflow-hidden'
             : cvClinicMobile
               ? 'lg:overflow-y-auto'
-              : 'overflow-y-auto',
+              : 'scroll-content-end-pad overflow-y-auto',
         )}
         data-lenis-prevent
       >

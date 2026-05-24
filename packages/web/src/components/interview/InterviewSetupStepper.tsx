@@ -42,6 +42,7 @@ import {
   type InterviewPersonaId,
 } from '@/lib/interviewPersonas';
 import { PERSONALITIES } from '@/lib/interviewPersonalities';
+import { MobileExperienceBanner } from '@/components/dashboard/MobileExperienceBanner';
 import { cn } from '@/lib/utils';
 
 const TIP_LINES = [
@@ -353,8 +354,9 @@ export function InterviewSetupStepper() {
   };
 
   return (
-    <div className="ip-page mx-auto max-w-4xl space-y-6 pb-10 max-lg:px-1 sm:px-0">
-      <header>
+    <div className="ip-page mx-auto w-full min-w-0 max-w-4xl space-y-6 overflow-x-hidden px-3 pb-10 sm:px-0">
+      <MobileExperienceBanner surface="interview-prep" className="mb-1" />
+      <header className="min-w-0">
         <h1 className="text-[22px] font-bold text-[var(--text-primary)]">
           Interview Prep
         </h1>
@@ -371,7 +373,7 @@ export function InterviewSetupStepper() {
         <p className="mt-1 text-[13px] text-[var(--text-secondary)]">
           Pressure-based practice that overrides adaptive mode.
         </p>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className="mt-3 grid min-w-0 gap-3 sm:grid-cols-2">
           {(['hr_simulation', 'senior_interviewer_simulation'] as const).map(
             (mode) => (
               <SimulationModeCard

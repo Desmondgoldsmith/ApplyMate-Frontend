@@ -1,4 +1,9 @@
-export type TourId = 'dashboard' | 'cv-clinic' | 'job-analyzer' | 'job-hub' | 'job-board';
+export type TourId =
+  | 'dashboard'
+  | 'cv-clinic'
+  | 'job-analyzer'
+  | 'job-hub'
+  | 'job-board';
 
 export type TourSide = 'top' | 'right' | 'bottom' | 'left';
 
@@ -15,17 +20,24 @@ export type TourStepDef = {
   narrowSelector?: string;
   narrowSide?: TourSide;
   beforeHighlight?: () => void;
+  /** Mobile: keep step when target mounts after `beforeHighlight` (e.g. bottom nav). */
+  revealOnHighlight?: boolean;
 };
 
 export const TOUR_STORAGE_PREFIX = 'applymate:tour:';
 
-export function tourStorageKey(tourId: TourId, userId: string | undefined): string {
+export function tourStorageKey(
+  tourId: TourId,
+  userId: string | undefined,
+): string {
   const base = `${TOUR_STORAGE_PREFIX}${tourId}`;
   return userId ? `${base}:${userId}` : base;
 }
 
 export function normalizeTourPath(pathname: string): string {
-  return (pathname.split('?')[0] ?? pathname).replace(/\/$/, '') || '/dashboard';
+  return (
+    (pathname.split('?')[0] ?? pathname).replace(/\/$/, '') || '/dashboard'
+  );
 }
 
 export function matchTourId(pathname: string): TourId | null {
@@ -43,7 +55,49 @@ export function openJobsNavForTour(): void {
   window.dispatchEvent(new CustomEvent('applymate:tour-open-jobs-nav'));
 }
 
-function smartSide(el: Element, preferred: TourSide, narrow: boolean): TourSide {
+export function closeJobsNavForTour(): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('applymate:tour-close-jobs-nav'));
+  window.dispatchEvent(new CustomEvent('applymate:tour-close-more-nav'));
+}
+
+export function setMobileNavVisibleForTour(visible: boolean): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(
+    new CustomEvent('applymate:tour-set-nav-visible', { detail: { visible } }),
+  );
+}
+
+export function openMobileNavForTour(): void {
+  setMobileNavVisibleForTour(true);
+}
+
+export function closeMobileNavForTour(): void {
+  setMobileNavVisibleForTour(false);
+  closeJobsNavForTour();
+}
+
+function scrollTourTarget(selector: string): void {
+  if (typeof window === 'undefined') return;
+  window.setTimeout(() => {
+    document.querySelector(selector)?.scrollIntoView({
+      block: 'center',
+      inline: 'nearest',
+      behavior: 'smooth',
+    });
+  }, 80);
+}
+
+function openMobileNavThenJobsForTour(): void {
+  openMobileNavForTour();
+  window.setTimeout(() => openJobsNavForTour(), 320);
+}
+
+function smartSide(
+  el: Element,
+  preferred: TourSide,
+  narrow: boolean,
+): TourSide {
   if (!narrow) return preferred;
   const rect = el.getBoundingClientRect();
   const vh = window.innerHeight;
@@ -52,7 +106,11 @@ function smartSide(el: Element, preferred: TourSide, narrow: boolean): TourSide 
   return preferred === 'left' || preferred === 'right' ? 'bottom' : preferred;
 }
 
-export function resolveStepSide(el: Element, def: TourStepDef, narrow: boolean): TourSide {
+export function resolveStepSide(
+  el: Element,
+  def: TourStepDef,
+  narrow: boolean,
+): TourSide {
   const base = narrow && def.narrowSide ? def.narrowSide : def.side;
   return smartSide(el, base, narrow);
 }
@@ -65,8 +123,140 @@ export function resolveStepSelector(def: TourStepDef, narrow: boolean): string {
   return def.selector;
 }
 
-function dashboardSteps(narrow: boolean): TourStepDef[] {
-  const side = (s: TourSide) => (narrow ? 'bottom' : s) as TourSide;
+function dashboardStepsMobile(): TourStepDef[] {
+  const scroll = (selector: string) => () => scrollTourTarget(selector);
+  return [
+    {
+      selector: '[data-tour="ai-counter"]',
+      title: 'Daily AI credits',
+      description:
+        'Analyses, cover letters, and AI edits use credits. Free accounts get 5 per day; Pro is unlimited.',
+      side: 'bottom',
+      stagePadding: 6,
+      stageRadius: 10,
+      popoverOffset: 14,
+    },
+    {
+      selector: '[data-tour="mobile-nav-toggle"]',
+      title: 'More options on your phone',
+      description:
+        'Tap this grid button anytime to open the menu bar — Jobs, CV Clinic, Interview Prep, and the rest of the app live there.',
+      side: 'top',
+      stagePadding: 8,
+      stageRadius: 12,
+      popoverOffset: 16,
+      beforeHighlight: () => closeMobileNavForTour(),
+    },
+    {
+      selector: '[data-tour="recommended-move"]',
+      title: 'Recommended move',
+      description:
+        'Your single best next action — ranked by fit, urgency, and momentum. Start here when you are not sure what to do.',
+      side: 'bottom',
+      stagePadding: 10,
+      stageRadius: 14,
+      popoverOffset: 18,
+      beforeHighlight: scroll('[data-tour="recommended-move"]'),
+    },
+    {
+      selector: '[data-tour="dashboard-focus"]',
+      title: 'Your focus',
+      description:
+        'A short list of what needs attention now — follow-ups, interviews, and CV fixes.',
+      side: 'bottom',
+      stagePadding: 10,
+      stageRadius: 14,
+      popoverOffset: 18,
+      beforeHighlight: scroll('[data-tour="dashboard-focus"]'),
+    },
+    {
+      selector: '[data-tour="todays-plan"]',
+      title: "Today's Plan",
+      description:
+        'Your daily briefing — top priorities, CV fixes, and applications to finish. Refresh after you complete something.',
+      side: 'bottom',
+      stagePadding: 10,
+      stageRadius: 14,
+      popoverOffset: 18,
+      beforeHighlight: scroll('[data-tour="todays-plan"]'),
+    },
+    {
+      selector: '[data-tour="cv-clinic-card"]',
+      title: 'CV Clinic',
+      description:
+        'Score, edit, and improve your CV from here when the dashboard flags work to do.',
+      side: 'bottom',
+      stagePadding: 8,
+      stageRadius: 12,
+      popoverOffset: 18,
+      beforeHighlight: scroll('[data-tour="cv-clinic-card"]'),
+    },
+    {
+      selector: '[data-tour="getting-started"]',
+      title: 'Setup checklist',
+      description:
+        'Track the milestones that unlock the full product — most people finish in one session.',
+      side: 'bottom',
+      stagePadding: 10,
+      stageRadius: 14,
+      popoverOffset: 18,
+      beforeHighlight: scroll('[data-tour="getting-started"]'),
+    },
+    {
+      selector: '[data-tour="nav-jobs-workspace"]',
+      title: 'Jobs menu',
+      description:
+        'We opened the menu for you. Tap Jobs to reach Job Hub, Job Analyzer, and Job Board.',
+      side: 'top',
+      stagePadding: 8,
+      stageRadius: 12,
+      popoverOffset: 16,
+      revealOnHighlight: true,
+      beforeHighlight: openMobileNavForTour,
+    },
+    {
+      selector: '[data-tour="nav-job-hub"]',
+      title: 'Job Hub — your pipeline',
+      description:
+        'Every role you save or analyze lands here — track stages, notes, and documents.',
+      side: 'top',
+      stagePadding: 6,
+      stageRadius: 10,
+      popoverOffset: 14,
+      revealOnHighlight: true,
+      beforeHighlight: openMobileNavThenJobsForTour,
+    },
+    {
+      selector: '[data-tour="nav-job-analyzer"]',
+      title: 'Job Analyzer',
+      description:
+        'Paste any job description to score your CV, find gaps, and draft a tailored cover letter.',
+      side: 'top',
+      stagePadding: 6,
+      stageRadius: 10,
+      popoverOffset: 14,
+      revealOnHighlight: true,
+      beforeHighlight: openMobileNavThenJobsForTour,
+    },
+    {
+      selector: '[data-tour="upgrade-card"]',
+      title: 'Go further with Pro',
+      description:
+        'Remove daily limits and keep your full application history. Cancel anytime.',
+      side: 'bottom',
+      stagePadding: 10,
+      stageRadius: 14,
+      popoverOffset: 18,
+      beforeHighlight: () => {
+        closeMobileNavForTour();
+        scrollTourTarget('[data-tour="upgrade-card"]');
+      },
+    },
+  ];
+}
+
+function dashboardStepsDesktop(): TourStepDef[] {
+  const side = (s: TourSide) => s;
   return [
     {
       selector: '[data-tour="todays-plan"]',
@@ -98,43 +288,48 @@ function dashboardSteps(narrow: boolean): TourStepDef[] {
       stageRadius: 10,
       popoverOffset: 14,
     },
-    ...(narrow
-      ? [
-          {
-            selector: '[data-tour="nav-jobs-workspace"]',
-            title: 'Jobs workspace',
-            description:
-              'Tap Jobs in the bottom bar for Job Board (matched roles), Job Analyzer (paste any JD), and Job Hub (your pipeline).',
-            side: 'top' as TourSide,
-            stagePadding: 8,
-            stageRadius: 12,
-            popoverOffset: 16,
-          },
-        ]
-      : [
-          {
-            selector: '[data-tour="nav-job-board"]',
-            title: 'Job Board — matched roles',
-            description:
-              'Browse roles scored against your CV and location. Open any listing to see fit % before you apply.',
-            side: 'right' as TourSide,
-            stagePadding: 6,
-            stageRadius: 10,
-            popoverOffset: 16,
-            beforeHighlight: openJobsNavForTour,
-          },
-          {
-            selector: '[data-tour="nav-job-analyzer"]',
-            title: 'Job Analyzer — any role in ~60s',
-            description:
-              'Paste a job description to score your CV, surface gaps, estimate salary, and draft a tailored cover letter.',
-            side: 'right' as TourSide,
-            stagePadding: 6,
-            stageRadius: 10,
-            popoverOffset: 16,
-            beforeHighlight: openJobsNavForTour,
-          },
-        ]),
+    {
+      selector: '[data-tour="recommended-move"]',
+      title: 'Recommended move',
+      description:
+        'Your single best next action — ranked by fit, urgency, and momentum. Start here when you are not sure what to do.',
+      side: side('bottom'),
+      stagePadding: 10,
+      stageRadius: 14,
+      popoverOffset: 18,
+    },
+    {
+      selector: '[data-tour="dashboard-focus"]',
+      title: 'Your focus',
+      description:
+        'A short list of what needs attention now — follow-ups, interviews, and CV fixes. Work through these after your recommended move.',
+      side: side('bottom'),
+      stagePadding: 10,
+      stageRadius: 14,
+      popoverOffset: 18,
+    },
+    {
+      selector: '[data-tour="nav-job-hub"]',
+      title: 'Job Hub — your pipeline',
+      description:
+        'Every role you save or analyze lands here. Track stages, notes, and documents without losing context.',
+      side: 'right' as TourSide,
+      stagePadding: 6,
+      stageRadius: 10,
+      popoverOffset: 16,
+      beforeHighlight: openJobsNavForTour,
+    },
+    {
+      selector: '[data-tour="nav-job-analyzer"]',
+      title: 'Job Analyzer — any role in ~60s',
+      description:
+        'Paste a job description to score your CV, surface gaps, estimate salary, and draft a tailored cover letter.',
+      side: 'right' as TourSide,
+      stagePadding: 6,
+      stageRadius: 10,
+      popoverOffset: 16,
+      beforeHighlight: openJobsNavForTour,
+    },
     {
       selector: '[data-tour="cv-clinic-card"]',
       narrowSelector: '[data-tour="cv-clinic-card"]',
@@ -160,7 +355,8 @@ function dashboardSteps(narrow: boolean): TourStepDef[] {
     {
       selector: '[data-tour="upgrade-card"]',
       title: 'Go further with Pro',
-      description: 'Remove daily limits, unlock deeper analysis, and keep your full application history. Cancel anytime.',
+      description:
+        'Remove daily limits, unlock deeper analysis, and keep your full application history. Cancel anytime.',
       side: side('left'),
       narrowSide: 'bottom',
       stagePadding: 10,
@@ -168,6 +364,10 @@ function dashboardSteps(narrow: boolean): TourStepDef[] {
       popoverOffset: 18,
     },
   ];
+}
+
+function dashboardSteps(narrow: boolean): TourStepDef[] {
+  return narrow ? dashboardStepsMobile() : dashboardStepsDesktop();
 }
 
 function cvClinicSteps(narrow: boolean): TourStepDef[] {
@@ -253,7 +453,8 @@ function jobHubSteps(narrow: boolean): TourStepDef[] {
     {
       selector: '[data-tour="job-hub-search"]',
       title: 'Find roles fast',
-      description: 'Search by title or company, switch board vs list view, and open a card to see the full detail panel.',
+      description:
+        'Search by title or company, switch board vs list view, and open a card to see the full detail panel.',
       side: narrow ? 'bottom' : 'bottom',
       stagePadding: 8,
       stageRadius: 12,
@@ -330,7 +531,10 @@ export function stepsForTour(tourId: TourId, narrow: boolean): TourStepDef[] {
   }
 }
 
-export function tourMeta(tourId: TourId): { label: string; celebrate: boolean } {
+export function tourMeta(tourId: TourId): {
+  label: string;
+  celebrate: boolean;
+} {
   switch (tourId) {
     case 'dashboard':
       return { label: 'Dashboard', celebrate: true };

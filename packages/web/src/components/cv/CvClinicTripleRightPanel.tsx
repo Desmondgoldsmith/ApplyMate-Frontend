@@ -8,8 +8,14 @@ import type { CVBuilderQualitySignals } from '@/components/cv/CVBuilder';
 import { CVScoreCard } from '@/components/cv/CVScoreCard';
 import { ImprovementsPanel } from '@/components/cv/ImprovementsPanel';
 import { Button } from '@/components/ui/Button';
+import { ScrollContentEnd } from '@/components/ui/ScrollContentEnd';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { api, type CVImprovementItem, type CvDiffPreviewOpenParams, type CvSpellIssue } from '@/lib/api';
+import {
+  api,
+  type CVImprovementItem,
+  type CvDiffPreviewOpenParams,
+  type CvSpellIssue,
+} from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 export type CvClinicTripleRightTab = 'analysis' | 'improvements';
@@ -41,7 +47,8 @@ export type CvClinicTripleRightPanelProps = {
   bumpSpellCheck: () => void;
   bumpSpellFixAll: () => void;
   jumpToSectionRef: MutableRefObject<
-    ((sid: string, itemId?: string, opts?: { scrollForm?: boolean }) => void) | null
+    | ((sid: string, itemId?: string, opts?: { scrollForm?: boolean }) => void)
+    | null
   >;
   resolveJumpSectionKey: (rawKey: string) => string;
   onApplySpellIssue: (issue: CvSpellIssue) => void;
@@ -91,7 +98,8 @@ function CvClinicTripleRightPanelInner({
     <div
       className={cn(
         'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl transition-all duration-300',
-        highlightImprovementsAttention && 'ring-2 ring-[#00C9B1]/65 shadow-[0_0_0_6px_rgba(0,201,177,0.14)]',
+        highlightImprovementsAttention &&
+          'ring-2 ring-[#00C9B1]/65 shadow-[0_0_0_6px_rgba(0,201,177,0.14)]',
       )}
     >
       <div className="grid h-11 w-full min-w-0 shrink-0 grid-cols-2 border-b border-white/[0.07]">
@@ -135,7 +143,7 @@ function CvClinicTripleRightPanelInner({
       </div>
       <div
         data-lenis-prevent-wheel
-        className="app-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-0 pb-24 pt-1 lg:pb-6"
+        className="app-scrollbar scroll-content-end-pad min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-0 pt-1 lg:pb-6"
       >
         {tripleRightTab === 'analysis' ? (
           <div className="space-y-3 px-3">
@@ -173,12 +181,18 @@ function CvClinicTripleRightPanelInner({
             {!isOnRecommendedTemplate ? (
               <div className="flex flex-col gap-3 rounded-xl border border-[rgba(0,201,177,0.15)] bg-white/[0.02] p-4">
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-[#00C9B1]">Format suggestion for {formatRecommendation.label}</p>
-                  <p className="mt-1 text-[11px] leading-relaxed text-white/50">{formatRecommendation.reason}</p>
+                  <p className="text-xs font-semibold text-[#00C9B1]">
+                    Format suggestion for {formatRecommendation.label}
+                  </p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-white/50">
+                    {formatRecommendation.reason}
+                  </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => void onTemplateChange(formatRecommendation.recommended)}
+                  onClick={() =>
+                    void onTemplateChange(formatRecommendation.recommended)
+                  }
                   className="inline-flex shrink-0 items-center justify-center rounded-full border border-[rgba(0,201,177,0.3)] bg-[rgba(0,201,177,0.12)] px-4 py-1.5 text-xs font-semibold text-[#00C9B1] transition hover:border-[#00C9B1]/50"
                 >
                   Try {formatRecommendation.recommended}
@@ -191,7 +205,9 @@ function CvClinicTripleRightPanelInner({
             {completenessGroups.length > 0 ? (
               <div className="mx-3 mt-3 rounded-[10px] border border-[rgba(251,191,36,0.20)] bg-[rgba(251,191,36,0.07)] px-3.5 py-3">
                 <div className="mb-2 flex items-center justify-between gap-2">
-                  <p className="text-xs font-semibold text-white/85">Sections to complete</p>
+                  <p className="text-xs font-semibold text-white/85">
+                    Sections to complete
+                  </p>
                 </div>
                 <p className="mb-2.5 text-[11px] text-white/40">
                   {completenessScore != null
@@ -202,15 +218,24 @@ function CvClinicTripleRightPanelInner({
                 </p>
                 <ul className="divide-y divide-white/[0.06]">
                   {completenessGroups.map((sec) => (
-                    <li key={sec.sectionKey} className="flex items-center justify-between gap-2 py-1.5 first:pt-0 last:pb-0">
-                      <span className="text-xs text-white/70">{sec.sectionLabel}</span>
+                    <li
+                      key={sec.sectionKey}
+                      className="flex items-center justify-between gap-2 py-1.5 first:pt-0 last:pb-0"
+                    >
+                      <span className="text-xs text-white/70">
+                        {sec.sectionLabel}
+                      </span>
                       <button
                         type="button"
                         className="inline-flex h-6 shrink-0 items-center rounded-md border border-white/[0.12] bg-transparent px-2.5 text-[11px] font-medium text-white/60 transition hover:border-white/25 hover:text-white"
                         onClick={() =>
-                          jumpToSectionRef.current?.(resolveJumpSectionKey(sec.sectionKey), undefined, {
-                            scrollForm: false,
-                          })
+                          jumpToSectionRef.current?.(
+                            resolveJumpSectionKey(sec.sectionKey),
+                            undefined,
+                            {
+                              scrollForm: false,
+                            },
+                          )
                         }
                       >
                         Open
@@ -221,13 +246,15 @@ function CvClinicTripleRightPanelInner({
               </div>
             ) : null}
 
-            {(qualitySignals.spellIssueCount > 0 ||
-              qualitySignals.grammarIssueCount > 0 ||
-              qualitySignals.isSpellChecking) ? (
+            {qualitySignals.spellIssueCount > 0 ||
+            qualitySignals.grammarIssueCount > 0 ||
+            qualitySignals.isSpellChecking ? (
               <div className="mx-3 mb-3 rounded-[10px] border border-[rgba(52,211,153,0.18)] bg-[rgba(52,211,153,0.06)] px-3.5 py-2.5">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold text-white/85">Spelling & grammar</p>
+                    <p className="text-xs font-semibold text-white/85">
+                      Spelling & grammar
+                    </p>
                     <p className="mt-0.5 text-[11px] text-white/40">
                       {qualitySignals.isSpellChecking
                         ? 'Checking…'
@@ -239,7 +266,10 @@ function CvClinicTripleRightPanelInner({
                       type="button"
                       title="Apply every spelling suggestion"
                       className="rounded-md border border-emerald-400/35 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
-                      disabled={qualitySignals.spellIssueCount <= 0 || qualitySignals.isSpellChecking}
+                      disabled={
+                        qualitySignals.spellIssueCount <= 0 ||
+                        qualitySignals.isSpellChecking
+                      }
                       onClick={bumpSpellFixAll}
                     >
                       Fix all
@@ -256,23 +286,34 @@ function CvClinicTripleRightPanelInner({
                   </div>
                 </div>
                 {qualitySignals.isSpellChecking ? (
-                  <p className="mt-2 text-[10px] text-white/40">Looking through your CV…</p>
+                  <p className="mt-2 text-[10px] text-white/40">
+                    Looking through your CV…
+                  </p>
                 ) : (
                   <div className="mt-2 space-y-3">
-                    {Object.entries(qualitySignals.spellIssueEntriesBySection).map(([sectionKey, issues]) => {
+                    {Object.entries(
+                      qualitySignals.spellIssueEntriesBySection,
+                    ).map(([sectionKey, issues]) => {
                       if (!issues.length) return null;
-                      const sectionLabel = qualitySignals.sectionLabels[sectionKey] ?? sectionKey;
+                      const sectionLabel =
+                        qualitySignals.sectionLabels[sectionKey] ?? sectionKey;
                       return (
                         <div key={sectionKey}>
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-[11px] font-semibold text-white/85">{sectionLabel}</p>
+                            <p className="text-[11px] font-semibold text-white/85">
+                              {sectionLabel}
+                            </p>
                             <button
                               type="button"
                               className="rounded-md border border-white/[0.12] bg-white/[0.04] px-1.5 py-0.5 text-[9px] font-semibold text-white/60 transition hover:border-white/[0.2]"
                               onClick={() =>
-                                jumpToSectionRef.current?.(resolveJumpSectionKey(sectionKey), undefined, {
-                                  scrollForm: false,
-                                })
+                                jumpToSectionRef.current?.(
+                                  resolveJumpSectionKey(sectionKey),
+                                  undefined,
+                                  {
+                                    scrollForm: false,
+                                  },
+                                )
                               }
                             >
                               Open
@@ -280,13 +321,21 @@ function CvClinicTripleRightPanelInner({
                           </div>
                           <ul className="mt-1 space-y-1.5">
                             {issues.map((issue, idx) => {
-                              const kind = issue.type === 'grammar' || issue.type === 'style' ? 'grammar' : 'spelling';
+                              const kind =
+                                issue.type === 'grammar' ||
+                                issue.type === 'style'
+                                  ? 'grammar'
+                                  : 'spelling';
                               const original = (issue.original ?? '').trim();
-                              const suggestion = (issue.suggestion ?? '').trim();
+                              const suggestion = (
+                                issue.suggestion ?? ''
+                              ).trim();
                               return (
                                 <li
                                   key={
-                                    issue.issueId ? `${sectionKey}-${issue.issueId}` : `${sectionKey}-${idx}-${original}`
+                                    issue.issueId
+                                      ? `${sectionKey}-${issue.issueId}`
+                                      : `${sectionKey}-${idx}-${original}`
                                   }
                                   className="rounded-lg border border-white/[0.08] bg-[#111616] p-2"
                                 >
@@ -301,21 +350,29 @@ function CvClinicTripleRightPanelInner({
                                         </span>
                                         {suggestion ? (
                                           <>
-                                            <span className="mx-1 text-white/40">→</span>
+                                            <span className="mx-1 text-white/40">
+                                              →
+                                            </span>
                                             <span className="rounded bg-emerald-500/15 px-1 text-emerald-200">
                                               {suggestion}
                                             </span>
                                           </>
                                         ) : null}
                                       </p>
-                                      {issue.message ? <p className="mt-1 text-[10px] text-white/50">{issue.message}</p> : null}
+                                      {issue.message ? (
+                                        <p className="mt-1 text-[10px] text-white/50">
+                                          {issue.message}
+                                        </p>
+                                      ) : null}
                                     </div>
                                     <div className="flex shrink-0 items-center gap-1.5">
                                       {suggestion ? (
                                         <button
                                           type="button"
                                           className="rounded-md border border-emerald-300/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300"
-                                          onClick={() => onApplySpellIssue(issue)}
+                                          onClick={() =>
+                                            onApplySpellIssue(issue)
+                                          }
                                         >
                                           Apply
                                         </button>
@@ -323,7 +380,9 @@ function CvClinicTripleRightPanelInner({
                                       <button
                                         type="button"
                                         className="rounded-md border border-white/[0.12] bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold text-white/60"
-                                        onClick={() => onDismissSpellIssue(issue)}
+                                        onClick={() =>
+                                          onDismissSpellIssue(issue)
+                                        }
                                       >
                                         Dismiss
                                       </button>
@@ -342,9 +401,12 @@ function CvClinicTripleRightPanelInner({
             ) : (
               <div className="mx-3 mb-3 flex flex-wrap items-start justify-between gap-2 rounded-[10px] border border-[rgba(52,211,153,0.18)] bg-[rgba(52,211,153,0.06)] px-3.5 py-2.5">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-white/85">Spelling & grammar</p>
+                  <p className="text-xs font-semibold text-white/85">
+                    Spelling & grammar
+                  </p>
                   <p className="mt-0.5 text-[11px] text-white/40">
-                    Run Re-check to scan this CV for spelling and grammar. No issues right now.
+                    Run Re-check to scan this CV for spelling and grammar. No
+                    issues right now.
                   </p>
                 </div>
                 <button
@@ -365,6 +427,7 @@ function CvClinicTripleRightPanelInner({
             />
           </>
         )}
+        <ScrollContentEnd />
       </div>
       {footerSlot ? (
         <div className="shrink-0 border-t border-white/[0.08] bg-[#080A0A] p-3 shadow-[0_-8px_24px_rgba(0,0,0,0.35)]">

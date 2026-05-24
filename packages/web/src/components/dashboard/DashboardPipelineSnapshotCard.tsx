@@ -2,10 +2,14 @@
 
 import { InfoHint } from '@/components/ui/InfoHint';
 import type { PipelineMetricView } from '@/lib/dashboardViewModel';
-import { SEARCH_AT_GLANCE_INTRO_HINT, searchAtGlanceHintForMetricKey } from '@/lib/dashboardDashboardHints';
+import {
+  SEARCH_AT_GLANCE_INTRO_HINT,
+  searchAtGlanceHintForMetricKey,
+} from '@/lib/dashboardDashboardHints';
 import {
   dedupeNearDuplicateSentences,
   pipelineEyebrowHeadlineRedundant,
+  pipelineHeadlineSubsumedByBody,
 } from '@/lib/dashboardPipelineNarrative';
 import { cn } from '@/lib/utils';
 
@@ -37,10 +41,15 @@ export function DashboardPipelineSnapshotCard({
   sectionEyebrow,
   primaryLineFallback,
 }: Props) {
-  const positiveMetrics = metrics.filter((m) => typeof m.value === 'number' && Number.isFinite(m.value) && m.value > 0);
+  const positiveMetrics = metrics.filter(
+    (m) =>
+      typeof m.value === 'number' && Number.isFinite(m.value) && m.value > 0,
+  );
   const headlineText = headline?.trim() || '';
   const titleOverrideText = titleOverride?.trim() || '';
-  const bodyText = body?.trim() || '';
+  const bodyText = body?.trim()
+    ? dedupeNearDuplicateSentences(body.trim())
+    : '';
   const hasHeadOrTitle = Boolean(headlineText || titleOverrideText);
   const bodyOnlySummary = Boolean(bodyText) && !hasHeadOrTitle;
   const hasNarrative = Boolean(headlineText || titleOverrideText || bodyText);
@@ -50,14 +59,27 @@ export function DashboardPipelineSnapshotCard({
   const narrativeFirst = hasNarrative;
   const showMetricGrid = positiveMetrics.length > 0 && !narrativeFirst;
 
-  const primaryTitle =
-    hasHeadOrTitle ? headlineText || titleOverrideText : bodyOnlySummary ? bodyText : '';
+  const primaryTitle = hasHeadOrTitle
+    ? headlineText || titleOverrideText
+    : bodyOnlySummary
+      ? bodyText
+      : '';
   const fallbackHeadline =
-    primaryLineFallback === undefined ? 'Your Landscape' : primaryLineFallback === null ? '' : primaryLineFallback;
-  const displayPrimary = primaryTitle || (!bodyOnlySummary ? fallbackHeadline : '');
+    primaryLineFallback === undefined
+      ? 'Your Landscape'
+      : primaryLineFallback === null
+        ? ''
+        : primaryLineFallback;
+  const displayPrimary =
+    primaryTitle || (!bodyOnlySummary ? fallbackHeadline : '');
 
+  const primaryForDedupe = headlineText || titleOverrideText;
   const displaySecondary =
-    hasHeadOrTitle && bodyText && bodyText !== headlineText && bodyText !== titleOverrideText
+    hasHeadOrTitle &&
+    bodyText &&
+    bodyText !== headlineText &&
+    bodyText !== titleOverrideText &&
+    !pipelineHeadlineSubsumedByBody(primaryForDedupe, bodyText)
       ? bodyText
       : null;
 
@@ -78,23 +100,35 @@ export function DashboardPipelineSnapshotCard({
           )}
         >
           {eyebrow ? (
-            <p className="min-w-0 flex-1 text-[11px] font-medium tracking-wide text-white/38">{eyebrow}</p>
+            <p className="min-w-0 flex-1 text-[11px] font-medium tracking-wide text-white/38">
+              {eyebrow}
+            </p>
           ) : null}
-          <InfoHint text={SEARCH_AT_GLANCE_INTRO_HINT} buttonClassName="translate-y-px" />
+          <InfoHint
+            text={SEARCH_AT_GLANCE_INTRO_HINT}
+            buttonClassName="translate-y-px"
+          />
         </div>
         {bodyOnlySummary ? (
-          <p className="mt-2 text-[13px] leading-relaxed text-white/85">{bodyText}</p>
+          <p className="mt-2 text-[13px] leading-relaxed text-white/85">
+            {bodyText}
+          </p>
         ) : (
           <>
             {displayPrimary ? (
-              <p className="mt-2 text-[15px] font-medium leading-snug text-white/88">{displayPrimary}</p>
+              <p className="mt-2 text-[15px] font-medium leading-snug text-white/88">
+                {displayPrimary}
+              </p>
             ) : null}
             {displaySecondary ? (
-              <p className="mt-2 text-[13px] leading-relaxed text-white/52">{displaySecondary}</p>
+              <p className="mt-2 text-[13px] leading-relaxed text-white/52">
+                {displaySecondary}
+              </p>
             ) : null}
             {forceRender === true && !hasAnySignal ? (
               <p className="mt-2 text-[13px] leading-relaxed text-white/52">
-                {emptyStateCopyOverride?.trim() || 'Start analyzing roles to see how your search is progressing.'}
+                {emptyStateCopyOverride?.trim() ||
+                  'Start analyzing roles to see how your search is progressing.'}
               </p>
             ) : null}
           </>
@@ -104,14 +138,24 @@ export function DashboardPipelineSnapshotCard({
       {showMetricGrid ? (
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           {positiveMetrics.slice(0, 6).map((m) => (
-            <div key={m.key} className={cn('rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3')}>
+            <div
+              key={m.key}
+              className={cn(
+                'rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3',
+              )}
+            >
               <div className="flex items-start justify-between gap-1.5">
                 <p className="min-w-0 flex-1 text-[10px] font-medium leading-snug tracking-wide text-white/38">
                   {m.label}
                 </p>
-                <InfoHint text={searchAtGlanceHintForMetricKey(m.key)} className="shrink-0" />
+                <InfoHint
+                  text={searchAtGlanceHintForMetricKey(m.key)}
+                  className="shrink-0"
+                />
               </div>
-              <p className="mt-1.5 text-[17px] font-semibold tabular-nums text-white/85">{m.value}</p>
+              <p className="mt-1.5 text-[17px] font-semibold tabular-nums text-white/85">
+                {m.value}
+              </p>
             </div>
           ))}
         </div>

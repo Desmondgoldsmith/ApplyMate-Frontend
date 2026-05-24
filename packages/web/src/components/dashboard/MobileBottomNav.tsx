@@ -63,9 +63,16 @@ export function MobileBottomNav() {
   );
   useEffect(() => {
     const openJobs = () => setJobsMenuOpen(true);
+    const closeJobs = () => setJobsMenuOpen(false);
+    const closeMore = () => setMoreOpen(false);
     window.addEventListener('applymate:tour-open-jobs-nav', openJobs);
-    return () =>
+    window.addEventListener('applymate:tour-close-jobs-nav', closeJobs);
+    window.addEventListener('applymate:tour-close-more-nav', closeMore);
+    return () => {
       window.removeEventListener('applymate:tour-open-jobs-nav', openJobs);
+      window.removeEventListener('applymate:tour-close-jobs-nav', closeJobs);
+      window.removeEventListener('applymate:tour-close-more-nav', closeMore);
+    };
   }, []);
 
   const submenuBottom = navVisible
@@ -192,18 +199,13 @@ export function MobileBottomNav() {
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <div className="max-h-[min(58vh,340px)] overflow-y-auto px-2 pb-2 app-scrollbar">
+              <div className="app-scrollbar scroll-content-end-pad max-h-[min(58vh,340px)] overflow-y-auto px-2 pb-4">
                 <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                   {jobSuite.children.map((item) => {
                     const Icon = item.icon;
                     const active = isDashboardNavActive(pathname, item.href);
                     const soon = Boolean(item.comingSoon && item.feature);
-                    const tourAttr =
-                      item.id === 'job-board'
-                        ? 'nav-job-board'
-                        : item.id === 'job-analyze'
-                          ? 'nav-job-analyzer'
-                          : undefined;
+                    const tourAttr = item.tourAttr;
                     return (
                       <Link
                         key={item.id}
@@ -292,12 +294,7 @@ export function MobileBottomNav() {
                 const Icon = item.icon;
                 const active = isDashboardNavActive(pathname, item.href);
                 const soon = Boolean(item.comingSoon && item.feature);
-                const tourAttr =
-                  item.id === 'job-board'
-                    ? 'nav-job-board'
-                    : item.id === 'job-analyze'
-                      ? 'nav-job-analyzer'
-                      : undefined;
+                const tourAttr = item.tourAttr;
                 return (
                   <Link
                     key={item.id}

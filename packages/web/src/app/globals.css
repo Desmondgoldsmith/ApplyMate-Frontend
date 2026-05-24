@@ -327,11 +327,7 @@ input.auth-input:-webkit-autofill:active {
   width: 250px;
   height: 250px;
   border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(0, 174, 175, 0.12),
-    transparent 70%
-  );
+  background: radial-gradient(circle, rgba(0, 174, 175, 0.12), transparent 70%);
   transition: opacity 0.4s ease;
 }
 
@@ -400,6 +396,28 @@ input.auth-input:-webkit-autofill:active {
 }
 .app-scrollbar::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/* Extra scroll room at the bottom of panels (mobile FABs, bottom nav, safe area). */
+.scroll-content-end-pad {
+  scroll-padding-bottom: max(
+    5rem,
+    calc(env(safe-area-inset-bottom, 0px) + 4.5rem)
+  );
+}
+
+/* iOS Safari zooms focused fields under 16px — keep CV inputs at readable size on touch layouts. */
+@media (max-width: 1023px) {
+  [data-cv-document-root] input,
+  [data-cv-document-root] textarea,
+  [data-cv-document-root] select,
+  [data-cv-document-root] [contenteditable='true'],
+  .cv-builder-form-root input,
+  .cv-builder-form-root textarea,
+  .cv-builder-form-root select {
+    font-size: 16px !important;
+    line-height: 1.45;
+  }
 }
 
 /* Job Hub pipeline strip — chevron segments */

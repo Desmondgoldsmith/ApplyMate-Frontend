@@ -5,6 +5,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { useMobileShell } from '@/components/dashboard/MobileShellContext';
+import { ScrollContentEnd } from '@/components/ui/ScrollContentEnd';
 import { useDraggableFab } from '@/hooks/useDraggableFab';
 import { cn } from '@/lib/utils';
 
@@ -99,8 +100,9 @@ export function MobileDockFab({
               style={{ bottom: navVisible ? navBottomOffset : 0 }}
             >
               <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-white/20" />
-              <div className="app-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2">
+              <div className="app-scrollbar scroll-content-end-pad min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pt-2">
                 {children}
+                <ScrollContentEnd />
               </div>
             </motion.div>
           </>

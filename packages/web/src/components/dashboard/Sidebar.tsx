@@ -5,7 +5,14 @@ import { ChevronDown, LogOut, PanelLeftClose, PanelRight } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  Fragment,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -23,7 +30,13 @@ import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useUIStore } from '@/store/useUIStore';
 
-function CollapsedNavFlyout({ label, children }: { label: string; children: ReactNode }) {
+function CollapsedNavFlyout({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
   const wrapRef = useRef<HTMLSpanElement>(null);
   const [hover, setHover] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
@@ -128,7 +141,10 @@ export function Sidebar() {
   const jobSuite = visibleItems.find((i) => i.id === 'job-workspace');
 
   useEffect(() => {
-    if (jobSuite?.children?.length && isDashboardNavEntryActive(pathname, jobSuite)) {
+    if (
+      jobSuite?.children?.length &&
+      isDashboardNavEntryActive(pathname, jobSuite)
+    ) {
       setJobsOpen(true);
     }
   }, [pathname, jobSuite]);
@@ -136,15 +152,15 @@ export function Sidebar() {
   useEffect(() => {
     const openJobs = () => setJobsOpen(true);
     window.addEventListener('applymate:tour-open-jobs-nav', openJobs);
-    return () => window.removeEventListener('applymate:tour-open-jobs-nav', openJobs);
+    return () =>
+      window.removeEventListener('applymate:tour-open-jobs-nav', openJobs);
   }, []);
 
   const renderLeaf = (item: DashboardNavItem, opts: { nested?: boolean }) => {
     const Icon = item.icon;
     const active = isDashboardNavActive(pathname, item.href);
     const showSoonBadge = Boolean(item.comingSoon && item.feature);
-    const tourAttr =
-      item.id === 'job-board' ? 'nav-job-board' : item.id === 'job-analyze' ? 'nav-job-analyzer' : undefined;
+    const tourAttr = item.tourAttr;
     const link = (
       <Link
         href={item.href}
@@ -162,11 +178,24 @@ export function Sidebar() {
                   'border-l-2 border-transparent text-white/45 hover:bg-white/[0.05] hover:text-white/80',
                   opts.nested ? 'pl-8 pr-2' : 'pl-3',
                 ),
-          sidebarCollapsed && !opts.nested && active && 'bg-[rgba(0,201,177,0.12)] text-[#00C9B1]',
+          sidebarCollapsed &&
+            !opts.nested &&
+            active &&
+            'bg-[rgba(0,201,177,0.12)] text-[#00C9B1]',
         )}
       >
-        {active && !opts.nested ? <motion.div layoutId="activeNav" className="absolute inset-0 rounded-[10px]" /> : null}
-        <Icon className={cn('h-[18px] w-[18px] shrink-0', active ? 'text-[#00C9B1]' : 'text-white/45')} />
+        {active && !opts.nested ? (
+          <motion.div
+            layoutId="activeNav"
+            className="absolute inset-0 rounded-[10px]"
+          />
+        ) : null}
+        <Icon
+          className={cn(
+            'h-[18px] w-[18px] shrink-0',
+            active ? 'text-[#00C9B1]' : 'text-white/45',
+          )}
+        />
         <AnimatePresence>
           {!sidebarCollapsed || opts.nested ? (
             <motion.span
@@ -206,9 +235,16 @@ export function Sidebar() {
       )}
     >
       <div className="flex items-center justify-between p-4">
-        <div className={cn('flex items-center gap-2', sidebarCollapsed && 'justify-center')}>
+        <div
+          className={cn(
+            'flex items-center gap-2',
+            sidebarCollapsed && 'justify-center',
+          )}
+        >
           <span className="h-5 w-5 rounded-full bg-[#00C9B1]" />
-          {!sidebarCollapsed ? <span className="font-semibold text-white">ApplyMate</span> : null}
+          {!sidebarCollapsed ? (
+            <span className="font-semibold text-white">ApplyMate</span>
+          ) : null}
         </div>
         <button
           type="button"
@@ -216,7 +252,11 @@ export function Sidebar() {
           className="text-white/60 transition-colors hover:text-[#00C9B1]"
           aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {sidebarCollapsed ? <PanelRight className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          {sidebarCollapsed ? (
+            <PanelRight className="h-4 w-4" />
+          ) : (
+            <PanelLeftClose className="h-4 w-4" />
+          )}
         </button>
       </div>
 
@@ -245,10 +285,18 @@ export function Sidebar() {
                   )}
                   aria-expanded={jobsOpen}
                 >
-                  <Icon className={cn('h-[18px] w-[18px] shrink-0', groupActive ? 'text-[#00C9B1]' : 'text-white/45')} />
+                  <Icon
+                    className={cn(
+                      'h-[18px] w-[18px] shrink-0',
+                      groupActive ? 'text-[#00C9B1]' : 'text-white/45',
+                    )}
+                  />
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
                   <ChevronDown
-                    className={cn('h-4 w-4 shrink-0 text-white/35 transition-transform', jobsOpen && 'rotate-180')}
+                    className={cn(
+                      'h-4 w-4 shrink-0 text-white/35 transition-transform',
+                      jobsOpen && 'rotate-180',
+                    )}
                     aria-hidden
                   />
                 </button>
@@ -261,7 +309,9 @@ export function Sidebar() {
                       transition={{ duration: 0.2 }}
                       className="overflow-hidden space-y-0.5 pl-0"
                     >
-                      {item.children.map((ch) => renderLeaf(ch, { nested: true }))}
+                      {item.children.map((ch) =>
+                        renderLeaf(ch, { nested: true }),
+                      )}
                     </motion.div>
                   ) : null}
                 </AnimatePresence>

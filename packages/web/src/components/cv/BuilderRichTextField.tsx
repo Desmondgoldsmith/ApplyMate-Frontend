@@ -48,7 +48,10 @@ export const BuilderRichTextField = memo(function BuilderRichTextField({
     }
     const range = sel.getRangeAt(0);
     const node = range.commonAncestorContainer;
-    const el = node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
+    const el =
+      node.nodeType === Node.ELEMENT_NODE
+        ? (node as Element)
+        : node.parentElement;
     setHasAnchor(Boolean(el?.closest('a[href]')));
     if (el?.closest('[contenteditable="true"]') === editorRef.current) {
       lastRangeRef.current = range.cloneRange();
@@ -64,7 +67,8 @@ export const BuilderRichTextField = memo(function BuilderRichTextField({
 
   useEffect(() => {
     document.addEventListener('selectionchange', syncAnchorState);
-    return () => document.removeEventListener('selectionchange', syncAnchorState);
+    return () =>
+      document.removeEventListener('selectionchange', syncAnchorState);
   }, [syncAnchorState]);
 
   const commit = useCallback(() => {
@@ -129,10 +133,14 @@ export const BuilderRichTextField = memo(function BuilderRichTextField({
 
   const removeLink = () => {
     const sel = window.getSelection();
-    const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : lastRangeRef.current;
+    const range =
+      sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : lastRangeRef.current;
     if (!range) return;
     const node = range.commonAncestorContainer;
-    const el = node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
+    const el =
+      node.nodeType === Node.ELEMENT_NODE
+        ? (node as Element)
+        : node.parentElement;
     const anchor = el?.closest('a[href]');
     if (!(anchor instanceof HTMLAnchorElement)) return;
     const text = anchor.textContent ?? '';
@@ -233,7 +241,7 @@ export const BuilderRichTextField = memo(function BuilderRichTextField({
         suppressContentEditableWarning
         data-placeholder={placeholder}
         className={cn(
-          'rounded-lg border border-[rgba(255,255,255,0.10)] bg-[#0c1010] px-3 py-2 text-sm text-white outline-none',
+          'rounded-lg border border-[rgba(255,255,255,0.10)] bg-[#0c1010] px-3 py-2 text-sm max-lg:text-base text-white outline-none',
           'empty:before:pointer-events-none empty:before:text-white/30 empty:before:content-[attr(data-placeholder)]',
           '[&_a]:text-[#00C9B1] [&_a]:underline',
           minHeightClass,

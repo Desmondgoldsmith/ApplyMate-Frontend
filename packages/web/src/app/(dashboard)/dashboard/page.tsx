@@ -20,7 +20,10 @@ import { DashboardLandscapeCard } from '@/components/dashboard/DashboardLandscap
 import { DashboardCommandBar } from '@/components/dashboard/DashboardCommandBar';
 import { DashboardDeepDiveShell } from '@/components/dashboard/DashboardDeepDiveShell';
 import { DashboardFocusSection } from '@/components/dashboard/DashboardFocusSection';
-import { DashboardStatsRow, type DashboardStatChip } from '@/components/dashboard/DashboardStatsRow';
+import {
+  DashboardStatsRow,
+  type DashboardStatChip,
+} from '@/components/dashboard/DashboardStatsRow';
 import { ContinuationSection } from '@/components/dashboard/ContinuationSection';
 import { DashboardUpcomingInterviewsSection } from '@/components/dashboard/DashboardUpcomingInterviewsSection';
 import { DashboardInterviewPreparationSection } from '@/components/dashboard/DashboardInterviewPreparationSection';
@@ -84,7 +87,10 @@ import {
   resolveDashboardPhase14Layout,
   shouldShowSecondaryCard,
 } from '@/lib/dashboardPhase14Layout';
-import { buildDashboardCtaHrefSet, canonicalDashboardHref } from '@/lib/dashboardHrefDedupe';
+import {
+  buildDashboardCtaHrefSet,
+  canonicalDashboardHref,
+} from '@/lib/dashboardHrefDedupe';
 import { filterFocusItemsRemovingGenericInterviewCoaching } from '@/lib/genericInterviewCoaching';
 import { selectActionablePriorityCardIds } from '@/lib/dashboardSectionOrder';
 import { buildDashboardFocusItems } from '@/lib/dashboardFocusMerge';
@@ -136,7 +142,11 @@ import {
   type TodayPlanItem,
   type TodayPlanPayload,
 } from '@/lib/today-plan';
-import { formatConfidenceShort, scanLabelForJobHistoryRow, subtextClassForMomentumType } from '@/lib/todayPlanLabels';
+import {
+  formatConfidenceShort,
+  scanLabelForJobHistoryRow,
+  subtextClassForMomentumType,
+} from '@/lib/todayPlanLabels';
 import { mergeDashboardUpcomingInterviews } from '@/lib/upcomingInterviews';
 import { useAuthStore } from '@/store/useAuthStore';
 import { cn } from '@/lib/utils';
@@ -160,9 +170,15 @@ type CommittedExperience = {
   heroWhyMatters: string | null;
   heroEmotionalTone: string | null;
   momentumLine: string | null;
-  continuation: NonNullable<ReturnType<typeof buildDashboardViewModel>>['continuation'] | null;
-  pipelineMetrics: NonNullable<ReturnType<typeof buildDashboardViewModel>>['pipelineMetrics'];
-  insightSurfaces: NonNullable<ReturnType<typeof buildDashboardViewModel>>['informationalSurfaces'];
+  continuation:
+    | NonNullable<ReturnType<typeof buildDashboardViewModel>>['continuation']
+    | null;
+  pipelineMetrics: NonNullable<
+    ReturnType<typeof buildDashboardViewModel>
+  >['pipelineMetrics'];
+  insightSurfaces: NonNullable<
+    ReturnType<typeof buildDashboardViewModel>
+  >['informationalSurfaces'];
   mode: string | null;
   narrativeFatigueAdjusted: boolean | null;
   experienceSessionId: string | null;
@@ -183,7 +199,10 @@ function greetingLine(name: string): string {
   return `Good evening, ${name}.`;
 }
 
-function getPersonalisedSubtext(cvProfileCount: number, totalJobsAnalyzed: number): string {
+function getPersonalisedSubtext(
+  cvProfileCount: number,
+  totalJobsAnalyzed: number,
+): string {
   if (cvProfileCount === 0) {
     return "Let's get your CV set up — it takes less than 2 minutes.";
   }
@@ -193,7 +212,10 @@ function getPersonalisedSubtext(cvProfileCount: number, totalJobsAnalyzed: numbe
   return `You've analyzed ${totalJobsAnalyzed} jobs. Keep going.`;
 }
 
-const HABIT_BAND_LABEL: Record<NonNullable<HabitProgressPayload['streakStatus']>, string> = {
+const HABIT_BAND_LABEL: Record<
+  NonNullable<HabitProgressPayload['streakStatus']>,
+  string
+> = {
   starting: 'Starting',
   building: 'Building',
   strong: 'Strong',
@@ -212,9 +234,13 @@ function deepDiveCareerMomentumSummary(data: CareerMomentumPayload): string {
 }
 
 function deepDivePredictiveSummary(data: PredictiveOutlookPayload): string {
-  const iv = effectiveDeterministicIndexValue(data.interviewOutlook, data.interviewProbability);
+  const iv = effectiveDeterministicIndexValue(
+    data.interviewOutlook,
+    data.interviewProbability,
+  );
   const pct = iv != null ? `${iv}%` : '—';
-  const hint = data.headline?.trim()?.split(/\s+/).slice(0, 2).join(' ') || 'Outlook';
+  const hint =
+    data.headline?.trim()?.split(/\s+/).slice(0, 2).join(' ') || 'Outlook';
   return `Interview Outlook · ${pct} · ${hint}`;
 }
 
@@ -228,7 +254,8 @@ function deepDiveGoalSummary(alignment: GoalAlignmentPayload): string {
 
 function deepDiveHabitSummary(data: HabitProgressPayload): string {
   const d =
-    typeof data.currentStreakDays === 'number' && Number.isFinite(data.currentStreakDays)
+    typeof data.currentStreakDays === 'number' &&
+    Number.isFinite(data.currentStreakDays)
       ? Math.max(0, Math.round(data.currentStreakDays))
       : null;
   const streakPart = d != null ? `${d}-Day Streak` : 'Consistency';
@@ -259,7 +286,12 @@ function deepDiveCareerAchievementsSummary(
 }
 
 function wrapProgressCore(
-  id: 'career_momentum' | 'predictive_outlook' | 'goal_alignment' | 'habit_progress' | 'today_plan_achievements',
+  id:
+    | 'career_momentum'
+    | 'predictive_outlook'
+    | 'goal_alignment'
+    | 'habit_progress'
+    | 'today_plan_achievements',
   summary: string,
   inner: ReactNode,
 ): ReactNode {
@@ -319,11 +351,17 @@ function GrowthProgressCard({
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
-              <p className="text-[15px] font-semibold text-white/90">{movementHeading}</p>
-              <InfoHint text={MOVEMENT_SECTION_HINT} buttonClassName="translate-y-px" />
+              <p className="text-[15px] font-semibold text-white/90">
+                {movementHeading}
+              </p>
+              <InfoHint
+                text={MOVEMENT_SECTION_HINT}
+                buttonClassName="translate-y-px"
+              />
             </div>
             <p className="mt-1 text-[12px] text-white/45">
-              {emptyStateCopy?.trim() || 'Your progress will appear here as you analyze roles and complete applications.'}
+              {emptyStateCopy?.trim() ||
+                'Your progress will appear here as you analyze roles and complete applications.'}
             </p>
           </div>
           <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1">
@@ -332,12 +370,18 @@ function GrowthProgressCard({
                 key={key}
                 type="button"
                 title={
-                  key === 'daily' ? 'Last 24 hours' : key === 'weekly' ? 'Last 7 days' : 'Last 30 days'
+                  key === 'daily'
+                    ? 'Last 24 hours'
+                    : key === 'weekly'
+                      ? 'Last 7 days'
+                      : 'Last 30 days'
                 }
                 onClick={() => onWindowChange(key)}
                 className={cn(
                   'rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em]',
-                  key === window ? 'bg-[#00C9B1] text-[#080A0A]' : 'text-white/50 hover:text-white/80',
+                  key === window
+                    ? 'bg-[#00C9B1] text-[#080A0A]'
+                    : 'text-white/50 hover:text-white/80',
                 )}
               >
                 {key.slice(0, 1)}
@@ -354,10 +398,17 @@ function GrowthProgressCard({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
-            <p className="text-[15px] font-semibold text-white/90">{movementHeading}</p>
-            <InfoHint text={MOVEMENT_SECTION_HINT} buttonClassName="translate-y-px" />
+            <p className="text-[15px] font-semibold text-white/90">
+              {movementHeading}
+            </p>
+            <InfoHint
+              text={MOVEMENT_SECTION_HINT}
+              buttonClassName="translate-y-px"
+            />
           </div>
-          <p className="mt-1 text-[12px] text-white/45">Steady progress beats chasing perfection.</p>
+          <p className="mt-1 text-[12px] text-white/45">
+            Steady progress beats chasing perfection.
+          </p>
         </div>
         <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1">
           {(['daily', 'weekly', 'monthly'] as const).map((key) => (
@@ -365,12 +416,18 @@ function GrowthProgressCard({
               key={key}
               type="button"
               title={
-                key === 'daily' ? 'Last 24 hours' : key === 'weekly' ? 'Last 7 days' : 'Last 30 days'
+                key === 'daily'
+                  ? 'Last 24 hours'
+                  : key === 'weekly'
+                    ? 'Last 7 days'
+                    : 'Last 30 days'
               }
               onClick={() => onWindowChange(key)}
               className={cn(
                 'rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em]',
-                key === window ? 'bg-[#00C9B1] text-[#080A0A]' : 'text-white/50 hover:text-white/80',
+                key === window
+                  ? 'bg-[#00C9B1] text-[#080A0A]'
+                  : 'text-white/50 hover:text-white/80',
               )}
             >
               {key.slice(0, 1)}
@@ -381,31 +438,52 @@ function GrowthProgressCard({
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
           <div className="flex items-start justify-between gap-1.5">
-            <p className="min-w-0 flex-1 text-[11px] leading-snug text-white/45">Roles you moved forward</p>
+            <p className="min-w-0 flex-1 text-[11px] leading-snug text-white/45">
+              Roles you moved forward
+            </p>
             <InfoHint text={MOVEMENT_ROLES_FORWARD_HINT} className="shrink-0" />
           </div>
-          <p className="mt-1 text-[20px] font-semibold text-white">{metrics?.jobsProgressed ?? 0}</p>
+          <p className="mt-1 text-[20px] font-semibold text-white">
+            {metrics?.jobsProgressed ?? 0}
+          </p>
         </div>
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
           <div className="flex items-start justify-between gap-1.5">
-            <p className="min-w-0 flex-1 text-[11px] leading-snug text-white/45">Follow-ups you closed</p>
+            <p className="min-w-0 flex-1 text-[11px] leading-snug text-white/45">
+              Follow-ups you closed
+            </p>
             <InfoHint text={MOVEMENT_FOLLOWUPS_HINT} className="shrink-0" />
           </div>
-          <p className="mt-1 text-[20px] font-semibold text-white">{metrics?.followUpsCompleted ?? 0}</p>
+          <p className="mt-1 text-[20px] font-semibold text-white">
+            {metrics?.followUpsCompleted ?? 0}
+          </p>
         </div>
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
           <div className="flex items-start justify-between gap-1.5">
-            <p className="min-w-0 flex-1 text-[11px] leading-snug text-white/45">Typical fit on analyzed roles</p>
+            <p className="min-w-0 flex-1 text-[11px] leading-snug text-white/45">
+              Typical fit on analyzed roles
+            </p>
             <InfoHint text={MOVEMENT_TYPICAL_FIT_HINT} className="shrink-0" />
           </div>
-          <p className="mt-1 text-[20px] font-semibold text-white">{Math.round(metrics?.matchQualityAvg ?? 0)}%</p>
+          <p className="mt-1 text-[20px] font-semibold text-white">
+            {Math.round(metrics?.matchQualityAvg ?? 0)}%
+          </p>
         </div>
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
           <div className="flex items-start justify-between gap-1.5">
-            <p className="min-w-0 flex-1 text-[11px] leading-snug text-white/45">Fit trend vs last window</p>
+            <p className="min-w-0 flex-1 text-[11px] leading-snug text-white/45">
+              Fit trend vs last window
+            </p>
             <InfoHint text={MOVEMENT_FIT_TREND_HINT} className="shrink-0" />
           </div>
-          <p className={cn('mt-1 text-[20px] font-semibold', (metrics?.matchQualityDelta ?? 0) >= 0 ? 'text-[#00C9B1]' : 'text-amber-300')}>
+          <p
+            className={cn(
+              'mt-1 text-[20px] font-semibold',
+              (metrics?.matchQualityDelta ?? 0) >= 0
+                ? 'text-[#00C9B1]'
+                : 'text-amber-300',
+            )}
+          >
             {(metrics?.matchQualityDelta ?? 0) >= 0 ? '+' : ''}
             {(metrics?.matchQualityDelta ?? 0).toFixed(1)}
           </p>
@@ -434,7 +512,8 @@ function DashboardTopMatchesSection({
     return isAppliedOrLaterState(it.state, it.isApplied);
   };
   const filtered = useMemo(
-    () => items.filter((it) => (it.matchScore ?? 0) >= 50 && !isAppliedOrLater(it)),
+    () =>
+      items.filter((it) => (it.matchScore ?? 0) >= 50 && !isAppliedOrLater(it)),
     [items],
   );
   if (filtered.length === 0) return null;
@@ -443,10 +522,18 @@ function DashboardTopMatchesSection({
     <section>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-[15px] font-semibold text-white/90">Top matches</h2>
-          <InfoHint text={TOOLTIP_JOB_MATCH_SCORE} buttonAriaLabel="What are match scores?" />
+          <h2 className="text-[15px] font-semibold text-white/90">
+            Top matches
+          </h2>
+          <InfoHint
+            text={TOOLTIP_JOB_MATCH_SCORE}
+            buttonAriaLabel="What are match scores?"
+          />
         </div>
-        <Link href="/dashboard/job-board" className="text-[13px] font-medium text-[#00C9B1] hover:underline">
+        <Link
+          href="/dashboard/job-board"
+          className="text-[13px] font-medium text-[#00C9B1] hover:underline"
+        >
           View all →
         </Link>
       </div>
@@ -458,17 +545,21 @@ function DashboardTopMatchesSection({
             actionType: it.ctaHint,
             journeyNextRoute: it.journey?.nextRoute ?? null,
             safeFallback: '/dashboard/jobs',
-            orchestrationCanonicalRoute: canonById?.get(it.id)?.canonicalRoute ?? null,
-            orchestrationFallbackRoute: canonById?.get(it.id)?.fallbackRoute ?? null,
+            orchestrationCanonicalRoute:
+              canonById?.get(it.id)?.canonicalRoute ?? null,
+            orchestrationFallbackRoute:
+              canonById?.get(it.id)?.fallbackRoute ?? null,
           }).href;
           const ctaPill =
-            canonById?.get(it.id)?.canonicalActionLabel?.trim() || 'Review & apply →';
+            canonById?.get(it.id)?.canonicalActionLabel?.trim() ||
+            'Review & apply →';
           const company = it.company ?? 'Company';
           const title = it.jobTitle ?? it.title;
           const score = it.matchScore ?? 0;
           const shellClass = cn(
             'group flex flex-col gap-4 rounded-xl border border-white/[0.08] bg-white/[0.04] p-3 transition-[border-color,background-color] duration-200 motion-reduce:transition-none sm:flex-row sm:items-center sm:justify-between sm:p-4',
-            href && 'cursor-pointer hover:border-white/[0.12] hover:bg-white/[0.055]',
+            href &&
+              'cursor-pointer hover:border-white/[0.12] hover:bg-white/[0.055]',
           );
           const matchScan = formatConfidenceShort(score);
           const inner = (
@@ -479,14 +570,18 @@ function DashboardTopMatchesSection({
                 </div>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="min-w-0 truncate text-[14px] font-semibold text-white">{title}</p>
+                    <p className="min-w-0 truncate text-[14px] font-semibold text-white">
+                      {title}
+                    </p>
                     {matchScan ? (
                       <span className="shrink-0 rounded-full border border-[#00C9B1]/28 bg-[#00C9B1]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#9CF5EA]">
                         {matchScan}
                       </span>
                     ) : null}
                   </div>
-                  <p className="truncate text-[13px] font-medium text-white/50">{company}</p>
+                  <p className="truncate text-[13px] font-medium text-white/50">
+                    {company}
+                  </p>
                 </div>
               </div>
               <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-3">
@@ -496,7 +591,9 @@ function DashboardTopMatchesSection({
                     {ctaPill}
                   </span>
                 ) : (
-                  <span className="text-[13px] font-medium text-white/35">Open in app</span>
+                  <span className="text-[13px] font-medium text-white/35">
+                    Open in app
+                  </span>
                 )}
               </div>
             </>
@@ -508,11 +605,17 @@ function DashboardTopMatchesSection({
               className={shellClass}
               onMouseEnter={() => {
                 router.prefetch(href);
-                trackFunnelEvent('topmatch_prefetched', { itemId: it.id, href });
+                trackFunnelEvent('topmatch_prefetched', {
+                  itemId: it.id,
+                  href,
+                });
               }}
               onFocus={() => {
                 router.prefetch(href);
-                trackFunnelEvent('topmatch_prefetched', { itemId: it.id, href });
+                trackFunnelEvent('topmatch_prefetched', {
+                  itemId: it.id,
+                  href,
+                });
               }}
               onClick={(e) => {
                 if (isAppliedOrLater(it)) {
@@ -564,7 +667,9 @@ function RecentAnalysesStickyColumn({
     );
   };
 
-  const nextStepForAnalysis = (item: JobHistoryItem): { label: string; href: string } => {
+  const nextStepForAnalysis = (
+    item: JobHistoryItem,
+  ): { label: string; href: string } => {
     if (isInterviewStage(item)) {
       const qp = new URLSearchParams();
       qp.set('jobAnalysisId', item.id);
@@ -575,8 +680,10 @@ function RecentAnalysesStickyColumn({
       if (jt) qp.set('jobTitle', jt);
       if (company) qp.set('company', company);
       if (cvProfileId) qp.set('cvProfileId', cvProfileId);
-      if (tailoringCvProfileId) qp.set('preferredCvProfileId', tailoringCvProfileId);
-      if (tailoringCvProfileId) qp.set('tailoringCvProfileId', tailoringCvProfileId);
+      if (tailoringCvProfileId)
+        qp.set('preferredCvProfileId', tailoringCvProfileId);
+      if (tailoringCvProfileId)
+        qp.set('tailoringCvProfileId', tailoringCvProfileId);
       return {
         label: 'Prep for interview',
         href: `/dashboard/interview?${qp.toString()}`,
@@ -613,10 +720,18 @@ function RecentAnalysesStickyColumn({
     >
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-lg font-semibold tracking-tight text-white/90">Recent analyses</h2>
-          <InfoHint text={TOOLTIP_JOB_MATCH_SCORE} buttonAriaLabel="What are match scores?" />
+          <h2 className="text-lg font-semibold tracking-tight text-white/90">
+            Recent analyses
+          </h2>
+          <InfoHint
+            text={TOOLTIP_JOB_MATCH_SCORE}
+            buttonAriaLabel="What are match scores?"
+          />
         </div>
-        <Link href="/dashboard/jobs" className="text-[13px] font-medium text-[#00C9B1] hover:underline">
+        <Link
+          href="/dashboard/jobs"
+          className="text-[13px] font-medium text-[#00C9B1] hover:underline"
+        >
           View all →
         </Link>
       </div>
@@ -630,9 +745,16 @@ function RecentAnalysesStickyColumn({
           </>
         ) : items.length === 0 ? (
           <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-8 text-center">
-            <BarChart2 className="mx-auto h-6 w-6 text-[#00C9B1]" strokeWidth={1.5} />
-            <p className="mt-2 text-[13px] font-semibold text-white">No analyses yet</p>
-            <p className="mt-1 text-[12px] font-medium text-white/40">Paste a job to see your match score</p>
+            <BarChart2
+              className="mx-auto h-6 w-6 text-[#00C9B1]"
+              strokeWidth={1.5}
+            />
+            <p className="mt-2 text-[13px] font-semibold text-white">
+              No analyses yet
+            </p>
+            <p className="mt-1 text-[12px] font-medium text-white/40">
+              Paste a job to see your match score
+            </p>
             <Link
               href="/dashboard/jobs/analyze"
               className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-full bg-[#00C9B1] px-4 py-2 text-[13px] font-semibold text-[#080A0A]"
@@ -664,7 +786,9 @@ function RecentAnalysesStickyColumn({
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="min-w-0 truncate text-[13px] font-medium text-white">{title}</p>
+                      <p className="min-w-0 truncate text-[13px] font-medium text-white">
+                        {title}
+                      </p>
                       <span
                         className={cn(
                           'shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em]',
@@ -686,10 +810,18 @@ function RecentAnalysesStickyColumn({
                     href={next.href}
                     className="text-[12px] font-medium text-[#00C9B1] hover:underline"
                     onClick={(e) => {
-                      const allowedPostApplyLabels = new Set(['Continue in Job Hub', 'Prep for interview']);
-                      if (isAppliedOrLater(item) && !allowedPostApplyLabels.has(next.label)) {
+                      const allowedPostApplyLabels = new Set([
+                        'Continue in Job Hub',
+                        'Prep for interview',
+                      ]);
+                      if (
+                        isAppliedOrLater(item) &&
+                        !allowedPostApplyLabels.has(next.label)
+                      ) {
                         e.preventDefault();
-                        toast.info('This task was already resolved. Refreshing your current priorities.');
+                        toast.info(
+                          'This task was already resolved. Refreshing your current priorities.',
+                        );
                         onRefreshPriorities();
                       }
                     }}
@@ -764,24 +896,32 @@ function AnalyzeNextRoleBanner({
   return (
     <motion.section
       {...sectionMotion}
-      transition={{ duration: 0.35, delay: 0.45, ease: [0.21, 0.47, 0.32, 0.98] }}
+      transition={{
+        duration: 0.35,
+        delay: 0.45,
+        ease: [0.21, 0.47, 0.32, 0.98],
+      }}
       className="rounded-2xl border border-[rgba(0,201,177,0.3)] bg-gradient-to-br from-[rgba(0,201,177,0.15)] to-[rgba(0,201,177,0.05)] p-6 sm:p-8"
     >
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[rgba(0,201,177,0.12)] sm:h-14 sm:w-14">
           <Icon className="h-7 w-7 text-[#00C9B1] sm:h-8 sm:w-8" aria-hidden />
-          </div>
+        </div>
         <div className="min-w-0 flex-1">
-          <h3 className="text-[16px] font-semibold text-white">{config.title}</h3>
-          <p className="mt-2 text-[13px] font-medium leading-relaxed text-white/60">{config.body}</p>
+          <h3 className="text-[16px] font-semibold text-white">
+            {config.title}
+          </h3>
+          <p className="mt-2 text-[13px] font-medium leading-relaxed text-white/60">
+            {config.body}
+          </p>
         </div>
-        </div>
-        <Link
-          href={config.href}
+      </div>
+      <Link
+        href={config.href}
         className="mt-6 flex min-h-[48px] w-full items-center justify-center rounded-xl bg-[#00C9B1] px-4 py-3 text-[14px] font-semibold text-[#080A0A] transition-colors hover:bg-[#33d4c2]"
-        >
-          {config.cta}
-        </Link>
+      >
+        {config.cta}
+      </Link>
     </motion.section>
   );
 }
@@ -805,20 +945,38 @@ function GettingStartedChecklist({
   return (
     <motion.section
       {...sectionMotion}
-      transition={{ duration: 0.35, delay: 0.35, ease: [0.21, 0.47, 0.32, 0.98] }}
+      transition={{
+        duration: 0.35,
+        delay: 0.35,
+        ease: [0.21, 0.47, 0.32, 0.98],
+      }}
       data-tour="getting-started"
       className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-5 sm:p-6"
     >
-      <p className="mb-4 text-[15px] font-semibold text-white/90">Get the most out of ApplyMate</p>
+      <p className="mb-4 text-[15px] font-semibold text-white/90">
+        Get the most out of ApplyMate
+      </p>
       <div className="flex flex-row flex-wrap gap-x-6 gap-y-3">
         {items.map((item) => (
-          <div key={item.label} className="flex min-w-[140px] items-center gap-2">
+          <div
+            key={item.label}
+            className="flex min-w-[140px] items-center gap-2"
+          >
             {item.done ? (
-              <Check className="h-4 w-4 shrink-0 text-[#00C9B1]" strokeWidth={2.5} />
+              <Check
+                className="h-4 w-4 shrink-0 text-[#00C9B1]"
+                strokeWidth={2.5}
+              />
             ) : (
               <span className="h-4 w-4 shrink-0 rounded-full border border-white/25" />
             )}
-            <span className={item.done ? 'text-[13px] font-medium text-white' : 'text-[13px] font-medium text-white/25'}>
+            <span
+              className={
+                item.done
+                  ? 'text-[13px] font-medium text-white'
+                  : 'text-[13px] font-medium text-white/25'
+              }
+            >
               {item.label}
             </span>
           </div>
@@ -851,25 +1009,37 @@ function DashboardOverviewPageContent() {
     }
   }, []);
   const searchParams = useSearchParams();
-  const includeHiddenDashboardCards = searchParams.get('includeHiddenDashboardCards') === 'true';
+  const includeHiddenDashboardCards =
+    searchParams.get('includeHiddenDashboardCards') === 'true';
   const todayPlan = useTodayPlan({
     cvProfileId: defaultProfile?.id ?? null,
     timezone: browserTz,
     includeHiddenDashboardCards,
   });
   const cvSectionVisible = shouldRenderSection('cv', todayPlan.data ?? null);
-  const analyzeSectionVisible = shouldRenderSection('analyze', todayPlan.data ?? null);
+  const analyzeSectionVisible = shouldRenderSection(
+    'analyze',
+    todayPlan.data ?? null,
+  );
   const showAnalyzeNextRoleBanner =
     analyzeSectionVisible &&
     !(cvSectionVisible && (primaryGoal === 'cv' || primaryGoal === 'student'));
   const showCvProfileTeaserPromo =
     !cvSectionVisible &&
-    !(analyzeSectionVisible && (primaryGoal === 'cv' || primaryGoal === 'student'));
+    !(
+      analyzeSectionVisible &&
+      (primaryGoal === 'cv' || primaryGoal === 'student')
+    );
   const dashboardVm = useMemo(
-    () => buildDashboardViewModel(todayPlan.data, { defaultCvProfileId: defaultProfile?.id ?? null }),
+    () =>
+      buildDashboardViewModel(todayPlan.data, {
+        defaultCvProfileId: defaultProfile?.id ?? null,
+      }),
     [todayPlan.data, defaultProfile?.id],
   );
-  const [committedExp, setCommittedExp] = useState<CommittedExperience | null>(null);
+  const [committedExp, setCommittedExp] = useState<CommittedExperience | null>(
+    null,
+  );
   const markDashboardSeen = useDashboardSeen();
   const weeklyStall = useWeeklyStallSummary({ limit: 5 });
   const growthDirection = useGrowthDailyDirection();
@@ -884,11 +1054,17 @@ function DashboardOverviewPageContent() {
     displayRows.length === 0 || !anyProfileScored || totalJobsAnalyzed === 0;
 
   const [createCvOpen, setCreateCvOpen] = useState(false);
-  const [growthWindow, setGrowthWindow] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
-  const [returnWelcomeLine, setReturnWelcomeLine] = useState<string | null>(null);
+  const [growthWindow, setGrowthWindow] = useState<
+    'daily' | 'weekly' | 'monthly'
+  >('weekly');
+  const [returnWelcomeLine, setReturnWelcomeLine] = useState<string | null>(
+    null,
+  );
   useEffect(() => {
     const prev = readLastDashboardOpenMs();
-    setReturnWelcomeLine(dashboardWelcomeLine({ firstName: welcomeName, lastOpenedAtMs: prev }));
+    setReturnWelcomeLine(
+      dashboardWelcomeLine({ firstName: welcomeName, lastOpenedAtMs: prev }),
+    );
     writeDashboardOpenedNow();
   }, [welcomeName]);
 
@@ -903,7 +1079,8 @@ function DashboardOverviewPageContent() {
   const heroAction = dashboardHeader?.actionContext;
   const heroClusterId = (heroAction?.recommendationClusterId ?? '').trim();
   const heroDominant = isHeroDominant(todayPlan.data);
-  const hasUnifiedPriorities = (todayPlan.data?.unifiedPriorities.items.length ?? 0) > 0;
+  const hasUnifiedPriorities =
+    (todayPlan.data?.unifiedPriorities.items.length ?? 0) > 0;
   const heroSubtext =
     committedExp?.momentumLine?.trim() ||
     (todayPlan.data
@@ -915,19 +1092,22 @@ function DashboardOverviewPageContent() {
 
   const hasCompressedAssistantNarrative = Boolean(
     todayPlan.data?.assistantNarrative?.headline?.trim() &&
-      todayPlan.data?.assistantNarrative?.supporting?.trim() &&
-      todayPlan.data?.assistantNarrative?.ctaLabel?.trim(),
+    todayPlan.data?.assistantNarrative?.supporting?.trim() &&
+    todayPlan.data?.assistantNarrative?.ctaLabel?.trim(),
   );
   const heroActionHeadline = useMemo(() => {
     if (!heroAction) return null;
     const company = (heroAction.companyName ?? '').trim();
     const role = (heroAction.roleTitle ?? '').trim();
     const days =
-      typeof heroAction.daysSinceActivity === 'number' && Number.isFinite(heroAction.daysSinceActivity)
+      typeof heroAction.daysSinceActivity === 'number' &&
+      Number.isFinite(heroAction.daysSinceActivity)
         ? Math.max(1, Math.round(heroAction.daysSinceActivity))
         : null;
-    if (company && days) return `Your ${company} application went quiet ${days} day${days === 1 ? '' : 's'} ago.`;
-    if (role && days) return `${role} went quiet ${days} day${days === 1 ? '' : 's'} ago.`;
+    if (company && days)
+      return `Your ${company} application went quiet ${days} day${days === 1 ? '' : 's'} ago.`;
+    if (role && days)
+      return `${role} went quiet ${days} day${days === 1 ? '' : 's'} ago.`;
     if (company) return `Your ${company} application needs attention.`;
     if (role) return `${role} needs attention.`;
     return null;
@@ -959,7 +1139,8 @@ function DashboardOverviewPageContent() {
   const orchestratedHero = useMemo(() => {
     const plan = todayPlan.data;
     if (!plan || !isOrchestrationV1(plan)) return null;
-    if (dashboardVm?.usesExperienceLayer && dashboardVm.hero?.title?.trim()) return null;
+    if (dashboardVm?.usesExperienceLayer && dashboardVm.hero?.title?.trim())
+      return null;
     const hid = effectiveHeroRecommendationId(plan);
     if (!hid) return null;
     const item = plan.unifiedPriorities.items.find((x) => x.id === hid);
@@ -990,12 +1171,24 @@ function DashboardOverviewPageContent() {
       href,
       label,
       arcLabel: plan.dashboardNarrative?.arcLabel?.trim() || null,
-      supportingLine: (item.compactDisplay?.primaryLine ?? item.subtitle ?? item.reasonShort ?? '').trim() || null,
+      supportingLine:
+        (
+          item.compactDisplay?.primaryLine ??
+          item.subtitle ??
+          item.reasonShort ??
+          ''
+        ).trim() || null,
       minutes,
     };
-  }, [todayPlan.data, defaultProfile?.id, dashboardVm?.usesExperienceLayer, dashboardVm?.hero?.title]);
+  }, [
+    todayPlan.data,
+    defaultProfile?.id,
+    dashboardVm?.usesExperienceLayer,
+    dashboardVm?.hero?.title,
+  ]);
   const heroActionMinutes =
-    typeof heroAction?.estimatedMinutes === 'number' && Number.isFinite(heroAction.estimatedMinutes)
+    typeof heroAction?.estimatedMinutes === 'number' &&
+    Number.isFinite(heroAction.estimatedMinutes)
       ? Math.max(1, Math.round(heroAction.estimatedMinutes))
       : null;
   const nudgesTop = useMemo(
@@ -1007,10 +1200,13 @@ function DashboardOverviewPageContent() {
   );
   const primaryDirectionHref = useMemo(() => {
     const primaryId = growthDirection.data?.dailyDirection.primaryPriorityId;
-    const fallbackId = growthDirection.data?.continuationState.suggestedPriorityId;
+    const fallbackId =
+      growthDirection.data?.continuationState.suggestedPriorityId;
     const targetId = primaryId ?? fallbackId ?? null;
     if (!targetId) return '/dashboard/jobs';
-    const item = todayPlan.data?.unifiedPriorities.items.find((x) => x.id === targetId);
+    const item = todayPlan.data?.unifiedPriorities.items.find(
+      (x) => x.id === targetId,
+    );
     if (!item) return '/dashboard/jobs';
     return resolveExecutionDestination({
       cta: item.cta,
@@ -1024,7 +1220,11 @@ function DashboardOverviewPageContent() {
       defaultCvProfileId: defaultProfile?.id ?? null,
       safeFallback: '/dashboard/jobs',
     }).href;
-  }, [defaultProfile?.id, growthDirection.data, todayPlan.data?.unifiedPriorities.items]);
+  }, [
+    defaultProfile?.id,
+    growthDirection.data,
+    todayPlan.data?.unifiedPriorities.items,
+  ]);
   const filteredNudges = useMemo(() => {
     const blockedRoutes = new Set<string>();
     const blockedClusters = new Set<string>();
@@ -1033,15 +1233,24 @@ function DashboardOverviewPageContent() {
     if (orchestratedHero?.href) blockedRoutes.add(orchestratedHero.href);
     if (primaryDirectionHref) blockedRoutes.add(primaryDirectionHref);
     if (heroClusterId) blockedClusters.add(heroClusterId);
-    const ownedClusters = computeOwnedClusters(todayPlan.data?.unifiedPriorities.items ?? [], 'hero');
+    const ownedClusters = computeOwnedClusters(
+      todayPlan.data?.unifiedPriorities.items ?? [],
+      'hero',
+    );
     for (const cluster of ownedClusters) blockedClusters.add(cluster);
     return nudgesTop
       .filter((n) => !blockedRoutes.has(n.route))
       .filter((n) => {
-        const cluster = String((n as { recommendationClusterId?: string | null }).recommendationClusterId ?? '').trim();
+        const cluster = String(
+          (n as { recommendationClusterId?: string | null })
+            .recommendationClusterId ?? '',
+        ).trim();
         return !cluster || !blockedClusters.has(cluster);
       })
-      .slice(0, heroDominant ? 1 : heroActionHref || orchestratedHero?.href ? 1 : 2);
+      .slice(
+        0,
+        heroDominant ? 1 : heroActionHref || orchestratedHero?.href ? 1 : 2,
+      );
   }, [
     heroActionHref,
     dashboardVm?.hero?.href,
@@ -1060,7 +1269,9 @@ function DashboardOverviewPageContent() {
       primaryGoal !== 'student' &&
       primaryGoal !== 'interviews';
     if (!bannerPromotesAnalyzeJob) return filteredNudges;
-    return filteredNudges.filter((n) => String(n.route) !== '/dashboard/jobs/analyze');
+    return filteredNudges.filter(
+      (n) => String(n.route) !== '/dashboard/jobs/analyze',
+    );
   }, [filteredNudges, showAnalyzeNextRoleBanner, primaryGoal]);
 
   useEffect(() => {
@@ -1094,31 +1305,52 @@ function DashboardOverviewPageContent() {
     if (!dashboardVm.hero?.title?.trim()) return;
     setCommittedExp((prev) => {
       const sessionId = todayPlan.data?.experienceSessionId?.trim() || null;
-      const revision = typeof todayPlan.data?.experienceRevision === 'number' ? todayPlan.data.experienceRevision : null;
-      const experienceKey = sessionId && revision != null ? `${sessionId}:${revision}` : null;
+      const revision =
+        typeof todayPlan.data?.experienceRevision === 'number'
+          ? todayPlan.data.experienceRevision
+          : null;
+      const experienceKey =
+        sessionId && revision != null ? `${sessionId}:${revision}` : null;
       // If key didn't change, keep stable rendering (no flip-flop / re-animate).
-      const hk = st?.hydrationConsistencyKey?.trim() || todayPlan.data?.resumeTarget?.hydrationConsistencyKey?.trim() || null;
-      if (prev && prev.experienceSessionId && prev.experienceRevision != null && experienceKey) {
+      const hk =
+        st?.hydrationConsistencyKey?.trim() ||
+        todayPlan.data?.resumeTarget?.hydrationConsistencyKey?.trim() ||
+        null;
+      if (
+        prev &&
+        prev.experienceSessionId &&
+        prev.experienceRevision != null &&
+        experienceKey
+      ) {
         const prevKey = `${prev.experienceSessionId}:${prev.experienceRevision}`;
         if (prevKey === experienceKey) return prev;
       }
-      if (prev && prev.hydrationConsistencyKey && hk && prev.hydrationConsistencyKey === hk) return prev;
+      if (
+        prev &&
+        prev.hydrationConsistencyKey &&
+        hk &&
+        prev.hydrationConsistencyKey === hk
+      )
+        return prev;
       // If we have a committed hero and no key is available, avoid churn on minor refreshes.
       if (prev && prev.heroTitle.trim() && !hk && !experienceKey) return prev;
       const hero = dashboardVm.hero!;
       const compressedNarrative = Boolean(
         todayPlan.data?.assistantNarrative?.headline?.trim() &&
-          todayPlan.data?.assistantNarrative?.supporting?.trim() &&
-          todayPlan.data?.assistantNarrative?.ctaLabel?.trim(),
+        todayPlan.data?.assistantNarrative?.supporting?.trim() &&
+        todayPlan.data?.assistantNarrative?.ctaLabel?.trim(),
       );
       const exp = todayPlan.data?.dashboardExperience ?? null;
       const pipelineInfo =
         exp?.surfaces.find(
           (s): s is DashboardExperienceInformationalSurface =>
-            s.kind === 'informational' && s.category.trim().toLowerCase() === 'pipeline',
+            s.kind === 'informational' &&
+            s.category.trim().toLowerCase() === 'pipeline',
         ) ?? null;
       const rawInsights = dashboardVm.informationalSurfaces ?? [];
-      const insights = rawInsights.filter((s) => s.category.trim().toLowerCase() !== 'pipeline');
+      const insights = rawInsights.filter(
+        (s) => s.category.trim().toLowerCase() !== 'pipeline',
+      );
       const dn = todayPlan.data?.dashboardNarrative ?? null;
       const narrative = exp?.narrative ?? null;
       const continuityLine =
@@ -1149,7 +1381,9 @@ function DashboardOverviewPageContent() {
         heroShowCta: hero.showPrimaryCta,
         heroArcLabel,
         heroContinuityLine,
-        heroWhyMatters: compressedNarrative ? null : hero.expectedOutcome?.trim() || null,
+        heroWhyMatters: compressedNarrative
+          ? null
+          : hero.expectedOutcome?.trim() || null,
         heroEmotionalTone: hero.emotionalTone?.trim() || null,
         momentumLine: dashboardVm.momentumLine?.trim() || null,
         continuation: dashboardVm.continuation ?? null,
@@ -1186,7 +1420,8 @@ function DashboardOverviewPageContent() {
     const exp = todayPlan.data?.dashboardExperience;
     if (!exp) return null;
     const informational = exp.surfaces.filter(
-      (s): s is DashboardExperienceInformationalSurface => s.kind === 'informational',
+      (s): s is DashboardExperienceInformationalSurface =>
+        s.kind === 'informational',
     );
     return informational.find((s) => s.id?.trim() === 'exp-landscape') ?? null;
   }, [todayPlan.data?.dashboardExperience]);
@@ -1195,12 +1430,17 @@ function DashboardOverviewPageContent() {
     const exp = todayPlan.data?.dashboardExperience;
     if (!exp) return null;
     const informational = exp.surfaces.filter(
-      (s): s is DashboardExperienceInformationalSurface => s.kind === 'informational',
+      (s): s is DashboardExperienceInformationalSurface =>
+        s.kind === 'informational',
     );
-    const byPipelineId = informational.find((s) => s.id?.trim() === 'exp-pipeline-snapshot');
+    const byPipelineId = informational.find(
+      (s) => s.id?.trim() === 'exp-pipeline-snapshot',
+    );
     return (
       byPipelineId ??
-      informational.find((s) => s.category.trim().toLowerCase() === 'pipeline') ??
+      informational.find(
+        (s) => s.category.trim().toLowerCase() === 'pipeline',
+      ) ??
       null
     );
   }, [todayPlan.data?.dashboardExperience]);
@@ -1224,17 +1464,23 @@ function DashboardOverviewPageContent() {
   }, [landscapeInfoSurface, todayPlan.data?.sectionPayloads?.landscape]);
 
   const insightSurfaces = useMemo(() => {
-    const raw = committedExp?.insightSurfaces ?? dashboardVm?.informationalSurfaces ?? [];
+    const raw =
+      committedExp?.insightSurfaces ?? dashboardVm?.informationalSurfaces ?? [];
     return raw.filter((s) => {
       const c = s.category.trim().toLowerCase();
       if (c === 'pipeline' || c === 'landscape') return false;
-      const sid = 'surfaceId' in s ? String((s as { surfaceId?: string | null }).surfaceId ?? '').trim() : '';
+      const sid =
+        'surfaceId' in s
+          ? String((s as { surfaceId?: string | null }).surfaceId ?? '').trim()
+          : '';
       if (sid === 'exp-landscape') return false;
       return true;
     });
   }, [committedExp?.insightSurfaces, dashboardVm?.informationalSurfaces]);
 
-  const [dismissedInsights, setDismissedInsights] = useState<ReadonlySet<string>>(new Set());
+  const [dismissedInsights, setDismissedInsights] = useState<
+    ReadonlySet<string>
+  >(new Set());
   const visibleInsightSurfaces = useMemo(() => {
     if (dismissedInsights.size === 0) return insightSurfaces;
     return insightSurfaces.filter((s) => {
@@ -1246,10 +1492,13 @@ function DashboardOverviewPageContent() {
   const showLegacyNudges = !(
     (committedExp?.mode || dashboardVm?.mode) &&
     dashboardVm?.usesExperienceLayer &&
-    ((committedExp?.mode || dashboardVm?.mode) === 'interviewing' || (committedExp?.mode || dashboardVm?.mode) === 'recovery')
+    ((committedExp?.mode || dashboardVm?.mode) === 'interviewing' ||
+      (committedExp?.mode || dashboardVm?.mode) === 'recovery')
   );
 
-  const hasExperienceHeroCandidate = Boolean(dashboardVm?.usesExperienceLayer && dashboardVm.hero?.title?.trim());
+  const hasExperienceHeroCandidate = Boolean(
+    dashboardVm?.usesExperienceLayer && dashboardVm.hero?.title?.trim(),
+  );
   const experienceStable = planStableForHero(todayPlan.data);
   const shouldHoldExperienceUi =
     Boolean(dashboardVm?.usesExperienceLayer) &&
@@ -1264,25 +1513,38 @@ function DashboardOverviewPageContent() {
    * - Without `todayPlan.data`, many strings fall back to growth/analytics heuristics.
    * - With experience layer enabled, wait until `committedExp` is committed (hero skeleton already exists).
    */
-  const shouldHoldInitialDashboardUi = !todayPlan.data || todayPlan.isLoading || shouldHoldExperienceUi;
+  const shouldHoldInitialDashboardUi =
+    !todayPlan.data || todayPlan.isLoading || shouldHoldExperienceUi;
 
   const experienceMode = committedExp?.mode ?? dashboardVm?.mode ?? null;
-  const assistantAtmosphere = useMemo(() => atmosphereForMode(experienceMode), [experienceMode]);
+  const assistantAtmosphere = useMemo(
+    () => atmosphereForMode(experienceMode),
+    [experienceMode],
+  );
   const reassuranceWhisper = useMemo(() => {
     if (hasCompressedAssistantNarrative) return null;
     return pickReassuranceLine({
       mode: experienceMode,
       seed: `${todayPlan.data?.experienceSessionId ?? ''}|${todayPlan.data?.digestVersion ?? ''}|${welcomeName}`,
     });
-  }, [experienceMode, hasCompressedAssistantNarrative, todayPlan.data?.digestVersion, todayPlan.data?.experienceSessionId, welcomeName]);
+  }, [
+    experienceMode,
+    hasCompressedAssistantNarrative,
+    todayPlan.data?.digestVersion,
+    todayPlan.data?.experienceSessionId,
+    welcomeName,
+  ]);
 
   const phase14Layout = useMemo(
     () =>
-      resolveDashboardPhase14Layout(todayPlan.data?.dashboardLayoutConfig ?? null, {
-        heroSuppressesInsights: Boolean(
-          hasCompressedAssistantNarrative && dashboardVm?.hero?.title?.trim(),
-        ),
-      }),
+      resolveDashboardPhase14Layout(
+        todayPlan.data?.dashboardLayoutConfig ?? null,
+        {
+          heroSuppressesInsights: Boolean(
+            hasCompressedAssistantNarrative && dashboardVm?.hero?.title?.trim(),
+          ),
+        },
+      ),
     [
       todayPlan.data?.dashboardLayoutConfig,
       hasCompressedAssistantNarrative,
@@ -1304,14 +1566,21 @@ function DashboardOverviewPageContent() {
     [todayPlan.data, phase14Layout, priorityIntelligenceExcludeIds],
   );
 
-  const secondaryCollapsibleIds = useMemo(() => buildSecondaryCardsCollapsibleOrder(), []);
+  const secondaryCollapsibleIds = useMemo(
+    () => buildSecondaryCardsCollapsibleOrder(),
+    [],
+  );
 
   const isBrandNewUser = useMemo(
     () =>
       displayRows.length === 0 &&
       (analytics.data?.jobsAnalyzed ?? 0) === 0 &&
       !(todayPlan.data?.unifiedPriorities?.items?.length ?? 0),
-    [displayRows.length, analytics.data?.jobsAnalyzed, todayPlan.data?.unifiedPriorities?.items?.length],
+    [
+      displayRows.length,
+      analytics.data?.jobsAnalyzed,
+      todayPlan.data?.unifiedPriorities?.items?.length,
+    ],
   );
 
   const focusItemsRaw = useMemo(
@@ -1323,7 +1592,13 @@ function DashboardOverviewPageContent() {
         defaultCvProfileId: defaultProfile?.id ?? null,
         heroClusterId: heroClusterId || null,
       }),
-    [todayPlan.data, dashboardVm?.continuation, weeklyStall.data, defaultProfile?.id, heroClusterId],
+    [
+      todayPlan.data,
+      dashboardVm?.continuation,
+      weeklyStall.data,
+      defaultProfile?.id,
+      heroClusterId,
+    ],
   );
 
   const upcomingInterviews = useMemo(() => {
@@ -1334,7 +1609,10 @@ function DashboardOverviewPageContent() {
 
   const focusItemsFilteredForInterview = useMemo(
     () =>
-      filterFocusItemsRemovingGenericInterviewCoaching(focusItemsRaw, upcomingRowsCount > 0 ? 1 : 0),
+      filterFocusItemsRemovingGenericInterviewCoaching(
+        focusItemsRaw,
+        upcomingRowsCount > 0 ? 1 : 0,
+      ),
     [focusItemsRaw, upcomingRowsCount],
   );
 
@@ -1342,9 +1620,13 @@ function DashboardOverviewPageContent() {
     () => listContinuationItemsForDisplay(todayPlan.data ?? null),
     [todayPlan.data],
   );
-  const continuationTotal = todayPlan.data?.continuationCount ?? continuationList.length;
+  const continuationTotal =
+    todayPlan.data?.continuationCount ?? continuationList.length;
 
-  const recommendedMove = useMemo(() => resolveRecommendedMove(todayPlan.data ?? null), [todayPlan.data]);
+  const recommendedMove = useMemo(
+    () => resolveRecommendedMove(todayPlan.data ?? null),
+    [todayPlan.data],
+  );
 
   const recommendedMoveEyebrow = useMemo(() => {
     const p = todayPlan.data;
@@ -1393,7 +1675,8 @@ function DashboardOverviewPageContent() {
   }, [todayPlan.data?.goalAlignment?.ctaHref]);
 
   const goalAlignmentSuppressedByDedupe = Boolean(
-    goalAlignmentHrefCanon && dashboardPrimaryDedupeHrefs.has(goalAlignmentHrefCanon),
+    goalAlignmentHrefCanon &&
+    dashboardPrimaryDedupeHrefs.has(goalAlignmentHrefCanon),
   );
 
   const whereThingsStandHeadline = useMemo(() => {
@@ -1408,7 +1691,9 @@ function DashboardOverviewPageContent() {
 
     if (plan?.dashboardVitals) {
       const fromApi = dashboardVitalsToStatChips(plan.dashboardVitals, plan);
-      const hasRealValues = fromApi.some((c) => c.value !== '—' && c.value.trim() !== '');
+      const hasRealValues = fromApi.some(
+        (c) => c.value !== '—' && c.value.trim() !== '',
+      );
       if (fromApi.length > 0 && hasRealValues) return fromApi;
     }
 
@@ -1418,7 +1703,11 @@ function DashboardOverviewPageContent() {
       const cm = plan.careerMomentum;
       const v = effectiveDeterministicIndexValue(cm.momentumIndex, cm.score);
       const value =
-        v != null ? `${v}/100` : cm.headline?.trim().includes('/') ? cm.headline.trim() : `${cm.score ?? '—'}/100`;
+        v != null
+          ? `${v}/100`
+          : cm.headline?.trim().includes('/')
+            ? cm.headline.trim()
+            : `${cm.score ?? '—'}/100`;
       const tier =
         cm.tier === 'building'
           ? 'Building'
@@ -1440,8 +1729,12 @@ function DashboardOverviewPageContent() {
 
     if (plan?.predictiveOutlook) {
       const po = plan.predictiveOutlook;
-      const iv = effectiveDeterministicIndexValue(po.interviewOutlook, po.interviewProbability);
-      const words = po.headline?.trim()?.split(/\s+/).slice(0, 2).join(' ') || 'On track';
+      const iv = effectiveDeterministicIndexValue(
+        po.interviewOutlook,
+        po.interviewProbability,
+      );
+      const words =
+        po.headline?.trim()?.split(/\s+/).slice(0, 2).join(' ') || 'On track';
       chips.push({
         key: 'predictive_outlook',
         label: 'Interview Outlook',
@@ -1464,14 +1757,16 @@ function DashboardOverviewPageContent() {
       let appValue = String(a?.applicationsSent ?? 0);
       let appStatus = 'In your pipeline';
       if (snap) {
-        const interviewing = (snap.interviewing ?? 0) + (snap.interviewsUpcoming7d ?? 0);
+        const interviewing =
+          (snap.interviewing ?? 0) + (snap.interviewsUpcoming7d ?? 0);
         let sum = 0;
         for (const v of Object.values(snap)) {
           if (typeof v === 'number' && Number.isFinite(v) && v > 0) sum += v;
         }
         if (sum > 0) {
           appValue = String(sum);
-          appStatus = interviewing > 0 ? `${interviewing} active` : 'Moving forward';
+          appStatus =
+            interviewing > 0 ? `${interviewing} active` : 'Moving forward';
         }
       }
       chips.push({
@@ -1483,7 +1778,10 @@ function DashboardOverviewPageContent() {
       });
     }
 
-    if (plan?.habitProgress && typeof plan.habitProgress.currentStreakDays === 'number') {
+    if (
+      plan?.habitProgress &&
+      typeof plan.habitProgress.currentStreakDays === 'number'
+    ) {
       const d = Math.max(0, Math.round(plan.habitProgress.currentStreakDays));
       chips.push({
         key: 'streak',
@@ -1506,7 +1804,10 @@ function DashboardOverviewPageContent() {
 
   const phase14SecondaryFlags = useMemo(
     () => ({
-      allowGrowthMomentum: shouldRenderSection('momentum', todayPlan.data ?? null),
+      allowGrowthMomentum: shouldRenderSection(
+        'momentum',
+        todayPlan.data ?? null,
+      ),
       allowGrowthAchievements:
         shouldRenderSection('achievements', todayPlan.data ?? null) &&
         (growthAchievements.data?.items?.length ?? 0) > 0,
@@ -1517,9 +1818,13 @@ function DashboardOverviewPageContent() {
   const pipelineDisplayHeadline = useMemo(() => {
     const raw =
       whereThingsStandHeadline ??
-      (typeof pipelineInfoSurface?.headline === 'string' ? pipelineInfoSurface.headline : null);
+      (typeof pipelineInfoSurface?.headline === 'string'
+        ? pipelineInfoSurface.headline
+        : null);
     const bodyPreview =
-      typeof pipelineInfoSurface?.body === 'string' ? pipelineInfoSurface.body : null;
+      typeof pipelineInfoSurface?.body === 'string'
+        ? pipelineInfoSurface.body
+        : null;
     if (!raw?.trim()) return raw;
     const mergedPreview = phase14Layout.mergeLandscapeIntoPipeline
       ? mergePipelineLandscapeBodies(bodyPreview, landscapeCoachingBody)
@@ -1535,20 +1840,27 @@ function DashboardOverviewPageContent() {
 
   const pipelineMergedBody = useMemo(() => {
     const pipelineBody =
-      typeof pipelineInfoSurface?.body === 'string' ? pipelineInfoSurface.body : null;
+      typeof pipelineInfoSurface?.body === 'string'
+        ? pipelineInfoSurface.body
+        : null;
     const landscapeBody = landscapeCoachingBody;
     const merged = phase14Layout.mergeLandscapeIntoPipeline
       ? mergePipelineLandscapeBodies(pipelineBody, landscapeBody)
-      : pipelineBody ?? null;
+      : (pipelineBody ?? null);
     const s = merged?.trim();
     return s ? dedupeNearDuplicateSentences(s) : null;
-  }, [phase14Layout.mergeLandscapeIntoPipeline, pipelineInfoSurface, landscapeCoachingBody]);
+  }, [
+    phase14Layout.mergeLandscapeIntoPipeline,
+    pipelineInfoSurface,
+    landscapeCoachingBody,
+  ]);
 
   const showMergedPipelineCard = useMemo(() => {
     const m = dashboardVm?.pipelineMetrics?.length ?? 0;
     const hasPipelineSurface = pipelineInfoSurface != null;
     const mergedNarrativeOnly =
-      phase14Layout.mergeLandscapeIntoPipeline && Boolean(landscapeCoachingBody?.trim());
+      phase14Layout.mergeLandscapeIntoPipeline &&
+      Boolean(landscapeCoachingBody?.trim());
     return m > 0 || hasPipelineSurface || mergedNarrativeOnly;
   }, [
     dashboardVm?.pipelineMetrics?.length,
@@ -1561,10 +1873,15 @@ function DashboardOverviewPageContent() {
     if (phase14Layout.hidden.has('landscape')) return false;
     if (phase14Layout.mergeLandscapeIntoPipeline) return false;
     return shouldShowLandscapeSection(todayPlan.data ?? null);
-  }, [phase14Layout.hidden, phase14Layout.mergeLandscapeIntoPipeline, todayPlan.data]);
+  }, [
+    phase14Layout.hidden,
+    phase14Layout.mergeLandscapeIntoPipeline,
+    todayPlan.data,
+  ]);
 
   const hideCvClinicPromo = phase14Layout.hidden.has('cv_clinic_promo');
-  const showCvTeaserInExecution = showCvProfileTeaserPromo && !hideCvClinicPromo;
+  const showCvTeaserInExecution =
+    showCvProfileTeaserPromo && !hideCvClinicPromo;
   const showCvClinicSectionInExecution =
     cvSectionVisible && !hideCvClinicPromo && !cvClinicSuppressedByDedupe;
 
@@ -1579,7 +1896,13 @@ function DashboardOverviewPageContent() {
           phase14SecondaryFlags,
         ),
       ),
-    [secondaryCollapsibleIds, todayPlan.data, phase14Layout, priorityZoneCardIds, phase14SecondaryFlags],
+    [
+      secondaryCollapsibleIds,
+      todayPlan.data,
+      phase14Layout,
+      priorityZoneCardIds,
+      phase14SecondaryFlags,
+    ],
   );
 
   const hasGoalsStrategyCard = useMemo(
@@ -1606,9 +1929,14 @@ function DashboardOverviewPageContent() {
       <div className="flex min-h-0 flex-1 flex-col gap-10 lg:flex-row lg:gap-8 lg:overflow-hidden">
         <div
           className={cn(
-            'flex w-full min-w-0 flex-col pr-0 lg:mx-auto lg:max-w-[760px] lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pr-2 app-scrollbar',
+            'app-scrollbar scroll-content-end-pad flex w-full min-w-0 flex-col pr-0 lg:mx-auto lg:max-w-[760px] lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pr-2',
             dashboardVm?.usesExperienceLayer
-              ? cn(modeShellClass(committedExp?.mode ?? dashboardVm?.mode ?? null), 'gap-0')
+              ? cn(
+                  modeShellClass(
+                    committedExp?.mode ?? dashboardVm?.mode ?? null,
+                  ),
+                  'gap-0',
+                )
               : 'gap-0',
           )}
         >
@@ -1618,14 +1946,26 @@ function DashboardOverviewPageContent() {
               dashboardVm?.usesExperienceLayer
                 ? {
                     duration: assistantAtmosphere.motionTransition.duration,
-                    ease: assistantAtmosphere.motionTransition.ease as [number, number, number, number],
+                    ease: assistantAtmosphere.motionTransition.ease as [
+                      number,
+                      number,
+                      number,
+                      number,
+                    ],
                   }
-                : { duration: 0.35, delay: 0, ease: [0.21, 0.47, 0.32, 0.98] as const }
+                : {
+                    duration: 0.35,
+                    delay: 0,
+                    ease: [0.21, 0.47, 0.32, 0.98] as const,
+                  }
             }
             className={cn(
               'mb-6 max-md:mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-10',
               'rounded-none border-0 bg-transparent p-0 pb-2 shadow-none ring-0 sm:pb-3',
-              dashboardVm?.usesExperienceLayer && assistantToneHeroAccentClass(todayPlan.data?.assistantTone ?? null),
+              dashboardVm?.usesExperienceLayer &&
+                assistantToneHeroAccentClass(
+                  todayPlan.data?.assistantTone ?? null,
+                ),
             )}
           >
             <div className="min-w-0 max-w-[65ch]">
@@ -1638,22 +1978,36 @@ function DashboardOverviewPageContent() {
                 {greetingLine(welcomeName)}
               </p>
               {!hasCompressedAssistantNarrative && returnWelcomeLine ? (
-                <p className="mb-4 mt-0 text-[13px] leading-relaxed text-[#9CF5EA]/72">{returnWelcomeLine}</p>
+                <p className="mb-4 mt-0 text-[13px] leading-relaxed text-[#9CF5EA]/72">
+                  {returnWelcomeLine}
+                </p>
               ) : null}
               {/* Phase 5 compressed hero: suppress legacy strip + reasoning when assistantNarrative is present. */}
-              {dashboardVm?.usesExperienceLayer && !hasCompressedAssistantNarrative ? (
+              {dashboardVm?.usesExperienceLayer &&
+              !hasCompressedAssistantNarrative ? (
                 <AssistantHeaderRenderer
-                  compact={Boolean(committedExp?.heroTitle?.trim()) && !shouldHoldExperienceUi}
+                  compact={
+                    Boolean(committedExp?.heroTitle?.trim()) &&
+                    !shouldHoldExperienceUi
+                  }
                   assistantTone={todayPlan.data?.assistantTone ?? null}
                   emotionalSummary={todayPlan.data?.emotionalSummary ?? null}
-                  dailyNarrativeSummary={todayPlan.data?.dailyNarrativeSummary ?? null}
-                  narrativeProgression={todayPlan.data?.narrativeProgression ?? null}
+                  dailyNarrativeSummary={
+                    todayPlan.data?.dailyNarrativeSummary ?? null
+                  }
+                  narrativeProgression={
+                    todayPlan.data?.narrativeProgression ?? null
+                  }
                   memorySummary={todayPlan.data?.memorySummary ?? null}
-                  assistantReasoning={todayPlan.data?.assistantReasoning ?? null}
+                  assistantReasoning={
+                    todayPlan.data?.assistantReasoning ?? null
+                  }
                   adaptiveReasoning={todayPlan.data?.adaptiveReasoning ?? []}
                   assistantState={todayPlan.data?.assistantState ?? null}
                   humanizedLabels={todayPlan.data?.humanizedLabels ?? null}
-                  personalizationContext={todayPlan.data?.personalizationContext ?? null}
+                  personalizationContext={
+                    todayPlan.data?.personalizationContext ?? null
+                  }
                 />
               ) : null}
               {shouldHoldExperienceUi ? (
@@ -1672,14 +2026,20 @@ function DashboardOverviewPageContent() {
                   mode={committedExp.mode ?? dashboardVm?.mode ?? null}
                   fatigueAdjusted={committedExp.narrativeFatigueAdjusted}
                   primaryTitleClass={
-                    hasCompressedAssistantNarrative ? undefined : assistantAtmosphere.heroTitleClass
+                    hasCompressedAssistantNarrative
+                      ? undefined
+                      : assistantAtmosphere.heroTitleClass
                   }
                   compressedVisual={hasCompressedAssistantNarrative}
                 />
               ) : orchestratedHero?.arcLabel ? (
-                <p className="mt-2 text-[13px] font-medium text-white/72">{orchestratedHero.arcLabel}</p>
+                <p className="mt-2 text-[13px] font-medium text-white/72">
+                  {orchestratedHero.arcLabel}
+                </p>
               ) : heroActionHeadline ? (
-                <p className="mt-2 text-[13px] font-medium text-white/72">{heroActionHeadline}</p>
+                <p className="mt-2 text-[13px] font-medium text-white/72">
+                  {heroActionHeadline}
+                </p>
               ) : (
                 <p
                   className={cn(
@@ -1690,13 +2050,17 @@ function DashboardOverviewPageContent() {
                   {heroSubtext}
                 </p>
               )}
-              {dashboardVm?.usesExperienceLayer && dashboardVm.hero?.title
-                ? null
-                : orchestratedHero?.supportingLine ? (
-                    <p className="mt-1 text-[12px] text-white/50">{orchestratedHero.supportingLine}</p>
-                  ) : heroActionBenefit ? (
-                    <p className="mt-1 text-[12px] text-white/50">{heroActionBenefit}</p>
-                  ) : null}
+              {dashboardVm?.usesExperienceLayer &&
+              dashboardVm.hero
+                ?.title ? null : orchestratedHero?.supportingLine ? (
+                <p className="mt-1 text-[12px] text-white/50">
+                  {orchestratedHero.supportingLine}
+                </p>
+              ) : heroActionBenefit ? (
+                <p className="mt-1 text-[12px] text-white/50">
+                  {heroActionBenefit}
+                </p>
+              ) : null}
               {growthDirection.data?.dailyDirection.progressContext &&
               !heroAction &&
               !orchestratedHero &&
@@ -1709,9 +2073,22 @@ function DashboardOverviewPageContent() {
             </div>
             <div className="w-full shrink-0 lg:max-w-[38%] lg:pt-0.5 lg:pr-2">
               {shouldHoldExperienceUi ? (
-                <div className="flex w-full flex-col items-stretch gap-3 sm:items-end" aria-hidden>
-                  <Skeleton className="max-w-[11rem] sm:ml-auto" height={14} width="100%" borderRadius={8} />
-                  <Skeleton className="max-w-[13rem] sm:ml-auto" height={44} width="100%" borderRadius={999} />
+                <div
+                  className="flex w-full flex-col items-stretch gap-3 sm:items-end"
+                  aria-hidden
+                >
+                  <Skeleton
+                    className="max-w-[11rem] sm:ml-auto"
+                    height={14}
+                    width="100%"
+                    borderRadius={8}
+                  />
+                  <Skeleton
+                    className="max-w-[13rem] sm:ml-auto"
+                    height={44}
+                    width="100%"
+                    borderRadius={999}
+                  />
                 </div>
               ) : committedExp?.heroTitle ? (
                 <HeroRenderer
@@ -1733,7 +2110,8 @@ function DashboardOverviewPageContent() {
                     emitDashboardBehaviorEvent({
                       eventName: 'dashboard_hero_clicked',
                       context: {
-                        recommendationId: dashboardVm?.hero?.recommendationId ?? null,
+                        recommendationId:
+                          dashboardVm?.hero?.recommendationId ?? null,
                         canonicalRoute: committedExp.heroCtaHref,
                         surfaceKind: 'hero',
                       },
@@ -1769,7 +2147,9 @@ function DashboardOverviewPageContent() {
               ) : heroActionHref && heroActionCtaLabel ? (
                 <>
                   {heroActionMinutes ? (
-                    <p className="text-[12px] font-medium leading-relaxed text-white/35">Usually takes ~{heroActionMinutes} min</p>
+                    <p className="text-[12px] font-medium leading-relaxed text-white/35">
+                      Usually takes ~{heroActionMinutes} min
+                    </p>
                   ) : null}
                   <Link
                     href={heroActionHref}
@@ -1777,8 +2157,12 @@ function DashboardOverviewPageContent() {
                     onClick={() => {
                       if (typeof window !== 'undefined') {
                         console.info('[Dashboard CTA route]', {
-                          recommendationId: heroAction?.recommendationId ?? null,
-                          title: heroActionHeadline ?? heroAction?.roleTitle ?? 'Hero action',
+                          recommendationId:
+                            heroAction?.recommendationId ?? null,
+                          title:
+                            heroActionHeadline ??
+                            heroAction?.roleTitle ??
+                            'Hero action',
                           canonicalRoute:
                             heroAction?.executionPayload?.canonicalRoute ??
                             heroAction?.canonicalRoute ??
@@ -1804,13 +2188,19 @@ function DashboardOverviewPageContent() {
                 </>
               ) : !dashboardVm?.usesExperienceLayer ? (
                 <p className="text-[12px] font-medium leading-relaxed text-white/35">
-                  Tip: Revisit your top matches weekly — small updates to your CV often move the needle on fit scores.
+                  Tip: Revisit your top matches weekly — small updates to your
+                  CV often move the needle on fit scores.
                 </p>
               ) : null}
               {!shouldHoldExperienceUi &&
               !dashboardVm?.usesExperienceLayer &&
               !orchestratedHero &&
-              !(committedExp?.heroTitle && committedExp.heroShowCta && committedExp.heroCtaHref && committedExp.heroCtaLabel) &&
+              !(
+                committedExp?.heroTitle &&
+                committedExp.heroShowCta &&
+                committedExp.heroCtaHref &&
+                committedExp.heroCtaLabel
+              ) &&
               (!heroActionHref || !heroActionCtaLabel) ? (
                 <Link
                   href={primaryDirectionHref}
@@ -1842,430 +2232,581 @@ function DashboardOverviewPageContent() {
               omitCanonicalCtaHrefs={dashboardPrimaryDedupeHrefs}
               suppressGenericInterviewPriority={upcomingRowsCount > 0}
             />
-            <DashboardStatsRow chips={statsChips} loading={analytics.isLoading} />
+            <DashboardStatsRow
+              chips={statsChips}
+              loading={analytics.isLoading}
+            />
             {upcomingInterviews.length > 0 && (
               <DashboardUpcomingInterviewsSection
                 interviews={upcomingInterviews}
                 upcomingInterviewCount={
-                  todayPlan.data?.upcomingInterviewCount ?? upcomingInterviews.length
+                  todayPlan.data?.upcomingInterviewCount ??
+                  upcomingInterviews.length
                 }
               />
             )}
-            <ContinuationSection items={continuationList} continuationCount={continuationTotal} />
+            <ContinuationSection
+              items={continuationList}
+              continuationCount={continuationTotal}
+            />
             {recommendedMove ? (
               <DashboardRecommendedMoveSection
                 action={recommendedMove}
                 sectionEyebrow={recommendedMoveEyebrow}
-                followUpJobsSnapshotCount={todayPlan.data?.followUpJobs?.length ?? 0}
-                followUpJobsTotalCount={todayPlan.data?.followUpJobsTotalCount ?? null}
-                followUpJobsViewAllHref={todayPlan.data?.followUpJobsViewAllHref ?? null}
+                followUpJobsSnapshotCount={
+                  todayPlan.data?.followUpJobs?.length ?? 0
+                }
+                followUpJobsTotalCount={
+                  todayPlan.data?.followUpJobsTotalCount ?? null
+                }
+                followUpJobsViewAllHref={
+                  todayPlan.data?.followUpJobsViewAllHref ?? null
+                }
               />
             ) : null}
             <DashboardFocusSection
               items={focusItems}
-              sectionHeading={normalizedSectionTitle(todayPlan.data, 'focus', 'Your Focus')}
+              sectionHeading={normalizedSectionTitle(
+                todayPlan.data,
+                'focus',
+                'Your Focus',
+              )}
               phase15Empty={dashboardEmptyStateFor(todayPlan.data, 'focus')}
             />
             <InterviewPendingResultBanner className="mb-2" />
             {!suppressGenericInterviewCoaching ? (
-              <DashboardInterviewPreparationSection cards={todayPlan.data?.interviewPreparationCards ?? []} />
+              <DashboardInterviewPreparationSection
+                cards={todayPlan.data?.interviewPreparationCards ?? []}
+              />
             ) : null}
 
-          {showMergedPipelineCard || showStandaloneLandscapeCard ? (
-            <motion.section
-              id="dashboard-deep-summary"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: 0.1, ease: [0.21, 0.47, 0.32, 0.98] }}
-              className="scroll-mt-4 flex flex-col gap-6"
-              aria-label="Where things stand"
-            >
-              {showMergedPipelineCard ? (
-                <PipelineRenderer
-                  metrics={dashboardVm?.pipelineMetrics ?? []}
-                  headline={pipelineDisplayHeadline}
-                  body={
-                    pipelineMergedBody ??
-                    (typeof pipelineInfoSurface?.body === 'string'
-                      ? dedupeNearDuplicateSentences(pipelineInfoSurface.body)
-                      : null)
-                  }
-                  forceRender={true}
-                  titleOverride={null}
-                  emptyStateCopyOverride={null}
-                  sectionEyebrow={
-                    normalizedSectionTitle(todayPlan.data, 'search_at_a_glance', '')?.trim() ||
-                    'Where things stand'
-                  }
-                  primaryLineFallback={null}
-                  disableOuterMotion
-                  mode={committedExp?.mode ?? dashboardVm?.mode ?? null}
-                  fatigueAdjusted={
-                    todayPlan.data?.dashboardExperience?.narrative?.fatigueAdjusted ??
-                    committedExp?.narrativeFatigueAdjusted ??
-                    null
-                  }
-                />
-              ) : null}
-              {showStandaloneLandscapeCard ? (
-                <DashboardLandscapeCard
-                  title={landscapeSectionTitle}
-                  body={landscapeCoachingBody}
-                  emptyStateCopy={todayPlan.data?.sectionPayloads?.landscape?.emptyStateCopy ?? null}
-                />
-              ) : null}
-            </motion.section>
-          ) : null}
-
-          {showCvTeaserInExecution ? (
-            <motion.section
-              {...sectionMotion}
-              transition={{ duration: 0.35, delay: 0.09, ease: [0.21, 0.47, 0.32, 0.98] }}
-              aria-label="CV profiles"
-            >
-              <DashboardCvProfileTeaser onNewCv={() => setCreateCvOpen(true)} />
-            </motion.section>
-          ) : null}
-
-          {showCvClinicSectionInExecution ? (
-            <motion.section
-              {...sectionMotion}
-              transition={{ duration: 0.35, delay: 0.095, ease: [0.21, 0.47, 0.32, 0.98] }}
-              aria-label="CV Clinic"
-              className="rounded-3xl border border-white/[0.08] bg-white/[0.03] p-4 shadow-[0_24px_60px_-32px_rgba(0,0,0,0.45)] ring-1 ring-white/[0.05] sm:p-6"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold text-white/90">
-                    {normalizedSectionTitle(todayPlan.data, 'cv', '') ||
-                      todayPlan.data?.sectionPayloads?.cv?.title?.trim() ||
-                      'CV Clinic'}
-                  </h2>
-                  <p className="mt-2 text-[13px] font-medium leading-relaxed text-white/50">
-                    Start with a scan to get a score and section-by-section improvements.
-                  </p>
-                </div>
-                <Link href="/dashboard/cv" className="text-[13px] font-medium text-[#00C9B1] hover:underline">
-                  Open CV Clinic →
-                </Link>
-              </div>
-            </motion.section>
-          ) : null}
-
-          {!hasUnifiedPriorities ? (
-            <motion.section
-              {...sectionMotion}
-              transition={{ duration: 0.35, delay: 0.118, ease: [0.21, 0.47, 0.32, 0.98] }}
-            >
-              <DashboardTopMatchesSection
-                items={topMatches}
-                todayPlanPayload={todayPlan.data ?? null}
-                onInvalidNavigate={() => {
-                  toast.info('That task is already resolved. Showing your current priorities.');
-                  void todayPlan.refetch();
+            {showMergedPipelineCard || showStandaloneLandscapeCard ? (
+              <motion.section
+                id="dashboard-deep-summary"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.35,
+                  delay: 0.1,
+                  ease: [0.21, 0.47, 0.32, 0.98],
                 }}
-              />
-            </motion.section>
-          ) : null}
-
-          {hasProgressCollapsibleContent ? (
-            <DashboardProgressIntelligenceCollapsible>
-              {secondaryCollapsibleIds.map((id) => {
-                if (id === 'goal_strategic_coaching') return null;
-                if (
-                  !shouldShowSecondaryCard(
-                    id,
-                    todayPlan.data ?? null,
-                    phase14Layout,
-                    priorityZoneCardIds,
-                    phase14SecondaryFlags,
-                  )
-                ) {
-                  return null;
-                }
-                const plan = todayPlan.data;
-                if (!plan) return null;
-                let inner: ReactNode = null;
-                switch (id) {
-                  case 'career_momentum':
-                    inner = plan.careerMomentum
-                      ? wrapProgressCore(
-                          'career_momentum',
-                          deepDiveCareerMomentumSummary(plan.careerMomentum),
-                          <DashboardCareerMomentumCard
-                            data={plan.careerMomentum}
-                            phase15Empty={dashboardEmptyStateFor(todayPlan.data, 'career_momentum')}
-                          />,
-                        )
-                      : null;
-                    break;
-                  case 'predictive_outlook':
-                    inner = plan.predictiveOutlook
-                      ? wrapProgressCore(
-                          'predictive_outlook',
-                          deepDivePredictiveSummary(plan.predictiveOutlook),
-                          <DashboardPredictiveOutlookCard
-                            data={plan.predictiveOutlook}
-                            phase15Empty={dashboardEmptyStateFor(todayPlan.data, 'predictive_outlook')}
-                          />,
-                        )
-                      : null;
-                    break;
-                  case 'weekly_briefing':
-                    inner = plan.weeklyBriefing ? (
-                      <DashboardWeeklyBriefingCard data={plan.weeklyBriefing} />
-                    ) : null;
-                    break;
-                  case 'strategic_weekly_coaching':
-                    inner = plan.strategicWeeklyCoaching ? (
-                      <DashboardStrategicWeeklyCoachingCard data={plan.strategicWeeklyCoaching} />
-                    ) : null;
-                    break;
-                  case 'goal_alignment':
-                    inner =
-                      plan.goalAlignment && !goalAlignmentSuppressedByDedupe
-                        ? wrapProgressCore(
-                            'goal_alignment',
-                            deepDiveGoalSummary(plan.goalAlignment),
-                            <DashboardGoalAlignmentCard
-                              alignment={plan.goalAlignment}
-                              careerProfile={plan.careerGoalProfile ?? null}
-                            />,
-                          )
-                        : null;
-                    break;
-                  case 'strategic_coaching':
-                    inner =
-                      plan.strategicCoaching &&
-                      !(suppressGenericInterviewCoaching && plan.strategicCoaching.reason === 'interview_focus') ? (
-                        <DashboardStrategicCoachingCard data={plan.strategicCoaching} />
-                      ) : null;
-                    break;
-                  case 'adaptive_coaching':
-                    inner =
-                      plan.adaptiveCoaching &&
-                      !(
-                        suppressGenericInterviewCoaching &&
-                        plan.adaptiveCoaching.category === 'interview_momentum'
-                      ) ? (
-                        <DashboardAdaptiveCoachingCard data={plan.adaptiveCoaching} />
-                      ) : null;
-                    break;
-                  case 'milestone_celebration':
-                    inner = plan.milestoneCelebration ? (
-                      <DashboardMilestoneCelebration data={plan.milestoneCelebration} timeZone={browserTz} />
-                    ) : null;
-                    break;
-                  case 'habit_progress':
-                    inner = plan.habitProgress
-                      ? wrapProgressCore(
-                          'habit_progress',
-                          deepDiveHabitSummary(plan.habitProgress),
-                          <DashboardHabitProgressCard data={plan.habitProgress} />,
-                        )
-                      : null;
-                    break;
-                  case 'today_plan_achievements':
-                    inner =
-                      plan.careerAchievements != null || plan.achievements != null
-                        ? wrapProgressCore(
-                            'today_plan_achievements',
-                            deepDiveCareerAchievementsSummary(plan.careerAchievements, plan.achievements),
-                            <DashboardCareerAchievementsSection
-                              digestVersion={todayPlan.data?.digestVersion ?? ''}
-                              career={plan.careerAchievements}
-                              achievements={plan.achievements}
-                              heading={careerAchievementsHeading}
-                              phase15Empty={dashboardEmptyStateFor(todayPlan.data, 'achievements')}
-                            />,
-                          )
-                        : null;
-                    break;
-                  case 'growth_momentum':
-                    inner = (
-                      <GrowthProgressCard
-                        window={growthWindow}
-                        onWindowChange={setGrowthWindow}
-                        emptyStateCopy={todayPlan.data?.sectionPayloads?.momentum?.emptyStateCopy ?? null}
-                        sectionTitle={
-                          normalizedSectionTitle(todayPlan.data, 'momentum', '') ||
-                          todayPlan.data?.sectionPayloads?.momentum?.title?.trim() ||
-                          null
-                        }
-                      />
-                    );
-                    break;
-                  case 'growth_achievements':
-                    inner =
-                      shouldRenderSection('achievements', todayPlan.data ?? null) &&
-                      growthAchievements.data?.items?.length ? (
-                        <section className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-5 sm:p-6">
-                          <p className="mb-3 text-[15px] font-semibold text-white/90">
-                            {normalizedSectionTitle(todayPlan.data, 'achievements', '') ||
-                              todayPlan.data?.sectionPayloads?.achievements?.title?.trim() ||
-                              'Achievements'}
-                          </p>
-                          <div className="space-y-2">
-                            {growthAchievements.data.items.slice(0, 3).map((item) => (
-                              <div
-                                key={item.id}
-                                className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-3"
-                              >
-                                <div className="min-w-0">
-                                  <p className="truncate text-[13px] font-semibold text-white">{item.title}</p>
-                                  <p className="truncate text-[12px] text-white/50">{item.subtitle}</p>
-                                </div>
-                                <button
-                                  type="button"
-                                  className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-white/15 px-2.5 text-[12px] text-white/75 hover:border-[#00C9B1]/40 hover:text-[#00C9B1]"
-                                  onClick={async () => {
-                                    const text = `${item.sharePayload.badge}${item.sharePayload.value != null ? `: ${item.sharePayload.value}` : ''} - ${item.sharePayload.note}`;
-                                    if (navigator.share) {
-                                      try {
-                                        await navigator.share({ title: item.title, text });
-                                        return;
-                                      } catch {
-                                        // ignore and fallback to clipboard
-                                      }
-                                    }
-                                    await navigator.clipboard.writeText(text);
-                                    toast.success('Achievement copied for sharing');
-                                  }}
-                                >
-                                  <Share2 className="h-3.5 w-3.5" aria-hidden />
-                                  Share
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </section>
-                      ) : null;
-                    break;
-                  default:
-                    inner = null;
-                }
-                if (!inner) return null;
-                return (
-                  <div key={id} className={phase14SecondaryWrapClass}>
-                    {inner}
-                  </div>
-                );
-              })}
-            </DashboardProgressIntelligenceCollapsible>
-          ) : null}
-
-          {hasGoalsStrategyCard && todayPlan.data?.goalStrategicCoaching ? (
-            <motion.section
-              {...sectionMotion}
-              transition={{ duration: 0.35, delay: 0.117, ease: [0.21, 0.47, 0.32, 0.98] }}
-              aria-label="Goals and strategy"
-            >
-              <div className={phase14SecondaryWrapClass}>
-                <DashboardGoalStrategicCoachingCard data={todayPlan.data.goalStrategicCoaching} />
-              </div>
-            </motion.section>
-          ) : null}
-
-          {dashboardVm?.usesExperienceLayer &&
-          visibleInsightSurfaces.length > 0 &&
-          !phase14Layout.suppressInsightGuidance &&
-          todayPlan.data?.assistantNarrative?.suppressGuidanceCard !== true ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{
-                duration: assistantAtmosphere.motionTransition.duration,
-                ease: assistantAtmosphere.motionTransition.ease as [number, number, number, number],
-              }}
-            >
-              <section className="grid gap-4 sm:grid-cols-2" aria-label="Guidance for you">
-                {visibleInsightSurfaces.slice(0, assistantAtmosphere.insightDensity === 'sparse' ? 4 : 6).map((surf, i) => (
-                  <InsightRenderer
-                    key={`${surf.category}-${i}`}
-                    surface={surf}
+                className="scroll-mt-4 flex flex-col gap-6"
+                aria-label="Where things stand"
+              >
+                {showMergedPipelineCard ? (
+                  <PipelineRenderer
+                    metrics={dashboardVm?.pipelineMetrics ?? []}
+                    headline={pipelineDisplayHeadline}
+                    body={
+                      pipelineMergedBody ??
+                      (typeof pipelineInfoSurface?.body === 'string'
+                        ? dedupeNearDuplicateSentences(pipelineInfoSurface.body)
+                        : null)
+                    }
+                    forceRender={true}
+                    titleOverride={null}
+                    emptyStateCopyOverride={null}
+                    sectionEyebrow={
+                      normalizedSectionTitle(
+                        todayPlan.data,
+                        'search_at_a_glance',
+                        '',
+                      )?.trim() || 'Where things stand'
+                    }
+                    primaryLineFallback={null}
+                    disableOuterMotion
                     mode={committedExp?.mode ?? dashboardVm?.mode ?? null}
-                    insightDensity={assistantAtmosphere.insightDensity}
                     fatigueAdjusted={
-                      todayPlan.data?.dashboardExperience?.narrative?.fatigueAdjusted ??
+                      todayPlan.data?.dashboardExperience?.narrative
+                        ?.fatigueAdjusted ??
                       committedExp?.narrativeFatigueAdjusted ??
                       null
                     }
-                    onDismiss={() => {
-                      const k = `${String(surf.category ?? '').trim()}:${String(surf.headline ?? '').trim()}:${String(surf.insightCategory ?? '').trim()}`;
-                      setDismissedInsights((prev) => {
-                        const next = new Set(prev);
-                        next.add(k);
-                        return next;
-                      });
-                      emitDashboardBehaviorEvent({
-                        eventName: 'dashboard_insight_dismissed',
-                        context: {
-                          surfaceKind: 'insight',
-                          category: surf.category ?? null,
-                          insightCategory: surf.insightCategory ?? null,
-                          headline: surf.headline ?? null,
-                        },
-                      });
-                    }}
                   />
-                ))}
-              </section>
-            </motion.div>
-          ) : null}
-
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.14, ease: [0.21, 0.47, 0.32, 0.98] }}
-          >
-            {showLegacyNudges &&
-            !dashboardVm?.continuation &&
-            shouldRenderSection('nudges', todayPlan.data ?? null) &&
-            footerNudges.length > 0 ? (
-              <section className="rounded-3xl border border-white/[0.08] bg-white/[0.03] p-5 shadow-[0_24px_60px_-32px_rgba(0,0,0,0.35)] ring-1 ring-white/[0.05] sm:p-6">
-                <p className="mb-3 text-xl font-semibold tracking-tight text-white/90">
-                  {normalizedSectionTitle(todayPlan.data, 'nudges', '') ||
-                    todayPlan.data?.sectionPayloads?.nudges?.title?.trim() ||
-                    'Suggestions for you'}
-                </p>
-                <div className="space-y-2">
-                  {footerNudges.map((nudge) => (
-                    <Link
-                      key={nudge.id}
-                      href={nudge.route}
-                      className="block rounded-2xl border border-white/10 bg-white/[0.02] p-3 transition-colors hover:border-white/20 hover:bg-white/[0.04]"
-                    >
-                      <p className="text-[13px] font-semibold text-white">{nudge.title}</p>
-                      <p className="mt-1 text-[12px] text-white/50">{nudge.message}</p>
-                      <p className="mt-2 text-[12px] font-medium text-[#00C9B1]">{nudge.actionLabel} →</p>
-                    </Link>
-                  ))}
-                </div>
-              </section>
+                ) : null}
+                {showStandaloneLandscapeCard ? (
+                  <DashboardLandscapeCard
+                    title={landscapeSectionTitle}
+                    body={landscapeCoachingBody}
+                    emptyStateCopy={
+                      todayPlan.data?.sectionPayloads?.landscape
+                        ?.emptyStateCopy ?? null
+                    }
+                  />
+                ) : null}
+              </motion.section>
             ) : null}
-          </motion.div>
 
-          {showChecklist ? (
-            <GettingStartedChecklist
-              hasCvProfile={displayRows.length > 0}
-              anyProfileScored={anyProfileScored}
-              totalJobsAnalyzed={totalJobsAnalyzed}
-            />
-          ) : null}
+            {showCvTeaserInExecution ? (
+              <motion.section
+                {...sectionMotion}
+                transition={{
+                  duration: 0.35,
+                  delay: 0.09,
+                  ease: [0.21, 0.47, 0.32, 0.98],
+                }}
+                aria-label="CV profiles"
+              >
+                <DashboardCvProfileTeaser
+                  onNewCv={() => setCreateCvOpen(true)}
+                />
+              </motion.section>
+            ) : null}
 
-          {showAnalyzeNextRoleBanner ? (
-            <AnalyzeNextRoleBanner primaryGoal={primaryGoal} defaultProfile={defaultProfile} />
-          ) : null}
+            {showCvClinicSectionInExecution ? (
+              <motion.section
+                {...sectionMotion}
+                transition={{
+                  duration: 0.35,
+                  delay: 0.095,
+                  ease: [0.21, 0.47, 0.32, 0.98],
+                }}
+                aria-label="CV Clinic"
+                className="rounded-3xl border border-white/[0.08] bg-white/[0.03] p-4 shadow-[0_24px_60px_-32px_rgba(0,0,0,0.45)] ring-1 ring-white/[0.05] sm:p-6"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-white/90">
+                      {normalizedSectionTitle(todayPlan.data, 'cv', '') ||
+                        todayPlan.data?.sectionPayloads?.cv?.title?.trim() ||
+                        'CV Clinic'}
+                    </h2>
+                    <p className="mt-2 text-[13px] font-medium leading-relaxed text-white/50">
+                      Start with a scan to get a score and section-by-section
+                      improvements.
+                    </p>
+                  </div>
+                  <Link
+                    href="/dashboard/cv"
+                    className="text-[13px] font-medium text-[#00C9B1] hover:underline"
+                  >
+                    Open CV Clinic →
+                  </Link>
+                </div>
+              </motion.section>
+            ) : null}
 
+            {!hasUnifiedPriorities ? (
+              <motion.section
+                {...sectionMotion}
+                transition={{
+                  duration: 0.35,
+                  delay: 0.118,
+                  ease: [0.21, 0.47, 0.32, 0.98],
+                }}
+              >
+                <DashboardTopMatchesSection
+                  items={topMatches}
+                  todayPlanPayload={todayPlan.data ?? null}
+                  onInvalidNavigate={() => {
+                    toast.info(
+                      'That task is already resolved. Showing your current priorities.',
+                    );
+                    void todayPlan.refetch();
+                  }}
+                />
+              </motion.section>
+            ) : null}
+
+            {hasProgressCollapsibleContent ? (
+              <DashboardProgressIntelligenceCollapsible>
+                {secondaryCollapsibleIds.map((id) => {
+                  if (id === 'goal_strategic_coaching') return null;
+                  if (
+                    !shouldShowSecondaryCard(
+                      id,
+                      todayPlan.data ?? null,
+                      phase14Layout,
+                      priorityZoneCardIds,
+                      phase14SecondaryFlags,
+                    )
+                  ) {
+                    return null;
+                  }
+                  const plan = todayPlan.data;
+                  if (!plan) return null;
+                  let inner: ReactNode = null;
+                  switch (id) {
+                    case 'career_momentum':
+                      inner = plan.careerMomentum
+                        ? wrapProgressCore(
+                            'career_momentum',
+                            deepDiveCareerMomentumSummary(plan.careerMomentum),
+                            <DashboardCareerMomentumCard
+                              data={plan.careerMomentum}
+                              phase15Empty={dashboardEmptyStateFor(
+                                todayPlan.data,
+                                'career_momentum',
+                              )}
+                            />,
+                          )
+                        : null;
+                      break;
+                    case 'predictive_outlook':
+                      inner = plan.predictiveOutlook
+                        ? wrapProgressCore(
+                            'predictive_outlook',
+                            deepDivePredictiveSummary(plan.predictiveOutlook),
+                            <DashboardPredictiveOutlookCard
+                              data={plan.predictiveOutlook}
+                              phase15Empty={dashboardEmptyStateFor(
+                                todayPlan.data,
+                                'predictive_outlook',
+                              )}
+                            />,
+                          )
+                        : null;
+                      break;
+                    case 'weekly_briefing':
+                      inner = plan.weeklyBriefing ? (
+                        <DashboardWeeklyBriefingCard
+                          data={plan.weeklyBriefing}
+                        />
+                      ) : null;
+                      break;
+                    case 'strategic_weekly_coaching':
+                      inner = plan.strategicWeeklyCoaching ? (
+                        <DashboardStrategicWeeklyCoachingCard
+                          data={plan.strategicWeeklyCoaching}
+                        />
+                      ) : null;
+                      break;
+                    case 'goal_alignment':
+                      inner =
+                        plan.goalAlignment && !goalAlignmentSuppressedByDedupe
+                          ? wrapProgressCore(
+                              'goal_alignment',
+                              deepDiveGoalSummary(plan.goalAlignment),
+                              <DashboardGoalAlignmentCard
+                                alignment={plan.goalAlignment}
+                                careerProfile={plan.careerGoalProfile ?? null}
+                              />,
+                            )
+                          : null;
+                      break;
+                    case 'strategic_coaching':
+                      inner =
+                        plan.strategicCoaching &&
+                        !(
+                          suppressGenericInterviewCoaching &&
+                          plan.strategicCoaching.reason === 'interview_focus'
+                        ) ? (
+                          <DashboardStrategicCoachingCard
+                            data={plan.strategicCoaching}
+                          />
+                        ) : null;
+                      break;
+                    case 'adaptive_coaching':
+                      inner =
+                        plan.adaptiveCoaching &&
+                        !(
+                          suppressGenericInterviewCoaching &&
+                          plan.adaptiveCoaching.category ===
+                            'interview_momentum'
+                        ) ? (
+                          <DashboardAdaptiveCoachingCard
+                            data={plan.adaptiveCoaching}
+                          />
+                        ) : null;
+                      break;
+                    case 'milestone_celebration':
+                      inner = plan.milestoneCelebration ? (
+                        <DashboardMilestoneCelebration
+                          data={plan.milestoneCelebration}
+                          timeZone={browserTz}
+                        />
+                      ) : null;
+                      break;
+                    case 'habit_progress':
+                      inner = plan.habitProgress
+                        ? wrapProgressCore(
+                            'habit_progress',
+                            deepDiveHabitSummary(plan.habitProgress),
+                            <DashboardHabitProgressCard
+                              data={plan.habitProgress}
+                            />,
+                          )
+                        : null;
+                      break;
+                    case 'today_plan_achievements':
+                      inner =
+                        plan.careerAchievements != null ||
+                        plan.achievements != null
+                          ? wrapProgressCore(
+                              'today_plan_achievements',
+                              deepDiveCareerAchievementsSummary(
+                                plan.careerAchievements,
+                                plan.achievements,
+                              ),
+                              <DashboardCareerAchievementsSection
+                                digestVersion={
+                                  todayPlan.data?.digestVersion ?? ''
+                                }
+                                career={plan.careerAchievements}
+                                achievements={plan.achievements}
+                                heading={careerAchievementsHeading}
+                                phase15Empty={dashboardEmptyStateFor(
+                                  todayPlan.data,
+                                  'achievements',
+                                )}
+                              />,
+                            )
+                          : null;
+                      break;
+                    case 'growth_momentum':
+                      inner = (
+                        <GrowthProgressCard
+                          window={growthWindow}
+                          onWindowChange={setGrowthWindow}
+                          emptyStateCopy={
+                            todayPlan.data?.sectionPayloads?.momentum
+                              ?.emptyStateCopy ?? null
+                          }
+                          sectionTitle={
+                            normalizedSectionTitle(
+                              todayPlan.data,
+                              'momentum',
+                              '',
+                            ) ||
+                            todayPlan.data?.sectionPayloads?.momentum?.title?.trim() ||
+                            null
+                          }
+                        />
+                      );
+                      break;
+                    case 'growth_achievements':
+                      inner =
+                        shouldRenderSection(
+                          'achievements',
+                          todayPlan.data ?? null,
+                        ) && growthAchievements.data?.items?.length ? (
+                          <section className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-5 sm:p-6">
+                            <p className="mb-3 text-[15px] font-semibold text-white/90">
+                              {normalizedSectionTitle(
+                                todayPlan.data,
+                                'achievements',
+                                '',
+                              ) ||
+                                todayPlan.data?.sectionPayloads?.achievements?.title?.trim() ||
+                                'Achievements'}
+                            </p>
+                            <div className="space-y-2">
+                              {growthAchievements.data.items
+                                .slice(0, 3)
+                                .map((item) => (
+                                  <div
+                                    key={item.id}
+                                    className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-3"
+                                  >
+                                    <div className="min-w-0">
+                                      <p className="truncate text-[13px] font-semibold text-white">
+                                        {item.title}
+                                      </p>
+                                      <p className="truncate text-[12px] text-white/50">
+                                        {item.subtitle}
+                                      </p>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-white/15 px-2.5 text-[12px] text-white/75 hover:border-[#00C9B1]/40 hover:text-[#00C9B1]"
+                                      onClick={async () => {
+                                        const text = `${item.sharePayload.badge}${item.sharePayload.value != null ? `: ${item.sharePayload.value}` : ''} - ${item.sharePayload.note}`;
+                                        if (navigator.share) {
+                                          try {
+                                            await navigator.share({
+                                              title: item.title,
+                                              text,
+                                            });
+                                            return;
+                                          } catch {
+                                            // ignore and fallback to clipboard
+                                          }
+                                        }
+                                        await navigator.clipboard.writeText(
+                                          text,
+                                        );
+                                        toast.success(
+                                          'Achievement copied for sharing',
+                                        );
+                                      }}
+                                    >
+                                      <Share2
+                                        className="h-3.5 w-3.5"
+                                        aria-hidden
+                                      />
+                                      Share
+                                    </button>
+                                  </div>
+                                ))}
+                            </div>
+                          </section>
+                        ) : null;
+                      break;
+                    default:
+                      inner = null;
+                  }
+                  if (!inner) return null;
+                  return (
+                    <div key={id} className={phase14SecondaryWrapClass}>
+                      {inner}
+                    </div>
+                  );
+                })}
+              </DashboardProgressIntelligenceCollapsible>
+            ) : null}
+
+            {hasGoalsStrategyCard && todayPlan.data?.goalStrategicCoaching ? (
+              <motion.section
+                {...sectionMotion}
+                transition={{
+                  duration: 0.35,
+                  delay: 0.117,
+                  ease: [0.21, 0.47, 0.32, 0.98],
+                }}
+                aria-label="Goals and strategy"
+              >
+                <div className={phase14SecondaryWrapClass}>
+                  <DashboardGoalStrategicCoachingCard
+                    data={todayPlan.data.goalStrategicCoaching}
+                  />
+                </div>
+              </motion.section>
+            ) : null}
+
+            {dashboardVm?.usesExperienceLayer &&
+            visibleInsightSurfaces.length > 0 &&
+            !phase14Layout.suppressInsightGuidance &&
+            todayPlan.data?.assistantNarrative?.suppressGuidanceCard !==
+              true ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{
+                  duration: assistantAtmosphere.motionTransition.duration,
+                  ease: assistantAtmosphere.motionTransition.ease as [
+                    number,
+                    number,
+                    number,
+                    number,
+                  ],
+                }}
+              >
+                <section
+                  className="grid gap-4 sm:grid-cols-2"
+                  aria-label="Guidance for you"
+                >
+                  {visibleInsightSurfaces
+                    .slice(
+                      0,
+                      assistantAtmosphere.insightDensity === 'sparse' ? 4 : 6,
+                    )
+                    .map((surf, i) => (
+                      <InsightRenderer
+                        key={`${surf.category}-${i}`}
+                        surface={surf}
+                        mode={committedExp?.mode ?? dashboardVm?.mode ?? null}
+                        insightDensity={assistantAtmosphere.insightDensity}
+                        fatigueAdjusted={
+                          todayPlan.data?.dashboardExperience?.narrative
+                            ?.fatigueAdjusted ??
+                          committedExp?.narrativeFatigueAdjusted ??
+                          null
+                        }
+                        onDismiss={() => {
+                          const k = `${String(surf.category ?? '').trim()}:${String(surf.headline ?? '').trim()}:${String(surf.insightCategory ?? '').trim()}`;
+                          setDismissedInsights((prev) => {
+                            const next = new Set(prev);
+                            next.add(k);
+                            return next;
+                          });
+                          emitDashboardBehaviorEvent({
+                            eventName: 'dashboard_insight_dismissed',
+                            context: {
+                              surfaceKind: 'insight',
+                              category: surf.category ?? null,
+                              insightCategory: surf.insightCategory ?? null,
+                              headline: surf.headline ?? null,
+                            },
+                          });
+                        }}
+                      />
+                    ))}
+                </section>
+              </motion.div>
+            ) : null}
+
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.35,
+                delay: 0.14,
+                ease: [0.21, 0.47, 0.32, 0.98],
+              }}
+            >
+              {showLegacyNudges &&
+              !dashboardVm?.continuation &&
+              shouldRenderSection('nudges', todayPlan.data ?? null) &&
+              footerNudges.length > 0 ? (
+                <section className="rounded-3xl border border-white/[0.08] bg-white/[0.03] p-5 shadow-[0_24px_60px_-32px_rgba(0,0,0,0.35)] ring-1 ring-white/[0.05] sm:p-6">
+                  <p className="mb-3 text-xl font-semibold tracking-tight text-white/90">
+                    {normalizedSectionTitle(todayPlan.data, 'nudges', '') ||
+                      todayPlan.data?.sectionPayloads?.nudges?.title?.trim() ||
+                      'Suggestions for you'}
+                  </p>
+                  <div className="space-y-2">
+                    {footerNudges.map((nudge) => (
+                      <Link
+                        key={nudge.id}
+                        href={nudge.route}
+                        className="block rounded-2xl border border-white/10 bg-white/[0.02] p-3 transition-colors hover:border-white/20 hover:bg-white/[0.04]"
+                      >
+                        <p className="text-[13px] font-semibold text-white">
+                          {nudge.title}
+                        </p>
+                        <p className="mt-1 text-[12px] text-white/50">
+                          {nudge.message}
+                        </p>
+                        <p className="mt-2 text-[12px] font-medium text-[#00C9B1]">
+                          {nudge.actionLabel} →
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+            </motion.div>
+
+            {showChecklist ? (
+              <GettingStartedChecklist
+                hasCvProfile={displayRows.length > 0}
+                anyProfileScored={anyProfileScored}
+                totalJobsAnalyzed={totalJobsAnalyzed}
+              />
+            ) : null}
+
+            {showAnalyzeNextRoleBanner ? (
+              <AnalyzeNextRoleBanner
+                primaryGoal={primaryGoal}
+                defaultProfile={defaultProfile}
+              />
+            ) : null}
           </div>
 
-          <CreateCVProfileModal open={createCvOpen} onOpenChange={setCreateCvOpen} />
+          <CreateCVProfileModal
+            open={createCvOpen}
+            onOpenChange={setCreateCvOpen}
+          />
         </div>
 
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.12, ease: [0.21, 0.47, 0.32, 0.98] }}
+          transition={{
+            duration: 0.35,
+            delay: 0.12,
+            ease: [0.21, 0.47, 0.32, 0.98],
+          }}
           className="flex w-full shrink-0 flex-col border-t border-white/[0.08] pt-8 lg:flex lg:h-full lg:min-h-0 lg:w-[min(100%,340px)] lg:flex-col lg:border-l lg:border-white/[0.06] lg:border-t-0 lg:pl-6 lg:pt-0 xl:w-[360px] xl:pl-8"
         >
           <div className="lg:hidden">
@@ -2326,7 +2867,10 @@ function DashboardOverviewLoadingSkeleton() {
             <Skeleton height={18} width={220} borderRadius={10} />
             <div className="space-y-3">
               {[0, 1, 2].map((i) => (
-                <div key={i} className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+                <div
+                  key={i}
+                  className="rounded-2xl border border-white/10 bg-white/[0.02] p-4"
+                >
                   <Skeleton height={16} width="55%" borderRadius={10} />
                   <div className="mt-2">
                     <Skeleton height={12} width="80%" borderRadius={10} />
@@ -2344,7 +2888,10 @@ function DashboardOverviewLoadingSkeleton() {
           <div className="space-y-4">
             <Skeleton height={18} width={170} borderRadius={10} />
             {[0, 1, 2].map((i) => (
-              <div key={i} className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+              <div
+                key={i}
+                className="rounded-2xl border border-white/10 bg-white/[0.02] p-4"
+              >
                 <Skeleton height={14} width="70%" borderRadius={10} />
                 <div className="mt-2">
                   <Skeleton height={12} width="90%" borderRadius={10} />
@@ -2360,9 +2907,7 @@ function DashboardOverviewLoadingSkeleton() {
 
 export default function DashboardOverviewPage() {
   return (
-    <Suspense
-      fallback={<DashboardOverviewLoadingSkeleton />}
-    >
+    <Suspense fallback={<DashboardOverviewLoadingSkeleton />}>
       <DashboardOverviewPageContent />
     </Suspense>
   );

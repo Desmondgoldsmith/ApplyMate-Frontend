@@ -9,7 +9,13 @@ import { DashboardUserMenu } from '@/components/dashboard/DashboardUserMenu';
 import { NotificationBell } from '@/components/dashboard/NotificationBell';
 import { Button } from '@/components/ui/Button';
 
-function SearchCommandPlaceholder({ open, onClose }: { open: boolean; onClose: () => void }) {
+function SearchCommandPlaceholder({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -52,7 +58,12 @@ function SearchCommandPlaceholder({ open, onClose }: { open: boolean; onClose: (
             Command palette (⌘K) will search jobs, analyses, and CVs.
           </p>
           <p className="mt-2 text-[12px] text-white/35">Press Esc to close.</p>
-          <Button type="button" variant="ghost" className="mt-4 w-full text-[#00C9B1]" onClick={onClose}>
+          <Button
+            type="button"
+            variant="ghost"
+            className="mt-4 w-full text-[#00C9B1]"
+            onClick={onClose}
+          >
             Close
           </Button>
         </div>
@@ -78,9 +89,12 @@ export function Header() {
 
   return (
     <>
-      <SearchCommandPlaceholder open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <SearchCommandPlaceholder
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+      />
 
-      <header className="sticky top-0 z-50 flex h-14 min-h-[56px] shrink-0 items-center justify-between gap-2 border-b border-white/[0.08] bg-[#080b0a]/92 px-3 backdrop-blur-md sm:gap-3 sm:px-5">
+      <header className="sticky top-0 z-[60] flex h-14 min-h-[56px] shrink-0 items-center justify-between gap-2 border-b border-white/[0.08] bg-[#080b0a]/95 px-3 backdrop-blur-md sm:gap-3 sm:px-5 supports-[backdrop-filter]:bg-[#080b0a]/92">
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
           <Suspense
             fallback={
@@ -94,7 +108,10 @@ export function Header() {
         </div>
 
         <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-3">
-          <AiUsageBadge variant="compact" className="min-w-0 max-w-[min(52vw,13rem)] sm:max-w-[min(46vw,15rem)]" />
+          <AiUsageBadge
+            variant="compact"
+            className="min-w-0 max-w-[min(52vw,13rem)] sm:max-w-[min(46vw,15rem)]"
+          />
           <button
             type="button"
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 text-white/55 transition-colors hover:border-[#00C9B1]/35 hover:bg-white/[0.04] hover:text-[#00C9B1]"

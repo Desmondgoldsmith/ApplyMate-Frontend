@@ -43,6 +43,16 @@ export function MobileShellProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  useEffect(() => {
+    const onTourNav = (e: Event) => {
+      const visible = (e as CustomEvent<{ visible?: boolean }>).detail?.visible;
+      if (typeof visible === 'boolean') setNavVisible(visible);
+    };
+    window.addEventListener('applymate:tour-set-nav-visible', onTourNav);
+    return () =>
+      window.removeEventListener('applymate:tour-set-nav-visible', onTourNav);
+  }, [setNavVisible]);
+
   const toggleNav = useCallback(() => {
     setNavVisibleState((prev) => {
       const next = !prev;

@@ -27,7 +27,11 @@ function Dot({ kind }: { kind: FocusItem['dot'] }) {
         : 'bg-[var(--dot-teal)]';
   return (
     <span
-      className={cn('inline-block h-2 w-2 shrink-0 rounded-full', cls, isRed && 'dashboard-dot-pulse')}
+      className={cn(
+        'inline-block h-2 w-2 shrink-0 rounded-full',
+        cls,
+        isRed && 'dashboard-dot-pulse',
+      )}
       aria-hidden
     />
   );
@@ -51,10 +55,16 @@ export function DashboardFocusRow({
           <Dot kind={it.dot} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-semibold leading-snug text-white/92">{it.title}</p>
-          <p className="mt-0.5 line-clamp-2 text-[13px] leading-relaxed text-white/55">{it.subtitle}</p>
+          <p className="truncate text-[14px] font-semibold leading-snug text-white/92">
+            {it.title}
+          </p>
+          <p className="mt-0.5 line-clamp-2 text-[13px] leading-relaxed text-white/55">
+            {it.subtitle}
+          </p>
           {it.metaLine?.trim() ? (
-            <p className="mt-1.5 text-[11px] font-medium text-white/40">{it.metaLine}</p>
+            <p className="mt-1.5 text-[11px] font-medium text-white/40">
+              {it.metaLine}
+            </p>
           ) : null}
         </div>
       </div>
@@ -74,7 +84,11 @@ export function DashboardFocusRow({
   return <li className={focusRowSurfaceClass}>{inner}</li>;
 }
 
-export function DashboardFocusSection({ items, sectionHeading, phase15Empty }: Props) {
+export function DashboardFocusSection({
+  items,
+  sectionHeading,
+  phase15Empty,
+}: Props) {
   const visibleItems = items.slice(0, DASHBOARD_FOCUS_HOME_CAP);
   const showShowAll = items.length > DASHBOARD_FOCUS_HOME_CAP;
   const moreCount = Math.max(0, items.length - visibleItems.length);
@@ -83,12 +97,20 @@ export function DashboardFocusSection({ items, sectionHeading, phase15Empty }: P
 
   if (items.length === 0) {
     const custom = phase15Empty?.message?.trim();
-    const emptyHref = phase15Empty?.ctaHref?.trim() || '/dashboard/jobs/analyze';
+    const emptyHref =
+      phase15Empty?.ctaHref?.trim() || '/dashboard/jobs/analyze';
     const emptyCta = phase15Empty?.ctaLabel?.trim() || 'Analyze a job →';
     return (
-      <section id="dashboard-focus" aria-label={heading} className="scroll-mt-4 min-w-0">
+      <section
+        id="dashboard-focus"
+        data-tour="dashboard-focus"
+        aria-label={heading}
+        className="scroll-mt-4 min-w-0"
+      >
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 className="text-[14px] font-semibold text-[var(--text-primary)]">{heading}</h2>
+          <h2 className="text-[14px] font-semibold text-[var(--text-primary)]">
+            {heading}
+          </h2>
         </div>
         <p className="mt-3 text-[13px] leading-relaxed text-[var(--text-secondary)]">
           {custom ||
@@ -113,7 +135,9 @@ export function DashboardFocusSection({ items, sectionHeading, phase15Empty }: P
     >
       View all →
       {moreCount > 0 ? (
-        <span className="ml-1.5 font-normal text-[var(--text-muted)]">(+{moreCount} more)</span>
+        <span className="ml-1.5 font-normal text-[var(--text-muted)]">
+          (+{moreCount} more)
+        </span>
       ) : null}
     </Link>
   ) : null;
@@ -125,8 +149,13 @@ export function DashboardFocusSection({ items, sectionHeading, phase15Empty }: P
       countBadge={countBadge}
       headerRight={headerRight}
       className="min-w-0"
+      data-tour="dashboard-focus"
     >
-      <ul id="dashboard-focus" className="mt-0 flex list-none flex-col gap-2 p-0" aria-label={heading}>
+      <ul
+        id="dashboard-focus"
+        className="mt-0 flex list-none flex-col gap-2 p-0"
+        aria-label={heading}
+      >
         {visibleItems.map((it) => (
           <DashboardFocusRow key={it.id} it={it} />
         ))}

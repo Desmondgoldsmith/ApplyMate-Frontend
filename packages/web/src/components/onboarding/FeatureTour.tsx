@@ -13,6 +13,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
 import {
+  closeMobileNavForTour,
   matchTourId,
   resolveStepSelector,
   resolveStepSide,
@@ -69,34 +70,37 @@ function collectSteps(defs: TourStepDef[], narrow: boolean): DriveStep[] {
   for (const row of defs) {
     const selector = resolveStepSelector(row, narrow);
     const el = document.querySelector(selector);
-    if (!el) continue;
+    if (!el && !(narrow && row.revealOnHighlight)) continue;
     steps.push({
       element: selector,
       popover: {
         title: row.title,
         description: row.description,
-        side: resolveStepSide(el, row, narrow),
+        side: el ? resolveStepSide(el, row, narrow) : row.side,
         align: row.align ?? 'center',
         showButtons: ['next'],
         popoverOffset: row.popoverOffset ?? 16,
       } as DriveStep['popover'],
       onHighlightStarted: (element) => {
+        const scrollTarget = () => {
+          const target = element ?? document.querySelector(selector);
+          const block =
+            narrow && window.matchMedia('(max-width: 767px)').matches
+              ? 'nearest'
+              : 'center';
+          target?.scrollIntoView({
+            block,
+            inline: 'nearest',
+            behavior: 'smooth',
+          });
+        };
         if (row.beforeHighlight) {
           row.beforeHighlight();
-          window.setTimeout(() => {
-            element?.scrollIntoView({
-              block: 'center',
-              inline: 'nearest',
-              behavior: 'smooth',
-            });
-          }, 150);
+          const delay = narrow && row.revealOnHighlight ? 360 : 150;
+          window.setTimeout(scrollTarget, delay);
           return;
         }
-        element?.scrollIntoView({
-          block: 'center',
-          inline: 'nearest',
-          behavior: 'smooth',
-        });
+        scrollTarget();
       },
     });
   }
@@ -248,6 +252,13 @@ export function FeatureTour() {
           skip.textContent = 'Skip tour';
           skip.addEventListener('click', () => {
             celebrateRef.current = false;
+            if (
+              id === 'dashboard' &&
+              typeof window !== 'undefined' &&
+              window.matchMedia('(max-width: 767px)').matches
+            ) {
+              closeMobileNavForTour();
+            }
             opts.driver.destroy();
           });
           wrap.appendChild(skip);
@@ -293,6 +304,13 @@ export function FeatureTour() {
         onDestroyed: () => {
           driverRef.current = null;
           activeTourRef.current = null;
+          if (
+            tourId === 'dashboard' &&
+            typeof window !== 'undefined' &&
+            window.matchMedia('(max-width: 767px)').matches
+          ) {
+            closeMobileNavForTour();
+          }
           persistTourCompletionRef.current();
           if (celebrateRef.current) {
             celebrateRef.current = false;
@@ -315,16 +333,20 @@ export function FeatureTour() {
     const scheduleStart = () => {
       const narrow = window.matchMedia('(max-width: 767px)').matches;
       const defs = stepsForTour(tourId, narrow);
+      const minSteps = tourId === 'dashboard' && narrow ? 3 : 1;
       let steps = collectSteps(defs, narrow);
-      if (steps.length > 0 && firstStepReady(tourId, narrow)) {
+      if (steps.length >= minSteps && firstStepReady(tourId, narrow)) {
         launch(steps);
         return;
       }
-      window.setTimeout(() => {
-        if (cancelled) return;
-        steps = collectSteps(defs, narrow);
-        if (steps.length > 0) launch(steps);
-      }, 600);
+      window.setTimeout(
+        () => {
+          if (cancelled) return;
+          steps = collectSteps(defs, narrow);
+          if (steps.length >= minSteps) launch(steps);
+        },
+        narrow && tourId === 'dashboard' ? 1100 : 600,
+      );
     };
 
     const timer = window.setTimeout(
@@ -332,7 +354,11 @@ export function FeatureTour() {
         if (cancelled) return;
         scheduleStart();
       },
-      tourId === 'dashboard' ? 800 : 500,
+      tourId === 'dashboard'
+        ? window.matchMedia('(max-width: 767px)').matches
+          ? 1200
+          : 800
+        : 500,
     );
 
     return () => {

@@ -1382,6 +1382,7 @@ export default function OnboardingPage() {
                             uploadedScore.score !== undefined ? (
                               <CVScoreCard
                                 mode="compact"
+                                hideJobMatch
                                 score={uploadedScore.score}
                                 breakdown={uploadedScore.breakdown}
                                 improvementsCount={

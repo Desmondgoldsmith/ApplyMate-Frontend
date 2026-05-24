@@ -2311,8 +2311,15 @@ export function CVBuilder({
           : `cv-preview-${sid}`;
       const scrollAttempt = (attempt: number) => {
         const previewEl = document.getElementById(previewElId);
+        const narrowScroll =
+          typeof window !== 'undefined' &&
+          window.matchMedia('(max-width: 1023px)').matches;
         if (previewEl) {
-          previewEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          previewEl.scrollIntoView({
+            behavior: 'smooth',
+            block: narrowScroll ? 'nearest' : 'center',
+            inline: 'nearest',
+          });
         } else if (attempt < 8) {
           window.setTimeout(() => scrollAttempt(attempt + 1), 70);
         }
@@ -2923,11 +2930,11 @@ export function CVBuilder({
       <div
         data-lenis-prevent-wheel
         className={cn(
-          'cv-scroll-hide min-h-0 flex-1 overflow-y-auto overscroll-contain',
+          'cv-builder-form-root cv-scroll-hide scroll-content-end-pad min-h-0 flex-1 overflow-y-auto overscroll-contain',
           showTripleChrome
             ? 'px-3 py-2'
             : 'overscroll-y-contain px-5 py-4 sm:px-6 sm:py-5',
-          mode === 'dashboard' && 'max-lg:pb-28',
+          mode === 'dashboard' && 'max-lg:pb-32',
         )}
       >
         <>
@@ -4960,8 +4967,8 @@ export function CVBuilder({
       <div
         data-lenis-prevent-wheel
         className={cn(
-          'cv-scroll-hide min-h-0 flex-1 overflow-x-visible overflow-y-auto overscroll-y-contain p-4 lg:p-6',
-          mode === 'dashboard' && 'max-lg:px-2 max-lg:pb-28',
+          'cv-scroll-hide scroll-content-end-pad min-h-0 flex-1 overflow-x-visible overflow-y-auto overscroll-y-contain p-4 lg:p-6',
+          mode === 'dashboard' && 'max-lg:px-2 max-lg:pb-32',
         )}
       >
         {improvementDiffTruthBlock}
@@ -5109,7 +5116,7 @@ export function CVBuilder({
       ) : tripleColumn ? (
         <div
           ref={tripleColumn.containerRef}
-          className="mt-0 flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden rounded-2xl border border-white/[0.06] max-lg:min-h-[calc(100dvh-3.5rem)] max-lg:rounded-none max-lg:border-0"
+          className="mt-0 flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden rounded-2xl border border-white/[0.06] max-lg:h-full max-lg:min-h-0 max-lg:rounded-none max-lg:border-0"
         >
           <div className="flex min-h-0 min-w-0 w-full flex-1 flex-row overflow-hidden max-lg:flex-col">
             <CvTripleShellPreviewColumn

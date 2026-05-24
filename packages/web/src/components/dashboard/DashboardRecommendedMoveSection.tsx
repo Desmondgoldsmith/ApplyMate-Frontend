@@ -4,7 +4,10 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { InfoHint } from '@/components/ui/InfoHint';
-import { TOOLTIP_RECOMMENDED_MOVE_SIGNAL, TOOLTIP_STRATEGIC_MOVE_PRIORITY } from '@/lib/dashboardIntelligenceTooltips';
+import {
+  TOOLTIP_RECOMMENDED_MOVE_SIGNAL,
+  TOOLTIP_STRATEGIC_MOVE_PRIORITY,
+} from '@/lib/dashboardIntelligenceTooltips';
 import type { NextBestActionVm } from '@/lib/dashboardNextBestAction';
 import { resolveFollowUpJobsListHref } from '@/lib/followUpListRoute';
 import { cn } from '@/lib/utils';
@@ -20,7 +23,10 @@ type Props = {
 };
 
 function pctBar(value: number | null): ReactNode {
-  const v = typeof value === 'number' && Number.isFinite(value) ? Math.min(100, Math.max(0, Math.round(value))) : null;
+  const v =
+    typeof value === 'number' && Number.isFinite(value)
+      ? Math.min(100, Math.max(0, Math.round(value)))
+      : null;
   return (
     <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
       <div
@@ -42,7 +48,10 @@ function SignalRow({
   tooltip: string;
   tooltipAria: string;
 }) {
-  const display = typeof value === 'number' && Number.isFinite(value) ? `${Math.round(value)}%` : '—';
+  const display =
+    typeof value === 'number' && Number.isFinite(value)
+      ? `${Math.round(value)}%`
+      : '—';
   return (
     <div className="mt-2.5 first:mt-0">
       <div className="flex items-center justify-between gap-2 text-[11px] font-medium text-[var(--text-muted)]">
@@ -69,7 +78,8 @@ export function DashboardRecommendedMoveSection({
 
   const snap = Math.max(0, Math.round(followUpJobsSnapshotCount));
   const total =
-    typeof followUpJobsTotalCount === 'number' && Number.isFinite(followUpJobsTotalCount)
+    typeof followUpJobsTotalCount === 'number' &&
+    Number.isFinite(followUpJobsTotalCount)
       ? Math.max(0, Math.round(followUpJobsTotalCount))
       : null;
   const hasMultipleFollowUps = snap > 1 || (total != null && total > 1);
@@ -88,6 +98,7 @@ export function DashboardRecommendedMoveSection({
   return (
     <section
       aria-label={sectionEyebrow}
+      data-tour="recommended-move"
       className="scroll-mt-4 min-w-0"
       data-recommended-move-source={action.backendSource ?? undefined}
     >
@@ -97,7 +108,9 @@ export function DashboardRecommendedMoveSection({
 
       <div className="overflow-hidden rounded-2xl border border-[var(--border-teal)] border-l-[3px] border-l-[var(--teal)] bg-[var(--bg-surface)] pl-5 pr-5 py-5 sm:pl-6 sm:pr-6 sm:py-5">
         <div className="flex items-start justify-between gap-3">
-          <p className="min-w-0 flex-1 text-[15px] font-semibold leading-snug text-[var(--text-primary)]">{action.headline}</p>
+          <p className="min-w-0 flex-1 text-[15px] font-semibold leading-snug text-[var(--text-primary)]">
+            {action.headline}
+          </p>
           {hasMultipleFollowUps && followUpListHref ? (
             <Link
               href={followUpListHref}
@@ -108,7 +121,9 @@ export function DashboardRecommendedMoveSection({
           ) : null}
         </div>
         {supporting ? (
-          <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-secondary)] line-clamp-3">{supporting}</p>
+          <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-secondary)] line-clamp-3">
+            {supporting}
+          </p>
         ) : null}
 
         <div className="mt-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 sm:px-3.5">

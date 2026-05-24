@@ -4,8 +4,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, ChevronDown } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowLeft, BarChart3 } from 'lucide-react';
 
 import { AddSectionModal } from '@/components/cv/AddSectionModal';
 import { AISectionAssistantPanel } from '@/components/cv/AISectionAssistantPanel';
@@ -19,6 +19,7 @@ import { CvClinicToolbar } from '@/components/cv/CvClinicToolbar';
 import { CvClinicTripleRightPanel } from '@/components/cv/CvClinicTripleRightPanel';
 import { TemplatePickerModal } from '@/components/cv/TemplatePickerModal';
 import { Button } from '@/components/ui/Button';
+import { MobileDockFab } from '@/components/ui/MobileDockFab';
 import { useToast } from '@/components/ui/Toast';
 import { useCvSuggestionMutations } from '@/hooks/useCvSuggestionMutations';
 import { useCVImprovements } from '@/hooks/useCVImprovements';
@@ -1638,14 +1639,14 @@ export function OnboardingResumeClinic({
         existingSections={sections}
       />
 
-      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="shrink-0 overflow-x-auto border-b border-white/[0.06] bg-[#0C0F0F]">
+      <div className="flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col overflow-hidden">
+        <div className="hidden shrink-0 overflow-x-auto border-b border-white/[0.06] bg-[#0C0F0F] lg:block">
           <CvClinicToolbar
             visibility={toolbarVisibility}
             leftSlot={toolbarLeftSlot}
             rightAddon={toolbarRightAddon}
             allowWrap
-            showInsightsToggle={false}
+            showInsightsToggle
             targetId={profileId}
             profileOptions={[]}
             onProfileChange={() => {}}
@@ -1664,8 +1665,8 @@ export function OnboardingResumeClinic({
             builderSaveStatus={builderSaveStatus}
           />
         </div>
-        <div className="border-b border-white/[0.06] bg-[#0C0F0F] px-3 py-2 sm:hidden">
-          <div className="flex items-center gap-2">
+        <div className="shrink-0 border-b border-white/[0.06] bg-[#0C0F0F] px-3 py-2 lg:hidden">
+          <div className="flex min-w-0 items-center gap-2">
             <Button
               type="button"
               className="h-8 shrink-0 px-3 text-[11px]"
@@ -1681,39 +1682,26 @@ export function OnboardingResumeClinic({
             >
               Skip
             </button>
-            <button
-              type="button"
-              className="ml-auto inline-flex h-8 items-center gap-1 rounded-md border border-white/10 px-2 text-[11px] text-white/60 transition hover:text-white"
-              onClick={() => setMobileInsightsOpen((v) => !v)}
-            >
-              Insights
-              <ChevronDown
-                className={cn(
-                  'h-3.5 w-3.5 transition-transform',
-                  mobileInsightsOpen ? 'rotate-180' : '',
-                )}
-              />
-            </button>
           </div>
-          <AnimatePresence initial={false}>
-            {mobileInsightsOpen ? (
-              <motion.div
-                key="onboarding-mobile-insights"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="mt-2 overflow-hidden rounded-xl border border-white/[0.08]"
-              >
-                <div className="flex h-[min(58vh,520px)] min-h-0 flex-col p-2">
-                  {renderInsightsPanel()}
-                </div>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
         </div>
 
-        <div className="relative min-h-0 flex-1 overflow-hidden">
+        <MobileDockFab
+          open={mobileInsightsOpen}
+          onOpenChange={setMobileInsightsOpen}
+          icon={BarChart3}
+          label="Score and tips"
+          fabId="onboarding-cv-insights"
+          stackIndex={0}
+        >
+          <div className="space-y-3 pb-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-white/50">
+              Score breakdown & tips
+            </p>
+            {renderInsightsPanel()}
+          </div>
+        </MobileDockFab>
+
+        <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
           {showOnboardingEditHint ? (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
