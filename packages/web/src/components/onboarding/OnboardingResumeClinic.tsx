@@ -1667,21 +1667,35 @@ export function OnboardingResumeClinic({
         </div>
         <div className="shrink-0 border-b border-white/[0.06] bg-[#0C0F0F] px-3 py-2 lg:hidden">
           <div className="flex min-w-0 items-center gap-2">
-            <Button
-              type="button"
-              className="h-8 shrink-0 px-3 text-[11px]"
-              disabled={continueDisabled}
-              onClick={() => onContinue(cvDataSnapshot ?? initialData)}
-            >
-              Continue →
-            </Button>
             <button
               type="button"
-              className="h-8 shrink-0 px-2 text-[11px] text-white/45 transition hover:text-white/80"
-              onClick={onSkip}
+              className="group flex h-8 shrink-0 cursor-pointer items-center gap-1 px-1 text-[11px] text-white/45 transition hover:text-white/80"
+              onClick={onBack}
+              aria-label="Back to previous step"
             >
-              Skip
+              <ArrowLeft
+                className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:-translate-x-0.5"
+                strokeWidth={2}
+              />
+              Back
             </button>
+            <div className="ml-auto flex min-w-0 items-center gap-2">
+              <Button
+                type="button"
+                className="h-8 shrink-0 px-3 text-[11px]"
+                disabled={continueDisabled}
+                onClick={() => onContinue(cvDataSnapshot ?? initialData)}
+              >
+                Continue →
+              </Button>
+              <button
+                type="button"
+                className="h-8 shrink-0 px-2 text-[11px] text-white/45 transition hover:text-white/80"
+                onClick={onSkip}
+              >
+                Skip
+              </button>
+            </div>
           </div>
         </div>
 

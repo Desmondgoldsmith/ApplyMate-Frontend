@@ -4,7 +4,7 @@ import '@/styles/interview-prep.css';
 
 import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { X } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -307,6 +307,13 @@ export default function InterviewSessionPage() {
   const lastSimulationSignalsRef = useRef<SimulationSignal[]>([]);
 
   const [mobileResponseOpen, setMobileResponseOpen] = useState(false);
+
+  const scrollToMobileAnswer = useCallback(() => {
+    const target = document.getElementById('interview-mobile-answer');
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setMobileResponseOpen(true);
+  }, []);
   const [answerPipelineStatus, setAnswerPipelineStatus] =
     useState<AnswerPipelineStatus>('idle');
   const submitAnswerInFlightRef = useRef(false);
@@ -2478,6 +2485,46 @@ export default function InterviewSessionPage() {
                   />
                 </div>
 
+                {prep.usePrep && phase !== 'results' ? (
+                  <div className="mx-5 flex flex-col gap-2.5 sm:hidden">
+                    <CoachingStickyToggle
+                      settings={coaching.settings}
+                      disabled={coaching.isUpdating}
+                      onToggle={() =>
+                        coaching.setEnabled(!coaching.settings.enabled)
+                      }
+                      className="self-start shadow-none"
+                    />
+                    {phase === 'answering' || inIntroSelf ? (
+                      <button
+                        type="button"
+                        className="ip-btn-primary flex w-full cursor-pointer items-center justify-center gap-2 py-3 text-[13px] font-semibold"
+                        onClick={scrollToMobileAnswer}
+                      >
+                        Go to your answer
+                        <ChevronDown
+                          className="h-4 w-4 shrink-0 opacity-90"
+                          aria-hidden
+                        />
+                      </button>
+                    ) : null}
+                  </div>
+                ) : phase === 'answering' || inIntroSelf ? (
+                  <div className="mx-5 sm:hidden">
+                    <button
+                      type="button"
+                      className="ip-btn-primary flex w-full cursor-pointer items-center justify-center gap-2 py-3 text-[13px] font-semibold"
+                      onClick={scrollToMobileAnswer}
+                    >
+                      Go to your answer
+                      <ChevronDown
+                        className="h-4 w-4 shrink-0 opacity-90"
+                        aria-hidden
+                      />
+                    </button>
+                  </div>
+                ) : null}
+
                 {hasJobContext ? (
                   <div className="mx-5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] px-4 py-3.5">
                     <p className="ip-section-label">Interview context</p>
@@ -2586,7 +2633,7 @@ export default function InterviewSessionPage() {
             >
               <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
                 {prep.usePrep && phase !== 'results' ? (
-                  <div className="sticky top-0 z-10 flex justify-end border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]/95 px-4 py-2 backdrop-blur-sm">
+                  <div className="sticky top-0 z-10 flex justify-end border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]/95 px-4 py-2 backdrop-blur-sm max-sm:hidden">
                     <CoachingStickyToggle
                       settings={coaching.settings}
                       disabled={coaching.isUpdating}
@@ -2686,7 +2733,10 @@ export default function InterviewSessionPage() {
                   {phase === 'answering' ||
                   inIntroSelf ||
                   (phase === 'intro' && introStage === 'greeting') ? (
-                    <div className="border-b border-[var(--border-subtle)] px-5 py-4">
+                    <div
+                      id="interview-mobile-answer"
+                      className="scroll-mt-3 border-b border-[var(--border-subtle)] px-5 py-4"
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="ip-section-label">Your response</p>
