@@ -1,5 +1,18 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    /** When true, 401 responses do not trigger token refresh (auth endpoints). */
+    skipAuthRefresh?: boolean;
+    /** Set after a successful refresh retry to avoid infinite loops. */
+    _authRetry?: boolean;
+  }
+  interface InternalAxiosRequestConfig {
+    skipAuthRefresh?: boolean;
+    _authRetry?: boolean;
+  }
+}
+
 import { readApplymateTokenFromCookie } from '@/lib/authCookie';
 import { CV_PHOTO_TOO_LARGE_USER_MESSAGE } from '@/lib/cvPhotoCompress';
 import { applyNgrokSkipHeaders } from '@/lib/ngrokTunnel';

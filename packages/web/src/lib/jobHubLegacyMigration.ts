@@ -131,7 +131,7 @@ export function resolveJobKeyToScope(
 
 function resolveReminderTargets(
   jobKey: string,
-  jobs: TrackedJob[],
+  jobs: JobHubMigrationJob[],
 ): { jobAnalysisId?: string; jobBookmarkId?: string } | null {
   const job = jobs.find(
     (j) =>

@@ -28,15 +28,6 @@ const FALLBACK_REFRESH_INTERVAL_MS = 13 * 60 * 1000;
 export const REFRESH_TOKEN_REUSE_SESSION_KEY = 'applymate_logout_reason';
 export const REFRESH_TOKEN_REUSE_CODE = 'REFRESH_TOKEN_REUSE_DETECTED';
 
-declare module 'axios' {
-  interface InternalAxiosRequestConfig {
-    /** When true, 401 responses do not trigger token refresh (auth endpoints). */
-    skipAuthRefresh?: boolean;
-    /** Set after a successful refresh retry to avoid infinite loops. */
-    _authRetry?: boolean;
-  }
-}
-
 function readNestedErrorCode(data: unknown): string | undefined {
   if (!data || typeof data !== 'object') return undefined;
   const root = data as Record<string, unknown>;
@@ -241,8 +232,8 @@ function scheduleNextProactiveRefresh(
 export function startAuthTokenRefreshScheduler(): () => void {
   if (typeof window === 'undefined') return () => {};
 
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  let intervalId: ReturnType<typeof setInterval> | undefined;
+  let timeoutId: number | undefined;
+  let intervalId: number | undefined;
 
   const tick = () => {
     const access = readApplymateTokenFromCookie();

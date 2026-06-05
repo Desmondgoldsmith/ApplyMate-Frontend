@@ -35,11 +35,11 @@ export function parseExplainerBlocks(raw: string): ExplainerBlock[] {
   const blocks: ExplainerBlock[] = [];
 
   const withAfter = text.match(
-    /^(.*?)\bWeak:\s*(.+?)\s*(?:→|->)\s*Strong:\s*(.+?)(\.\s+.+)$/is,
+    /^([\s\S]*?)\bWeak:\s*([\s\S]+?)\s*(?:→|->)\s*Strong:\s*([\s\S]+?)(\.\s+[\s\S]+)$/i,
   );
   const tailOnly = withAfter
     ? null
-    : text.match(/^(.*?)\bWeak:\s*(.+?)\s*(?:→|->)\s*Strong:\s*(.+)$/is);
+    : text.match(/^([\s\S]*?)\bWeak:\s*([\s\S]+?)\s*(?:→|->)\s*Strong:\s*([\s\S]+)$/i);
   const compare = withAfter ?? tailOnly;
 
   if (compare) {
@@ -58,7 +58,7 @@ export function parseExplainerBlocks(raw: string): ExplainerBlock[] {
 }
 
 function parseVerbLead(text: string): ExplainerBlock | null {
-  const m = text.match(/^(.+?):\s*([A-Z][^.]+)\.\s*$/s);
+  const m = text.match(/^([\s\S]+?):\s*([A-Z][^.]+)\.\s*$/);
   if (!m) return null;
   const verbs = m[2]
     .split(/,\s*/)

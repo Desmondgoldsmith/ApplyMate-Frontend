@@ -1,3 +1,5 @@
+import { trackConversionFunnelEvent } from '@/lib/analytics';
+
 type InterviewAnalyticsEventName =
   | 'interview_started'
   | 'interview_answer_submitted'
