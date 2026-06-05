@@ -63,44 +63,46 @@ export function DashboardCollapsibleSection({
       className={cn('scroll-mt-4 min-w-0', className)}
       {...(dataTour ? { 'data-tour': dataTour } : {})}
     >
-      <button
-        type="button"
-        className="flex w-full cursor-pointer select-none items-center gap-2 border-0 bg-transparent p-0 pb-3 text-left"
-        onClick={toggle}
-        aria-expanded={expanded}
-      >
-        <ChevronDown
-          className={cn(
-            'h-4 w-4 shrink-0 text-[var(--text-muted)] transition-transform duration-200 ease-out',
-            expanded ? 'rotate-0' : 'rotate-180',
-          )}
-          aria-hidden
-        />
-        <span className="text-[14px] font-semibold leading-snug text-[var(--text-primary)]">
-          {title}
-        </span>
-        {countBadge ? (
-          <span
-            className="rounded-full border px-2 py-0.5 text-[11px] font-medium leading-none text-[var(--text-muted)]"
-            style={{
-              background: 'var(--bg-surface-2)',
-              borderColor: 'var(--border-subtle)',
-            }}
-          >
-            {countBadge}
+      <div className="flex flex-col gap-2 pb-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <button
+          type="button"
+          className="flex min-w-0 cursor-pointer select-none items-center gap-2 border-0 bg-transparent p-0 text-left"
+          onClick={toggle}
+          aria-expanded={expanded}
+        >
+          <ChevronDown
+            className={cn(
+              'h-4 w-4 shrink-0 text-[var(--text-muted)] transition-transform duration-200 ease-out',
+              expanded ? 'rotate-0' : 'rotate-180',
+            )}
+            aria-hidden
+          />
+          <span className="text-[14px] font-semibold leading-snug text-[var(--text-primary)]">
+            {title}
           </span>
-        ) : null}
+          {countBadge ? (
+            <span
+              className="shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium leading-none text-[var(--text-muted)]"
+              style={{
+                background: 'var(--bg-surface-2)',
+                borderColor: 'var(--border-subtle)',
+              }}
+            >
+              {countBadge}
+            </span>
+          ) : null}
+        </button>
         {headerRight ? (
-          <span
-            className="ml-auto flex shrink-0 items-center"
+          <div
+            className="flex shrink-0 items-center pl-6 sm:pl-0"
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
             role="presentation"
           >
             {headerRight}
-          </span>
+          </div>
         ) : null}
-      </button>
+      </div>
       <div
         className="dashboard-collapsible-content"
         data-expanded={hydrated ? expanded : true}

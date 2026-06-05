@@ -3,9 +3,12 @@
 let lockedMain: HTMLElement | null = null;
 let savedMainOverflow = '';
 let savedBodyOverflow = '';
+let scrollLocked = false;
 
 export function lockTourScroll(): void {
   if (typeof document === 'undefined') return;
+  if (scrollLocked) return;
+  scrollLocked = true;
   document.documentElement.classList.add('applymate-tour-scroll-lock');
   savedBodyOverflow = document.body.style.overflow;
   document.body.style.overflow = 'hidden';
@@ -22,6 +25,8 @@ export function lockTourScroll(): void {
 
 export function unlockTourScroll(): void {
   if (typeof document === 'undefined') return;
+  if (!scrollLocked) return;
+  scrollLocked = false;
   document.documentElement.classList.remove('applymate-tour-scroll-lock');
   document.body.style.overflow = savedBodyOverflow;
   if (lockedMain) {

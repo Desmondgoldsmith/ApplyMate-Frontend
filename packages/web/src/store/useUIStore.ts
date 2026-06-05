@@ -12,8 +12,8 @@ type UIState = {
 export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
-      /** Expanded (labels visible) by default on desktop. */
-      sidebarCollapsed: false,
+      /** Collapsed (icon-only) by default — user expands when needed. */
+      sidebarCollapsed: true,
       activeJobId: null,
       toggleSidebar: () =>
         set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),

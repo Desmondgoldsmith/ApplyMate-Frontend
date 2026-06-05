@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { api } from '@/lib/api';
 import { clearJobHubBrowserStorage } from '@/lib/jobHubClear';
@@ -20,10 +21,12 @@ export function DashboardUserMenu({ className }: { className?: string }) {
   const queryClient = useQueryClient();
   const storeUser = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
-  const { data: me } = useCurrentUser();
+  const { data: me, isLoading: meLoading } = useCurrentUser();
   const user = me ?? storeUser ?? undefined;
   const initials = getDisplayInitials(user);
   const name = getDisplayName(user);
+  const showUserSkeleton =
+    meLoading && !me && (!storeUser?.email || getDisplayInitials(storeUser) === 'U');
   const marketingPaused = isMarketingPauseActive(user?.nudgePausedUntil);
   const [open, setOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
@@ -63,7 +66,11 @@ export function DashboardUserMenu({ className }: { className?: string }) {
         aria-haspopup="menu"
         aria-label="Account menu"
       >
-        {initials}
+        {showUserSkeleton ? (
+          <Skeleton className="h-full w-full rounded-full" />
+        ) : (
+          initials
+        )}
       </button>
 
       {open ? (

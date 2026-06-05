@@ -16,6 +16,7 @@ import {
 import { createPortal } from 'react-dom';
 
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { Skeleton } from '@/components/ui/Skeleton';
 import {
   getVisibleDashboardNavItems,
   isDashboardNavActive,
@@ -111,10 +112,22 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { sidebarCollapsed, toggleSidebar } = useUIStore();
+  const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const { user: storeUser, clearAuth } = useAuthStore();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [jobsOpen, setJobsOpen] = useState(true);
+  const [uiHydrated, setUiHydrated] = useState(false);
+
+  useEffect(() => {
+    if (useUIStore.persist.hasHydrated()) {
+      setUiHydrated(true);
+      return;
+    }
+    return useUIStore.persist.onFinishHydration(() => setUiHydrated(true));
+  }, []);
+
+  const collapsed = uiHydrated ? sidebarCollapsed : true;
 
   const logoutMutation = useMutation({
     mutationFn: () => api.auth.logout(),
@@ -130,10 +143,12 @@ export function Sidebar() {
       router.push('/login');
     },
   });
-  const { data: me } = useCurrentUser();
+  const { data: me, isLoading: meLoading } = useCurrentUser();
   const user = me ?? storeUser ?? undefined;
   const displayName = getDisplayName(user);
   const initials = getDisplayInitials(user);
+  const showUserSkeleton =
+    meLoading && !me && (!storeUser?.email || getDisplayInitials(storeUser) === 'U');
 
   const features = user?.selectedFeatures ?? ['cv'];
 
@@ -167,7 +182,7 @@ export function Sidebar() {
         {...(tourAttr ? { 'data-tour': tourAttr } : {})}
         className={cn(
           'relative flex min-h-[40px] w-full items-center gap-2 rounded-[10px] py-2 text-[13px] font-medium transition-colors',
-          sidebarCollapsed && !opts.nested
+          collapsed && !opts.nested
             ? 'justify-center px-0 text-white/45 hover:bg-white/[0.05] hover:text-white/80'
             : active
               ? cn(
@@ -178,7 +193,7 @@ export function Sidebar() {
                   'border-l-2 border-transparent text-white/45 hover:bg-white/[0.05] hover:text-white/80',
                   opts.nested ? 'pl-8 pr-2' : 'pl-3',
                 ),
-          sidebarCollapsed &&
+          collapsed &&
             !opts.nested &&
             active &&
             'bg-[rgba(0,201,177,0.12)] text-[#00C9B1]',
@@ -197,7 +212,7 @@ export function Sidebar() {
           )}
         />
         <AnimatePresence>
-          {!sidebarCollapsed || opts.nested ? (
+          {!collapsed || opts.nested ? (
             <motion.span
               className="relative flex min-w-0 flex-1 items-center gap-1.5"
               initial={{ opacity: 0, x: -6 }}
@@ -216,7 +231,7 @@ export function Sidebar() {
       </Link>
     );
 
-    if (sidebarCollapsed && !opts.nested) {
+    if (collapsed && !opts.nested) {
       return (
         <CollapsedNavFlyout key={`${item.href}-${item.id}`} label={item.label}>
           {link}
@@ -231,18 +246,18 @@ export function Sidebar() {
     <aside
       className={cn(
         'relative z-10 hidden h-screen shrink-0 border-r border-[#00C9B1]/15 bg-[#0A0A0A]/95 backdrop-blur-md transition-[width] duration-300 lg:flex lg:flex-col',
-        sidebarCollapsed ? 'w-[60px]' : 'w-[216px]',
+        collapsed ? 'w-[60px]' : 'w-[216px]',
       )}
     >
       <div className="flex items-center justify-between p-4">
         <div
           className={cn(
             'flex items-center gap-2',
-            sidebarCollapsed && 'justify-center',
+            collapsed && 'justify-center',
           )}
         >
           <span className="h-5 w-5 rounded-full bg-[#00C9B1]" />
-          {!sidebarCollapsed ? (
+          {!collapsed ? (
             <span className="font-semibold text-white">ApplyMate</span>
           ) : null}
         </div>
@@ -250,9 +265,9 @@ export function Sidebar() {
           type="button"
           onClick={toggleSidebar}
           className="text-white/60 transition-colors hover:text-[#00C9B1]"
-          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {sidebarCollapsed ? (
+          {collapsed ? (
             <PanelRight className="h-4 w-4" />
           ) : (
             <PanelLeftClose className="h-4 w-4" />
@@ -265,7 +280,7 @@ export function Sidebar() {
           if (item.id === 'job-workspace' && item.children?.length) {
             const Icon = item.icon;
             const groupActive = isDashboardNavEntryActive(pathname, item);
-            if (sidebarCollapsed) {
+            if (collapsed) {
               return (
                 <div key={item.id} className="space-y-1">
                   {item.children.map((ch) => renderLeaf(ch, { nested: false }))}
@@ -324,17 +339,31 @@ export function Sidebar() {
 
       <div className="border-t border-[#00C9B1]/10 p-3">
         <div className="mb-3 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#00C9B1]/20 text-[10px] font-bold leading-none text-[#00C9B1]">
-            {initials}
-          </div>
-          {!sidebarCollapsed ? (
-            <div className="min-w-0">
-              <p className="truncate text-sm text-white">{displayName}</p>
-              <p className="truncate text-xs text-white/45">{user?.email}</p>
-            </div>
-          ) : null}
+          {showUserSkeleton ? (
+            <>
+              <Skeleton className="h-8 w-8 shrink-0 rounded-full" />
+              {!collapsed ? (
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <Skeleton className="h-3.5 w-24 rounded" />
+                  <Skeleton className="h-3 w-32 rounded" />
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#00C9B1]/20 text-[10px] font-bold leading-none text-[#00C9B1]">
+                {initials}
+              </div>
+              {!collapsed ? (
+                <div className="min-w-0">
+                  <p className="truncate text-sm text-white">{displayName}</p>
+                  <p className="truncate text-xs text-white/45">{user?.email}</p>
+                </div>
+              ) : null}
+            </>
+          )}
         </div>
-        {sidebarCollapsed ? (
+        {collapsed ? (
           <CollapsedNavFlyout label="Sign out">
             <button
               type="button"

@@ -310,6 +310,7 @@ export function FeatureTour() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (isNarrowViewport()) return;
     if (!user?.id || !tourId) return;
     if (user.onboardingCompleted !== true) return;
 
@@ -455,8 +456,8 @@ export function FeatureTour() {
         animate: true,
         overlayOpacity: 0.78,
         overlayColor: '#050808',
-        stagePadding: 14,
-        stageRadius: 12,
+        stagePadding: 24,
+        stageRadius: 14,
         allowClose: false,
         smoothScroll: true,
         allowKeyboardControl: true,
@@ -482,6 +483,12 @@ export function FeatureTour() {
           activeTourRef.current = null;
           tourRestartNonceRef.current = 0;
           endTourChrome();
+          unlockTourScroll();
+          document.body.style.removeProperty('overflow');
+          const main = document.querySelector(
+            'main.dashboard-app-canvas-bg',
+          ) as HTMLElement | null;
+          main?.style.removeProperty('overflow');
           driverRef.current = null;
           if (isNarrowViewport()) closeMobileNavForTour();
           if (celebrateRef.current) {

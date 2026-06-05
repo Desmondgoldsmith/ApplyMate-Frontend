@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { Suspense } from 'react';
 
 import { FunnelPageAnalytics } from '@/components/analytics/FunnelPageAnalytics';
 import { BreadcrumbProvider } from '@/components/dashboard/BreadcrumbContext';
@@ -28,7 +29,15 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             <Header />
             <FeatureTour />
             <LocationBootstrap enabled={Boolean(accessToken)} />
-            <DashboardMain>{children}</DashboardMain>
+            <Suspense
+              fallback={
+                <main className="dashboard-app-canvas-bg relative flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto px-4 py-4">
+                  {children}
+                </main>
+              }
+            >
+              <DashboardMain>{children}</DashboardMain>
+            </Suspense>
             <MobileBottomNav />
             <MobileNavToggleFab />
           </div>

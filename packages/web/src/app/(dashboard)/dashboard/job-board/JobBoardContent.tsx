@@ -624,9 +624,20 @@ export default function JobBoardContent() {
   }, [applicationIdFromUrl, items, isMaxLg, pathname, router]);
 
   return (
-    <div className="min-w-0 space-y-4">
+    <div className="flex min-h-0 min-w-0 flex-col gap-5">
+      <header className="space-y-1.5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#00C9B1]">
+          Discover roles
+        </p>
+        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Job board</h1>
+        <p className="max-w-2xl text-sm leading-relaxed text-white/50">
+          Browse openings matched to your CV and location. Save roles to your hub or analyze a listing in one click.
+        </p>
+      </header>
+
+      <div className="min-w-0 space-y-4">
       <div
-        className="min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-[#0C0F0F] p-2"
+        className="min-w-0 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0C0F0F] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
         data-tour="job-board-filters"
       >
         <button
@@ -683,7 +694,7 @@ export default function JobBoardContent() {
 
       <JobBoardAlertsBar alerts={boardAlerts} />
 
-      <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0C0F0F] max-lg:min-h-[min(78dvh,640px)] lg:h-[calc(100dvh-12rem)] lg:max-h-[calc(100dvh-12rem)] lg:flex-row lg:items-stretch">
+      <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0C0F0F] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] max-lg:min-h-[min(78dvh,640px)] lg:h-[calc(100dvh-9.5rem)] lg:max-h-[calc(100dvh-9.5rem)] lg:flex-row lg:items-stretch">
         <div
           data-tour="job-board-listings"
           className="flex min-h-[280px] w-full min-w-0 shrink-0 flex-col overflow-hidden border-b border-white/[0.06] max-lg:flex-1 max-lg:min-h-0 lg:min-h-0 lg:w-[min(52%,520px)] lg:max-w-[520px] lg:border-b-0 lg:border-r lg:border-white/[0.06]"
@@ -1048,6 +1059,7 @@ export default function JobBoardContent() {
           ) : null}
         </AnimatePresence>
       ) : null}
+      </div>
     </div>
   );
 }

@@ -131,13 +131,11 @@ export function DashboardFocusSection({
   const headerRight = showShowAll ? (
     <Link
       href="/dashboard/focus"
-      className="text-[12px] font-medium text-[var(--text-teal)] transition-opacity hover:opacity-80 hover:underline"
+      className="inline-flex flex-wrap items-center gap-x-1.5 text-[12px] font-medium leading-snug text-[var(--text-teal)] transition-opacity hover:opacity-80 hover:underline"
     >
-      View all →
+      <span>View all →</span>
       {moreCount > 0 ? (
-        <span className="ml-1.5 font-normal text-[var(--text-muted)]">
-          (+{moreCount} more)
-        </span>
+        <span className="font-normal text-[var(--text-muted)]">(+{moreCount} more)</span>
       ) : null}
     </Link>
   ) : null;

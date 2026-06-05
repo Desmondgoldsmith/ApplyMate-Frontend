@@ -401,9 +401,19 @@ input.auth-input:-webkit-autofill:active {
 /* Extra scroll room at the bottom of panels (mobile FABs, bottom nav, safe area). */
 .scroll-content-end-pad {
   scroll-padding-bottom: max(
-    5rem,
-    calc(env(safe-area-inset-bottom, 0px) + 4.5rem)
+    0.625rem,
+    calc(env(safe-area-inset-bottom, 0px) + 0.625rem)
   );
+}
+
+@media (max-width: 1023px) {
+  .scroll-content-end-pad::after {
+    content: '';
+    display: block;
+    flex-shrink: 0;
+    height: max(0.625rem, env(safe-area-inset-bottom, 0px));
+    pointer-events: none;
+  }
 }
 
 /* iOS Safari zooms focused fields under 16px — keep CV inputs at readable size on touch layouts. */

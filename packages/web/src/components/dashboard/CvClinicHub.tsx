@@ -17,6 +17,7 @@ import type { MouseEvent as ReactMouseEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { ScrollContentEnd } from '@/components/ui/ScrollContentEnd';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { Modal } from '@/components/ui/Modal';
@@ -39,7 +40,10 @@ import { formatRelativeEdited } from '@/lib/format-relative-edited';
 import { cn } from '@/lib/utils';
 
 const ACTION_TILE =
-  'group relative flex flex-col items-start gap-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#0f1414] to-[#0a0d0d] p-6 text-left shadow-[0_0_0_1px_rgba(0,201,177,0.06)] transition hover:border-[#00C9B1]/35 hover:shadow-[0_12px_40px_-12px_rgba(0,201,177,0.22)]';
+  'group relative flex w-full items-center gap-3.5 overflow-hidden rounded-xl border border-white/[0.08] bg-[#0C0F0F] p-3.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition hover:border-[#00C9B1]/30 hover:bg-[#0f1414] sm:p-4';
+
+const SECTION_SHELL =
+  'overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0C0F0F] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]';
 
 type ViewMode = 'cards' | 'table';
 
@@ -101,15 +105,15 @@ function HubActionTile({
     <button type="button" aria-label={title} onClick={onClick} className={ACTION_TILE}>
       <span
         className={cn(
-          'flex h-12 w-12 items-center justify-center rounded-2xl ring-1 transition group-hover:opacity-95',
+          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 transition group-hover:opacity-95 sm:h-11 sm:w-11',
           iconWrapClassName,
         )}
       >
         {icon}
       </span>
-      <div>
-        <p className="text-base font-bold text-white">{title}</p>
-        <p className="mt-1 text-xs leading-relaxed text-white/45">{description}</p>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-white sm:text-[15px]">{title}</p>
+        <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-white/45">{description}</p>
       </div>
     </button>
   );
@@ -132,15 +136,15 @@ function HubActionLink({
     <Link href={href} className={cn(ACTION_TILE, 'no-underline')}>
       <span
         className={cn(
-          'flex h-12 w-12 items-center justify-center rounded-2xl ring-1 transition group-hover:opacity-95',
+          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 transition group-hover:opacity-95 sm:h-11 sm:w-11',
           iconWrapClassName,
         )}
       >
         {icon}
       </span>
-      <div>
-        <p className="text-base font-bold text-white">{title}</p>
-        <p className="mt-1 text-xs leading-relaxed text-white/45">{description}</p>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-white sm:text-[15px]">{title}</p>
+        <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-white/45">{description}</p>
       </div>
     </Link>
   );
@@ -436,53 +440,52 @@ export function CvClinicHub({
   const pagedLetters = clPagination.pageItems;
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 pb-12 pt-2">
-      <header className="space-y-2" data-tour="cv-clinic-intro">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 pb-6 pt-2 sm:gap-10 sm:pb-8">
+      <header className="space-y-2 px-4 sm:px-0" data-tour="cv-clinic-intro">
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#00C9B1]">Resume workspace</p>
-        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">What would you like to do?</h1>
+        <h1 className="text-xl font-extrabold tracking-tight text-white sm:text-3xl">What would you like to do?</h1>
         <p className="max-w-2xl text-sm leading-relaxed text-white/50">
           Start a resume, upload an existing one, or jump to jobs and analyses. Open anything below to keep editing —
           your work saves automatically.
         </p>
       </header>
 
-      <section aria-label="Quick actions" className="grid gap-4 sm:grid-cols-2" data-tour="cv-clinic-actions">
+      <section aria-label="Quick actions" className="grid gap-3 px-4 sm:grid-cols-2 sm:gap-4 sm:px-0" data-tour="cv-clinic-actions">
         <HubActionTile
-          icon={<Plus className="h-6 w-6" strokeWidth={2.25} />}
-          iconWrapClassName="bg-[#00C9B1]/15 text-[#00C9B1] ring-[#00C9B1]/25 group-hover:bg-[#00C9B1]/25"
+          icon={<Plus className="h-5 w-5" strokeWidth={2.25} />}
+          iconWrapClassName="bg-[#00C9B1]/15 text-[#00C9B1] ring-[#00C9B1]/25 group-hover:bg-[#00C9B1]/20"
           title="New resume"
-          description="Pick a template, then build with AI or start from a blank page"
+          description="Pick a template, then build with AI or start blank"
           onClick={onNewCv}
         />
         <HubActionLink
           href="/dashboard/analyses"
-          icon={<History className="h-6 w-6" />}
-          iconWrapClassName="bg-emerald-500/10 text-emerald-300 ring-emerald-400/25 group-hover:bg-emerald-500/15"
+          icon={<History className="h-5 w-5" />}
+          iconWrapClassName="bg-emerald-500/10 text-emerald-300 ring-emerald-400/20 group-hover:bg-emerald-500/15"
           title="Analysis history"
-          description="Match scores, notes, and saved cover letters from every job you analyzed"
+          description="Match scores, notes, and cover letters from analyzed jobs"
         />
       </section>
 
-      <GlowCard
-        className="border border-[#00C9B1]/15 bg-gradient-to-r from-[#00C9B1]/[0.06] to-transparent"
-        contentClassName="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"
+      <div
+        className={cn(SECTION_SHELL, 'mx-4 flex flex-col gap-3 p-4 sm:mx-0 sm:flex-row sm:items-center sm:justify-between sm:p-5')}
       >
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-white">Tip</p>
-          <p className="mt-1 text-xs leading-relaxed text-white/50">
-            Open any resume below to edit, score, and export. Cover letters open straight to the letter tab in Jobs.
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#00C9B1]/90">Tip</p>
+          <p className="mt-1 text-sm leading-relaxed text-white/55">
+            Open any resume below to edit, score, and export. Cover letters open on the letter tab in Jobs.
           </p>
         </div>
         <Link
           href="/dashboard/jobs"
-          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-[#00C9B1]/35 bg-[#00C9B1]/10 px-4 py-2.5 text-sm font-semibold text-[#00C9B1] transition hover:bg-[#00C9B1]/20"
+          className="inline-flex w-fit shrink-0 items-center justify-center gap-2 self-start rounded-lg border border-[#00C9B1]/30 bg-[#00C9B1]/10 px-3.5 py-2 text-xs font-semibold text-[#00C9B1] transition hover:bg-[#00C9B1]/15 sm:self-center sm:text-sm"
         >
-          <Briefcase className="h-4 w-4" />
+          <Briefcase className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           Jobs workspace
         </Link>
-      </GlowCard>
+      </div>
 
-      <section aria-labelledby="cv-library-heading" className="space-y-4" data-tour="cv-clinic-library">
+      <section aria-labelledby="cv-library-heading" className={cn(SECTION_SHELL, 'space-y-4 p-4 sm:p-5')} data-tour="cv-clinic-library">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 id="cv-library-heading" className="text-lg font-bold text-white sm:text-xl">
@@ -523,16 +526,16 @@ export function CvClinicHub({
             ))}
           </div>
         ) : filteredProfiles.length === 0 ? (
-          <GlowCard className="border border-white/[0.08]" contentClassName="p-10 text-center">
-            <FileText className="mx-auto h-10 w-10 text-white/20" />
+          <div className="rounded-xl border border-dashed border-white/[0.1] bg-black/20 px-6 py-10 text-center">
+            <FileText className="mx-auto h-9 w-9 text-white/20" />
             <p className="mt-3 text-sm font-medium text-white/70">No resumes match your search</p>
             <p className="mt-1 text-xs text-white/40">Try another term or clear the search box</p>
-          </GlowCard>
+          </div>
         ) : cvView === 'cards' ? (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {pagedProfiles.map((p) => (
               <li key={p.id}>
-                <div className="group flex h-full w-full flex-col rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-transparent p-5 text-left transition hover:border-[#00C9B1]/35 hover:shadow-[0_8px_32px_-8px_rgba(0,201,177,0.2)]">
+                <div className="group flex h-full w-full flex-col rounded-xl border border-white/[0.08] bg-black/20 p-4 text-left transition hover:border-[#00C9B1]/30 hover:bg-white/[0.02]">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex min-w-0 flex-1 items-start gap-2">
                       {profiles.length > 1 ? (
@@ -638,7 +641,7 @@ export function CvClinicHub({
         <HubPagination {...cvPagination} />
       </section>
 
-      <section aria-labelledby="cl-heading" className="space-y-4">
+      <section aria-labelledby="cl-heading" className={cn(SECTION_SHELL, 'space-y-4 p-4 sm:p-5')}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 id="cl-heading" className="text-lg font-bold text-white sm:text-xl">
@@ -669,8 +672,8 @@ export function CvClinicHub({
             ))}
           </div>
         ) : filteredLetters.length === 0 ? (
-          <GlowCard className="border border-white/[0.08]" contentClassName="p-10 text-center">
-            <ScrollText className="mx-auto h-10 w-10 text-white/20" />
+          <div className="rounded-xl border border-dashed border-white/[0.1] bg-black/20 px-6 py-10 text-center">
+            <ScrollText className="mx-auto h-9 w-9 text-white/20" />
             <p className="mt-3 text-sm font-medium text-white/70">
               {coverLetterRows.length === 0 ? 'No saved cover letters yet' : 'No matches for your search'}
             </p>
@@ -681,7 +684,7 @@ export function CvClinicHub({
             </p>
             <Link
               href="/dashboard/jobs"
-              className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-[#00C9B1] px-4 py-2.5 text-sm font-semibold text-[#080A0A] transition hover:bg-[#00C9B1]"
+              className="mt-5 inline-flex w-auto items-center justify-center gap-2 rounded-lg bg-[#00C9B1] px-4 py-2 text-sm font-semibold text-[#080A0A] transition hover:bg-[#00C9B1]/90"
             >
               <Briefcase className="h-4 w-4" />
               Go to Jobs
@@ -693,14 +696,14 @@ export function CvClinicHub({
               </Link>
               .
             </p>
-          </GlowCard>
+          </div>
         ) : clView === 'cards' ? (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {pagedLetters.map((j) => (
               <li key={j.id}>
                 <Link
                   href={jobCoverLetterHref(j.id)}
-                  className="group flex h-full flex-col rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-transparent p-5 transition hover:border-[#00C9B1]/35 hover:shadow-[0_8px_32px_-8px_rgba(0,201,177,0.2)]"
+                  className="group flex h-full flex-col rounded-xl border border-white/[0.08] bg-black/20 p-4 transition hover:border-[#00C9B1]/30 hover:bg-white/[0.02]"
                 >
                   <p className="font-semibold text-white group-hover:text-[#00C9B1]">{j.company || 'Company'}</p>
                   <p className="mt-1 line-clamp-2 text-sm text-white/55">{j.jobTitle || j.title || 'Role'}</p>
@@ -765,6 +768,7 @@ export function CvClinicHub({
         profiles={profiles}
         onMerged={onOpenCv}
       />
+      <ScrollContentEnd className="max-lg:h-2" />
     </div>
   );
 }
