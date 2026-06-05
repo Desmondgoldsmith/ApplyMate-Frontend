@@ -150,8 +150,12 @@ type OnboardingDiscoveryProps = {
   referralOther: string;
   onReferralOtherChange: (v: string) => void;
   onBack: () => void;
-  /** Pass `true` when the user skips the referral question (valid API payload). */
-  onNext: (referralSkipped?: boolean) => void | Promise<void>;
+  /** Pass referral pick when auto-advancing so parent state is not stale. */
+  onNext: (opts?: {
+    referralSkipped?: boolean;
+    referralSource?: string;
+    referralOther?: string;
+  }) => void | Promise<void>;
   savePending: boolean;
 };
 
@@ -167,9 +171,9 @@ export function OnboardingDiscovery({
   firstName,
   discoveryStep,
   focusHired,
-  focusStudent,
+  focusStudent: _focusStudent,
   onToggleHired,
-  onToggleStudent,
+  onToggleStudent: _onToggleStudent,
   jobSearchUrgency,
   onSelectUrgency,
   targetRolesText,
@@ -191,9 +195,12 @@ export function OnboardingDiscovery({
   const greeting =
     firstName.trim().length > 0 ? `Welcome, ${firstName.trim()}.` : 'Welcome to ApplyMate.';
 
-  const focusValid = focusHired || focusStudent;
+  const focusValid = focusHired;
   const timelineValid = jobSearchUrgency !== null;
-  const rolesValid = parseRolesFromText(targetRolesText).length >= 1;
+  const roleChips = useMemo(() => parseRolesFromText(targetRolesText), [targetRolesText]);
+  const pendingRole = roleInput.trim();
+  const rolesValid =
+    roleChips.length >= 1 || pendingRole.length >= 2;
   const referralValid =
     referralSource.trim().length > 0 &&
     (referralSource !== 'Other' || referralOther.trim().length > 0);
@@ -257,8 +264,8 @@ export function OnboardingDiscovery({
     if (value !== 'Other') {
       onReferralOtherChange('');
       referralTimerRef.current = window.setTimeout(() => {
-        void onNext();
-      }, 400);
+        void onNext({ referralSource: value });
+      }, 350);
     }
   };
 
@@ -276,12 +283,14 @@ export function OnboardingDiscovery({
     setRoleInput('');
   };
 
+  const commitPendingRole = () => {
+    if (pendingRole.length >= 2) pushRoleChip(pendingRole);
+  };
+
   const removeRoleChip = (label: string) => {
     const next = parseRolesFromText(targetRolesText).filter((x) => x !== label);
     onTargetRolesChange(next.join(', '));
   };
-
-  const roleChips = useMemo(() => parseRolesFromText(targetRolesText), [targetRolesText]);
 
   const onRolesKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',') {
@@ -295,8 +304,11 @@ export function OnboardingDiscovery({
     if (discoveryStep !== 4 || referralSource !== 'Other') return;
     if (referralOther.trim().length < 2) return;
     referralTimerRef.current = window.setTimeout(() => {
-      void onNext();
-    }, 400);
+      void onNext({
+        referralSource: 'Other',
+        referralOther: referralOther.trim(),
+      });
+    }, 500);
     return () => clearReferralTimer();
   }, [clearReferralTimer, discoveryStep, onNext, referralOther, referralSource]);
 
@@ -309,7 +321,19 @@ export function OnboardingDiscovery({
         transition: { duration: 0.2, ease: 'easeOut' as const },
       };
 
-  const primaryCtaLabel = discoveryStep === 1 && !focusValid ? 'Select an option to continue' : 'Next';
+  const primaryCtaLabel =
+    discoveryStep === 1 && !focusValid
+      ? 'Select an option to continue'
+      : discoveryStep === 3 && roleChips.length === 0 && pendingRole.length >= 2
+        ? 'Add role & continue'
+        : 'Next';
+
+  const handlePrimaryNext = () => {
+    if (discoveryStep === 3 && pendingRole.length >= 2) {
+      commitPendingRole();
+    }
+    void onNext();
+  };
 
   return (
     <div className="flex w-full flex-col items-center text-center">
@@ -360,9 +384,11 @@ export function OnboardingDiscovery({
                 <OutcomeCard
                   icon={GraduationCap}
                   title="Student career launchpad"
-                  description="Guided support if you&apos;re studying or just starting out and want a clear path forward."
-                  selected={focusStudent}
-                  onClick={onToggleStudent}
+                  description="Guided support if you're studying or just starting out — launching soon."
+                  selected={false}
+                  comingSoon
+                  disabled
+                  onClick={() => {}}
                 />
               </div>
             </>
@@ -423,14 +449,31 @@ export function OnboardingDiscovery({
                 </span>
               </p>
               <div className="mt-8 w-full sm:mt-8">
-                <input
-                  type="text"
-                  value={roleInput}
-                  onChange={(e) => setRoleInput(e.target.value)}
-                  onKeyDown={onRolesKeyDown}
-                  placeholder="Type a job title and press Enter"
-                  className="h-12 w-full min-h-[48px] rounded-[10px] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] px-4 text-left text-[14px] text-white outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-[rgba(255,255,255,0.3)] focus:border-[#00C9B1] focus:shadow-[0_0_0_3px_rgba(0,201,177,0.15)]"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={roleInput}
+                    onChange={(e) => setRoleInput(e.target.value)}
+                    onKeyDown={onRolesKeyDown}
+                    onBlur={() => {
+                      if (pendingRole.length >= 2) commitPendingRole();
+                    }}
+                    placeholder="e.g. Product Manager"
+                    aria-describedby="onb-role-hint"
+                    className="h-12 min-h-[48px] flex-1 rounded-[10px] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] px-4 text-left text-[14px] text-white outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-[rgba(255,255,255,0.3)] focus:border-[#00C9B1] focus:shadow-[0_0_0_3px_rgba(0,201,177,0.15)]"
+                  />
+                  <button
+                    type="button"
+                    disabled={pendingRole.length < 2}
+                    onClick={commitPendingRole}
+                    className="h-12 shrink-0 rounded-[10px] border border-[rgba(0,201,177,0.35)] bg-[rgba(0,201,177,0.12)] px-4 text-[13px] font-semibold text-[#00C9B1] transition enabled:hover:bg-[rgba(0,201,177,0.2)] disabled:cursor-not-allowed disabled:opacity-35"
+                  >
+                    Add
+                  </button>
+                </div>
+                <p id="onb-role-hint" className="mt-2 text-left text-[12px] text-[rgba(255,255,255,0.45)]">
+                  Type a job title and tap <span className="font-medium text-white/70">Add</span>, or pick one below.
+                </p>
                 {roleChips.length > 0 ? (
                   <div className="mt-3 flex flex-wrap justify-center gap-2">
                     {roleChips.map((chip) => (
@@ -517,7 +560,7 @@ export function OnboardingDiscovery({
               <button
                 type="button"
                 className="mt-6 cursor-pointer text-[12px] text-[rgba(255,255,255,0.35)] transition-colors hover:text-[rgba(255,255,255,0.55)]"
-                onClick={() => void onNext(true)}
+                onClick={() => void onNext({ referralSkipped: true })}
               >
                 Skip this step →
               </button>
@@ -529,7 +572,7 @@ export function OnboardingDiscovery({
       {discoveryStep !== 2 && discoveryStep !== 4 ? (
         <OnboardingPrimaryCta
           disabled={!canNext || savePending}
-          onClick={() => void onNext()}
+          onClick={handlePrimaryNext}
         >
           {primaryCtaLabel}
         </OnboardingPrimaryCta>
@@ -550,25 +593,33 @@ function OutcomeCard({
   description,
   selected,
   onClick,
+  comingSoon = false,
+  disabled = false,
 }: {
   icon: ComponentType<{ className?: string }>;
   title: string;
   description: string;
   selected: boolean;
   onClick: () => void;
+  comingSoon?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <motion.button
       type="button"
-      whileTap={{ scale: 0.98 }}
+      whileTap={disabled ? undefined : { scale: 0.98 }}
       transition={{ duration: 0.1 }}
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
       aria-pressed={selected}
+      aria-disabled={disabled}
       className={cn(
-        'relative flex w-full cursor-pointer gap-4 rounded-xl border py-5 pl-5 pr-14 text-left transition-all duration-150',
-        selected
-          ? 'border-[#00C9B1] bg-[rgba(0,201,177,0.08)] [border-width:1.5px]'
-          : 'border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:bg-[rgba(255,255,255,0.06)]',
+        'relative flex w-full gap-4 rounded-xl border py-5 pl-5 pr-14 text-left transition-all duration-150',
+        disabled
+          ? 'cursor-not-allowed border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] opacity-70'
+          : selected
+            ? 'cursor-pointer border-[#00C9B1] bg-[rgba(0,201,177,0.08)] [border-width:1.5px]'
+            : 'cursor-pointer border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:bg-[rgba(255,255,255,0.06)]',
       )}
     >
       <div
@@ -578,10 +629,17 @@ function OutcomeCard({
         <Icon className="h-[18px] w-[18px] text-[#00C9B1]" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[15px] font-semibold text-white">{title}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-[15px] font-semibold text-white">{title}</p>
+          {comingSoon ? (
+            <span className="rounded-full border border-[rgba(0,201,177,0.35)] bg-[rgba(0,201,177,0.12)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#00C9B1]">
+              Coming soon
+            </span>
+          ) : null}
+        </div>
         <p className="mt-1 text-[13px] leading-snug text-[rgba(255,255,255,0.5)]">{description}</p>
       </div>
-      <SelectionRing selected={selected} />
+      {!disabled ? <SelectionRing selected={selected} /> : null}
     </motion.button>
   );
 }

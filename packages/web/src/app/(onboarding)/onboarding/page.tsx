@@ -37,10 +37,7 @@ import {
 } from '@/components/dashboard/CVUploadZone';
 import { CVChatInterface } from '@/components/onboarding/CVChatInterface';
 import { OnboardingDiscovery } from '@/components/onboarding/OnboardingDiscovery';
-import {
-  getOnboardingTemplateLabel,
-  TemplatePicker,
-} from '@/components/onboarding/TemplatePicker';
+import { TemplatePicker } from '@/components/onboarding/TemplatePicker';
 import { Button } from '@/components/ui/Button';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { useToast } from '@/components/ui/Toast';
@@ -216,17 +213,12 @@ export default function OnboardingPage() {
     if (focusHired) {
       out.push('jobs', 'interviews');
     }
-    if (focusStudent) {
-      out.push('student');
-    }
     return out;
-  }, [focusHired, focusStudent]);
+  }, [focusHired]);
   const primaryGoal = useMemo(() => {
-    if (focusHired && !focusStudent) return 'jobs';
-    if (focusStudent && !focusHired) return 'student';
-    if (focusHired && focusStudent) return 'jobs';
+    if (focusHired) return 'jobs';
     return 'cv';
-  }, [focusHired, focusStudent]);
+  }, [focusHired]);
 
   const firstName = useMemo(() => {
     const raw = (me?.name ?? authUser?.name ?? '').trim();
@@ -342,7 +334,7 @@ export default function OnboardingPage() {
     const hasFocusFlags =
       typeof s.focusHired === 'boolean' || typeof s.focusStudent === 'boolean';
     if (typeof s.focusHired === 'boolean') setFocusHired(s.focusHired);
-    if (typeof s.focusStudent === 'boolean') setFocusStudent(s.focusStudent);
+    if (typeof s.focusStudent === 'boolean') setFocusStudent(false);
     if (!hasFocusFlags && s.selectedFeatures?.length) {
       let hired = false;
       let stud = false;
@@ -435,7 +427,7 @@ export default function OnboardingPage() {
         if (typeof d.focusGetHired === 'boolean')
           setFocusHired(d.focusGetHired);
         if (typeof d.focusStudentLaunchpad === 'boolean')
-          setFocusStudent(d.focusStudentLaunchpad);
+          setFocusStudent(false);
       } else if (d.selectedFeatures?.length) {
         let hired = false;
         let stud = false;
@@ -728,7 +720,7 @@ export default function OnboardingPage() {
           persistProfileId = created.profileId;
         }
         setCompletionProfile(profileOut);
-        if (persistProfileId) {
+        if (persistProfileId && profileOut) {
           try {
             await syncSuggestedCvProfileMetadata(
               persistProfileId,
@@ -840,7 +832,9 @@ export default function OnboardingPage() {
               focusHired={focusHired}
               focusStudent={focusStudent}
               onToggleHired={() => setFocusHired((v) => !v)}
-              onToggleStudent={() => setFocusStudent((v) => !v)}
+              onToggleStudent={() => {
+                /* Student launchpad coming soon */
+              }}
               jobSearchUrgency={jobSearchUrgency}
               onSelectUrgency={(v) => setJobSearchUrgency(v)}
               targetRolesText={targetRolesText}
@@ -854,7 +848,7 @@ export default function OnboardingPage() {
               onReferralOtherChange={setReferralOther}
               savePending={saveProgress.isPending}
               onBack={() => setDiscoveryStep((d) => Math.max(0, d - 1))}
-              onNext={async (referralSkipped?: boolean) => {
+              onNext={async (opts) => {
                 if (discoveryStep < 4) {
                   setDiscoveryStep((d) => d + 1);
                   return;
@@ -863,14 +857,20 @@ export default function OnboardingPage() {
                 setCvEntryPhase('template');
                 setStep(2);
                 try {
+                  const refSource =
+                    opts?.referralSkipped === true
+                      ? 'Skipped'
+                      : (opts?.referralSource ?? referralSource);
+                  const refOther =
+                    opts?.referralOther ?? referralOther;
                   const discovery = buildOnboardingDiscoveryApiFields({
                     focusHired,
-                    focusStudent,
+                    focusStudent: false,
                     jobSearchUrgency,
                     targetRolesText,
-                    referralSource,
-                    referralOther,
-                    referralSkipped: referralSkipped === true,
+                    referralSource: refSource,
+                    referralOther: refOther,
+                    referralSkipped: opts?.referralSkipped === true,
                   });
                   await saveProgress.mutateAsync({
                     step: 2,
@@ -919,7 +919,7 @@ export default function OnboardingPage() {
                       try {
                         const discovery = buildOnboardingDiscoveryApiFields({
                           focusHired,
-                          focusStudent,
+                          focusStudent: false,
                           jobSearchUrgency,
                           targetRolesText,
                           referralSource,
@@ -960,20 +960,15 @@ export default function OnboardingPage() {
                     selectedTemplate={selectedTemplate}
                     showHeader={false}
                     onSelect={(t) => {
-                      if (isCvTemplateId(t)) setSelectedTemplate(t);
+                      if (!isCvTemplateId(t)) return;
+                      setSelectedTemplate(t);
+                      setCvEntryPhase('paths');
                     }}
                   />
                 </div>
-                <div className="mt-8 flex w-full justify-center">
-                  <button
-                    type="button"
-                    onClick={() => setCvEntryPhase('paths')}
-                    className="flex h-[52px] min-h-[52px] w-full min-w-[200px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#00C9B1] px-8 text-[15px] font-semibold text-white transition-all duration-200 hover:scale-[1.01] hover:brightness-[1.08] hover:shadow-[0_0_24px_rgba(0,201,177,0.25)] active:scale-[0.99] sm:w-auto"
-                  >
-                    Continue with {getOnboardingTemplateLabel(selectedTemplate)}
-                    <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
-                  </button>
-                </div>
+                <p className="mt-4 text-center text-[12px] text-[rgba(255,255,255,0.35)]">
+                  Tap a template to continue — you can change it anytime in the clinic.
+                </p>
               </>
             ) : null}
 
