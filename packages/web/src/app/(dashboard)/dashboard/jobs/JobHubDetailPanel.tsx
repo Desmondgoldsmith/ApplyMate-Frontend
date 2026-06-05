@@ -1191,7 +1191,7 @@ export function JobHubDetailPanel({
                                 st === 'elapsed' && 'bg-white/[0.06] text-white/45',
                               )}
                             >
-                              {reminderStatusLabel(st)}
+                              {hubReminderStatusLabel(st)}
                             </span>
                             <span className="text-[10px] font-medium uppercase tracking-wide text-white/35">
                               Account
