@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useToast } from '@/components/ui/Toast';
@@ -35,10 +36,10 @@ export function useBookmarkJob() {
       };
     },
     onMutate: async (variables) => {
-      await queryClient.cancelQueries({ queryKey: ['job-discovery-detail', variables.id] });
-      const previous = queryClient.getQueryData<JobListingDto>(['job-discovery-detail', variables.id]);
+      await queryClient.cancelQueries({ queryKey: queryKeys.jobs.discoveryDetail(variables.id) });
+      const previous = queryClient.getQueryData<JobListingDto>(queryKeys.jobs.discoveryDetail(variables.id));
       if (previous) {
-        queryClient.setQueryData(['job-discovery-detail', variables.id], {
+        queryClient.setQueryData(queryKeys.jobs.discoveryDetail(variables.id), {
           ...previous,
           isBookmarked: !variables.bookmarked,
         });
@@ -47,14 +48,14 @@ export function useBookmarkJob() {
     },
     onError: (err, variables, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(['job-discovery-detail', variables.id], context.previous);
+        queryClient.setQueryData(queryKeys.jobs.discoveryDetail(variables.id), context.previous);
       }
       toast.error(getApiErrorMessage(err));
     },
     onSuccess: (data) => {
       const listingKey = data.jobListingId;
       if (data.action === 'added') {
-        queryClient.setQueryData<JobListingDto | undefined>(['job-discovery-detail', listingKey], (old) =>
+        queryClient.setQueryData<JobListingDto | undefined>(queryKeys.jobs.discoveryDetail(listingKey), (old) =>
           old
             ? {
                 ...old,
@@ -65,14 +66,14 @@ export function useBookmarkJob() {
         );
         toast.success('Bookmarked — this role is saved; open Job Hub to work it.');
       } else {
-        queryClient.setQueryData<JobListingDto | undefined>(['job-discovery-detail', listingKey], (old) =>
+        queryClient.setQueryData<JobListingDto | undefined>(queryKeys.jobs.discoveryDetail(listingKey), (old) =>
           old ? { ...old, isBookmarked: false, bookmarkRowId: undefined } : old,
         );
         toast.success('Bookmark removed.');
       }
-      void queryClient.invalidateQueries({ queryKey: ['job-discovery'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.discovery({}) });
       /** Do not invalidate detail here: GET /job-discovery/:id may omit `isBookmarked`, and a refetch would clear the optimistic update. */
-      void queryClient.invalidateQueries({ queryKey: ['hub-bookmarks'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
       invalidateTodayPlanQueries(queryClient);
     },
   });

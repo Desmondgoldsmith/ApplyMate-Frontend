@@ -2,9 +2,10 @@
 
 import { FileText, Loader2, MessageSquare, Sparkles, UploadCloud, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
+import { CvParseImportSummaryPanel } from '@/components/cv/CvParseImportSummaryPanel';
 import { CVUploadZone } from '@/components/dashboard/CVUploadZone';
 import { CVChatInterface } from '@/components/onboarding/CVChatInterface';
 import { TemplatePicker } from '@/components/onboarding/TemplatePicker';
@@ -13,8 +14,13 @@ import { GlowCard } from '@/components/ui/GlowCard';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { useCreateCVProfile } from '@/hooks/useCreateCVProfile';
-import { api, type ChatCreateCVPayload } from '@/lib/api';
+import { api, type ChatCreateCVPayload, type CvParseImportSummary } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
+import {
+  CV_READY_TOAST,
+  cvEditorPath,
+  prefetchCvProfileForEditor,
+} from '@/lib/cvProfileNavigation';
 import { cn } from '@/lib/utils';
 
 type CreateCVProfileModalProps = {
@@ -52,38 +58,32 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
   const [step, setStep] = useState<FlowStep>('name');
   const [name, setName] = useState('');
   const [template, setTemplate] = useState('modern');
-  const [aiChatProfileId, setAiChatProfileId] = useState<string | null>(null);
   const [aiChatBuilding, setAiChatBuilding] = useState(false);
-  const bgSavePromise = useRef<Promise<boolean> | null>(null);
+  const [uploadImportSummary, setUploadImportSummary] =
+    useState<CvParseImportSummary | null>(null);
+  const [uploadProfileId, setUploadProfileId] = useState<string | null>(null);
 
   const close = useCallback(() => {
     setStep('name');
     setName('');
     setTemplate('modern');
-    setAiChatProfileId(null);
     setAiChatBuilding(false);
-    bgSavePromise.current = null;
+    setUploadImportSummary(null);
+    setUploadProfileId(null);
     onOpenChange(false);
   }, [onOpenChange]);
 
   const openProfileInBuilder = useCallback(
-    async (id: string) => {
+    async (id: string, opts?: { successToast?: string | null }) => {
       const trimmed = id.trim();
       if (!trimmed) return;
-      await queryClient.invalidateQueries({ queryKey: ['cv-profiles'] });
-      await queryClient.invalidateQueries({ queryKey: ['cv-profile'] });
-      await queryClient.prefetchQuery({
-        queryKey: ['cv-profile', trimmed],
-        queryFn: () => api.cv.getProfileById(trimmed),
-      });
-      await queryClient.prefetchQuery({
-        queryKey: ['cv-sections', trimmed],
-        queryFn: () => api.cv.getSections(true, trimmed),
-      });
+      await prefetchCvProfileForEditor(queryClient, trimmed);
       close();
-      router.push(`/dashboard/cv?profileId=${encodeURIComponent(trimmed)}`);
+      const message = opts?.successToast;
+      if (message) toast.success(message);
+      router.push(cvEditorPath(trimmed));
     },
-    [close, queryClient, router],
+    [close, queryClient, router, toast],
   );
 
   const modalWidth =
@@ -96,72 +96,45 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
           : 'max-w-lg';
 
   const showDots = step !== 'upload' && step !== 'aiChat';
-  const blockOverlayClose = createProfile.isPending || step === 'aiChat';
+  const blockOverlayClose =
+    createProfile.isPending || step === 'aiChat' || aiChatBuilding;
 
   const handleStartAiChat = useCallback(() => {
-    createProfile.mutate(
-      { name: name.trim() || undefined, template },
-      {
-        onSuccess: (row) => {
-          setAiChatProfileId(row.id);
-          setStep('aiChat');
-        },
-        onError: (e) => toast.error(getApiErrorMessage(e)),
-      },
-    );
-  }, [createProfile, name, template, toast]);
-
-  const doSave = useCallback(
-    async (data: ChatCreateCVPayload): Promise<boolean> => {
-      try {
-        await api.cv.chatCreateCV({ ...data, template });
-        await queryClient.invalidateQueries({ queryKey: ['cv-profiles'] });
-        await queryClient.invalidateQueries({ queryKey: ['cv-profile'] });
-        await queryClient.refetchQueries({ queryKey: ['cv-profiles'] });
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    [template, queryClient],
-  );
-
-  const handleDataExtracted = useCallback(
-    (extractedData: ChatCreateCVPayload) => {
-      if (!aiChatProfileId) return;
-      bgSavePromise.current = doSave(extractedData);
-    },
-    [aiChatProfileId, doSave],
-  );
+    setStep('aiChat');
+  }, []);
 
   const handleAiChatComplete = useCallback(
     async (extractedData: ChatCreateCVPayload) => {
-      if (!aiChatProfileId) return;
       setAiChatBuilding(true);
       try {
-        const alreadySaved = bgSavePromise.current ? await bgSavePromise.current : false;
-        if (!alreadySaved) {
-          await api.cv.chatCreateCV({ ...extractedData, template });
-          await queryClient.invalidateQueries({ queryKey: ['cv-profiles'] });
-          await queryClient.invalidateQueries({ queryKey: ['cv-profile'] });
-          await queryClient.refetchQueries({ queryKey: ['cv-profiles'] });
-        }
-        toast.success('Your CV has been created!');
-        await openProfileInBuilder(aiChatProfileId);
+        const { profileId } = await api.cv.chatCreateCV({
+          ...extractedData,
+          template,
+          ...(name.trim() ? { name: name.trim() } : {}),
+        });
+        await openProfileInBuilder(profileId, { successToast: CV_READY_TOAST });
       } catch (e) {
         toast.error(getApiErrorMessage(e) || 'Failed to create CV from chat data');
       } finally {
         setAiChatBuilding(false);
       }
     },
-    [aiChatProfileId, template, queryClient, toast, doSave, openProfileInBuilder],
+    [template, name, toast, openProfileInBuilder],
   );
 
   const handleAiChatSkip = useCallback(() => {
-    if (!aiChatProfileId) return;
-    toast.success("CV profile created — let's build it out manually");
-    void openProfileInBuilder(aiChatProfileId);
-  }, [aiChatProfileId, toast, openProfileInBuilder]);
+    createProfile.mutate(
+      { name: name.trim() || undefined, template },
+      {
+        onSuccess: (row) => {
+          void openProfileInBuilder(row.id, {
+            successToast: "CV profile created — let's build it out manually",
+          });
+        },
+        onError: (e) => toast.error(getApiErrorMessage(e)),
+      },
+    );
+  }, [createProfile, name, template, toast, openProfileInBuilder]);
 
   return (
     <Modal
@@ -312,8 +285,9 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
                         { name: name.trim() || undefined, template },
                         {
                           onSuccess: (row) => {
-                            toast.success("CV profile created — let's build it out");
-                            void openProfileInBuilder(row.id);
+                            void openProfileInBuilder(row.id, {
+                              successToast: CV_READY_TOAST,
+                            });
                           },
                           onError: (e) => toast.error(getApiErrorMessage(e)),
                         },
@@ -357,7 +331,8 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
               </button>
             </div>
             <p className="mt-1 text-[13px] text-white/55">
-              Answer a few questions and we&apos;ll generate your CV automatically.
+              Answer a few questions or paste your full CV — we&apos;ll only ask about
+              what&apos;s missing.
             </p>
             <div className="mt-4">
               {aiChatBuilding ? (
@@ -370,7 +345,6 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
                   selectedTemplate={template}
                   onComplete={(data) => void handleAiChatComplete(data)}
                   onSkip={handleAiChatSkip}
-                  onDataExtracted={handleDataExtracted}
                 />
               )}
             </div>
@@ -388,18 +362,40 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
             <h2 className="text-lg font-bold text-white">Upload your CV</h2>
             <p className="mt-2 text-[13px] text-white/55">We&apos;ll create a profile from your file.</p>
             <div className="mt-5">
-              <CVUploadZone
-                ensureNewProfileBeforeParse
-                onSuccess={async ({ profile }) => {
-                  const id = profile.id?.trim();
-                  if (id) {
-                    await openProfileInBuilder(id);
-                  } else {
-                    close();
-                    router.push('/dashboard/cv');
-                  }
-                }}
-              />
+              {uploadImportSummary && uploadProfileId ? (
+                <CvParseImportSummaryPanel
+                  importSummary={uploadImportSummary}
+                  profileId={uploadProfileId}
+                  onReviewInBuilder={() => {
+                    void openProfileInBuilder(uploadProfileId, {
+                      successToast: CV_READY_TOAST,
+                    });
+                  }}
+                  onContinue={() => {
+                    void openProfileInBuilder(uploadProfileId, {
+                      successToast: null,
+                    });
+                  }}
+                  continueLabel="Open CV editor"
+                />
+              ) : (
+                <CVUploadZone
+                  ensureNewProfileBeforeParse
+                  onSuccess={async ({ profile, importSummary }) => {
+                    const id = profile.id?.trim();
+                    if (!id) {
+                      toast.error('Upload succeeded but no profile id was returned.');
+                      return;
+                    }
+                    if (importSummary) {
+                      setUploadProfileId(id);
+                      setUploadImportSummary(importSummary);
+                      return;
+                    }
+                    await openProfileInBuilder(id, { successToast: CV_READY_TOAST });
+                  }}
+                />
+              )}
             </div>
           </>
         )}

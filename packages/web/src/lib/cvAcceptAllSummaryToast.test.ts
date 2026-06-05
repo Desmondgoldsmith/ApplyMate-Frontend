@@ -33,4 +33,12 @@ describe('buildAcceptAllSuggestionsSummaryMessage', () => {
     expect(msg).toMatch(/3 applied/);
     expect(msg).toMatch(/0 remaining pending/);
   });
+
+  it('notes single daily AI use when acceptAllAiCalls is 1', () => {
+    const msg = buildAcceptAllSuggestionsSummaryMessage({
+      acceptAllAiCalls: 1,
+      acceptAllSummary: { applied: 3, leftPending: 0 },
+    });
+    expect(msg).toContain('1 daily AI use');
+  });
 });

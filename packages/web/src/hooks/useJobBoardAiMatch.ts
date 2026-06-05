@@ -1,9 +1,11 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { type QueryClient, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 
 import { useDailyAiUsage } from '@/hooks/useDailyAiUsage';
+import { useJobAnalyzeLocationPayload } from '@/hooks/useJobAnalyzeLocationPayload';
 import { api, type HubBookmarkItem, type JobAnalysis, type JobAnalysisSummary } from '@/lib/api';
 import { canUseAiFromDailyAiUsage, type DailyAiUsage } from '@/lib/ai-daily-usage';
 import {
@@ -50,7 +52,7 @@ async function fetchJobBoardReuseOnlyMatch(params: {
   let listingRows: JobAnalysisSummary[] = [];
   try {
     listingRows = await queryClient.ensureQueryData({
-      queryKey: ['job-analyses', 'listing', discoveryJobId],
+      queryKey: queryKeys.jobs.analysesListing(discoveryJobId),
       queryFn: () => api.jobs.listAnalyses({ jobListingId: discoveryJobId }),
     });
   } catch {
@@ -70,7 +72,7 @@ async function fetchJobBoardReuseOnlyMatch(params: {
   let analysesFull: JobAnalysisSummary[] = [];
   try {
     analysesFull = await queryClient.ensureQueryData({
-      queryKey: ['job-analyses'],
+      queryKey: queryKeys.jobs.analyses(),
       queryFn: () => api.jobs.listAnalyses(),
     });
   } catch {
@@ -80,7 +82,7 @@ async function fetchJobBoardReuseOnlyMatch(params: {
   let bookmarks: HubBookmarkItem[] = [];
   try {
     bookmarks = await queryClient.ensureQueryData({
-      queryKey: ['hub-bookmarks'],
+      queryKey: queryKeys.hub.bookmarks(),
       queryFn: () => api.jobDiscovery.listBookmarks(),
     });
   } catch {
@@ -132,6 +134,7 @@ export function useJobBoardAiMatch(opts: {
 }) {
   const queryClient = useQueryClient();
   const aiUsage = useDailyAiUsage();
+  const analyzeLocationPayload = useJobAnalyzeLocationPayload();
 
   /** Job id after debounce — only equals `discoveryJobId` once the user has paused on that job. */
   const [debouncedJobId, setDebouncedJobId] = useState('');
@@ -155,7 +158,7 @@ export function useJobBoardAiMatch(opts: {
   );
 
   const queryKey = useMemo(
-    () => ['job-board-ai-match', cv, opts.discoveryJobId] as const,
+    () => queryKeys.jobs.boardAiMatch(cv, opts.discoveryJobId),
     [cv, opts.discoveryJobId],
   );
 
@@ -166,7 +169,7 @@ export function useJobBoardAiMatch(opts: {
   );
 
   const overQuotaReuseQuery = useQuery({
-    queryKey: ['job-board-over-quota-reuse', cv, opts.discoveryJobId] as const,
+    queryKey: queryKeys.jobs.boardOverQuotaReuse(cv, opts.discoveryJobId),
     queryFn: () =>
       fetchJobBoardReuseOnlyMatch({
         queryClient,
@@ -208,7 +211,7 @@ export function useJobBoardAiMatch(opts: {
   );
 
   const quotaFitQuery = useQuery({
-    queryKey: ['job-board-quota-fit', cv, opts.discoveryJobId, desc.slice(0, 2400)] as const,
+    queryKey: queryKeys.jobs.boardQuotaFit(cv, opts.discoveryJobId, desc.slice(0, 2400)),
     queryFn: () =>
       api.jobs.matchScore({
         description: opts.description,
@@ -248,17 +251,18 @@ export function useJobBoardAiMatch(opts: {
           jobListingId: opts.discoveryJobId.trim(),
           ...applyUrlAnalyzePayload(opts.listingApplyUrl),
           persistAnalysis: false,
+          ...analyzeLocationPayload,
         }),
       );
 
-      void queryClient.invalidateQueries({ queryKey: ['job-analyses'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
 
       if (!analysis.reusedExistingAnalysis && analysis.scoreSource !== 'heuristic') {
-        void queryClient.invalidateQueries({ queryKey: ['me'] });
-        void queryClient.invalidateQueries({ queryKey: ['analytics'] });
-        void queryClient.invalidateQueries({ queryKey: ['job-history'] });
-        void queryClient.invalidateQueries({ queryKey: ['cv-profiles'] });
-        void queryClient.invalidateQueries({ queryKey: ['hub-bookmarks'] });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
         invalidateTodayPlanQueries(queryClient);
       }
 

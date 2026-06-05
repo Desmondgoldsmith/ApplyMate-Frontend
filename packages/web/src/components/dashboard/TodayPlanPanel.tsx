@@ -2097,7 +2097,7 @@ export function TodayPlanPanel({
       {cvClinicEffective ? (
         <section className="mb-8">
           <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.1em] text-white/40">CV Clinic</p>
-          <div data-tour="cv-clinic-card">
+          <div data-tour="cv-clinic-section">
             <PlanInnerCard
               item={cvClinicEffective}
               icon={Stethoscope}

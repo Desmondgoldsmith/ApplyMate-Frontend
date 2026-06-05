@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
@@ -14,9 +15,9 @@ export function useRestoreOriginalTemplate(profileId: string | null) {
     },
     onSuccess: () => {
       const id = profileId?.trim() ?? '';
-      void queryClient.invalidateQueries({ queryKey: ['cv-profile', id] });
-      void queryClient.invalidateQueries({ queryKey: ['cv-profiles'] });
-      void queryClient.invalidateQueries({ queryKey: ['cv-profile'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profile(id) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profileDefault() });
     },
   });
 }

@@ -1,3 +1,4 @@
+import type { SemanticOutlookPayload } from '@/lib/dashboardSemanticOutlook';
 import type { DashboardCommandBarSource, DeterministicIndexScorePayload } from '@/lib/today-plan';
 
 /**
@@ -28,8 +29,8 @@ export function deterministicIndexTooltipText(
 
 /** Footnote under predictive outlook: API disclaimers when provided, else product fallback. */
 export function predictiveOutlookDisclaimerFootnote(
-  interview: DeterministicIndexScorePayload | null | undefined,
-  offer: DeterministicIndexScorePayload | null | undefined,
+  interview: SemanticOutlookPayload | null | undefined,
+  offer: SemanticOutlookPayload | null | undefined,
   fallback: string,
 ): string {
   const i = interview?.disclaimer?.trim();
@@ -64,18 +65,18 @@ export const TOOLTIP_CV_SCORE =
 export const TOOLTIP_JOB_MATCH_SCORE =
   'How well this role matches your profile from your saved analysis (0–100).';
 
-/** Phase 6A predictive outlook — deterministic outlook indexes (not statistical probabilities). */
-export const TOOLTIP_PREDICTIVE_INTERVIEW_INDEX =
-  'A deterministic outlook index from your current activity—not a statistical probability or guarantee of interviews. Higher reflects stronger signals from your CV, role fit, applications, and interview-related steps.';
+/** Phase 6A predictive outlook — semantic bands (not statistical probabilities). */
+export const TOOLTIP_PREDICTIVE_INTERVIEW_OUTLOOK =
+  'This reflects your current activity and pipeline health—not a statistical prediction of interview outcomes.';
 
-export const TOOLTIP_PREDICTIVE_OFFER_INDEX =
-  'A deterministic outlook index from what we see now—not a statistical probability or promise about offers. It blends interviews, movement on applications, momentum, and follow-ups.';
+export const TOOLTIP_PREDICTIVE_OFFER_OUTLOOK =
+  'This reflects your current activity and pipeline health—not a statistical prediction of offer outcomes.';
 
-export const TOOLTIP_PREDICTIVE_WEEKS_RANGE =
-  'A rough range based on your funnel balance and movement—not a deadline. It updates as your activity changes.';
+export const TOOLTIP_PREDICTIVE_TIMELINE_OUTLOOK =
+  'A qualitative timeline band from your funnel balance and movement—not a week-by-week forecast or deadline.';
 
 export const TOOLTIP_PREDICTIVE_CONFIDENCE =
-  'How much recent activity we had to build this outlook—not your chance of an interview or offer (those are separate indexes).';
+  'How much recent activity we had to build this outlook—not interview or offer odds.';
 
 /** Upcoming interview row — `upcomingInterviews[].confidence` */
 export const TOOLTIP_UPCOMING_INTERVIEW_PREP_PRIORITY =
@@ -123,7 +124,7 @@ export function tooltipCommandBarConfidence(source: CommandBarConfidenceTooltipS
 }
 
 export const PREDICTIVE_OUTLOOK_DISCLAIMER =
-  'These numbers summarize today’s signals for guidance only. They aren’t predictions or guarantees.';
+  'Outlook badges summarize today’s signals for guidance only. They aren’t predictions or guarantees.';
 
 /** Predictive outlook — pipeline health badge (balanced / active search read). */
 export const TOOLTIP_PIPELINE_HEALTH_BASE =

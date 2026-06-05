@@ -7,10 +7,8 @@ import { motion } from 'framer-motion';
 
 import { CVDocumentPreview } from '@/components/cv/CVDocumentPreview';
 import { GlowCard } from '@/components/ui/GlowCard';
-import { CV_TEMPLATE_IDS, cvTemplatePreviewSampleData, type CvTemplateId } from '@/lib/cvBuilder';
+import { CV_TEMPLATE_IDS, cvTemplatePreviewSampleDataFor, type CvTemplateId } from '@/lib/cvBuilder';
 import { cn } from '@/lib/utils';
-
-const PREVIEW_SAMPLE = cvTemplatePreviewSampleData();
 
 /** Same labels as CV clinic `TemplatePickerModal` (grid layout). */
 export const ONBOARDING_TEMPLATE_LABELS: Record<CvTemplateId, string> = {
@@ -18,11 +16,7 @@ export const ONBOARDING_TEMPLATE_LABELS: Record<CvTemplateId, string> = {
   modern: 'Modern',
   creative: 'Creative',
   professional: 'Professional',
-  'europass-classic': 'Europass Classic',
-  'europass-modern': 'Europass Modern',
-  french: 'French resume',
-  german: 'German Lebenslauf',
-  uk: 'UK resume',
+  onyx: 'Onyx',
 };
 
 /** @deprecated Use {@link ONBOARDING_TEMPLATE_LABELS} */
@@ -69,35 +63,11 @@ const TEMPLATES = [
     bestFor: 'Engineering, DevOps & technical roles',
   },
   {
-    id: 'europass-classic' as const,
-    name: 'Europass Classic',
-    description: 'Official EU format — single column',
-    bestFor: 'EU public sector, academia, Eastern Europe',
-  },
-  {
-    id: 'europass-modern' as const,
-    name: 'Europass Modern',
-    description: 'Official EU format — two column sidebar',
-    bestFor: 'EU job market, international applications',
-    badge: 'EU Standard',
-  },
-  {
-    id: 'french' as const,
-    name: 'French resume',
-    description: 'French format — elegant, photo-ready',
-    bestFor: 'France and French-speaking markets',
-  },
-  {
-    id: 'german' as const,
-    name: 'German Lebenslauf',
-    description: 'Structured formal layout with photo block',
-    bestFor: 'Germany, Austria, Switzerland',
-  },
-  {
-    id: 'uk' as const,
-    name: 'UK resume',
-    description: 'British format with strong personal profile',
-    bestFor: 'United Kingdom, Ireland, Commonwealth',
+    id: 'onyx' as const,
+    name: 'Onyx',
+    description: 'Premium dark sidebar with photo & references',
+    bestFor: 'Consulting, business & leadership roles',
+    badge: 'New',
   },
 ];
 
@@ -163,7 +133,7 @@ function TemplatePickerOnboardingGrid({
                     transformOrigin: 'top left',
                   }}
                 >
-                  <CVDocumentPreview data={PREVIEW_SAMPLE} template={tid} activeSection={null} />
+                  <CVDocumentPreview data={cvTemplatePreviewSampleDataFor(tid)} template={tid} activeSection={null} />
                 </div>
               </div>
               <span className="px-2 pb-3 pt-2.5 text-center text-[13px] font-medium text-[rgba(255,255,255,0.8)]">
@@ -219,7 +189,7 @@ function TemplatePickerClinicGrid({
                     transformOrigin: 'top left',
                   }}
                 >
-                  <CVDocumentPreview data={PREVIEW_SAMPLE} template={tid} activeSection={null} />
+                  <CVDocumentPreview data={cvTemplatePreviewSampleDataFor(tid)} template={tid} activeSection={null} />
                 </div>
               </div>
               <span className="border-t border-white/[0.06] px-2 py-2 text-center text-xs font-medium capitalize text-white/80">
@@ -343,7 +313,7 @@ export function TemplatePicker({
                       style={{ transform: 'translateX(-50%) scale(0.45)' }}
                       aria-hidden
                     >
-                      <CVDocumentPreview data={PREVIEW_SAMPLE} template={tpl.id} activeSection={null} />
+                      <CVDocumentPreview data={cvTemplatePreviewSampleDataFor(tpl.id)} template={tpl.id} activeSection={null} />
                     </div>
                   </div>
                   <div className="space-y-1 pr-1">

@@ -2,24 +2,21 @@
 
 import Link from 'next/link';
 
+import { SemanticOutlookBadge } from '@/components/dashboard/SemanticOutlookBadge';
 import { InfoHint } from '@/components/ui/InfoHint';
+import { formatTimelineOutlookLabel } from '@/lib/dashboardSemanticOutlook';
 import {
-  effectiveDeterministicIndexValue,
-  type DashboardEmptyStatePayload,
-  type EstimatedWeeksToOfferPayload,
-  type PredictiveOutlookPayload,
-  type PredictivePipelineHealth,
-} from '@/lib/today-plan';
-import {
-  deterministicIndexTooltipText,
-  PREDICTIVE_OUTLOOK_DISCLAIMER,
-  predictiveOutlookDisclaimerFootnote,
   TOOLTIP_PREDICTIVE_CONFIDENCE,
-  TOOLTIP_PREDICTIVE_INTERVIEW_INDEX,
-  TOOLTIP_PREDICTIVE_OFFER_INDEX,
-  TOOLTIP_PREDICTIVE_WEEKS_RANGE,
+  TOOLTIP_PREDICTIVE_OFFER_OUTLOOK,
+  TOOLTIP_PREDICTIVE_INTERVIEW_OUTLOOK,
+  TOOLTIP_PREDICTIVE_TIMELINE_OUTLOOK,
   tooltipPipelineHealthText,
 } from '@/lib/dashboardIntelligenceTooltips';
+import type {
+  DashboardEmptyStatePayload,
+  PredictiveOutlookPayload,
+  PredictivePipelineHealth,
+} from '@/lib/today-plan';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -48,31 +45,13 @@ function healthLabel(health: PredictivePipelineHealth | null): string | null {
   return health.charAt(0).toUpperCase() + health.slice(1);
 }
 
-function formatWeeksRange(w: EstimatedWeeksToOfferPayload | null): string | null {
-  if (!w) return null;
-  const { min, max } = w;
-  if (min != null && max != null) {
-    if (min === max) return `About ${min} ${min === 1 ? 'week' : 'weeks'}`;
-    return `About ${min}–${max} weeks`;
-  }
-  if (min != null) return `About ${min}+ weeks`;
-  if (max != null) return `Up to about ${max} weeks`;
-  return null;
-}
-
 export function DashboardPredictiveOutlookCard({ data, phase15Empty }: Props) {
   const headline = data.headline?.trim() || '';
   const supporting = data.supporting?.trim() || '';
 
-  const interviewPct = effectiveDeterministicIndexValue(data.interviewOutlook, data.interviewProbability);
-  const offerPct = effectiveDeterministicIndexValue(data.offerOutlook, data.offerProbability);
-
-  const interviewTooltip = deterministicIndexTooltipText(data.interviewOutlook, TOOLTIP_PREDICTIVE_INTERVIEW_INDEX);
-  const offerTooltip = deterministicIndexTooltipText(data.offerOutlook, TOOLTIP_PREDICTIVE_OFFER_INDEX);
-  const outlookDisclaimer = predictiveOutlookDisclaimerFootnote(
-    data.interviewOutlook,
-    data.offerOutlook,
-    PREDICTIVE_OUTLOOK_DISCLAIMER,
+  const timelineLabel = formatTimelineOutlookLabel(
+    data.timelineOutlook,
+    data.timelineOutlookLabel,
   );
 
   const confidence =
@@ -80,12 +59,10 @@ export function DashboardPredictiveOutlookCard({ data, phase15Empty }: Props) {
       ? Math.min(100, Math.max(0, Math.round(data.confidence)))
       : null;
 
-  const weeksLabel = formatWeeksRange(data.estimatedWeeksToOffer);
-
   const hasAnyMetric =
-    interviewPct != null ||
-    offerPct != null ||
-    weeksLabel != null ||
+    data.interviewOutlook != null ||
+    data.offerOutlook != null ||
+    timelineLabel != null ||
     data.pipelineHealth != null;
 
   const isEmpty = !headline && !supporting && !hasAnyMetric && confidence == null;
@@ -109,7 +86,7 @@ export function DashboardPredictiveOutlookCard({ data, phase15Empty }: Props) {
         ) : (
           <>
             <p className="mt-4 max-w-[72ch] text-[13px] leading-relaxed text-white/58">
-              Outlook predictions need at least 3 applications in your pipeline.
+              Outlook summaries need at least 3 applications in your pipeline.
             </p>
             <p className="mt-2 max-w-[72ch] text-[13px] leading-relaxed text-white/48">
               Keep applying — this section unlocks automatically.
@@ -163,41 +140,44 @@ export function DashboardPredictiveOutlookCard({ data, phase15Empty }: Props) {
 
         {hasAnyMetric ? (
           <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
-            <div className="min-w-0 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-3 sm:py-4">
-              <div className="flex items-start justify-between gap-1.5">
-                <p className="min-w-0 flex-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/38">
-                  Interview probability
-                </p>
-                <InfoHint text={interviewTooltip} buttonAriaLabel="About interview probability" />
+            {data.interviewOutlook ? (
+              <div className="min-w-0 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-3 sm:py-4">
+                <SemanticOutlookBadge
+                  outlook={data.interviewOutlook}
+                  defaultTitle="Interview outlook"
+                  tooltipFallback={TOOLTIP_PREDICTIVE_INTERVIEW_OUTLOOK}
+                  infoAriaLabel="About interview outlook"
+                />
               </div>
-              <p className="mt-2 text-[22px] font-semibold tabular-nums text-white/90">
-                {interviewPct != null ? `${interviewPct}%` : '—'}
-              </p>
-            </div>
+            ) : null}
 
-            <div className="min-w-0 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-3 sm:py-4">
-              <div className="flex items-start justify-between gap-1.5">
-                <p className="min-w-0 flex-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/38">
-                  Offer probability
-                </p>
-                <InfoHint text={offerTooltip} buttonAriaLabel="About offer probability" />
+            {data.offerOutlook ? (
+              <div className="min-w-0 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-3 sm:py-4">
+                <SemanticOutlookBadge
+                  outlook={data.offerOutlook}
+                  defaultTitle="Offer outlook"
+                  tooltipFallback={TOOLTIP_PREDICTIVE_OFFER_OUTLOOK}
+                  infoAriaLabel="About offer outlook"
+                />
               </div>
-              <p className="mt-2 text-[22px] font-semibold tabular-nums text-white/90">
-                {offerPct != null ? `${offerPct}%` : '—'}
-              </p>
-            </div>
+            ) : null}
 
-            <div className="min-w-0 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-3 sm:py-4">
-              <div className="flex items-start justify-between gap-1.5">
-                <p className="min-w-0 flex-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/38 leading-tight">
-                  Likely timeline to offer
+            {timelineLabel ? (
+              <div className="min-w-0 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-3 sm:py-4">
+                <div className="flex items-start justify-between gap-1.5">
+                  <p className="min-w-0 flex-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/38 leading-tight">
+                    Timeline outlook
+                  </p>
+                  <InfoHint
+                    text={TOOLTIP_PREDICTIVE_TIMELINE_OUTLOOK}
+                    buttonAriaLabel="About timeline outlook"
+                  />
+                </div>
+                <p className="mt-2 text-[15px] font-semibold leading-snug text-white/88">
+                  {timelineLabel}
                 </p>
-                <InfoHint text={TOOLTIP_PREDICTIVE_WEEKS_RANGE} buttonAriaLabel="About likely timeline to offer" />
               </div>
-              <p className="mt-2 text-[15px] font-semibold leading-snug text-white/88">
-                {weeksLabel ?? '—'}
-              </p>
-            </div>
+            ) : null}
 
             <div className="min-w-0 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-3 sm:py-4">
               <div className="flex items-start justify-between gap-1.5">
@@ -226,10 +206,6 @@ export function DashboardPredictiveOutlookCard({ data, phase15Empty }: Props) {
             </div>
           </div>
         ) : null}
-
-        <p className="max-w-[72ch] whitespace-pre-line text-[11px] leading-relaxed text-white/38">
-          {outlookDisclaimer}
-        </p>
 
         {confidence != null ? (
           <div className="max-w-sm pt-1">

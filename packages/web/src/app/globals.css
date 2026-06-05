@@ -489,6 +489,28 @@ input.auth-input:-webkit-autofill:active {
   scroll-margin-top: 5rem;
 }
 
+@keyframes cv-assistant-accept-flash-keyframes {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(0, 201, 177, 0.65),
+      inset 0 0 0 2px rgba(0, 201, 177, 0.55);
+    background-color: rgba(0, 201, 177, 0.14);
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(0, 201, 177, 0),
+      inset 0 0 0 0 rgba(0, 201, 177, 0);
+    background-color: transparent;
+  }
+}
+
+#cv-section-personal.cv-assistant-accept-flash,
+[id^='cv-section-'].cv-assistant-accept-flash {
+  animation: cv-assistant-accept-flash-keyframes 0.6s ease-out;
+  border-radius: 12px;
+  scroll-margin-top: 5rem;
+}
+
 @keyframes tailor-revert-flash-keyframes {
   0% {
     box-shadow:

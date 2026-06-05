@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
@@ -11,14 +12,14 @@ export function useGenerateContent() {
   return useMutation({
     mutationFn: api.jobs.generate,
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['me'] });
-      queryClient.invalidateQueries({ queryKey: ['analytics'] });
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
       const jid = variables.jobAnalysisId?.trim();
       if (jid) {
-        void queryClient.invalidateQueries({ queryKey: ['job-generated', jid] });
-        void queryClient.invalidateQueries({ queryKey: ['job', jid] });
-        void queryClient.invalidateQueries({ queryKey: ['job-analyses'] });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.generated(jid) });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analysis(jid) });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
       }
       invalidateTodayPlanQueries(queryClient);
     },

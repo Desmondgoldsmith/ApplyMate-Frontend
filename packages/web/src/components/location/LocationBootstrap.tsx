@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -31,7 +32,7 @@ export function LocationBootstrap({ enabled }: { enabled: boolean }) {
       });
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['me'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
     },
   });
 

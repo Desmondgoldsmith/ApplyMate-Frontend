@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronDown,
@@ -195,7 +196,7 @@ export default function JobBoardContent() {
       setSelectedLocation(nextLoc);
       void api.users
         .updateMe({ uiPrefs: { jobSearchLocation: nextLoc } })
-        .then(() => queryClient.invalidateQueries({ queryKey: ['me'] }))
+        .then(() => queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() }))
         .catch(() => {
           toast.error(
             'Location saved locally but could not sync to your account.',
@@ -358,7 +359,7 @@ export default function JobBoardContent() {
   const prefetchListing = useCallback(
     (job: JobListingDto) => {
       void queryClient.prefetchQuery({
-        queryKey: ['job-discovery-detail', job.id],
+        queryKey: queryKeys.jobs.discoveryDetail(job.id),
         queryFn: () => api.jobDiscovery.getDetail(job.id),
       });
       trackFunnelEvent('jobboard_card_prefetched', { jobListingId: job.id });

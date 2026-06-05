@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, Info } from 'lucide-react';
 import Link from 'next/link';
@@ -63,7 +64,7 @@ export function NotificationsTab() {
     mutationFn: api.users.updateMe,
     onSuccess: (next) => {
       syncUserFromMe(next);
-      void queryClient.invalidateQueries({ queryKey: ['me'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   });

@@ -10,6 +10,7 @@ export const AI_USAGE_FLOW_LABELS: Record<string, string> = {
   CV_OPTIMIZE: 'CV optimize',
   CV_IMPROVEMENT_APPLY: 'Apply with AI',
   CV_ASSISTANT: 'CV assistant command',
+  CV_ASSISTANT_GLOBAL: 'Global CV assistant command',
   CV_TAILOR: 'Job tailoring',
   CV_CHAT_STRUCTURED_EXTRACT: 'Chat — structured CV from pasted text',
 };

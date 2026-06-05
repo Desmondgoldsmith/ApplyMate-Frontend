@@ -9,7 +9,9 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { api, type CvTailorDraft, type CvTailorDraftEntry } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
+import { coerceAiPatchSectionBlob } from '@/lib/cvAiPatchDisplay';
 import { buildLineDiff, type CvTailorDiffLine } from '@/lib/cvTailorDiff';
+import { TailorChangeHighlights } from '@/components/dashboard/TailorChangeHighlights';
 import { rehydrateCvBuilderAfterStructuredPersist } from '@/lib/cvStructuredDraftCommit';
 import { cn } from '@/lib/utils';
 
@@ -71,9 +73,17 @@ function TailorSuggestionCard({
   const toast = useToast();
   const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState(entry.status === 'pending');
+  const beforeDisplay = useMemo(
+    () => coerceAiPatchSectionBlob(entry.before, entry.sectionType),
+    [entry.before, entry.sectionType],
+  );
+  const afterDisplay = useMemo(
+    () => coerceAiPatchSectionBlob(entry.after, entry.sectionType),
+    [entry.after, entry.sectionType],
+  );
   const diffLines = useMemo(
-    () => buildLineDiff(entry.before, entry.after),
-    [entry.before, entry.after],
+    () => buildLineDiff(beforeDisplay, afterDisplay),
+    [beforeDisplay, afterDisplay],
   );
 
   const invalidateCv = useCallback(
@@ -164,7 +174,15 @@ function TailorSuggestionCard({
 
       {expanded ? (
         <div className="mt-3 space-y-3 border-t border-white/[0.06] pt-3">
-          <InlineDiff lines={diffLines} />
+          <TailorChangeHighlights
+            sectionType={entry.sectionType}
+            beforeRaw={beforeDisplay}
+            afterRaw={afterDisplay}
+            changedFields={entry.changedFields}
+          />
+          {diffLines.some((l) => l.type !== 'same') ? (
+            <InlineDiff lines={diffLines} />
+          ) : null}
           {entry.status === 'pending' ? (
             <div className="flex gap-2">
               <Button

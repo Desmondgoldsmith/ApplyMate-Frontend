@@ -13,6 +13,32 @@ describe('assistantDiffDisplayStrings', () => {
     expect(after).not.toContain('{');
   });
 
+  it('formats patch operation blobs as value text', () => {
+    const { after } = assistantDiffDisplayStrings(
+      'summary',
+      null,
+      { action: 'replace', field: 'summary', value: 'Readable paragraph.' },
+    );
+    expect(after).toBe('Readable paragraph.');
+    expect(after).not.toContain('action');
+  });
+
+  it('does not recurse on full-CV blobs scoped to one section', () => {
+    const fullCv = {
+      summary: { text: 'Summary line' },
+      experience: {
+        items: [{ title: 'Engineer', company: 'Acme', bullets: ['Did work'] }],
+      },
+    };
+    const { before, after } = assistantDiffDisplayStrings(
+      'experience',
+      fullCv,
+      fullCv,
+    );
+    expect(before).toContain('Engineer');
+    expect(after).toContain('Engineer');
+  });
+
   it('formats experience items as readable lines', () => {
     const blob = {
       experience: {

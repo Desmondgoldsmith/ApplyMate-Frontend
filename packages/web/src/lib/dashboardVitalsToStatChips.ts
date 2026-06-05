@@ -1,4 +1,5 @@
 import type { DashboardStatChip } from '@/components/dashboard/DashboardStatsRow';
+import { formatSemanticOutlookBand } from '@/lib/dashboardSemanticOutlook';
 import type { DashboardVitalsPayload, TodayPlanPayload } from '@/lib/today-plan';
 import { normalizedSectionTitle } from '@/lib/today-plan';
 
@@ -49,14 +50,16 @@ export function dashboardVitalsToStatChips(
 
   if (vitals.interviewOutlook) {
     const v = vitals.interviewOutlook;
+    const basis = v.outlookBasis?.trim() ?? '';
     const status =
-      v.label && !isRedundantSupportingLine(v.label, titleOutlook) ? v.label.trim() : '';
+      basis ||
+      (v.label && !isRedundantSupportingLine(v.label, titleOutlook) ? v.label.trim() : '');
     chips.push({
       key: 'predictive_outlook',
       label: titleOutlook,
-      value: `${v.score}%`,
+      value: formatSemanticOutlookBand(v.value),
       status,
-      explanation: v.explanation?.trim() || undefined,
+      explanation: v.disclaimer?.trim() || v.explanation?.trim() || undefined,
       scrollTargetId: 'dashboard-deep-predictive-outlook',
     });
   }

@@ -2,10 +2,12 @@ import { create } from 'zustand';
 
 import type { AuthUser } from '@/lib/api';
 import {
-  clearApplymateAuthCookie,
+  clearApplymateAuthCookies,
+  readApplymateRefreshTokenFromCookie,
   readApplymateTokenFromCookie,
   removeLegacyTokenFromLocalStorage,
   writeApplymateAuthCookie,
+  writeApplymateRefreshCookie,
 } from '@/lib/authCookie';
 import { broadcastAuthLogout } from '@/lib/authSync';
 import { clearStoredWizard } from '@/lib/onboardingWizardStorage';
@@ -32,8 +34,9 @@ export type ClearAuthOptions = {
 type AuthState = {
   user: AuthUser | null;
   accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
-  setAuth: (user: AuthUser, token: string) => void;
+  setAuth: (user: AuthUser, accessToken: string, refreshToken?: string | null) => void;
   clearAuth: (opts?: ClearAuthOptions) => void;
   /** Restore session token from cookie after full reload (memory-only Zustand resets). */
   hydrateFromStorage: () => void;
@@ -45,32 +48,53 @@ type AuthState = {
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
+  refreshToken: null,
   isAuthenticated: false,
   hydrateFromStorage: () => {
     if (typeof window === 'undefined') return;
     removeLegacyTokenFromLocalStorage();
     const token = readApplymateTokenFromCookie()?.trim();
     if (!token) return;
-    if (get().accessToken) return;
-    set({ accessToken: token, isAuthenticated: true });
+    const refresh = readApplymateRefreshTokenFromCookie()?.trim() ?? null;
+    if (get().accessToken === token && get().refreshToken === refresh) return;
+    set({
+      accessToken: token,
+      refreshToken: refresh,
+      isAuthenticated: true,
+    });
   },
-  setAuth: (user, token) => {
+  setAuth: (user, accessToken, refreshToken) => {
+    const refresh =
+      typeof refreshToken === 'string' && refreshToken.trim()
+        ? refreshToken.trim()
+        : get().refreshToken;
     if (typeof window !== 'undefined') {
       removeLegacyTokenFromLocalStorage();
-      writeApplymateAuthCookie(token);
+      writeApplymateAuthCookie(accessToken);
+      if (refresh) writeApplymateRefreshCookie(refresh);
     }
-    set({ user: withAuthDefaults(user), accessToken: token, isAuthenticated: true });
+    set({
+      user: withAuthDefaults(user),
+      accessToken,
+      refreshToken: refresh ?? null,
+      isAuthenticated: true,
+    });
   },
   clearAuth: (opts) => {
     if (typeof window !== 'undefined') {
       removeLegacyTokenFromLocalStorage();
       clearStoredWizard();
-      clearApplymateAuthCookie();
+      clearApplymateAuthCookies();
       if (!opts?.skipBroadcast) {
         broadcastAuthLogout();
       }
     }
-    set({ user: null, accessToken: null, isAuthenticated: false });
+    set({
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      isAuthenticated: false,
+    });
   },
   syncUserFromMe: (next) =>
     set((s) => {

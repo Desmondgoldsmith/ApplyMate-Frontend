@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 
-import { JobsAnalyzeContent } from '../JobsAnalyzeContent';
+import { JobsAnalyzeContent } from '@/components/jobs/analyze/JobsAnalyzeContent';
 
 export const metadata = { title: 'Analyze Job — ApplyMate' };
 

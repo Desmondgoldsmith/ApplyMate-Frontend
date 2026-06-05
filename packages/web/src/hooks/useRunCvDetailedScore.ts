@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef } from 'react';
 
@@ -76,8 +77,8 @@ export function useRunCvDetailedScore() {
       queryClient.setQueryData<CvImprovementsPayload>(cvSuggestionsQueryKey(cvProfileId), next);
       const id = cvProfileId?.trim();
       if (id) {
-        void queryClient.invalidateQueries({ queryKey: ['cv', 'score', id], exact: true });
-        void queryClient.invalidateQueries({ queryKey: ['cv-profile', id], exact: true });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.cv.score(id), exact: true });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profile(id), exact: true });
       }
     },
   });

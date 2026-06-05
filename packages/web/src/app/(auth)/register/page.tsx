@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { AuthFormCard } from '@/components/auth/AuthFormCard';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { useGoogleOAuthErrorToast } from '@/components/auth/useGoogleOAuthErrorToast';
+import { useSessionReuseToast } from '@/components/auth/useSessionReuseToast';
 import { AuthPasswordInput, AuthTextInput } from '@/components/auth/AuthInputs';
 import { AppShellBackdrop } from '@/components/layout/AppShellBackdrop';
 import { Button } from '@/components/ui/Button';
@@ -28,6 +29,7 @@ function RegisterPageContent() {
   const router = useRouter();
   const toast = useToast();
   useGoogleOAuthErrorToast();
+  useSessionReuseToast();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [form, setForm] = useState<FormValues>({ email: '', password: '' });
   const [errors, setErrors] = useState<
@@ -55,7 +57,7 @@ function RegisterPageContent() {
         email: form.email,
         password: form.password,
       });
-      setAuth(login.user, login.accessToken);
+      setAuth(login.user, login.accessToken, login.refreshToken);
       captureEvent('auth_register_completed');
       toast.success('Account created');
       router.push('/onboarding');

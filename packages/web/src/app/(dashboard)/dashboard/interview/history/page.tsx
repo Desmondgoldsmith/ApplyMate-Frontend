@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -61,9 +62,9 @@ function InterviewHistoryRowActions({ row }: { row: InterviewSession }) {
           onClick={() =>
             retryEvaluation.mutate(undefined, {
               onSuccess: () => {
-                void queryClient.invalidateQueries({ queryKey: ['interview-sessions'] });
-                void queryClient.invalidateQueries({ queryKey: ['interview-session', row.id], exact: true });
-                void queryClient.invalidateQueries({ queryKey: ['interview-result', row.id] });
+                void queryClient.invalidateQueries({ queryKey: queryKeys.interview.sessions() });
+                void queryClient.invalidateQueries({ queryKey: queryKeys.interview.session(row.id), exact: true });
+                void queryClient.invalidateQueries({ queryKey: queryKeys.interview.result(row.id) });
                 router.push(`/dashboard/interview/${row.id}`);
               },
             })

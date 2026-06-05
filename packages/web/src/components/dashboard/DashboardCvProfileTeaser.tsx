@@ -31,7 +31,7 @@ export function DashboardCvProfileTeaser({ onNewCv }: DashboardCvProfileTeaserPr
   return (
     <section>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[15px] font-semibold text-white/90">CV Clinic</h2>
+        <h2 className="text-[15px] font-semibold text-white/90">Resume Clinic</h2>
         <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"

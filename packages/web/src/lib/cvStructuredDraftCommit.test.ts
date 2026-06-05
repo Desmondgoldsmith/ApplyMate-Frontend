@@ -1,3 +1,4 @@
+import { queryKeys } from '@/lib/queryKeys';
 import { describe, expect, it, vi } from 'vitest';
 
 import { cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
@@ -34,11 +35,11 @@ describe('commitAcceptedStructuredDraft', () => {
 
     expect(mutation).toHaveBeenCalledTimes(1);
     expect(qc.refetchQueries).toHaveBeenCalledWith({
-      queryKey: ['cv-profile', id],
+      queryKey: queryKeys.cv.profile(id),
       exact: true,
     });
     expect(qc.refetchQueries).toHaveBeenCalledWith({
-      queryKey: ['cv-sections', id],
+      queryKey: queryKeys.cv.sections(id),
       exact: true,
     });
     expect(qc.refetchQueries).toHaveBeenCalledWith({
@@ -48,7 +49,7 @@ describe('commitAcceptedStructuredDraft', () => {
     expect(onRehydrated).toHaveBeenCalledTimes(1);
 
     expect(qc.invalidateQueries).toHaveBeenCalledTimes(1);
-    expect(qc.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['cv', 'score', id], exact: true });
+    expect(qc.invalidateQueries).toHaveBeenCalledWith({ queryKey: queryKeys.cv.score(id), exact: true });
   });
 
   it('rehydrateCvBuilderAfterStructuredPersist omits mutation', async () => {

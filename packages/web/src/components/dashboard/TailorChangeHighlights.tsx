@@ -7,10 +7,20 @@ import {
   buildTailorSectionChanges,
   type TailorChangeHunk,
 } from '@/lib/cvTailorDiff';
+import { richTextPlainText } from '@/lib/cvRichTextCore';
 import { cn } from '@/lib/utils';
 
+/** Strip rich-text markup (e.g. <strong>, <u>, <a>) so diffs read as clean prose. */
+function cleanDiffText(raw: string): string {
+  if (!raw) return '';
+  return richTextPlainText(raw) || raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 function InlineEdit({ before, after }: { before: string; after: string }) {
-  const tokens = useMemo(() => buildOrderedWordDiff(before, after), [before, after]);
+  const tokens = useMemo(
+    () => buildOrderedWordDiff(cleanDiffText(before), cleanDiffText(after)),
+    [before, after],
+  );
 
   if (tokens.length === 0) {
     return <p className="text-[12px] leading-relaxed text-white/45">No changes</p>;
@@ -44,7 +54,7 @@ function SkillDelta({ removed, added }: { removed: string[]; added: string[] }) 
               key={`rm-${s}`}
               className="rounded-md bg-rose-500/15 px-2 py-0.5 text-[11px] text-rose-200/90 line-through"
             >
-              {s}
+              {cleanDiffText(s)}
             </span>
           ))}
         </div>
@@ -56,7 +66,7 @@ function SkillDelta({ removed, added }: { removed: string[]; added: string[] }) 
               key={`add-${s}`}
               className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-100"
             >
-              + {s}
+              + {cleanDiffText(s)}
             </span>
           ))}
         </div>

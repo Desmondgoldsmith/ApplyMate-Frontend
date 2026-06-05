@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, LayoutGrid, List, Search } from 'lucide-react';
 import Link from 'next/link';
@@ -57,7 +58,9 @@ import {
   type TrackedJob,
 } from './jobHubMerge';
 import { coalesceJobHubEmailTemplateQueryParam } from './jobHubEmailTemplates';
-import { notifyDueLocalReminders } from '@/lib/jobHubLocalReminders';
+import { useHubRemindersPrefetch } from '@/hooks/useHubReminders';
+import { useJobHubLegacyMigration } from '@/hooks/useJobHubLegacyMigration';
+import { notifyDueHubRemindersFromCache } from '@/lib/hubReminderNotifications';
 import { prefillJobAnalyzerInStorage } from '@/lib/jobHubPrefill';
 import { trackFunnelEvent } from '@/lib/actionFunnel';
 
@@ -78,11 +81,11 @@ export function JobHub() {
     mutationFn: (args: { bookmarkId: string; hubPipelineStage: ReturnType<typeof hubStageToHubPipelineStage> }) =>
       api.jobDiscovery.patchBookmark(args.bookmarkId, { hubPipelineStage: args.hubPipelineStage }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['hub-bookmarks'] });
-      void queryClient.invalidateQueries({ queryKey: ['job-history'] });
-      void queryClient.invalidateQueries({ queryKey: ['applications'] });
-      void queryClient.invalidateQueries({ queryKey: ['hub-reminders'] });
-      void queryClient.invalidateQueries({ queryKey: ['career', 'dashboard'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.remindersRoot() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.career.dashboard() });
       invalidateGrowthQueries(queryClient);
       invalidateTodayPlanQueries(queryClient);
     },
@@ -101,12 +104,12 @@ export function JobHub() {
         delete next[args.overrideKey];
         return next;
       });
-      void queryClient.invalidateQueries({ queryKey: ['job-history'] });
-      void queryClient.invalidateQueries({ queryKey: ['job', args.jobAnalysisId] });
-      void queryClient.invalidateQueries({ queryKey: ['hub-bookmarks'] });
-      void queryClient.invalidateQueries({ queryKey: ['applications'] });
-      void queryClient.invalidateQueries({ queryKey: ['hub-reminders'] });
-      void queryClient.invalidateQueries({ queryKey: ['career', 'dashboard'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analysis(args.jobAnalysisId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.remindersRoot() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.career.dashboard() });
       invalidateGrowthQueries(queryClient);
       invalidateTodayPlanQueries(queryClient);
     },
@@ -136,7 +139,7 @@ export function JobHub() {
 
   useEffect(() => {
     const tick = () => {
-      notifyDueLocalReminders();
+      notifyDueHubRemindersFromCache(queryClient);
       setDueUiTick((x) => x + 1);
     };
     tick();
@@ -151,12 +154,18 @@ export function JobHub() {
       window.removeEventListener('focus', tick);
       document.removeEventListener('visibilitychange', onVis);
     };
-  }, []);
+  }, [queryClient]);
 
   const merged = useMemo(
     () => mergeTrackedJobs(apps.data ?? [], history.data ?? [], overrides, hubBookmarks.data ?? []),
     [apps.data, history.data, overrides, hubBookmarks.data],
   );
+
+  const hubDataReady =
+    apps.isSuccess && history.isSuccess && hubBookmarks.isSuccess;
+  const { needsSync, migrationFailed, retryMigration, retrying } =
+    useJobHubLegacyMigration(merged, hubDataReady);
+  useHubRemindersPrefetch();
 
   const [detailJobPin, setDetailJobPin] = useState<TrackedJob | null>(null);
 
@@ -306,11 +315,11 @@ export function JobHub() {
       api.jobs.markAccepted(args.jobAnalysisId),
     onSuccess: (data, vars) => {
       setOverrides((prev) => ({ ...prev, [vars.jobAnalysisId]: 'accepted' }));
-      void queryClient.invalidateQueries({ queryKey: ['career', 'dashboard'] });
-      void queryClient.invalidateQueries({ queryKey: ['job-history'] });
-      void queryClient.invalidateQueries({ queryKey: ['applications'] });
-      void queryClient.invalidateQueries({ queryKey: ['hub-bookmarks'] });
-      void queryClient.invalidateQueries({ queryKey: ['job', vars.jobAnalysisId] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.career.dashboard() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analysis(vars.jobAnalysisId) });
       openShareAchievement(data.badge, vars.title, vars.company);
     },
     onError: (e) => toast.error(getApiErrorMessage(e) || 'Could not mark as accepted'),
@@ -389,7 +398,7 @@ export function JobHub() {
             jobAnalysisId: job.jobAnalysisId,
           })
           .then(() => {
-            void queryClient.invalidateQueries({ queryKey: ['applications'] });
+            void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
             invalidateTodayPlanQueries(queryClient);
           })
           .catch((err) => {
@@ -444,13 +453,13 @@ export function JobHub() {
     (j: TrackedJob) => {
       if (j.jobAnalysisId) {
         void queryClient.prefetchQuery({
-          queryKey: ['job', j.jobAnalysisId],
+          queryKey: queryKeys.jobs.analysis(j.jobAnalysisId),
           queryFn: () => api.jobs.getJob(j.jobAnalysisId!),
         });
       }
       if (j.boardDiscoveryId) {
         void queryClient.prefetchQuery({
-          queryKey: ['job-discovery-detail', j.boardDiscoveryId],
+          queryKey: queryKeys.jobs.discoveryDetail(j.boardDiscoveryId),
           queryFn: () => api.jobDiscovery.getDetail(j.boardDiscoveryId!),
         });
       }
@@ -486,8 +495,8 @@ export function JobHub() {
     },
     onSuccess: () => {
       toast.success('Removed from your list.');
-      void queryClient.invalidateQueries({ queryKey: ['hub-bookmarks'] });
-      void queryClient.invalidateQueries({ queryKey: ['job-discovery'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.discovery({}) });
       invalidateTodayPlanQueries(queryClient);
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -500,16 +509,16 @@ export function JobHub() {
     }) => api.jobs.archive(vars.payload),
     onSuccess: () => {
       toast.success('Archived. Restore anytime under Jobs workspace → Archived jobs.');
-      void queryClient.invalidateQueries({ queryKey: ['hub-bookmarks'] });
-      void queryClient.invalidateQueries({ queryKey: ['job-discovery'] });
-      void queryClient.invalidateQueries({ queryKey: ['applications'] });
-      void queryClient.invalidateQueries({ queryKey: ['job-history'] });
-      void queryClient.invalidateQueries({ queryKey: ['job-analyses'] });
-      void queryClient.invalidateQueries({ queryKey: ['career', 'dashboard'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.discovery({}) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.career.dashboard() });
       invalidateNotificationList(queryClient);
       scheduleUnreadNotificationCountInvalidate(queryClient);
-      void queryClient.invalidateQueries({ queryKey: ['hub-reminders'] });
-      void queryClient.invalidateQueries({ queryKey: ['jobs', 'archive'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.remindersRoot() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.archive() });
       invalidateGrowthQueries(queryClient);
       invalidateTodayPlanQueries(queryClient);
     },
@@ -761,6 +770,27 @@ export function JobHub() {
           </span>
         </p>
       </div>
+
+      {needsSync ? (
+        <GlowCard className="border-amber-400/25 bg-amber-500/10 px-4 py-3">
+          <p className="text-sm text-amber-100/95">
+            {migrationFailed
+              ? `Some notes or reminders on this device could not be synced: ${migrationFailed}`
+              : 'Syncing notes and reminders from this device to your account…'}
+          </p>
+          {migrationFailed ? (
+            <Button
+              type="button"
+              variant="ghost"
+              className="mt-2 border border-amber-400/30 text-xs text-amber-100"
+              disabled={retrying}
+              onClick={() => void retryMigration()}
+            >
+              {retrying ? 'Syncing…' : 'Sync notes'}
+            </Button>
+          ) : null}
+        </GlowCard>
+      ) : null}
 
       <div className="flex flex-col gap-4 xl:flex-row xl:items-stretch xl:min-h-[min(72vh,720px)]">
         <div className="min-h-0 min-w-0 flex-1 space-y-4 xl:overflow-y-auto xl:pr-1 app-scrollbar">

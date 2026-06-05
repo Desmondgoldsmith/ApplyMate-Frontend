@@ -1,122 +1,204 @@
 /* ApplyMate feature tours — driver.js overrides */
 
-/* Dim only — backdrop blur on the overlay washes out the spotlight cutout */
+/* ── Scroll lock while tour runs ── */
+html.applymate-tour-scroll-lock,
+html.applymate-tour-scroll-lock body {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
+html.applymate-tour-scroll-lock main.dashboard-app-canvas-bg {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
+/*
+ * driver.js sets overflow:hidden on parents of the active element, which clips
+ * our spotlight ring. Keep the chain visible instead.
+ */
+html.applymate-tour-scroll-lock header:has(.driver-active-element),
+html.applymate-tour-scroll-lock aside:has(.driver-active-element),
+html.applymate-tour-scroll-lock nav:has(.driver-active-element),
+html.applymate-tour-scroll-lock .applymate-tour-spotlight-chain {
+  overflow: visible !important;
+}
+
+/*
+ * CRITICAL: Never set background on .driver-overlay (the SVG root).
+ * A solid background fills the cutout hole and dims spotlight targets.
+ */
 .driver-overlay {
+  background: transparent !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  pointer-events: auto !important;
 }
 
-/* Active tour: lift spotlight above overlay and clear ancestor blur */
-html.applymate-tour-active .driver-active-element,
-html.applymate-tour-active .applymate-tour-target {
-  position: relative !important;
-  z-index: 100003 !important;
+.driver-overlay path {
+  pointer-events: auto !important;
+}
+
+/* Hide mobile submenu scrims while tour runs — they double-dim spotlight targets */
+html.applymate-tour-scroll-lock button.fixed.z-\[42\].bg-black\/55 {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* ── Spotlight target: ring stays inside driver stage cutout ── */
+.driver-active-element,
+.applymate-tour-spotlight-target {
+  z-index: 100001 !important;
   isolation: isolate !important;
-  transform: translateZ(0);
   opacity: 1 !important;
-  mix-blend-mode: normal !important;
   filter: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  text-shadow: none !important;
+  mix-blend-mode: normal !important;
+  outline: none !important;
   border-radius: inherit;
-  outline: 2px solid #00c9b1 !important;
-  outline-offset: 3px !important;
   box-shadow:
-    0 0 0 1px rgba(0, 201, 177, 0.45),
-    0 0 0 6px rgba(0, 201, 177, 0.14),
-    0 0 28px rgba(0, 201, 177, 0.55),
-    0 16px 48px -12px rgba(0, 201, 177, 0.4) !important;
+    inset 0 0 0 2px #00c9b1,
+    0 0 0 1px rgba(0, 201, 177, 0.55),
+    0 0 20px rgba(0, 201, 177, 0.42) !important;
 }
 
-html.applymate-tour-active .driver-active-element *,
-html.applymate-tour-active .applymate-tour-target * {
+.driver-active-element *,
+.applymate-tour-spotlight-target,
+.applymate-tour-spotlight-target * {
   opacity: 1 !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   mix-blend-mode: normal !important;
-  filter: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
 }
 
-html.applymate-tour-active .applymate-tour-ancestor,
-html.applymate-tour-active header:has(.driver-active-element),
-html.applymate-tour-active nav:has(.driver-active-element),
-html.applymate-tour-active [class*='backdrop-blur']:has(.driver-active-element),
-html.applymate-tour-active
-  [class*='backdrop-blur']:has(.applymate-tour-target) {
+.driver-active-element * {
+  pointer-events: none !important;
+}
+
+/* Ancestor chain: strip blur and lift sidebar / header / mobile sheets */
+.applymate-tour-spotlight-chain {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   filter: none !important;
+  opacity: 1 !important;
+  isolation: isolate !important;
+  overflow: visible !important;
 }
 
-html.applymate-tour-active header:has(.driver-active-element),
-html.applymate-tour-active nav:has(.driver-active-element),
-html.applymate-tour-active .applymate-tour-ancestor {
-  z-index: 100002 !important;
+/* Mobile nav / sheets: opaque shell so spotlight targets are not blurred */
+.applymate-tour-spotlight-shell,
+nav[data-tour='mobile-bottom-nav'].applymate-tour-spotlight-shell,
+[data-tour='mobile-jobs-sheet'].applymate-tour-spotlight-shell,
+[data-tour='mobile-more-sheet'].applymate-tour-spotlight-shell {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+  background: #0c0f0f !important;
+  z-index: 100001 !important;
+  opacity: 1 !important;
 }
 
-html.applymate-tour-active
-  [data-tour='mobile-nav-toggle'].driver-active-element,
-html.applymate-tour-active
-  .driver-active-element[data-tour='mobile-nav-toggle'] {
-  z-index: 100004 !important;
+.applymate-tour-spotlight-shell *,
+.applymate-tour-spotlight-shell .applymate-tour-spotlight-target,
+.applymate-tour-spotlight-shell .driver-active-element {
+  opacity: 1 !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  z-index: 2 !important;
+  position: relative !important;
 }
 
-html.applymate-tour-active
-  [data-tour='mobile-bottom-nav'].driver-active-element,
-html.applymate-tour-active
-  .driver-active-element[data-tour='mobile-bottom-nav'] {
-  z-index: 100004 !important;
+aside.applymate-tour-spotlight-chain,
+header.applymate-tour-spotlight-chain,
+nav.applymate-tour-spotlight-chain {
+  z-index: 100001 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
 }
 
+/* ── Popover ── */
 .driver-popover {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   filter: none !important;
+  z-index: 1000000020 !important;
 }
 
 .applymate-tour-popover.driver-popover {
-  background: linear-gradient(165deg, #161b1b 0%, #101414 100%) !important;
+  background: #141c18 !important;
   border: 1px solid rgba(0, 201, 177, 0.28) !important;
-  border-radius: 18px !important;
-  padding: 18px 20px 16px !important;
+  border-radius: 16px !important;
+  box-sizing: border-box !important;
+  padding: 18px 22px 14px !important;
   max-width: min(340px, calc(100vw - 32px)) !important;
   min-width: min(280px, calc(100vw - 32px)) !important;
   box-shadow:
-    0 20px 50px rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(255, 255, 255, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
-  color: rgba(255, 255, 255, 0.92) !important;
-  z-index: 100005 !important;
+    0 8px 40px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(0, 201, 177, 0.08),
+    0 0 32px rgba(0, 201, 177, 0.06) !important;
+  color: rgba(240, 244, 242, 0.92) !important;
+  overflow: hidden !important;
 }
 
-.applymate-tour-popover .driver-popover-arrow {
-  border-color: #121616 !important;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+.applymate-tour-popover.driver-popover::before {
+  content: '';
+  display: block;
+  height: 3px;
+  margin: -18px -22px 16px;
+  background: rgba(255, 255, 255, 0.06);
 }
 
-.applymate-tour-popover .driver-popover-arrow-side-left {
-  border-left-color: transparent !important;
-  border-right-color: #121616 !important;
+.applymate-tour-popover.driver-popover::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: var(--progress, 14%);
+  background: #00c9b1;
+  transition: width 300ms ease;
+  pointer-events: none;
 }
 
-.applymate-tour-popover .driver-popover-arrow-side-right {
-  border-right-color: transparent !important;
-  border-left-color: #121616 !important;
+.applymate-tour-popover [data-applymate-tour-meta] {
+  padding: 0 0 14px !important;
+  margin: 0 !important;
 }
 
-.applymate-tour-popover .driver-popover-arrow-side-top {
-  border-top-color: transparent !important;
-  border-bottom-color: #121616 !important;
+.applymate-tour-popover .driver-popover-title {
+  display: block !important;
+  padding: 0 !important;
+  margin: 0 0 8px !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  line-height: 1.35 !important;
+  letter-spacing: -0.02em !important;
 }
 
-.applymate-tour-popover .driver-popover-arrow-side-bottom {
-  border-bottom-color: transparent !important;
-  border-top-color: #121616 !important;
+.applymate-tour-popover .driver-popover-description {
+  display: block !important;
+  padding: 0 !important;
+  margin: 0 0 16px !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  color: rgba(255, 255, 255, 0.65) !important;
+  line-height: 1.65 !important;
+}
+
+.applymate-tour-popover .driver-popover-footer {
+  margin-top: 0 !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  padding: 0 !important;
 }
 
 .applymate-tour-meta {
-  margin-bottom: 14px;
+  margin-bottom: 0 !important;
 }
 
 .applymate-tour-kicker {
@@ -148,28 +230,33 @@ html.applymate-tour-active
   transition: width 220ms ease;
 }
 
-.applymate-tour-popover .driver-popover-title {
-  font-size: 16px !important;
-  font-weight: 700 !important;
-  color: #ffffff !important;
-  margin-bottom: 8px !important;
-  line-height: 1.35 !important;
-  letter-spacing: -0.02em !important;
+.applymate-tour-popover.final-step .driver-popover-navigation-btns button {
+  background: linear-gradient(135deg, #00c9b1 0%, #00a896 100%) !important;
 }
 
-.applymate-tour-popover .driver-popover-description {
-  font-size: 13px !important;
-  font-weight: 400 !important;
-  color: rgba(255, 255, 255, 0.62) !important;
-  line-height: 1.65 !important;
-  margin-bottom: 16px !important;
+.applymate-tour-popover .driver-popover-arrow {
+  border-color: #141c18 !important;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
 }
 
-.applymate-tour-popover .driver-popover-footer {
-  margin-top: 0 !important;
-  flex-direction: column !important;
-  align-items: stretch !important;
-  gap: 0 !important;
+.applymate-tour-popover .driver-popover-arrow-side-left {
+  border-left-color: transparent !important;
+  border-right-color: #141c18 !important;
+}
+
+.applymate-tour-popover .driver-popover-arrow-side-right {
+  border-right-color: transparent !important;
+  border-left-color: #141c18 !important;
+}
+
+.applymate-tour-popover .driver-popover-arrow-side-top {
+  border-top-color: transparent !important;
+  border-bottom-color: #141c18 !important;
+}
+
+.applymate-tour-popover .driver-popover-arrow-side-bottom {
+  border-bottom-color: transparent !important;
+  border-top-color: #141c18 !important;
 }
 
 .applymate-tour-popover .driver-popover-navigation-btns {
@@ -184,7 +271,7 @@ html.applymate-tour-active
   color: #080a0a !important;
   border: none !important;
   border-radius: 12px !important;
-  padding: 11px 20px !important;
+  padding: 12px 20px !important;
   font-size: 14px !important;
   font-weight: 600 !important;
   cursor: pointer !important;
@@ -202,14 +289,14 @@ html.applymate-tour-active
 
 .applymate-tour-skip {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.32);
+  color: rgba(255, 255, 255, 0.35);
   background: none;
   border: none;
   cursor: pointer;
-  margin-top: 10px;
+  margin: 4px 0 0 !important;
   width: 100%;
   text-align: center;
-  padding: 10px 8px;
+  padding: 10px 0 0 !important;
   min-height: 44px;
   transition: color 150ms;
 }
@@ -219,26 +306,41 @@ html.applymate-tour-active
 }
 
 @media (max-width: 767px) {
-  .applymate-tour-popover.driver-popover {
-    max-width: calc(100vw - 24px) !important;
-    min-width: calc(100vw - 24px) !important;
-    padding: 16px 18px 14px !important;
+  .applymate-tour-popover.applymate-tour-popover--mobile.driver-popover {
+    position: fixed !important;
+    transform: none !important;
+    max-width: calc(100vw - 32px) !important;
+    min-width: min(280px, calc(100vw - 32px)) !important;
+    padding: 18px 22px 14px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
   }
 
-  .applymate-tour-skip {
-    min-height: 44px;
-    padding: 12px 8px;
+  .applymate-tour-popover.applymate-tour-popover--mobile .driver-popover-arrow {
+    display: none !important;
   }
 
-  html.applymate-tour-active .driver-active-element,
-  html.applymate-tour-active .applymate-tour-target {
-    outline-offset: 2px !important;
+  nav[data-tour='mobile-bottom-nav'],
+  nav[data-tour='mobile-bottom-nav'].applymate-tour-spotlight-chain,
+  nav[data-tour='mobile-bottom-nav'].applymate-tour-spotlight-shell,
+  [data-tour='mobile-jobs-sheet'],
+  [data-tour='mobile-jobs-sheet'].applymate-tour-spotlight-chain,
+  [data-tour='mobile-jobs-sheet'].applymate-tour-spotlight-shell,
+  [data-tour='mobile-more-sheet'],
+  [data-tour='mobile-more-sheet'].applymate-tour-spotlight-chain,
+  [data-tour='mobile-more-sheet'].applymate-tour-spotlight-shell {
+    z-index: 100001 !important;
   }
+}
+
+.applymate-tour-popover.applymate-tour-popover--above.driver-popover,
+.applymate-tour-popover.applymate-tour-popover--below.driver-popover {
+  overflow-y: auto !important;
 }
 
 @media (min-width: 768px) {
   .applymate-tour-skip {
     min-height: 0;
-    padding: 8px;
+    padding-top: 8px !important;
   }
 }

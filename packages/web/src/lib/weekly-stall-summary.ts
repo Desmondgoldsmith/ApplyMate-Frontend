@@ -1,8 +1,10 @@
+import { queryKeys } from '@/lib/queryKeys';
+
 import type { TodayPlanCta } from './today-plan';
 import { resolveTodayPlanHref } from './today-plan';
 
 /** Root segment for React Query keys — invalidated with `invalidateTodayPlanQueries` (see `today-plan.ts`). */
-export const WEEKLY_STALL_SUMMARY_QUERY_ROOT = 'weekly-stall-summary' as const;
+export const WEEKLY_STALL_SUMMARY_QUERY_ROOT = queryKeys.weeklyStallSummary.root()[0];
 
 const LIMIT_DEFAULT = 5;
 const LIMIT_MIN = 1;
@@ -11,7 +13,7 @@ const LIMIT_MAX = 20;
 export function weeklyStallSummaryQueryKey(params?: { limit?: number }) {
   const raw = params?.limit ?? LIMIT_DEFAULT;
   const limit = Math.min(LIMIT_MAX, Math.max(LIMIT_MIN, Number.isFinite(raw) ? raw : LIMIT_DEFAULT));
-  return [WEEKLY_STALL_SUMMARY_QUERY_ROOT, limit] as const;
+  return queryKeys.weeklyStallSummary.key(limit);
 }
 
 export type WeeklyStallCtaHint = 'OPEN_JOB_HUB' | 'OPEN_JOB_ANALYZE';

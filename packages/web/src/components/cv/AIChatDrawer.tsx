@@ -1,19 +1,24 @@
 'use client';
 
-import { Loader2, Send, Sparkles, X } from 'lucide-react';
+import { Loader2, Sparkles, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { CvChatComposer } from '@/components/cv/CvChatComposer';
 import { Button } from '@/components/ui/Button';
 import { api, type ChatConversationHistoryItem, type ChatCreateCVPayload } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
 import type { CvTemplateId } from '@/lib/cvBuilder';
+import {
+  cvChatInputLimitErrorMessage,
+  isCvChatInputOverLimit,
+} from '@/lib/cvChatInputDisplay';
 import { cn } from '@/lib/utils';
 
 type Msg = ChatConversationHistoryItem;
 
 const OPENING =
-  "Let's build your CV together. Tell me your name, target role, and your latest experience.";
+  "Let's build your CV together. Share your background or paste an existing CV — I'll only ask about what's still missing.";
 
 function summarizeExtracted(d: ChatCreateCVPayload): string[] {
   const exp = Array.isArray(d.experience) ? d.experience.length : 0;
@@ -50,11 +55,19 @@ export function AIChatDrawer({ open, onOpenChange, selectedTemplate, onCreated }
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, sending, extractedData]);
 
-  const canSend = input.trim().length > 0 && !sending && !building;
-
   const send = async () => {
     const text = input.trim();
     if (!text || sending || building) return;
+    if (isCvChatInputOverLimit(text.length)) {
+      setMessages((m) => [
+        ...m,
+        {
+          role: 'assistant',
+          content: cvChatInputLimitErrorMessage(text.length),
+        },
+      ]);
+      return;
+    }
     const prior = [...messages];
     setMessages((m) => [...m, { role: 'user', content: text }]);
     setInput('');
@@ -156,24 +169,14 @@ export function AIChatDrawer({ open, onOpenChange, selectedTemplate, onCreated }
                   <p className="mt-2 text-[10px] text-white/40">Template: {selectedTemplate}</p>
                 </div>
               ) : null}
-              <div className="flex gap-2">
-                <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      void send();
-                    }
-                  }}
-                  rows={2}
-                  placeholder="Tell AI about your experience..."
-                  className="min-h-[48px] flex-1 resize-y rounded-xl border border-white/[0.12] bg-[#111616] px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-[#00C9B1]/40"
-                />
-                <Button type="button" className="h-[48px] px-3" disabled={!canSend} onClick={() => void send()}>
-                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </Button>
-              </div>
+              <CvChatComposer
+                value={input}
+                onChange={setInput}
+                onSend={() => void send()}
+                sending={sending}
+                disabled={building}
+                textareaClassName="border-white/[0.12] bg-[#111616]"
+              />
               {extractedData ? (
                 <Button
                   type="button"
@@ -183,8 +186,11 @@ export function AIChatDrawer({ open, onOpenChange, selectedTemplate, onCreated }
                     if (!extractedData) return;
                     setBuilding(true);
                     try {
-                      const profile = await api.cv.chatCreateCV({ ...extractedData, template: selectedTemplate });
-                      onCreated(profile.id);
+                      const { profileId } = await api.cv.chatCreateCV({
+                        ...extractedData,
+                        template: selectedTemplate,
+                      });
+                      onCreated(profileId);
                       onOpenChange(false);
                     } catch {
                       setMessages((m) => [...m, { role: 'assistant', content: 'Build failed. Please try again.' }]);

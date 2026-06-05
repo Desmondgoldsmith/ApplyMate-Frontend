@@ -11,6 +11,7 @@ import {
   SECTION_DRAG_END_EVENT_NAME,
 } from '@/components/cv/cvSectionDrag';
 import { cn } from '@/lib/utils';
+import { recruiterScanHeatmapStyle } from '@/lib/cvRecruiterScan';
 
 export type CVSectionWrapperProps = {
   sectionId: string;
@@ -32,10 +33,24 @@ export function CVSectionWrapper({ sectionId, children, className }: CVSectionWr
   const shouldDimForEntryLevel = isEntryLevelActive && !thisHasFocus;
   const isSectionLevelActive = focusedSection !== null && focusedEntryId === null;
   const shouldDimForSectionLevel = isSectionLevelActive && focusedSection !== sectionId;
-  const dimmed = shouldDimForEntryLevel || shouldDimForSectionLevel;
+
+  /**
+   * While a single suggestion / section assistant diff is under review, keep that exact
+   * section fully visible and dim every other section so attention is on the change being
+   * reviewed. The reviewed section must never be dimmed (it's the one being changed).
+   */
+  const diffSection = ctx?.diffSection?.trim() || null;
+  const isDiffReviewActive = diffSection !== null;
+  const isDiffTarget =
+    isDiffReviewActive && diffSection.toLowerCase() === sectionId.trim().toLowerCase();
+
+  const dimmed = isDiffReviewActive
+    ? !isDiffTarget
+    : shouldDimForEntryLevel || shouldDimForSectionLevel;
   const thisContainsFocusedEntry = focusedEntrySection === sectionId;
   const hasIncomplete = ctx?.incompleteSectionIds?.has(sectionId) === true;
   const spellIssues = ctx?.spellIssuesBySection?.[sectionId] ?? 0;
+  const heatmapEntry = ctx?.recruiterScanHeatmap?.[sectionId];
 
   /** Pin only when this section is the live preview focus target (not merely default accordion `activeSection`). */
   const thisSectionHasAssistantTarget =
@@ -56,13 +71,15 @@ export function CVSectionWrapper({ sectionId, children, className }: CVSectionWr
 
   const sectionOutline = isDropTarget
     ? '2px dashed #00C9B1'
-    : isFocused && thisContainsFocusedEntry
-      ? '1px solid rgba(0,201,177,0.4)'
-      : isFocused
-        ? '1.5px solid #00C9B1'
-        : isHovered
-          ? '1.5px dashed rgba(0,201,177,0.5)'
-          : 'none';
+    : isDiffTarget
+      ? '1.5px solid #10B981'
+      : isFocused && thisContainsFocusedEntry
+        ? '1px solid rgba(0,201,177,0.4)'
+        : isFocused
+          ? '1.5px solid #00C9B1'
+          : isHovered
+            ? '1.5px dashed rgba(0,201,177,0.5)'
+            : 'none';
 
   return (
     <div
@@ -108,15 +125,31 @@ export function CVSectionWrapper({ sectionId, children, className }: CVSectionWr
         outlineOffset: '4px',
         backgroundColor: isDropTarget
           ? 'rgba(0,201,177,0.08)'
-          : isHovered || isFocused
-            ? 'rgba(0,201,177,0.03)'
-            : 'transparent',
-        transition: 'outline-color 120ms, background-color 120ms, opacity 120ms',
-        opacity: dimmed ? 0.45 : 1,
+          : isDiffTarget
+            ? 'rgba(16,185,129,0.05)'
+            : isHovered || isFocused
+              ? 'rgba(0,201,177,0.03)'
+              : 'transparent',
+        transition: 'outline-color 120ms, background-color 120ms, opacity 120ms, box-shadow 120ms',
+        opacity: dimmed
+          ? 0.45
+          : ctx?.recruiterScanHeatmap
+            ? heatmapEntry
+              ? 1
+              : 0.55
+            : 1,
         borderRadius: '4px',
         position: 'relative',
         boxShadow: hasIncomplete ? 'inset 0 0 0 1px rgba(245, 158, 11, 0.45)' : undefined,
+        ...(heatmapEntry ? recruiterScanHeatmapStyle(heatmapEntry) : {}),
       }}
+      title={
+        heatmapEntry
+          ? [heatmapEntry.note, heatmapEntry.focalPoint ? `Focus: ${heatmapEntry.focalPoint}` : '']
+              .filter(Boolean)
+              .join(' · ')
+          : undefined
+      }
     >
       {(hasIncomplete || spellIssues > 0) && (
         <div className="pointer-events-none absolute -right-1.5 -top-2 z-[5] flex items-center gap-1">
@@ -133,6 +166,12 @@ export function CVSectionWrapper({ sectionId, children, className }: CVSectionWr
         </div>
       )}
       {isEditing && showAssistantPin ? <CvSectionAssistantInline sectionId={sectionId} /> : null}
+      {isEditing ? (
+        <div
+          data-cv-entry-toolbar-slot=""
+          className="relative z-[1001] mb-1 min-h-0 pr-11 [&:empty]:hidden"
+        />
+      ) : null}
       {children}
     </div>
   );

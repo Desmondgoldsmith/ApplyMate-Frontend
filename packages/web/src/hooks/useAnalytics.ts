@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useQuery } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
@@ -9,7 +10,7 @@ export function useAnalytics() {
   const accessToken = useAuthStore((s) => s.accessToken);
   return useQuery({
     /** Scope per auth session to avoid stale cross-account analytics. */
-    queryKey: ['analytics', accessToken ?? ''],
+    queryKey: queryKeys.analytics.root(accessToken ?? ''),
     queryFn: api.analytics.getOverview,
     staleTime: 0,
     gcTime: 5 * 60_000,

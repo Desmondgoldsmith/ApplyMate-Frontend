@@ -1,8 +1,9 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { Check, FileDown, Loader2, RotateCcw, X } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { useQueryClient } from '@tanstack/react-query';
@@ -396,7 +397,6 @@ export function CvTailoringSidebar({
   useEffect(() => setMounted(true), []);
   const isSplit = layout === 'split';
   const cvProfileId = draft?.cvProfileId?.trim() ?? '';
-  const changesScrollRef = useRef<HTMLDivElement>(null);
   const resolvedTemplate = useMemo(
     () => (exportTemplate && isCvTemplateId(exportTemplate) ? exportTemplate : 'modern'),
     [exportTemplate],
@@ -407,7 +407,7 @@ export function CvTailoringSidebar({
     if (!id) return;
     await rehydrateCvBuilderAfterStructuredPersist(queryClient, id);
     await queryClient.fetchQuery({
-      queryKey: ['cv-profile', id],
+      queryKey: queryKeys.cv.profile(id),
       queryFn: () => api.cv.getProfileById(id),
     });
     setBuilderHydrateNonce((n) => n + 1);
@@ -512,7 +512,7 @@ export function CvTailoringSidebar({
     <>
       <div
         className={cn(
-          'fixed inset-0 z-[100050] bg-black/70 backdrop-blur-sm transition-opacity duration-300',
+          'fixed inset-0 z-[100050] bg-black/80 transition-opacity duration-300',
           open ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         onClick={onClose}
@@ -521,7 +521,7 @@ export function CvTailoringSidebar({
 
       <div
         className={cn(
-          'pointer-events-none fixed top-0 z-[100060] flex h-[100dvh] max-h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#090C0D] transition-all duration-300 ease-out',
+          'pointer-events-none fixed top-0 z-[100060] flex h-[100dvh] max-h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#090C0D] transition-[opacity,transform] duration-300 ease-out',
           isSplit
             ? 'inset-x-0 w-full'
             : 'right-0 w-full max-w-[440px] border-l border-white/[0.08] shadow-[0_0_0_1px_rgba(0,201,177,0.06)]',
@@ -548,44 +548,24 @@ export function CvTailoringSidebar({
           </button>
         </header>
 
-        <div
-          className={cn(
-            'flex min-h-0 flex-1 overflow-hidden',
-            isSplit && 'grid min-h-0 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_min(420px,38vw)]',
-          )}
-        >
-          {isSplit && cvProfileId ? (
-            <div className="hidden h-full min-h-0 overflow-hidden border-b border-white/[0.08] lg:block lg:border-b-0 lg:border-r">
-              <TailorCvBuilderPane
-                profileId={cvProfileId}
-                rehydrateNonce={builderHydrateNonce}
-                highlightSectionId={builderHighlight?.sectionId ?? null}
-                highlightNonce={builderHighlight?.nonce ?? 0}
-                highlightAction={builderHighlight?.action ?? 'accepted'}
-                onAutosaved={() => onTailoringCvPersisted?.()}
-                onStructuredPersisted={async () => {
-                  await invalidateCv(cvProfileId);
-                }}
-              />
-            </div>
-          ) : null}
-          <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:max-h-[calc(100dvh-3.5rem)]">
-          <div
-            ref={changesScrollRef}
-            className="app-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 pb-8 [-webkit-overflow-scrolling:touch] [scrollbar-gutter:stable] touch-pan-y sm:px-5 sm:py-5"
-            onWheelCapture={(e) => {
-              const el = changesScrollRef.current;
-              if (!el || el.scrollHeight <= el.clientHeight) return;
-              const atTop = el.scrollTop <= 0;
-              const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
-              const scrollingUp = e.deltaY < 0;
-              const scrollingDown = e.deltaY > 0;
-              if ((atTop && scrollingUp) || (atBottom && scrollingDown)) return;
-              el.scrollTop += e.deltaY;
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          >
+        {cvProfileId ? (
+          <div className="flex min-h-0 flex-1 overflow-hidden">
+            <TailorCvBuilderPane
+              profileId={cvProfileId}
+              rehydrateNonce={builderHydrateNonce}
+              highlightSectionId={builderHighlight?.sectionId ?? null}
+              highlightNonce={builderHighlight?.nonce ?? 0}
+              highlightAction={builderHighlight?.action ?? 'accepted'}
+              onAutosaved={() => onTailoringCvPersisted?.()}
+              onStructuredPersisted={async () => {
+                await invalidateCv(cvProfileId);
+              }}
+              tailorChangesBadgeCount={pendingDrafts.length}
+              tailorRightSlot={
+                <div
+                  data-lenis-prevent-wheel
+                  className="app-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 pb-8 [-webkit-overflow-scrolling:touch] [scrollbar-gutter:stable] touch-pan-y sm:px-5 sm:py-5"
+                >
             {!isSplit ? <p className="mb-4 text-[13px] leading-snug text-white/45">{titleLine}</p> : null}
 
             {scoreBeforeTailor != null &&
@@ -810,9 +790,15 @@ export function CvTailoringSidebar({
                 ) : null}
               </div>
             ) : null}
+                </div>
+              }
+            />
           </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden px-6 text-center text-sm text-white/45">
+            No draft loaded.
           </div>
-        </div>
+        )}
       </div>
     </>
   );

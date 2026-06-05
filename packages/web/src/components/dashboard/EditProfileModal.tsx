@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
@@ -31,7 +32,7 @@ export function EditProfileModal({ open, onOpenChange, initialName, email }: Edi
     mutationFn: (payload: { name: string }) => api.users.updateMe(payload),
     onSuccess: (next) => {
       syncUserFromMe(next);
-      void queryClient.invalidateQueries({ queryKey: ['me'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
       toast.success('Profile updated');
       onOpenChange(false);
     },

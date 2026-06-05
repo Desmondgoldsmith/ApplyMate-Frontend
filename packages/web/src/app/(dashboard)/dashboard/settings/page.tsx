@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { Suspense } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -21,6 +22,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { api } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
 import { useAuthStore } from '@/store/useAuthStore';
+import { resetGlobalTourFlags } from '@/components/onboarding/featureTourStorage';
 import { cn } from '@/lib/utils';
 
 import { NotificationsTab } from './NotificationsTab';
@@ -134,7 +136,7 @@ function AccountTab() {
     mutationFn: (payload: { name: string }) => api.users.updateMe(payload),
     onSuccess: (next) => {
       syncUserFromMe(next);
-      void queryClient.invalidateQueries({ queryKey: ['me'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
       toast.success('Profile updated');
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -220,6 +222,7 @@ function sameFeatureList(a: string[], b: string[]): boolean {
 
 function FeaturesTab() {
   const toast = useToast();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { data: user } = useCurrentUser();
   const setSelectedFeatures = useAuthStore((s) => s.setSelectedFeatures);
@@ -240,11 +243,11 @@ function FeaturesTab() {
     mutationFn: (selectedFeatures: string[]) => api.users.updateFeatures(selectedFeatures),
     onSuccess: (data) => {
       setSelectedFeatures(data.selectedFeatures);
-      void queryClient.invalidateQueries({ queryKey: ['me'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
     },
     onError: () => {
       toast.error('Failed to update — please try again');
-      void queryClient.invalidateQueries({ queryKey: ['me'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
     },
   });
 
@@ -359,6 +362,25 @@ function FeaturesTab() {
           );
         })}
       </div>
+
+      <GlowCard contentClassName="p-5 sm:p-6">
+        <h4 className="text-sm font-semibold text-white">Product tour</h4>
+        <p className="mt-1 text-sm text-white/45">
+          Replay the guided walkthrough of your dashboard — AI credits, jobs, CV Clinic, and Pro.
+        </p>
+        <button
+          type="button"
+          className="mt-4 text-sm font-medium text-[#00C9B1] transition-colors hover:text-[#00e5cc]"
+          onClick={() => {
+            resetGlobalTourFlags(user?.id);
+            window.dispatchEvent(new CustomEvent('applymate:tour-restart'));
+            toast.success('Tour reset — opening your dashboard');
+            router.push('/dashboard');
+          }}
+        >
+          Restart product tour
+        </button>
+      </GlowCard>
     </div>
   );
 }

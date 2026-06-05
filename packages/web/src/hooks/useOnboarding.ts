@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
@@ -10,7 +11,7 @@ export function useOnboardingStatus() {
 
   return useQuery({
     /** Scope per session — avoids showing another user's completed onboarding state. */
-    queryKey: ['onboarding', 'status', accessToken ?? ''],
+    queryKey: queryKeys.onboarding.status(accessToken ?? ''),
     queryFn: api.onboarding.getStatus,
     staleTime: 30_000,
     retry: 2,
@@ -23,7 +24,9 @@ export function useSaveOnboardingProgress() {
   return useMutation({
     mutationFn: api.onboarding.saveProgress,
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['onboarding', 'status'] });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.onboarding.statusRoot(),
+      });
     },
   });
 }

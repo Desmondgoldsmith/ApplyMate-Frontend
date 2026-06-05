@@ -1,3 +1,4 @@
+import { queryKeys } from '@/lib/queryKeys';
 import type { QueryClient } from '@tanstack/react-query';
 
 import { cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
@@ -6,13 +7,13 @@ import { cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
 export type RefreshCvStateProfileId = string | null | undefined;
 
 export type RefreshCvStateOptions = {
-  /** Await active refetches for `['cv-profile', profileId]`. */
+  /** Await active refetches for `queryKeys.cv.profile(profileId)`. */
   refreshProfile?: boolean;
-  /** Await active refetches for `['cv-sections', profileId]`. */
+  /** Await active refetches for `queryKeys.cv.sections(profileId)`. */
   refreshSections?: boolean;
   /** Await active refetches for `['cv','suggestions', profileId]`. */
   refreshSuggestions?: boolean;
-  /** Mark `['cv','score', profileId]` stale (scoped); observers refetch if mounted. */
+  /** Mark `queryKeys.cv.score(profileId)` stale (scoped); observers refetch if mounted. */
   invalidateScore?: boolean;
   /** When list metadata may have changed (rename, default flag, etc.). */
   invalidateCvProfilesList?: boolean;
@@ -25,7 +26,7 @@ function canonicalProfileId(profileId: RefreshCvStateProfileId): string | null {
 
 /**
  * Single entry point for post-mutation CV cache alignment — avoids duplicate refetch/invalidate storms.
- * Uses only canonical per-profile keys; no unscoped `['cv','score']` or `['cv-profile']` sweeps.
+ * Uses only canonical per-profile keys; no unscoped `queryKeys.cv.scoreRoot()` or `queryKeys.cv.profileDefault()` sweeps.
  */
 export async function refreshCvState(
   queryClient: QueryClient,
@@ -37,10 +38,10 @@ export async function refreshCvState(
 
   if (id) {
     if (options.refreshProfile) {
-      tasks.push(queryClient.refetchQueries({ queryKey: ['cv-profile', id], exact: true }));
+      tasks.push(queryClient.refetchQueries({ queryKey: queryKeys.cv.profile(id), exact: true }));
     }
     if (options.refreshSections) {
-      tasks.push(queryClient.refetchQueries({ queryKey: ['cv-sections', id], exact: true }));
+      tasks.push(queryClient.refetchQueries({ queryKey: queryKeys.cv.sections(id), exact: true }));
     }
     if (options.refreshSuggestions) {
       tasks.push(queryClient.refetchQueries({ queryKey: cvSuggestionsQueryKey(id), exact: true }));
@@ -50,10 +51,10 @@ export async function refreshCvState(
   await Promise.all(tasks);
 
   if (id && options.invalidateScore) {
-    void queryClient.invalidateQueries({ queryKey: ['cv', 'score', id], exact: true });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cv.score(id), exact: true });
   }
 
   if (options.invalidateCvProfilesList) {
-    void queryClient.invalidateQueries({ queryKey: ['cv-profiles'], exact: true });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles(), exact: true });
   }
 }

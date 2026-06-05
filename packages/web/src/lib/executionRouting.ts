@@ -1,3 +1,4 @@
+import { normalizeDashboardRoute } from '@/lib/dashboardCanonicalRoutes';
 import { normalizeTodayPlanRoute, resolveTodayPlanHref, type TodayPlanCta } from '@/lib/today-plan';
 
 type ResolutionState = 'resolved' | 'degraded' | 'missing_context' | null | undefined;
@@ -64,7 +65,7 @@ function normalizeRoute(href: string | null | undefined): string | null {
   const mapped = href ? mapApiContinuationHref(href) : href;
   const n = normalizeTodayPlanRoute(mapped ?? null);
   if (!n) return null;
-  return n.startsWith('/dashboard/cv-clinic') ? n.replace('/dashboard/cv-clinic', '/dashboard/cv') : n;
+  return normalizeDashboardRoute(n);
 }
 
 function isKnownDashboardRoute(href: string): boolean {
@@ -87,14 +88,7 @@ function isKnownDashboardRoute(href: string): boolean {
 function isMissingContextForRoute(href: string): boolean {
   try {
     const u = new URL(href, 'https://applymate.invalid');
-    /** Same validation as `/dashboard/interview` — alias route redirects here with query preserved. */
-    if (u.pathname === '/dashboard/interview-prep') {
-      return !u.searchParams.get('jobAnalysisId');
-    }
-    if (
-      u.pathname.startsWith('/dashboard/interview') &&
-      !u.pathname.startsWith('/dashboard/interview-prep')
-    ) {
+    if (u.pathname === '/dashboard/interview') {
       return !u.searchParams.get('jobAnalysisId');
     }
     if (u.pathname.startsWith('/dashboard/jobs') && u.searchParams.get('applicationId') !== null) {

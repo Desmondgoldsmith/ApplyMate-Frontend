@@ -7,6 +7,7 @@ import {
   ListPlus,
   Loader2,
   MoreHorizontal,
+  Rows3,
   Sparkles,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -31,6 +32,7 @@ type CvTopChromeMoreMenuProps = {
   spellChecking: boolean;
   onOpenTemplatePicker: () => void;
   onOpenSectionModal: () => void;
+  onOpenSectionOrder?: () => void;
   onOpenAiChat: () => void;
   onTriggerSpellCheck: () => void;
   /** When false, hides “Build with AI” from the overflow menu (e.g. onboarding). */
@@ -44,6 +46,7 @@ export function CvTopChromeMoreMenu({
   spellChecking,
   onOpenTemplatePicker,
   onOpenSectionModal,
+  onOpenSectionOrder,
   onOpenAiChat,
   onTriggerSpellCheck,
   showBuildWithAi = true,
@@ -81,6 +84,16 @@ export function CvTopChromeMoreMenu({
       Icon: ListPlus,
       onSelect: onOpenSectionModal,
     },
+    ...(onOpenSectionOrder
+      ? [
+          {
+            id: 'section-order',
+            label: 'Reorder professionally',
+            Icon: Rows3,
+            onSelect: onOpenSectionOrder,
+          },
+        ]
+      : []),
     ...(showBuildWithAi
       ? [
           {

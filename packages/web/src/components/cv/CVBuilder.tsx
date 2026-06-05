@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import {
   Check,
   ChevronDown,
@@ -48,6 +49,7 @@ import { CvTripleShellPreviewColumn } from '@/components/cv/CvTripleShellPreview
 import {
   api,
   type CVSectionRecord,
+  type CvReorderSectionsResult,
   type CvSpellIssue,
   type CvSpellcheckBulkResult,
   type CvPerformanceMeta,
@@ -60,6 +62,7 @@ import {
   coerceStructuredTextInCvBuilderData,
   emptyCVBuilderData,
   ensureCvPreviewData,
+  filterCvBuilderReferences,
   getCvBuilderSectionFieldText,
   logCvBuilderSavePerfDev,
   newLocalId,
@@ -77,6 +80,15 @@ import {
   dedupePreviewSectionKeys,
   professionalSectionRank,
 } from '@/lib/cvSectionProfessionalOrder';
+import { filterParsedCustomSectionsForEditor, shouldRenderCustomLegacySection } from '@/lib/cvParsedCustomSectionUtils';
+import {
+  readStoredPreviewSectionOrder,
+  writeStoredPreviewSectionOrder,
+} from '@/lib/cvPreviewSectionOrderStorage';
+import {
+  cvSectionOrderSuggestQueryKey,
+  writeSectionOrderBannerDismissed,
+} from '@/lib/cvSectionOrderSuggest';
 import { getApiErrorMessage } from '@/lib/axios';
 import {
   compressImageFileToCvDataUrl,
@@ -87,6 +99,10 @@ import { commitAcceptedStructuredDraft } from '@/lib/cvStructuredDraftCommit';
 import { refreshCvState } from '@/lib/refreshCvState';
 import { cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
 import { normalizeText } from '@/lib/normalizeText';
+import {
+  resolveCvBuilderSurfaceLayout,
+  type CvBuilderSurfaceContext,
+} from '@/lib/cvBuilderSurface';
 import { cn } from '@/lib/utils';
 import { CvOverlayLayerProvider } from '@/components/cv/CvOverlayLayerContext';
 import { useCVAutosave } from '@/hooks/useCVAutosave';
@@ -127,7 +143,9 @@ function mergeNewSectionsIntoData(
   seedIfEmpty('certifications', prev.certifications, incoming.certifications);
   seedIfEmpty('achievements', prev.achievements, incoming.achievements);
   seedIfEmpty('references', prev.references, incoming.references);
-  seedIfEmpty('customSections', prev.customSections, incoming.customSections);
+  if (filterParsedCustomSectionsForEditor(incoming.parsedCustomSections).length === 0) {
+    seedIfEmpty('customSections', prev.customSections, incoming.customSections);
+  }
   if (!prev.experience.items.length && incoming.experience.items.length) {
     next = { ...touch(), experience: { items: incoming.experience.items } };
   }
@@ -156,41 +174,23 @@ const TEMPLATE_LABELS: Record<CvTemplateId, string> = {
   modern: 'Modern',
   creative: 'Creative',
   professional: 'Professional',
-  'europass-classic': 'Europass Classic',
-  'europass-modern': 'Europass Modern',
-  french: 'French CV',
-  german: 'German Lebenslauf',
-  uk: 'UK CV',
+  onyx: 'Onyx',
 };
 
 const EMPTY_INCOMPLETE_SECTION_IDS = new Set<string>();
 
 const TEMPLATE_FIELD_CONFIG = {
-  showInternationalPersonalFields: [
-    'europass-classic',
-    'europass-modern',
-    'french',
-    'german',
-  ] as CvTemplateId[],
-  showPhotoUpload: [
-    'europass-classic',
-    'europass-modern',
-    'french',
-    'german',
-  ] as CvTemplateId[],
-  showHobbies: ['french', 'german'] as CvTemplateId[],
+  showInternationalPersonalFields: [] as CvTemplateId[],
+  showPhotoUpload: ['onyx'] as CvTemplateId[],
+  showHobbies: [] as CvTemplateId[],
   showReferences: [
     'classic',
     'modern',
     'creative',
     'professional',
-    'uk',
-    'german',
+    'onyx',
   ] as CvTemplateId[],
-  showCefrLanguageBreakdown: [
-    'europass-classic',
-    'europass-modern',
-  ] as CvTemplateId[],
+  showCefrLanguageBreakdown: [] as CvTemplateId[],
 } as const;
 
 /** A4 preview canvas size used by CVDocumentPreview layouts (px). */
@@ -536,30 +536,11 @@ function mergePreviewSectionOrder(
   const prevFiltered = prev.filter((k) => serverSet.has(k));
   const prevSet = new Set(prevFiltered);
   const newKeys = server.filter((k) => !prevSet.has(k));
-  if (newKeys.length === 0) {
-    return server;
-  }
-  const sortedNew = [...newKeys].sort(
-    (a, b) =>
-      accordionKeyProfessionalRank(a, sections) -
-      accordionKeyProfessionalRank(b, sections),
-  );
-  const out = [...prevFiltered];
-  for (const nk of sortedNew) {
-    const rnk = accordionKeyProfessionalRank(nk, sections);
-    let insertAt = out.length;
-    for (let i = 0; i < out.length; i++) {
-      if (accordionKeyProfessionalRank(out[i]!, sections) > rnk) {
-        insertAt = i;
-        break;
-      }
-    }
-    out.splice(insertAt, 0, nk);
-  }
+  const out = newKeys.length > 0 ? [...prevFiltered, ...newKeys] : [...prevFiltered];
   for (const k of server) {
     if (!out.includes(k)) out.push(k);
   }
-  return dedupePreviewSectionKeys(out);
+  return dedupePreviewSectionKeys(out.length > 0 ? out : server);
 }
 
 /** Desktop CV Clinic: preview + optional insights (`cv/page.tsx`). */
@@ -590,6 +571,11 @@ function useDesktopLgMedia(): boolean {
 }
 
 export type CVBuilderProps = {
+  /**
+   * Preferred entry point — same editor everywhere; adjusts layout chrome only.
+   * When set, overrides `mode` / `cvMode` unless you pass those explicitly for legacy callers.
+   */
+  builderContext?: CvBuilderSurfaceContext;
   mode: 'onboarding' | 'dashboard';
   /** clinic = default CV Clinic; tailor = Grammarly-style job tailoring split view. */
   cvMode?: 'clinic' | 'tailor';
@@ -624,7 +610,10 @@ export type CVBuilderProps = {
     before: string;
     after: string;
     type: 'added' | 'removed' | 'changed';
+    sectionDiffIndex?: number;
   }> | null;
+  /** Global assistant: inline diff on each changed section in the preview. */
+  diffMultiSection?: boolean;
   onAcceptDiff?: (changeIndex?: number) => void;
   onRejectDiff?: (changeIndex?: number) => void;
   /** While true, preview diff Accept/Reject are disabled (improvement API in flight). */
@@ -648,6 +637,7 @@ export type CVBuilderProps = {
     targetSection?: string,
   ) => Promise<CvAssistantRunResult>;
   cvAssistantBusy?: boolean;
+  cvAssistantBusyMessage?: string | null;
   cvAssistantClarificationQuestion?: string | null;
   /**
    * First onboarding editor visit: hide preview “Incomplete” chips until the user edits
@@ -668,6 +658,11 @@ export type CVBuilderProps = {
   tailorHighlightSectionId?: string | null;
   tailorHighlightNonce?: number;
   tailorHighlightAction?: 'accepted' | 'reverted';
+  /** Clinic assistant Accept: flash + scroll to updated section (~600ms). */
+  assistantAcceptHighlightSectionId?: string | null;
+  assistantAcceptHighlightNonce?: number;
+  /** Recruiter Scan: attention heatmap on preview sections (preview section ids). */
+  recruiterScanHeatmap?: Record<string, import('@/lib/cvRecruiterScan').CvRecruiterScanReadingPathEntry> | null;
   /** When true with an active improvement diff, show factuality trust copy above the preview. */
   improvementDiffTruthPanel?: boolean;
   improvementDiffTruthfulness?: CvTruthfulnessMeta | null;
@@ -675,8 +670,9 @@ export type CVBuilderProps = {
 };
 
 export function CVBuilder({
-  mode,
-  cvMode = 'clinic',
+  builderContext,
+  mode: modeProp,
+  cvMode: cvModeProp,
   initialData,
   selectedTemplate,
   onTemplateChange,
@@ -694,6 +690,7 @@ export function CVBuilder({
   diffBefore = null,
   diffAfter = null,
   diffChangedFields = null,
+  diffMultiSection = false,
   onAcceptDiff,
   onRejectDiff,
   diffActionsDisabled = false,
@@ -709,8 +706,9 @@ export function CVBuilder({
   onDataSnapshotChange,
   cvAssistantCommand,
   cvAssistantBusy,
+  cvAssistantBusyMessage,
   cvAssistantClarificationQuestion,
-  deferIncompletePreviewBadges = false,
+  deferIncompletePreviewBadges: deferIncompletePreviewBadgesProp = false,
   serverHydrateNonce = 0,
   improvementDiffTruthPanel = false,
   improvementDiffTruthfulness = null,
@@ -719,7 +717,20 @@ export function CVBuilder({
   tailorHighlightSectionId = null,
   tailorHighlightNonce = 0,
   tailorHighlightAction = 'accepted',
+  assistantAcceptHighlightSectionId = null,
+  assistantAcceptHighlightNonce = 0,
+  recruiterScanHeatmap = null,
 }: CVBuilderProps) {
+  const surfaceLayout = builderContext
+    ? resolveCvBuilderSurfaceLayout(builderContext)
+    : null;
+  const mode = modeProp ?? surfaceLayout?.mode ?? 'dashboard';
+  const cvMode = cvModeProp ?? surfaceLayout?.cvMode ?? 'clinic';
+  const deferIncompletePreviewBadgesResolved =
+    deferIncompletePreviewBadgesProp ??
+    surfaceLayout?.deferIncompletePreviewBadges ??
+    false;
+
   const queryClient = useQueryClient();
   const toast = useToast();
   const dashboardMainRef = useContext(DashboardMainContext);
@@ -750,20 +761,20 @@ export function CVBuilder({
   const [langCefrOpen, setLangCefrOpen] = useState<Record<string, boolean>>({});
   const [dirty, setDirty] = useState(false);
   const [allowIncompletePreviewBadges, setAllowIncompletePreviewBadges] =
-    useState(() => !deferIncompletePreviewBadges);
+    useState(() => !deferIncompletePreviewBadgesResolved);
   useEffect(() => {
-    if (!deferIncompletePreviewBadges) return undefined;
+    if (!deferIncompletePreviewBadgesResolved) return undefined;
     const id = window.setTimeout(
       () => setAllowIncompletePreviewBadges(true),
       60_000,
     );
     return () => window.clearTimeout(id);
-  }, [deferIncompletePreviewBadges]);
+  }, [deferIncompletePreviewBadgesResolved]);
 
   useEffect(() => {
-    if (deferIncompletePreviewBadges && dirty)
+    if (deferIncompletePreviewBadgesResolved && dirty)
       setAllowIncompletePreviewBadges(true);
-  }, [deferIncompletePreviewBadges, dirty]);
+  }, [deferIncompletePreviewBadgesResolved, dirty]);
   const [saveStatus, setSaveStatus] = useState<CvBuilderSaveStatus>('idle');
   const [focusedPreviewSection, setFocusedPreviewSection] = useState<
     string | null
@@ -793,9 +804,15 @@ export function CVBuilder({
   const [sectionVisibility, setSectionVisibility] = useState<
     Record<string, boolean>
   >({});
-  const [previewSectionOrder, setPreviewSectionOrder] = useState<string[]>(() =>
-    previewOrderFromSections(existingSections),
-  );
+  const [previewSectionOrder, setPreviewSectionOrder] = useState<string[]>(() => {
+    const server = previewOrderFromSections(existingSections);
+    const stored = profileId?.trim() ? readStoredPreviewSectionOrder(profileId.trim()) : null;
+    if (!stored?.length) return server;
+    const serverSet = new Set(server);
+    const fromStored = stored.filter((k) => serverSet.has(k));
+    const merged = fromStored.length > 0 ? [...fromStored, ...server.filter((k) => !fromStored.includes(k))] : server;
+    return dedupePreviewSectionKeys(merged.length > 0 ? merged : server);
+  });
   const [reorderPending, setReorderPending] = useState(false);
   const [spellIssuesBySection, setSpellIssuesBySection] = useState<
     Record<string, number>
@@ -858,11 +875,21 @@ export function CVBuilder({
     setKnownSectionTypes(new Set(existingSections?.map((s) => s.type) ?? []));
   }, [profileId]);
 
+  /** Section row id set — merge preview order only when rows are added/removed, not when `order` alone changes. */
+  const cvSectionIdsSig = useMemo(
+    () =>
+      [...existingSections]
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .map((s) => s.id)
+        .join('|'),
+    [existingSections],
+  );
+
   const cvSectionRowsSig = useMemo(
     () =>
       [...existingSections]
-        .map((s) => s.id)
-        .sort()
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .map((s) => `${s.id}:${s.order}`)
         .join('|'),
     [existingSections],
   );
@@ -902,14 +929,39 @@ export function CVBuilder({
     const pidKey = profileId?.trim() ? profileId.trim() : '__no_profile__';
     if (lastPreviewOrderProfileRef.current !== pidKey) {
       lastPreviewOrderProfileRef.current = pidKey;
-      setPreviewSectionOrder(previewOrderFromSections(existingSections));
+      const server = previewOrderFromSections(existingSections);
+      const pid = profileId?.trim();
+      if (server.length > 0) {
+        setPreviewSectionOrder(server);
+        lastConfirmedPreviewOrderRef.current = server;
+        if (pid) writeStoredPreviewSectionOrder(pid, server);
+      } else {
+        const fromStore = pid ? readStoredPreviewSectionOrder(pid) : null;
+        const next = fromStore?.length ? dedupePreviewSectionKeys(fromStore) : server;
+        setPreviewSectionOrder(next);
+        lastConfirmedPreviewOrderRef.current = next;
+      }
       return;
     }
     setPreviewSectionOrder((prev) =>
       mergePreviewSectionOrder(prev, existingSections),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to id-set / profile changes, not every sections refetch
-  }, [cvSectionRowsSig, mode, profileId]);
+  }, [cvSectionIdsSig, mode, profileId]);
+
+  /** When section row order changes on the server (e.g. after refresh), adopt it unless the user is mid-edit. */
+  useEffect(() => {
+    if (mode !== 'dashboard' || reorderPending || dirty) return;
+    const server = previewOrderFromSections(existingSections);
+    if (server.length === 0) return;
+    setPreviewSectionOrder((prev) => {
+      if (prev.join('|') === server.join('|')) return prev;
+      lastConfirmedPreviewOrderRef.current = server;
+      const pid = profileId?.trim();
+      if (pid) writeStoredPreviewSectionOrder(pid, server);
+      return server;
+    });
+  }, [cvSectionRowsSig, dirty, existingSections, mode, profileId, reorderPending]);
 
   useEffect(() => {
     onReorderPendingChange?.(reorderPending);
@@ -917,8 +969,7 @@ export function CVBuilder({
 
   useEffect(() => {
     if (reorderPending) return;
-    lastConfirmedPreviewOrderRef.current =
-      previewOrderFromSections(existingSections);
+    lastConfirmedPreviewOrderRef.current = previewOrderFromSections(existingSections);
   }, [existingSections, reorderPending]);
 
   const setHeaderPreview = useCallback(
@@ -1004,7 +1055,7 @@ export function CVBuilder({
       seedNew('languages', prev.languages.length > 0, () => {
         const n = touch();
         n.languages = [
-          { id: newLocalId(), language: '', proficiency: 'Fluent' },
+          { id: newLocalId(), language: '', proficiency: '' },
         ];
       });
       seedNew('achievements', prev.achievements.length > 0, () => {
@@ -1013,7 +1064,7 @@ export function CVBuilder({
           { id: newLocalId(), title: '', issuer: '', date: '', detail: '' },
         ];
       });
-      seedNew('references', prev.references.length > 0, () => {
+      seedNew('references', filterCvBuilderReferences(prev.references).length > 0, () => {
         const n = touch();
         n.references = [
           {
@@ -1030,6 +1081,26 @@ export function CVBuilder({
       return changed ? next : prev;
     });
   }, [mode, optionalSectionPresence]);
+
+  /** Drop importer "available upon request" placeholder rows so they never duplicate real references. */
+  useEffect(() => {
+    setData((prev) => {
+      const cleanedRefs = filterCvBuilderReferences(prev.references);
+      const cleanedParsed = filterParsedCustomSectionsForEditor(prev.parsedCustomSections);
+      const refsSame =
+        cleanedRefs.length === prev.references.length &&
+        cleanedRefs.every((r, i) => r.id === prev.references[i]?.id);
+      const parsedSame =
+        cleanedParsed.length === prev.parsedCustomSections.length &&
+        cleanedParsed.every((b, i) => b.sectionId === prev.parsedCustomSections[i]?.sectionId);
+      if (refsSame && parsedSame) return prev;
+      return {
+        ...prev,
+        references: cleanedRefs,
+        parsedCustomSections: cleanedParsed,
+      };
+    });
+  }, [profileId]);
 
   const runCvAssistantWithTarget = useCallback(
     async (
@@ -1116,7 +1187,7 @@ export function CVBuilder({
         next.languages =
           freshData.languages.length > 0
             ? freshData.languages
-            : [{ id: newLocalId(), language: '', proficiency: 'Intermediate' }];
+            : [{ id: newLocalId(), language: '', proficiency: '' }];
       }
       if (currentTypes.has('projects') && prevData.projects.length === 0) {
         next.projects =
@@ -1166,22 +1237,32 @@ export function CVBuilder({
               ];
       }
 
-      const customSections = existingSections.filter((s) =>
+      const customSlugSections = existingSections.filter((s) =>
         s.type.startsWith('custom_'),
       );
-      if (customSections.length > prevData.parsedCustomSections.length) {
-        next.parsedCustomSections =
-          freshData.parsedCustomSections.length > 0
-            ? freshData.parsedCustomSections
-            : customSections.map((s) => ({
-                sectionId: s.id,
-                sectionType: s.type,
-                title: s.type
-                  .replace('custom_', '')
-                  .replace(/_/g, ' ')
-                  .replace(/\b\w/g, (l) => l.toUpperCase()),
-                items: [{ id: newLocalId(), text: '', subItems: [] }],
-              }));
+      const prevParsedIds = new Set(prevData.parsedCustomSections.map((b) => b.sectionId));
+      const newCustomRows = customSlugSections.filter((s) => !prevParsedIds.has(s.id));
+      if (newCustomRows.length > 0) {
+        const added = newCustomRows.map((s) => {
+          const d = (s.data ?? {}) as Record<string, unknown>;
+          const titleFromData =
+            typeof d.title === 'string' && d.title.trim() ? d.title.trim() : '';
+          const title =
+            titleFromData ||
+            s.type
+              .replace(/^custom_?/i, '')
+              .replace(/_/g, ' ')
+              .replace(/\b\w/g, (l) => l.toUpperCase()) ||
+            'Custom section';
+          return {
+            sectionId: s.id,
+            sectionType: s.type,
+            title,
+            items: [{ id: newLocalId(), text: '', subItems: [] }],
+          };
+        });
+        next.parsedCustomSections = [...prevData.parsedCustomSections, ...added];
+        next.customSections = [];
       }
 
       return next;
@@ -1543,6 +1624,16 @@ export function CVBuilder({
         void api.cv
           .removeSection(rowId, profileId)
           .then(async () => {
+            const row = sectionsRef.current.find((s) => s.id === rowId);
+            const d = (row?.data ?? {}) as Record<string, unknown>;
+            const label =
+              (typeof d.title === 'string' && d.title.trim()) ||
+              row?.type
+                ?.replace(/^custom_?/i, '')
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, (l) => l.toUpperCase()) ||
+              id;
+            toastRef.current?.success(`${label} removed from your CV`);
             await refreshCvState(queryClient, profileId, {
               refreshProfile: true,
               refreshSections: true,
@@ -1701,12 +1792,12 @@ export function CVBuilder({
   );
 
   const previewIncompleteSectionIds = useMemo(() => {
-    if (!deferIncompletePreviewBadges || allowIncompletePreviewBadges)
+    if (!deferIncompletePreviewBadgesResolved || allowIncompletePreviewBadges)
       return incompleteSectionIds;
     return EMPTY_INCOMPLETE_SECTION_IDS;
   }, [
     allowIncompletePreviewBadges,
-    deferIncompletePreviewBadges,
+    deferIncompletePreviewBadgesResolved,
     incompleteSectionIds,
   ]);
   const missingFieldsKey = useMemo(
@@ -1913,6 +2004,7 @@ export function CVBuilder({
       setActiveSection,
       focusedSection: focusedPreviewSection,
       setFocusedSection: setFocusedPreviewSection,
+      diffSection,
       focusedEntryId,
       setFocusedEntryId,
       focusedEntrySection,
@@ -1928,8 +2020,10 @@ export function CVBuilder({
       onDismissSpellIssue,
       runCvAssistantCommand: runCvAssistantWithTarget,
       cvAssistantBusy: cvAssistantBusy ?? false,
+      cvAssistantBusyMessage: cvAssistantBusyMessage?.trim() || null,
       cvAssistantClarificationQuestion:
         cvAssistantClarificationQuestion ?? null,
+      recruiterScanHeatmap: recruiterScanHeatmap ?? null,
     }),
     [
       mode,
@@ -1937,6 +2031,7 @@ export function CVBuilder({
       activeSection,
       update,
       focusedPreviewSection,
+      diffSection,
       focusedEntryId,
       focusedEntrySection,
       headerPreview,
@@ -1950,7 +2045,9 @@ export function CVBuilder({
       onDismissSpellIssue,
       runCvAssistantWithTarget,
       cvAssistantBusy,
+      cvAssistantBusyMessage,
       cvAssistantClarificationQuestion,
+      recruiterScanHeatmap,
     ],
   );
 
@@ -1982,7 +2079,7 @@ export function CVBuilder({
       try {
         await api.cv.updateSection(sec.id, { visible: nextVisible }, profileId);
         void queryClient.invalidateQueries({
-          queryKey: ['cv', 'score', profileId],
+          queryKey: queryKeys.cv.score(profileId),
           exact: true,
         });
         void queryClient.invalidateQueries({
@@ -2055,18 +2152,13 @@ export function CVBuilder({
         return;
       }
 
-      const orderedIds = orderSectionRowIdsByPreviewKeys(
-        allSections,
-        dedupedOrder,
-      );
-      if (orderedIds.length !== allSections.length) {
-        setPreviewSectionOrder(lastConfirmedPreviewOrderRef.current);
-        toast.error(
-          'Could not sync section order with the server. Please refresh the page.',
+      const buildOrderedIds = (rows: CVSectionRecord[]): string[] =>
+        orderSectionRowIdsByPreviewKeys(rows, dedupedOrder).filter((rowId) =>
+          rowId?.trim(),
         );
-        return;
-      }
-      if (orderedIds.some((rowId) => !rowId?.trim())) {
+
+      let orderedIds = buildOrderedIds(allSections);
+      if (orderedIds.length === 0) {
         setPreviewSectionOrder(lastConfirmedPreviewOrderRef.current);
         toast.error(
           'Some sections are missing server IDs. Refresh the page so we can load full section rows (including hidden).',
@@ -2074,17 +2166,41 @@ export function CVBuilder({
         return;
       }
 
+      // Partial lists are accepted by the server now (it keeps unlisted rows in place).
+      // On a 400 (stale/unknown id after an add or remove), refetch fresh ids and retry once
+      // so the user never has to manually refresh before reordering.
+      const isUnknownIdError = (e: unknown): boolean =>
+        (e as { response?: { status?: number } })?.response?.status === 400;
+
       try {
         setReorderPending(true);
-        const saved = await api.cv.reorderSections(orderedIds, profileId);
+        let saved: CvReorderSectionsResult;
+        try {
+          saved = await api.cv.reorderSections(orderedIds, profileId);
+        } catch (e) {
+          if (!isUnknownIdError(e)) throw e;
+          const fresh = await api.cv.getSections(true, profileId);
+          if (fresh.length > 0) {
+            orderedIds = buildOrderedIds(fresh);
+          }
+          if (orderedIds.length === 0) throw e;
+          saved = await api.cv.reorderSections(orderedIds, profileId);
+        }
         const serverOrder = previewOrderFromSections(saved.sections);
         if (serverOrder.length > 0) {
           setPreviewSectionOrder(serverOrder);
           lastConfirmedPreviewOrderRef.current = serverOrder;
+          if (profileId?.trim()) {
+            writeStoredPreviewSectionOrder(profileId.trim(), serverOrder);
+          }
         }
         await refreshCvState(queryClient, profileId, {
           refreshProfile: true,
           refreshSections: true,
+        });
+        writeSectionOrderBannerDismissed(profileId);
+        void queryClient.invalidateQueries({
+          queryKey: cvSectionOrderSuggestQueryKey(profileId),
         });
       } catch (e) {
         setPreviewSectionOrder(lastConfirmedPreviewOrderRef.current);
@@ -2371,6 +2487,37 @@ export function CVBuilder({
     tailorHighlightSectionId,
     tailorHighlightNonce,
     tailorHighlightAction,
+    jumpToSection,
+  ]);
+
+  useEffect(() => {
+    if (
+      isTailorView ||
+      !assistantAcceptHighlightSectionId?.trim() ||
+      !assistantAcceptHighlightNonce
+    )
+      return;
+    const sid = assistantAcceptHighlightSectionId.trim();
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.add(sid);
+      if (sid.startsWith('experience')) next.add('experience');
+      return next;
+    });
+    setMobileTab('edit');
+    jumpToSection(sid, undefined, { scrollForm: true });
+    const el = document.getElementById(`cv-section-${sid}`);
+    if (!el) return undefined;
+    el.classList.add('cv-assistant-accept-flash');
+    const t = window.setTimeout(
+      () => el.classList.remove('cv-assistant-accept-flash'),
+      650,
+    );
+    return () => window.clearTimeout(t);
+  }, [
+    isTailorView,
+    assistantAcceptHighlightSectionId,
+    assistantAcceptHighlightNonce,
     jumpToSection,
   ]);
 
@@ -3199,7 +3346,7 @@ export function CVBuilder({
                   </label>
                   <p className="text-[10px] leading-snug text-white/30">
                     JPG, PNG or WEBP · Large photos are resized and compressed
-                    before save · Used by French, German and Europass templates
+                    before save · Used by the Onyx template
                   </p>
                   <details className="mt-1">
                     <summary className="cursor-pointer select-none text-xs text-white/35 hover:text-white/55">
@@ -4241,7 +4388,7 @@ export function CVBuilder({
                   update({
                     languages: [
                       ...data.languages,
-                      { id: newLocalId(), language: '', proficiency: 'Fluent' },
+                      { id: newLocalId(), language: '', proficiency: '' },
                     ],
                   })
                 }
@@ -4308,6 +4455,7 @@ export function CVBuilder({
                         }
                         onFocus={() => jumpToSection('languages')}
                       >
+                        <option value="">Select level</option>
                         {(
                           [
                             'Native',
@@ -4476,7 +4624,7 @@ export function CVBuilder({
           {showReferences ? (
             <AccordionSection
               id="references"
-              title="References (UK CV / Optional)"
+              title="References"
               expanded={expanded.has('references')}
               onToggle={() => toggleAccordion('references')}
               onFocusSection={() => jumpToSection('references')}
@@ -4488,7 +4636,7 @@ export function CVBuilder({
                   onClick={() =>
                     update({
                       references: [
-                        ...data.references,
+                        ...filterCvBuilderReferences(data.references),
                         {
                           id: newLocalId(),
                           name: '',
@@ -4506,9 +4654,7 @@ export function CVBuilder({
               }
             >
               <p className="mb-2 text-[10px] leading-snug text-white/40">
-                References are displayed on UK CVs. For other templates, write
-                &apos;References available upon request.&apos; in your summary
-                or leave blank.
+                References appear in the Onyx template and as an optional section in other layouts.
               </p>
               {data.references.map((ref) => (
                 <GlowCard
@@ -4862,6 +5008,7 @@ export function CVBuilder({
         diffBefore={diffBefore}
         diffAfter={diffAfter}
         diffChangedFields={diffChangedFields}
+        diffMultiSection={diffMultiSection}
         onAcceptDiff={onAcceptDiff}
         onRejectDiff={onRejectDiff}
         diffActionsDisabled={diffActionsDisabled}
@@ -4886,6 +5033,7 @@ export function CVBuilder({
       diffBefore,
       diffAfter,
       diffChangedFields,
+      diffMultiSection,
       onAcceptDiff,
       onRejectDiff,
       diffActionsDisabled,
@@ -5253,10 +5401,17 @@ export function CVBuilder({
     </div>
   );
 
+  const diffActionBarSectionId =
+    diffSection?.trim() ||
+    (diffMultiSection && diffChangedFields?.length
+      ? (diffChangedFields[0]?.fieldPath ?? '').trim()
+      : '');
   const diffActionBar = (
     <CvDiffMobileActionBar
-      visible={Boolean(diffSection?.trim() && onAcceptDiff && onRejectDiff)}
-      sectionId={diffSection}
+      visible={Boolean(
+        diffActionBarSectionId && onAcceptDiff && onRejectDiff,
+      )}
+      sectionId={diffActionBarSectionId || null}
       disabled={diffActionsDisabled}
       onAccept={() => onAcceptDiff?.()}
       onReject={() => onRejectDiff?.()}

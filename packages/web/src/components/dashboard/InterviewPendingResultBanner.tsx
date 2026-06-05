@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -27,7 +28,7 @@ function PendingRow({
   onFailed: (sessionId: string) => void;
 }) {
   const pollQ = useQuery({
-    queryKey: ['interview-result', item.sessionId],
+    queryKey: queryKeys.interview.result(item.sessionId),
     queryFn: () => api.interviews.getResult(item.sessionId),
     refetchInterval: (query) => {
       const poll = query.state.data as InterviewEvaluationPollState | undefined;
@@ -124,8 +125,8 @@ export function InterviewPendingResultBanner({ className }: { className?: string
   const handleReady = (sessionId: string) => {
     clearInterviewPendingResult(sessionId);
     setItems(listPendingInterviewResults());
-    void queryClient.invalidateQueries({ queryKey: ['interview-sessions'] });
-    void queryClient.invalidateQueries({ queryKey: ['interview-session', sessionId], exact: true });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.interview.sessions() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.interview.session(sessionId), exact: true });
   };
 
   const handleFailed = (sessionId: string) => {

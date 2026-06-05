@@ -16,11 +16,7 @@ const TEMPLATE_LABELS: Record<CvTemplateId, string> = {
   modern: 'Modern',
   creative: 'Creative',
   professional: 'Professional',
-  'europass-classic': 'Europass Classic',
-  'europass-modern': 'Europass Modern',
-  french: 'French CV',
-  german: 'German Lebenslauf',
-  uk: 'UK CV',
+  onyx: 'Onyx',
 };
 
 const TEAL = '#00C9B1';
@@ -36,6 +32,8 @@ export type TemplatePickerModalProps = {
   /** When set, only these templates appear (order preserved). */
   templateIds?: readonly CvTemplateId[];
   showFooterHint?: boolean;
+  /** Override modal stacking (e.g. when hosted inside a very-high-z overlay). */
+  layerZIndex?: number;
 };
 
 export function TemplatePickerModal({
@@ -48,6 +46,7 @@ export function TemplatePickerModal({
   modalDescription = 'Pick a layout. Your content stays the same.',
   templateIds,
   showFooterHint = true,
+  layerZIndex,
 }: TemplatePickerModalProps) {
   const ids =
     templateIds && templateIds.length > 0
@@ -62,6 +61,7 @@ export function TemplatePickerModal({
       description={modalDescription}
       scrollBody
       className="max-w-4xl"
+      layerZIndex={layerZIndex}
     >
       {open ? (
         <div className="pr-1">

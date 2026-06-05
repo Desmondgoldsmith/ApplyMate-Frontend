@@ -1,9 +1,13 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
+import { CvScoreSectionExplainer } from '@/components/cv/CvScoreSectionExplainer';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { InfoHint } from '@/components/ui/InfoHint';
+import { useCvScoreSectionActions } from '@/hooks/useCvScoreSectionActions';
 import { cn } from '@/lib/utils';
 import type {
   ATSCompatibility,
@@ -12,12 +16,32 @@ import type {
   CVImprovement,
   CVImprovementItem,
   CVScoreBreakdown,
+  CvDiffPreviewOpenParams,
   JobMatchSectionScore,
   SectionScore,
 } from '@/lib/api';
+import {
+  buildSectionExplainerFallback,
+  cvSectionLabel,
+  parseBreakdownSectionExplainers,
+  parseSectionScoreWithExplainer,
+  type CvSectionScoreExplainer,
+  type CvSectionScoreKey,
+} from '@/lib/cvSectionScoreExplainer';
 import { AtsSimulationInsights } from '@/components/cv/AtsSimulationInsights';
 import { parseAtsSimulationReport } from '@/lib/atsSimulation';
 import { scoreBreakdownFromPayload } from '@/lib/cvBuilder';
+import {
+  formatAiDimensionLabel,
+  hybridBlendCompactLine,
+  hybridOverallFormulaExample,
+  hybridWeightsSummaryLine,
+  hybridWeightsTooltip,
+  hybridScoringFromScorePayload,
+  parseCvHybridScoring,
+  type CvHybridScoringMeta,
+} from '@/lib/cvHybridScoring';
+import type { CVScorePayload } from '@/lib/api';
 
 const RING_VIEW = 80;
 const RING_CX = RING_VIEW / 2;
@@ -47,31 +71,7 @@ const EMPTY_SECTION = (): SectionScore => ({
 });
 
 function parseSectionScore(raw: unknown): SectionScore {
-  if (
-    raw !== null &&
-    typeof raw === 'object' &&
-    !Array.isArray(raw) &&
-    'score' in (raw as object)
-  ) {
-    const o = raw as Record<string, unknown>;
-    const sc = Number(o.score);
-    const w = o.weight !== undefined ? Number(o.weight) : NaN;
-    const flags: CVFlag[] = Array.isArray(o.flags)
-      ? (o.flags as unknown[]).filter(
-          (f): f is CVFlag => f !== null && typeof f === 'object',
-        )
-      : [];
-    return {
-      score: Number.isFinite(sc) ? Math.round(sc) : 0,
-      weight: Number.isFinite(w) ? w : 0,
-      feedback: typeof o.feedback === 'string' ? o.feedback : '',
-      flags,
-    };
-  }
-  if (typeof raw === 'number' && Number.isFinite(raw)) {
-    return { score: Math.round(raw), weight: 0, feedback: '', flags: [] };
-  }
-  return EMPTY_SECTION();
+  return parseSectionScoreWithExplainer(raw);
 }
 
 function parseStringArray(raw: unknown): string[] {
@@ -252,7 +252,292 @@ export type CVScoreCardProps = {
   hideJobMatch?: boolean;
   /** Opens CV assistant with a grounded prompt (e.g. ATS missing keywords). */
   onAtsKeywordAssist?: (prompt: string) => void;
+  /** Hybrid scoring metadata (from GET/POST score); parsed from `breakdown` when omitted. */
+  hybridScoring?: CvHybridScoringMeta | null;
+  /** Optional full score payload for hybrid field extraction. */
+  scorePayload?: CVScorePayload | null;
+  /** CV profile id — enables section explainer actions when set. */
+  cvProfileId?: string | null;
+  /** Pending suggestions used to link explainers to queue rows. */
+  pendingImprovements?: CVImprovementItem[];
+  onDiffPreview?: (params: CvDiffPreviewOpenParams | null) => void;
+  /** Called after a suggestion action so parents can refetch score. */
+  onScoreRefresh?: () => void;
 };
+
+function CvHybridScoringBlock({
+  hybrid,
+  overallScore,
+  compact,
+}: {
+  hybrid: CvHybridScoringMeta;
+  overallScore: number;
+  compact: boolean;
+}) {
+  // AI breakdown unavailable → show a clear heuristic note instead of an empty card.
+  if (!hybrid.aiBreakdownAvailable) {
+    const structural = hybrid.structuralScore;
+    return (
+      <div className={cn('mt-3 w-full min-w-0', compact ? 'px-1' : 'px-0.5')}>
+        <div
+          className={cn(
+            'rounded-xl border border-amber-500/20 bg-amber-500/[0.06]',
+            compact ? 'px-2.5 py-2' : 'px-3 py-2.5',
+          )}
+        >
+          <p
+            className={cn(
+              'font-medium leading-snug text-amber-100/90',
+              compact ? 'text-[10px]' : 'text-[11px]',
+            )}
+          >
+            AI analysis unavailable — showing structural checks only.
+          </p>
+          <p
+            className={cn(
+              'mt-1 leading-snug text-white/45',
+              compact ? 'text-[9px]' : 'text-[10px]',
+            )}
+          >
+            The AI quality review refreshes automatically once AI is available
+            again.
+            {structural != null
+              ? ` Structure score: ${structural}/100.`
+              : ''}
+          </p>
+        </div>
+      </div>
+    );
+  }
+  const t = hybrid.scoringTransparency;
+  const structPct = t?.weights.structuralPercent ?? 30;
+  const aiPct = t?.weights.aiPercent ?? 70;
+  const weightsSummary =
+    hybrid.scoringMethod === 'hybrid'
+      ? hybridWeightsSummaryLine(structPct, aiPct)
+      : null;
+  const weightsTooltip =
+    hybrid.scoringMethod === 'hybrid'
+      ? hybridWeightsTooltip(structPct, aiPct, t?.weights.short)
+      : null;
+  const structural =
+    hybrid.structuralScore != null ? hybrid.structuralScore : null;
+  const ai = hybrid.aiScore != null ? hybrid.aiScore : null;
+  const showBlend =
+    hybrid.scoringMethod === 'hybrid' &&
+    structural != null &&
+    ai != null;
+  const overallRounded = Math.round(overallScore);
+  const blendCompactLine =
+    showBlend && structural != null && ai != null
+      ? hybridBlendCompactLine(structural, ai, overallRounded)
+      : null;
+  const formulaExample =
+    showBlend && structural != null && ai != null
+      ? hybridOverallFormulaExample(
+          structural,
+          ai,
+          structPct,
+          aiPct,
+          overallRounded,
+        )
+      : null;
+  const showRubricOnlyStructure =
+    hybrid.scoringMethod === 'rubric_only' && structural != null;
+  const dimensions = hybrid.aiAssessment?.dimensions ?? {};
+  const dimensionEntries = Object.entries(dimensions).filter(
+    ([, d]) => typeof d.score === 'number',
+  );
+  const summary = hybrid.aiAssessment?.summary?.trim() ?? '';
+
+  return (
+    <div
+      className={cn(
+        'mt-3 w-full min-w-0 space-y-2.5',
+        compact ? 'px-1' : 'px-0.5',
+      )}
+    >
+      <div
+        className={cn(
+          'rounded-xl border border-white/[0.08] bg-white/[0.03]',
+          compact ? 'px-2.5 py-2' : 'px-3 py-2.5',
+        )}
+      >
+        {weightsSummary ? (
+          <div className="text-center">
+            <p
+              className={cn(
+                'leading-snug text-white/55',
+                compact ? 'text-[10px]' : 'text-[11px]',
+              )}
+            >
+              Blended from two scores
+            </p>
+            <div className="mt-1 flex flex-col items-center justify-center gap-0.5">
+              <p
+                className={cn(
+                  'font-medium tabular-nums text-white/40',
+                  compact ? 'text-[9px]' : 'text-[10px]',
+                )}
+              >
+                {weightsSummary}
+              </p>
+              {weightsTooltip ? (
+                <InfoHint
+                  text={weightsTooltip}
+                  buttonAriaLabel="Where the blend weights come from"
+                  tooltipClassName="max-w-[min(20rem,90vw)]"
+                  buttonClassName="h-4 w-4"
+                />
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        {showBlend ? (
+          <>
+            <div
+              className={cn(
+                'mt-2 grid grid-cols-3 gap-1 text-center tabular-nums',
+                compact ? 'text-[10px]' : 'text-[11px]',
+              )}
+            >
+              <div className="min-w-0 rounded-lg bg-white/[0.04] px-1 py-1.5">
+                <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-white/35">
+                  Structure score
+                </p>
+                {t?.structural.short ? (
+                  <div className="mt-0.5 flex justify-center">
+                    <InfoHint
+                      text={t.structural.short}
+                      buttonAriaLabel="What the structure score measures"
+                      tooltipClassName="max-w-[min(18rem,88vw)]"
+                      buttonClassName="h-3.5 w-3.5"
+                    />
+                  </div>
+                ) : null}
+                <p className="mt-0.5 text-[9px] text-white/30">out of 100</p>
+                <p
+                  className="mt-0.5 text-base font-semibold leading-none"
+                  style={{ color: sectionScoreBarColor(structural) }}
+                >
+                  {structural}
+                </p>
+              </div>
+              <div className="min-w-0 rounded-lg bg-white/[0.04] px-1 py-1.5">
+                <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-white/35">
+                  Quality score
+                </p>
+                {t?.ai.short ? (
+                  <div className="mt-0.5 flex justify-center">
+                    <InfoHint
+                      text={t.ai.short}
+                      buttonAriaLabel="What the quality score measures"
+                      tooltipClassName="max-w-[min(18rem,88vw)]"
+                      buttonClassName="h-3.5 w-3.5"
+                    />
+                  </div>
+                ) : null}
+                <p className="mt-0.5 text-[9px] text-white/30">out of 100</p>
+                <p
+                  className="mt-0.5 text-base font-semibold leading-none"
+                  style={{ color: sectionScoreBarColor(ai) }}
+                >
+                  {ai}
+                </p>
+              </div>
+              <div className="rounded-lg border border-[#00C9B1]/20 bg-[#00C9B1]/[0.06] px-1.5 py-1.5">
+                <p className="text-[9px] font-medium uppercase tracking-wide text-[#00C9B1]/80">
+                  Overall score
+                </p>
+                <p className="mt-0.5 text-[9px] text-[#00C9B1]/60">weighted blend</p>
+                <p className="mt-0.5 text-base font-semibold leading-none text-white">
+                  {Math.round(overallScore)}
+                </p>
+              </div>
+            </div>
+            {formulaExample ? (
+              <p
+                className={cn(
+                  'mt-2 text-center font-medium tabular-nums text-white/35',
+                  compact ? 'text-[9px]' : 'text-[10px]',
+                )}
+              >
+                How we calculated this: {formulaExample}
+              </p>
+            ) : null}
+          </>
+        ) : null}
+
+        {hybrid.aiCached && t?.cache.short ? (
+          <div className="mt-2 flex items-center justify-center gap-1.5 border-t border-white/[0.06] pt-2">
+            <span className="text-[10px] font-medium text-white/35">
+              Cached quality review
+            </span>
+            <InfoHint
+              text={t.cache.short}
+              buttonAriaLabel="About cached quality review"
+              tooltipClassName="max-w-[min(18rem,88vw)]"
+            />
+          </div>
+        ) : null}
+      </div>
+
+      {summary ? (
+        <div
+          className={cn(
+            'rounded-xl border-l-2 border-[#00C9B1]/50 bg-white/[0.03] py-2 pl-3 pr-2.5',
+            compact ? 'text-[10px]' : 'text-[11px]',
+          )}
+        >
+          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-white/35">
+            AI review
+          </p>
+          <p className="leading-relaxed text-white/60">{summary}</p>
+        </div>
+      ) : null}
+
+      {dimensionEntries.length > 0 ? (
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-2.5">
+          <p className="mb-2 text-[9px] font-semibold uppercase tracking-wide text-white/35">
+            Quality dimensions
+          </p>
+          <div className="space-y-2">
+            {dimensionEntries.map(([key, dim]) => (
+              <div key={key} className="min-w-0" title={dim.note?.trim() || undefined}>
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span
+                    className={cn(
+                      'truncate text-white/55',
+                      compact ? 'text-[10px]' : 'text-[11px]',
+                    )}
+                  >
+                    {formatAiDimensionLabel(key)}
+                  </span>
+                  <span
+                    className="shrink-0 text-[11px] font-semibold tabular-nums"
+                    style={{ color: sectionScoreBarColor(dim.score) }}
+                  >
+                    {dim.score}
+                  </span>
+                </div>
+                <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500"
+                    style={{
+                      width: `${Math.min(100, Math.max(0, dim.score))}%`,
+                      background: sectionScoreBarColor(dim.score),
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export function CVScoreCard({
   score,
@@ -265,12 +550,76 @@ export function CVScoreCard({
   scorePreview = false,
   hideJobMatch = false,
   onAtsKeywordAssist,
+  hybridScoring,
+  scorePayload,
+  cvProfileId,
+  pendingImprovements = [],
+  onDiffPreview,
+  onScoreRefresh,
 }: CVScoreCardProps) {
   const raw =
     breakdown !== null && typeof breakdown === 'object'
       ? (breakdown as Record<string, unknown>)
       : undefined;
   const br = normalizeScoreBreakdown(raw, score);
+  const hybrid =
+    hybridScoring ??
+    hybridScoringFromScorePayload(scorePayload ?? null) ??
+    parseCvHybridScoring(raw);
+  // Never render an empty ring: only show the circle when there is a real score.
+  const roundedScore = Math.round(score);
+  const showScoreRing = roundedScore > 0;
+  const atsMode = hybrid?.atsMode ?? 'heuristic';
+  const atsIsAiRead = atsMode === 'ai';
+  const sectionExplainersRoot = parseBreakdownSectionExplainers(raw);
+  const { fixWithAi, fixMyself } = useCvScoreSectionActions(
+    cvProfileId,
+    onDiffPreview,
+    onScoreRefresh,
+  );
+  const [actionBusy, setActionBusy] = useState<{
+    key: CvSectionScoreKey;
+    kind: 'ai' | 'self';
+  } | null>(null);
+  const prevScoreRef = useRef(score);
+  const [scoreBump, setScoreBump] = useState(false);
+
+  useEffect(() => {
+    if (score > (prevScoreRef.current ?? 0)) {
+      setScoreBump(true);
+      const t = window.setTimeout(() => setScoreBump(false), 900);
+      prevScoreRef.current = score;
+      return () => window.clearTimeout(t);
+    }
+    prevScoreRef.current = score;
+  }, [score]);
+
+  const resolveExplainer = (
+    key: CvSectionScoreKey,
+    section: SectionScore,
+  ): CvSectionScoreExplainer | null => {
+    const fromSection = section.explainer ?? sectionExplainersRoot[key] ?? null;
+    if (fromSection) return fromSection;
+    return buildSectionExplainerFallback(section, key, pendingImprovements);
+  };
+
+  const runFixWithAi = async (key: CvSectionScoreKey, suggestionId: string) => {
+    setActionBusy({ key, kind: 'ai' });
+    try {
+      await fixWithAi(suggestionId);
+    } finally {
+      setActionBusy(null);
+    }
+  };
+
+  const runFixMyself = async (key: CvSectionScoreKey, suggestionId: string) => {
+    setActionBusy({ key, kind: 'self' });
+    try {
+      await fixMyself(suggestionId);
+    } finally {
+      setActionBusy(null);
+    }
+  };
 
   const experienceScore = br.sections?.experience?.score ?? 0;
   const isLikelyParseFailure =
@@ -355,11 +704,17 @@ export function CVScoreCard({
   );
 
   const atsHeuristicDisclaimer =
-    "These ATS-related items are heuristic checks on structure and text in this product — not a guarantee of how a specific employer's software will score or parse your file.";
+    "These ATS-related items are heuristic checks on structure and text in this product, not a guarantee of how a specific employer's software will score or parse your file.";
 
-  const atsSectionTitle = 'Heuristic ATS analysis';
-  const atsPassedTooltip =
-    'Formatting appears ATS-friendly for these heuristic checks. Recommendations are based on common ATS best practices.';
+  const atsSectionTitle = atsIsAiRead
+    ? 'ATS read (AI-assisted)'
+    : 'ATS read (basic checks)';
+  const atsPassedTooltip = atsIsAiRead
+    ? 'AI-assisted ATS read of your structure and content. Recommendations are based on common ATS best practices.'
+    : 'Formatting appears ATS-friendly for these basic structural checks. Recommendations are based on common ATS best practices.';
+  const atsBadgeFriendlyLabel = atsIsAiRead
+    ? 'ATS-friendly (AI read)'
+    : 'ATS-friendly (basic checks)';
 
   const atsCompatibilitySection = (compactLayout: boolean) => (
     <div
@@ -407,7 +762,7 @@ export function CVScoreCard({
               )}
               title={br.ats.compatible ? atsPassedTooltip : undefined}
             >
-              {br.ats.compatible ? 'ATS-friendly (heuristic)' : 'Suggestions'}
+              {br.ats.compatible ? atsBadgeFriendlyLabel : 'Suggestions'}
             </span>
           </div>
         </div>
@@ -484,95 +839,142 @@ export function CVScoreCard({
         className={cn('flex flex-col', mode === 'compact' ? 'gap-3' : 'gap-5')}
       >
         <div className="flex shrink-0 flex-col items-center px-2 pb-2 pt-0.5 sm:px-3">
+          <div className="mb-2 flex items-center justify-center gap-1">
+            <span
+              className={cn(
+                'font-semibold uppercase tracking-[0.08em] text-white/40',
+                mode === 'compact' ? 'text-[9px]' : 'text-[10px]',
+              )}
+            >
+              Resume score
+            </span>
+            {hybrid ? (
+              (() => {
+                const t = hybrid.scoringTransparency;
+                const hint = [t?.headline, t?.methods[hybrid.scoringMethod]?.short]
+                  .filter(Boolean)
+                  .join('\n\n');
+                return hint ? (
+                  <InfoHint
+                    text={hint}
+                    buttonAriaLabel="How your resume score is calculated"
+                    tooltipClassName="max-w-[min(22rem,92vw)]"
+                  />
+                ) : null;
+              })()
+            ) : null}
+          </div>
+          {showScoreRing ? (
+            <>
+              <motion.svg
+                width={RING_VIEW}
+                height={RING_VIEW}
+                viewBox={`0 0 ${RING_VIEW} ${RING_VIEW}`}
+                className="shrink-0"
+                initial={false}
+                animate={scoreBump ? { scale: [1, 1.04, 1] } : false}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+              >
+                <circle
+                  cx={RING_CX}
+                  cy={RING_CY}
+                  r={RING_R}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.08)"
+                  strokeWidth={RING_STROKE}
+                />
+                <circle
+                  cx={RING_CX}
+                  cy={RING_CY}
+                  r={RING_R}
+                  fill="none"
+                  stroke="#00C9B1"
+                  strokeWidth={RING_STROKE}
+                  strokeDasharray={RING_C}
+                  strokeDashoffset={
+                    RING_C * (1 - Math.min(100, Math.max(0, score)) / 100)
+                  }
+                  strokeLinecap="round"
+                  transform={`rotate(-90 ${RING_CX} ${RING_CY})`}
+                  style={{ transition: 'stroke-dashoffset 1s ease' }}
+                />
+                <text
+                  x={RING_CX}
+                  y={RING_CY}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fill="white"
+                  fontSize="24"
+                  fontWeight="700"
+                >
+                  {roundedScore}
+                </text>
+              </motion.svg>
+              <span className="mt-0.5 text-xs text-white/40">/100</span>
+            </>
+          ) : (
+            <div
+              className="flex max-w-[15rem] flex-col items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-4 text-center"
+              role="status"
+            >
+              <span className="text-[11px] font-semibold text-white/70">
+                Score not available yet
+              </span>
+              <span className="text-[10px] leading-snug text-white/40">
+                Run a scan to generate your resume score. The AI review appears
+                here when it&apos;s ready.
+              </span>
+            </div>
+          )}
           {br.careerStage && !isLikelyParseFailure ? (
-            <div className="mb-2 text-center text-[10px] font-medium uppercase tracking-[0.08em] text-white/35">
+            <div className="mt-2 text-center text-[10px] font-medium uppercase tracking-[0.08em] text-white/35">
               {CAREER_STAGE_LABELS[br.careerStage] ?? br.careerStage}
             </div>
           ) : null}
           {isLikelyParseFailure ? (
             <div
-              style={{
-                fontSize: 11,
-                color: '#F59E0B',
-                textAlign: 'center',
-                marginBottom: 8,
-                padding: '4px 10px',
-                background: 'rgba(245,158,11,0.08)',
-                borderRadius: 6,
-                border: '1px solid rgba(245,158,11,0.2)',
-              }}
+              className="mt-2 rounded-md border border-amber-500/20 bg-amber-500/[0.08] px-2.5 py-1 text-center text-[11px] text-amber-200/90"
+              role="status"
             >
-              CV sections may not have loaded correctly
+              Resume sections may not have loaded correctly
             </div>
           ) : null}
-          <svg
-            width={RING_VIEW}
-            height={RING_VIEW}
-            viewBox={`0 0 ${RING_VIEW} ${RING_VIEW}`}
-            className="shrink-0"
-          >
-            <circle
-              cx={RING_CX}
-              cy={RING_CY}
-              r={RING_R}
-              fill="none"
-              stroke="rgba(255,255,255,0.08)"
-              strokeWidth={RING_STROKE}
+          {hybrid ? (
+            <CvHybridScoringBlock
+              hybrid={hybrid}
+              overallScore={score}
+              compact={mode === 'compact'}
             />
-            <circle
-              cx={RING_CX}
-              cy={RING_CY}
-              r={RING_R}
-              fill="none"
-              stroke="#00C9B1"
-              strokeWidth={RING_STROKE}
-              strokeDasharray={RING_C}
-              strokeDashoffset={
-                RING_C * (1 - Math.min(100, Math.max(0, score)) / 100)
-              }
-              strokeLinecap="round"
-              transform={`rotate(-90 ${RING_CX} ${RING_CY})`}
-              style={{ transition: 'stroke-dashoffset 1s ease' }}
-            />
-            <text
-              x={RING_CX}
-              y={RING_CY}
-              textAnchor="middle"
-              dominantBaseline="central"
-              fill="white"
-              fontSize="24"
-              fontWeight="700"
-            >
-              {Math.round(score)}
-            </text>
-          </svg>
-          <span className="mt-0.5 text-xs text-white/40">/100</span>
+          ) : null}
           {scorePreview && !hideJobMatch ? (
             <span className="mt-2 max-w-[14rem] text-center text-[10px] font-semibold leading-snug text-amber-200/90">
               <span className="rounded-full border border-amber-500/35 bg-amber-500/10 px-2 py-0.5">
                 Preview (not saved)
               </span>
               <span className="mt-1 block font-normal text-white/40">
-                Stored CV score updates only when you run a full scan without
+                Stored resume score updates only when you run a full scan without
                 pasted job text.
               </span>
             </span>
           ) : null}
         </div>
 
-        <div className="min-w-0 flex-1 overflow-x-visible">
-          <p className="mb-1 px-3 text-[10px] font-medium uppercase tracking-[0.08em] text-white/30 sm:px-4">
+        <div className="min-w-0 flex-1 overflow-x-visible border-t border-white/[0.07] pt-3">
+          <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35 sm:px-4">
             Section breakdown
           </p>
-          <div className="overflow-x-visible">
+          <div className="overflow-x-visible rounded-xl border border-white/[0.06] bg-white/[0.015] py-1">
             {sectionOrder.map(({ key, label }) => {
               const section = br.sections[key];
               if (!section) return null;
+              const sectionKey = key as CvSectionScoreKey;
+              const explainer = resolveExplainer(sectionKey, section);
               const sc = section.score;
               const w = section.weight;
               const barColor = sectionScoreBarColor(sc);
               const weightPct =
                 w !== undefined && w > 0 ? Math.round(w * 100) : null;
+              const actionsEnabled = Boolean(cvProfileId?.trim() && explainer?.suggestionId);
               return (
                 <div
                   key={key}
@@ -611,6 +1013,29 @@ export function CVScoreCard({
                       }}
                     />
                   </div>
+                  {explainer ? (
+                    <CvScoreSectionExplainer
+                      sectionLabel={cvSectionLabel(sectionKey)}
+                      score={sc}
+                      explainer={explainer}
+                      compact={mode === 'compact'}
+                      busy={
+                        actionBusy?.key === sectionKey
+                          ? actionBusy.kind
+                          : null
+                      }
+                      onFixWithAi={
+                        actionsEnabled
+                          ? (id) => runFixWithAi(sectionKey, id)
+                          : undefined
+                      }
+                      onFixMyself={
+                        actionsEnabled
+                          ? (id) => runFixMyself(sectionKey, id)
+                          : undefined
+                      }
+                    />
+                  ) : null}
                 </div>
               );
             })}
@@ -625,7 +1050,7 @@ export function CVScoreCard({
                 {Math.round(jobMatch?.score ?? 0)}%
               </p>
               <p className="mt-1 text-[11px] leading-relaxed text-white/35">
-                Heuristic alignment with the job text you provided — not a
+                Heuristic alignment with the job text you provided, not a
                 hiring decision or interview guarantee.
               </p>
               {jobMatch?.feedback?.trim() ? (

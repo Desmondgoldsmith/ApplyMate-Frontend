@@ -3,9 +3,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api, type CareerGoalsWorkspace } from '@/lib/api';
+import { queryKeys } from '@/lib/queryKeys';
 import { invalidateTodayPlanQueries } from '@/lib/today-plan';
 
-export const careerGoalsQueryKey = ['career-goals'] as const;
+export const careerGoalsQueryKey = queryKeys.career.goals();
 
 export function useCareerGoals() {
   return useQuery({

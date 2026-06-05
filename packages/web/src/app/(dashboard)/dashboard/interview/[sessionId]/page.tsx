@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import '@/styles/interview-prep.css';
 
 import { useQueryClient } from '@tanstack/react-query';
@@ -28,9 +29,11 @@ import { InterviewVoiceBanner } from '@/components/interview/InterviewVoiceBanne
 import { useInterviewTTS } from '@/hooks/useInterviewTTS';
 import { MobileExperienceBanner } from '@/components/dashboard/MobileExperienceBanner';
 import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/Toast';
 import {
   useAdaptiveProfile,
   useEnrichedPrepSession,
+  useInterviewPrepQuota,
   useInterviewTurns,
   useSimulationState,
   useSkillProfile,
@@ -100,7 +103,15 @@ import {
   resolveCoachPersonality,
   COACH_PERSONALITIES,
 } from '@/lib/coachPersonalities';
-import { getApiErrorCode, getApiErrorMessage } from '@/lib/axios';
+import {
+  getApiErrorCode,
+  getApiErrorMessage,
+  isInterviewPrepWeeklyLimitApiError,
+} from '@/lib/axios';
+import {
+  formatInterviewPrepQuotaReset,
+  readInterviewPrepWeeklyLimitFromError,
+} from '@/lib/interviewPrepQuota';
 import {
   buildSubmitAnswersFromTurns,
   isMainInterviewTurn,
@@ -232,6 +243,7 @@ function isTurnAnswerTooShortError(error: unknown): boolean {
 }
 
 function shouldRetryInterviewSubmit(error: unknown): boolean {
+  if (isInterviewPrepWeeklyLimitApiError(error)) return false;
   if (!axios.isAxiosError(error)) return true;
   const status = error.response?.status;
   if (status === undefined) return true;
@@ -260,9 +272,13 @@ export default function InterviewSessionPage() {
   const sessionId =
     typeof params.sessionId === 'string' ? params.sessionId : '';
 
+  const toast = useToast();
   const sessionQ = useInterviewSession(sessionId || null);
+  const quotaQ = useInterviewPrepQuota();
+  const prepQuota = quotaQ.data;
   const submitAnswers = useSubmitInterviewAnswers(sessionId);
   const retryEvaluation = useRetryInterviewEvaluation(sessionId);
+  const voicePaidOnlyToastShownRef = useRef(false);
   const [phase, setPhase] = useState<InterviewPhase>('loading');
   const [introStage, setIntroStage] = useState<IntroStage>('greeting');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -593,6 +609,20 @@ export default function InterviewSessionPage() {
   }, [personality?.id, sessionPersona]);
 
   const ttsSessionId = (session?.id ?? sessionId) || null;
+  const interviewerVoiceEnabled = prepQuota?.voiceEnabled ?? false;
+
+  const onPremiumVoiceBlocked = useCallback(
+    (upgradeMessage: string) => {
+      if (voicePaidOnlyToastShownRef.current) return;
+      voicePaidOnlyToastShownRef.current = true;
+      toast.info(upgradeMessage);
+    },
+    [toast],
+  );
+
+  useEffect(() => {
+    voicePaidOnlyToastShownRef.current = false;
+  }, [sessionId]);
 
   const interviewTTS = useInterviewTTS({
     sessionId: ttsSessionId,
@@ -602,6 +632,8 @@ export default function InterviewSessionPage() {
     voiceName: personality?.voiceName,
     voiceRate,
     voicePitch,
+    voiceEnabled: interviewerVoiceEnabled,
+    onPremiumVoiceBlocked,
   });
 
   const interviewTtsRef = useRef(interviewTTS);
@@ -935,7 +967,7 @@ export default function InterviewSessionPage() {
     ) {
       clearPendingSubmission(session.id);
       clearInterviewPendingResult(session.id);
-      const resultKey = ['interview-result', session.id] as const;
+      const resultKey = queryKeys.interview.result(session.id);
       const cached = queryClient.getQueryData(resultKey) as
         | { status?: string }
         | undefined;
@@ -1193,7 +1225,7 @@ export default function InterviewSessionPage() {
     setPhase('results');
     queueMicrotask(() => {
       void queryClient.invalidateQueries({
-        queryKey: ['interview-session', sessionId],
+        queryKey: queryKeys.interview.session(sessionId),
         exact: true,
       });
       void queryClient.invalidateQueries({
@@ -1308,6 +1340,24 @@ export default function InterviewSessionPage() {
             finishingInterviewRef.current = false;
             return;
           }
+          if (isInterviewPrepWeeklyLimitApiError(err)) {
+            const details = readInterviewPrepWeeklyLimitFromError(err);
+            finishingInterviewRef.current = false;
+            const resetSuffix = details?.quotaResetsAt
+              ? ` Quota resets ${formatInterviewPrepQuotaReset(
+                  details.quotaResetsAt,
+                  prepQuota?.quotaTimezone ?? 'UTC',
+                )}.`
+              : '';
+            setSubmitError(
+              details
+                ? `${details.upgradeMessage}${resetSuffix}`
+                : getApiErrorMessage(err),
+            );
+            void quotaQ.refetch();
+            setPhase('answer_feedback');
+            return;
+          }
           finishingInterviewRef.current = true;
           setSubmitError(getApiErrorMessage(err));
           setPhase('answer_feedback');
@@ -1319,6 +1369,8 @@ export default function InterviewSessionPage() {
     clearPendingSubmission,
     persistPendingSubmission,
     phase,
+    prepQuota?.quotaTimezone,
+    quotaQ,
     session?.id,
     submitAnswers,
     submitRetryAttempt,
@@ -1399,10 +1451,10 @@ export default function InterviewSessionPage() {
     retryEvaluation.mutate(undefined, {
       onSuccess: () => {
         void queryClient.invalidateQueries({
-          queryKey: ['interview-result', sessionId],
+          queryKey: queryKeys.interview.result(sessionId),
         });
         void queryClient.invalidateQueries({
-          queryKey: ['interview-session', sessionId],
+          queryKey: queryKeys.interview.session(sessionId),
           exact: true,
         });
         void resultQ.refetch();
@@ -2558,6 +2610,15 @@ export default function InterviewSessionPage() {
                     prepMode={prepMode}
                     adaptiveOn={showAdaptiveBadge}
                   />
+                ) : null}
+
+                {prepQuota ? (
+                  <p
+                    className="mx-5 text-center text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]"
+                    aria-live="polite"
+                  >
+                    {prepQuota.voiceEnabled ? 'AI voice (Pro)' : 'Text practice'}
+                  </p>
                 ) : null}
 
                 <SimulationPanel

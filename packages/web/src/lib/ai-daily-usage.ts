@@ -1,9 +1,7 @@
-/**
- * Daily AI usage display + guards — data comes from the API (`GET /users/me`, UTC day).
- * The server enforces limits; this module maps `AuthUser` into UI state.
- */
+import type { QueryClient } from '@tanstack/react-query';
 
 import type { AuthUser } from '@/lib/api';
+import { queryKeys } from '@/lib/queryKeys';
 
 export type DailyAiUsage = {
   used: number;
@@ -19,7 +17,15 @@ export type DailyAiUsage = {
 };
 
 export const DAILY_AI_LIMIT_REACHED_MESSAGE =
-  "You've reached today's limit of free AI actions (CV scan, chat, spellcheck, apply-with-AI, and similar). Counts reset at UTC midnight.";
+  "You've reached today's limit of free AI actions (tailor, apply-with-AI, merge, and similar). Refreshing your CV score does not count. Resets at UTC midnight.";
+
+/** Shown near CV suggestion bulk actions when the server sends quota copy. */
+export const CV_SCORE_NO_AI_USE_NOTE =
+  'Refreshing your CV score does not use a daily AI action.';
+
+/** Tailor CTA helper — one charge for the whole operation. */
+export const CV_TAILOR_ONE_AI_USE_NOTE =
+  'Uses 1 daily AI action for the whole tailor (not per section).';
 
 /** Appended in CV flows when surfacing quota errors (links to `#pricing` elsewhere). */
 export const AI_QUOTA_UPGRADE_HINT = 'Upgrade your plan for higher daily limits — open Plans from the dashboard.';
@@ -60,7 +66,7 @@ export function mapMeToDailyAiUsage(
   const limit =
     typeof me?.aiDailyLimit === 'number' && Number.isFinite(me.aiDailyLimit)
       ? me.aiDailyLimit
-      : 5;
+      : 10;
   const used = typeof me?.aiUsesToday === 'number' && Number.isFinite(me.aiUsesToday) ? me.aiUsesToday : 0;
   const remaining =
     typeof me?.aiUsesRemaining === 'number' && Number.isFinite(me.aiUsesRemaining)
@@ -82,4 +88,14 @@ export function canUseAiFromDailyAiUsage(u: DailyAiUsage): boolean {
   if (u.isLoading) return true;
   if (!u.isLimited || u.isPaidTier) return true;
   return (u.remaining ?? 0) > 0;
+}
+
+/** Invalidate `GET /users/me` after an action that consumes daily AI quota. */
+export function invalidateDailyAiUsageQuery(
+  queryClient: QueryClient,
+  accessToken: string | null | undefined,
+): void {
+  void queryClient.invalidateQueries({
+    queryKey: queryKeys.auth.me(accessToken ?? ''),
+  });
 }

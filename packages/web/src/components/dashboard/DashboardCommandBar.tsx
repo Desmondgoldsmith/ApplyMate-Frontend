@@ -43,7 +43,7 @@ function noticeEyebrow(source: CommandNoticeSource | undefined): string {
     case 'priority_intelligence':
       return 'Priority';
     case 'cv_clinic':
-      return 'CV clinic';
+      return 'Resume clinic';
     case 'continuation':
       return 'Continue';
     default:

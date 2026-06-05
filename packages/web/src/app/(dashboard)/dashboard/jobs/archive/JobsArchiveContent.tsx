@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { Archive, LayoutGrid, List, Loader2, RotateCcw, Search, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
@@ -68,7 +69,7 @@ export function JobsArchiveContent() {
   const [purgeRow, setPurgeRow] = useState<ArchiveRow | null>(null);
 
   const listQ = useQuery({
-    queryKey: ['jobs', 'archive'],
+    queryKey: queryKeys.jobs.archive(),
     queryFn: () => api.jobs.listArchive(),
     staleTime: 30_000,
   });
@@ -96,12 +97,12 @@ export function JobsArchiveContent() {
     mutationFn: (row: ArchiveRow) => api.jobs.restoreArchive(archivePayloadForRow(row)),
     onSuccess: (data) => {
       toast.success(data.message || 'Restored to your workspace.');
-      void queryClient.invalidateQueries({ queryKey: ['jobs', 'archive'] });
-      void queryClient.invalidateQueries({ queryKey: ['hub-bookmarks'] });
-      void queryClient.invalidateQueries({ queryKey: ['applications'] });
-      void queryClient.invalidateQueries({ queryKey: ['job-history'] });
-      void queryClient.invalidateQueries({ queryKey: ['job-analyses'] });
-      void queryClient.invalidateQueries({ queryKey: ['career', 'dashboard'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.archive() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.career.dashboard() });
       invalidateTodayPlanQueries(queryClient);
     },
     onError: (e) => toast.error(getApiErrorMessage(e) || 'Could not restore'),
@@ -111,7 +112,7 @@ export function JobsArchiveContent() {
     mutationFn: (row: ArchiveRow) => deleteArchiveFn(row),
     onSuccess: () => {
       toast.success('Permanently deleted.');
-      void queryClient.invalidateQueries({ queryKey: ['jobs', 'archive'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.archive() });
       setPurgeRow(null);
     },
     onError: (e) => toast.error(getApiErrorMessage(e) || 'Could not delete'),

@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useQuery } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
@@ -31,7 +32,7 @@ function discoveryPlaceholderAllowed(prev: JobDiscoveryParams, next: JobDiscover
 
 export function useJobDiscovery(params: JobDiscoveryParams, enabled = true) {
   return useQuery({
-    queryKey: ['job-discovery', params],
+    queryKey: queryKeys.jobs.discovery(params),
     queryFn: () => api.jobDiscovery.discover(params),
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,

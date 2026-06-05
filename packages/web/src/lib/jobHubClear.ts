@@ -1,7 +1,8 @@
 /**
  * Job Hub workspace data in localStorage (not auth tokens). Call on sign-out so
- * another account on the same browser does not inherit bookmarks / notes / reminders.
- * Server-backed reminders & application notes are unaffected.
+ * another account on the same browser does not inherit stage overrides or legacy
+ * note/reminder keys. Hub notes and CRM reminders are server-backed; migration flag
+ * `applymate:job-hub:migrated-notes-v1` is cleared with other hub keys.
  */
 export function clearJobHubBrowserStorage() {
   if (typeof window === 'undefined') return;

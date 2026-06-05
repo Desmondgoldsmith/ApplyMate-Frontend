@@ -1,3 +1,4 @@
+import { queryKeys } from '@/lib/queryKeys';
 import { QueryClient } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -29,28 +30,25 @@ describe('refreshCvStateAfterCvParseSuccess', () => {
 
     await refreshCvStateAfterCvParseSuccess(qc, profile);
 
-    expect(setSpy).toHaveBeenCalledWith(['cv-profile', 'pid-1'], profile);
+    expect(setSpy).toHaveBeenCalledWith(queryKeys.cv.profile('pid-1'), profile);
     expect(refetchSpy).toHaveBeenCalledWith({
-      queryKey: ['cv-profile', 'pid-1'],
+      queryKey: queryKeys.cv.profile('pid-1'),
       exact: true,
-      type: 'active',
     });
     expect(refetchSpy).toHaveBeenCalledWith({
-      queryKey: ['cv-sections', 'pid-1'],
+      queryKey: queryKeys.cv.sections('pid-1'),
       exact: true,
-      type: 'active',
     });
     expect(refetchSpy).toHaveBeenCalledWith({
       queryKey: cvSuggestionsQueryKey('pid-1'),
       exact: true,
-      type: 'active',
     });
     expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: ['cv', 'score', 'pid-1'],
+      queryKey: queryKeys.cv.score('pid-1'),
       exact: true,
     });
     expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: ['cv-profiles'],
+      queryKey: queryKeys.cv.profiles(),
       exact: true,
     });
   });
@@ -69,7 +67,7 @@ describe('refreshCvStateAfterCvParseSuccess', () => {
 
     expect(refetchSpy).not.toHaveBeenCalled();
     expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: ['cv-profiles'],
+      queryKey: queryKeys.cv.profiles(),
       exact: true,
     });
   });

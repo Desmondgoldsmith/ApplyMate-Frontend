@@ -1,5 +1,6 @@
 import { api } from '@/lib/api';
 import type { AuthUser } from '@/lib/api';
+import { getLastRequestId } from '@/lib/observability/requestId';
 import { getPostHog, initPostHog, isPostHogEnabled } from '@/lib/posthog';
 
 import {
@@ -16,9 +17,11 @@ export function captureEvent(
 
   const client = getPostHog() ?? (isPostHogEnabled() ? initPostHog() : null);
   if (client) {
+    const requestId = getLastRequestId();
     client.capture(eventName, {
       ...properties,
       $current_url: window.location.href,
+      ...(requestId ? { requestId } : {}),
     });
   }
 

@@ -1,3 +1,4 @@
+import { queryKeys } from '@/lib/queryKeys';
 import type { QueryClient } from '@tanstack/react-query';
 
 import { logCvDevPerfWallMs } from '@/lib/cvDevPerf';
@@ -17,12 +18,12 @@ export function reconcileAfterCvSuggestionMutation(
   const id = profileId?.trim();
   if (!id) return 0;
   let n = 0;
-  void queryClient.invalidateQueries({ queryKey: ['cv', 'score', id], exact: true });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.cv.score(id), exact: true });
   n += 1;
   void queryClient.invalidateQueries({ queryKey: cvSuggestionsQueryKey(id), exact: true });
   n += 1;
   if (kind === 'structuralAccept') {
-    void queryClient.invalidateQueries({ queryKey: ['cv-profiles'], exact: true });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles(), exact: true });
     n += 1;
   }
   return n;

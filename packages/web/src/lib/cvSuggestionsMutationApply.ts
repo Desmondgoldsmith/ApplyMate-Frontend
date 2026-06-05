@@ -46,6 +46,28 @@ export function applySuggestionAcceptToImprovementsCache(
   };
 }
 
+/** Merge self-fix (in progress) into the pending suggestions cache — row leaves pending queue. */
+export function applySuggestionSelfFixToImprovementsCache(
+  prev: CvImprovementsPayload | undefined,
+  pointer: string,
+  product: CvSuggestionMutationResult,
+): CvImprovementsPayload | undefined {
+  if (!prev?.improvements) return prev;
+  const rid = pointer.trim();
+  const serverIds = normalizeIdSet(product.rejectedSuggestionIds);
+  const remove = serverIds ?? new Set([rid]);
+  const nextList = prev.improvements.filter((it) => !remove.has((it?.id ?? '').trim()));
+  return {
+    ...prev,
+    improvements: nextList,
+    pendingSuggestionsCount: product.pendingSuggestionsCount ?? Math.max(0, nextList.length),
+    ...mergeRevisionFromCommit(prev, {
+      cvRevisionId: product.cvRevisionId ?? undefined,
+      structuredRevisionHash: product.structuredRevisionHash,
+    }),
+  };
+}
+
 /** Merge single-suggestion reject into the pending suggestions cache. */
 export function applySuggestionRejectToImprovementsCache(
   prev: CvImprovementsPayload | undefined,

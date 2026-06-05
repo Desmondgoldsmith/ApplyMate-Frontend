@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef } from 'react';
 
@@ -21,8 +22,8 @@ export function useUploadCV(cvProfileId?: string | null) {
     retry: cvParseMutationShouldRetry,
     onSuccess: async (result) => {
       await refreshCvStateAfterCvParseSuccess(queryClient, result.profile);
-      void queryClient.invalidateQueries({ queryKey: ['me'] });
-      void queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
     },
   });
 }

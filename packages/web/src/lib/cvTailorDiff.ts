@@ -1,3 +1,8 @@
+import {
+  coerceAiPatchToDisplayString,
+  isAiPatchOperation,
+} from '@/lib/cvAiPatchDisplay';
+
 export type CvTailorDiffLine = {
   type: 'same' | 'added' | 'removed';
   text: string;
@@ -8,13 +13,19 @@ export type TailorChangeHunk =
   | { kind: 'text'; label: string; before: string; after: string }
   | { kind: 'bullet'; label: string; before: string; after: string };
 
-function parseSectionJson(raw: string): unknown {
+function parseSectionJson(raw: string, sectionType = ''): unknown {
   const t = raw?.trim() ?? '';
   if (!t) return null;
   try {
-    return JSON.parse(t) as unknown;
+    const parsed = JSON.parse(t) as unknown;
+    if (isAiPatchOperation(parsed)) {
+      const text = coerceAiPatchToDisplayString(parsed, sectionType);
+      return text || parsed;
+    }
+    return parsed;
   } catch {
-    return t;
+    const fromPatch = coerceAiPatchToDisplayString(t, sectionType);
+    return fromPatch || t;
   }
 }
 
@@ -131,8 +142,8 @@ export function buildTailorSectionChanges(
   changedFields: string[] = [],
 ): TailorChangeHunk[] {
   const st = sectionType.trim().toLowerCase();
-  const beforeParsed = parseSectionJson(beforeRaw);
-  const afterParsed = parseSectionJson(afterRaw);
+  const beforeParsed = parseSectionJson(beforeRaw, st);
+  const afterParsed = parseSectionJson(afterRaw, st);
   const hunks: TailorChangeHunk[] = [];
 
   if (st === 'skills' || st === 'skill') {

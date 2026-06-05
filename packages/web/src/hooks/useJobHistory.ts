@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
@@ -17,8 +18,8 @@ export function useJobHistory(params?: {
   const includeAccepted = params?.includeAccepted === true;
   return useQuery({
     queryKey: hasPagination
-      ? ['job-history', params!.limit ?? 'all', params!.offset ?? 0, includeAccepted]
-      : ['job-history', includeAccepted],
+      ? queryKeys.jobs.historyWithPagination(params!.limit ?? 'all', params!.offset ?? 0, includeAccepted)
+      : queryKeys.jobs.history(includeAccepted),
     queryFn: () => api.jobs.getHistory(params),
     staleTime: 0,
     refetchOnMount: 'always',
@@ -31,7 +32,7 @@ export function useJobHistoryPage(pageIndex: number, pageSize = JOB_HISTORY_PAGE
   const limit = Math.min(Math.max(1, pageSize), 50);
   const offset = pageIndex * limit;
   return useQuery({
-    queryKey: ['job-history', 'page', limit, offset],
+    queryKey: queryKeys.jobs.historyPage(limit, offset),
     queryFn: () => api.jobs.getHistoryPaginated({ limit, offset }),
     staleTime: 0,
     refetchOnMount: 'always',

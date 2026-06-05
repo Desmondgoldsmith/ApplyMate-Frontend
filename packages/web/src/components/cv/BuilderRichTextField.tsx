@@ -1,7 +1,14 @@
 'use client';
 
 import { Bold, Italic, Link2, Underline } from 'lucide-react';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from 'react';
 
 import { normalizeEditableHtml, toDisplayRichHtml } from '@/lib/cvRichTextCore';
 import { cn } from '@/lib/utils';
@@ -57,6 +64,31 @@ export const BuilderRichTextField = memo(function BuilderRichTextField({
       lastRangeRef.current = range.cloneRange();
     }
   }, []);
+
+  /**
+   * Capture the user's live highlight at the exact moment a toolbar button is pressed.
+   * Runs on `mousedown` (before focus moves / the click side-effects collapse the
+   * selection), so the formatting/link commands always see the real range — this
+   * is what fixes the false "highlight the text first" alert.
+   */
+  const captureSelection = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    const range = sel.getRangeAt(0);
+    if (range.collapsed) return;
+    const el = editorRef.current;
+    if (el && el.contains(range.commonAncestorContainer)) {
+      lastRangeRef.current = range.cloneRange();
+    }
+  }, []);
+
+  const onToolbarMouseDown = useCallback(
+    (e: ReactMouseEvent) => {
+      e.preventDefault();
+      captureSelection();
+    },
+    [captureSelection],
+  );
 
   useEffect(() => {
     const el = editorRef.current;
@@ -157,7 +189,7 @@ export const BuilderRichTextField = memo(function BuilderRichTextField({
           type="button"
           title="Bold"
           className="rounded p-1 text-white/60 hover:bg-white/10 hover:text-white"
-          onMouseDown={(e) => e.preventDefault()}
+          onMouseDown={onToolbarMouseDown}
           onClick={() => wrapSelection('bold')}
         >
           <Bold className="h-3.5 w-3.5" />
@@ -166,7 +198,7 @@ export const BuilderRichTextField = memo(function BuilderRichTextField({
           type="button"
           title="Italic"
           className="rounded p-1 text-white/60 hover:bg-white/10 hover:text-white"
-          onMouseDown={(e) => e.preventDefault()}
+          onMouseDown={onToolbarMouseDown}
           onClick={() => wrapSelection('italic')}
         >
           <Italic className="h-3.5 w-3.5" />
@@ -175,7 +207,7 @@ export const BuilderRichTextField = memo(function BuilderRichTextField({
           type="button"
           title="Underline"
           className="rounded p-1 text-white/60 hover:bg-white/10 hover:text-white"
-          onMouseDown={(e) => e.preventDefault()}
+          onMouseDown={onToolbarMouseDown}
           onClick={() => wrapSelection('underline')}
         >
           <Underline className="h-3.5 w-3.5" />
@@ -184,13 +216,9 @@ export const BuilderRichTextField = memo(function BuilderRichTextField({
           type="button"
           title="Insert link"
           className="rounded p-1 text-white/60 hover:bg-white/10 hover:text-white"
-          onMouseDown={(e) => e.preventDefault()}
+          onMouseDown={onToolbarMouseDown}
           onClick={() => {
             syncAnchorState();
-            const sel = window.getSelection();
-            if (sel?.rangeCount && !sel.getRangeAt(0).collapsed) {
-              lastRangeRef.current = sel.getRangeAt(0).cloneRange();
-            }
             setShowLink((v) => !v);
           }}
         >

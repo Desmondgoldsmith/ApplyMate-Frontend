@@ -130,18 +130,11 @@ function pickUser(obj: UnknownRecord, depth = 0): NormalizedUser | undefined {
 /**
  * Maps common backend shapes (camelCase, snake_case, nested `data`) to what the app expects.
  */
-/** Use after refresh endpoint when only a token is returned. */
-export function normalizeRefreshResponse(data: unknown): {
-  accessToken: string;
-} {
-  if (!isRecord(data)) {
-    throw new Error('Invalid refresh response');
-  }
-  const accessToken = pickToken(data);
-  if (!accessToken) {
-    throw new Error('Refresh response missing access token');
-  }
-  return { accessToken };
+/** Same shape as login — refresh rotates both tokens and may return user. */
+export function normalizeRefreshResponse(
+  data: unknown,
+): { accessToken: string; refreshToken?: string; user: NormalizedUser } {
+  return normalizeAuthResponse(data);
 }
 
 export function normalizeAuthResponse(

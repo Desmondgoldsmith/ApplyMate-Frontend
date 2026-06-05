@@ -22,7 +22,7 @@ function row(partial: Partial<UpcomingInterviewItem> & Pick<UpcomingInterviewIte
     daysUntilInterview: partial.daysUntilInterview ?? null,
     confidence: partial.confidence ?? null,
     ctaLabel: 'Start interview practice',
-    ctaHref: `/dashboard/interview-prep?jobAnalysisId=${partial.jobAnalysisId}`,
+    ctaHref: `/dashboard/interview?jobAnalysisId=${partial.jobAnalysisId}`,
     lastUpdatedAt: null,
     ...partial,
   };

@@ -44,6 +44,12 @@ function scheduleFlush(): void {
 
 /** Non-blocking analytics — debounced batch, never awaited on hot path. */
 export function enqueueInterviewAnalyticsEvent(evt: QueuedEvent): void {
+  if (evt.eventName === 'interview_started') {
+    trackConversionFunnelEvent('interview_started', {
+      ...evt.context,
+      sessionId: evt.sessionId,
+    });
+  }
   queue.push(evt);
   scheduleFlush();
 }

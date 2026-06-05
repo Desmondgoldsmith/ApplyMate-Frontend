@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useQuery } from '@tanstack/react-query';
 
 import { resolveJobApplyUrl } from '@/lib/jobApplyUrl';
@@ -15,7 +16,7 @@ export function useJobApplyUrl(opts: {
   const enabled = opts.enabled !== false && !direct && Boolean(listingId);
 
   const q = useQuery({
-    queryKey: ['job-apply-url', listingId],
+    queryKey: queryKeys.jobs.applyUrl(listingId),
     queryFn: () => resolveJobApplyUrl({ jobListingId: listingId }),
     enabled,
     staleTime: 5 * 60 * 1000,

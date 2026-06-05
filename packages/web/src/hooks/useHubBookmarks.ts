@@ -1,12 +1,13 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useQuery } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
 
 export function useHubBookmarks() {
   return useQuery({
-    queryKey: ['hub-bookmarks'],
+    queryKey: queryKeys.hub.bookmarks(),
     queryFn: async () => {
       try {
         return await api.jobDiscovery.listBookmarks();

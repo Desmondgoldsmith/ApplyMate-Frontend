@@ -4,6 +4,8 @@ import { Info } from 'lucide-react';
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { Modal } from '@/components/ui/Modal';
+import { usePrefersFinePointer } from '@/hooks/usePrefersFinePointer';
 import { cn } from '@/lib/utils';
 
 type InfoHintProps = {
@@ -16,6 +18,13 @@ type InfoHintProps = {
   tooltipClassName?: string;
   /** Default is teal accent (consistent across dashboard). Use `muted` for the legacy neutral panel only if needed. */
   variant?: 'accent' | 'muted';
+  /**
+   * On touch/coarse pointers, open a full-screen-friendly sheet instead of hover tooltip.
+   * Set false only for rare cases where hover-only is intentional.
+   */
+  sheetOnTouch?: boolean;
+  /** Optional sheet title (defaults to buttonAriaLabel). */
+  sheetTitle?: string;
 };
 
 const VARIANT_PANEL: Record<NonNullable<InfoHintProps['variant']>, string> = {
@@ -35,9 +44,15 @@ export function InfoHint({
   buttonAriaLabel,
   tooltipClassName,
   variant = 'accent',
+  sheetOnTouch = true,
+  sheetTitle,
 }: InfoHintProps) {
+  const prefersFinePointer = usePrefersFinePointer();
+  const useSheet = sheetOnTouch && !prefersFinePointer;
+
   const tooltipId = useId();
   const [open, setOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [coords, setCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLSpanElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -51,9 +66,10 @@ export function InfoHint({
   }, []);
 
   const scheduleClose = useCallback(() => {
+    if (useSheet) return;
     clearCloseTimer();
     closeTimerRef.current = setTimeout(() => setOpen(false), CLOSE_DELAY_MS);
-  }, [clearCloseTimer]);
+  }, [clearCloseTimer, useSheet]);
 
   const layoutRetries = useRef(0);
 
@@ -88,15 +104,15 @@ export function InfoHint({
   }, []);
 
   useLayoutEffect(() => {
-    if (!open) return;
+    if (!open || useSheet) return;
     layoutRetries.current = 0;
     measureAndPosition();
     const id = requestAnimationFrame(() => measureAndPosition());
     return () => cancelAnimationFrame(id);
-  }, [open, text, measureAndPosition]);
+  }, [open, text, measureAndPosition, useSheet]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || useSheet) return;
     const onScrollOrResize = () => measureAndPosition();
     window.addEventListener('scroll', onScrollOrResize, true);
     window.addEventListener('resize', onScrollOrResize);
@@ -104,12 +120,21 @@ export function InfoHint({
       window.removeEventListener('scroll', onScrollOrResize, true);
       window.removeEventListener('resize', onScrollOrResize);
     };
-  }, [open, measureAndPosition]);
+  }, [open, measureAndPosition, useSheet]);
 
   useEffect(() => () => clearCloseTimer(), [clearCloseTimer]);
 
+  const toggle = () => {
+    clearCloseTimer();
+    if (useSheet) {
+      setSheetOpen((v) => !v);
+      return;
+    }
+    setOpen((v) => !v);
+  };
+
   const tooltip =
-    open && typeof document !== 'undefined'
+    !useSheet && open && typeof document !== 'undefined'
       ? createPortal(
           <div
             ref={panelRef}
@@ -141,6 +166,7 @@ export function InfoHint({
         ref={triggerRef}
         className={cn('relative inline-flex items-center', className)}
         onPointerEnter={() => {
+          if (useSheet) return;
           clearCloseTimer();
           setOpen(true);
         }}
@@ -150,13 +176,14 @@ export function InfoHint({
           role="button"
           tabIndex={0}
           aria-label={buttonAriaLabel ?? 'More information'}
-          aria-expanded={open}
-          aria-describedby={open ? tooltipId : undefined}
-          onClick={() => {
-            clearCloseTimer();
-            setOpen((v) => !v);
+          aria-expanded={useSheet ? sheetOpen : open}
+          aria-describedby={!useSheet && open ? tooltipId : undefined}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggle();
           }}
           onFocus={() => {
+            if (useSheet) return;
             clearCloseTimer();
             setOpen(true);
           }}
@@ -164,27 +191,39 @@ export function InfoHint({
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
-              clearCloseTimer();
-              setOpen((v) => !v);
+              toggle();
             }
             if (e.key === 'Escape') {
               e.preventDefault();
               clearCloseTimer();
               setOpen(false);
+              setSheetOpen(false);
             }
           }}
           className={cn(
-            'inline-flex h-4.5 w-4.5 items-center justify-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C9B1]/40',
+            'inline-flex items-center justify-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C9B1]/40',
+            useSheet ? 'h-7 w-7 min-h-[28px] min-w-[28px]' : 'h-4.5 w-4.5',
             variant === 'accent'
               ? 'text-[#7ef4e6]/90 hover:text-[#00C9B1]'
               : 'text-white/45 hover:text-[#00C9B1]',
             buttonClassName,
           )}
         >
-          <Info className="h-3.5 w-3.5" aria-hidden />
+          <Info className={cn(useSheet ? 'h-4 w-4' : 'h-3.5 w-3.5')} aria-hidden />
         </span>
       </span>
       {tooltip}
+      {useSheet ? (
+        <Modal
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+          title={sheetTitle ?? buttonAriaLabel ?? 'More information'}
+          scrollBody
+          className="max-w-md"
+        >
+          <p className="whitespace-pre-line text-sm leading-relaxed text-white/70">{text}</p>
+        </Modal>
+      ) : null}
     </>
   );
 }

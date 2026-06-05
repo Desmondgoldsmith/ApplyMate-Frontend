@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Copy, FileDown, Loader2, Search } from 'lucide-react';
@@ -15,6 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { useToast } from '@/components/ui/Toast';
 import { useAnalyzeJob } from '@/hooks/useAnalyzeJob';
+import { useJobAnalyzeLocationPayload } from '@/hooks/useJobAnalyzeLocationPayload';
 import { useDailyAiUsage } from '@/hooks/useDailyAiUsage';
 import { useCVProfile } from '@/hooks/useCVProfile';
 import { useCVProfiles } from '@/hooks/useCVProfiles';
@@ -26,6 +28,11 @@ import {
   scheduleUnreadNotificationCountInvalidate,
 } from '@/hooks/useNotifications';
 import { useJobHistory } from '@/hooks/useJobHistory';
+import { AI_PROMPT_INPUT_JOB_DESCRIPTION_MAX_CHARS } from '@/lib/ai-prompt-input.limits';
+import {
+  formatJobDescriptionCharCount,
+  isJobDescriptionOverAiLimit,
+} from '@/lib/aiPromptInputDisplay';
 import {
   api,
   type ApplicationItem,
@@ -47,6 +54,10 @@ import { resolveCvProfileIdForSavedJob } from '@/lib/jobAnalysisCvContext';
 import { consumePrefetchByContextToken, FRESH_ANALYZE_PREFILL_SESSION } from '@/lib/jobHubPrefill';
 import { getApiErrorMessage } from '@/lib/axios';
 import { trackFunnelEvent } from '@/lib/actionFunnel';
+import {
+  trackConversionFunnelEvent,
+  trackUpgradePrompted,
+} from '@/lib/analytics';
 import { downloadCoverLetterPdf } from '@/lib/cover-letter-pdf';
 import { substituteCoverLetterCandidateName } from '@/lib/cover-letter-placeholders';
 import { normalizeText } from '@/lib/normalizeText';
@@ -312,6 +323,9 @@ export function JobsContent() {
   const { data: cvProfilesData, isPending: cvProfilesPending } = useCVProfiles();
   const cvProfiles = cvProfilesData?.rows ?? [];
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const analyzeLocationPayload = useJobAnalyzeLocationPayload(
+    selectedProfileId && cv?.id === selectedProfileId ? cv.location : null,
+  );
   const storeUser = useAuthStore((s) => s.user);
   const activeJobId = useUIStore((s) => s.activeJobId);
   const setActiveJobId = useUIStore((s) => s.setActiveJobId);
@@ -422,9 +436,9 @@ export function JobsContent() {
         if (!next) return prev;
         analysisMergeRef.current = next;
         persistSessionSnapshot(title, company, description, next);
-        queryClient.setQueryData(['job-analysis-current'], next);
-        void queryClient.invalidateQueries({ queryKey: ['job-history'] });
-        void queryClient.invalidateQueries({ queryKey: ['job-analyses'] });
+        queryClient.setQueryData(queryKeys.jobs.analysisCurrent(), next);
+        void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
         return next;
       });
     },
@@ -433,6 +447,7 @@ export function JobsContent() {
 
   const handleCreateTailorDraft = useCallback(async () => {
     if (tailorAiBlocked || !canUseAiFromDailyAiUsage(aiUsage)) {
+      trackUpgradePrompted('jobs_content_tailor');
       toast.error(DAILY_AI_LIMIT_REACHED_MESSAGE);
       return;
     }
@@ -470,6 +485,12 @@ export function JobsContent() {
           jobAnalysisId: (result.draft.jobAnalysisId ?? '').trim() || jobAnalysisIdForTailor,
           cvProfileId: (result.draft.cvProfileId ?? '').trim() || cvProfileIdForTailor,
         },
+      });
+      trackConversionFunnelEvent('cv_tailored', {
+        jobAnalysisId: jobAnalysisIdForTailor,
+        cvProfileId: cvProfileIdForTailor,
+        skillCount: selectedSkillNames.length,
+        surface: 'jobs_content',
       });
       queueMicrotask(() => setTailorSidebarOpen(true));
     } catch (e) {
@@ -552,29 +573,29 @@ export function JobsContent() {
       setAnalysis(scored.analysis);
       setViewingSavedAnalysis(false);
       persistSessionSnapshot(title, company, description, scored.analysis);
-      queryClient.setQueryData(['job-analysis-current'], scored.analysis);
-      void queryClient.invalidateQueries({ queryKey: ['me'] });
-      void queryClient.invalidateQueries({ queryKey: ['analytics'] });
-      void queryClient.invalidateQueries({ queryKey: ['cv-profile'] });
-      void queryClient.invalidateQueries({ queryKey: ['cv-profile', cvId] });
-      void queryClient.invalidateQueries({ queryKey: ['cv-profiles'] });
-      void queryClient.invalidateQueries({ queryKey: ['cv', 'score', cvId] });
-      void queryClient.invalidateQueries({ queryKey: ['cv', 'score'] });
+      queryClient.setQueryData(queryKeys.jobs.analysisCurrent(), scored.analysis);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profileDefault() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profile(cvId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.score(cvId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.scoreRoot() });
       void queryClient.invalidateQueries({ queryKey: cvSuggestionsQueryKey(cvId) });
       void queryClient.invalidateQueries({ queryKey: CV_SUGGESTIONS_QUERY_ROOT });
       window.setTimeout(() => {
-        void queryClient.invalidateQueries({ queryKey: ['cv', 'score', cvId] });
-        void queryClient.invalidateQueries({ queryKey: ['cv', 'score'] });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.cv.score(cvId) });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.cv.scoreRoot() });
       }, 2500);
-      void queryClient.invalidateQueries({ queryKey: ['job-history'] });
-      void queryClient.invalidateQueries({ queryKey: ['job-analyses'] });
-      void queryClient.invalidateQueries({ queryKey: ['job', jobId] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analysis(jobId) });
       invalidateTodayPlanQueries(queryClient);
       toast.success('Job match updated from your saved analysis');
     } catch (e) {
       const msg = getApiErrorMessage(e) || 'Could not refresh job match';
       toast.error(msg);
-      void queryClient.invalidateQueries({ queryKey: ['me'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
     } finally {
       setRematching(false);
     }
@@ -705,11 +726,11 @@ export function JobsContent() {
         detail = await api.jobs.getJob(jobId);
       } catch {
         await queryClient.ensureQueryData({
-          queryKey: ['job-history'],
+          queryKey: queryKeys.jobs.history(),
           queryFn: () => api.jobs.getHistory(),
         });
         const items = ensureArray<JobHistoryItem>(
-          queryClient.getQueryData<JobHistoryItem[]>(['job-history']) ?? history.data,
+          queryClient.getQueryData<JobHistoryItem[]>(queryKeys.jobs.history()) ?? history.data,
         );
         const item = items.find((i) => i.id === jobId);
         if (!item) {
@@ -943,8 +964,8 @@ export function JobsContent() {
   const recordApplication = useMutation({
     mutationFn: api.applications.create,
     onMutate: async (payload) => {
-      await queryClient.cancelQueries({ queryKey: ['applications'] });
-      const previous = queryClient.getQueryData<ApplicationItem[]>(['applications']);
+      await queryClient.cancelQueries({ queryKey: queryKeys.applications.root() });
+      const previous = queryClient.getQueryData<ApplicationItem[]>(queryKeys.applications.root());
       const optimistic: ApplicationItem = {
         id: `optimistic-${Date.now()}`,
         title: payload.title,
@@ -954,22 +975,22 @@ export function JobsContent() {
         status: 'applied',
         createdAt: new Date().toISOString(),
       };
-      queryClient.setQueryData<ApplicationItem[]>(['applications'], (old = []) => [
+      queryClient.setQueryData<ApplicationItem[]>(queryKeys.applications.root(), (old = []) => [
         optimistic,
         ...old,
       ]);
       return { previous };
     },
     onError: (_e, _v, ctx) => {
-      queryClient.setQueryData(['applications'], ctx?.previous ?? []);
+      queryClient.setQueryData(queryKeys.applications.root(), ctx?.previous ?? []);
     },
     onSuccess: () => {
       invalidateNotificationList(queryClient);
       scheduleUnreadNotificationCountInvalidate(queryClient);
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['applications'] });
-      void queryClient.invalidateQueries({ queryKey: ['job-analyses'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
       invalidateGrowthQueries(queryClient);
       invalidateTodayPlanQueries(queryClient);
     },
@@ -1019,6 +1040,7 @@ export function JobsContent() {
         description,
         applicationQuestions: [],
         ...(selectedProfileId ? { cvProfileId: selectedProfileId } : {}),
+        ...analyzeLocationPayload,
       },
       {
         onSuccess: (res) => {
@@ -1037,7 +1059,7 @@ export function JobsContent() {
           analysisMergeRef.current = res;
           setAnalysis(res);
           setViewingSavedAnalysis(false);
-          void queryClient.invalidateQueries({ queryKey: ['job-analyses'] });
+          void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
           const analysisId = (res.id ?? '').trim();
           const hb = pendingHubBookmarkIdRef.current;
           if (hb && analysisId) {
@@ -1052,7 +1074,7 @@ export function JobsContent() {
                   /* ignore */
                 }
               }
-              void queryClient.invalidateQueries({ queryKey: ['hub-bookmarks'] });
+              void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
               invalidateTodayPlanQueries(queryClient);
             })();
           } else {
@@ -1066,7 +1088,7 @@ export function JobsContent() {
         },
         onError: (err) => {
           toast.error(getApiErrorMessage(err));
-          queryClient.invalidateQueries({ queryKey: ['me'] });
+          queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
         },
       },
     );
@@ -1213,12 +1235,30 @@ export function JobsContent() {
         <div className="space-y-3">
           <Input value={title} onChange={setTitle} placeholder="Job Title (optional)" />
           <Input value={company} onChange={setCompany} placeholder="Company (optional)" />
-          <textarea
-            className="h-36 w-full min-w-0 rounded-xl border border-[#00C9B1]/20 bg-[#111616] px-3 py-3 text-sm text-white outline-none transition focus:border-[#00C9B1] focus:shadow-[0_0_0_3px_rgba(0,201,177,0.1)] sm:h-44 sm:px-4"
-            placeholder="Paste the full job description here..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+          <div className="relative">
+            <textarea
+              className={cn(
+                'h-36 w-full min-w-0 rounded-xl border bg-[#111616] px-3 py-3 pb-8 text-sm text-white outline-none transition focus:shadow-[0_0_0_3px_rgba(0,201,177,0.1)] sm:h-44 sm:px-4',
+                isJobDescriptionOverAiLimit(description.length)
+                  ? 'border-rose-400/40 focus:border-rose-400/50'
+                  : 'border-[#00C9B1]/20 focus:border-[#00C9B1]',
+              )}
+              placeholder="Paste the full job description here..."
+              value={description}
+              maxLength={AI_PROMPT_INPUT_JOB_DESCRIPTION_MAX_CHARS}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+            <span
+              className={cn(
+                'pointer-events-none absolute bottom-2 right-3 text-[11px]',
+                isJobDescriptionOverAiLimit(description.length)
+                  ? 'text-rose-400/80'
+                  : 'text-white/35',
+              )}
+            >
+              {formatJobDescriptionCharCount(description.length)}
+            </span>
+          </div>
           {error ? <p className="text-xs text-red-300">{error}</p> : null}
           <Button
             fullWidth
@@ -1503,13 +1543,13 @@ export function JobsContent() {
                             'Cover letter is ready, but it could not be saved to your tracker. You can still copy or download it below.',
                           );
                         } finally {
-                          void queryClient.invalidateQueries({ queryKey: ['job-analyses'] });
+                          void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
                           invalidateTodayPlanQueries(queryClient);
                         }
                       },
                       onError: (err) => {
                         toast.error(getApiErrorMessage(err));
-                        queryClient.invalidateQueries({ queryKey: ['me'] });
+                        queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
                       },
                     },
                   );
@@ -1602,7 +1642,7 @@ export function JobsContent() {
       exportTemplate={selectedProfile?.template ?? cv?.template ?? null}
       onTailoringCvPersisted={() => {
         scheduleRematchAfterTailoring();
-        void queryClient.invalidateQueries({ queryKey: ['job-analyses'] });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
         invalidateTodayPlanQueries(queryClient);
       }}
       scoreBeforeTailor={displayScoreBeforeTailor}

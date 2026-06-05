@@ -20,7 +20,7 @@ type Props = {
   data: FollowUpIntelligencePayload | null;
   queueJobs?: FollowUpJobRowPayload[] | null;
   queueTotalCount?: number | null;
-  /** Backend “Show all” target (often `/dashboard/job-hub?followUps=1`). */
+  /** Backend “Show all” target (often `/dashboard/follow-up-jobs`). */
   followUpJobsViewAllHref?: string | null;
 };
 

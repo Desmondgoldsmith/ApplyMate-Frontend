@@ -1,20 +1,20 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { CVBuilder } from '@/components/cv/CVBuilder';
+import { CvClinicWorkspace } from '@/components/cv/CvClinicWorkspace';
 import { useCVProfileById } from '@/hooks/useCVProfileById';
 import { pickCvSectionRowsForEditor } from '@/lib/api';
-import {
-  isCvTemplateId,
-  transformSectionsToCVBuilderData,
-  type CvTemplateId,
-  type SaveCVBuilderDataResult,
-} from '@/lib/cvBuilder';
-import { useAuthStore } from '@/store/useAuthStore';
+import { isCvTemplateId, type CvTemplateId } from '@/lib/cvBuilder';
 
+/**
+ * Tailor surface CV editor — now the FULL Resume Clinic builder (toolbar with
+ * Template / Sections / Reorder / Spelling / Scan, triple-column preview, and a
+ * right panel that defaults to "Tailoring changes" with toggles to Analysis and
+ * Improvements). The job-tailoring change stream is injected via `tailorRightSlot`.
+ */
 export function TailorCvBuilderPane({
   profileId,
   rehydrateNonce = 0,
@@ -23,6 +23,11 @@ export function TailorCvBuilderPane({
   highlightAction = 'accepted',
   onAutosaved,
   onStructuredPersisted,
+  tailorRightSlot,
+  tailorChangesBadgeCount = 0,
+  onExportPdf,
+  onExportDocx,
+  isExportPending = false,
 }: {
   profileId: string;
   rehydrateNonce?: number;
@@ -33,15 +38,15 @@ export function TailorCvBuilderPane({
   onAutosaved?: () => void;
   /** After accept/revert or AI structured persist — parent may await refetch then bump hydrate. */
   onStructuredPersisted?: () => void | Promise<void>;
+  /** The job-tailoring change stream (Suggested / Accepted / Rejected + export). */
+  tailorRightSlot?: ReactNode;
+  /** Pending change count shown as a badge on the "Tailoring changes" tab. */
+  tailorChangesBadgeCount?: number;
+  onExportPdf?: () => void;
+  onExportDocx?: () => void;
+  isExportPending?: boolean;
 }) {
-  const queryClient = useQueryClient();
-  const user = useAuthStore((s) => s.user);
   const profileQ = useCVProfileById(profileId);
-  const [serverHydrateNonce, setServerHydrateNonce] = useState(0);
-  const jumpToSectionRef = useRef<
-    | ((sid: string, itemId?: string, opts?: { scrollForm?: boolean }) => void)
-    | null
-  >(null);
 
   const profile = profileQ.data?.profile;
   const sections = useMemo(
@@ -49,43 +54,11 @@ export function TailorCvBuilderPane({
     [profileQ.data?.sections],
   );
 
-  const initialData = useMemo(
-    () =>
-      transformSectionsToCVBuilderData(profile ?? null, sections, {
-        email: user?.email,
-        name: user?.name,
-      }),
-    [profile, sections, user?.email, user?.name],
-  );
-
-  const template: CvTemplateId = useMemo(() => {
+  const [template, setTemplate] = useState<CvTemplateId>('modern');
+  useEffect(() => {
     const t = profile?.template;
-    return t && isCvTemplateId(t) ? t : 'modern';
+    if (t && isCvTemplateId(t)) setTemplate(t);
   }, [profile?.template]);
-
-  /** Match CV Clinic: soft cache update, no hydrate nonce on autosave. */
-  const onTailorAutosaved = useCallback(
-    async (result?: SaveCVBuilderDataResult) => {
-      if (result?.sections && result.sections.length > 0) {
-        queryClient.setQueryData(['cv-profile', profileId], (prev: unknown) => {
-          if (!prev || typeof prev !== 'object') return prev;
-          const row = prev as { profile?: unknown; sections?: unknown };
-          return { ...row, sections: result.sections };
-        });
-      }
-      void queryClient.invalidateQueries({
-        queryKey: ['cv-profile', profileId],
-        refetchType: 'none',
-      });
-      onAutosaved?.();
-    },
-    [onAutosaved, profileId, queryClient],
-  );
-
-  const onTailorSectionPersisted = useCallback(async () => {
-    setServerHydrateNonce((n) => n + 1);
-    await onStructuredPersisted?.();
-  }, [onStructuredPersisted]);
 
   if (profileQ.isLoading) {
     return (
@@ -104,25 +77,26 @@ export function TailorCvBuilderPane({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080a0a]">
-      <CVBuilder
-        key={profileId}
-        mode="dashboard"
-        cvMode="tailor"
-        profileId={profileId}
-        initialData={initialData}
-        selectedTemplate={template}
-        existingSections={sections}
-        serverHydrateNonce={serverHydrateNonce + rehydrateNonce}
-        onAiStructuredPersisted={onTailorSectionPersisted}
-        onDashboardSaved={onTailorAutosaved}
-        onJumpToSectionReady={(fn) => {
-          jumpToSectionRef.current = fn;
-        }}
-        tailorHighlightSectionId={highlightSectionId}
-        tailorHighlightNonce={highlightNonce}
-        tailorHighlightAction={highlightAction}
-      />
-    </div>
+    <CvClinicWorkspace
+      key={profileId}
+      builderContext="tailoring"
+      profileId={profileId}
+      sections={sections}
+      selectedTemplate={template}
+      onTemplateIdChange={setTemplate}
+      onDashboardSaved={onAutosaved}
+      tailorRightSlot={tailorRightSlot}
+      tailorChangesBadgeCount={tailorChangesBadgeCount}
+      tailorHighlightSectionId={highlightSectionId}
+      tailorHighlightNonce={highlightNonce}
+      tailorHighlightAction={highlightAction}
+      externalServerHydrateNonce={rehydrateNonce}
+      onStructuredPersisted={onStructuredPersisted}
+      modalLayerZIndex={100070}
+      onExportPdf={onExportPdf}
+      onExportDocx={onExportDocx}
+      isExportPending={isExportPending}
+      className="h-full"
+    />
   );
 }

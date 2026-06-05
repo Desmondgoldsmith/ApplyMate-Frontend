@@ -8,7 +8,11 @@ import {
   decodeInterviewSpeechBase64,
   isPlayableInterviewSpeechBase64,
 } from '@/lib/interviewVoicePlayback';
-import { getApiErrorMessage } from '@/lib/axios';
+import { getApiErrorCode, getApiErrorMessage } from '@/lib/axios';
+import {
+  INTERVIEW_VOICE_PAID_ONLY_CODE,
+  readInterviewVoicePaidOnlyUpgradeMessage,
+} from '@/lib/interviewPrepQuota';
 import { INTERVIEW_QUESTION_SPEAK_PAUSE_MS, sleep } from '@/lib/interviewSpeech';
 
 type CacheEntry = {
@@ -44,7 +48,8 @@ type FetchSpeechResult =
       disabledReason?: string;
       requestId: string | null;
     }
-  | { status: 'error'; message: string; requestId: string | null };
+  | { status: 'error'; message: string; requestId: string | null }
+  | { status: 'paid_only'; message: string; requestId: string | null };
 
 function cacheKey(sessionId: string, text: string, persona?: string, speed?: number): string {
   const speedKey = typeof speed === 'number' ? Math.round(speed * 100) / 100 : 1;
@@ -58,6 +63,10 @@ export type UseInterviewTTSOptions = {
   voiceName?: string;
   voiceRate?: number;
   voicePitch?: number;
+  /** When false, skip `POST /interviews/:id/speech` — questions stay on screen (free tier). */
+  voiceEnabled?: boolean;
+  /** Called once when interviewer TTS returns `INTERVIEW_VOICE_PAID_ONLY`. */
+  onPremiumVoiceBlocked?: (upgradeMessage: string) => void;
 };
 
 export type SpeakInterviewerOptions = {
@@ -71,8 +80,16 @@ export type SpeakInterviewerOptions = {
 };
 
 export function useInterviewTTS(options: UseInterviewTTSOptions) {
-  const { sessionId, interviewPersona, speakingSpeed = 1, voiceName, voiceRate = 1, voicePitch = 1 } =
-    options;
+  const {
+    sessionId,
+    interviewPersona,
+    speakingSpeed = 1,
+    voiceName,
+    voiceRate = 1,
+    voicePitch = 1,
+    voiceEnabled = true,
+    onPremiumVoiceBlocked,
+  } = options;
 
   const speech = useSpeech();
   const {
@@ -124,6 +141,13 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
 
   const fetchSpeech = useCallback(
     async (text: string): Promise<FetchSpeechResult> => {
+      if (!voiceEnabled) {
+        return {
+          status: 'paid_only',
+          message: 'Interviewer voice is available on Pro.',
+          requestId: null,
+        };
+      }
       if (!sessionId || !text.trim()) {
         return { status: 'error', message: 'Missing session or text for voice.', requestId: null };
       }
@@ -177,6 +201,14 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
           cacheRef.current.set(key, entry);
           return { status: 'ok', entry, requestId };
         } catch (err) {
+          const paidOnlyMessage = readInterviewVoicePaidOnlyUpgradeMessage(err);
+          if (paidOnlyMessage || getApiErrorCode(err) === INTERVIEW_VOICE_PAID_ONLY_CODE) {
+            return {
+              status: 'paid_only',
+              message: paidOnlyMessage ?? 'Interviewer voice is available on Pro.',
+              requestId: null,
+            };
+          }
           return {
             status: 'error',
             message: getApiErrorMessage(err),
@@ -190,17 +222,17 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
       inflightRef.current.set(key, request);
       return request;
     },
-    [interviewPersona, sessionId, speakingSpeed],
+    [interviewPersona, sessionId, speakingSpeed, voiceEnabled],
   );
 
   const prefetch = useCallback(
     (text: string) => {
-      if (!sessionId || !text.trim()) return;
+      if (!voiceEnabled || !sessionId || !text.trim()) return;
       const key = cacheKey(sessionId, text, interviewPersona, speakingSpeed);
       if (cacheRef.current.has(key) || inflightRef.current.has(key)) return;
       void fetchSpeech(text);
     },
-    [fetchSpeech, interviewPersona, sessionId, speakingSpeed],
+    [fetchSpeech, interviewPersona, sessionId, speakingSpeed, voiceEnabled],
   );
 
   useEffect(() => {
@@ -309,6 +341,16 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
             return;
           }
 
+          if (!voiceEnabled) {
+            speakOptions.onStart?.();
+            if (speakOptions.advanceOnUnavailable !== false) {
+              complete();
+            } else {
+              resolve();
+            }
+            return;
+          }
+
           browserStopListening();
           stopAudioElement();
           setPlaybackIssue((prev) => (prev?.kind === 'browser_fallback' ? prev : null));
@@ -367,6 +409,17 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
             return;
           }
           setIsGeneratingVoice(false);
+
+          if (fetched.status === 'paid_only') {
+            onPremiumVoiceBlocked?.(fetched.message);
+            speakOptions.onStart?.();
+            if (speakOptions.advanceOnUnavailable !== false) {
+              complete();
+            } else {
+              resolve();
+            }
+            return;
+          }
 
           if (fetched.status === 'disabled') {
             const browserOk = await attemptBrowserFallback(clean, speakOptions, generation);
@@ -496,8 +549,10 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
       browserStopListening,
       fetchSpeech,
       isSpeechSynthesisSupported,
+      onPremiumVoiceBlocked,
       sessionId,
       stopAudioElement,
+      voiceEnabled,
     ],
   );
 
@@ -556,6 +611,7 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
       isGeneratingVoice,
       usesElevenLabs,
       usingBrowserVoice,
+      voiceEnabled,
       /** Prefer `isInterviewerAudioActive` in effect deps (stable boolean). */
       isSynthesisActive: () => isInterviewerAudioActive,
       releaseAudioForListening,
@@ -582,6 +638,7 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
       useDeviceVoiceForLastLine,
       usesElevenLabs,
       usingBrowserVoice,
+      voiceEnabled,
     ],
   );
 }

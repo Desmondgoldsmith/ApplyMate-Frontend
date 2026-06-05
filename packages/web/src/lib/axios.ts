@@ -3,7 +3,22 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { readApplymateTokenFromCookie } from '@/lib/authCookie';
 import { CV_PHOTO_TOO_LARGE_USER_MESSAGE } from '@/lib/cvPhotoCompress';
 import { applyNgrokSkipHeaders } from '@/lib/ngrokTunnel';
-import { useAuthStore } from '@/store/useAuthStore';
+import {
+  readRequestIdFromHeaders,
+  setLastRequestId,
+} from '@/lib/observability/requestId';
+
+/** Lazy read — top-level import of useAuthStore creates a cycle: axios → store → api → interview-prep-api → axios. */
+function readAccessTokenFromMemory(): string | undefined {
+  if (typeof window === 'undefined') return undefined;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useAuthStore } = require('@/store/useAuthStore') as typeof import('@/store/useAuthStore');
+    return useAuthStore.getState().accessToken?.trim() || undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * Backend API base (trailing slash). Prefer NEXT_PUBLIC_API_URL in .env.local
@@ -25,10 +40,18 @@ export const axiosClient = axios.create({
   withCredentials: true,
 });
 
+axiosClient.interceptors.response.use((response) => {
+  const requestId = readRequestIdFromHeaders(
+    response.headers as Record<string, unknown>,
+  );
+  if (requestId) setLastRequestId(requestId);
+  return response;
+});
+
 axiosClient.interceptors.request.use((config) => {
   applyNgrokSkipHeaders(config, API_BASE_URL);
   if (typeof window !== 'undefined') {
-    const fromMemory = useAuthStore.getState().accessToken?.trim();
+    const fromMemory = readAccessTokenFromMemory();
     const fromCookie = readApplymateTokenFromCookie()?.trim();
     const token = fromMemory || fromCookie;
     if (token) {
@@ -63,26 +86,6 @@ axiosClient.interceptors.request.use((config) => {
   config.headers = headers;
   return config;
 });
-
-axiosClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    /** Wrong-password / validation failures on login/register must not wipe an existing session or trigger refresh storms. */
-    if (error?.response?.status === 401 && typeof window !== 'undefined') {
-      const url = error.config?.url;
-      if (!isLoginOrRegisterAttemptUrl(url)) {
-        useAuthStore.getState().clearAuth();
-        if (
-          !window.location.pathname.startsWith('/login') &&
-          !window.location.pathname.startsWith('/register')
-        ) {
-          window.location.href = '/login';
-        }
-      }
-    }
-    return Promise.reject(error);
-  },
-);
 
 export type ErrorBody = {
   message?: string | string[];
@@ -310,15 +313,6 @@ function isAuthThrottleRequestUrl(url: string | undefined): boolean {
   return AUTH_SUBPATH.test(url);
 }
 
-/** Login/register/google — failed sign-in attempts must not clear session. */
-const LOGIN_OR_REGISTER_SUBPATH =
-  /(^|\/)(auth\/login|auth\/register|auth\/google)(\/?$|[/?#])/i;
-
-function isLoginOrRegisterAttemptUrl(url: string | undefined): boolean {
-  if (!url) return false;
-  return LOGIN_OR_REGISTER_SUBPATH.test(url);
-}
-
 /** HTTP 429 on auth endpoints (rate limiting); distinct from AI daily quota. */
 export function isAuthRateLimitError(error: unknown): boolean {
   if (!axios.isAxiosError(error)) return false;
@@ -348,6 +342,38 @@ export const AUTH_RATE_LIMIT_USER_MESSAGE =
 export const GENERIC_SERVER_ERROR_USER_MESSAGE =
   'Something went wrong on our side. Please try again in a moment.';
 
+/** Free tier exhausted weekly interview practice sessions (distinct from daily AI quota). */
+export function isInterviewPrepWeeklyLimitApiError(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false;
+  const nested = readNestedApiError(
+    (error as AxiosError<ErrorBody>).response?.data,
+  );
+  return nested.code === 'INTERVIEW_PREP_WEEKLY_LIMIT_REACHED';
+}
+
+/** ElevenLabs interviewer TTS is Pro-only (`POST /interviews/:id/speech`). */
+export function isInterviewVoicePaidOnlyApiError(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false;
+  const ax = error as AxiosError<ErrorBody>;
+  const nested = readNestedApiError(ax.response?.data);
+  return (
+    nested.code === 'INTERVIEW_VOICE_PAID_ONLY' ||
+    (ax.response?.status === 403 && nested.code === 'INTERVIEW_VOICE_PAID_ONLY')
+  );
+}
+
+export const ACCEPT_ALL_DAILY_QUOTA_EXHAUSTED_CODE =
+  'ACCEPT_ALL_DAILY_QUOTA_EXHAUSTED' as const;
+
+/** True when apply-all hit the daily AI cap (429 + structured quota payload). */
+export function isAcceptAllDailyQuotaExhaustedError(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false;
+  const nested = readNestedApiError(
+    (error as AxiosError<ErrorBody>).response?.data,
+  );
+  return nested.code === ACCEPT_ALL_DAILY_QUOTA_EXHAUSTED_CODE;
+}
+
 /** True when the API indicates daily free-AI quota exhaustion (`error.code` or HTTP 429 + quota shape). */
 export function isDailyAiLimitApiError(error: unknown): boolean {
   if (!axios.isAxiosError(error)) return false;
@@ -363,8 +389,10 @@ export function isDailyAiLimitApiError(error: unknown): boolean {
       ? JSON.stringify(ax.response.data).toLowerCase()
       : '';
   const combinedForQuota = `${nested.code ?? ''} ${nested.message ?? ''} ${payloadBlob}`;
+  if (nested.code === 'INTERVIEW_PREP_WEEKLY_LIMIT_REACHED') return false;
   return (
     nested.code === 'DAILY_AI_LIMIT_REACHED' ||
+    nested.code === ACCEPT_ALL_DAILY_QUOTA_EXHAUSTED_CODE ||
     effectiveStatus === 429 ||
     responseStatus === 429 ||
     combinedForQuota.includes('daily free ai limit') ||
@@ -667,4 +695,16 @@ function getApiErrorMessageBase(error: unknown): string {
 
 export function getApiErrorMessage(error: unknown): string {
   return stripUserFacingDebugTrailer(getApiErrorMessageBase(error));
+}
+
+/** User-facing toast copy with optional API error code for support. */
+export function formatApiErrorForToast(
+  error: unknown,
+  fallback: string,
+): string {
+  const message = getApiErrorMessage(error) || fallback;
+  const code = getApiErrorCode(error);
+  if (!code) return message;
+  if (message.toUpperCase().includes(code.toUpperCase())) return message;
+  return `${message} (${code})`;
 }

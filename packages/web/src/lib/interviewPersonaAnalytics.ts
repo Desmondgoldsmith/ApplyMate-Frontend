@@ -1,4 +1,5 @@
 import { enqueueInterviewAnalyticsEvent } from '@/lib/interviewAnalyticsBatch';
+import { trackConversionFunnelEvent } from '@/lib/analytics/funnelEvents';
 import type { InterviewPersonaId } from '@/lib/interviewPersonas';
 
 type PersonaAnalyticsPayload = {

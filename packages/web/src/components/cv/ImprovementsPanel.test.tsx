@@ -4,17 +4,14 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ImprovementsPanel } from '@/components/cv/ImprovementsPanel';
+import { cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
 
 const reconcileAfterMutationFn = vi.hoisted(() => vi.fn(() => 2));
 
 vi.mock('@/hooks/useCvSuggestionMutations', () => ({
   useCvSuggestionMutations: () => ({
     reconcileAfterMutation: reconcileAfterMutationFn,
-    suggestionsQueryKey: (id: string | null | undefined) => [
-      'cv',
-      'suggestions',
-      id,
-    ],
+    suggestionsQueryKey: cvSuggestionsQueryKey,
   }),
 }));
 
@@ -34,7 +31,7 @@ vi.mock('@/components/ui/Toast', () => ({
   }),
 }));
 
-const { applyImprovement, rejectSuggestion } = vi.hoisted(() => ({
+const { applyImprovement, rejectSuggestion, selfFixSuggestion } = vi.hoisted(() => ({
   applyImprovement: vi.fn().mockResolvedValue({
     success: true,
     pointer: 'imp-1',
@@ -49,6 +46,9 @@ const { applyImprovement, rejectSuggestion } = vi.hoisted(() => ({
   rejectSuggestion: vi
     .fn()
     .mockResolvedValue({ pendingSuggestionsCount: 0, cvRevisionId: null }),
+  selfFixSuggestion: vi
+    .fn()
+    .mockResolvedValue({ pendingSuggestionsCount: 1, cvRevisionId: null }),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -56,6 +56,7 @@ vi.mock('@/lib/api', () => ({
     cv: {
       applyImprovement,
       rejectSuggestion,
+      selfFixSuggestion,
     },
   },
 }));
@@ -99,7 +100,7 @@ describe('ImprovementsPanel', () => {
       </QueryClientProvider>,
     );
 
-    await user.click(screen.getByRole('button', { name: /apply with ai/i }));
+    await user.click(screen.getByRole('button', { name: /fix with ai/i }));
 
     expect(applyImprovement).toHaveBeenCalledWith('imp-1', undefined);
     expect(onDiffPreview).toHaveBeenCalledWith(
@@ -132,7 +133,7 @@ describe('ImprovementsPanel', () => {
       </QueryClientProvider>,
     );
 
-    const btn = screen.getByRole('button', { name: /apply with ai/i });
+    const btn = screen.getByRole('button', { name: /fix with ai/i });
     await user.click(btn);
     await user.click(btn);
 
@@ -158,7 +159,7 @@ describe('ImprovementsPanel', () => {
     const qc = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    qc.setQueryData(['cv', 'suggestions', 'p1'], {
+    qc.setQueryData(cvSuggestionsQueryKey('p1'), {
       improvements: [
         { id: 'imp-1', issue: 'A', resolved: false },
         { id: 'imp-2', issue: 'B', resolved: false },
@@ -193,7 +194,7 @@ describe('ImprovementsPanel', () => {
       </QueryClientProvider>,
     );
 
-    await user.click(screen.getByRole('button', { name: /apply with ai/i }));
+    await user.click(screen.getByRole('button', { name: /fix with ai/i }));
 
     expect(toastInfo).toHaveBeenCalledWith(
       expect.stringContaining('saved preview'),
@@ -203,7 +204,7 @@ describe('ImprovementsPanel', () => {
     const data = qc.getQueryData<{
       improvements: { id?: string }[];
       pendingSuggestionsCount?: number;
-    }>(['cv', 'suggestions', 'p1']);
+    }>(cvSuggestionsQueryKey('p1'));
     expect(data?.improvements?.map((i) => i.id)).toEqual(['imp-1', 'imp-2']);
     expect(data?.pendingSuggestionsCount).toBe(2);
   });
@@ -238,7 +239,7 @@ describe('ImprovementsPanel', () => {
       </QueryClientProvider>,
     );
 
-    await user.click(screen.getByRole('button', { name: /apply with ai/i }));
+    await user.click(screen.getByRole('button', { name: /fix with ai/i }));
 
     expect(toastInfo).toHaveBeenCalledWith(
       expect.stringMatching(/previously generated preview/i),
@@ -274,9 +275,9 @@ describe('ImprovementsPanel', () => {
       </QueryClientProvider>,
     );
 
-    await user.click(screen.getByRole('button', { name: /apply with ai/i }));
+    await user.click(screen.getByRole('button', { name: /fix with ai/i }));
     expect(
-      screen.getByRole('button', { name: /Analyzing your experience/i }),
+      screen.getByRole('button', { name: /Applying suggestion/i }),
     ).toBeInTheDocument();
 
     await act(async () => {
@@ -293,8 +294,42 @@ describe('ImprovementsPanel', () => {
       });
     });
     expect(
-      screen.getByRole('button', { name: /^apply with ai$/i }),
+      screen.getByRole('button', { name: /^fix with ai$/i }),
     ).toBeInTheDocument();
+  });
+
+  it("'I'll fix it myself' removes exactly the clicked suggestion (not a neighbour)", async () => {
+    const user = userEvent.setup();
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <QueryClientProvider client={qc}>
+        <ImprovementsPanel
+          improvements={[
+            { id: 'imp-1', issue: 'First issue headline', resolved: false },
+            { id: 'imp-2', issue: 'Second issue headline', resolved: false },
+            { id: 'imp-3', issue: 'Third issue headline', resolved: false },
+          ]}
+          onDiffPreview={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+
+    // First card is visible; the others are reachable via the navigator.
+    expect(screen.getByText('First issue headline')).toBeInTheDocument();
+    expect(screen.getByText(/of 3/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /fix it myself/i }));
+
+    expect(selfFixSuggestion).toHaveBeenCalledTimes(1);
+    expect(selfFixSuggestion).toHaveBeenCalledWith('imp-1', undefined);
+
+    // Exactly one removed: the clicked one is gone, the other two remain.
+    expect(screen.queryByText('First issue headline')).not.toBeInTheDocument();
+    expect(screen.getByText('Second issue headline')).toBeInTheDocument();
+    expect(screen.getByText(/of 2/i)).toBeInTheDocument();
   });
 
   it('autoResolved removes the suggestion from cache and skips diff preview', async () => {
@@ -303,7 +338,7 @@ describe('ImprovementsPanel', () => {
     const qc = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    qc.setQueryData(['cv', 'suggestions', 'p1'], {
+    qc.setQueryData(cvSuggestionsQueryKey('p1'), {
       improvements: [{ id: 'imp-1', issue: 'T', resolved: false }],
       pendingSuggestionsCount: 1,
     });
@@ -333,7 +368,7 @@ describe('ImprovementsPanel', () => {
       </QueryClientProvider>,
     );
 
-    await user.click(screen.getByRole('button', { name: /apply with ai/i }));
+    await user.click(screen.getByRole('button', { name: /fix with ai/i }));
 
     expect(toastSuccess).toHaveBeenCalledWith(
       'This improvement is already reflected in your CV.',
@@ -342,7 +377,7 @@ describe('ImprovementsPanel', () => {
     const data = qc.getQueryData<{
       improvements: { id?: string }[];
       pendingSuggestionsCount?: number;
-    }>(['cv', 'suggestions', 'p1']);
+    }>(cvSuggestionsQueryKey('p1'));
     expect(data?.improvements ?? []).toHaveLength(0);
     expect(data?.pendingSuggestionsCount).toBe(0);
   });
@@ -353,7 +388,7 @@ describe('ImprovementsPanel', () => {
     const qc = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    qc.setQueryData(['cv', 'suggestions', 'p1'], {
+    qc.setQueryData(cvSuggestionsQueryKey('p1'), {
       improvements: [{ id: 'imp-1', issue: 'T', resolved: false }],
       pendingSuggestionsCount: 1,
     });
@@ -384,7 +419,7 @@ describe('ImprovementsPanel', () => {
       </QueryClientProvider>,
     );
 
-    await user.click(screen.getByRole('button', { name: /apply with ai/i }));
+    await user.click(screen.getByRole('button', { name: /fix with ai/i }));
 
     expect(toastSuccess).toHaveBeenCalledWith(
       'Applied — your CV already matched this suggestion.',
@@ -398,7 +433,7 @@ describe('ImprovementsPanel', () => {
     const qc = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    qc.setQueryData(['cv', 'suggestions', 'p1'], {
+    qc.setQueryData(cvSuggestionsQueryKey('p1'), {
       improvements: [
         { id: 'imp-1', issue: 'T', resolved: false },
         { id: 'imp-2', issue: 'U', resolved: false },
@@ -432,7 +467,7 @@ describe('ImprovementsPanel', () => {
       </QueryClientProvider>,
     );
 
-    await user.click(screen.getByRole('button', { name: /apply with ai/i }));
+    await user.click(screen.getByRole('button', { name: /fix with ai/i }));
 
     expect(toastSuccess).toHaveBeenCalledWith(
       'This improvement is already reflected in your CV.',
@@ -441,7 +476,7 @@ describe('ImprovementsPanel', () => {
     const data = qc.getQueryData<{
       improvements: { id?: string }[];
       pendingSuggestionsCount?: number;
-    }>(['cv', 'suggestions', 'p1']);
+    }>(cvSuggestionsQueryKey('p1'));
     expect(data?.improvements?.map((i) => i.id)).toEqual(['imp-2']);
     expect(data?.pendingSuggestionsCount).toBe(1);
   });
@@ -452,7 +487,7 @@ describe('ImprovementsPanel', () => {
       defaultOptions: { queries: { retry: false } },
     });
     const refetchSpy = vi.spyOn(qc, 'refetchQueries');
-    qc.setQueryData(['cv', 'suggestions', 'p1'], {
+    qc.setQueryData(cvSuggestionsQueryKey('p1'), {
       improvements: [{ id: 'imp-1', issue: 'T', resolved: false }],
       needsScoring: false,
     });
@@ -473,7 +508,7 @@ describe('ImprovementsPanel', () => {
       </QueryClientProvider>,
     );
 
-    await user.click(screen.getByRole('button', { name: /mark as done/i }));
+    await user.click(screen.getByRole('button', { name: /dismiss/i }));
 
     expect(toastSuccess).toHaveBeenCalledWith('Already dismissed.');
     const reconcileCalls = vi.mocked(reconcileAfterMutationFn).mock
@@ -489,3 +524,4 @@ describe('ImprovementsPanel', () => {
     expect(data?.improvements ?? []).toHaveLength(0);
   });
 });
+

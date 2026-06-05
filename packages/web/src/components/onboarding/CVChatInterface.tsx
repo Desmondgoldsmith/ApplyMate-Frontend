@@ -1,17 +1,18 @@
 'use client';
 
-import { Loader2, Send } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { CvChatComposer } from '@/components/cv/CvChatComposer';
 import { Button } from '@/components/ui/Button';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { api, type ChatConversationHistoryItem, type ChatCreateCVPayload } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
+import { cvChatInputLimitErrorMessage, isCvChatInputOverLimit } from '@/lib/cvChatInputDisplay';
 import { cn } from '@/lib/utils';
 
 const OPENING =
-  "Hi! I'm going to help you build a great resume. Let's start with the basics — what's your name and what kind of work do you do?";
+  "Hi! I'm going to help you build a great resume. Share your background in your own words, or paste an existing CV — I'll only ask about what's still missing.";
 
 /**
  * Splits assistant copy on an em/en dash so the trailing “main question” can be emphasized in teal.
@@ -108,13 +109,19 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, isTyping, extractedData]);
 
-  const userTurns = messages.filter((m) => m.role === 'user').length;
-  const progressDots = 4;
-  const filledDots = Math.min(progressDots, Math.max(1, userTurns + (isTyping ? 0 : 0)));
-
   const sendMessage = useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed || isTyping || !openingDone) return;
+    if (isCvChatInputOverLimit(trimmed.length)) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: cvChatInputLimitErrorMessage(trimmed.length),
+        },
+      ]);
+      return;
+    }
     const prior = messages;
     const userMessage: ChatMessage = { role: 'user', content: trimmed };
     setMessages((m) => [...m, userMessage]);
@@ -151,20 +158,9 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
   return (
     <GlowCard className="min-h-0 border border-[rgba(0,201,177,0.15)]" contentClassName="flex min-h-0 min-w-0 flex-col p-0">
       <div className="border-b border-[rgba(0,201,177,0.12)] px-4 py-3">
-        <p className="text-center text-[11px] text-white/45">
-          Turn {Math.min(userTurns + 1, progressDots)} of ~{progressDots}
+        <p className="text-center text-[11px] leading-snug text-white/45">
+          Answer naturally or paste a full CV — follow-ups focus on gaps only
         </p>
-        <div className="mt-2 flex justify-center gap-1.5">
-          {Array.from({ length: progressDots }, (_, i) => (
-            <span
-              key={i}
-              className={cn(
-                'h-2 w-2 rounded-full transition-colors',
-                i < filledDots ? 'bg-[#00C9B1]' : 'border border-white/25 bg-transparent',
-              )}
-            />
-          ))}
-        </div>
       </div>
 
       <div
@@ -248,32 +244,13 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
         </div>
       ) : (
         <div className="border-t border-[rgba(0,201,177,0.12)] p-4">
-          <div className="flex gap-2">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  void sendMessage();
-                }
-              }}
-              placeholder="Type your answer..."
-              rows={3}
-              disabled={!openingDone || isTyping}
-              data-lenis-prevent-wheel
-              className="min-h-[72px] max-h-[40vh] min-w-0 flex-1 touch-pan-y resize-y overflow-y-auto rounded-xl border border-[rgba(255,255,255,0.10)] bg-[#111616] px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-[#00C9B1]/40 disabled:opacity-50"
-            />
-            <Button
-              type="button"
-              className="h-[48px] shrink-0 px-4"
-              disabled={!openingDone || !input.trim() || isTyping}
-              onClick={() => void sendMessage()}
-              aria-label="Send"
-            >
-              {isTyping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </Button>
-          </div>
+          <CvChatComposer
+            value={input}
+            onChange={setInput}
+            onSend={() => void sendMessage()}
+            disabled={!openingDone}
+            sending={isTyping}
+          />
           <button
             type="button"
             className="mt-3 w-full text-center text-[13px] text-white/45 transition hover:text-white/75"

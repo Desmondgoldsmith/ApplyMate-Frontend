@@ -20,6 +20,17 @@ export function broadcastAuthLogout(): void {
   }
 }
 
+/** Notify other tabs that access/refresh cookies were rotated in this tab. */
+export function broadcastAuthTokensUpdated(): void {
+  const ch = openChannel();
+  if (!ch) return;
+  try {
+    ch.postMessage({ type: 'tokens-updated', t: Date.now() });
+  } finally {
+    ch.close();
+  }
+}
+
 export type AuthSyncUnsubscribe = () => void;
 
 /**
@@ -35,6 +46,23 @@ export function subscribeAuthLogout(onLogout: () => void): AuthSyncUnsubscribe {
   ch.onmessage = (ev: MessageEvent) => {
     const d = ev.data as { type?: string } | undefined;
     if (d?.type === 'logout') onLogout();
+  };
+
+  return () => {
+    ch.onmessage = null;
+    ch.close();
+  };
+}
+
+export function subscribeAuthTokensUpdated(onUpdate: () => void): AuthSyncUnsubscribe {
+  if (typeof window === 'undefined') return () => {};
+
+  const ch = openChannel();
+  if (!ch) return () => {};
+
+  ch.onmessage = (ev: MessageEvent) => {
+    const d = ev.data as { type?: string } | undefined;
+    if (d?.type === 'tokens-updated') onUpdate();
   };
 
   return () => {

@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useCallback, useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -42,11 +43,11 @@ export function useCoachingSettings(
       const next = normalizeSettings(data.coachingSettings);
       setSettings(next);
       queryClient.setQueryData<{ coachingSettings?: CoachingSettings }>(
-        ['interview-session', sessionId],
+        queryKeys.interview.session(sessionId),
         (old) => (old ? { ...old, coachingSettings: next } : old),
       );
       queryClient.setQueryData(
-        ['interview-prep', 'session', sessionId],
+        queryKeys.interviewPrep.session(sessionId),
         (old: { coachingSettings?: CoachingSettings } | undefined) =>
           old ? { ...old, coachingSettings: next } : old,
       );

@@ -6,20 +6,35 @@ import {
   History,
   LayoutGrid,
   List,
+  MoreVertical,
+  Pencil,
   Plus,
   ScrollText,
   Search,
-  Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import type { MouseEvent as ReactMouseEvent, ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { GlowCard } from '@/components/ui/GlowCard';
+import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { useToast } from '@/components/ui/Toast';
+import {
+  CvProfileMergeCheckbox,
+  CvProfileMergeToolbar,
+  MergeCvProfilesModal,
+  useCvProfileMergeSelection,
+} from '@/components/dashboard/MergeCvProfilesModal';
+import { useClientPagination } from '@/hooks/useClientPagination';
+import { useDeleteCVProfile } from '@/hooks/useDeleteCVProfile';
+import { useRenameCVProfile } from '@/hooks/useRenameCVProfile';
 import { useJobHistory } from '@/hooks/useJobHistory';
 import { ensureArray } from '@/lib/ensure-array';
 import type { CvProfileSummary, JobHistoryItem } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/axios';
 import { formatRelativeEdited } from '@/lib/format-relative-edited';
 import { cn } from '@/lib/utils';
 
@@ -135,22 +150,249 @@ type CvClinicHubProps = {
   profiles: CvProfileSummary[];
   loading?: boolean;
   onNewCv: () => void;
-  onOpenUpload: () => void;
   onOpenCv: (profileId: string) => void;
-  onOpenJobs: () => void;
 };
+
+const HUB_PAGE_SIZE = 10;
 
 function norm(s: string) {
   return s.trim().toLowerCase();
+}
+
+function jobCoverLetterHref(jobAnalysisId: string) {
+  return `/dashboard/jobs?jobId=${encodeURIComponent(jobAnalysisId)}&tab=cover`;
+}
+
+function HubPagination({
+  page,
+  setPage,
+  totalPages,
+  rangeStart,
+  rangeEnd,
+  total,
+  showPager,
+}: {
+  page: number;
+  setPage: (n: number | ((p: number) => number)) => void;
+  totalPages: number;
+  rangeStart: number;
+  rangeEnd: number;
+  total: number;
+  showPager: boolean;
+}) {
+  if (!showPager) return null;
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
+      <p className="text-xs text-white/40">
+        Showing {rangeStart}–{rangeEnd} of {total}
+      </p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          disabled={page <= 1}
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+          className="rounded-lg border border-white/[0.1] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:border-white/20 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Previous
+        </button>
+        <span className="text-xs tabular-nums text-white/45">
+          {page} / {totalPages}
+        </span>
+        <button
+          type="button"
+          disabled={page >= totalPages}
+          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          className="rounded-lg border border-white/[0.1] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:border-white/20 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function HubProfileActions({
+  profile,
+  profiles,
+  onOpenCv,
+}: {
+  profile: CvProfileSummary;
+  profiles: CvProfileSummary[];
+  onOpenCv: (profileId: string) => void;
+}) {
+  const toast = useToast();
+  const del = useDeleteCVProfile();
+  const rename = useRenameCVProfile();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<{ top: number; right: number } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CvProfileSummary | null>(null);
+  const [renameTarget, setRenameTarget] = useState<CvProfileSummary | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDoc = (e: Event) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+        setMenuAnchor(null);
+      }
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [menuOpen]);
+
+  useLayoutEffect(() => {
+    if (!menuOpen || !menuAnchor) return;
+    const close = () => {
+      setMenuOpen(false);
+      setMenuAnchor(null);
+    };
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+    };
+  }, [menuOpen, menuAnchor]);
+
+  const openMenu = useCallback((e: ReactMouseEvent) => {
+    e.stopPropagation();
+    const el = e.currentTarget as HTMLElement;
+    const rect = el.getBoundingClientRect();
+    setMenuAnchor({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    setMenuOpen(true);
+  }, []);
+
+  return (
+    <>
+      <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          onClick={() => onOpenCv(profile.id)}
+          className="inline-flex items-center gap-1 rounded-lg border border-[#00C9B1]/35 bg-[#00C9B1]/10 px-2.5 py-1.5 text-xs font-semibold text-[#00C9B1] transition hover:bg-[#00C9B1]/20"
+        >
+          <Pencil className="h-3 w-3" />
+          Edit
+        </button>
+        <button
+          type="button"
+          aria-label="More actions"
+          className="rounded-lg p-1.5 text-white/45 transition hover:bg-white/5 hover:text-white"
+          onClick={openMenu}
+        >
+          <MoreVertical className="h-4 w-4" />
+        </button>
+      </div>
+      {typeof document !== 'undefined' && menuOpen && menuAnchor
+        ? createPortal(
+            <div
+              ref={menuRef}
+              className="fixed z-[200] min-w-[10rem] rounded-xl border border-[rgba(0,201,177,0.15)] bg-[#161B1B] py-1 shadow-lg"
+              style={{ top: menuAnchor.top, right: menuAnchor.right }}
+            >
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-xs text-white/80 hover:bg-white/5"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setMenuAnchor(null);
+                  setRenameTarget(profile);
+                  setRenameValue(profile.name);
+                }}
+              >
+                Rename
+              </button>
+              <button
+                type="button"
+                disabled={profiles.length <= 1 || del.isPending}
+                className="block w-full px-3 py-2 text-left text-xs text-red-300 hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-40"
+                onClick={() => {
+                  if (profiles.length <= 1) {
+                    toast.error('You need at least one resume profile.');
+                    return;
+                  }
+                  setMenuOpen(false);
+                  setMenuAnchor(null);
+                  setDeleteTarget(profile);
+                }}
+              >
+                Delete
+              </button>
+            </div>,
+            document.body,
+          )
+        : null}
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        onOpenChange={(o) => {
+          if (!o) setDeleteTarget(null);
+        }}
+        title="Delete resume?"
+        description={
+          deleteTarget ? `Permanently remove “${deleteTarget.name}”? This cannot be undone.` : undefined
+        }
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          try {
+            await del.mutateAsync(deleteTarget.id);
+            toast.success('Resume deleted');
+            setDeleteTarget(null);
+          } catch (e) {
+            toast.error(getApiErrorMessage(e));
+          }
+        }}
+      />
+      <Modal
+        open={Boolean(renameTarget)}
+        onOpenChange={(o) => !o && setRenameTarget(null)}
+        title="Rename resume"
+      >
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!renameTarget) return;
+            const name = renameValue.trim();
+            if (!name) return;
+            void rename.mutateAsync(
+              { id: renameTarget.id, name },
+              {
+                onSuccess: () => {
+                  toast.success('Resume renamed');
+                  setRenameTarget(null);
+                },
+                onError: (err) => toast.error(getApiErrorMessage(err)),
+              },
+            );
+          }}
+        >
+          <input
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            className="w-full rounded-xl border border-white/15 bg-[#0C0F0F] px-3 py-2.5 text-sm text-white outline-none focus:border-[#00C9B1]/50"
+            autoFocus
+          />
+          <button
+            type="submit"
+            disabled={!renameValue.trim() || rename.isPending}
+            className="w-full rounded-xl bg-[#00C9B1] py-2.5 text-sm font-semibold text-[#080A0A] disabled:opacity-50"
+          >
+            Save
+          </button>
+        </form>
+      </Modal>
+    </>
+  );
 }
 
 export function CvClinicHub({
   profiles,
   loading = false,
   onNewCv,
-  onOpenUpload,
   onOpenCv,
-  onOpenJobs,
 }: CvClinicHubProps) {
   const history = useJobHistory();
   const jobItems = ensureArray<JobHistoryItem>(history.data);
@@ -159,6 +401,8 @@ export function CvClinicHub({
   const [clSearch, setClSearch] = useState('');
   const [cvView, setCvView] = useState<ViewMode>('cards');
   const [clView, setClView] = useState<ViewMode>('cards');
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const mergeSelection = useCvProfileMergeSelection(profiles);
 
   const coverLetterRows = useMemo(
     () =>
@@ -186,23 +430,28 @@ export function CvClinicHub({
     });
   }, [coverLetterRows, clSearch]);
 
+  const cvPagination = useClientPagination(filteredProfiles, HUB_PAGE_SIZE);
+  const clPagination = useClientPagination(filteredLetters, HUB_PAGE_SIZE);
+  const pagedProfiles = cvPagination.pageItems;
+  const pagedLetters = clPagination.pageItems;
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 pb-12 pt-2">
       <header className="space-y-2" data-tour="cv-clinic-intro">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#00C9B1]">CV workspace</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#00C9B1]">Resume workspace</p>
         <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">What would you like to do?</h1>
         <p className="max-w-2xl text-sm leading-relaxed text-white/50">
-          Start a CV, upload an existing one, or jump to jobs and analyses. Open anything below to keep editing — your
-          work saves automatically.
+          Start a resume, upload an existing one, or jump to jobs and analyses. Open anything below to keep editing —
+          your work saves automatically.
         </p>
       </header>
 
-      <section aria-label="Quick actions" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-tour="cv-clinic-actions">
+      <section aria-label="Quick actions" className="grid gap-4 sm:grid-cols-2" data-tour="cv-clinic-actions">
         <HubActionTile
           icon={<Plus className="h-6 w-6" strokeWidth={2.25} />}
           iconWrapClassName="bg-[#00C9B1]/15 text-[#00C9B1] ring-[#00C9B1]/25 group-hover:bg-[#00C9B1]/25"
-          title="New CV"
-          description="Name, template choice, then build with AI, upload, or from scratch"
+          title="New resume"
+          description="Pick a template, then build with AI or start from a blank page"
           onClick={onNewCv}
         />
         <HubActionLink
@@ -210,31 +459,36 @@ export function CvClinicHub({
           icon={<History className="h-6 w-6" />}
           iconWrapClassName="bg-emerald-500/10 text-emerald-300 ring-emerald-400/25 group-hover:bg-emerald-500/15"
           title="Analysis history"
-          description="Every job you ran — match scores, notes, and saved cover letters"
-        />
-        <HubActionTile
-          icon={<Sparkles className="h-6 w-6" />}
-          iconWrapClassName="bg-violet-500/10 text-violet-300 ring-violet-400/20 group-hover:bg-violet-500/15"
-          title="Upload CV"
-          description="We parse your file and fill the builder for you"
-          onClick={onOpenUpload}
-        />
-        <HubActionTile
-          icon={<ScrollText className="h-6 w-6" />}
-          iconWrapClassName="bg-amber-500/10 text-amber-200 ring-amber-400/25 group-hover:bg-amber-500/15"
-          title="New cover letter"
-          description="Analyze a job — we match your CV and draft a letter"
-          onClick={onOpenJobs}
+          description="Match scores, notes, and saved cover letters from every job you analyzed"
         />
       </section>
+
+      <GlowCard
+        className="border border-[#00C9B1]/15 bg-gradient-to-r from-[#00C9B1]/[0.06] to-transparent"
+        contentClassName="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-white">Tip</p>
+          <p className="mt-1 text-xs leading-relaxed text-white/50">
+            Open any resume below to edit, score, and export. Cover letters open straight to the letter tab in Jobs.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/jobs"
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-[#00C9B1]/35 bg-[#00C9B1]/10 px-4 py-2.5 text-sm font-semibold text-[#00C9B1] transition hover:bg-[#00C9B1]/20"
+        >
+          <Briefcase className="h-4 w-4" />
+          Jobs workspace
+        </Link>
+      </GlowCard>
 
       <section aria-labelledby="cv-library-heading" className="space-y-4" data-tour="cv-clinic-library">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 id="cv-library-heading" className="text-lg font-bold text-white sm:text-xl">
-              Recent CVs
+              Recent resumes
             </h2>
-            <p className="mt-0.5 text-sm text-white/45">Open a CV to enter the CV Clinic editor</p>
+            <p className="mt-0.5 text-sm text-white/45">Open a resume to enter the Resume Clinic editor</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative min-w-[12rem] flex-1 sm:max-w-xs">
@@ -252,6 +506,16 @@ export function CvClinicHub({
           </div>
         </div>
 
+        {profiles.length > 1 ? (
+          <CvProfileMergeToolbar
+            selectedCount={mergeSelection.selectedList.length}
+            canMerge={mergeSelection.canMerge}
+            overLimit={mergeSelection.overLimit}
+            onClear={mergeSelection.clear}
+            onMerge={() => setMergeOpen(true)}
+          />
+        ) : null}
+
         {loading ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {[0, 1, 2].map((i) => (
@@ -261,20 +525,35 @@ export function CvClinicHub({
         ) : filteredProfiles.length === 0 ? (
           <GlowCard className="border border-white/[0.08]" contentClassName="p-10 text-center">
             <FileText className="mx-auto h-10 w-10 text-white/20" />
-            <p className="mt-3 text-sm font-medium text-white/70">No CVs match your search</p>
+            <p className="mt-3 text-sm font-medium text-white/70">No resumes match your search</p>
             <p className="mt-1 text-xs text-white/40">Try another term or clear the search box</p>
           </GlowCard>
         ) : cvView === 'cards' ? (
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredProfiles.map((p) => (
+            {pagedProfiles.map((p) => (
               <li key={p.id}>
-                <button
-                  type="button"
-                  onClick={() => onOpenCv(p.id)}
-                  className="group flex h-full w-full flex-col rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-transparent p-5 text-left transition hover:border-[#00C9B1]/35 hover:shadow-[0_8px_32px_-8px_rgba(0,201,177,0.2)]"
-                >
+                <div className="group flex h-full w-full flex-col rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-transparent p-5 text-left transition hover:border-[#00C9B1]/35 hover:shadow-[0_8px_32px_-8px_rgba(0,201,177,0.2)]">
                   <div className="flex items-start justify-between gap-2">
-                    <p className="min-w-0 flex-1 font-semibold text-white group-hover:text-[#00C9B1]">{p.name}</p>
+                    <div className="flex min-w-0 flex-1 items-start gap-2">
+                      {profiles.length > 1 ? (
+                        <CvProfileMergeCheckbox
+                          checked={mergeSelection.selectedIds.has(p.id)}
+                          disabled={
+                            !mergeSelection.selectedIds.has(p.id) &&
+                            mergeSelection.selectedList.length >= 6
+                          }
+                          onChange={() => mergeSelection.toggle(p.id)}
+                          label={`Select ${p.name} for merge`}
+                        />
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => onOpenCv(p.id)}
+                        className="min-w-0 flex-1 text-left font-semibold text-white group-hover:text-[#00C9B1]"
+                      >
+                        {p.name}
+                      </button>
+                    </div>
                     {p.isDefault ? (
                       <span className="shrink-0 rounded-full bg-[#00C9B1]/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#00C9B1]">
                         Default
@@ -293,7 +572,10 @@ export function CvClinicHub({
                     ) : null}
                     <span className="text-white/35">· {formatRelativeEdited(p.updatedAt)}</span>
                   </div>
-                </button>
+                  <div className="mt-4 flex justify-end border-t border-white/[0.06] pt-3">
+                    <HubProfileActions profile={p} profiles={profiles} onOpenCv={onOpenCv} />
+                  </div>
+                </div>
               </li>
             ))}
           </ul>
@@ -303,18 +585,40 @@ export function CvClinicHub({
               <table className="w-full min-w-[520px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-white/[0.08] bg-white/[0.03] text-[11px] font-semibold uppercase tracking-wide text-white/45">
+                    {profiles.length > 1 ? <th className="w-10 px-2 py-3" /> : null}
                     <th className="px-4 py-3">Name</th>
                     <th className="px-4 py-3">Headline</th>
                     <th className="px-4 py-3">Template</th>
                     <th className="px-4 py-3">Score</th>
                     <th className="px-4 py-3">Updated</th>
-                    <th className="px-4 py-3 text-right"> </th>
+                    <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProfiles.map((p) => (
+                  {pagedProfiles.map((p) => (
                     <tr key={p.id} className="border-b border-white/[0.05] transition hover:bg-white/[0.03]">
-                      <td className="px-4 py-3 font-medium text-white">{p.name}</td>
+                      {profiles.length > 1 ? (
+                        <td className="px-2 py-3">
+                          <CvProfileMergeCheckbox
+                            checked={mergeSelection.selectedIds.has(p.id)}
+                            disabled={
+                              !mergeSelection.selectedIds.has(p.id) &&
+                              mergeSelection.selectedList.length >= 6
+                            }
+                            onChange={() => mergeSelection.toggle(p.id)}
+                            label={`Select ${p.name} for merge`}
+                          />
+                        </td>
+                      ) : null}
+                      <td className="px-4 py-3 font-medium text-white">
+                        <button
+                          type="button"
+                          className="text-left hover:text-[#00C9B1]"
+                          onClick={() => onOpenCv(p.id)}
+                        >
+                          {p.name}
+                        </button>
+                      </td>
                       <td className="max-w-[200px] truncate px-4 py-3 text-white/50">{p.headline?.trim() || '—'}</td>
                       <td className="px-4 py-3 capitalize text-white/55">{p.template ?? '—'}</td>
                       <td className="px-4 py-3 tabular-nums text-[#00C9B1]">{p.score != null ? `${p.score}/100` : '—'}</td>
@@ -322,13 +626,7 @@ export function CvClinicHub({
                         {p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : '—'}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => onOpenCv(p.id)}
-                          className="rounded-lg border border-[#00C9B1]/35 bg-[#00C9B1]/10 px-3 py-1.5 text-xs font-semibold text-[#00C9B1] transition hover:bg-[#00C9B1]/20"
-                        >
-                          Open
-                        </button>
+                        <HubProfileActions profile={p} profiles={profiles} onOpenCv={onOpenCv} />
                       </td>
                     </tr>
                   ))}
@@ -337,6 +635,7 @@ export function CvClinicHub({
             </div>
           </GlowCard>
         )}
+        <HubPagination {...cvPagination} />
       </section>
 
       <section aria-labelledby="cl-heading" className="space-y-4">
@@ -345,7 +644,7 @@ export function CvClinicHub({
             <h2 id="cl-heading" className="text-lg font-bold text-white sm:text-xl">
               Cover letters
             </h2>
-            <p className="mt-0.5 text-sm text-white/45">Saved with job analyses — open to view or edit in Jobs</p>
+            <p className="mt-0.5 text-sm text-white/45">Opens directly on the cover letter tab in Jobs</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative min-w-[12rem] flex-1 sm:max-w-xs">
@@ -377,17 +676,16 @@ export function CvClinicHub({
             </p>
             <p className="mt-1 text-xs text-white/40">
               {coverLetterRows.length === 0
-                ? 'Run a job analysis and generate a letter — it will show up here.'
+                ? 'Run a job analysis and generate a letter. It will show up here.'
                 : 'Try another company or role keyword.'}
             </p>
-            <button
-              type="button"
-              onClick={onOpenJobs}
+            <Link
+              href="/dashboard/jobs"
               className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-[#00C9B1] px-4 py-2.5 text-sm font-semibold text-[#080A0A] transition hover:bg-[#00C9B1]"
             >
               <Briefcase className="h-4 w-4" />
               Go to Jobs
-            </button>
+            </Link>
             <p className="mt-4 text-[11px] text-white/30">
               Or browse{' '}
               <Link href="/dashboard/analyses" className="text-[#00C9B1] hover:underline">
@@ -398,10 +696,10 @@ export function CvClinicHub({
           </GlowCard>
         ) : clView === 'cards' ? (
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredLetters.map((j) => (
+            {pagedLetters.map((j) => (
               <li key={j.id}>
                 <Link
-                  href={`/dashboard/jobs?jobId=${encodeURIComponent(j.id)}`}
+                  href={jobCoverLetterHref(j.id)}
                   className="group flex h-full flex-col rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-transparent p-5 transition hover:border-[#00C9B1]/35 hover:shadow-[0_8px_32px_-8px_rgba(0,201,177,0.2)]"
                 >
                   <p className="font-semibold text-white group-hover:text-[#00C9B1]">{j.company || 'Company'}</p>
@@ -431,7 +729,7 @@ export function CvClinicHub({
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredLetters.map((j) => (
+                  {pagedLetters.map((j) => (
                     <tr key={j.id} className="border-b border-white/[0.05] transition hover:bg-white/[0.03]">
                       <td className="px-4 py-3 font-medium text-white">{j.company || '—'}</td>
                       <td className="max-w-[220px] truncate px-4 py-3 text-white/55">{j.jobTitle || j.title || '—'}</td>
@@ -441,7 +739,7 @@ export function CvClinicHub({
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Link
-                          href={`/dashboard/jobs?jobId=${encodeURIComponent(j.id)}`}
+                          href={jobCoverLetterHref(j.id)}
                           className="inline-block rounded-lg border border-[#00C9B1]/35 bg-[#00C9B1]/10 px-3 py-1.5 text-xs font-semibold text-[#00C9B1] transition hover:bg-[#00C9B1]/20"
                         >
                           Open
@@ -454,7 +752,19 @@ export function CvClinicHub({
             </div>
           </GlowCard>
         )}
+        <HubPagination {...clPagination} />
       </section>
+
+      <MergeCvProfilesModal
+        open={mergeOpen}
+        onOpenChange={(open) => {
+          setMergeOpen(open);
+          if (!open) mergeSelection.clear();
+        }}
+        profileIds={mergeSelection.selectedList}
+        profiles={profiles}
+        onMerged={onOpenCv}
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import '@/styles/interview-prep.css';
 
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -25,9 +26,22 @@ import {
 import {
   useCreateSimulateSession,
   useInterviewPrepProgress,
+  useInterviewPrepQuota,
 } from '@/hooks/useInterviewPrep';
 import { api, type InterviewPersonality, type InterviewType } from '@/lib/api';
-import { getApiErrorMessage } from '@/lib/axios';
+import {
+  getApiErrorMessage,
+  isInterviewPrepWeeklyLimitApiError,
+} from '@/lib/axios';
+import { trackUpgradePrompted } from '@/lib/analytics';
+import { InterviewPrepQuotaBanner } from '@/components/interview/InterviewPrepQuotaBanner';
+import {
+  canStartInterviewPrepSession,
+  formatInterviewPrepQuotaReset,
+  isInterviewPrepWeeklyLimitReached,
+  readInterviewPrepWeeklyLimitFromError,
+  type InterviewPrepWeeklyLimitDetails,
+} from '@/lib/interviewPrepQuota';
 import { PersonaSelectorCard } from '@/components/interview/personality/PersonaSelectorCard';
 import type {
   CoachingIntensity,
@@ -88,6 +102,7 @@ export function InterviewSetupStepper() {
   const profiles = profilesQ.data?.rows ?? [];
   const sessionsQ = useInterviewSessions();
   const progressQ = useInterviewPrepProgress();
+  const quotaQ = useInterviewPrepQuota();
   const createInterview = useCreateInterview();
   const createSimulation = useCreateSimulateSession();
 
@@ -119,13 +134,26 @@ export function InterviewSetupStepper() {
     () => params.get('jobTitle')?.trim() ?? '',
   );
   const [startError, setStartError] = useState<string | null>(null);
+  const [weeklyLimitGate, setWeeklyLimitGate] =
+    useState<InterviewPrepWeeklyLimitDetails | null>(null);
+
+  const prepQuota = quotaQ.data;
+  const weeklyLimitReached =
+    isInterviewPrepWeeklyLimitReached(prepQuota) || weeklyLimitGate != null;
+  const canStartSession = canStartInterviewPrepSession(prepQuota) && !weeklyLimitGate;
+
+  useEffect(() => {
+    if (weeklyLimitGate) {
+      trackUpgradePrompted('interview_prep_weekly_limit');
+    }
+  }, [weeklyLimitGate]);
 
   const jobAnalysisId = (params.get('jobAnalysisId') ?? '').trim();
   const lastAutoSelectedCvRef = useRef<string | null>(null);
   const lastAutoJobContextRef = useRef<string | null>(null);
 
   const linkedJobQ = useQuery({
-    queryKey: ['job', jobAnalysisId],
+    queryKey: queryKeys.jobs.analysis(jobAnalysisId),
     queryFn: () => api.jobs.getJob(jobAnalysisId),
     enabled: Boolean(jobAnalysisId),
   });
@@ -204,8 +232,38 @@ export function InterviewSetupStepper() {
         Boolean(jobAnalysisId) ||
         targetRoleTitle.trim().length >= 2;
 
+  const handleStartError = useCallback(
+    (err: unknown) => {
+      if (isInterviewPrepWeeklyLimitApiError(err)) {
+        const details = readInterviewPrepWeeklyLimitFromError(err);
+        if (details) {
+          setWeeklyLimitGate(details);
+          void quotaQ.refetch();
+        }
+        setStartError(null);
+        return;
+      }
+      setStartError(getApiErrorMessage(err));
+    },
+    [quotaQ],
+  );
+
   const startInterview = useCallback(() => {
     setStartError(null);
+    setWeeklyLimitGate(null);
+    if (!canStartSession) {
+      if (prepQuota && isInterviewPrepWeeklyLimitReached(prepQuota)) {
+        setWeeklyLimitGate({
+          message: 'Weekly interview practice limit reached.',
+          upgradeMessage: prepQuota.upgradeMessage,
+          weeklyLimit: prepQuota.weeklyLimit,
+          sessionsCompletedThisWeek: prepQuota.sessionsCompletedThisWeek,
+          quotaResetsAt: prepQuota.quotaResetsAt || null,
+          voiceRequiresPaid: true,
+        });
+      }
+      return;
+    }
     if (!effectiveCvId) {
       setStartError(
         'Add a CV profile first — open CV Builder and create one, then return here.',
@@ -268,9 +326,7 @@ export function InterviewSetupStepper() {
             }
             router.push(`/dashboard/interview/${session.id}`);
           },
-          onError: (err) => {
-            setStartError(getApiErrorMessage(err));
-          },
+          onError: handleStartError,
         },
       );
       return;
@@ -316,14 +372,15 @@ export function InterviewSetupStepper() {
           }
           router.push(`/dashboard/interview/${session.id}`);
         },
-        onError: (err) => {
-          setStartError(getApiErrorMessage(err));
-        },
+        onError: handleStartError,
       },
     );
   }, [
+    canStartSession,
     company,
     createInterview,
+    handleStartError,
+    prepQuota,
     coachingEnabled,
     coachingIntensity,
     createSimulation,
@@ -365,6 +422,11 @@ export function InterviewSetupStepper() {
         </p>
         <hr className="ip-divider" />
       </header>
+
+      <InterviewPrepQuotaBanner
+        quota={prepQuota}
+        isLoading={quotaQ.isLoading}
+      />
 
       <ProgressCoachPanel />
 
@@ -735,7 +797,31 @@ export function InterviewSetupStepper() {
           )}
         </div>
 
-        {startError ? (
+        {weeklyLimitGate ? (
+          <div className="border-t border-[var(--border-subtle)] bg-amber-500/10 px-5 py-4">
+            <p className="text-sm font-semibold text-amber-100">
+              {weeklyLimitGate.message || 'Weekly practice limit reached'}
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-amber-100/90">
+              {weeklyLimitGate.upgradeMessage}
+            </p>
+            {weeklyLimitGate.quotaResetsAt ? (
+              <p className="mt-2 text-xs text-amber-200/75">
+                Quota resets{' '}
+                {formatInterviewPrepQuotaReset(
+                  weeklyLimitGate.quotaResetsAt,
+                  prepQuota?.quotaTimezone ?? 'UTC',
+                )}
+              </p>
+            ) : null}
+            <a
+              href="/#pricing"
+              className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[#00C9B1] px-4 py-2.5 text-sm font-semibold text-[#080A0A] transition hover:bg-[#33d4c2]"
+            >
+              Compare Pro plans
+            </a>
+          </div>
+        ) : startError ? (
           <p className="border-t border-[var(--border-subtle)] bg-rose-500/10 px-5 py-3 text-sm text-rose-200">
             {startError}
           </p>
@@ -773,21 +859,30 @@ export function InterviewSetupStepper() {
             <button
               type="button"
               className="ip-btn-primary ip-btn-primary-lg"
-              disabled={isStarting || profilesQ.isLoading || !effectiveCvId}
+              disabled={
+                isStarting ||
+                profilesQ.isLoading ||
+                !effectiveCvId ||
+                weeklyLimitReached
+              }
               onClick={startInterview}
               title={
-                !effectiveCvId && !profilesQ.isLoading
-                  ? 'Create a CV profile in CV Builder first'
-                  : undefined
+                weeklyLimitReached
+                  ? 'Weekly practice limit reached — upgrade to Pro for unlimited sessions'
+                  : !effectiveCvId && !profilesQ.isLoading
+                    ? 'Create a CV profile in CV Builder first'
+                    : undefined
               }
             >
               {isStarting
                 ? 'Starting…'
-                : simulationSelection
-                  ? 'Start simulation'
-                  : adaptiveDifficulty
-                    ? 'Start adaptive interview'
-                    : `Start with ${selectedPersona.personName}`}
+                : weeklyLimitReached
+                  ? 'Weekly limit reached'
+                  : simulationSelection
+                    ? 'Start simulation'
+                    : adaptiveDifficulty
+                      ? 'Start adaptive interview'
+                      : `Start with ${selectedPersona.personName}`}
             </button>
           )}
         </footer>

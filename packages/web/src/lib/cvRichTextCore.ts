@@ -87,3 +87,18 @@ export function toDisplayRichHtml(input: string): string {
   const withMdItalic = withMdBold.replace(/(^|[^*])\*(?!\*)(.+?)\*(?!\*)/g, '$1<em>$2</em>');
   return sanitizeRichHtml(withMdItalic.replace(/\n/g, '<br/>'));
 }
+
+/** Visible plain text for emptiness checks (filters, section visibility). */
+export function richTextPlainText(input: string): string {
+  if (!input?.trim()) return '';
+  if (typeof document === 'undefined') {
+    return decodeHtml(input)
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  const el = document.createElement('div');
+  el.innerHTML = toDisplayRichHtml(input);
+  return (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+}

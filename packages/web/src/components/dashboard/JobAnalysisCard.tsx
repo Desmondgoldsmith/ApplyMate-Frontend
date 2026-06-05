@@ -1,67 +1,14 @@
-import { Check, CircleDollarSign, Loader2 } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 
 import { JobAnalysisV2Panel } from '@/components/job-analysis/JobAnalysisV2Panel';
+import { MatchScoreFactorsBreakdown } from '@/components/job-analysis/MatchScoreFactorsBreakdown';
+import { JobSalaryEstimatePanel } from '@/components/job-analysis/JobSalaryEstimatePanel';
 import { Button } from '@/components/ui/Button';
 import { MatchScoreBar } from '@/components/ui/MatchScoreBar';
 
-import type { JobAnalysis, JobSalaryEstimate } from '@/lib/api';
-
-function localeForSalaryCurrency(code: string): string {
-  const c = code.toUpperCase();
-  if (c === 'GHS') return 'en-GH';
-  if (c === 'NGN') return 'en-NG';
-  if (c === 'KES') return 'en-KE';
-  if (c === 'ZAR') return 'en-ZA';
-  if (c === 'EGP') return 'en-EG';
-  if (c === 'GBP') return 'en-GB';
-  return 'en-US';
-}
-
-function formatSalaryAmount(n: number, currency: string): string {
-  const loc = localeForSalaryCurrency(currency);
-  try {
-    return new Intl.NumberFormat(loc, {
-      style: 'currency',
-      currency: currency.toUpperCase(),
-      maximumFractionDigits: 0,
-    }).format(n);
-  } catch {
-    return `${currency} ${Math.round(n).toLocaleString(loc)}`;
-  }
-}
-
-function formatSalaryRange(est: JobSalaryEstimate): string {
-  const a = formatSalaryAmount(est.min, est.currency);
-  const b = formatSalaryAmount(est.max, est.currency);
-  const basis =
-    est.basis?.toLowerCase() === 'annual' || !est.basis ? 'year' : String(est.basis).replace(/_/g, ' ');
-  return `${a} – ${b} / ${basis}`;
-}
-
-function SalaryConfidenceLine({ est }: { est: JobSalaryEstimate }) {
-  const c = est.confidence;
-  if (c === 'high') {
-    return (
-      <span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-200/95">
-        High confidence
-      </span>
-    );
-  }
-  if (c === 'low') {
-    return (
-      <span className="inline-flex items-center rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-0.5 text-[11px] font-medium text-white/45">
-        Rough estimate
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center rounded-full border border-amber-500/35 bg-[rgba(245,158,11,0.15)] px-2.5 py-0.5 text-[11px] font-semibold text-amber-100/95">
-      ~ Estimated
-    </span>
-  );
-}
+import type { JobAnalysis } from '@/lib/api';
 
 export function JobAnalysisCard({
   analysis,
@@ -71,6 +18,7 @@ export function JobAnalysisCard({
   acceptedSkillNames,
   showTailorAction = false,
   hideAiReport = false,
+  factorsDefaultOpen = false,
   applyUrl,
   onTailorFirst,
   onApplyNow,
@@ -83,6 +31,8 @@ export function JobAnalysisCard({
   showTailorAction?: boolean;
   /** When true, AI recruiter report is shown in a parent collapsible section instead. */
   hideAiReport?: boolean;
+  /** Expand the "Why this score?" factor breakdown by default (Job Analyzer results panel). */
+  factorsDefaultOpen?: boolean;
   applyUrl?: string | null;
   onTailorFirst?: () => void;
   onApplyNow?: () => void;
@@ -118,6 +68,7 @@ export function JobAnalysisCard({
   const analyzedCvProfileId = (cvMeta.sourceCvProfileId ?? cvMeta.cvProfileId ?? '').trim();
   const fallbackCvProfileId = (cvMeta.cvProfileId ?? '').trim();
   const hasV2 = Boolean(analysis.analysisV2);
+  const factorsBreakdown = analysis.factorsBreakdown;
 
   return (
     <div className="relative min-w-0 max-w-full space-y-6 overflow-x-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-6">
@@ -160,8 +111,15 @@ export function JobAnalysisCard({
             </p>
           ) : analysis.scoreSource === 'ai' ? (
             <p className="mt-2 text-[11px] leading-relaxed text-emerald-200/65">
-              AI-analyzed — skill gaps below are suitable for tailoring.
+              AI-analyzed: skill gaps below are suitable for tailoring.
             </p>
+          ) : null}
+          {factorsBreakdown?.factors.length ? (
+            <MatchScoreFactorsBreakdown
+              breakdown={factorsBreakdown}
+              className="mt-3"
+              defaultOpen={factorsDefaultOpen}
+            />
           ) : null}
         </>
       ) : null}
@@ -182,19 +140,7 @@ export function JobAnalysisCard({
       ) : null}
 
       {salary && !rematchInProgress ? (
-        <div className="rounded-[14px] border border-amber-500/20 bg-[rgba(245,158,11,0.06)] px-5 py-5 sm:px-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <CircleDollarSign className="h-5 w-5 shrink-0 text-amber-300" strokeWidth={2} aria-hidden />
-            <p className="text-[14px] font-semibold text-white">Estimated Salary</p>
-          </div>
-          <p className="mt-2 text-[22px] font-bold leading-tight text-white">{formatSalaryRange(salary)}</p>
-          <div className="mt-2">
-            <SalaryConfidenceLine est={salary} />
-          </div>
-          {salary.note?.trim() ? (
-            <p className="mt-3 text-[12px] leading-relaxed text-white/45">{salary.note.trim()}</p>
-          ) : null}
-        </div>
+        <JobSalaryEstimatePanel estimate={salary} />
       ) : null}
 
       <div>

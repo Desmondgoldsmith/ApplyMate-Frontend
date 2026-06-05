@@ -2,6 +2,10 @@ import { axiosClient, throwIfApiFailureResponse } from '@/lib/axios';
 import { dedupeTurnSubmit } from '@/lib/interviewRequestDedupe';
 import type { InterviewSession } from '@/lib/api';
 import type { PreCoachingResponse } from '@/lib/interview-coaching-types';
+import {
+  parseInterviewPrepQuota,
+  type InterviewPrepQuota,
+} from '@/lib/interviewPrepQuota';
 import type {
   AdaptiveProfile,
   AnswerSource,
@@ -27,6 +31,16 @@ function unwrapPrepData<T>(raw: unknown): T {
 }
 
 export const interviewPrepApi = {
+  getQuota: async (): Promise<InterviewPrepQuota> => {
+    const res = await axiosClient.get<unknown>('/interview-prep/quota');
+    throwIfApiFailureResponse(res.data, res.status);
+    const parsed = parseInterviewPrepQuota(unwrapPrepData<unknown>(res.data));
+    if (!parsed) {
+      throw new Error('Invalid interview prep quota response');
+    }
+    return parsed;
+  },
+
   getProgress: async (): Promise<InterviewProgressSnapshot> => {
     const res = await axiosClient.get<unknown>('/interview-prep/progress');
     throwIfApiFailureResponse(res.data, res.status);

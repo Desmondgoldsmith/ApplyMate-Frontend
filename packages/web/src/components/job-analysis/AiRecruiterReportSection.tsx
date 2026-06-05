@@ -92,6 +92,7 @@ export function AiRecruiterReportSection({
               analysis={analysis}
               applyUrl={applyUrl}
               isTailored={isTailored}
+              embeddedInReport
               onTailorFirst={onTailorFirst}
               onApplyNow={onApplyNow}
             />

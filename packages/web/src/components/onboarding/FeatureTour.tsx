@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import confetti from 'canvas-confetti';
 import {
   driver,
@@ -10,98 +11,169 @@ import {
 import 'driver.js/dist/driver.css';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   closeMobileNavForTour,
   matchTourId,
+  MOBILE_JOBS_REVEAL_MS,
+  MOBILE_NAV_REVEAL_MS,
   resolveStepSelector,
   resolveStepSide,
   stepsForTour,
   tourMeta,
-  tourStorageKey,
   type TourId,
   type TourStepDef,
 } from '@/components/onboarding/featureTourDefinitions';
-import { useAnalytics } from '@/hooks/useAnalytics';
+import {
+  applyTourSpotlight,
+  clearTourSpotlight,
+  isDriverDummyElement,
+  resolveTourHighlightTarget,
+  waitForTourTarget,
+} from '@/components/onboarding/tourSpotlight';
+import {
+  isGlobalTourFinished,
+  markGlobalTourCompleted,
+  markGlobalTourSkipped,
+  markPageTourCompleted,
+  markPageTourSkipped,
+  shouldShowDashboardTour,
+  shouldShowPageTour,
+  TOUR_COMPLETED_KEY,
+  TOUR_SKIPPED_KEY,
+} from '@/components/onboarding/featureTourStorage';
+import {
+  applyMobileTourPopoverPosition,
+  clearTourPopoverInlinePosition,
+} from '@/components/onboarding/tourPopoverLayout';
+import {
+  bindTourScrollPrevent,
+  lockTourScroll,
+  unlockTourScroll,
+} from '@/components/onboarding/tourScrollLock';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
 
 import './onboarding-tour.css';
 
-const LEGACY_DASHBOARD_KEY = 'applymate:tour:completed';
-const TOUR_TARGET_CLASS = 'applymate-tour-target';
-const TOUR_ANCESTOR_CLASS = 'applymate-tour-ancestor';
+const TOUR_START_DELAY_MS = 1200;
+const TOUR_DOM_RETRY_MS = 500;
+const TOUR_DOM_MAX_ATTEMPTS = 16;
 
-function clearTourSpotlight(): void {
-  if (typeof document === 'undefined') return;
-  document.documentElement.classList.remove('applymate-tour-active');
-  document.querySelectorAll(`.${TOUR_TARGET_CLASS}`).forEach((el) => {
-    el.classList.remove(TOUR_TARGET_CLASS);
-  });
-  document.querySelectorAll(`.${TOUR_ANCESTOR_CLASS}`).forEach((el) => {
-    el.classList.remove(TOUR_ANCESTOR_CLASS);
-  });
-}
-
-function applyTourSpotlight(
-  element: Element | undefined,
-  selector: string,
-): void {
-  if (typeof document === 'undefined') return;
-  clearTourSpotlight();
-  document.documentElement.classList.add('applymate-tour-active');
-  const el = (element ??
-    document.querySelector(selector)) as HTMLElement | null;
-  if (!el) return;
-  el.classList.add(TOUR_TARGET_CLASS);
-  let parent = el.parentElement;
-  while (parent && parent !== document.body) {
-    parent.classList.add(TOUR_ANCESTOR_CLASS);
-    parent = parent.parentElement;
-  }
-}
-
-function markTourCompleteLocal(storageKey: string): void {
-  try {
-    localStorage.setItem(storageKey, 'true');
-  } catch {
-    /* ignore */
-  }
-}
-
-function readTourCompleteLocal(storageKey: string): boolean {
-  try {
-    return localStorage.getItem(storageKey) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-function dashboardTourFinished(
-  user:
-    | { id?: string; uiPrefs?: { tourCompleted?: boolean } | null }
-    | null
-    | undefined,
-  storageKey: string,
-): boolean {
-  const legacyKey = user?.id
-    ? `${LEGACY_DASHBOARD_KEY}:${user.id}`
-    : LEGACY_DASHBOARD_KEY;
+function isNarrowViewport(): boolean {
   return (
-    user?.uiPrefs?.tourCompleted === true ||
-    readTourCompleteLocal(storageKey) ||
-    readTourCompleteLocal(legacyKey)
+    typeof window !== 'undefined' &&
+    window.matchMedia('(max-width: 767px)').matches
   );
 }
 
-function collectSteps(defs: TourStepDef[], narrow: boolean): DriveStep[] {
+function scrollTourTargetIntoView(element: Element | null | undefined): void {
+  if (!element) return;
+  const inHeader = Boolean(element.closest('header'));
+  element.scrollIntoView({
+    block: inHeader ? 'nearest' : 'center',
+    inline: 'nearest',
+    behavior: 'auto',
+  });
+}
+
+function refreshDriverLayout(drv: ReturnType<typeof driver> | null): void {
+  if (!drv?.isActive()) return;
+  drv.refresh();
+  window.requestAnimationFrame(() => drv.refresh());
+}
+
+function stepSelector(step: DriveStep | undefined): string {
+  const el = step?.element;
+  return typeof el === 'string' ? el : '';
+}
+
+function repositionMobileTourPopover(
+  element: Element | null | undefined,
+  wrap?: HTMLElement | null,
+): void {
+  const pop =
+    wrap ?? document.getElementById('driver-popover-content');
+  if (!(pop instanceof HTMLElement)) return;
+  const placement = applyMobileTourPopoverPosition(pop, element);
+  pop.classList.toggle('applymate-tour-popover--above', placement === 'above');
+  pop.classList.toggle('applymate-tour-popover--below', placement === 'below');
+}
+
+/** driver.js positions the popover after onPopoverRender — override on the next frames. */
+function scheduleMobileTourLayout(
+  getDriver: () => ReturnType<typeof driver> | null,
+  wrap?: HTMLElement | null,
+): void {
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      const drv = getDriver();
+      if (!drv?.isActive()) return;
+      const step = drv.getActiveStep();
+      const selector = stepSelector(step);
+      const target = resolveTourHighlightTarget(
+        drv.getActiveElement(),
+        selector,
+      );
+      if (target) applyTourSpotlight(target, selector);
+      repositionMobileTourPopover(target, wrap);
+    });
+  });
+}
+
+function collectSteps(
+  defs: TourStepDef[],
+  narrow: boolean,
+  onStepHighlight: () => void,
+  getDriver: () => ReturnType<typeof driver> | null,
+): DriveStep[] {
   const steps: DriveStep[] = [];
   for (const row of defs) {
     const selector = resolveStepSelector(row, narrow);
     const el = document.querySelector(selector);
-    if (!el && !(narrow && row.revealOnHighlight)) continue;
+    if (!el && !row.revealOnHighlight) continue;
+
+    let rebindDepth = 0;
+
+    const settleStep = async (element: Element | undefined) => {
+      const drv = getDriver();
+      if (!drv?.isActive()) return;
+
+      if (row.revealOnHighlight) {
+        await waitForTourTarget(
+          selector,
+          narrow ? MOBILE_NAV_REVEAL_MS + MOBILE_JOBS_REVEAL_MS + 320 : 520,
+        );
+        const idx = drv.getActiveIndex();
+        if (idx !== undefined) {
+          rebindDepth += 1;
+          drv.moveTo(idx);
+          rebindDepth -= 1;
+        }
+        if (narrow) scheduleMobileTourLayout(getDriver);
+        return;
+      }
+
+      const target = resolveTourHighlightTarget(
+        element,
+        selector,
+      ) ??
+        (document.querySelector(selector) as HTMLElement | null);
+
+      if (!target || isDriverDummyElement(target)) return;
+
+      scrollTourTargetIntoView(target);
+      applyTourSpotlight(target, selector);
+      if (narrow) {
+        scheduleMobileTourLayout(getDriver);
+      } else {
+        refreshDriverLayout(drv);
+        window.requestAnimationFrame(() => refreshDriverLayout(drv));
+      }
+    };
+
     steps.push({
       element: selector,
       popover: {
@@ -110,103 +182,107 @@ function collectSteps(defs: TourStepDef[], narrow: boolean): DriveStep[] {
         side: el ? resolveStepSide(el, row, narrow) : row.side,
         align: row.align ?? 'center',
         showButtons: ['next'],
-        popoverOffset: row.popoverOffset ?? 16,
+        popoverOffset: row.popoverOffset ?? 12,
       } as DriveStep['popover'],
       onHighlightStarted: (element) => {
-        const spotlight = () => applyTourSpotlight(element, selector);
-        const scrollTarget = () => {
-          const target = element ?? document.querySelector(selector);
-          const block =
-            narrow && window.matchMedia('(max-width: 767px)').matches
-              ? 'nearest'
-              : 'center';
-          target?.scrollIntoView({
-            block,
-            inline: 'nearest',
-            behavior: 'smooth',
-          });
-          spotlight();
-        };
-        if (row.beforeHighlight) {
-          row.beforeHighlight();
-          const delay = narrow && row.revealOnHighlight ? 360 : 150;
-          window.setTimeout(scrollTarget, delay);
-          window.setTimeout(spotlight, 40);
+        onStepHighlight();
+        if (rebindDepth > 0) {
+          const target = resolveTourHighlightTarget(element, selector);
+          if (target) {
+            scrollTourTargetIntoView(target);
+            applyTourSpotlight(target, selector);
+            if (narrow) scheduleMobileTourLayout(getDriver);
+          }
+          if (!narrow) refreshDriverLayout(getDriver());
           return;
         }
-        scrollTarget();
+        if (row.beforeHighlight) {
+          row.beforeHighlight();
+          const delay = row.revealOnHighlight
+            ? narrow
+              ? MOBILE_NAV_REVEAL_MS + MOBILE_JOBS_REVEAL_MS
+              : 280
+            : 180;
+          window.setTimeout(() => {
+            void settleStep(element);
+          }, delay);
+          return;
+        }
+        void settleStep(element);
+      },
+      onDeselected: () => {
+        clearTourSpotlight();
       },
     });
   }
   return steps;
 }
 
-function firstStepReady(tourId: TourId, narrow: boolean): boolean {
-  const defs = stepsForTour(tourId, narrow);
-  if (defs.length === 0) return false;
-  const first = defs[0]!;
-  return Boolean(document.querySelector(resolveStepSelector(first, narrow)));
+function countReadyTourTargets(defs: TourStepDef[], narrow: boolean): number {
+  let n = 0;
+  for (const row of defs) {
+    const selector = resolveStepSelector(row, narrow);
+    if (document.querySelector(selector)) n += 1;
+  }
+  return n;
 }
 
 export function FeatureTour() {
   const pathname = usePathname();
-  const analytics = useAnalytics();
   const queryClient = useQueryClient();
   const accessToken = useAuthStore((s) => s.accessToken);
-  const { data: user } = useCurrentUser();
-  const tourId = matchTourId(pathname);
-  const storageKey = tourId ? tourStorageKey(tourId, user?.id) : '';
+  const storeUser = useAuthStore((s) => s.user);
+  const { data: meUser } = useCurrentUser();
+  const user = useMemo(() => {
+    if (!meUser && !storeUser) return null;
+    const id = meUser?.id?.trim() || storeUser?.id?.trim() || '';
+    if (!id) return null;
+    return {
+      ...(storeUser ?? {}),
+      ...(meUser ?? {}),
+      id,
+      onboardingCompleted:
+        meUser?.onboardingCompleted === true ||
+        storeUser?.onboardingCompleted === true,
+      uiPrefs: meUser?.uiPrefs ?? storeUser?.uiPrefs ?? null,
+    };
+  }, [meUser, storeUser]);
   const driverRef = useRef<ReturnType<typeof driver> | null>(null);
   const celebrateRef = useRef(false);
   const tourCompletionSyncedRef = useRef(false);
-  const persistTourCompletionRef = useRef<() => void>(() => {});
+  const unbindScrollPreventRef = useRef<(() => void) | null>(null);
+  const tourRestartNonceRef = useRef(0);
+  const [tourRestartNonce, setTourRestartNonce] = useState(0);
   const activeTourRef = useRef<TourId | null>(null);
+  const tourId = matchTourId(pathname);
 
   useEffect(() => {
-    persistTourCompletionRef.current = () => {
-      if (!storageKey) return;
-      markTourCompleteLocal(storageKey);
-      if (tourId === 'dashboard') {
-        markTourCompleteLocal(
-          user?.id
-            ? `${LEGACY_DASHBOARD_KEY}:${user.id}`
-            : LEGACY_DASHBOARD_KEY,
-        );
-      }
-      if (tourId !== 'dashboard') return;
-      void (async () => {
-        if (tourCompletionSyncedRef.current) return;
-        tourCompletionSyncedRef.current = true;
-        try {
-          await api.users.updateMe({ tourCompleted: true });
-          await queryClient.invalidateQueries({
-            queryKey: ['me', accessToken ?? ''],
-          });
-        } catch {
-          tourCompletionSyncedRef.current = false;
-        }
-      })();
+    if (user?.uiPrefs?.tourCompleted !== true) return;
+    if (tourRestartNonceRef.current > 0) return;
+    markGlobalTourCompleted(user.id);
+  }, [user?.uiPrefs?.tourCompleted, user?.id]);
+
+  useEffect(() => {
+    const onRestart = () => {
+      tourRestartNonceRef.current += 1;
+      setTourRestartNonce((n) => n + 1);
     };
-  }, [accessToken, queryClient, storageKey, tourId, user?.id]);
-
-  useEffect(() => {
-    if (
-      user?.uiPrefs?.tourCompleted === true &&
-      tourId === 'dashboard' &&
-      storageKey
-    ) {
-      markTourCompleteLocal(storageKey);
-    }
-  }, [user?.uiPrefs?.tourCompleted, storageKey, tourId]);
+    window.addEventListener('applymate:tour-restart', onRestart);
+    return () => window.removeEventListener('applymate:tour-restart', onRestart);
+  }, []);
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
-      if (!storageKey || e.key !== storageKey || e.newValue !== 'true') return;
-      driverRef.current?.destroy();
+      if (
+        (e.key === TOUR_COMPLETED_KEY || e.key === TOUR_SKIPPED_KEY) &&
+        e.newValue === 'true'
+      ) {
+        driverRef.current?.destroy();
+      }
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
-  }, [storageKey]);
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -215,11 +291,14 @@ export function FeatureTour() {
       if (!d?.isActive()) return;
       e.preventDefault();
       celebrateRef.current = false;
+      const id = activeTourRef.current;
+      if (id === 'dashboard') markGlobalTourSkipped();
+      else if (id) markPageTourSkipped(id, user?.id);
       d.destroy();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     const d = driverRef.current;
@@ -231,34 +310,79 @@ export function FeatureTour() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (!user?.id) return;
-    if (!tourId || !storageKey) return;
+    if (!user?.id || !tourId) return;
+    if (user.onboardingCompleted !== true) return;
 
-    const finished =
-      tourId === 'dashboard'
-        ? dashboardTourFinished(user, storageKey)
-        : readTourCompleteLocal(storageKey);
-    if (finished) return;
+    const restarted = tourRestartNonceRef.current > 0;
+    const showGlobalDashboard =
+      tourId === 'dashboard' &&
+      shouldShowDashboardTour(user) &&
+      (restarted || !isGlobalTourFinished(user));
+    const showPage =
+      tourId !== 'dashboard' && shouldShowPageTour(tourId, user.id);
 
-    if (tourId === 'dashboard') {
-      if (analytics.isLoading) return;
-      if ((analytics.data?.jobsAnalyzed ?? 0) > 0) return;
-    }
-
+    if (!showGlobalDashboard && !showPage) return;
     if (driverRef.current?.isActive()) return;
 
     let cancelled = false;
     const meta = tourMeta(tourId);
 
+    const endTourChrome = () => {
+      unlockTourScroll();
+      unbindScrollPreventRef.current?.();
+      unbindScrollPreventRef.current = null;
+    };
+
+    const beginTourChrome = () => {
+      lockTourScroll();
+      if (!unbindScrollPreventRef.current) {
+        unbindScrollPreventRef.current = bindTourScrollPrevent(() =>
+          Boolean(driverRef.current?.isActive()),
+        );
+      }
+    };
+
+    const syncTourCompletedApi = () => {
+      void (async () => {
+        if (tourCompletionSyncedRef.current) return;
+        tourCompletionSyncedRef.current = true;
+        try {
+          await api.users.updateMe({ tourCompleted: true });
+          await queryClient.invalidateQueries({
+            queryKey: queryKeys.auth.me(accessToken ?? ''),
+          });
+        } catch {
+          tourCompletionSyncedRef.current = false;
+        }
+      })();
+    };
+
     const attachPopoverChrome =
       (totalSteps: number, id: TourId) =>
       (popover: PopoverDOM, opts: { driver: ReturnType<typeof driver> }) => {
         const wrap = popover.wrapper;
+        const narrow = isNarrowViewport();
+
         wrap.classList.add('applymate-tour-popover');
+        wrap.classList.toggle('applymate-tour-popover--mobile', narrow);
         wrap.dataset.applymateTour = id;
+
+        if (narrow) {
+          scheduleMobileTourLayout(() => opts.driver, wrap);
+        } else {
+          clearTourPopoverInlinePosition(wrap);
+          wrap.classList.remove(
+            'applymate-tour-popover--above',
+            'applymate-tour-popover--below',
+          );
+          refreshDriverLayout(opts.driver);
+        }
 
         const activeIdx = (opts.driver.getActiveIndex() ?? 0) + 1;
         const pct = Math.round((activeIdx / Math.max(1, totalSteps)) * 100);
+        wrap.style.setProperty('--progress', `${pct}%`);
+        wrap.classList.toggle('first-step', activeIdx === 1);
+        wrap.classList.toggle('final-step', activeIdx === totalSteps);
 
         let metaEl = wrap.querySelector('[data-applymate-tour-meta]');
         if (!metaEl) {
@@ -286,27 +410,26 @@ export function FeatureTour() {
           skip.textContent = 'Skip tour';
           skip.addEventListener('click', () => {
             celebrateRef.current = false;
-            if (
-              id === 'dashboard' &&
-              typeof window !== 'undefined' &&
-              window.matchMedia('(max-width: 767px)').matches
-            ) {
-              closeMobileNavForTour();
-            }
+            if (id === 'dashboard') markGlobalTourSkipped();
+            else markPageTourSkipped(id, user?.id);
+            if (isNarrowViewport()) closeMobileNavForTour();
             opts.driver.destroy();
           });
           wrap.appendChild(skip);
         }
       };
 
-    const launch = (steps: DriveStep[]) => {
+    const launch = (steps: DriveStep[], id: TourId) => {
       if (steps.length === 0) return;
+      activeTourRef.current = id;
       const lastIdx = steps.length - 1;
+      const celebrateOnFinish = meta.celebrate;
       const withButtons = steps.map((s, i) => ({
         ...s,
         popover: {
           ...s.popover,
-          nextBtnText: i === lastIdx ? "Got it — let's go" : 'Next',
+          nextBtnText:
+            i === lastIdx ? "Got it — let's go! 🚀" : 'Next →',
           onNextClick: (
             _el: Element | undefined,
             _step: DriveStep,
@@ -314,7 +437,15 @@ export function FeatureTour() {
               driver: drv,
             }: { driver: { isLastStep: () => boolean; moveNext: () => void } },
           ) => {
-            if (drv.isLastStep()) celebrateRef.current = meta.celebrate;
+            if (drv.isLastStep()) {
+              celebrateRef.current = celebrateOnFinish;
+              if (id === 'dashboard') {
+                markGlobalTourCompleted(user!.id);
+                syncTourCompletedApi();
+              } else {
+                markPageTourCompleted(id, user!.id);
+              }
+            }
             drv.moveNext();
           },
         },
@@ -324,36 +455,44 @@ export function FeatureTour() {
         animate: true,
         overlayOpacity: 0.78,
         overlayColor: '#050808',
-        stagePadding: 8,
+        stagePadding: 14,
         stageRadius: 12,
         allowClose: false,
-        smoothScroll: false,
+        smoothScroll: true,
         allowKeyboardControl: true,
-        disableActiveInteraction: false,
+        disableActiveInteraction: true,
         popoverClass: 'applymate-tour-popover',
         showButtons: ['next'],
         showProgress: false,
         steps: withButtons,
-        onPopoverRender: attachPopoverChrome(withButtons.length, tourId),
+        onPopoverRender: attachPopoverChrome(withButtons.length, id),
+        onHighlighted: (element, step) => {
+          beginTourChrome();
+          const selector = stepSelector(step);
+          const target = resolveTourHighlightTarget(element, selector);
+          if (target) applyTourSpotlight(target, selector);
+          if (isNarrowViewport()) {
+            scheduleMobileTourLayout(() => driverRef.current);
+          } else {
+            refreshDriverLayout(driverRef.current);
+          }
+        },
         onDestroyed: () => {
           clearTourSpotlight();
-          driverRef.current = null;
           activeTourRef.current = null;
-          if (
-            tourId === 'dashboard' &&
-            typeof window !== 'undefined' &&
-            window.matchMedia('(max-width: 767px)').matches
-          ) {
-            closeMobileNavForTour();
-          }
-          persistTourCompletionRef.current();
+          tourRestartNonceRef.current = 0;
+          endTourChrome();
+          driverRef.current = null;
+          if (isNarrowViewport()) closeMobileNavForTour();
           if (celebrateRef.current) {
             celebrateRef.current = false;
             void confetti({
-              particleCount: 72,
-              spread: 64,
-              origin: { y: 0.58 },
-              colors: ['#00C9B1', '#ffffff', '#00A896'],
+              particleCount: 90,
+              spread: 75,
+              origin: { y: 0.55 },
+              colors: ['#00C9B1', '#ffffff', '#00A896', 'rgba(0,201,177,0.6)'],
+              ticks: 200,
+              gravity: 1.1,
             });
           }
         },
@@ -361,53 +500,62 @@ export function FeatureTour() {
 
       const drv = driver(cfg);
       driverRef.current = drv;
-      activeTourRef.current = tourId;
       drv.drive();
     };
 
-    const scheduleStart = () => {
-      const narrow = window.matchMedia('(max-width: 767px)').matches;
+    const tryLaunchTour = (attempt = 0) => {
+      if (cancelled) return;
+      if (!user?.id || !tourId) return;
+
+      const restartedNow = tourRestartNonceRef.current > 0;
+      const showGlobalDashboard =
+        tourId === 'dashboard' &&
+        shouldShowDashboardTour(user) &&
+        (restartedNow || !isGlobalTourFinished(user));
+      const showPage =
+        tourId !== 'dashboard' && shouldShowPageTour(tourId, user.id);
+      if (!showGlobalDashboard && !showPage) return;
+
+      const narrow = isNarrowViewport();
       const defs = stepsForTour(tourId, narrow);
-      const minSteps = tourId === 'dashboard' && narrow ? 3 : 1;
-      let steps = collectSteps(defs, narrow);
-      if (steps.length >= minSteps && firstStepReady(tourId, narrow)) {
-        launch(steps);
+      const minSteps = tourId === 'dashboard' ? (narrow ? 3 : 2) : 1;
+      const steps = collectSteps(defs, narrow, beginTourChrome, () =>
+        driverRef.current,
+      );
+
+      if (steps.length >= minSteps) {
+        launch(steps, tourId);
         return;
       }
-      window.setTimeout(
-        () => {
-          if (cancelled) return;
-          steps = collectSteps(defs, narrow);
-          if (steps.length >= minSteps) launch(steps);
-        },
-        narrow && tourId === 'dashboard' ? 1100 : 600,
-      );
+
+      const readyTargets = countReadyTourTargets(defs, narrow);
+      if (readyTargets === 0 && attempt >= TOUR_DOM_MAX_ATTEMPTS) return;
+
+      if (attempt < TOUR_DOM_MAX_ATTEMPTS) {
+        window.setTimeout(() => tryLaunchTour(attempt + 1), TOUR_DOM_RETRY_MS);
+      }
     };
 
-    const timer = window.setTimeout(
-      () => {
-        if (cancelled) return;
-        scheduleStart();
-      },
-      tourId === 'dashboard'
-        ? window.matchMedia('(max-width: 767px)').matches
-          ? 1200
-          : 800
-        : 500,
-    );
+    const timer = window.setTimeout(() => {
+      if (cancelled) return;
+      tryLaunchTour(0);
+    }, TOUR_START_DELAY_MS);
 
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
+      if (driverRef.current?.isActive()) {
+        celebrateRef.current = false;
+        driverRef.current.destroy();
+      }
+      endTourChrome();
     };
   }, [
-    user?.id,
-    user?.uiPrefs?.tourCompleted,
-    storageKey,
+    accessToken,
     tourId,
-    pathname,
-    analytics.isLoading,
-    analytics.data?.jobsAnalyzed,
+    tourRestartNonce,
+    user?.id,
+    user?.onboardingCompleted,
   ]);
 
   return null;

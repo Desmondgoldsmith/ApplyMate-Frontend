@@ -1,6 +1,11 @@
 import type { NotificationItem } from '@/lib/api';
-
-const JOB_HUB_FALLBACK = '/dashboard/job-hub';
+import {
+  DASHBOARD_ROUTES,
+  jobHubAnalysisHref,
+  jobHubApplicationHref,
+  jobHubBookmarkHref,
+  normalizeDashboardRoute,
+} from '@/lib/dashboardCanonicalRoutes';
 
 function pickMetaString(meta: Record<string, unknown> | undefined, keys: string[]): string | null {
   if (!meta) return null;
@@ -11,53 +16,14 @@ function pickMetaString(meta: Record<string, unknown> | undefined, keys: string[
   return null;
 }
 
-function jobHubAnalysisHref(jobAnalysisId: string, focus = 'analysis'): string {
-  const qp = new URLSearchParams();
-  qp.set('jobAnalysisId', jobAnalysisId);
-  if (focus) qp.set('focus', focus);
-  return `/dashboard/job-hub?${qp.toString()}`;
-}
-
-function jobHubApplicationHref(applicationId: string): string {
-  const qp = new URLSearchParams({ applicationId, focus: 'followup' });
-  return `/dashboard/job-hub?${qp.toString()}`;
-}
-
-function jobHubBookmarkHref(bookmarkId: string): string {
-  return `/dashboard/job-hub?${new URLSearchParams({ bookmarkId }).toString()}`;
-}
-
 /**
- * Backend may still return legacy `/dashboard/jobs?jobId=…` rows; normalize to canonical job-hub URLs
- * (alias page forwards to `/dashboard/jobs` with the query keys Job Hub reads).
+ * Backend may return legacy alias URLs or `/dashboard/jobs?jobId=…`; normalize to canonical
+ * Job Hub paths (`/dashboard/jobs` with query keys Job Hub reads).
  */
 export function normalizeNotificationHref(href: string): string {
   const trimmed = href.trim();
   if (!trimmed.startsWith('/')) return trimmed;
-
-  try {
-    const url = new URL(trimmed, 'https://applymate.local');
-    const path = url.pathname.replace(/\/$/, '') || '/';
-
-    if (path === '/dashboard/jobs') {
-      const jobAnalysisId =
-        url.searchParams.get('jobAnalysisId')?.trim() ||
-        url.searchParams.get('jobId')?.trim() ||
-        null;
-      const applicationId = url.searchParams.get('applicationId')?.trim() || null;
-      const bookmarkId = url.searchParams.get('bookmarkId')?.trim() || null;
-      const focus = url.searchParams.get('focus')?.trim() || 'analysis';
-
-      if (jobAnalysisId) return jobHubAnalysisHref(jobAnalysisId, focus);
-      if (applicationId) return jobHubApplicationHref(applicationId);
-      if (bookmarkId) return jobHubBookmarkHref(bookmarkId);
-      return JOB_HUB_FALLBACK;
-    }
-
-    return `${url.pathname}${url.search}${url.hash}`;
-  } catch {
-    return trimmed;
-  }
+  return normalizeDashboardRoute(trimmed);
 }
 
 /**
@@ -108,7 +74,7 @@ export function notificationActionHref(n: NotificationItem): string {
   ]);
   if (bookmarkId) return jobHubBookmarkHref(bookmarkId);
 
-  return JOB_HUB_FALLBACK;
+  return DASHBOARD_ROUTES.jobs;
 }
 
 export function notificationActionLabel(n: NotificationItem): string {

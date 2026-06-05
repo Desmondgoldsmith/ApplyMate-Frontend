@@ -3,6 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CVScoreCard } from '@/components/cv/CVScoreCard';
 
+vi.mock('@/hooks/useCvScoreSectionActions', () => ({
+  useCvScoreSectionActions: () => ({
+    fixWithAi: vi.fn(),
+    fixMyself: vi.fn(),
+  }),
+}));
+
 describe('CVScoreCard Phase 1 (ATS + job match)', () => {
   it('renders ATS section title and heuristic disclaimer in info hint only', async () => {
     render(
@@ -33,7 +40,7 @@ describe('CVScoreCard Phase 1 (ATS + job match)', () => {
         }}
       />,
     );
-    expect(screen.getByText(/Heuristic ATS analysis/i)).toBeInTheDocument();
+    expect(screen.getByText(/ATS read \(basic checks\)/i)).toBeInTheDocument();
     expect(
       screen.queryByText(/These ATS-related items are heuristic checks on structure and text in this product/i),
     ).not.toBeInTheDocument();
@@ -43,7 +50,122 @@ describe('CVScoreCard Phase 1 (ATS + job match)', () => {
     expect(
       await screen.findByText(/These ATS-related items are heuristic checks on structure and text in this product/i),
     ).toBeInTheDocument();
-    expect(screen.getByText(/ATS-friendly \(heuristic\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/ATS-friendly \(basic checks\)/i)).toBeInTheDocument();
+  });
+
+  it('shows hybrid blend and rubric-only banner', async () => {
+    render(
+      <CVScoreCard
+        mode="compact"
+        score={73}
+        hideJobMatch
+        scorePayload={{
+          score: 73,
+          scoringMethod: 'hybrid',
+          structuralScore: 62,
+          aiScore: 78,
+          aiCached: true,
+          scoringTransparency: {
+            headline: 'Blended CV score',
+            methods: {
+              hybrid: { title: 'Hybrid', short: 'Structure plus quality review.' },
+              rubric_only: {
+                title: 'Structure only',
+                short: 'Quality review unavailable — structure check only.',
+              },
+            },
+            structural: { title: 'Structure', short: 'Section completeness check.' },
+            ai: { title: 'Quality', short: 'AI reads your CV excerpt.' },
+            weights: { structuralPercent: 30, aiPercent: 70, short: '30/70.' },
+            cache: { title: 'Cache', short: 'Cached for 24 hours.' },
+            jobContext: { title: 'Job', short: 'Optional.' },
+          },
+          aiAssessment: { summary: 'Recruiter-style feedback here.' },
+        }}
+        breakdown={{
+          overall: 73,
+          careerStage: 'mid',
+          sections: {
+            contact: { score: 80, weight: 0.1, feedback: '', flags: [] },
+            experience: { score: 70, weight: 0.25, feedback: '', flags: [] },
+            education: { score: 75, weight: 0.1, feedback: '', flags: [] },
+            skills: { score: 68, weight: 0.2, feedback: '', flags: [] },
+            summary: { score: 72, weight: 0.15, feedback: '', flags: [] },
+            formatting: { score: 80, weight: 0.1, feedback: '', flags: [] },
+          },
+          ats: { score: 0, compatible: true, issues: [], passed: [] },
+          flags: [],
+          strengths: [],
+          improvements: [],
+        }}
+      />,
+    );
+    expect(screen.getByText(/Blended from two scores/i)).toBeInTheDocument();
+    expect(screen.getByText(/30% structure · 70% quality/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /where the blend weights come from/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/^Structure score$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Quality score$/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/How we calculated this: 73 ≈ 30% × 62 \+ 70% × 78/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Recruiter-style feedback here/i)).toBeInTheDocument();
+    expect(screen.getByText(/Cached quality review/i)).toBeInTheDocument();
+    const hint = screen.getByRole('button', { name: /how your resume score is calculated/i });
+    fireEvent.pointerEnter(hint.parentElement!);
+    expect(await screen.findByText(/Blended CV score/i)).toBeInTheDocument();
+  });
+
+  it('does not show rubric-only unavailable banner above the score ring', () => {
+    render(
+      <CVScoreCard
+        mode="compact"
+        score={55}
+        hideJobMatch
+        scorePayload={{
+          score: 55,
+          scoringMethod: 'rubric_only',
+          structuralScore: 55,
+          aiScore: null,
+          scoringTransparency: {
+            headline: 'Structure check only',
+            methods: {
+              hybrid: { title: 'Hybrid', short: 'Hybrid method.' },
+              rubric_only: {
+                title: 'Structure only',
+                short: 'Quality review unavailable — showing structure check only.',
+              },
+            },
+            structural: { title: 'Structure', short: 'Rubric sections.' },
+            ai: { title: 'Quality', short: 'AI off.' },
+            weights: { structuralPercent: 100, aiPercent: 0, short: '100% structure.' },
+            cache: { title: 'Cache', short: 'N/A.' },
+            jobContext: { title: 'Job', short: 'N/A.' },
+          },
+        }}
+        breakdown={{
+          overall: 55,
+          careerStage: 'early',
+          sections: {
+            contact: { score: 80, weight: 0.1, feedback: '', flags: [] },
+            experience: { score: 50, weight: 0.25, feedback: '', flags: [] },
+            education: { score: 75, weight: 0.1, feedback: '', flags: [] },
+            skills: { score: 68, weight: 0.2, feedback: '', flags: [] },
+            summary: { score: 72, weight: 0.15, feedback: '', flags: [] },
+            formatting: { score: 80, weight: 0.1, feedback: '', flags: [] },
+          },
+          ats: { score: 0, compatible: true, issues: [], passed: [] },
+          flags: [],
+          strengths: [],
+          improvements: [],
+        }}
+      />,
+    );
+    expect(screen.getByText(/Resume score/i)).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Quality review unavailable — showing structure check only/i),
+    ).not.toBeInTheDocument();
   });
 
   it('shows job match panel when jobMatch has weight', () => {

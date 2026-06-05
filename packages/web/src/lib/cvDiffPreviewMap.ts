@@ -1,4 +1,5 @@
 import type { CvApplyImprovementResult, CvDiffPreviewOpenParams } from '@/lib/api';
+import { normalizeCvDiffPreviewParams } from '@/lib/cvAiPatchDisplay';
 import { compactDiffPreviewPerformance } from '@/lib/cvApplyPerformanceDev';
 
 /** Virtual key for assistant-driven CV diff (not a real improvement id). */
@@ -41,7 +42,7 @@ export function cvOpenParamsFromApplyResult(
   const pointer =
     (result.improvementId?.trim() || (typeof result.pointer === 'string' ? result.pointer.trim() : '')) ||
     stableRowId.trim();
-  return {
+  return normalizeCvDiffPreviewParams({
     previewMapKey: stableRowId.trim(),
     suggestionId: suggestionId || undefined,
     pointer,
@@ -54,5 +55,5 @@ export function cvOpenParamsFromApplyResult(
     unsupportedChangesDetected: result.unsupportedChangesDetected,
     truthfulnessWarnings: result.truthfulnessWarnings,
     performance: compactDiffPreviewPerformance(result),
-  };
+  });
 }

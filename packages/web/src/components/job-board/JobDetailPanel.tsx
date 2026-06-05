@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { Bookmark, ExternalLink, Loader2, Plug, Share2, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -103,7 +104,7 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
   const bookmark = useBookmarkJob();
   const aiUsage = useDailyAiUsage();
   const detail = useQuery({
-    queryKey: ['job-discovery-detail', jobId],
+    queryKey: queryKeys.jobs.discoveryDetail(jobId),
     queryFn: () => api.jobDiscovery.getDetail(jobId),
     enabled: Boolean(jobId),
     staleTime: 1000 * 30,

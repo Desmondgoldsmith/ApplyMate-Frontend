@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
@@ -9,9 +10,9 @@ export function useRenameCVProfile() {
   return useMutation({
     mutationFn: ({ id, name }: { id: string; name: string }) => api.cv.updateProfileName(id, name),
     onSuccess: (_data, vars) => {
-      void queryClient.invalidateQueries({ queryKey: ['cv-profiles'] });
-      void queryClient.invalidateQueries({ queryKey: ['analytics'] });
-      void queryClient.invalidateQueries({ queryKey: ['cv-profile', vars.id] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profile(vars.id) });
     },
   });
 }

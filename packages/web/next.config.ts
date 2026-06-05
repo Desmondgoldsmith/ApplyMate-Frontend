@@ -12,18 +12,21 @@ const dev = process.env.NODE_ENV !== 'production';
 loadEnvConfig(repoRoot, dev);
 loadEnvConfig(webDir, dev);
 
+import { resolveSentryRelease } from './sentry.shared.config';
+
 const nextConfig: NextConfig = {
   /** Compile the shared workspace package from source (no pre-build step). */
   transpilePackages: ['@applymate/shared'],
 };
 
+const sentryRelease = resolveSentryRelease();
+
 export default withSentryConfig(nextConfig, {
-  // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
-
-  org: 'mlt-group',
-
-  project: 'javascript-nextjs',
+  org: process.env.SENTRY_ORG?.trim() || 'mlt-group',
+  project: process.env.SENTRY_PROJECT?.trim() || 'javascript-nextjs',
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  release: sentryRelease ? { name: sentryRelease } : undefined,
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,

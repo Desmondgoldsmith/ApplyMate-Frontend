@@ -1,3 +1,5 @@
+import { coerceAiPatchToDisplayString } from '@/lib/cvAiPatchDisplay';
+
 /**
  * Human-readable strings for CV assistant diff UI.
  *
@@ -184,6 +186,7 @@ function readTargetFromBlob(
   targetSection: string,
   blob: unknown,
   maxJson: number,
+  allowCoerceFallback = true,
 ): string {
   const ts = targetSection.trim().toLowerCase();
   if (!ts) return '';
@@ -207,12 +210,24 @@ function readTargetFromBlob(
   }
   const whole = formatSectionBlob(ts, blob);
   if (whole) return trimToMax(whole, maxJson);
-  try {
-    const j = JSON.stringify(o, null, 2);
-    return trimToMax(j, maxJson);
-  } catch {
-    return '';
-  }
+
+  if (!allowCoerceFallback) return '';
+
+  const fromPatch = coerceAiPatchToDisplayString(blob, ts);
+  if (fromPatch.trim()) return trimToMax(fromPatch, maxJson);
+
+  return '';
+}
+
+/**
+ * Section-scoped display text without patch coercion (used by cvAiPatchDisplay to avoid cycles).
+ */
+export function assistantSectionBlobToDisplayString(
+  targetSection: string,
+  blob: unknown,
+  maxJson = 12000,
+): string {
+  return readTargetFromBlob(targetSection, blob, maxJson, false);
 }
 
 export function assistantDiffDisplayStrings(

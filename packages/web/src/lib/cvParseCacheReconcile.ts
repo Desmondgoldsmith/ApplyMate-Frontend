@@ -1,3 +1,4 @@
+import { queryKeys } from '@/lib/queryKeys';
 import type { QueryClient } from '@tanstack/react-query';
 
 import type { CVProfile } from '@/lib/api';
@@ -13,10 +14,10 @@ export async function refreshCvStateAfterCvParseSuccess(
 ): Promise<void> {
   const id = profile.id?.trim();
   if (!id) {
-    void queryClient.invalidateQueries({ queryKey: ['cv-profiles'], exact: true });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles(), exact: true });
     return;
   }
-  queryClient.setQueryData(['cv-profile', id], profile);
+  queryClient.setQueryData(queryKeys.cv.profile(id), profile);
   await refreshCvState(queryClient, id, {
     refreshProfile: true,
     refreshSections: true,

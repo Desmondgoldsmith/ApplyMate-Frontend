@@ -15,6 +15,8 @@ function setToolbarInteracting(value: boolean) {
 
 type EntryToolbarProps = {
   sectionType: string;
+  /** DOM `data-cv-section` id for toolbar placement (defaults to `sectionType`). */
+  anchorSectionId?: string;
   onAddEntry: () => void;
   onAddBullet?: () => void;
   onMoveUp: () => void;
@@ -33,6 +35,8 @@ type EntryToolbarProps = {
   addEntryLabel?: string;
   addSecondaryEntryLabel?: string;
   position?: 'above' | 'below';
+  /** Pin toolbar above the section header instead of overlapping the focused entry. */
+  pinToSectionHeader?: boolean;
   hideAddButton?: boolean;
   /** When true, the trash/delete button is omitted entirely (used for core sections that can't be deleted). */
   hideDelete?: boolean;
@@ -46,6 +50,7 @@ type EntryToolbarProps = {
 
 export function EntryToolbar({
   sectionType,
+  anchorSectionId,
   onAddEntry,
   onAddBullet,
   onMoveUp,
@@ -63,12 +68,15 @@ export function EntryToolbar({
   addEntryLabel = '+ Entry',
   addSecondaryEntryLabel,
   position = 'above',
+  pinToSectionHeader = true,
   hideAddButton = false,
   hideDelete = false,
   settingsOptions = [],
 }: EntryToolbarProps) {
+  const toolbarAnchorId = anchorSectionId ?? sectionType;
   const overlayZ = useCvOverlayZIndex();
   const rootRef = useRef<HTMLDivElement>(null);
+  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const [anchorRect, setAnchorRect] = useState<{ left: number; top: number; bottom: number }>({ left: 0, top: 0, bottom: 0 });
   const [showDate, setShowDate] = useState(false);
@@ -101,13 +109,25 @@ export function EntryToolbar({
   }, []);
 
   useEffect(() => {
+    if (!pinToSectionHeader || typeof document === 'undefined') {
+      setHeaderSlot(null);
+      return;
+    }
+    const slot = document.querySelector(
+      `[data-cv-section="${toolbarAnchorId}"] [data-cv-entry-toolbar-slot]`,
+    );
+    setHeaderSlot(slot instanceof HTMLElement ? slot : null);
+  }, [pinToSectionHeader, toolbarAnchorId, mounted]);
+
+  useEffect(() => {
     const onSelectionChange = () => {
       const sel = window.getSelection();
       if (!sel || sel.rangeCount === 0) return;
       const range = sel.getRangeAt(0);
       const container = range.commonAncestorContainer;
       const element = container.nodeType === Node.ELEMENT_NODE ? (container as Element) : container.parentElement;
-      if (element?.closest('[contenteditable="true"]')) {
+      // Only remember real highlights; a collapsed caret must not clobber the saved range.
+      if (element?.closest('[contenteditable="true"]') && !range.collapsed) {
         lastContentEditableRangeRef.current = range.cloneRange();
       }
       const anchor = element?.closest('a[href]');
@@ -162,21 +182,32 @@ export function EntryToolbar({
 
   const captureSelection = () => {
     const active = document.activeElement;
-    if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
+    // Ignore the toolbar's own URL input so it never becomes the format target.
+    if (
+      (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) &&
+      active.dataset.cvToolbarLinkInput !== 'true'
+    ) {
       lastSelectionRef.current = {
         el: active,
         start: active.selectionStart ?? 0,
         end: active.selectionEnd ?? 0,
       };
+      // An input/textarea is now the target — drop any stale contentEditable range.
+      lastContentEditableRangeRef.current = null;
       return;
     }
     const sel = window.getSelection();
     if (sel && sel.rangeCount > 0) {
       const range = sel.getRangeAt(0);
+      // Never overwrite a good saved highlight with a collapsed (caret-only) range —
+      // doing so caused the false "please highlight the text" alert.
+      if (range.collapsed) return;
       const container = range.commonAncestorContainer;
       const element = container.nodeType === Node.ELEMENT_NODE ? (container as Element) : container.parentElement;
       if (element?.closest('[contenteditable="true"]')) {
         lastContentEditableRangeRef.current = range.cloneRange();
+        // A contentEditable field is now the target — drop any stale input selection.
+        lastSelectionRef.current = { el: null, start: 0, end: 0 };
       }
     }
   };
@@ -267,15 +298,26 @@ export function EntryToolbar({
 
   const removeLink = () => {
     const sel = window.getSelection();
+    // Prefer the saved highlight; a live caret may have collapsed off the link
+    // after the toolbar button took focus.
     const range =
-      sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : lastContentEditableRangeRef.current;
-    if (!range) return;
+      sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed
+        ? sel.getRangeAt(0)
+        : lastContentEditableRangeRef.current;
+    if (!range) {
+      window.alert('Highlight the linked text first, then choose Unlink.');
+      return;
+    }
     const node = range.commonAncestorContainer;
     const element = node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
-    const anchor = element?.closest('a[href]');
+    // The selection may wrap (not be inside) the anchor — search descendants too.
+    const anchor =
+      element?.closest('a[href]') ??
+      element?.querySelector('a[href]') ??
+      null;
     const host = anchor?.closest('[contenteditable="true"]');
     if (!(anchor instanceof HTMLAnchorElement) || !(host instanceof HTMLElement)) {
-      window.alert('Click inside a link in the editable field first.');
+      window.alert('Highlight the linked text first, then choose Unlink.');
       return;
     }
     const text = anchor.textContent ?? '';
@@ -293,20 +335,26 @@ export function EntryToolbar({
       window.alert('Please enter a valid URL (http/https).');
       return;
     }
-    const active = document.activeElement;
-    if (active instanceof HTMLTextAreaElement || active instanceof HTMLInputElement) {
-      const start = active.selectionStart ?? 0;
-      const end = active.selectionEnd ?? 0;
-      if (start === end) {
-        window.alert('Please highlight the text you want to link.');
-        return;
-      }
-      const raw = active.value;
+    // Use the field selection captured when the toolbar was pressed. We must not
+    // read document.activeElement here: focus is on the toolbar's own URL input
+    // or the OK button, which would otherwise hijack the link target.
+    const savedInput = lastSelectionRef.current;
+    if (
+      (savedInput.el instanceof HTMLInputElement ||
+        savedInput.el instanceof HTMLTextAreaElement) &&
+      savedInput.end > savedInput.start &&
+      document.body.contains(savedInput.el)
+    ) {
+      const el = savedInput.el;
+      const { start, end } = savedInput;
+      const raw = el.value;
       const selected = raw.slice(start, end);
       const wrapped = `<a href="${href}" target="_blank" rel="noreferrer">${selected}</a>`;
-      active.value = `${raw.slice(0, start)}${wrapped}${raw.slice(end)}`;
-      active.dispatchEvent(new Event('input', { bubbles: true }));
+      el.value = `${raw.slice(0, start)}${wrapped}${raw.slice(end)}`;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
       setShowLinkInput(false);
+      setShowTextTools(false);
+      setLinkDraft('https://');
       return;
     }
     const range = lastContentEditableRangeRef.current;
@@ -338,6 +386,8 @@ export function EntryToolbar({
     host.dispatchEvent(new Event('input', { bubbles: true }));
     host.focus();
     setShowLinkInput(false);
+    setShowTextTools(false);
+    setLinkDraft('https://');
   };
 
   const selectedAnchorHref = (): string | null => {
@@ -353,20 +403,24 @@ export function EntryToolbar({
     return anchor?.getAttribute('href')?.trim() || null;
   };
 
-  return (
+  const toolbarBar = (
     <div
       ref={rootRef}
-      className={`absolute left-0 z-[1000] ${position === 'above' ? '-top-11' : 'top-full mt-2'}`}
+      className={
+        headerSlot
+          ? 'flex w-full max-w-full items-center'
+          : `absolute left-0 z-[1000] ${position === 'above' ? '-top-11' : 'top-full mt-2'}`
+      }
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="flex items-center rounded-full border border-white/10 bg-white shadow-xl">
+      <div className="flex max-w-full flex-nowrap items-center rounded-full border border-white/10 bg-white shadow-xl">
         {!hideAddButton && addSecondaryEntryLabel && onAddSecondaryEntry ? (
           <>
             <button
               type="button"
               onClick={onAddEntry}
               title={addEntryLabel}
-              className="rounded-l-full bg-[#00C9B1] px-3 py-1.5 text-sm font-semibold text-white"
+              className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-l-full bg-[#00C9B1] px-3 py-1.5 text-sm font-semibold text-white"
             >
               {addEntryLabel}
             </button>
@@ -380,11 +434,18 @@ export function EntryToolbar({
             </button>
           </>
         ) : !hideAddButton ? (
-          <button type="button" onClick={onAddEntry} title={addEntryLabel} className="rounded-l-full bg-[#00C9B1] px-3 py-1.5 text-sm font-semibold text-white">
+          <button
+            type="button"
+            onClick={onAddEntry}
+            title={addEntryLabel}
+            className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-l-full bg-[#00C9B1] px-3 py-1.5 text-sm font-semibold leading-none text-white"
+          >
             {addEntryLabel}
           </button>
         ) : (
-          <span className="rounded-l-full bg-[#00C9B1] px-2 py-1.5 text-[10px] font-semibold text-white">Edit</span>
+          <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-l-full bg-[#00C9B1] px-2 py-1.5 text-[10px] font-semibold leading-none text-white">
+            Edit
+          </span>
         )}
         <button type="button" title="Move up" disabled={!showMoveUp} onClick={onMoveUp} className="px-2 py-1.5 text-black/70 disabled:opacity-30"><ChevronUp className="h-4 w-4" /></button>
         <button type="button" title="Move down" disabled={!showMoveDown} onClick={onMoveDown} className="px-2 py-1.5 text-black/70 disabled:opacity-30"><ChevronDown className="h-4 w-4" /></button>
@@ -416,6 +477,12 @@ export function EntryToolbar({
         ) : null}
         <button type="button" title="Settings" disabled={!canShowSettings} onClick={() => setShowSettings((v) => !v)} className="rounded-r-full px-2 py-1.5 text-black/70 disabled:opacity-30"><Settings className="h-4 w-4" /></button>
       </div>
+    </div>
+  );
+
+  return (
+    <>
+      {headerSlot && mounted ? createPortal(toolbarBar, headerSlot) : toolbarBar}
       {showTextTools && mounted ? createPortal(
         <div className={`${panelPositionClass} w-[340px] rounded-xl border border-white/10 bg-white p-3 shadow-xl`} style={panelStyle(340)} onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center gap-1">
@@ -453,11 +520,17 @@ export function EntryToolbar({
               <div className="flex items-center gap-2">
                 <input
                   type="text"
+                  data-cv-toolbar-link-input="true"
                   value={linkDraft}
                   onChange={(e) => setLinkDraft(e.target.value)}
                   placeholder="https://example.com"
                   className="h-9 flex-1 rounded-md border border-black/15 bg-white px-2 text-sm text-[#111111] outline-none placeholder:text-black/40 focus:border-[#00C9B1]"
-                  onMouseDown={() => setToolbarInteracting(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      applyLink();
+                    }
+                  }}
                 />
                 <button type="button" className="h-9 rounded-md border border-black/15 px-3 text-xs font-semibold text-black/70" onClick={() => setShowLinkInput(false)}>Cancel</button>
                 <button type="button" className="h-9 rounded-md bg-[#10B981] px-3 text-xs font-semibold text-white" onClick={applyLink}>OK</button>
@@ -527,6 +600,6 @@ export function EntryToolbar({
         </div>,
         document.body,
       ) : null}
-    </div>
+    </>
   );
 }

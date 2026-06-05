@@ -7,10 +7,11 @@ import { usePathname } from 'next/navigation';
 import { useSyncExternalStore } from 'react';
 
 import { api } from '@/lib/api';
+import { queryKeys } from '@/lib/queryKeys';
 
 /** List vs unread-count must not share a prefix — see invalidateNotificationList(). */
-export const NOTIFICATION_LIST_KEY = ['notifications', 'list'] as const;
-export const NOTIFICATION_UNREAD_COUNT_KEY = ['notifications', 'unread-count'] as const;
+export const NOTIFICATION_LIST_KEY = queryKeys.notifications.list();
+export const NOTIFICATION_UNREAD_COUNT_KEY = queryKeys.notifications.unreadCount();
 
 const UNREAD_STALE_MS = 5 * 60_000;
 const UNREAD_INVALIDATE_DEBOUNCE_MS = 5_000;

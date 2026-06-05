@@ -11,6 +11,12 @@ import { GlowCard } from '@/components/ui/GlowCard';
 import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
+import {
+  CvProfileMergeCheckbox,
+  CvProfileMergeToolbar,
+  MergeCvProfilesModal,
+  useCvProfileMergeSelection,
+} from '@/components/dashboard/MergeCvProfilesModal';
 import { useDeleteCVProfile } from '@/hooks/useDeleteCVProfile';
 import { useDuplicateCVProfile } from '@/hooks/useDuplicateCVProfile';
 import { useRenameCVProfile } from '@/hooks/useRenameCVProfile';
@@ -49,6 +55,8 @@ export function DashboardCvProfilesPanel({ profiles, isLoading, onNewCv }: Dashb
   const [renameTarget, setRenameTarget] = useState<CvProfileSummary | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [pdfOpeningId, setPdfOpeningId] = useState<string | null>(null);
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const mergeSelection = useCvProfileMergeSelection(profiles);
 
   useEffect(() => {
     if (!menuId) return;
@@ -120,6 +128,21 @@ export function DashboardCvProfilesPanel({ profiles, isLoading, onNewCv }: Dashb
         </p>
       ) : null}
 
+      {!isLoading && profiles.length > 1 ? (
+        <p className="mb-2 text-[11px] text-white/35">
+          Select two or more CVs to merge into a new profile. Originals are not changed.
+        </p>
+      ) : null}
+
+      <CvProfileMergeToolbar
+        selectedCount={mergeSelection.selectedList.length}
+        canMerge={mergeSelection.canMerge}
+        overLimit={mergeSelection.overLimit}
+        onClear={mergeSelection.clear}
+        onMerge={() => setMergeOpen(true)}
+        className="mb-3"
+      />
+
       <div className="space-y-3">
         {isLoading ? (
           <>
@@ -146,7 +169,19 @@ export function DashboardCvProfilesPanel({ profiles, isLoading, onNewCv }: Dashb
                 contentClassName="relative p-4"
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
+                  <div className="flex min-w-0 flex-1 items-start gap-2">
+                    {profiles.length > 1 ? (
+                      <CvProfileMergeCheckbox
+                        checked={mergeSelection.selectedIds.has(p.id)}
+                        disabled={
+                          !mergeSelection.selectedIds.has(p.id) &&
+                          mergeSelection.selectedList.length >= 6
+                        }
+                        onChange={() => mergeSelection.toggle(p.id)}
+                        label={`Select ${p.name} for merge`}
+                      />
+                    ) : null}
+                    <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       {p.isDefault ? <Star className="h-3.5 w-3.5 shrink-0 fill-[#00C9B1] text-[#00C9B1]" /> : null}
                       <p className="truncate text-[15px] font-semibold text-white">{p.name}</p>
@@ -167,6 +202,7 @@ export function DashboardCvProfilesPanel({ profiles, isLoading, onNewCv }: Dashb
                       {' · '}
                       Last edited {formatRelativeEdited(p.updatedAt)}
                     </p>
+                    </div>
                   </div>
                   <div className="relative shrink-0">
                     <button
@@ -362,6 +398,16 @@ export function DashboardCvProfilesPanel({ profiles, isLoading, onNewCv }: Dashb
           </Button>
         </div>
       </Modal>
+
+      <MergeCvProfilesModal
+        open={mergeOpen}
+        onOpenChange={(open) => {
+          setMergeOpen(open);
+          if (!open) mergeSelection.clear();
+        }}
+        profileIds={mergeSelection.selectedList}
+        profiles={profiles}
+      />
     </GlowCard>
   );
 }

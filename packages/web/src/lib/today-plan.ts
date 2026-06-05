@@ -1,13 +1,20 @@
 import type { QueryClient } from '@tanstack/react-query';
 
-/** Must match `WEEKLY_STALL_SUMMARY_QUERY_ROOT` in `weekly-stall-summary.ts` (avoid circular import). */
-const WEEKLY_STALL_SUMMARY_QK = 'weekly-stall-summary' as const;
+import {
+  isSemanticOutlookBand,
+  isTimelineOutlookBand,
+  type SemanticOutlookPayload,
+  type SemanticOutlookBand,
+  type TimelineOutlookBand,
+} from '@/lib/dashboardSemanticOutlook';
+import { normalizeDashboardRoute } from '@/lib/dashboardCanonicalRoutes';
+import { queryKeys } from '@/lib/queryKeys';
 
 /** Root segment for React Query keys — use with `invalidateTodayPlanQueries`. */
-export const TODAY_PLAN_QUERY_ROOT = 'today-plan' as const;
+export const TODAY_PLAN_QUERY_ROOT = queryKeys.todayPlan.root()[0];
 
 /** GET /dashboard/focus — ranked focus feed (invalidate with today-plan when priorities change). */
-export const DASHBOARD_FOCUS_QUERY_ROOT = 'dashboard-focus' as const;
+export const DASHBOARD_FOCUS_QUERY_ROOT = queryKeys.dashboardFocus.root()[0];
 
 export function todayPlanQueryKey(params: {
   cvProfileId?: string | null;
@@ -27,19 +34,19 @@ export function todayPlanQueryKey(params: {
     params.focusFeedMaxItems <= 100
       ? Math.round(params.focusFeedMaxItems)
       : null;
-  return [TODAY_PLAN_QUERY_ROOT, cv, tz, includeHidden, ffm ?? 'default'] as const;
+  return queryKeys.todayPlan.key(cv, tz, includeHidden, ffm ?? 'default');
 }
 
 export function dashboardFocusQueryKey(params: { cvProfileId?: string | null; timezone: string }) {
   const cv = (params.cvProfileId ?? '').trim() || 'default';
   const tz = (params.timezone ?? 'UTC').trim() || 'UTC';
-  return [DASHBOARD_FOCUS_QUERY_ROOT, cv, tz] as const;
+  return queryKeys.dashboardFocus.key(cv, tz);
 }
 
 export function invalidateTodayPlanQueries(queryClient: QueryClient): void {
-  void queryClient.invalidateQueries({ queryKey: [TODAY_PLAN_QUERY_ROOT] });
-  void queryClient.invalidateQueries({ queryKey: [DASHBOARD_FOCUS_QUERY_ROOT] });
-  void queryClient.invalidateQueries({ queryKey: [WEEKLY_STALL_SUMMARY_QK] });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.todayPlan.root() });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardFocus.root() });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.weeklyStallSummary.root() });
 }
 
 /** CTA from `GET /dashboard/today-plan` (backend-driven). */
@@ -772,9 +779,10 @@ export type DashboardCareerMomentumVitalPayload = {
 
 /** Phase 15 — interview outlook tile (`dashboardVitals.interviewOutlook`). */
 export type DashboardInterviewOutlookVitalPayload = {
-  /** 0–100 */
-  score: number;
+  value: SemanticOutlookBand;
   label: string;
+  outlookBasis?: string | null;
+  disclaimer?: string | null;
   explanation?: string | null;
 };
 
@@ -876,7 +884,7 @@ export type TodayPlanPayload = {
   /** Total queue size before cap; for “View all (N)” / truncation copy. */
   followUpJobsTotalCount: number | null;
   /**
-   * Deep link for “View all” follow-up queue (e.g. `/dashboard/job-hub?followUps=1`).
+   * Deep link for “View all” follow-up queue (e.g. `/dashboard/follow-up-jobs`).
    * Present when the backend wants the hub list UX for queued follow-ups.
    */
   followUpJobsViewAllHref: string | null;
@@ -1409,20 +1417,12 @@ export type WeeklyBriefingPayload = {
 
 export type PredictivePipelineHealth = 'fragile' | 'building' | 'healthy' | 'strong';
 
-export type EstimatedWeeksToOfferPayload = {
-  min: number | null;
-  max: number | null;
-};
-
-/** Phase 6A: Forecast-style indexes from deterministic backend rules (not LLM). */
+/** Phase 6A: Semantic outlook bands from deterministic backend rules (not LLM probabilities). */
 export type PredictiveOutlookPayload = {
-  interviewProbability: number | null;
-  offerProbability: number | null;
-  /** Preferred metadata for interview outlook index; legacy `interviewProbability` mirrors `value`. */
-  interviewOutlook: DeterministicIndexScorePayload | null;
-  /** Preferred metadata for offer outlook index; legacy `offerProbability` mirrors `value`. */
-  offerOutlook: DeterministicIndexScorePayload | null;
-  estimatedWeeksToOffer: EstimatedWeeksToOfferPayload | null;
+  interviewOutlook: SemanticOutlookPayload | null;
+  offerOutlook: SemanticOutlookPayload | null;
+  timelineOutlook: TimelineOutlookBand | null;
+  timelineOutlookLabel: string | null;
   pipelineHealth: PredictivePipelineHealth | null;
   headline: string | null;
   supporting: string | null;
@@ -1935,15 +1935,20 @@ function pickCareerMomentumVital(raw: unknown): DashboardCareerMomentumVitalPayl
 }
 
 function pickInterviewOutlookVital(raw: unknown): DashboardInterviewOutlookVitalPayload | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
-  const o = raw as Record<string, unknown>;
-  const score = inferScore0to100(o);
-  if (score === null) return null;
-  const label = String(pickStr(o, 'label') ?? '').trim();
-  const explanation = pickStrOrNull(o, 'explanation');
+  const outlook = pickSemanticOutlook(raw);
+  if (!outlook) return null;
+  const label = outlook.label?.trim() || 'Interview outlook';
+  const explanation = pickStrOrNull(
+    raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+      ? (raw as Record<string, unknown>)
+      : {},
+    'explanation',
+  );
   return {
-    score,
+    value: outlook.value,
     label,
+    outlookBasis: outlook.outlookBasis,
+    disclaimer: outlook.disclaimer,
     ...(explanation?.trim() ? { explanation: explanation.trim() } : {}),
   };
 }
@@ -2318,7 +2323,7 @@ function pickUpcomingInterviewCard(raw: unknown): UpcomingInterviewItem | null {
   /** Align with backend defaults when the row is analysis-linked but CTAs were omitted on the wire. */
   if (jobAnalysisId) {
     if (!ctaHref) {
-      ctaHref = `/dashboard/interview-prep?jobAnalysisId=${encodeURIComponent(jobAnalysisId)}`;
+      ctaHref = `/dashboard/interview?jobAnalysisId=${encodeURIComponent(jobAnalysisId)}`;
     }
     if (!ctaLabel) {
       ctaLabel = 'Start interview practice';
@@ -2503,7 +2508,7 @@ function deriveUpcomingInterviewsFromFocusItems(
     const ctaHrefRaw = r.ctaHref.trim();
     const ctaHref =
       ja && !extractJobAnalysisIdFromCtaHref(ctaHrefRaw)
-        ? `/dashboard/interview-prep?jobAnalysisId=${encodeURIComponent(ja)}`
+        ? `/dashboard/interview?jobAnalysisId=${encodeURIComponent(ja)}`
         : ctaHrefRaw;
     out.push({
       id: ja,
@@ -2573,7 +2578,7 @@ function deriveUpcomingInterviewsFromUnifiedItems(items: UnifiedPriorityItem[]):
           ? Math.round(Math.max(0, Math.min(100, it.explain.confidence)))
           : null;
 
-    const ctaHref = `/dashboard/interview-prep?jobAnalysisId=${encodeURIComponent(ja)}`;
+    const ctaHref = `/dashboard/interview?jobAnalysisId=${encodeURIComponent(ja)}`;
     const ctaLabel = 'Start interview practice';
 
     out.push({
@@ -4268,24 +4273,45 @@ function pickWeeklyBriefing(raw: unknown): WeeklyBriefingPayload | null {
   };
 }
 
-function pickEstimatedWeeksToOffer(raw: unknown): EstimatedWeeksToOfferPayload | null {
+function pickSemanticOutlook(raw: unknown): SemanticOutlookPayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
-  const minRaw = o.min ?? o.minWeeks ?? o.min_weeks;
-  const maxRaw = o.max ?? o.maxWeeks ?? o.max_weeks;
-  let min: number | null = null;
-  let max: number | null = null;
-  if (typeof minRaw === 'number' && Number.isFinite(minRaw)) min = Math.max(0, Math.round(minRaw));
-  else if (typeof minRaw === 'string' && minRaw.trim() && Number.isFinite(Number(minRaw))) {
-    min = Math.max(0, Math.round(Number(minRaw)));
-  }
-  if (typeof maxRaw === 'number' && Number.isFinite(maxRaw)) max = Math.max(0, Math.round(maxRaw));
-  else if (typeof maxRaw === 'string' && maxRaw.trim() && Number.isFinite(Number(maxRaw))) {
-    max = Math.max(0, Math.round(Number(maxRaw)));
-  }
-  if (min == null && max == null) return null;
-  return { min, max };
+  const valueRaw = String(pickStr(o, 'value') ?? '')
+    .trim()
+    .toLowerCase();
+  if (!isSemanticOutlookBand(valueRaw)) return null;
+  const label = pickStrOrNull(o, 'label');
+  const outlookBasis = pickStrOrNull(
+    o,
+    'outlookBasis',
+    'outlook_basis',
+    'description',
+    'interpretation',
+  );
+  const disclaimer = pickStrOrNull(o, 'disclaimer');
+  return {
+    value: valueRaw,
+    label,
+    outlookBasis,
+    disclaimer,
+  };
+}
+
+function pickTimelineOutlookFields(o: Record<string, unknown>): {
+  timelineOutlook: TimelineOutlookBand | null;
+  timelineOutlookLabel: string | null;
+} {
+  const bandRaw = String(pickStr(o, 'timelineOutlook', 'timeline_outlook') ?? '')
+    .trim()
+    .toLowerCase();
+  const timelineOutlook = isTimelineOutlookBand(bandRaw) ? bandRaw : null;
+  const timelineOutlookLabel = pickStrOrNull(
+    o,
+    'timelineOutlookLabel',
+    'timeline_outlook_label',
+  );
+  return { timelineOutlook, timelineOutlookLabel };
 }
 
 function pickPredictiveOutlook(raw: unknown): PredictiveOutlookPayload | null {
@@ -4293,19 +4319,10 @@ function pickPredictiveOutlook(raw: unknown): PredictiveOutlookPayload | null {
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
 
-  const interviewOutlook = pickDeterministicIndexScore(o.interviewOutlook ?? o.interview_outlook);
-  const offerOutlook = pickDeterministicIndexScore(o.offerOutlook ?? o.offer_outlook);
+  const interviewOutlook = pickSemanticOutlook(o.interviewOutlook ?? o.interview_outlook);
+  const offerOutlook = pickSemanticOutlook(o.offerOutlook ?? o.offer_outlook);
+  const { timelineOutlook, timelineOutlookLabel } = pickTimelineOutlookFields(o);
 
-  const interviewProbability = pickOptionalScore(
-    o,
-    'interviewProbability',
-    'interview_probability',
-    'interview_index',
-  );
-  const offerProbability = pickOptionalScore(o, 'offerProbability', 'offer_probability', 'offer_index');
-  const estimatedWeeksToOffer = pickEstimatedWeeksToOffer(
-    o.estimatedWeeksToOffer ?? o.estimated_weeks_to_offer ?? o.weeksToOffer ?? o.weeks_to_offer,
-  );
   const pipelineRaw = pickStrOrNull(o, 'pipelineHealth', 'pipeline_health', 'funnel_health');
   const pipelineHealth = (() => {
     const t = String(pipelineRaw ?? '').trim().toLowerCase();
@@ -4316,12 +4333,13 @@ function pickPredictiveOutlook(raw: unknown): PredictiveOutlookPayload | null {
   const supporting = pickStrOrNull(o, 'supporting', 'supporting_copy', 'body');
   const confidence = pickOptionalScore(o, 'confidence', 'confidenceScore', 'confidence_score');
 
+  const hasTimeline =
+    timelineOutlook != null || Boolean(timelineOutlookLabel?.trim());
+
   if (
     interviewOutlook == null &&
     offerOutlook == null &&
-    interviewProbability == null &&
-    offerProbability == null &&
-    estimatedWeeksToOffer == null &&
+    !hasTimeline &&
     pipelineHealth == null &&
     !headline &&
     !supporting &&
@@ -4330,11 +4348,10 @@ function pickPredictiveOutlook(raw: unknown): PredictiveOutlookPayload | null {
     return null;
   }
   return {
-    interviewProbability,
-    offerProbability,
     interviewOutlook,
     offerOutlook,
-    estimatedWeeksToOffer,
+    timelineOutlook,
+    timelineOutlookLabel,
     pipelineHealth,
     headline,
     supporting,
@@ -5750,14 +5767,10 @@ export function normalizeTodayPlanRoute(href: string | null | undefined): string
   try {
     const u = new URL(raw, 'https://applymate.invalid');
     u.pathname = u.pathname.replace(/['"]+$/g, '');
-    if (u.pathname === '/dashboard/cv-clinic') {
-      u.pathname = '/dashboard/cv';
-      return `${u.pathname}${u.search}`;
-    }
-    return `${u.pathname}${u.search}`;
+    return normalizeDashboardRoute(`${u.pathname}${u.search}`);
   } catch {
     const cleaned = raw.replace(/['"]+$/g, '');
-    return cleaned === '/dashboard/cv-clinic' ? '/dashboard/cv' : cleaned;
+    return normalizeDashboardRoute(cleaned);
   }
 }
 

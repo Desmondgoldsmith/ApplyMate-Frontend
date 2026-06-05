@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { AuthFormCard } from '@/components/auth/AuthFormCard';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { useGoogleOAuthErrorToast } from '@/components/auth/useGoogleOAuthErrorToast';
+import { useSessionReuseToast } from '@/components/auth/useSessionReuseToast';
 import { AuthPasswordInput, AuthTextInput } from '@/components/auth/AuthInputs';
 import { AppShellBackdrop } from '@/components/layout/AppShellBackdrop';
 import { Button } from '@/components/ui/Button';
@@ -28,6 +29,7 @@ function LoginPageContent() {
   const router = useRouter();
   const toast = useToast();
   useGoogleOAuthErrorToast();
+  useSessionReuseToast();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [form, setForm] = useState<FormValues>({ email: '', password: '' });
   const [errors, setErrors] = useState<
@@ -51,7 +53,7 @@ function LoginPageContent() {
     captureEvent('auth_login_started');
     try {
       const result = await api.auth.login(form);
-      setAuth(result.user, result.accessToken);
+      setAuth(result.user, result.accessToken, result.refreshToken);
       captureEvent('auth_login_completed');
       toast.success('Signed in successfully');
       let onboardingDone = result.user.onboardingCompleted === true;

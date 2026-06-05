@@ -4,6 +4,7 @@ import type { JobAnalysis } from '@/lib/api';
 import { ANALYSIS_AXIS_META } from '@/lib/jobAnalysisV2';
 
 import { AnalysisAxisCard } from '@/components/job-analysis/AnalysisAxisCard';
+import { MatchScoreFactorsBreakdown } from '@/components/job-analysis/MatchScoreFactorsBreakdown';
 import { ApplyStrategyBlock } from '@/components/job-analysis/ApplyStrategyBlock';
 import { AttackPlanPanel } from '@/components/job-analysis/AttackPlanPanel';
 import { RecruiterVerdictBadge } from '@/components/job-analysis/RecruiterVerdictBadge';
@@ -12,6 +13,7 @@ export function JobAnalysisV2Panel({
   analysis,
   applyUrl,
   isTailored: isTailoredOverride,
+  embeddedInReport = false,
   onTailorFirst,
   onApplyNow,
 }: {
@@ -19,6 +21,13 @@ export function JobAnalysisV2Panel({
   applyUrl?: string | null;
   /** When true, disables “Tailor first” in the recommended next step block. */
   isTailored?: boolean;
+  /**
+   * When rendered inside the collapsible AI recruiter report, the score
+   * breakdown ("Why this score?") and the apply-strategy / recommended next
+   * step block are shown elsewhere on the page, so they are omitted here to
+   * avoid duplication.
+   */
+  embeddedInReport?: boolean;
   onTailorFirst?: () => void;
   onApplyNow?: () => void;
 }) {
@@ -38,6 +47,10 @@ export function JobAnalysisV2Panel({
         </p>
       </div>
 
+      {!embeddedInReport && analysis.factorsBreakdown?.factors.length ? (
+        <MatchScoreFactorsBreakdown breakdown={analysis.factorsBreakdown} />
+      ) : null}
+
       <div className="grid gap-3 sm:grid-cols-2">
         {ANALYSIS_AXIS_META.map((axis) => (
           <AnalysisAxisCard
@@ -51,14 +64,16 @@ export function JobAnalysisV2Panel({
 
       <AttackPlanPanel attackPlan={v2.attackPlan} />
 
-      <ApplyStrategyBlock
-        strategy={v2.applyStrategy}
-        jobListingId={analysis.jobListingId}
-        applyUrl={applyUrl}
-        isTailored={isTailored}
-        onTailorFirst={onTailorFirst}
-        onApplyNow={onApplyNow}
-      />
+      {!embeddedInReport ? (
+        <ApplyStrategyBlock
+          strategy={v2.applyStrategy}
+          jobListingId={analysis.jobListingId}
+          applyUrl={applyUrl}
+          isTailored={isTailored}
+          onTailorFirst={onTailorFirst}
+          onApplyNow={onApplyNow}
+        />
+      ) : null}
     </div>
   );
 }

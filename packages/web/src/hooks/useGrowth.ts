@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQuery, type QueryClient } from '@tanstack/react-query';
 
 import { useToast } from '@/components/ui/Toast';
@@ -7,14 +8,14 @@ import { api, type GrowthEventName, type GrowthProgressWindow } from '@/lib/api'
 
 /** Invalidate dashboard growth widgets (`GET /growth/*`) after pipeline / application changes. */
 export function invalidateGrowthQueries(queryClient: QueryClient): void {
-  void queryClient.invalidateQueries({ queryKey: ['growth'] });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.growth.root() });
 }
 
 const FEEDBACK_SESSION_KEY = 'applymate:growth:last-feedback-id';
 
 export function useGrowthDailyDirection() {
   return useQuery({
-    queryKey: ['growth', 'daily-direction'],
+    queryKey: queryKeys.growth.dailyDirection(),
     queryFn: () => api.growth.getDailyDirection(),
     staleTime: 0,
     gcTime: 5 * 60_000,
@@ -25,7 +26,7 @@ export function useGrowthDailyDirection() {
 
 export function useGrowthProgress(window: GrowthProgressWindow) {
   return useQuery({
-    queryKey: ['growth', 'progress', window],
+    queryKey: queryKeys.growth.progress(window),
     queryFn: () => api.growth.getProgress(window),
     staleTime: 0,
     gcTime: 5 * 60_000,
@@ -36,7 +37,7 @@ export function useGrowthProgress(window: GrowthProgressWindow) {
 
 export function useGrowthMomentumNudges() {
   return useQuery({
-    queryKey: ['growth', 'momentum-nudges'],
+    queryKey: queryKeys.growth.momentumNudges(),
     queryFn: () => api.growth.getMomentumNudges(),
     staleTime: 0,
     gcTime: 5 * 60_000,
@@ -47,7 +48,7 @@ export function useGrowthMomentumNudges() {
 
 export function useGrowthAchievements() {
   return useQuery({
-    queryKey: ['growth', 'achievements'],
+    queryKey: queryKeys.growth.achievements(),
     queryFn: () => api.growth.getAchievements(),
     staleTime: 0,
     gcTime: 5 * 60_000,

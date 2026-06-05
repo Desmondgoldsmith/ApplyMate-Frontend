@@ -4,6 +4,7 @@ import { createContext, useContext, type ReactNode } from 'react';
 
 import type { CvSpellIssue } from '@/lib/api';
 import type { CVBuilderData } from '@/lib/cvBuilder';
+import type { CvRecruiterScanReadingPathEntry } from '@/lib/cvRecruiterScan';
 
 export type HeaderPreviewSettings = {
   /** Role headline line below name */
@@ -61,6 +62,12 @@ export type CVEditContextValue = {
   setActiveSection: (id: string | null) => void;
   focusedSection: string | null;
   setFocusedSection: (id: string | null) => void;
+  /**
+   * Accordion/preview key of the section currently under AI diff review (single-suggestion
+   * apply / section assistant). When set, that section is kept fully visible while the
+   * others are dimmed so the user's attention is on the change being reviewed.
+   */
+  diffSection?: string | null;
   focusedEntryId: string | null;
   setFocusedEntryId: (id: string | null) => void;
   focusedEntrySection: string | null;
@@ -82,6 +89,11 @@ export type CVEditContextValue = {
     sectionKey?: string,
   ) => Promise<CvAssistantRunResult>;
   cvAssistantBusy?: boolean;
+  /** e.g. "Generating changes…" while a section assistant command runs. */
+  cvAssistantBusyMessage?: string | null;
+  /** Recruiter Scan heatmap overlay keyed by preview section id. */
+  recruiterScanHeatmap?: Record<string, CvRecruiterScanReadingPathEntry> | null;
+  /** @deprecated Clarification uses {@link CvAssistantClarificationModal} in clinic. */
   cvAssistantClarificationQuestion?: string | null;
 };
 

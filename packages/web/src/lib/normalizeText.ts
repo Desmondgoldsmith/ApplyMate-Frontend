@@ -13,6 +13,14 @@ export function normalizeText(value: unknown): string {
     if ('content' in o && typeof o.content === 'string') {
       return o.content;
     }
+    const action = o.action ?? o.op;
+    if (
+      typeof action === 'string' &&
+      typeof o.value === 'string' &&
+      (o.field != null || o.path != null || o.fieldPath != null)
+    ) {
+      return o.value;
+    }
     return '';
   }
   if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {

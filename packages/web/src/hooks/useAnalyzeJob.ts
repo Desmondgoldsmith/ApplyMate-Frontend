@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { api, type JobAnalysis, type JobHistoryItem } from '@/lib/api';
@@ -13,8 +14,8 @@ export function useAnalyzeJob() {
   return useMutation({
     mutationFn: api.jobs.analyze,
     onMutate: async (input) => {
-      await queryClient.cancelQueries({ queryKey: ['job-history'] });
-      const previous = queryClient.getQueryData<JobHistoryItem[]>(['job-history']);
+      await queryClient.cancelQueries({ queryKey: queryKeys.jobs.history() });
+      const previous = queryClient.getQueryData<JobHistoryItem[]>(queryKeys.jobs.history());
       const optimistic: JobHistoryItem = {
         id: `optimistic-${Date.now()}`,
         jobTitle: input.title ?? '',
@@ -29,7 +30,7 @@ export function useAnalyzeJob() {
         hasCoverLetter: false,
         title: input.title,
       };
-      queryClient.setQueryData<JobHistoryItem[]>(['job-history'], (old = []) => [
+      queryClient.setQueryData<JobHistoryItem[]>(queryKeys.jobs.history(), (old = []) => [
         optimistic,
         ...old,
       ]);
@@ -37,11 +38,11 @@ export function useAnalyzeJob() {
     },
     onError: (_error, _vars, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(['job-history'], context.previous);
+        queryClient.setQueryData(queryKeys.jobs.history(), context.previous);
       }
     },
     onSuccess: (data) => {
-      queryClient.setQueryData<JobAnalysis>(['job-analysis-current'], data);
+      queryClient.setQueryData<JobAnalysis>(queryKeys.jobs.analysisCurrent(), data);
       const jobAnalysisId = (data.id ?? '').trim() || null;
       void api.growth.trackEvent({
         eventName: 'analyze_completed',
@@ -58,17 +59,17 @@ export function useAnalyzeJob() {
         void consumeFeedback();
       }
       if (data.scoreSource !== 'heuristic') {
-        void queryClient.invalidateQueries({ queryKey: ['me'] });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
       }
-      queryClient.invalidateQueries({ queryKey: ['analytics'] });
-      queryClient.invalidateQueries({ queryKey: ['cv-profile'] });
-      queryClient.invalidateQueries({ queryKey: ['cv-profiles'] });
-      queryClient.invalidateQueries({ queryKey: ['job-analyses'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.cv.profileDefault() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['job-history'] });
-      queryClient.invalidateQueries({ queryKey: ['job-analyses'] });
-      void queryClient.invalidateQueries({ queryKey: ['hub-bookmarks'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
       invalidateTodayPlanQueries(queryClient);
     },
   });

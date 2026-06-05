@@ -3,6 +3,7 @@
 import Link from 'next/link';
 
 import { useDailyAiUsage } from '@/hooks/useDailyAiUsage';
+import { trackUpgradePrompted } from '@/lib/analytics';
 import { cn } from '@/lib/utils';
 
 type AiUsageBadgeProps = {
@@ -37,7 +38,7 @@ export function AiUsageBadge({ className = '', variant = 'default' }: AiUsageBad
   const compact = variant === 'compact';
 
   const title =
-    'Free tier: successful AI actions today vs your daily cap (UTC). Paid plans have no cap. Failed requests do not count.';
+    'Free tier: successful AI actions today vs your daily cap (UTC). CV score refresh does not count. Paid plans have no cap.';
 
   const pillClass = cn(
     'inline-flex max-w-full items-center rounded-full border transition-colors duration-150',
@@ -93,6 +94,9 @@ export function AiUsageBadge({ className = '', variant = 'default' }: AiUsageBad
     <Link
       data-tour="ai-counter"
       href="/#pricing"
+      onClick={() => {
+        if (atLimit) trackUpgradePrompted('ai_usage_badge');
+      }}
       className={cn(
         pillClass,
         'cursor-pointer',

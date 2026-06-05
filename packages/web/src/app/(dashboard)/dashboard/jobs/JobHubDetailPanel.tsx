@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -34,20 +35,11 @@ import { canUseAiFromDailyAiUsage, DAILY_AI_LIMIT_REACHED_MESSAGE } from '@/lib/
 import {
   api,
   type FollowUpEmailDraft,
-  type HubNoteEntry,
-  type HubReminderStatus,
   type JobAnalysis,
-  type SyncLocalReminderPayload,
 } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
 import { openExternalJobApplyUrl } from '@/lib/jobApplyUrl';
 import { shouldShowScoreImprovementGuide } from '@/lib/scoreImprovement';
-import { invalidateGrowthQueries } from '@/hooks/useGrowth';
-import {
-  invalidateNotificationList,
-  scheduleUnreadNotificationCountInvalidate,
-} from '@/hooks/useNotifications';
-import { invalidateTodayPlanQueries } from '@/lib/today-plan';
 import { downloadCoverLetterPdf } from '@/lib/cover-letter-pdf';
 import { normalizeText } from '@/lib/normalizeText';
 import { cn } from '@/lib/utils';
@@ -56,19 +48,14 @@ import {
   JOB_HUB_EMAIL_TEMPLATE_OPTIONS,
   type JobHubEmailTemplateType,
 } from './jobHubEmailTemplates';
+import { useHubNotes } from '@/hooks/useHubNotes';
+import { useHubReminders } from '@/hooks/useHubReminders';
+import { hubNoteScopeFromJob } from '@/lib/hubNotesQueryKeys';
 import {
-  addLocalReminder,
-  listLocalRemindersForJob,
-  localReminderStatus,
-  notifyDueLocalReminders,
-  removeLocalReminder,
-} from '@/lib/jobHubLocalReminders';
-import {
-  appendNoteEntryIfChanged,
-  listNoteEntries,
-  removeNoteEntry,
-  seedNoteEntriesIfEmpty,
-} from '@/lib/jobHubNotesEntries';
+  hubReminderDueStatus,
+  hubReminderStatusLabel,
+} from '@/lib/hubReminderDueStatus';
+import { notifyDueHubRemindersFromCache } from '@/lib/hubReminderNotifications';
 import { prefillJobAnalyzerInStorage } from '@/lib/jobHubPrefill';
 import {
   HUB_STAGE_LABELS,
@@ -93,28 +80,6 @@ const TEAL = {
   activeTab: 'border-[#00C9B1]',
   pillActive: 'border-[#00C9B1]/45 bg-[#00C9B1]/15 text-[#00C9B1]',
 } as const;
-
-function notesLocalStorageKey(jobKey: string) {
-  return `applymate:job-hub:notes-local:${jobKey}`;
-}
-
-function loadLocalNotes(jobKey: string): string {
-  if (typeof window === 'undefined') return '';
-  try {
-    return window.localStorage.getItem(notesLocalStorageKey(jobKey)) ?? '';
-  } catch {
-    return '';
-  }
-}
-
-function saveLocalNotes(jobKey: string, text: string) {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(notesLocalStorageKey(jobKey), text);
-  } catch {
-    /* ignore */
-  }
-}
 
 function noteSnippet(body: string, max = 72) {
   const line = body.trim().split(/\r?\n/)[0] ?? '';
@@ -175,12 +140,6 @@ function formatReminderWhen(iso: string) {
   });
 }
 
-function reminderStatusLabel(s: ReturnType<typeof localReminderStatus>) {
-  if (s === 'upcoming') return 'Upcoming';
-  if (s === 'due') return 'Due';
-  return 'Elapsed';
-}
-
 function formatAssistLabel(field: string): string {
   return field
     .replace(/_/g, ' ')
@@ -216,11 +175,8 @@ export function JobHubDetailPanel({
 
   const [reminderAt, setReminderAt] = useState('');
   const [reminderMessage, setReminderMessage] = useState('');
-  const [reminderSyncCloud, setReminderSyncCloud] = useState(false);
-  const [localRemindersVersion, setLocalRemindersVersion] = useState(0);
   const [analyzeNavigateBusy, setAnalyzeNavigateBusy] = useState(false);
   const [browserAlertsOn, setBrowserAlertsOn] = useState(false);
-  const [notesListTick, setNotesListTick] = useState(0);
   const [expandedNoteIds, setExpandedNoteIds] = useState<Record<string, boolean>>({});
   const [noteRowEditId, setNoteRowEditId] = useState<string | null>(null);
   const [noteRowEditText, setNoteRowEditText] = useState('');
@@ -232,44 +188,37 @@ export function JobHubDetailPanel({
   const [emailDraft, setEmailDraft] = useState<FollowUpEmailDraft | null>(null);
 
   const jobDetail = useQuery({
-    queryKey: ['job', job.jobAnalysisId],
+    queryKey: queryKeys.jobs.analysis(job.jobAnalysisId ?? ''),
     queryFn: () => api.jobs.getJob(job.jobAnalysisId!),
     enabled: Boolean(job.jobAnalysisId),
   });
 
   const generated = useQuery({
-    queryKey: ['job-generated', job.jobAnalysisId],
+    queryKey: queryKeys.jobs.generated(job.jobAnalysisId ?? ''),
     queryFn: () => api.jobs.getGenerated(job.jobAnalysisId!),
     enabled: Boolean(job.jobAnalysisId) && tab === 'cover',
   });
 
   const bookmarkListingId = (job.boardDiscoveryId ?? '').trim();
   const bookmarkDiscoveryDetail = useQuery({
-    queryKey: ['job-discovery-detail', bookmarkListingId],
+    queryKey: queryKeys.jobs.discoveryDetail(bookmarkListingId),
     queryFn: () => api.jobDiscovery.getDetail(bookmarkListingId),
     enabled: Boolean(bookmarkListingId) && !job.jobAnalysisId && tab === 'description',
   });
 
-  const noteQueryKey = useMemo((): readonly ['hub-note-entries', 'application' | 'bookmark' | 'job' | 'local', string] => {
-    if (job.applicationId) return ['hub-note-entries', 'application', job.applicationId];
-    if (job.jobAnalysisId) return ['hub-note-entries', 'job', job.jobAnalysisId];
-    if (job.hubBookmarkId) return ['hub-note-entries', 'bookmark', job.hubBookmarkId];
-    return ['hub-note-entries', 'local', job.key];
-  }, [job.applicationId, job.jobAnalysisId, job.hubBookmarkId, job.key]);
+  const noteScope = useMemo(() => hubNoteScopeFromJob(job), [job]);
+  const notesScopeKey = noteScope
+    ? `${noteScope.kind}:${noteScope.kind === 'application' ? noteScope.applicationId : noteScope.kind === 'job-analysis' ? noteScope.jobAnalysisId : noteScope.bookmarkId}`
+    : '';
 
-  const isLocalNotes = noteQueryKey[1] === 'local';
-  const notesScope = `${noteQueryKey[1]}:${noteQueryKey[2]}`;
-
-  const serverNotesQ = useQuery({
-    queryKey: noteQueryKey,
-    queryFn: () => {
-      if (job.applicationId) return api.applications.listNotes(job.applicationId);
-      if (job.jobAnalysisId) return api.jobs.listNotes(job.jobAnalysisId);
-      if (job.hubBookmarkId) return api.jobDiscovery.listBookmarkNotes(job.hubBookmarkId);
-      return Promise.resolve([]);
-    },
-    enabled: !isLocalNotes,
-  });
+  const {
+    query: serverNotesQ,
+    rows: savedNoteRows,
+    createNote: postHubNote,
+    updateNote: patchHubNote,
+    deleteNote: deleteHubNote,
+    isMutating: notesMutationBusy,
+  } = useHubNotes(noteScope, { jobAnalysisId: job.jobAnalysisId });
 
   useEffect(() => {
     setTab(initialTab);
@@ -291,226 +240,61 @@ export function JobHubDetailPanel({
     setNoteRowEditId(null);
     setNoteRowEditText('');
     notesHydratedScopeRef.current = '';
-    if (isLocalNotes) {
-      const next = loadLocalNotes(job.key);
-      setNotesDraft(next);
-      notesBaselineRef.current = next;
-      seedNoteEntriesIfEmpty(job.key, next);
-      setNotesListTick((n) => n + 1);
-      return;
-    }
-    const legacy = job.applicationNotes ?? '';
-    setNotesDraft(legacy);
-    notesBaselineRef.current = legacy;
-  }, [job.key, isLocalNotes, job.applicationNotes]);
+    setNotesDraft('');
+    notesBaselineRef.current = '';
+  }, [job.key]);
 
   useEffect(() => {
-    if (isLocalNotes || !serverNotesQ.isSuccess) return;
-    if (notesHydratedScopeRef.current === notesScope) return;
-    const rows = serverNotesQ.data ?? [];
+    if (!noteScope || !serverNotesQ.isSuccess) return;
+    if (notesHydratedScopeRef.current === notesScopeKey) return;
+    const rows = savedNoteRows;
     if (rows.length > 0) {
       const latest = rows[0]!.body;
       setNotesDraft(latest);
       notesBaselineRef.current = latest;
     }
-    notesHydratedScopeRef.current = notesScope;
-  }, [isLocalNotes, notesScope, serverNotesQ.isSuccess, serverNotesQ.data]);
+    notesHydratedScopeRef.current = notesScopeKey;
+  }, [noteScope, notesScopeKey, serverNotesQ.isSuccess, savedNoteRows]);
 
-  const savedNoteRows = useMemo((): HubNoteEntry[] => {
-    if (isLocalNotes) {
-      return listNoteEntries(job.key).map((e) => ({
-        id: e.id,
-        body: e.body,
-        snippet: noteSnippet(e.body),
-        createdAt: e.savedAt,
-        updatedAt: null,
-      }));
-    }
-    return serverNotesQ.data ?? [];
-  }, [isLocalNotes, job.key, serverNotesQ.data, notesListTick]);
-
-  const bumpLocalReminders = useCallback(() => {
-    setLocalRemindersVersion((v) => v + 1);
-  }, []);
-
-  /** Exactly one of analysis id or bookmark id — matches POST /jobs/hub-reminders (prefer analysis when both exist). */
-  const canUseHubReminders = Boolean(job.jobAnalysisId || job.hubBookmarkId);
-
-  const hubRemindersQuery = useQuery({
-    queryKey: ['hub-reminders', job.jobAnalysisId ?? '', job.hubBookmarkId ?? ''],
-    queryFn: () =>
-      api.jobs.listHubReminders(
-        job.jobAnalysisId
-          ? { jobAnalysisId: job.jobAnalysisId }
-          : { jobBookmarkId: job.hubBookmarkId! },
-      ),
-    enabled: canUseHubReminders,
+  const {
+    query: hubRemindersQuery,
+    pending: hubRemindersDisplay,
+    createReminder: createHubReminderMut,
+    patchReminder: patchHubReminderMut,
+    deleteReminder: deleteHubReminderMut,
+    canUse: canUseHubReminders,
+    isMutating: hubRemindersMutating,
+  } = useHubReminders({
+    jobAnalysisId: job.jobAnalysisId,
+    jobBookmarkId: job.hubBookmarkId,
   });
-
-  const createHubReminderMut = useMutation({
-    mutationFn: () => {
-      const iso = new Date(reminderAt).toISOString();
-      const t = reminderMessage.trim();
-      if (job.jobAnalysisId) {
-        return api.jobs.createHubReminder({
-          jobAnalysisId: job.jobAnalysisId,
-          remindAt: iso,
-          ...(t ? { title: t } : {}),
-        });
-      }
-      if (job.hubBookmarkId) {
-        return api.jobs.createHubReminder({
-          jobBookmarkId: job.hubBookmarkId,
-          remindAt: iso,
-          ...(t ? { title: t } : {}),
-        });
-      }
-      return Promise.reject(new Error('No job or bookmark scope for hub reminder'));
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['hub-reminders'] });
-      if (job.jobAnalysisId) void queryClient.invalidateQueries({ queryKey: ['job', job.jobAnalysisId] });
-      void queryClient.invalidateQueries({ queryKey: ['job-history'] });
-      void queryClient.invalidateQueries({ queryKey: ['hub-bookmarks'] });
-      invalidateTodayPlanQueries(queryClient);
-      invalidateGrowthQueries(queryClient);
-      setReminderAt('');
-      setReminderMessage('');
-      setReminderSyncCloud(false);
-      toast.success('Follow-up saved');
-    },
-    onError: (e) => toast.error(getApiErrorMessage(e)),
-  });
-
-  const deleteHubReminderMut = useMutation({
-    mutationFn: (id: string) => api.jobs.deleteHubReminder(id),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['hub-reminders'] });
-      if (job.jobAnalysisId) void queryClient.invalidateQueries({ queryKey: ['job', job.jobAnalysisId] });
-      void queryClient.invalidateQueries({ queryKey: ['job-history'] });
-      void queryClient.invalidateQueries({ queryKey: ['hub-bookmarks'] });
-      invalidateTodayPlanQueries(queryClient);
-      invalidateGrowthQueries(queryClient);
-    },
-    onError: (e) => toast.error(getApiErrorMessage(e)),
-  });
-
-  const patchHubReminderMut = useMutation({
-    mutationFn: (args: { id: string; status: HubReminderStatus }) =>
-      api.jobs.patchHubReminder(args.id, { status: args.status }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['hub-reminders'] });
-      if (job.jobAnalysisId) void queryClient.invalidateQueries({ queryKey: ['job', job.jobAnalysisId] });
-      invalidateTodayPlanQueries(queryClient);
-      invalidateGrowthQueries(queryClient);
-    },
-    onError: (e) => toast.error(getApiErrorMessage(e)),
-  });
-
-  const displayReminders = useMemo(() => {
-    return listLocalRemindersForJob(job.key).filter((r) => r.source !== 'server');
-  }, [job.key, localRemindersVersion, dueUiTick]);
-
-  const hubRemindersDisplay = useMemo(() => {
-    const rows = hubRemindersQuery.data ?? [];
-    return rows.filter((r) => r.status === 'pending');
-  }, [hubRemindersQuery.data]);
-
-  const postHubNote = useMutation({
-    mutationFn: (body: string) => {
-      if (job.applicationId) return api.applications.createNote(job.applicationId, body);
-      if (job.jobAnalysisId) return api.jobs.createNote(job.jobAnalysisId, body);
-      if (job.hubBookmarkId) return api.jobDiscovery.createBookmarkNote(job.hubBookmarkId, body);
-      return Promise.reject(new Error('No note scope'));
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: [...noteQueryKey] });
-      void queryClient.invalidateQueries({ queryKey: ['applications'] });
-      void queryClient.invalidateQueries({ queryKey: ['hub-bookmarks'] });
-      invalidateTodayPlanQueries(queryClient);
-    },
-    onError: (e) => toast.error(getApiErrorMessage(e)),
-  });
-
-  const patchHubNote = useMutation({
-    mutationFn: ({ noteId, body }: { noteId: string; body: string }) => {
-      if (job.applicationId) return api.applications.updateNote(job.applicationId, noteId, body);
-      if (job.jobAnalysisId) return api.jobs.updateNote(job.jobAnalysisId, noteId, body);
-      if (job.hubBookmarkId) return api.jobDiscovery.updateBookmarkNote(job.hubBookmarkId, noteId, body);
-      return Promise.reject(new Error('No note scope'));
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: [...noteQueryKey] });
-      void queryClient.invalidateQueries({ queryKey: ['applications'] });
-      void queryClient.invalidateQueries({ queryKey: ['hub-bookmarks'] });
-      invalidateTodayPlanQueries(queryClient);
-      setNoteRowEditId(null);
-      setNoteRowEditText('');
-    },
-    onError: (e) => toast.error(getApiErrorMessage(e)),
-  });
-
-  const deleteHubNote = useMutation({
-    mutationFn: (noteId: string) => {
-      if (job.applicationId) return api.applications.deleteNote(job.applicationId, noteId);
-      if (job.jobAnalysisId) return api.jobs.deleteNote(job.jobAnalysisId, noteId);
-      if (job.hubBookmarkId) return api.jobDiscovery.deleteBookmarkNote(job.hubBookmarkId, noteId);
-      return Promise.reject(new Error('No note scope'));
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: [...noteQueryKey] });
-      void queryClient.invalidateQueries({ queryKey: ['applications'] });
-      void queryClient.invalidateQueries({ queryKey: ['hub-bookmarks'] });
-      invalidateTodayPlanQueries(queryClient);
-      setNoteRowEditId(null);
-      setNoteRowEditText('');
-    },
-    onError: (e) => toast.error(getApiErrorMessage(e)),
-  });
-
-  const notesMutationBusy =
-    postHubNote.isPending || patchHubNote.isPending || deleteHubNote.isPending;
 
   const flushNotesSave = useCallback(() => {
+    if (!noteScope) {
+      toast.error('Save this job to your hub before adding synced notes.');
+      return;
+    }
     if (notesBaselineRef.current === notesDraft) return;
     const trimmed = notesDraft.trim();
     if (!trimmed) return;
-    setNotesStatus('saving');
-    if (isLocalNotes) {
-      try {
-        saveLocalNotes(job.key, notesDraft);
-        notesBaselineRef.current = notesDraft;
-        appendNoteEntryIfChanged(job.key, notesDraft);
-        setNotesListTick((n) => n + 1);
-        setNotesStatus('saved');
-        window.setTimeout(() => setNotesStatus('idle'), 2000);
-      } catch {
-        setNotesStatus('error');
-        toast.error('Could not save notes in this browser.');
-      }
+    const latest = savedNoteRows[0];
+    if (latest && latest.body.trim() === trimmed) {
+      notesBaselineRef.current = notesDraft;
       return;
     }
+    setNotesStatus('saving');
     postHubNote.mutate(trimmed, {
       onSuccess: () => {
         notesBaselineRef.current = notesDraft;
         setNotesStatus('saved');
         window.setTimeout(() => setNotesStatus('idle'), 2000);
       },
-      onError: () => setNotesStatus('error'),
+      onError: (e) => {
+        setNotesStatus('error');
+        toast.error(getApiErrorMessage(e));
+      },
     });
-  }, [isLocalNotes, job.key, notesDraft, noteQueryKey, postHubNote, toast]);
-
-  useEffect(() => {
-    if (!isLocalNotes) return;
-    if (notesBaselineRef.current === notesDraft) return;
-    if (notesSaveTimer.current) clearTimeout(notesSaveTimer.current);
-    notesSaveTimer.current = setTimeout(() => {
-      flushNotesSave();
-    }, 1200);
-    return () => {
-      if (notesSaveTimer.current) clearTimeout(notesSaveTimer.current);
-    };
-  }, [notesDraft, flushNotesSave, isLocalNotes]);
+  }, [noteScope, notesDraft, savedNoteRows, postHubNote, toast]);
 
   const genEmail = useMutation({
     mutationFn: async () => {
@@ -539,13 +323,6 @@ export function JobHubDetailPanel({
   const generateCover = useGenerateContent();
   const aiUsage = useDailyAiUsage();
 
-  /** Local-only path: require future time + message. */
-  const reminderValid = useMemo(() => {
-    if (!reminderAt.trim()) return false;
-    const t = new Date(reminderAt).getTime();
-    return Number.isFinite(t) && t > Date.now();
-  }, [reminderAt]);
-
   /** Hub CRM path: any parseable date/time (server validates). */
   const hubReminderTimeOk = useMemo(() => {
     if (!reminderAt.trim()) return false;
@@ -553,72 +330,33 @@ export function JobHubDetailPanel({
     return Number.isFinite(t);
   }, [reminderAt]);
 
-  const canSyncCloudReminder = Boolean(job.applicationId || job.jobAnalysisId);
-
-  const syncCloudReminder = useMutation({
-    mutationFn: (payload: SyncLocalReminderPayload) => api.users.syncLocalReminder(payload),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['applications'] });
-      void queryClient.invalidateQueries({ queryKey: ['job-history'] });
-      invalidateNotificationList(queryClient);
-      scheduleUnreadNotificationCountInvalidate(queryClient);
-      invalidateTodayPlanQueries(queryClient);
-      toast.success('Reminder synced for email and in-app delivery');
-    },
-    onError: (e) => toast.error(getApiErrorMessage(e)),
-  });
-
-  const scheduleLocalReminder = useCallback(() => {
-    if (!reminderValid || !reminderMessage.trim()) return;
-    const iso = new Date(reminderAt).toISOString();
-    const msg = reminderMessage.trim();
-    addLocalReminder(job.key, iso, msg);
-    bumpLocalReminders();
-    setReminderAt('');
-    setReminderMessage('');
-    notifyDueLocalReminders();
-    toast.success('Reminder saved on this device');
-
-    if (reminderSyncCloud && canSyncCloudReminder) {
-      syncCloudReminder.mutate({
-        remindAt: iso,
-        message: msg,
-        applicationId: job.applicationId ?? undefined,
-        jobAnalysisId: job.jobAnalysisId ?? undefined,
-        jobKey: job.key,
-        title: job.title,
-        company: job.company,
-      });
-    }
-    setReminderSyncCloud(false);
-  }, [
-    job.applicationId,
-    job.company,
-    job.jobAnalysisId,
-    job.key,
-    job.title,
-    bumpLocalReminders,
-    canSyncCloudReminder,
-    reminderAt,
-    reminderMessage,
-    reminderSyncCloud,
-    reminderValid,
-    syncCloudReminder,
-    toast,
-  ]);
-
-  const scheduleHubReminder = useCallback(() => {
-    if (!hubReminderTimeOk) return;
-    createHubReminderMut.mutate();
-  }, [createHubReminderMut, hubReminderTimeOk]);
-
   const scheduleReminder = useCallback(() => {
-    if (canUseHubReminders) {
-      scheduleHubReminder();
+    if (!canUseHubReminders) {
+      toast.error('Analyze or bookmark this role to schedule synced follow-ups.');
       return;
     }
-    scheduleLocalReminder();
-  }, [canUseHubReminders, scheduleHubReminder, scheduleLocalReminder]);
+    if (!hubReminderTimeOk) return;
+    const iso = new Date(reminderAt).toISOString();
+    const t = reminderMessage.trim();
+    createHubReminderMut.mutate(
+      { remindAt: iso, ...(t ? { title: t } : {}) },
+      {
+        onSuccess: () => {
+          setReminderAt('');
+          setReminderMessage('');
+          toast.success('Follow-up saved');
+        },
+        onError: (e) => toast.error(getApiErrorMessage(e)),
+      },
+    );
+  }, [
+    canUseHubReminders,
+    createHubReminderMut,
+    hubReminderTimeOk,
+    reminderAt,
+    reminderMessage,
+    toast,
+  ]);
 
   const detail = jobDetail.data;
   const analysisForCard: JobAnalysis | null =
@@ -679,7 +417,7 @@ export function JobHubDetailPanel({
       if (job.jobAnalysisId && !description) {
         try {
           const d = await queryClient.fetchQuery({
-            queryKey: ['job', job.jobAnalysisId],
+            queryKey: queryKeys.jobs.analysis(job.jobAnalysisId ?? ''),
             queryFn: () => api.jobs.getJob(job.jobAnalysisId!),
           });
           description = d?.description?.trim() ?? '';
@@ -689,7 +427,7 @@ export function JobHubDetailPanel({
       } else if (!job.jobAnalysisId && discoveryId && !description) {
         try {
           const d = await queryClient.fetchQuery({
-            queryKey: ['job-discovery-detail', discoveryId],
+            queryKey: queryKeys.jobs.discoveryDetail(discoveryId),
             queryFn: () => api.jobDiscovery.getDetail(discoveryId),
           });
           description = d?.description?.trim() ?? '';
@@ -1161,7 +899,7 @@ export function JobHubDetailPanel({
                           },
                           onError: (err) => {
                             toast.error(getApiErrorMessage(err));
-                            void queryClient.invalidateQueries({ queryKey: ['me'] });
+                            void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
                           },
                         },
                       );
@@ -1210,9 +948,9 @@ export function JobHubDetailPanel({
                 </span>
               </div>
               <p className="mt-1 text-xs text-white/35">
-                {isLocalNotes
-                  ? 'Stored on this device only. Pausing typing auto-saves.'
-                  : 'Saved to your account. Tap a row to read or edit.'}
+                {noteScope
+                  ? 'Saved to your account and synced across devices. Tap a row to read or edit.'
+                  : 'Save or analyze this job in your hub to add synced notes.'}
               </p>
               <textarea
                 value={notesDraft}
@@ -1222,8 +960,8 @@ export function JobHubDetailPanel({
                     clearTimeout(notesSaveTimer.current);
                     notesSaveTimer.current = null;
                   }
-                  if (isLocalNotes) flushNotesSave();
                 }}
+                disabled={!noteScope}
                 rows={10}
                 className={cn(
                   'mt-3 w-full resize-y rounded-xl border border-white/12 bg-[#080b0b] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none',
@@ -1234,7 +972,7 @@ export function JobHubDetailPanel({
               <Button
                 className="mt-3"
                 variant="ghost"
-                disabled={notesMutationBusy}
+                disabled={!noteScope || notesMutationBusy}
                 onClick={() => flushNotesSave()}
               >
                 Save now
@@ -1243,14 +981,16 @@ export function JobHubDetailPanel({
               <div className="mt-5">
                 <h3 className="text-[11px] font-semibold uppercase tracking-wide text-white/45">Saved notes</h3>
                 <p className="mt-1 text-[11px] text-white/30">Tap a row to expand.</p>
-                {!isLocalNotes && serverNotesQ.isLoading ? (
+                {noteScope && serverNotesQ.isLoading ? (
                   <div className="mt-3 flex items-center gap-2 text-xs text-white/45">
                     <Loader2 className={cn('h-4 w-4 animate-spin', TEAL.text)} aria-hidden />
                     Loading notes…
                   </div>
+                ) : noteScope && serverNotesQ.isError ? (
+                  <p className="mt-3 text-xs text-rose-200">{getApiErrorMessage(serverNotesQ.error)}</p>
                 ) : savedNoteRows.length === 0 ? (
                   <p className="mt-3 text-xs text-white/35">
-                    {isLocalNotes ? 'Nothing saved yet.' : 'No saved notes yet — add text above.'}
+                    {noteScope ? 'No saved notes yet — add text above.' : 'Notes appear after this role is saved to your hub.'}
                   </p>
                 ) : (
                   <ul className="mt-3 space-y-1.5">
@@ -1284,7 +1024,7 @@ export function JobHubDetailPanel({
                           </button>
                           {open ? (
                             <div className="border-t border-white/[0.06] px-3 py-2.5 pl-10">
-                              {!isLocalNotes && noteRowEditId === row.id ? (
+                              {noteScope && noteRowEditId === row.id ? (
                                 <div className="space-y-2">
                                   <textarea
                                     value={noteRowEditText}
@@ -1302,10 +1042,19 @@ export function JobHubDetailPanel({
                                       className="border border-white/12 text-xs"
                                       disabled={notesMutationBusy || !noteRowEditText.trim()}
                                       onClick={() =>
-                                        patchHubNote.mutate({
-                                          noteId: row.id,
-                                          body: noteRowEditText.trim(),
-                                        })
+                                        patchHubNote.mutate(
+                                          {
+                                            noteId: row.id,
+                                            body: noteRowEditText.trim(),
+                                          },
+                                          {
+                                            onSuccess: () => {
+                                              setNoteRowEditId(null);
+                                              setNoteRowEditText('');
+                                            },
+                                            onError: (e) => toast.error(getApiErrorMessage(e)),
+                                          },
+                                        )
                                       }
                                     >
                                       Save changes
@@ -1330,7 +1079,7 @@ export function JobHubDetailPanel({
                                 </p>
                               )}
                               <div className="mt-3 flex flex-wrap gap-2">
-                                {!isLocalNotes ? (
+                                {noteScope ? (
                                   <>
                                     <Button
                                       type="button"
@@ -1357,7 +1106,9 @@ export function JobHubDetailPanel({
                                           )
                                         )
                                           return;
-                                        deleteHubNote.mutate(row.id);
+                                        deleteHubNote.mutate(row.id, {
+                                          onError: (e) => toast.error(getApiErrorMessage(e)),
+                                        });
                                         setExpandedNoteIds((prev) => ({ ...prev, [row.id]: false }));
                                       }}
                                     >
@@ -1365,28 +1116,7 @@ export function JobHubDetailPanel({
                                       Delete
                                     </Button>
                                   </>
-                                ) : (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    className="gap-1.5 border border-white/12 text-xs"
-                                    disabled={notesMutationBusy}
-                                    onClick={() => {
-                                      if (
-                                        !window.confirm(
-                                          'Remove this note from this device?',
-                                        )
-                                      )
-                                        return;
-                                      removeNoteEntry(job.key, row.id);
-                                      setNotesListTick((n) => n + 1);
-                                      setExpandedNoteIds((prev) => ({ ...prev, [row.id]: false }));
-                                    }}
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" aria-hidden />
-                                    Remove
-                                  </Button>
-                                )}
+                                ) : null}
                               </div>
                             </div>
                           ) : null}
@@ -1402,12 +1132,11 @@ export function JobHubDetailPanel({
               <h2 className="text-sm font-semibold text-white">Reminders</h2>
               {canUseHubReminders ? (
                 <p className="mt-1 text-xs text-white/40">
-                  Hub follow-ups sync to your account (not the same as application email reminders). Open from any
-                  device.
+                  Hub follow-ups sync to your account (not application email reminders). Open from any device.
                 </p>
               ) : (
                 <p className="mt-1 text-xs text-white/40">
-                  Reminders on this device. Turn on alerts for a pop-up. Optional: email too if you sync to your account.
+                  Analyze or bookmark this role to schedule synced follow-ups.
                 </p>
               )}
               <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -1425,7 +1154,7 @@ export function JobHubDetailPanel({
                     if (p === 'granted') {
                       setBrowserAlertsOn(true);
                       toast.success('You’ll get a pop-up when a reminder is due.');
-                      notifyDueLocalReminders();
+                      notifyDueHubRemindersFromCache(queryClient);
                     } else {
                       toast.error('Alerts stay off until you allow them in your browser settings.');
                     }
@@ -1445,7 +1174,7 @@ export function JobHubDetailPanel({
               ) : canUseHubReminders && hubRemindersDisplay.length > 0 ? (
                 <ul className="mt-4 space-y-2">
                   {hubRemindersDisplay.map((r) => {
-                    const st = localReminderStatus(r.remindAt);
+                    const st = hubReminderDueStatus(r.remindAt);
                     const line = r.title?.trim() || r.note?.trim() || '—';
                     return (
                       <li
@@ -1475,8 +1204,13 @@ export function JobHubDetailPanel({
                           <button
                             type="button"
                             className="rounded-lg border border-white/12 px-2 py-1 text-[11px] text-white/55 hover:border-[#00C9B1]/35 hover:bg-[#00C9B1]/12 hover:text-[#00C9B1]"
-                            onClick={() => patchHubReminderMut.mutate({ id: r.id, status: 'completed' })}
-                            disabled={patchHubReminderMut.isPending}
+                            onClick={() =>
+                              patchHubReminderMut.mutate(
+                                { id: r.id, status: 'completed' },
+                                { onError: (e) => toast.error(getApiErrorMessage(e)) },
+                              )
+                            }
+                            disabled={hubRemindersMutating}
                           >
                             Mark done
                           </button>
@@ -1485,9 +1219,11 @@ export function JobHubDetailPanel({
                             className="rounded-lg border border-rose-400/25 px-2 py-1 text-[11px] text-rose-200/90 hover:bg-rose-500/10"
                             onClick={() => {
                               if (!window.confirm('Delete this follow-up?')) return;
-                              deleteHubReminderMut.mutate(r.id);
+                              deleteHubReminderMut.mutate(r.id, {
+                                onError: (e) => toast.error(getApiErrorMessage(e)),
+                              });
                             }}
-                            disabled={deleteHubReminderMut.isPending}
+                            disabled={hubRemindersMutating}
                           >
                             Delete
                           </button>
@@ -1498,98 +1234,9 @@ export function JobHubDetailPanel({
                 </ul>
               ) : canUseHubReminders ? (
                 <p className="mt-3 text-xs text-white/30">No open follow-ups for this job.</p>
-              ) : displayReminders.length > 0 ? (
-                <ul className="mt-4 space-y-2">
-                  {displayReminders.map((r) => {
-                    const st = localReminderStatus(r.remindAt);
-                    return (
-                      <li
-                        key={r.id}
-                        className="flex flex-col gap-2 rounded-lg border border-white/10 bg-[#080b0b]/80 px-3 py-2.5 sm:flex-row sm:items-start sm:justify-between"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span
-                              className={cn(
-                                'rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-                                st === 'upcoming' && 'bg-[#00C9B1]/20 text-[#00C9B1]',
-                                st === 'due' && 'bg-amber-500/20 text-amber-100',
-                                st === 'elapsed' && 'bg-white/[0.06] text-white/45',
-                              )}
-                            >
-                              {reminderStatusLabel(st)}
-                            </span>
-                            <span className="text-[10px] font-medium uppercase tracking-wide text-white/35">
-                              This device
-                            </span>
-                          </div>
-                          <p className="mt-1 text-xs text-white/45">{formatReminderWhen(r.remindAt)}</p>
-                          <p className="mt-1 text-sm text-white/85">{r.message || '—'}</p>
-                        </div>
-                        <button
-                          type="button"
-                          className="shrink-0 self-start rounded-lg border border-white/12 px-2 py-1 text-[11px] text-white/55 hover:border-[#00C9B1]/35 hover:bg-[#00C9B1]/12 hover:text-[#00C9B1]"
-                          onClick={() => {
-                            removeLocalReminder(r.id);
-                            bumpLocalReminders();
-                          }}
-                        >
-                          Remove
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
               ) : (
-                <p className="mt-3 text-xs text-white/30">No reminders for this job yet.</p>
+                <p className="mt-3 text-xs text-white/30">Follow-ups appear after you analyze or bookmark this role.</p>
               )}
-
-              {canUseHubReminders && displayReminders.length > 0 ? (
-                <>
-                  <p className="mt-6 text-xs font-medium uppercase tracking-wide text-white/45">Also on this device</p>
-                  <ul className="mt-2 space-y-2">
-                    {displayReminders.map((r) => {
-                      const st = localReminderStatus(r.remindAt);
-                      return (
-                        <li
-                          key={r.id}
-                          className="flex flex-col gap-2 rounded-lg border border-white/10 bg-[#080b0b]/80 px-3 py-2.5 sm:flex-row sm:items-start sm:justify-between"
-                        >
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span
-                                className={cn(
-                                  'rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-                                  st === 'upcoming' && 'bg-[#00C9B1]/20 text-[#00C9B1]',
-                                  st === 'due' && 'bg-amber-500/20 text-amber-100',
-                                  st === 'elapsed' && 'bg-white/[0.06] text-white/45',
-                                )}
-                              >
-                                {reminderStatusLabel(st)}
-                              </span>
-                              <span className="text-[10px] font-medium uppercase tracking-wide text-white/35">
-                                This device
-                              </span>
-                            </div>
-                            <p className="mt-1 text-xs text-white/45">{formatReminderWhen(r.remindAt)}</p>
-                            <p className="mt-1 text-sm text-white/85">{r.message || '—'}</p>
-                          </div>
-                          <button
-                            type="button"
-                            className="shrink-0 self-start rounded-lg border border-white/12 px-2 py-1 text-[11px] text-white/55 hover:border-[#00C9B1]/35 hover:bg-[#00C9B1]/12 hover:text-[#00C9B1]"
-                            onClick={() => {
-                              removeLocalReminder(r.id);
-                              bumpLocalReminders();
-                            }}
-                          >
-                            Remove
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </>
-              ) : null}
 
               <div className="mt-5 space-y-4">
                 <div className="space-y-1.5">
@@ -1598,6 +1245,7 @@ export function JobHubDetailPanel({
                     type="datetime-local"
                     value={reminderAt}
                     onChange={(e) => setReminderAt(e.target.value)}
+                    disabled={!canUseHubReminders}
                     className={cn(
                       'block w-full rounded-xl border border-white/12 bg-[#080b0b] px-3 py-2 text-sm text-white focus:outline-none',
                       TEAL.focus,
@@ -1606,56 +1254,27 @@ export function JobHubDetailPanel({
                 </div>
                 <div className="space-y-1.5">
                   <span className="block text-[11px] font-medium uppercase tracking-wide text-white/45">
-                    {canUseHubReminders ? 'Title (optional)' : 'Message'}
+                    Title (optional)
                   </span>
                   <input
                     type="text"
                     value={reminderMessage}
                     onChange={(e) => setReminderMessage(e.target.value)}
                     placeholder="e.g. Follow up with Jamie at Acme"
+                    disabled={!canUseHubReminders}
                     className={cn(
                       'block w-full rounded-xl border border-white/12 bg-[#080b0b] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none',
                       TEAL.focus,
                     )}
                   />
                 </div>
-                {!canUseHubReminders ? (
-                  <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
-                    <input
-                      type="checkbox"
-                      checked={reminderSyncCloud}
-                      disabled={!canSyncCloudReminder || syncCloudReminder.isPending}
-                      onChange={(e) => setReminderSyncCloud(e.target.checked)}
-                      className="mt-0.5 shrink-0 rounded border-white/20 bg-[#080b0b]"
-                    />
-                    <span className="text-xs leading-snug text-white/50">
-                      <span className="font-medium text-white/70">Also schedule on my account</span> — email and
-                      in-app reminder when due (per your backend). Leave off to keep this reminder device-only.
-                      {!canSyncCloudReminder ? (
-                        <span className="mt-1 block text-amber-200/80">
-                          Requires a saved job analysis or an application row so the server can attach the reminder.
-                        </span>
-                      ) : null}
-                    </span>
-                  </label>
-                ) : null}
                 <Button
                   variant="ghost"
                   className="border border-white/12"
-                  disabled={
-                    canUseHubReminders
-                      ? !hubReminderTimeOk || createHubReminderMut.isPending
-                      : !reminderValid || !reminderMessage.trim() || syncCloudReminder.isPending
-                  }
+                  disabled={!canUseHubReminders || !hubReminderTimeOk || hubRemindersMutating}
                   onClick={() => scheduleReminder()}
                 >
-                  {canUseHubReminders
-                    ? createHubReminderMut.isPending
-                      ? 'Saving…'
-                      : 'Save follow-up'
-                    : syncCloudReminder.isPending
-                      ? 'Saving…'
-                      : 'Save reminder'}
+                  {hubRemindersMutating ? 'Saving…' : 'Save follow-up'}
                 </Button>
               </div>
             </div>

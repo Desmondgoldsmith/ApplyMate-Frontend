@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useQuery } from '@tanstack/react-query';
 
 import { api, type CvProfileSummary } from '@/lib/api';
@@ -19,7 +20,7 @@ async function fetchCvProfileRows(): Promise<CvProfilesQueryData> {
 
 export function useCVProfiles() {
   return useQuery({
-    queryKey: ['cv-profiles'],
+    queryKey: queryKeys.cv.profiles(),
     queryFn: fetchCvProfileRows,
     staleTime: 30_000,
     refetchOnWindowFocus: true,

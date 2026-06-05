@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -28,6 +29,7 @@ import {
 } from 'react';
 
 import { OnboardingResumeClinic } from '@/components/onboarding/OnboardingResumeClinic';
+import { CvParseImportSummaryPanel } from '@/components/cv/CvParseImportSummaryPanel';
 import { CVScoreCard } from '@/components/cv/CVScoreCard';
 import {
   CVUploadZone,
@@ -54,7 +56,17 @@ import {
   type CVProfile,
   type CVScorePayload,
   type CVSectionRecord,
+  type CvParseImportSummary,
 } from '@/lib/api';
+import { trackConversionFunnelEvent } from '@/lib/analytics';
+import { refreshCvStateAfterCvParseSuccess } from '@/lib/cvParseCacheReconcile';
+import { cvEditorPath } from '@/lib/cvProfileNavigation';
+import { CV_CHAT_INPUT_MAX_CHARS } from '@/lib/cv-chat-input.constants';
+import {
+  cvChatInputLimitErrorMessage,
+  formatCvChatCharCount,
+  isCvChatInputOverLimit,
+} from '@/lib/cvChatInputDisplay';
 import {
   saveCVBuilderData,
   type CVBuilderData,
@@ -176,12 +188,18 @@ export default function OnboardingPage() {
   const [uploadParsedProfile, setUploadParsedProfile] =
     useState<CVProfile | null>(null);
   const [sectionCount, setSectionCount] = useState(0);
-  const [uploadPhase, setUploadPhase] = useState<'zone' | 'score'>('zone');
+  const [uploadPhase, setUploadPhase] = useState<'zone' | 'summary' | 'score'>('zone');
+  const [uploadImportSummary, setUploadImportSummary] =
+    useState<CvParseImportSummary | null>(null);
 
   const [pasteText, setPasteText] = useState('');
   const [pasteSubmitting, setPasteSubmitting] = useState(false);
   const [pasteError, setPasteError] = useState<string | null>(null);
   const [pasteStatusIdx, setPasteStatusIdx] = useState(0);
+  const [pasteImportSummary, setPasteImportSummary] =
+    useState<CvParseImportSummary | null>(null);
+  const [pasteParsedProfile, setPasteParsedProfile] = useState<CVProfile | null>(null);
+  const [pasteParsedProfileId, setPasteParsedProfileId] = useState<string | null>(null);
 
   const [processing, setProcessing] = useState(false);
   const [processingStepIdx, setProcessingStepIdx] = useState(0);
@@ -221,7 +239,7 @@ export default function OnboardingPage() {
 
   /** Chat + manual need a resume profile row; sections + builder expect it (same as dashboard create flow). */
   const onboardingCvProfileQuery = useQuery({
-    queryKey: ['onboarding', 'cv-default-profile', accessToken ?? ''],
+    queryKey: queryKeys.onboarding.cvDefaultProfile(accessToken ?? ''),
     queryFn: async () => {
       const profiles = await api.cv.listProfiles();
       const pick = profiles.find((p) => p.isDefault) ?? profiles[0];
@@ -233,7 +251,12 @@ export default function OnboardingPage() {
         name: 'My resume',
         template: tpl,
       });
-      void queryClient.invalidateQueries({ queryKey: ['cv-profiles'] });
+      trackConversionFunnelEvent('cv_created', {
+        cvProfileId: row.id,
+        template: tpl,
+        via: 'onboarding',
+      });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
       return row.id;
     },
     enabled:
@@ -244,7 +267,10 @@ export default function OnboardingPage() {
   });
 
   const cvSectionsQuery = useQuery({
-    queryKey: ['cv-sections', true, onboardingCvProfileQuery.data],
+    queryKey: queryKeys.cv.sectionsWithHidden(
+      onboardingCvProfileQuery.data ?? '',
+      true,
+    ),
     queryFn: () => api.cv.getSections(true, onboardingCvProfileQuery.data),
     enabled:
       Boolean(accessToken) &&
@@ -474,7 +500,7 @@ export default function OnboardingPage() {
         improvements: detailed.improvements ?? [],
         needsScoring: false,
       });
-      await queryClient.invalidateQueries({ queryKey: ['cv', 'score'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.cv.scoreRoot() });
       await queryClient.invalidateQueries({
         queryKey: CV_SUGGESTIONS_QUERY_ROOT,
       });
@@ -486,12 +512,12 @@ export default function OnboardingPage() {
   const onUploadParsed = useCallback(
     async (parse?: CvParseSuccessPayload) => {
       const fresh = parse?.profile;
-      await queryClient.invalidateQueries({ queryKey: ['cv-profile'] });
-      await queryClient.invalidateQueries({ queryKey: ['cv-sections'] });
-      await queryClient.invalidateQueries({ queryKey: ['cv', 'score'] });
-      await queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.cv.profileDefault() });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.cv.sectionsRoot() });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.cv.scoreRoot() });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
       const list = await queryClient.fetchQuery({
-        queryKey: ['cv-sections', true],
+        queryKey: queryKeys.cv.sectionsActive(true),
         queryFn: () => api.cv.getSections(true),
       });
       setSectionCount(Array.isArray(list) ? list.length : 0);
@@ -526,8 +552,9 @@ export default function OnboardingPage() {
           /* optional */
         }
       }
-      void queryClient.invalidateQueries({ queryKey: ['cv-profiles'] });
-      setUploadPhase('score');
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
+      setUploadImportSummary(parse?.importSummary ?? null);
+      setUploadPhase(parse?.importSummary ? 'summary' : 'score');
       try {
         await saveProgress.mutateAsync({ step: 2, hasCV: true });
       } catch {
@@ -548,9 +575,9 @@ export default function OnboardingPage() {
       primaryGoal,
     });
     clearStoredWizard();
-    await queryClient.invalidateQueries({ queryKey: ['cv-profiles'] });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
     await queryClient.invalidateQueries({
-      queryKey: ['me', accessToken ?? ''],
+      queryKey: queryKeys.auth.me(accessToken ?? ''),
     });
     const u = useAuthStore.getState().user;
     const token = useAuthStore.getState().accessToken;
@@ -606,8 +633,8 @@ export default function OnboardingPage() {
           template: selectedTemplate,
           cvProfileId: profileId,
         });
-        await queryClient.invalidateQueries({ queryKey: ['cv-sections'] });
-        await queryClient.invalidateQueries({ queryKey: ['cv-profile'] });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.cv.sectionsRoot() });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.cv.profileDefault() });
         const { profile } = await api.cv.getProfileById(profileId);
         try {
           await syncSuggestedCvProfileMetadata(
@@ -689,18 +716,22 @@ export default function OnboardingPage() {
       setProcessingStepIdx(0);
       try {
         let profileOut: CVProfile | null = opts.profile ?? null;
+        let persistProfileId = (opts.profileId ?? profileOut?.id ?? '').trim();
         if (opts.source === 'chat' && opts.payload) {
           const scoped = (opts.profileId ?? '').trim();
-          profileOut = await api.cv.chatCreateCV({
+          const created = await api.cv.chatCreateCV({
             ...opts.payload,
+            template: selectedTemplate,
             ...(scoped ? { cvProfileId: scoped } : {}),
           });
+          profileOut = created.profile;
+          persistProfileId = created.profileId;
         }
         setCompletionProfile(profileOut);
-        if (profileOut?.id) {
+        if (persistProfileId) {
           try {
             await syncSuggestedCvProfileMetadata(
-              profileOut.id,
+              persistProfileId,
               profileOut,
               targetRolesText,
             );
@@ -708,12 +739,12 @@ export default function OnboardingPage() {
             /* optional */
           }
         }
-        const sid = (opts.profileId ?? profileOut?.id ?? '').trim();
+        const sid = persistProfileId;
         const score = await api.cv.getScore(sid || undefined);
         setFinalScore(score);
         setCompletionSource(opts.source);
-        void queryClient.invalidateQueries({ queryKey: ['cv-profiles'] });
-        void queryClient.invalidateQueries({ queryKey: ['analytics'] });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
         void triggerPostCvScore();
         await saveProgress.mutateAsync({ step: 2, hasCV: true });
         setStep(3);
@@ -729,12 +760,17 @@ export default function OnboardingPage() {
   const submitPaste = useCallback(async () => {
     const raw = pasteText.trim();
     if (raw.length < 50) return;
+    if (isCvChatInputOverLimit(raw.length)) {
+      setPasteError(cvChatInputLimitErrorMessage(raw.length));
+      return;
+    }
     setPasteError(null);
     setPasteSubmitting(true);
     setPasteStatusIdx(0);
     try {
       let profile: CVProfile | undefined;
       let profileId: string | undefined;
+      let importSummary: CvParseImportSummary | null = null;
       for (let attempt = 0; attempt < 5; attempt++) {
         try {
           const r = await api.cv.parseTextCV({
@@ -743,6 +779,7 @@ export default function OnboardingPage() {
           });
           profile = r.profile;
           profileId = r.profileId;
+          importSummary = r.importSummary;
           break;
         } catch (e) {
           if (!isTransientAiStructuredOutputError(e) || attempt === 4) throw e;
@@ -752,15 +789,21 @@ export default function OnboardingPage() {
         }
       }
       if (!profile || !profileId) throw new Error('parse failed');
+      await refreshCvStateAfterCvParseSuccess(queryClient, profile);
+      setPasteParsedProfile(profile);
+      setPasteParsedProfileId(profileId);
+      setPasteImportSummary(importSummary);
       setPasteSubmitting(false);
-      await runProcessingThenFinish({ source: 'paste', profileId, profile });
+      if (!importSummary) {
+        await runProcessingThenFinish({ source: 'paste', profileId, profile });
+      }
     } catch (e) {
       setPasteSubmitting(false);
       setPasteError(
         getApiErrorMessage(e) || 'Could not parse your text. Try again.',
       );
     }
-  }, [pasteText, runProcessingThenFinish, selectedTemplate]);
+  }, [pasteText, queryClient, runProcessingThenFinish, selectedTemplate]);
 
   const wideStep2 = step === 2 && (cvPath === 'chat' || cvPath === 'manual');
 
@@ -1118,29 +1161,61 @@ export default function OnboardingPage() {
                         setCvPath(null);
                         setCvEntryPhase('paths');
                         setPasteError(null);
+                        setPasteImportSummary(null);
+                        setPasteParsedProfile(null);
+                        setPasteParsedProfileId(null);
                       }}
                     >
                       ← Back
                     </button>
-                    {!pasteSubmitting ? (
+                    {pasteImportSummary && pasteParsedProfile && !pasteSubmitting ? (
+                      <CvParseImportSummaryPanel
+                        importSummary={pasteImportSummary}
+                        profileId={pasteParsedProfileId}
+                        onReviewInBuilder={() => {
+                          const id = pasteParsedProfileId?.trim();
+                          if (id) router.push(cvEditorPath(id));
+                        }}
+                        onContinue={() => {
+                          const id = pasteParsedProfileId?.trim();
+                          const profile = pasteParsedProfile;
+                          setPasteImportSummary(null);
+                          if (id && profile) {
+                            void runProcessingThenFinish({
+                              source: 'paste',
+                              profileId: id,
+                              profile,
+                            });
+                          }
+                        }}
+                        continueLabel="Continue to scoring"
+                      />
+                    ) : !pasteSubmitting ? (
                       <GlowCard
                         className="border border-[rgba(0,201,177,0.15)]"
                         contentClassName="flex min-h-0 flex-col overflow-hidden p-5"
                       >
                         <p className="text-xs text-white/55">
-                          Paste anything — your old resume, a LinkedIn bio,
-                          notes
+                          Paste your full resume, LinkedIn export, or notes — up to{' '}
+                          {CV_CHAT_INPUT_MAX_CHARS.toLocaleString()} characters
                         </p>
                         <textarea
                           value={pasteText}
                           onChange={(e) => setPasteText(e.target.value)}
                           placeholder="Paste your resume text, LinkedIn About section, job history notes — anything works. The more you share, the better your resume will be."
-                          rows={10}
+                          rows={12}
                           data-lenis-prevent-wheel
-                          className="app-scrollbar mt-3 min-h-[200px] max-h-[min(50vh,420px)] flex-1 w-full resize-y overflow-y-auto rounded-xl border border-[rgba(255,255,255,0.10)] bg-[#111616] px-3 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-[#00C9B1]/40"
+                          className="app-scrollbar mt-3 min-h-[220px] max-h-[min(55vh,520px)] flex-1 w-full resize-y overflow-y-auto rounded-xl border border-[rgba(255,255,255,0.10)] bg-[#111616] px-3 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-[#00C9B1]/40"
                         />
-                        <p className="mt-2 text-right text-[11px] text-white/45">
-                          {pasteText.length} characters
+                        <p
+                          className={cn(
+                            'mt-2 text-right text-[11px]',
+                            isCvChatInputOverLimit(pasteText.length)
+                              ? 'text-rose-400/90'
+                              : 'text-white/45',
+                          )}
+                        >
+                          {formatCvChatCharCount(pasteText.length)}
                         </p>
                         {pasteError ? (
                           <p className="mt-2 text-sm text-[#EF4444]">
@@ -1298,7 +1373,7 @@ export default function OnboardingPage() {
                         }}
                         onDashboardSaved={() => {
                           void queryClient.invalidateQueries({
-                            queryKey: ['cv-sections'],
+                            queryKey: queryKeys.cv.sectionsRoot(),
                           });
                         }}
                         onSaveStatusChange={setManualSaveStatus}
@@ -1350,6 +1425,32 @@ export default function OnboardingPage() {
                         />
                       </>
                     ) : null}
+                    {uploadPhase === 'summary' && uploadImportSummary ? (
+                      <div className="space-y-4">
+                        <button
+                          type="button"
+                          className="text-sm text-white/45 transition hover:text-white"
+                          onClick={() => {
+                            setUploadPhase('zone');
+                            setUploadImportSummary(null);
+                            setUploadParsedProfile(null);
+                            setUploadedScore(null);
+                          }}
+                        >
+                          ← Upload another file
+                        </button>
+                        <CvParseImportSummaryPanel
+                          importSummary={uploadImportSummary}
+                          profileId={uploadParsedProfile?.id}
+                          onReviewInBuilder={() => {
+                            const id = uploadParsedProfile?.id?.trim();
+                            if (id) router.push(cvEditorPath(id));
+                          }}
+                          onContinue={() => setUploadPhase('score')}
+                          continueLabel="See your score"
+                        />
+                      </div>
+                    ) : null}
                     {uploadPhase === 'score' && uploadedScore ? (
                       <div className="space-y-4">
                         <button
@@ -1359,6 +1460,7 @@ export default function OnboardingPage() {
                             setUploadPhase('zone');
                             setUploadedScore(null);
                             setUploadParsedProfile(null);
+                            setUploadImportSummary(null);
                           }}
                         >
                           ← Upload another file
@@ -1385,6 +1487,7 @@ export default function OnboardingPage() {
                                 hideJobMatch
                                 score={uploadedScore.score}
                                 breakdown={uploadedScore.breakdown}
+                                scorePayload={uploadedScore}
                                 improvementsCount={
                                   uploadedScore.improvements?.length
                                 }
@@ -1650,6 +1753,7 @@ function CompletionPanel({
                 hideJobMatch
                 score={finalScore.score}
                 breakdown={finalScore.breakdown}
+                scorePayload={finalScore}
                 improvementsCount={finalScore.improvements?.length}
               />
             ) : (

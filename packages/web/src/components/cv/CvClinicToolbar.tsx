@@ -9,11 +9,13 @@ import {
   LayoutTemplate,
   ListPlus,
   Loader2,
+  Rows3,
 } from 'lucide-react';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 import { InfoHint } from '@/components/ui/InfoHint';
+import { useUIStore } from '@/store/useUIStore';
 import type { CvProfileSummary } from '@/lib/api';
 import type { CvBuilderSaveStatus } from '@/lib/cvBuilder';
 import { cn } from '@/lib/utils';
@@ -51,6 +53,8 @@ export type CvClinicToolbarProps = {
   onNewCv: () => void;
   onOpenTemplatePicker: () => void;
   onOpenSectionModal: () => void;
+  onOpenSectionOrder?: () => void;
+  isSectionOrderPending?: boolean;
   /** Optional — kept for callers that still pass a handler; not used by this toolbar. */
   onOpenAiChat?: () => void;
   isSpellChecking: boolean;
@@ -82,6 +86,31 @@ function ToolbarDivider({ className }: { className?: string }) {
 const ghostToolClass =
   'inline-flex h-8 max-w-full shrink min-w-0 items-center gap-1 whitespace-nowrap rounded-lg border-0 bg-transparent px-2 text-[12px] font-medium text-white/65 transition-colors duration-150 hover:bg-white/[0.06] hover:text-white/95 disabled:pointer-events-none disabled:opacity-40 sm:px-2.5';
 
+function ToolbarToolButton({
+  label,
+  compact,
+  className,
+  children,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  label: string;
+  compact: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      className={cn(ghostToolClass, compact && 'px-2 sm:px-2', className)}
+      title={compact ? label : undefined}
+      aria-label={compact ? label : undefined}
+      {...props}
+    >
+      {children}
+      {compact ? null : <span>{label}</span>}
+    </button>
+  );
+}
+
 export function CvClinicToolbar({
   visibility,
   libraryHref = '/dashboard/cv',
@@ -91,6 +120,8 @@ export function CvClinicToolbar({
   onNewCv,
   onOpenTemplatePicker,
   onOpenSectionModal,
+  onOpenSectionOrder,
+  isSectionOrderPending = false,
   isSpellChecking,
   onSpellCheck,
   isAtsScanPending,
@@ -108,6 +139,8 @@ export function CvClinicToolbar({
   showInsightsToggle = true,
 }: CvClinicToolbarProps) {
   const v = { ...DEFAULT_VISIBILITY, ...visibility };
+  const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
+  const compactToolLabels = !sidebarCollapsed;
   const showLeftCluster = v.libraryLink || v.profilePicker || v.newCvButton;
   const hasProfileSelect = v.profilePicker && profileOptions.length > 0 && targetId;
 
@@ -126,14 +159,14 @@ export function CvClinicToolbar({
         )}
       >
         {/* Group 1 — Navigation & identity */}
-        <div className="flex min-w-0 max-w-[min(100%,46%)] shrink items-center gap-1.5 sm:max-w-none sm:shrink-0 sm:gap-2">
+        <div className="flex min-w-0 max-w-[min(100%,36%)] shrink items-center gap-1 sm:max-w-none sm:shrink-0 sm:gap-1.5">
           {leftSlot ?? (
             <>
               {v.libraryLink ? (
                 <Link
                   href={libraryHref}
-                  className="inline-flex h-8 shrink-0 items-center gap-0.5 rounded-lg px-2 py-0 text-[12px] font-medium text-white/45 transition hover:bg-white/[0.04] hover:text-white/80 sm:gap-1 sm:px-2.5 sm:text-[13px]"
-                  title="Back to CV library"
+                  className="inline-flex h-8 shrink-0 items-center gap-0.5 rounded-lg pl-0.5 pr-1.5 py-0 text-[12px] font-medium text-white/45 transition hover:bg-white/[0.04] hover:text-white/80 sm:pr-2 sm:text-[13px]"
+                  title="Back to resume library"
                 >
                   <ChevronLeft className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
                   <span className="hidden sm:inline">Library</span>
@@ -164,7 +197,7 @@ export function CvClinicToolbar({
                   onClick={onNewCv}
                   className="inline-flex h-8 shrink-0 items-center rounded-lg border border-white/[0.15] bg-transparent px-2.5 text-[12px] font-medium text-white/80 transition hover:border-white/30 hover:bg-white/[0.04] sm:px-3 sm:text-[13px]"
                 >
-                  + New CV
+                  + New resume
                 </button>
               ) : null}
               {!showLeftCluster && leftTitle ? (
@@ -181,35 +214,58 @@ export function CvClinicToolbar({
         {/* Group 2 — Edit tools (centre) */}
         <div
           className={cn(
-            'flex min-w-0 flex-1 items-center justify-center gap-0.5 overflow-hidden px-0.5 sm:gap-1',
+            'flex min-w-0 flex-1 items-center justify-center gap-0 overflow-hidden px-0 sm:gap-0.5',
             allowWrap && 'basis-full justify-start min-[900px]:basis-auto min-[900px]:justify-center',
           )}
         >
-          <button type="button" className={ghostToolClass} onClick={onOpenTemplatePicker}>
+          <ToolbarToolButton label="Template" compact={compactToolLabels} onClick={onOpenTemplatePicker}>
             <LayoutTemplate className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
-            <span>Template</span>
-          </button>
-          <button type="button" className={ghostToolClass} onClick={onOpenSectionModal}>
+          </ToolbarToolButton>
+          <ToolbarToolButton label="Sections" compact={compactToolLabels} onClick={onOpenSectionModal}>
             <ListPlus className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
-            <span>Sections</span>
-          </button>
-          <button type="button" className={ghostToolClass} disabled={isSpellChecking} onClick={onSpellCheck}>
+          </ToolbarToolButton>
+          {onOpenSectionOrder ? (
+            <ToolbarToolButton
+              label="Reorder"
+              compact={compactToolLabels}
+              disabled={isSectionOrderPending}
+              onClick={onOpenSectionOrder}
+            >
+              {isSectionOrderPending ? (
+                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[#00C9B1]" />
+              ) : (
+                <Rows3 className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+              )}
+            </ToolbarToolButton>
+          ) : null}
+          <ToolbarToolButton
+            label="Spelling"
+            compact={compactToolLabels}
+            disabled={isSpellChecking}
+            onClick={onSpellCheck}
+          >
             {isSpellChecking ? (
               <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[#00C9B1]" />
             ) : (
               <FileText className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
             )}
-            <span>Spelling</span>
-          </button>
-          <button type="button" className={ghostToolClass} disabled={isAtsScanPending} onClick={() => void onAtsCheck()}>
+          </ToolbarToolButton>
+          <ToolbarToolButton
+            label="Scan"
+            compact={compactToolLabels}
+            disabled={isAtsScanPending}
+            onClick={() => void onAtsCheck()}
+            className={compactToolLabels ? 'gap-0' : undefined}
+          >
             {isAtsScanPending ? (
               <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[#00C9B1]" />
             ) : (
               <FileSearch className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
             )}
-            <span>Scan</span>
-            <InfoHint text="Runs a full CV scan with formatting recommendations and suggestions — heuristic checks, not a guarantee of employer ATS behavior." />
-          </button>
+            {!compactToolLabels ? (
+              <InfoHint text="Runs a full resume scan with formatting recommendations and suggestions — heuristic checks, not a guarantee of employer ATS behavior." />
+            ) : null}
+          </ToolbarToolButton>
         </div>
 
         <ToolbarDivider />

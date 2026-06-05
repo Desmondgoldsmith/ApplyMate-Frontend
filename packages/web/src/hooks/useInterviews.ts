@@ -1,7 +1,10 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { INTERVIEW_PREP_QUOTA_KEY } from '@/hooks/useInterviewPrep';
+import { trackConversionFunnelEvent } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import {
   interviewResultFromPoll,
@@ -11,7 +14,7 @@ import { getCachedSession, setCachedSession } from '@/lib/interviewSessionCache'
 
 export function useInterviewSessions() {
   return useQuery({
-    queryKey: ['interview-sessions'],
+    queryKey: queryKeys.interview.sessions(),
     queryFn: () => api.interviews.list(),
     staleTime: 1000 * 60 * 2,
   });
@@ -19,7 +22,7 @@ export function useInterviewSessions() {
 
 export function useInterviewSession(sessionId: string | null) {
   return useQuery({
-    queryKey: ['interview-session', sessionId],
+    queryKey: queryKeys.interview.session(sessionId ?? ''),
     queryFn: async () => {
       const session = await api.interviews.get(sessionId!);
       setCachedSession(sessionId!, session);
@@ -35,7 +38,7 @@ export function useInterviewSession(sessionId: string | null) {
 
 export function useInterviewResult(sessionId: string | null, enabled: boolean) {
   return useQuery({
-    queryKey: ['interview-result', sessionId],
+    queryKey: queryKeys.interview.result(sessionId ?? ''),
     queryFn: () => api.interviews.getResult(sessionId!),
     enabled: !!sessionId && enabled,
     retry: false,
@@ -67,9 +70,9 @@ export function useRetryInterviewEvaluation(sessionId: string) {
   return useMutation({
     mutationFn: () => api.interviews.retryEvaluation(sessionId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['interview-result', sessionId] });
-      void queryClient.invalidateQueries({ queryKey: ['interview-session', sessionId] });
-      void queryClient.invalidateQueries({ queryKey: ['interview-sessions'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.interview.result(sessionId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.interview.session(sessionId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.interview.sessions() });
     },
   });
 }
@@ -78,10 +81,18 @@ export function useCreateInterview() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: api.interviews.create,
-    onSuccess: () => {
+    onSuccess: (session) => {
+      if (session?.id) {
+        trackConversionFunnelEvent('interview_started', {
+          sessionId: session.id,
+          interviewMode: session.interviewMode ?? undefined,
+          interviewType: session.interviewType ?? undefined,
+        });
+      }
       queryClient.invalidateQueries({
-        queryKey: ['interview-sessions'],
+        queryKey: queryKeys.interview.sessions(),
       });
+      void queryClient.invalidateQueries({ queryKey: INTERVIEW_PREP_QUOTA_KEY });
     },
   });
 }
@@ -98,8 +109,9 @@ export function useSubmitInterviewAnswers(sessionId: string) {
       api.interviews.submitAnswers(sessionId, answers, { idempotencyKey }),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['interview-session', sessionId],
+        queryKey: queryKeys.interview.session(sessionId),
       });
+      void queryClient.invalidateQueries({ queryKey: INTERVIEW_PREP_QUOTA_KEY });
     },
   });
 }

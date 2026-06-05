@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
@@ -12,7 +13,7 @@ export function useCurrentUser() {
 
   const query = useQuery({
     /** Scope cache per session so a new login never reads another user's /me payload. */
-    queryKey: ['me', accessToken ?? ''],
+    queryKey: queryKeys.auth.me(accessToken ?? ''),
     queryFn: api.users.me,
     staleTime: 60_000,
     enabled: Boolean(accessToken),

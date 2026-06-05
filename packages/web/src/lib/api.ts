@@ -1,3 +1,4 @@
+import { queryKeys } from '@/lib/queryKeys';
 import axios from 'axios';
 
 import {
@@ -6,6 +7,10 @@ import {
   normalizeRefreshResponse,
 } from './auth-response';
 import { axiosClient, throwIfApiFailureResponse } from './axios';
+import {
+  aiWaitForResultBody,
+  resolveMaybeQueuedAiResponse,
+} from './aiBackgroundJob';
 import { ensureArray } from './ensure-array';
 import {
   normalizeDashboardFocus,
@@ -19,10 +24,31 @@ import {
 } from './weekly-stall-summary';
 import { parseJobAnalysisV2 } from './jobAnalysisV2';
 import {
+  parseJobMatchFactorsBreakdown,
+  type JobMatchFactorsBreakdown,
+} from './jobMatchFactorsBreakdown';
+import {
   parseScoreImprovementGuide,
   type ScoreImprovementGuide,
 } from './scoreImprovement';
 import { pickApplyUrlFromRecord } from './jobApplyUrlPick';
+import {
+  normalizeCvAssistantSectionCommandResponse,
+  normalizeCvGlobalAssistantCommandResponse,
+  normalizeCvGlobalAssistantOperations,
+  type CvAssistantCommandResponse,
+  type CvGlobalAssistantCommandResponse,
+  type CvGlobalAssistantOperation,
+  type CvGlobalAssistantOperationKey,
+} from './cvGlobalAssistant';
+import { sanitizeAssistantClarificationQuestion } from './cvAssistantUserFacing';
+import {
+  prepareCvChatTextForAi,
+  prepareCvSectionTextForAi,
+  prepareJobDescriptionForAi,
+} from './sanitizeAiPromptInput';
+import { parseCvHybridScoring, type CvAiAssessment, type CvScoringMethod, type CvScoringTransparency } from './cvHybridScoring';
+import type { CvSectionScoreExplainer } from './cvSectionScoreExplainer';
 import {
   normalizeCareerDashboard,
   parseMarkAcceptedResult,
@@ -34,6 +60,24 @@ import {
   type InterviewEvaluationPollState,
 } from './interviewEvaluationPoll';
 import { resolveExportFilename } from './exportFilenameFromResponse';
+import {
+  coerceAiPatchSectionBlob,
+  coerceAiPatchToDisplayString,
+} from './cvAiPatchDisplay';
+import {
+  extractCvParseImportSummary,
+  type CvParseImportSummary,
+} from './cvParseImportSummary';
+import {
+  parseAcceptAllQuota,
+  type CvAcceptAllQuota,
+} from './cvAcceptAllQuota';
+import {
+  normalizeCvMergeProfilesResponse,
+  type CvMergeCreatedResult,
+  type CvMergeMode,
+  type CvMergePreviewResult,
+} from './cvProfileMerge';
 
 export type JobSearchUrgency = 'asap' | 'few_months' | 'exploring';
 
@@ -292,14 +336,14 @@ export function isPartialCvExtractionFromStructured(
 }
 
 function mapBodyToCvProfile(body: Record<string, unknown>): CVProfile {
-  const id = String(body.cvProfileId ?? body.id ?? '').trim();
+  const id = String(body.cvProfileId ?? body.profileId ?? body.id ?? '').trim();
   const structured =
     body.structured !== null && typeof body.structured === 'object'
       ? (body.structured as CVProfile['structured'])
       : undefined;
   const nullableStr = (v: unknown) => (typeof v === 'string' ? v : undefined);
   return {
-    id: id || 'cv-profile',
+    id,
     rawText: typeof body.rawText === 'string' ? body.rawText : undefined,
     structured,
     createdAt: typeof body.createdAt === 'string' ? body.createdAt : undefined,
@@ -328,13 +372,24 @@ function mapBodyToCvProfile(body: Record<string, unknown>): CVProfile {
  * POST /cv/parse — `data` is a parse envelope (cvProfileId, structured, …), not a full Prisma row.
  * Canonical id: `cvProfileId` (same as CvProfile.id). `skillsFound` is client-derived only.
  */
+export type {
+  CvParseImportSummary,
+  CvParseImportSectionKind,
+  CvParseImportSectionRow,
+} from './cvParseImportSummary';
+
 function normalizeCvParseResponse(raw: unknown): {
   profile: CVProfile;
   skillsFound?: number;
   isPartialExtraction: boolean;
+  importSummary: CvParseImportSummary | null;
 } {
-  const body = unwrapApiDataEnvelope(raw);
+  const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
   const profile = mapBodyToCvProfile(body);
+  const resolvedId = resolveCvProfileId(body, profile);
+  if (resolvedId) {
+    profile.id = resolvedId;
+  }
   let skillsFound: number | undefined =
     typeof body.skillsFound === 'number' ? body.skillsFound : undefined;
   const s = profile.structured;
@@ -345,7 +400,8 @@ function normalizeCvParseResponse(raw: unknown): {
     skillsFound = s!.primarySkills!.length;
   }
   const isPartialExtraction = isPartialCvExtractionFromStructured(s);
-  return { profile, skillsFound, isPartialExtraction };
+  const importSummary = extractCvParseImportSummary(body);
+  return { profile, skillsFound, isPartialExtraction, importSummary };
 }
 
 function normalizeCvProfileResponse(raw: unknown): CVProfile {
@@ -358,7 +414,7 @@ function normalizeCvProfileSummary(raw: unknown): CvProfileSummary {
     raw !== null && typeof raw === 'object' && !Array.isArray(raw)
       ? (raw as Record<string, unknown>)
       : {};
-  const id = String(o.id ?? o.cvProfileId ?? '').trim();
+  const id = String(o.id ?? o.cvProfileId ?? o.profileId ?? '').trim();
   const scoreRaw = o.score;
   const score =
     typeof scoreRaw === 'number' && Number.isFinite(scoreRaw) ? scoreRaw : null;
@@ -644,7 +700,15 @@ export type JobAnalysis = {
   analysisV2?: JobAnalysisV2;
   /** Post-tailor score context (GET /jobs/:id, analyze, tailor mutations — not on history lists). */
   scoreImprovement?: ScoreImprovementGuide;
+  /** Transparent match score factors (3.3). */
+  factorsBreakdown?: JobMatchFactorsBreakdown | null;
 };
+
+export type {
+  JobMatchFactor,
+  JobMatchFactorKey,
+  JobMatchFactorsBreakdown,
+} from './jobMatchFactorsBreakdown';
 
 export type {
   ScoreImprovementGuide,
@@ -665,6 +729,7 @@ function looksLikeJobAnalysisRow(o: Record<string, unknown>): boolean {
   if (o.salary_estimate !== null && typeof o.salary_estimate === 'object')
     return true;
   if (o.analysisV2 != null || o.analysis_v2 != null) return true;
+  if (o.factorsBreakdown != null || o.factors_breakdown != null) return true;
   return false;
 }
 
@@ -859,6 +924,51 @@ function parseSalaryEstimateFromUnknown(
       ? confRaw
       : ('medium' as const);
   const note = typeof se.note === 'string' ? se.note : '';
+  const sourceRaw = String(
+    se.source ?? se.dataSource ?? se.data_source ?? '',
+  )
+    .trim()
+    .toLowerCase();
+  const source: JobSalaryEstimateSource | undefined =
+    sourceRaw === 'job_description' ||
+    sourceRaw === 'job_posting' ||
+    sourceRaw === 'posting'
+      ? 'job_description'
+      : sourceRaw === 'ai_estimate' || sourceRaw === 'ai'
+        ? 'ai_estimate'
+        : undefined;
+  const sourceLabel =
+    typeof se.sourceLabel === 'string'
+      ? se.sourceLabel
+      : typeof se.source_label === 'string'
+        ? se.source_label
+        : undefined;
+  const disclaimer =
+    typeof se.disclaimer === 'string' ? se.disclaimer : undefined;
+  const dataSource =
+    typeof se.dataSource === 'string'
+      ? se.dataSource
+      : typeof se.data_source === 'string'
+        ? se.data_source
+        : undefined;
+  const marketLocation =
+    typeof se.marketLocation === 'string'
+      ? se.marketLocation
+      : typeof se.market_location === 'string'
+        ? se.market_location
+        : undefined;
+  const marketCountryCode =
+    typeof se.marketCountryCode === 'string'
+      ? se.marketCountryCode
+      : typeof se.market_country_code === 'string'
+        ? se.market_country_code
+        : undefined;
+  const preferredCurrencyCode =
+    typeof se.preferredCurrencyCode === 'string'
+      ? se.preferredCurrencyCode
+      : typeof se.preferred_currency_code === 'string'
+        ? se.preferred_currency_code
+        : undefined;
   if (currency && Number.isFinite(min) && Number.isFinite(max)) {
     return {
       currency,
@@ -868,6 +978,17 @@ function parseSalaryEstimateFromUnknown(
       basis,
       confidence,
       note,
+      ...(source ? { source } : {}),
+      ...(sourceLabel?.trim() ? { sourceLabel: sourceLabel.trim() } : {}),
+      ...(disclaimer?.trim() ? { disclaimer: disclaimer.trim() } : {}),
+      ...(dataSource ? { dataSource } : {}),
+      ...(marketLocation?.trim() ? { marketLocation: marketLocation.trim() } : {}),
+      ...(marketCountryCode?.trim()
+        ? { marketCountryCode: marketCountryCode.trim() }
+        : {}),
+      ...(preferredCurrencyCode?.trim()
+        ? { preferredCurrencyCode: preferredCurrencyCode.trim() }
+        : {}),
     };
   }
   return null;
@@ -1005,6 +1126,10 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
       ? scoreSourceRaw.trim().toLowerCase()
       : undefined;
 
+  const factorsBreakdown = parseJobMatchFactorsBreakdown(
+    body.factorsBreakdown ?? body.factors_breakdown,
+  );
+
   return {
     id: pickJobAnalysisId(body),
     title: typeof body.title === 'string' ? body.title : undefined,
@@ -1042,6 +1167,7 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
     })(),
     ...(analysisV2 ? { analysisV2 } : {}),
     ...(scoreImprovement ? { scoreImprovement } : {}),
+    ...(factorsBreakdown ? { factorsBreakdown } : {}),
   };
 }
 
@@ -2176,6 +2302,8 @@ export type ApplicationItem = {
   };
 };
 
+export type JobSalaryEstimateSource = 'job_description' | 'ai_estimate';
+
 export type JobSalaryEstimate = {
   currency: string;
   min: number;
@@ -2184,6 +2312,15 @@ export type JobSalaryEstimate = {
   basis: string;
   confidence: 'high' | 'medium' | 'low';
   note: string;
+  /** Primary provenance — drives badge + disclaimer. */
+  source?: JobSalaryEstimateSource;
+  sourceLabel?: string;
+  disclaimer?: string;
+  /** Deprecated alias for `source`. */
+  dataSource?: JobSalaryEstimateSource | string;
+  marketLocation?: string;
+  marketCountryCode?: string;
+  preferredCurrencyCode?: string;
 };
 
 export type FollowUpEmailDraft = {
@@ -2373,12 +2510,26 @@ export type CvProfileDetail = {
   sections: CVSectionRecord[];
 };
 
+/** POST /cv/profiles/:id/assistant/commit — success (`source: ai_assistant`). */
+export type CvAssistantCommitResult = {
+  success: boolean;
+  message: string;
+  targetSection?: string;
+  sectionsSynced?: boolean;
+  profileId: string;
+  profile: CVProfile;
+  sections: CVSectionRecord[];
+  cvRevisionId?: string | null;
+};
+
 export type CvReorderSectionsResult = {
   sections: CVSectionRecord[];
 };
 
 /** POST /cv/profiles/:id/sections/batch-upsert — Phase 4 autosave body item. */
 export type CvBatchUpsertSectionInput = {
+  /** Existing section row UUID — required so batch-upsert updates in place (reorder + autosave). */
+  id?: string;
   type: string;
   order: number;
   visible: boolean;
@@ -2415,12 +2566,20 @@ export type CVScorePayload = {
   breakdown?: Record<string, unknown>;
   /** When a detailed score POST returns suggestions in the same payload. */
   improvements?: CVImprovementItem[];
+  /** Hybrid scoring (30% structure + 70% AI quality when available). */
+  scoringMethod?: CvScoringMethod;
+  structuralScore?: number | null;
+  aiScore?: number | null;
+  aiCached?: boolean;
+  aiEvaluatedAt?: string;
+  aiAssessment?: CvAiAssessment | null;
+  scoringTransparency?: CvScoringTransparency | null;
 };
 
 export type CVImprovementItem = {
   id?: string;
   /** Server lifecycle; missing legacy rows are treated as `pending`. */
-  status?: 'pending' | 'applying' | 'accepted' | 'rejected' | 'failed';
+  status?: 'pending' | 'applying' | 'accepted' | 'rejected' | 'failed' | 'in_progress';
   /** ISO timestamp when accepted/rejected (when provided). */
   resolvedAt?: string;
   resolution?: 'accepted' | 'rejected' | 'already_applied';
@@ -2457,6 +2616,8 @@ export type CvImprovementsPayload = {
   cvRevisionId?: string | null;
   /** Optional fingerprint aligned with structured CV (when mutations return it). */
   structuredRevisionHash?: string | null;
+  /** Bulk apply-all quota from server (FREE tier daily cap). */
+  acceptAllQuota?: CvAcceptAllQuota | null;
 };
 
 /** POST /cv/suggestions/:id/accept|reject — product flows (full suggestion, no field subset). */
@@ -2576,6 +2737,8 @@ export type CvSuggestionsBulkMutationResult = CvTruthfulnessMeta &
     acceptAllDraftReuseCount?: number;
     acceptAllMaxSuggestions?: number;
     acceptAllMaxAiCalls?: number;
+    /** Daily AI uses charged for this accept-all batch (0 = no charge). */
+    acceptAllAiCalls?: number;
     cacheHit?: boolean;
     /** Suggestions skipped because the AI draft failed truthfulness / structure checks. */
     failedTruthfulnessCount?: number;
@@ -2665,6 +2828,8 @@ export type SectionScore = {
   weight: number;
   feedback: string;
   flags: CVFlag[];
+  /** Section score explainer (3.2) when returned on breakdown sections. */
+  explainer?: CvSectionScoreExplainer | null;
 };
 
 /** Optional job-alignment block under `breakdown.sections.jobMatch` (same core shape as {@link SectionScore}). */
@@ -2702,6 +2867,41 @@ export type CvScoreJobContextParams = {
 
 /** POST /cv/chat-create body — extend as backend adds fields. */
 export type ChatCreateCVPayload = Record<string, unknown>;
+
+/** Successful CV persist (chat-create, parse-text, etc.). */
+export type CvPersistResult = {
+  profileId: string;
+  profile: CVProfile;
+};
+
+/** Normalize profile id from API `data` envelopes. */
+export function resolveCvProfileId(
+  body: Record<string, unknown>,
+  profile?: { id?: string } | null,
+): string {
+  return String(
+    body.cvProfileId ?? body.profileId ?? body.id ?? profile?.id ?? '',
+  ).trim();
+}
+
+function normalizeCvPersistResult(raw: unknown): CvPersistResult {
+  const envelope = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
+  const nested =
+    envelope.profile !== null &&
+    typeof envelope.profile === 'object' &&
+    !Array.isArray(envelope.profile)
+      ? (envelope.profile as Record<string, unknown>)
+      : null;
+  const profile = mapBodyToCvProfile(nested ?? envelope);
+  const profileId = resolveCvProfileId(envelope, profile);
+  if (!profileId) {
+    throw new Error('CV persist response missing profile id');
+  }
+  return {
+    profileId,
+    profile: { ...profile, id: profileId },
+  };
+}
 
 export type ChatConversationHistoryItem = {
   role: 'user' | 'assistant';
@@ -2787,20 +2987,18 @@ export type CvCompletenessResult = {
   }>;
 };
 
-export type CvAssistantCommandResponse =
-  | { type: 'clarify'; commandId: string; question: string }
-  | {
-      type: 'result';
-      commandId: string;
-      targetSection: string;
-      patch: Record<string, unknown>;
-      /**
-       * `diff.summary` — one-line human blurb for toasts/UI (not CV body).
-       * For `targetSection === 'summary'`, body text lives in `diff.before` / `diff.after` as
-       * `{ summary: { text: string } }` (narrow slice), not in `diff.summary`.
-       */
-      diff: { before: unknown; after: unknown; summary: string };
-    };
+export type {
+  CvAssistantCommandResponse,
+  CvAssistantScope,
+  CvAssistantSectionCommandResult,
+  CvAssistantSectionDiff,
+  CvGlobalAssistantCommandResponse,
+  CvGlobalAssistantFindingsResult,
+  CvGlobalAssistantFullCvResult,
+  CvGlobalAssistantOperation,
+  CvGlobalAssistantOperationKey,
+  CvGlobalAssistantOperationScope,
+} from '@/lib/cvGlobalAssistant';
 
 function normalizeChatConversationResponse(
   raw: unknown,
@@ -2840,15 +3038,21 @@ function normalizeChatConversationResponse(
 export type ParseTextCvResult = {
   profile: CVProfile;
   profileId: string;
+  importSummary: CvParseImportSummary | null;
 };
 
 function normalizeParseTextCvResult(raw: unknown): ParseTextCvResult {
   const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
   const profile = mapBodyToCvProfile(body);
-  const profileId = String(
-    body.profileId ?? body.cvProfileId ?? profile.id ?? '',
-  ).trim();
-  return { profile, profileId: profileId || profile.id };
+  const profileId = resolveCvProfileId(body, profile);
+  if (!profileId) {
+    throw new Error('CV parse-text response missing profile id');
+  }
+  return {
+    profile: { ...profile, id: profileId },
+    profileId,
+    importSummary: extractCvParseImportSummary(body),
+  };
 }
 
 export type AnalyticsCvProfileRow = {
@@ -3423,7 +3627,14 @@ function normalizeCVSection(raw: unknown): CVSectionRecord {
 
 function normalizeCvProfileDetail(raw: unknown): CvProfileDetail {
   const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
-  const sectionsRaw = body.sections;
+  const profileNested =
+    body.profile !== null &&
+    typeof body.profile === 'object' &&
+    !Array.isArray(body.profile)
+      ? (body.profile as Record<string, unknown>)
+      : null;
+  const sectionsSource = profileNested ?? body;
+  const sectionsRaw = sectionsSource.sections ?? body.sections;
   let sectionsArr: unknown[] = [];
   if (Array.isArray(sectionsRaw)) {
     sectionsArr = sectionsRaw as unknown[];
@@ -3434,11 +3645,57 @@ function normalizeCvProfileDetail(raw: unknown): CvProfileDetail {
     >);
   }
   const sections = sectionsArr.map(normalizeCVSection);
-  const profileBody: Record<string, unknown> = { ...body };
+  const profileBody: Record<string, unknown> = profileNested
+    ? { ...profileNested }
+    : { ...body };
   delete profileBody.sections;
   return {
     profile: mapBodyToCvProfile(profileBody),
     sections,
+  };
+}
+
+/** Parse assistant commit success envelope (tests + client helpers). */
+export function parseCvAssistantCommitResponse(
+  raw: unknown,
+): CvAssistantCommitResult {
+  return normalizeCvAssistantCommitResult(raw);
+}
+
+function normalizeCvAssistantCommitResult(raw: unknown): CvAssistantCommitResult {
+  const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
+  const { profile, sections } = normalizeCvProfileDetail(raw);
+  const profileId = resolveCvProfileId(body, profile);
+  if (!profileId) {
+    throw new Error('Assistant commit response missing profile id');
+  }
+  const messageRaw = body.message;
+  const message =
+    typeof messageRaw === 'string' && messageRaw.trim()
+      ? messageRaw.trim()
+      : 'Changes saved to your CV.';
+  const targetSectionRaw = body.targetSection ?? body.target_section;
+  const targetSection =
+    typeof targetSectionRaw === 'string' && targetSectionRaw.trim()
+      ? targetSectionRaw.trim()
+      : undefined;
+  const cvRevisionIdRaw = body.cvRevisionId ?? body.cv_revision_id;
+  const cvRevisionId =
+    cvRevisionIdRaw === null
+      ? null
+      : typeof cvRevisionIdRaw === 'string' && cvRevisionIdRaw.trim()
+        ? cvRevisionIdRaw.trim()
+        : undefined;
+  return {
+    success: body.success !== false,
+    message,
+    targetSection,
+    sectionsSynced:
+      body.sectionsSynced === true || body.sections_synced === true,
+    profileId,
+    profile: { ...profile, id: profileId },
+    sections,
+    cvRevisionId,
   };
 }
 
@@ -3475,22 +3732,11 @@ function normalizeCvBatchUpsertSectionsResult(
   };
 }
 
-function normalizeCVScore(raw: unknown): CVScorePayload {
-  const body = unwrapApiDataEnvelope(raw);
-  const o = body as Record<string, unknown>;
-  const rawScore = o.score ?? o.overallScore ?? o.cvScore ?? o.value;
-  if (rawScore === null || rawScore === undefined) {
-    const improvements = normalizeCVImprovementsFromDetailedEnvelope(raw);
-    return {
-      score: null,
-      lastScoredAt:
-        typeof o.lastScoredAt === 'string' ? o.lastScoredAt : undefined,
-      breakdown: (() => {
+function pickCvScoreBreakdown(o: Record<string, unknown>): Record<string, unknown> | undefined {
         if (
           o.breakdown !== null &&
           typeof o.breakdown === 'object' &&
-          typeof (o.breakdown as Record<string, unknown>).sections ===
-            'object' &&
+    typeof (o.breakdown as Record<string, unknown>).sections === 'object' &&
           (o.breakdown as Record<string, unknown>).sections !== null
         ) {
           return o.breakdown as Record<string, unknown>;
@@ -3498,8 +3744,7 @@ function normalizeCVScore(raw: unknown): CVScorePayload {
         if (
           o.evaluation !== null &&
           typeof o.evaluation === 'object' &&
-          typeof (o.evaluation as Record<string, unknown>).sections ===
-            'object' &&
+    typeof (o.evaluation as Record<string, unknown>).sections === 'object' &&
           (o.evaluation as Record<string, unknown>).sections !== null
         ) {
           return o.evaluation as Record<string, unknown>;
@@ -3508,8 +3753,51 @@ function normalizeCVScore(raw: unknown): CVScorePayload {
           return o.breakdown as Record<string, unknown>;
         }
         return undefined;
-      })(),
+}
+
+function hybridFieldsForCvScore(
+  o: Record<string, unknown>,
+  breakdown?: Record<string, unknown>,
+): Pick<
+  CVScorePayload,
+  | 'scoringMethod'
+  | 'structuralScore'
+  | 'aiScore'
+  | 'aiCached'
+  | 'aiEvaluatedAt'
+  | 'aiAssessment'
+  | 'scoringTransparency'
+> {
+  const hybrid =
+    parseCvHybridScoring(o) ??
+    (breakdown ? parseCvHybridScoring(breakdown) : null);
+  if (!hybrid) return {};
+  return {
+    scoringMethod: hybrid.scoringMethod,
+    structuralScore: hybrid.structuralScore,
+    aiScore: hybrid.aiScore,
+    aiCached: hybrid.aiCached,
+    aiEvaluatedAt: hybrid.aiEvaluatedAt,
+    aiAssessment: hybrid.aiAssessment,
+    scoringTransparency: hybrid.scoringTransparency,
+  };
+}
+
+function normalizeCVScore(raw: unknown): CVScorePayload {
+  const body = unwrapApiDataEnvelope(raw);
+  const o = body as Record<string, unknown>;
+  const rawScore = o.score ?? o.overallScore ?? o.cvScore ?? o.value ?? o.overall;
+  const breakdown = pickCvScoreBreakdown(o);
+  const hybridFields = hybridFieldsForCvScore(o, breakdown);
+  if (rawScore === null || rawScore === undefined) {
+    const improvements = normalizeCVImprovementsFromDetailedEnvelope(raw);
+    return {
+      score: null,
+      lastScoredAt:
+        typeof o.lastScoredAt === 'string' ? o.lastScoredAt : undefined,
+      breakdown,
       improvements: improvements.length > 0 ? improvements : undefined,
+      ...hybridFields,
     };
   }
   const n =
@@ -3523,30 +3811,9 @@ function normalizeCVScore(raw: unknown): CVScorePayload {
     score: Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : null,
     lastScoredAt:
       typeof o.lastScoredAt === 'string' ? o.lastScoredAt : undefined,
-    breakdown: (() => {
-      if (
-        o.breakdown !== null &&
-        typeof o.breakdown === 'object' &&
-        typeof (o.breakdown as Record<string, unknown>).sections === 'object' &&
-        (o.breakdown as Record<string, unknown>).sections !== null
-      ) {
-        return o.breakdown as Record<string, unknown>;
-      }
-      if (
-        o.evaluation !== null &&
-        typeof o.evaluation === 'object' &&
-        typeof (o.evaluation as Record<string, unknown>).sections ===
-          'object' &&
-        (o.evaluation as Record<string, unknown>).sections !== null
-      ) {
-        return o.evaluation as Record<string, unknown>;
-      }
-      if (o.breakdown !== null && typeof o.breakdown === 'object') {
-        return o.breakdown as Record<string, unknown>;
-      }
-      return undefined;
-    })(),
+    breakdown,
     improvements: improvements.length > 0 ? improvements : undefined,
+    ...hybridFields,
   };
 }
 
@@ -3638,9 +3905,14 @@ function normalizeCVImprovements(raw: unknown): CVImprovementItem[] {
       statusRaw === 'accepted' ||
       statusRaw === 'rejected' ||
       statusRaw === 'applying' ||
-      statusRaw === 'failed'
+      statusRaw === 'failed' ||
+      statusRaw === 'in_progress' ||
+      statusRaw === 'in progress'
     ) {
-      normalizedStatus = statusRaw as NonNullable<CVImprovementItem['status']>;
+      normalizedStatus =
+        statusRaw === 'in progress'
+          ? 'in_progress'
+          : (statusRaw as NonNullable<CVImprovementItem['status']>);
     } else if (statusRaw === 'resolved') {
       normalizedStatus = 'accepted';
     } else if (legacyResolved) {
@@ -3726,6 +3998,7 @@ export function normalizeCvImprovementsGetResponse(
     score,
     lastScoredAt,
     cvRevisionId,
+    acceptAllQuota: parseAcceptAllQuota(body.acceptAllQuota ?? body.accept_all_quota),
   };
 }
 
@@ -4078,6 +4351,14 @@ function parseCvSuggestionsBulkEnvelope(
       Number.isFinite(src.acceptAllMaxAiCalls)
         ? src.acceptAllMaxAiCalls
         : undefined,
+    acceptAllAiCalls:
+      typeof src.acceptAllAiCalls === 'number' &&
+      Number.isFinite(src.acceptAllAiCalls)
+        ? src.acceptAllAiCalls
+        : typeof src.accept_all_ai_calls === 'number' &&
+            Number.isFinite(src.accept_all_ai_calls)
+          ? src.accept_all_ai_calls
+        : undefined,
     cacheHit: src.cacheHit === true,
     ...parseTruthfulnessFields(src),
     ...parsePerformanceFields(src),
@@ -4223,8 +4504,8 @@ function normalizeCvTailorDraft(raw: unknown): CvTailorDraft {
       return {
         sectionId,
         sectionType,
-        before: typeof d.before === 'string' ? d.before : '',
-        after: typeof d.after === 'string' ? d.after : '',
+        before: coerceAiPatchSectionBlob(d.before, sectionType),
+        after: coerceAiPatchSectionBlob(d.after, sectionType),
         status,
         changedFields: cf,
         patchId,
@@ -4348,8 +4629,16 @@ const auth = {
   },
   logout: async () => (await axiosClient.post('/auth/logout')).data,
   refresh: async (payload: { refreshToken: string }) => {
-    const res = await axiosClient.post<unknown>('/auth/refresh', payload);
-    return normalizeRefreshResponse(res.data);
+    const res = await axiosClient.post<unknown>('/auth/refresh', payload, {
+      skipAuthRefresh: true,
+    });
+    throwIfApiFailureResponse(res.data, res.status);
+    const normalized = normalizeRefreshResponse(res.data);
+    return {
+      accessToken: normalized.accessToken,
+      refreshToken: normalized.refreshToken,
+      user: mapNormalizedUserToAuthUser(normalized.user) as AuthUser,
+    };
   },
   /** Google OAuth — same response shape as login; creates user on first sign-in. */
   google: async (payload: {
@@ -4695,7 +4984,7 @@ const cv = {
   },
   /**
    * POST /cv/profiles/:id/sync-sections-from-structured — rebuild four core sections from stored `structured` (no file).
-   * After success, invalidate/refetch `['cv-profile', cvProfileId]` and improvements so client state matches merged `structured`.
+   * After success, invalidate/refetch `queryKeys.cv.profile(cvProfileId)` and improvements so client state matches merged `structured`.
    */
   syncCoreSectionsFromStructured: async (
     cvProfileId: string,
@@ -4710,69 +4999,133 @@ const cv = {
     message: string;
     history: ChatConversationHistoryItem[];
   }): Promise<ChatConversationResponse> => {
-    const res = await axiosClient.post<unknown>('/cv/chat-conversation', data);
+    const res = await axiosClient.post<unknown>('/cv/chat-conversation', {
+      message: prepareCvChatTextForAi(data.message),
+      history: data.history.map((item) => ({
+        ...item,
+        content: prepareCvChatTextForAi(item.content),
+      })),
+    });
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeChatConversationResponse(res.data);
   },
 
-  chatCreateCV: async (data: ChatCreateCVPayload): Promise<CVProfile> => {
+  chatCreateCV: async (data: ChatCreateCVPayload): Promise<CvPersistResult> => {
     const res = await axiosClient.post<unknown>('/cv/chat-create', data);
     throwIfApiFailureResponse(res.data, res.status);
-    const body = unwrapApiDataEnvelope(res.data);
-    if (
-      body !== null &&
-      typeof body === 'object' &&
-      'profile' in body &&
-      body.profile !== null &&
-      typeof body.profile === 'object'
-    ) {
-      return mapBodyToCvProfile(body.profile as Record<string, unknown>);
-    }
-    return mapBodyToCvProfile(body as Record<string, unknown>);
+    return normalizeCvPersistResult(res.data);
   },
   assistantCommand: async (
     cvProfileId: string,
     payload: {
       command: string;
-      targetSection?: string;
+      targetSection: string;
       cvData?: Record<string, unknown>;
       clarifications?: Array<{ question: string; answer: string }>;
     },
   ): Promise<CvAssistantCommandResponse> => {
+    const { cvData: _cvDataOmit, ...assistantPayload } = payload;
     const res = await axiosClient.post<unknown>(
       `/cv/profiles/${encodeURIComponent(cvProfileId)}/assistant/command`,
-      payload,
+      {
+        ...assistantPayload,
+        targetSection: payload.targetSection.trim(),
+        command: prepareCvChatTextForAi(payload.command),
+        ...(payload.clarifications?.length
+          ? {
+              clarifications: payload.clarifications.map((c) => ({
+                question: prepareCvSectionTextForAi(c.question),
+                answer: prepareCvChatTextForAi(c.answer),
+              })),
+            }
+          : {}),
+      },
     );
     throwIfApiFailureResponse(res.data, res.status);
     const body = unwrapApiDataEnvelope(res.data) as Record<string, unknown>;
     if (body.type === 'clarify') {
       return {
         type: 'clarify',
-        commandId: String(body.commandId ?? ''),
-        question: String(body.question ?? 'Could you clarify your request?'),
+        commandId: String(body.commandId ?? body.command_id ?? ''),
+        question: sanitizeAssistantClarificationQuestion(
+          String(body.question ?? 'Could you clarify your request?'),
+        ),
       };
     }
-    return {
-      type: 'result',
-      commandId: String(body.commandId ?? ''),
-      targetSection: String(body.targetSection ?? 'summary'),
-      patch:
-        body.patch &&
-        typeof body.patch === 'object' &&
-        !Array.isArray(body.patch)
-          ? (body.patch as Record<string, unknown>)
-          : {},
-      diff:
-        body.diff && typeof body.diff === 'object' && !Array.isArray(body.diff)
+    return normalizeCvAssistantSectionCommandResponse(body);
+  },
+  /** GET /cv/assistant/global/operations — preset global CV assistant catalog. */
+  assistantGlobalOperations: async (): Promise<CvGlobalAssistantOperation[]> => {
+    const res = await axiosClient.get<unknown>('/cv/assistant/global/operations');
+    throwIfApiFailureResponse(res.data, res.status);
+    return normalizeCvGlobalAssistantOperations(unwrapApiDataEnvelope(res.data));
+  },
+  assistantGlobalCommand: async (
+    cvProfileId: string,
+    payload: {
+      command: string;
+      operation?: CvGlobalAssistantOperationKey;
+      cvData?: Record<string, unknown>;
+      clarifications?: Array<{ question: string; answer: string }>;
+      /** Bullet list from recruiter scan — used with `apply_recruiter_findings`. */
+      findings?: string[];
+      /** Scan `commandId` for correlation when applying findings. */
+      scanCommandId?: string;
+    },
+  ): Promise<CvGlobalAssistantCommandResponse> => {
+    const { cvData: _cvDataOmit, ...globalPayload } = payload;
+    const findings =
+      payload.findings
+        ?.map((f) => prepareCvChatTextForAi(f))
+        .filter((f) => f.length > 0) ?? undefined;
+    const res = await axiosClient.post<unknown>(
+      `/cv/profiles/${encodeURIComponent(cvProfileId)}/assistant/global/command`,
+      {
+        ...globalPayload,
+        command: prepareCvChatTextForAi(payload.command),
+        ...(findings?.length ? { findings } : {}),
+        ...(payload.scanCommandId?.trim()
+          ? { scanCommandId: payload.scanCommandId.trim() }
+          : {}),
+        ...(payload.clarifications?.length
           ? {
-              before: (body.diff as Record<string, unknown>).before ?? null,
-              after: (body.diff as Record<string, unknown>).after ?? null,
-              summary: String(
-                (body.diff as Record<string, unknown>).summary ?? '',
-              ),
+              clarifications: payload.clarifications.map((c) => ({
+                question: prepareCvSectionTextForAi(c.question),
+                answer: prepareCvChatTextForAi(c.answer),
+              })),
             }
-          : { before: null, after: null, summary: '' },
-    };
+          : {}),
+      },
+    );
+    throwIfApiFailureResponse(res.data, res.status);
+    return normalizeCvGlobalAssistantCommandResponse(unwrapApiDataEnvelope(res.data));
+  },
+  /** POST /cv/profiles/:id/recruiter-scan — comprehensive first-impression simulation. */
+  recruiterScan: async (
+    cvProfileId: string,
+    body?: {
+      targetRole?: string;
+      clarifications?: Array<{ question: string; answer: string }>;
+    },
+  ): Promise<import('@/lib/cvRecruiterScan').CvRecruiterScanResponse> => {
+    const id = cvProfileId.trim();
+    if (!id) throw new Error('CV profile id is required');
+    const { normalizeCvRecruiterScanResponse } = await import('@/lib/cvRecruiterScan');
+    const payload: Record<string, unknown> = {};
+    const role = body?.targetRole?.trim();
+    if (role) payload.targetRole = role;
+    if (body?.clarifications?.length) {
+      payload.clarifications = body.clarifications.map((c) => ({
+        question: prepareCvSectionTextForAi(c.question),
+        answer: prepareCvChatTextForAi(c.answer),
+      }));
+    }
+    const res = await axiosClient.post<unknown>(
+      `/cv/profiles/${encodeURIComponent(id)}/recruiter-scan`,
+      payload,
+    );
+    throwIfApiFailureResponse(res.data, res.status);
+    return normalizeCvRecruiterScanResponse(unwrapApiDataEnvelope(res.data));
   },
   /**
    * POST /cv/profiles/:id/assistant/commit — persist assistant patch to structured CV.
@@ -4782,13 +5135,13 @@ const cv = {
   assistantCommit: async (
     cvProfileId: string,
     body: { patch: Record<string, unknown>; commandId?: string },
-  ): Promise<void> => {
+  ): Promise<CvAssistantCommitResult> => {
     const res = await axiosClient.post<unknown>(
       `/cv/profiles/${encodeURIComponent(cvProfileId)}/assistant/commit`,
       body,
     );
     throwIfApiFailureResponse(res.data, res.status);
-    unwrapApiDataEnvelope(res.data);
+    return normalizeCvAssistantCommitResult(res.data);
   },
   /** POST /cv/profiles/:id/generators/summary/accept — persist chosen summary text. */
   acceptGeneratorSummary: async (
@@ -4987,7 +5340,10 @@ const cv = {
     rawText: string;
     template?: string;
   }): Promise<ParseTextCvResult> => {
-    const res = await axiosClient.post<unknown>('/cv/parse-text', data);
+    const res = await axiosClient.post<unknown>('/cv/parse-text', {
+      ...data,
+      rawText: prepareCvChatTextForAi(data.rawText),
+    });
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeParseTextCvResult(res.data);
   },
@@ -5094,6 +5450,41 @@ const cv = {
     const body = unwrapApiDataEnvelope(res.data);
     return normalizeCvProfileSummary(body);
   },
+  /** POST /cv/profiles/merge — AI merge preview or create new profile from sources. */
+  mergeProfiles: async (payload: {
+    profileIds: string[];
+    instructions?: string;
+    mode?: CvMergeMode;
+    name?: string;
+    structured?: Record<string, unknown>;
+    template?: string;
+  }): Promise<CvMergePreviewResult | CvMergeCreatedResult> => {
+    const profileIds = payload.profileIds.map((id) => id.trim()).filter(Boolean);
+    const mode: CvMergeMode = payload.mode ?? 'preview';
+    const res = await axiosClient.post<unknown>('/cv/profiles/merge', {
+      profileIds,
+      mode,
+      ...(payload.instructions?.trim()
+        ? { instructions: prepareCvChatTextForAi(payload.instructions) }
+        : {}),
+      ...(mode === 'create' && payload.name?.trim()
+        ? { name: payload.name.trim().slice(0, 100) }
+        : {}),
+      ...(mode === 'create' && payload.structured
+        ? { structured: payload.structured }
+        : {}),
+      ...(payload.template?.trim() ? { template: payload.template.trim() } : {}),
+    });
+    throwIfApiFailureResponse(res.data, res.status);
+    const parsed = normalizeCvMergeProfilesResponse(unwrapApiDataEnvelope(res.data));
+    if (mode === 'create' && parsed.type !== 'created') {
+      throw new Error('Merge create did not return a created profile');
+    }
+    if (mode === 'preview' && parsed.type !== 'preview') {
+      throw new Error('Merge preview did not return preview data');
+    }
+    return parsed;
+  },
   setDefaultCvProfile: async (id: string): Promise<void> => {
     const res = await axiosClient.patch<unknown>(`/cv/profiles/${id}/default`);
     if (res.data !== undefined && res.data !== null && res.data !== '') {
@@ -5171,7 +5562,7 @@ const cv = {
     const params: Record<string, string> = {};
     if (cvProfileId?.trim()) params.cvProfileId = cvProfileId.trim();
     if (jobCtx?.jobDescription?.trim())
-      params.jobDescription = jobCtx.jobDescription.trim();
+      params.jobDescription = prepareJobDescriptionForAi(jobCtx.jobDescription);
     if (jobCtx?.targetRole?.trim())
       params.targetRole = jobCtx.targetRole.trim();
     const res = await axiosClient.get<unknown>('/cv/score', {
@@ -5187,7 +5578,7 @@ const cv = {
   ) => {
     const params: Record<string, string> = {};
     if (jobCtx?.jobDescription?.trim())
-      params.jobDescription = jobCtx.jobDescription.trim();
+      params.jobDescription = prepareJobDescriptionForAi(jobCtx.jobDescription);
     if (jobCtx?.targetRole?.trim())
       params.targetRole = jobCtx.targetRole.trim();
     const res = await axiosClient.get<unknown>(
@@ -5213,15 +5604,18 @@ const cv = {
       targetRole?: string;
     },
   ) => {
-    const body: Record<string, unknown> = {};
+    const body: Record<string, unknown> = { ...aiWaitForResultBody };
     if (config?.jobDescription?.trim())
-      body.jobDescription = config.jobDescription.trim();
+      body.jobDescription = prepareJobDescriptionForAi(config.jobDescription);
     if (config?.targetRole?.trim()) body.targetRole = config.targetRole.trim();
     const res = await axiosClient.post<unknown>('/cv/score/detailed', body, {
       signal: config?.signal,
     });
     throwIfApiFailureResponse(res.data, res.status);
-    return normalizeCVScore(res.data);
+    const resolved = await resolveMaybeQueuedAiResponse(res.data, {
+      signal: config?.signal,
+    });
+    return normalizeCVScore(resolved);
   },
   /** Scoped detailed score: `POST /cv/profiles/:cvProfileId/score/detailed` with optional `{ jobDescription, targetRole }` in the body (canonical for a specific CV). */
   getProfileScoreDetailed: async (
@@ -5232,9 +5626,9 @@ const cv = {
       targetRole?: string;
     },
   ) => {
-    const body: Record<string, unknown> = {};
+    const body: Record<string, unknown> = { ...aiWaitForResultBody };
     if (config?.jobDescription?.trim())
-      body.jobDescription = config.jobDescription.trim();
+      body.jobDescription = prepareJobDescriptionForAi(config.jobDescription);
     if (config?.targetRole?.trim()) body.targetRole = config.targetRole.trim();
     const res = await axiosClient.post<unknown>(
       `/cv/profiles/${encodeURIComponent(profileId)}/score/detailed`,
@@ -5242,7 +5636,10 @@ const cv = {
       { signal: config?.signal },
     );
     throwIfApiFailureResponse(res.data, res.status);
-    return normalizeCVScore(res.data);
+    const resolved = await resolveMaybeQueuedAiResponse(res.data, {
+      signal: config?.signal,
+    });
+    return normalizeCVScore(resolved);
   },
   /** GET /cv/suggestions — default: pending queue only; pass includeResolved for history. */
   getSuggestions: async (
@@ -5277,6 +5674,40 @@ const cv = {
     const ref = encodeURIComponent(String(suggestionId));
     const res = await axiosClient.post<unknown>(
       `/cv/suggestions/${ref}/reject`,
+      {},
+      { params: cvProfileId ? { cvProfileId } : {} },
+    );
+    throwIfApiFailureResponse(res.data, res.status);
+    return parseCvSuggestionMutationEnvelope(res.data);
+  },
+  /**
+   * POST /cv/suggestions/:suggestionId/self-fix — user will fix manually; removes from pending queue
+   * and marks in progress (backend credits section on save / rescoring).
+   */
+  selfFixSuggestion: async (
+    suggestionId: string,
+    cvProfileId?: string,
+  ): Promise<CvSuggestionMutationResult> => {
+    const ref = encodeURIComponent(String(suggestionId));
+    const res = await axiosClient.post<unknown>(
+      `/cv/suggestions/${ref}/self-fix`,
+      {},
+      { params: cvProfileId ? { cvProfileId } : {} },
+    );
+    throwIfApiFailureResponse(res.data, res.status);
+    return parseCvSuggestionMutationEnvelope(res.data);
+  },
+  /**
+   * POST /cv/suggestions/:suggestionId/reopen — bring a resolved suggestion back to pending.
+   * Used as the undo hook after an accepted AI fix is reverted in the editor.
+   */
+  reopenSuggestion: async (
+    suggestionId: string,
+    cvProfileId?: string,
+  ): Promise<CvSuggestionMutationResult> => {
+    const ref = encodeURIComponent(String(suggestionId));
+    const res = await axiosClient.post<unknown>(
+      `/cv/suggestions/${ref}/reopen`,
       {},
       { params: cvProfileId ? { cvProfileId } : {} },
     );
@@ -5374,12 +5805,14 @@ const cv = {
               : typeof f.field === 'string'
                 ? f.field
                 : fieldPath;
+        const sectionHint =
+          typeof src.section === 'string' ? src.section : '';
         return {
           field: fieldLabel,
           fieldPath,
           fieldLabel,
-          before: typeof f.before === 'string' ? f.before : '',
-          after: typeof f.after === 'string' ? f.after : '',
+          before: coerceAiPatchToDisplayString(f.before, sectionHint, fieldPath),
+          after: coerceAiPatchToDisplayString(f.after, sectionHint, fieldPath),
           type: (f.type === 'added' ||
           f.type === 'removed' ||
           f.type === 'changed'
@@ -5686,7 +6119,7 @@ const cv = {
   },
 
   rewriteBullet: async (payload: { bullet: string; context?: string }) => {
-    const bullet = payload.bullet.trim().slice(0, 500);
+    const bullet = prepareCvSectionTextForAi(payload.bullet).trim().slice(0, 500);
     const context = payload.context?.trim().slice(0, 100);
     const res = await axiosClient.post<unknown>('/cv/improve/bullet', {
       bullet,
@@ -5706,7 +6139,7 @@ const cv = {
   },
   /** POST /cv/improve/summary — `summary` 20–2000 chars; `context` optional, max 100. */
   improveSummary: async (payload: { summary: string; context?: string }) => {
-    const summary = payload.summary.trim().slice(0, 2000);
+    const summary = prepareCvSectionTextForAi(payload.summary).trim();
     const context = payload.context?.trim().slice(0, 100);
     const res = await axiosClient.post<unknown>('/cv/improve/summary', {
       summary,
@@ -5804,7 +6237,7 @@ const cv = {
     return normalizeCvBatchUpsertSectionsResult(res.data);
   },
   addSection: async (
-    data: { type: string; order?: number },
+    data: { type: string; order?: number; customTitle?: string },
     cvProfileId?: string,
   ) => {
     const id = cvProfileId?.trim();
@@ -5860,6 +6293,38 @@ const cv = {
       throwIfApiFailureResponse(res.data, res.status);
     }
   },
+  /** POST …/sections/suggest-order — deterministic section order suggestion (does not save). */
+  suggestSectionOrder: async (cvProfileId: string): Promise<import('@/lib/cvSectionOrderSuggest').CvSectionOrderSuggestResult> => {
+    const id = cvProfileId.trim();
+    if (!id) throw new Error('CV profile id is required');
+    const { normalizeCvSectionOrderSuggestResult } = await import(
+      '@/lib/cvSectionOrderSuggest'
+    );
+    try {
+      const scoped = await axiosClient.post<unknown>(
+        `/cv/profiles/${encodeURIComponent(id)}/sections/suggest-order`,
+        {},
+      );
+      throwIfApiFailureResponse(scoped.data, scoped.status);
+      const raw = unwrapApiDataEnvelope(scoped.data);
+      return normalizeCvSectionOrderSuggestResult(raw);
+    } catch (e) {
+      if (
+        !axios.isAxiosError(e) ||
+        (e.response?.status !== 404 && e.response?.status !== 405)
+      ) {
+        throw e;
+      }
+    }
+    const res = await axiosClient.post<unknown>(
+      '/cv/sections/suggest-order',
+      {},
+      { params: { profileId: id } },
+    );
+    throwIfApiFailureResponse(res.data, res.status);
+    const raw = unwrapApiDataEnvelope(res.data);
+    return normalizeCvSectionOrderSuggestResult(raw);
+  },
   reorderSections: async (
     sectionIds: string[],
     cvProfileId?: string,
@@ -5908,11 +6373,18 @@ const cv = {
     return normalizeCvReorderSectionsResult(res.data);
   },
   optimize: async (payload: { jobDescriptionHint: string }) =>
-    (await axiosClient.post<{ optimizedText: string }>('/cv/optimize', payload))
-      .data,
+    (
+      await axiosClient.post<{ optimizedText: string }>('/cv/optimize', {
+        jobDescriptionHint: prepareJobDescriptionForAi(payload.jobDescriptionHint),
+      })
+    ).data,
   tailor: async (payload: { cvProfileId: string; jobDescription: string }) =>
-    (await axiosClient.post<{ tailoredText: string }>('/cv/tailor', payload))
-      .data,
+    (
+      await axiosClient.post<{ tailoredText: string }>('/cv/tailor', {
+        cvProfileId: payload.cvProfileId,
+        jobDescription: prepareJobDescriptionForAi(payload.jobDescription),
+      })
+    ).data,
 };
 
 export type CvExportRequestOpts = {
@@ -6539,6 +7011,9 @@ const jobs = {
      * (e.g. Refresh analysis). Ignored when `persistAnalysis: false`.
      */
     forceRefreshAnalyzeWithAi?: boolean;
+    /** Local market hint for AI salary fallback (not used when pay is in the posting). */
+    candidateLocation?: string;
+    candidateCountryCode?: string;
   }) => {
     const {
       cvProfileId,
@@ -6556,7 +7031,16 @@ const jobs = {
     const res = await axiosClient.post<unknown>(
       '/jobs/analyze',
       {
+        ...aiWaitForResultBody,
         ...body,
+        description: prepareJobDescriptionForAi(body.description),
+        ...(Array.isArray(body.applicationQuestions)
+          ? {
+              applicationQuestions: body.applicationQuestions.map((q) =>
+                typeof q === 'string' ? prepareCvSectionTextForAi(q) : q,
+              ),
+            }
+          : {}),
         ...(useAi === true ? { useAi: true } : {}),
         ...(useAi === false ? { useAi: false } : {}),
         ...(persistAnalysis === false ? { persistAnalysis: false } : {}),
@@ -6575,7 +7059,8 @@ const jobs = {
       },
     );
     throwIfApiFailureResponse(res.data, res.status);
-    return normalizeJobAnalysis(res.data);
+    const resolved = await resolveMaybeQueuedAiResponse(res.data);
+    return normalizeJobAnalysis(resolved);
   },
   /**
    * POST /jobs/match-score — heuristic fit 0–100, no Gemini, no AI quota, no JobAnalysis row.
@@ -6588,7 +7073,7 @@ const jobs = {
     cvProfileId?: string;
   }): Promise<number> => {
     const res = await axiosClient.post<unknown>('/jobs/match-score', {
-      description: payload.description,
+      description: prepareJobDescriptionForAi(payload.description),
       ...(payload.title?.trim() ? { title: payload.title.trim() } : {}),
       ...(payload.company?.trim() ? { company: payload.company.trim() } : {}),
       ...(payload.cvProfileId?.trim()
@@ -6620,9 +7105,21 @@ const jobs = {
     questions?: string[];
     jobAnalysisId?: string;
   }) => {
-    const res = await axiosClient.post<unknown>('/jobs/generate', payload);
+    const res = await axiosClient.post<unknown>('/jobs/generate', {
+      ...aiWaitForResultBody,
+      ...payload,
+      description: prepareJobDescriptionForAi(payload.description),
+      ...(Array.isArray(payload.questions)
+        ? {
+            questions: payload.questions.map((q) =>
+              typeof q === 'string' ? prepareCvSectionTextForAi(q) : q,
+            ),
+          }
+        : {}),
+    });
     throwIfApiFailureResponse(res.data, res.status);
-    const body = unwrapApiDataEnvelope(res.data);
+    const resolved = await resolveMaybeQueuedAiResponse(res.data);
+    const body = unwrapApiDataEnvelope(resolved);
     return body as GeneratedContent;
   },
   /** Same as GET /jobs/history — returns items only (backward compatible with dashboards). */

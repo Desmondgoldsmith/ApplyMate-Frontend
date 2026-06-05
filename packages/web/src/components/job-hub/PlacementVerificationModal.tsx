@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { ImagePlus, Loader2, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -93,8 +94,8 @@ export function PlacementVerificationModal({
           : 'Submitted — we will review your verification shortly.',
       );
       onSubmitted?.({ pending: data.pendingApproval, premiumActiveUntil: data.premiumActiveUntil });
-      void queryClient.invalidateQueries({ queryKey: ['career', 'dashboard'] });
-      void queryClient.invalidateQueries({ queryKey: ['me'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.career.dashboard() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
       onOpenChange(false);
       setLinkedinUrl('');
       setScreenshotUrl('');

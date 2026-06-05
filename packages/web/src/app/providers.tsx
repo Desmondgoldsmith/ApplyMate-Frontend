@@ -2,20 +2,29 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SessionProvider } from 'next-auth/react';
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { PostHogProvider } from '@/components/analytics/PostHogProvider';
 import { ForceDarkTheme } from '@/components/theme/ForceDarkTheme';
 import { SmoothScrollProvider } from '@/components/smooth-scroll-provider';
 import { ToastViewport } from '@/components/ui/Toast';
+import {
+  setupAuthRefreshInterceptor,
+  startAuthTokenRefreshScheduler,
+} from '@/lib/authRefresh';
 import { subscribeAuthLogout } from '@/lib/authSync';
-import { shouldRetryFailedQuery } from '@/lib/axios';
+import { axiosClient, shouldRetryFailedQuery } from '@/lib/axios';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const refreshInterceptorReady = useRef(false);
   const hydrateFromStorage = useAuthStore((s) => s.hydrateFromStorage);
   useLayoutEffect(() => {
     hydrateFromStorage();
+    if (!refreshInterceptorReady.current) {
+      setupAuthRefreshInterceptor(axiosClient);
+      refreshInterceptorReady.current = true;
+    }
   }, [hydrateFromStorage]);
 
   useEffect(() => {
@@ -27,6 +36,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }
     });
   }, []);
+
+  useEffect(() => startAuthTokenRefreshScheduler(), []);
 
   const [queryClient] = useState(
     () =>

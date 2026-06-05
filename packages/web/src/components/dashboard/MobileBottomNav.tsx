@@ -65,13 +65,19 @@ export function MobileBottomNav() {
     const openJobs = () => setJobsMenuOpen(true);
     const closeJobs = () => setJobsMenuOpen(false);
     const closeMore = () => setMoreOpen(false);
+    const openMore = () => {
+      setJobsMenuOpen(false);
+      setMoreOpen(true);
+    };
     window.addEventListener('applymate:tour-open-jobs-nav', openJobs);
     window.addEventListener('applymate:tour-close-jobs-nav', closeJobs);
     window.addEventListener('applymate:tour-close-more-nav', closeMore);
+    window.addEventListener('applymate:tour-open-more-nav', openMore);
     return () => {
       window.removeEventListener('applymate:tour-open-jobs-nav', openJobs);
       window.removeEventListener('applymate:tour-close-jobs-nav', closeJobs);
       window.removeEventListener('applymate:tour-close-more-nav', closeMore);
+      window.removeEventListener('applymate:tour-open-more-nav', openMore);
     };
   }, []);
 
@@ -105,6 +111,7 @@ export function MobileBottomNav() {
             />
             <motion.div
               style={{ bottom: submenuBottom }}
+              data-tour="mobile-more-sheet"
               className="fixed inset-x-0 z-[43] mx-2 rounded-2xl border border-[#00C9B1]/30 bg-[#0C0F0F]/98 p-2 shadow-[0_-10px_28px_rgba(0,0,0,0.38)] backdrop-blur-md md:hidden"
               initial={{ y: 16, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -129,10 +136,12 @@ export function MobileBottomNav() {
                   const Icon = item.icon;
                   const active = isDashboardNavActive(pathname, item.href);
                   const soon = Boolean(item.comingSoon && item.feature);
+                  const tourAttr = item.tourAttr;
                   return (
                     <Link
                       key={item.id}
                       href={item.href}
+                      {...(tourAttr ? { 'data-tour': tourAttr } : {})}
                       className={cn(
                         'flex min-h-[3.7rem] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium leading-tight text-white/55 transition-colors',
                         active &&
@@ -180,6 +189,7 @@ export function MobileBottomNav() {
             />
             <motion.div
               style={{ bottom: submenuBottom }}
+              data-tour="mobile-jobs-sheet"
               className="fixed inset-x-0 z-[43] mx-2 max-h-[min(70vh,420px)] overflow-hidden rounded-2xl border border-[#00C9B1]/30 bg-[#0C0F0F]/98 shadow-[0_-10px_28px_rgba(0,0,0,0.38)] backdrop-blur-md md:hidden"
               initial={{ y: 16, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -329,6 +339,7 @@ export function MobileBottomNav() {
 
               <button
                 type="button"
+                data-tour="nav-more-menu"
                 onClick={() => setMoreOpen((v) => !v)}
                 className={cn(
                   'flex min-h-[4.1rem] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium leading-tight text-white/50 transition-colors',

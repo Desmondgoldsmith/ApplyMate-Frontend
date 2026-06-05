@@ -5,7 +5,10 @@ import { Suspense, useEffect, useRef } from 'react';
 
 import { captureEvent } from '@/lib/analytics';
 import { api } from '@/lib/api';
-import { readApplymateTokenFromCookie } from '@/lib/authCookie';
+import {
+  readApplymateRefreshTokenFromCookie,
+  readApplymateTokenFromCookie,
+} from '@/lib/authCookie';
 import { parseGoogleOAuthIntent } from '@/lib/google-oauth-intent';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -39,7 +42,7 @@ function OAuthCompleteContent() {
         } catch {
           /* fall back to user flag */
         }
-        setAuth(user, token);
+        setAuth(user, token, readApplymateRefreshTokenFromCookie());
 
         if (intent === 'register') {
           captureEvent('auth_register_completed', { provider: 'google' });

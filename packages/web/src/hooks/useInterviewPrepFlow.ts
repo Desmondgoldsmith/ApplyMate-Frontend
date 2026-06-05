@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -209,13 +210,13 @@ export function useInterviewPrepFlow(
   const scheduleSessionRefresh = useCallback(() => {
     if (!sessionId) return;
     debounceByKey(`prep-refresh:${sessionId}`, 500, () => {
-      void queryClient.invalidateQueries({ queryKey: ['interview-session', sessionId] });
-      void queryClient.invalidateQueries({ queryKey: ['interview-prep', 'turns', sessionId] });
-      void queryClient.invalidateQueries({ queryKey: ['interview-prep', 'session', sessionId] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.interview.session(sessionId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.interviewPrep.turns(sessionId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.interviewPrep.session(sessionId) });
       void queryClient.invalidateQueries({
-        queryKey: ['interview-prep', 'simulation-state', sessionId],
+        queryKey: queryKeys.interviewPrep.simulationState(sessionId),
       });
-      void queryClient.invalidateQueries({ queryKey: ['interview-prep', 'skill-profile'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.interviewPrep.skillProfile() });
     });
   }, [queryClient, sessionId]);
 

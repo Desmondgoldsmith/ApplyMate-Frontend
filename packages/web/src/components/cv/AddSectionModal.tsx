@@ -1,12 +1,12 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import axios from 'axios';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Award,
   BookOpen,
   Briefcase,
-  Check,
   FileText,
   FolderKanban,
   GraduationCap,
@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/Button';
+import { AddSectionPreviewCard } from '@/components/cv/AddSectionPreviewCard';
 import { Modal } from '@/components/ui/Modal';
 import { api } from '@/lib/api';
 import type { CVSectionRecord } from '@/lib/api';
@@ -28,7 +29,6 @@ import { insertNewSectionIdProfessionally } from '@/lib/cvSectionProfessionalOrd
 import { useToast } from '@/components/ui/Toast';
 import { getApiErrorMessage } from '@/lib/axios';
 import { useQueryClient } from '@tanstack/react-query';
-import { cn } from '@/lib/utils';
 
 const CORE: { id: string; label: string }[] = [
   { id: 'summary', label: 'Summary' },
@@ -133,6 +133,8 @@ export type AddSectionModalProps = {
   profileId: string | null;
   existingTypes: Set<string>;
   existingSections: CVSectionRecord[];
+  /** Override modal stacking (e.g. when hosted inside a very-high-z overlay). */
+  layerZIndex?: number;
 };
 
 function isAlreadyExistsError(e: unknown): boolean {
@@ -152,7 +154,7 @@ function getErrorStatus(e: unknown): number | null {
   return e.response?.status ?? null;
 }
 
-export function AddSectionModal({ open, onOpenChange, profileId, existingTypes, existingSections }: AddSectionModalProps) {
+export function AddSectionModal({ open, onOpenChange, profileId, existingTypes, existingSections, layerZIndex }: AddSectionModalProps) {
   const toast = useToast();
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState<string | null>(null);
@@ -188,18 +190,18 @@ export function AddSectionModal({ open, onOpenChange, profileId, existingTypes, 
 
   const invalidateAfterSectionChange = (id: string) => {
     // Legacy + current query keys used in this workspace.
-    void queryClient.invalidateQueries({ queryKey: ['cv-sections'] });
-    void queryClient.invalidateQueries({ queryKey: ['cv-sections', false] });
-    void queryClient.invalidateQueries({ queryKey: ['cv-sections', id] });
-    void queryClient.invalidateQueries({ queryKey: ['cv-profile', id] });
-    void queryClient.invalidateQueries({ queryKey: ['cv-profile'] });
-    void queryClient.invalidateQueries({ queryKey: ['cv-profiles'] });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cv.sectionsRoot() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cv.sectionsActive(false) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cv.sections(id) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profile(id) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profileDefault() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
     // Backend-advised equivalents (safe even if not currently used).
-    void queryClient.invalidateQueries({ queryKey: ['cv', 'profile', id, 'sections'] });
-    void queryClient.invalidateQueries({ queryKey: ['cv', 'profile', id] });
-    void queryClient.invalidateQueries({ queryKey: ['cv', 'profiles'] });
-    void queryClient.refetchQueries({ queryKey: ['cv-sections', id], type: 'active' });
-    void queryClient.refetchQueries({ queryKey: ['cv-sections', id], type: 'inactive' });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cv.sections(id) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profile(id) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
+    void queryClient.refetchQueries({ queryKey: queryKeys.cv.sections(id), type: 'active' });
+    void queryClient.refetchQueries({ queryKey: queryKeys.cv.sections(id), type: 'inactive' });
   };
 
   const ensureSectionVisibleForType = async (id: string, type: string) => {
@@ -224,12 +226,12 @@ export function AddSectionModal({ open, onOpenChange, profileId, existingTypes, 
       sectionKey === 'custom'
         ? (() => {
             const slug = toCustomSectionSlug(customSectionName);
-            return slug ? `custom_${slug}` : '';
+            return slug ? `custom_${slug}` : 'custom';
           })()
         : SECTION_TYPE_MAP[sectionKey as keyof typeof SECTION_TYPE_MAP];
 
     if (!mappedType) {
-      toast.error('Enter a custom section name first (e.g. Publications).');
+      toast.error('Could not add that section. Please try again.');
       return;
     }
 
@@ -248,17 +250,27 @@ export function AddSectionModal({ open, onOpenChange, profileId, existingTypes, 
         }
         setSessionOnCv((prev) => new Set(prev).add(sectionKey));
         invalidateAfterSectionChange(profileId);
-        await queryClient.refetchQueries({ queryKey: ['cv-profile', profileId], type: 'active' });
-        await queryClient.refetchQueries({ queryKey: ['cv-profile', profileId], type: 'inactive' });
+        await queryClient.refetchQueries({ queryKey: queryKeys.cv.profile(profileId), type: 'active' });
+        await queryClient.refetchQueries({ queryKey: queryKeys.cv.profile(profileId), type: 'inactive' });
         toast.success(`${nice} restored to your CV`);
         onOpenChange(false);
         return;
       }
-      const added = await api.cv.addSection({ type: mappedType }, profileId);
+      const added =
+        sectionKey === 'custom'
+          ? await api.cv.addSection(
+              {
+                type: 'custom',
+                ...(customSectionName.trim() ? { customTitle: customSectionName.trim() } : {}),
+              },
+              profileId,
+            )
+          : await api.cv.addSection({ type: mappedType }, profileId);
+      const resolvedType = added?.type?.trim() || mappedType;
       if (added?.id?.trim() && added.hidden === true) {
         await api.cv.updateSection(added.id, { visible: true }, profileId);
       } else {
-        await ensureSectionVisibleForType(profileId, mappedType);
+        await ensureSectionVisibleForType(profileId, resolvedType);
       }
       const rowIdForOrder = added?.id?.trim();
       if (rowIdForOrder) {
@@ -270,8 +282,8 @@ export function AddSectionModal({ open, onOpenChange, profileId, existingTypes, 
       }
       setSessionOnCv((prev) => new Set(prev).add(sectionKey));
       invalidateAfterSectionChange(profileId);
-      await queryClient.refetchQueries({ queryKey: ['cv-profile', profileId], type: 'active' });
-      await queryClient.refetchQueries({ queryKey: ['cv-profile', profileId], type: 'inactive' });
+      await queryClient.refetchQueries({ queryKey: queryKeys.cv.profile(profileId), type: 'active' });
+      await queryClient.refetchQueries({ queryKey: queryKeys.cv.profile(profileId), type: 'inactive' });
       toast.success(`${nice} added to your CV`);
       onOpenChange(false);
     } catch (e) {
@@ -281,8 +293,8 @@ export function AddSectionModal({ open, onOpenChange, profileId, existingTypes, 
         await ensureSectionVisibleForType(profileId, mappedType);
         setSessionOnCv((prev) => new Set(prev).add(sectionKey));
         invalidateAfterSectionChange(profileId);
-        await queryClient.refetchQueries({ queryKey: ['cv-profile', profileId], type: 'active' });
-        await queryClient.refetchQueries({ queryKey: ['cv-profile', profileId], type: 'inactive' });
+        await queryClient.refetchQueries({ queryKey: queryKeys.cv.profile(profileId), type: 'active' });
+        await queryClient.refetchQueries({ queryKey: queryKeys.cv.profile(profileId), type: 'inactive' });
         toast.success(`${nice} section is already in your CV`);
         onOpenChange(false);
         return;
@@ -293,67 +305,6 @@ export function AddSectionModal({ open, onOpenChange, profileId, existingTypes, 
     }
   };
 
-  const SectionPreviewCard = ({
-    label,
-    icon: Icon,
-    checked,
-    locked = false,
-    preview,
-    footer,
-    customBody,
-  }: {
-    label: string;
-    icon: LucideIcon;
-    checked: boolean;
-    locked?: boolean;
-    preview: string[];
-    footer?: React.ReactNode;
-    customBody?: React.ReactNode;
-  }) => (
-    <div
-      className={cn(
-        'group relative min-h-[162px] overflow-hidden rounded-2xl border bg-[#0B0F10]/90 p-3',
-        checked ? 'border-[#00C9B1]/55 shadow-[0_0_0_1px_rgba(0,201,177,0.22)]' : 'border-white/[0.08]',
-        !checked && !locked && 'hover:border-[#00C9B1]/45',
-      )}
-    >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-[#00C9B1]/10 to-transparent" />
-      <div className="relative flex items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-black/30 text-[#2DD4BF]">
-            <Icon className="h-4 w-4" />
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-white">{label}</p>
-            <p className="text-[10px] uppercase tracking-[0.14em] text-white/35">{locked ? 'Core section' : 'Optional section'}</p>
-          </div>
-        </div>
-        {checked ? (
-          <span className="inline-flex h-6 items-center gap-1 whitespace-nowrap rounded-full border border-[#00C9B1]/45 bg-[#00C9B1]/12 px-1.5 py-0 text-[9px] font-semibold leading-none text-[#44E6D6]">
-            <Check className="h-3 w-3" /> On CV
-          </span>
-        ) : null}
-      </div>
-
-      <div className="relative mt-3 rounded-xl border border-white/[0.08] bg-black/25 px-2.5 py-2">
-        <div className="space-y-1.5">
-          <div className="h-1.5 w-24 rounded-full bg-white/20" />
-          <div className="h-1.5 w-full rounded-full bg-white/10" />
-          <div className="h-1.5 w-[78%] rounded-full bg-white/10" />
-        </div>
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
-          {preview.map((x) => (
-            <span key={x} className="rounded-full border border-white/[0.12] bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/55">
-              {x}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div className="relative mt-3">{customBody ?? footer}</div>
-    </div>
-  );
-
   return (
     <Modal
       open={open}
@@ -363,12 +314,13 @@ export function AddSectionModal({ open, onOpenChange, profileId, existingTypes, 
       description="Core sections are always on your CV. Optional blocks can be added or removed."
       scrollBody
       className="max-w-3xl border border-white/[0.08] bg-[#1a1a1a] shadow-2xl"
+      layerZIndex={layerZIndex}
     >
       <div className="pr-1">
         <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/40">Core</p>
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-4">
           {CORE.map((s) => (
-            <SectionPreviewCard
+            <AddSectionPreviewCard
               key={s.id}
               label={s.label}
               icon={CORE_ICON_BY_ID[s.id] ?? FileText}
@@ -389,8 +341,8 @@ export function AddSectionModal({ open, onOpenChange, profileId, existingTypes, 
                       try {
                         await api.cv.updateSection(rowId, { visible: true }, profileId);
                         invalidateAfterSectionChange(profileId);
-                        await queryClient.refetchQueries({ queryKey: ['cv-profile', profileId], type: 'active' });
-                        await queryClient.refetchQueries({ queryKey: ['cv-profile', profileId], type: 'inactive' });
+                        await queryClient.refetchQueries({ queryKey: queryKeys.cv.profile(profileId), type: 'active' });
+                        await queryClient.refetchQueries({ queryKey: queryKeys.cv.profile(profileId), type: 'inactive' });
                         toast.success(`${s.label} restored`);
                         onOpenChange(false);
                       } catch (e) {
@@ -417,7 +369,7 @@ export function AddSectionModal({ open, onOpenChange, profileId, existingTypes, 
             const on = presentTypes.has(s.type);
             const Icon = OPTIONAL_ICON_BY_TYPE[s.type] ?? Plus;
             return (
-              <SectionPreviewCard
+              <AddSectionPreviewCard
                 key={s.type}
                 label={s.label}
                 icon={Icon}

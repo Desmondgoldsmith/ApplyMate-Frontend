@@ -58,6 +58,8 @@ export type InlineFieldProps = {
   dataBulletIdx?: string;
   fieldPath?: string;
   startEditingWhenEmpty?: boolean;
+  /** Placeholder contrast on dark sidebar backgrounds (Onyx). */
+  placeholderTone?: 'default' | 'onDark';
 };
 
 function InlineFieldInner({
@@ -77,6 +79,7 @@ function InlineFieldInner({
   dataBulletIdx,
   fieldPath = 'text',
   startEditingWhenEmpty = false,
+  placeholderTone = 'default',
 }: InlineFieldProps) {
   const ctx = useCVEdit();
   const [editing, setEditing] = useState(false);
@@ -170,10 +173,15 @@ function InlineFieldInner({
       (x) => (x.fieldPath ?? 'text') === fieldPath && spellIssueMatchesFieldText(x, displayText),
     );
 
+  const placeholderDisplayClass =
+    placeholderTone === 'onDark' ? 'text-white/45 italic' : 'text-black/40 italic';
+  const placeholderBeforeClass =
+    placeholderTone === 'onDark' ? 'empty:before:text-white/45' : 'empty:before:text-gray-400';
+
   if (!editable) {
     return (
       <span className={cn(className, '[&_a]:text-[#1D4ED8] [&_a]:underline')}>
-        {empty ? <span className="text-black/40 italic">{placeholder}</span> : <span dangerouslySetInnerHTML={{ __html: toFormattedHtml(displayText) }} />}
+        {empty ? <span className={placeholderDisplayClass}>{placeholder}</span> : <span dangerouslySetInnerHTML={{ __html: toFormattedHtml(displayText) }} />}
       </span>
     );
   }
@@ -197,6 +205,10 @@ function InlineFieldInner({
             className,
           )}
           onClick={(e) => {
+            // A link inside the field would otherwise navigate (open a new tab)
+            // on click, making it impossible to edit/format linked text. While
+            // the CV is editable, clicking enters edit mode instead.
+            e.preventDefault();
             e.stopPropagation();
             activateEntryFocus();
             setDraft(value);
@@ -212,7 +224,7 @@ function InlineFieldInner({
             }
           }}
         >
-          {showPlaceholder ? <span className="text-black/40 italic">{placeholder}</span> : <span dangerouslySetInnerHTML={{ __html: toFormattedHtml(displayText) }} />}
+          {showPlaceholder ? <span className={placeholderDisplayClass}>{placeholder}</span> : <span dangerouslySetInnerHTML={{ __html: toFormattedHtml(displayText) }} />}
         </span>
         {matchedIssue && ctx?.isEditing ? (
           <span className="inline-flex items-center gap-1">
@@ -274,7 +286,8 @@ function InlineFieldInner({
           suppressContentEditableWarning
           className={cn(
             editSurface,
-            'block min-h-[1.25em] w-full min-w-0 max-w-full border-b text-inherit whitespace-pre-wrap break-words empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400 empty:before:italic empty:before:pointer-events-none [&_a]:text-[#1D4ED8] [&_a]:underline',
+            'block min-h-[1.25em] w-full min-w-0 max-w-full border-b text-inherit whitespace-pre-wrap break-words empty:before:content-[attr(data-placeholder)] empty:before:italic empty:before:pointer-events-none [&_a]:text-[#1D4ED8] [&_a]:underline',
+            placeholderBeforeClass,
           )}
           style={{ borderBottomColor: TEAL_UNDER, caretColor: '#111111' }}
           data-placeholder={placeholder}
@@ -317,7 +330,8 @@ function InlineFieldInner({
         suppressContentEditableWarning
           className={cn(
           editSurface,
-            'inline-block min-w-[2ch] max-w-full border-b text-inherit empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400 empty:before:italic empty:before:pointer-events-none [&_a]:text-[#1D4ED8] [&_a]:underline',
+            'inline-block min-w-[2ch] max-w-full border-b text-inherit empty:before:content-[attr(data-placeholder)] empty:before:italic empty:before:pointer-events-none [&_a]:text-[#1D4ED8] [&_a]:underline',
+            placeholderBeforeClass,
         )}
         style={{ borderBottomColor: TEAL_UNDER, caretColor: '#111111' }}
         data-placeholder={placeholder}
@@ -364,6 +378,7 @@ function inlineFieldPropsEqual(prev: Readonly<InlineFieldProps>, next: Readonly<
     prev.entryId === next.entryId &&
     prev.fieldPath === next.fieldPath &&
     prev.startEditingWhenEmpty === next.startEditingWhenEmpty &&
+    prev.placeholderTone === next.placeholderTone &&
     prev.onChange === next.onChange &&
     prev.onInputKeyDown === next.onInputKeyDown &&
     prev.onKeyDown === next.onKeyDown &&

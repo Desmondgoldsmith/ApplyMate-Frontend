@@ -1,11 +1,12 @@
 'use client';
 
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2, ScanEye, Sparkles } from 'lucide-react';
 import type { MutableRefObject, ReactNode } from 'react';
 import { memo, startTransition } from 'react';
 
 import type { CVBuilderQualitySignals } from '@/components/cv/CVBuilder';
 import { CVScoreCard } from '@/components/cv/CVScoreCard';
+import type { CVScorePayload } from '@/lib/api';
 import { ImprovementsPanel } from '@/components/cv/ImprovementsPanel';
 import { Button } from '@/components/ui/Button';
 import { ScrollContentEnd } from '@/components/ui/ScrollContentEnd';
@@ -18,7 +19,7 @@ import {
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
-export type CvClinicTripleRightTab = 'analysis' | 'improvements';
+export type CvClinicTripleRightTab = 'analysis' | 'improvements' | 'changes';
 
 export type CvClinicCompletenessGroup = {
   sectionKey: string;
@@ -34,7 +35,9 @@ export type CvClinicTripleRightPanelProps = {
   scoreLoading: boolean;
   scoreValue: number | null | undefined;
   scoreBreakdown?: unknown;
+  scorePayload?: CVScorePayload | null;
   improvementList: CVImprovementItem[];
+  acceptAllQuota?: import('@/lib/cvAcceptAllQuota').CvAcceptAllQuota | null;
   analyzeScanPending: boolean;
   onAnalyzeScan: () => Promise<void>;
   improvementsBadgeCount: number;
@@ -59,6 +62,18 @@ export type CvClinicTripleRightPanelProps = {
   highlightImprovementsAttention?: boolean;
   /** ATS simulation “Draft in Assistant” — opens panel with a grounded prompt. */
   onAtsKeywordAssist?: (prompt: string) => void;
+  /** Comprehensive recruiter first-impression scan. */
+  onRecruiterScan?: () => void;
+  recruiterScanPending?: boolean;
+  onScoreRefresh?: () => void;
+  /**
+   * Tailoring mode only: when provided, a "Tailoring changes" tab is shown first
+   * (the main view) and renders this slot, while Analysis/Improvements stay
+   * available as secondary tabs.
+   */
+  changesSlot?: ReactNode;
+  changesLabel?: string;
+  changesBadgeCount?: number;
 };
 
 function CvClinicTripleRightPanelInner({
@@ -69,7 +84,9 @@ function CvClinicTripleRightPanelInner({
   scoreLoading,
   scoreValue,
   scoreBreakdown,
+  scorePayload,
   improvementList,
+  acceptAllQuota = null,
   improvementsBadgeCount,
   formatRecommendation,
   isOnRecommendedTemplate,
@@ -89,27 +106,64 @@ function CvClinicTripleRightPanelInner({
   onAnalyzeScan,
   highlightImprovementsAttention = false,
   onAtsKeywordAssist,
+  onRecruiterScan,
+  recruiterScanPending = false,
+  onScoreRefresh,
+  changesSlot,
+  changesLabel = 'Tailoring changes',
+  changesBadgeCount = 0,
 }: CvClinicTripleRightPanelProps) {
   const selectTab = (tab: CvClinicTripleRightTab) => {
     startTransition(() => onTripleRightTabChange(tab));
   };
+  const hasChanges = Boolean(changesSlot);
+  const activeTab: CvClinicTripleRightTab =
+    tripleRightTab === 'changes' && !hasChanges ? 'analysis' : tripleRightTab;
 
   return (
     <div
       className={cn(
-        'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl transition-all duration-300',
+        'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl',
         highlightImprovementsAttention &&
           'ring-2 ring-[#00C9B1]/65 shadow-[0_0_0_6px_rgba(0,201,177,0.14)]',
       )}
     >
-      <div className="grid h-11 w-full min-w-0 shrink-0 grid-cols-2 border-b border-white/[0.07]">
+      <div
+        className={cn(
+          'grid h-11 w-full min-w-0 shrink-0 border-b border-white/[0.07]',
+          hasChanges ? 'grid-cols-3' : 'grid-cols-2',
+        )}
+      >
+        {hasChanges ? (
+          <button
+            type="button"
+            data-testid="cv-tab-changes"
+            onClick={() => selectTab('changes')}
+            className={cn(
+              'flex min-w-0 items-center justify-center gap-1 border-b-2 px-1.5 text-[12px] font-medium transition-colors duration-150 sm:gap-1.5 sm:px-2.5 sm:text-[13px]',
+              activeTab === 'changes'
+                ? 'border-[#00C9B1] text-[#00C9B1]'
+                : 'border-transparent text-white/40 hover:text-white/70',
+            )}
+          >
+            <span className="truncate">{changesLabel}</span>
+            {changesBadgeCount > 0 ? (
+              <span
+                className="pointer-events-none inline-flex min-w-[1.25rem] shrink-0 items-center justify-center rounded-full bg-[#00C9B1] px-1.5 py-0.5 text-[10px] font-bold leading-none text-[#06201c] shadow-sm"
+                aria-label={`${changesBadgeCount} pending changes`}
+              >
+                {changesBadgeCount > 99 ? '99+' : changesBadgeCount}
+              </span>
+            ) : null}
+          </button>
+        ) : null}
         <button
           type="button"
           data-testid="cv-tab-analysis"
           onClick={() => selectTab('analysis')}
           className={cn(
             'flex min-w-0 items-center justify-center gap-1 border-b-2 px-1.5 text-[12px] font-medium transition-colors duration-150 sm:gap-1.5 sm:px-2.5 sm:text-[13px]',
-            tripleRightTab === 'analysis'
+            activeTab === 'analysis'
               ? 'border-[#00C9B1] text-[#00C9B1]'
               : 'border-transparent text-white/40 hover:text-white/70',
           )}
@@ -122,7 +176,7 @@ function CvClinicTripleRightPanelInner({
           onClick={() => selectTab('improvements')}
           className={cn(
             'flex min-w-0 items-center justify-center gap-1 border-b-2 px-1.5 text-[12px] font-medium transition-colors duration-150 sm:gap-1.5 sm:px-2.5 sm:text-[13px]',
-            tripleRightTab === 'improvements'
+            activeTab === 'improvements'
               ? 'border-[#00C9B1] text-[#00C9B1]'
               : 'border-transparent text-white/40 hover:text-white/70',
           )}
@@ -132,7 +186,7 @@ function CvClinicTripleRightPanelInner({
             <span
               className={cn(
                 'pointer-events-none inline-flex min-w-[1.25rem] shrink-0 items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm',
-                'animate-pulse',
+                highlightImprovementsAttention && 'animate-pulse',
               )}
               aria-label={`${improvementsBadgeCount} pending fixes`}
             >
@@ -141,11 +195,16 @@ function CvClinicTripleRightPanelInner({
           ) : null}
         </button>
       </div>
+      {activeTab === 'changes' && hasChanges ? (
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {changesSlot}
+        </div>
+      ) : (
       <div
         data-lenis-prevent-wheel
         className="app-scrollbar scroll-content-end-pad min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-0 pt-1 lg:pb-6"
       >
-        {tripleRightTab === 'analysis' ? (
+        {activeTab === 'analysis' ? (
           <div className="space-y-3 px-3">
             {!scoreLoading ? (
               scoreValue !== null && scoreValue !== undefined ? (
@@ -153,6 +212,11 @@ function CvClinicTripleRightPanelInner({
                   mode={scoreCardMode}
                   score={scoreValue}
                   breakdown={scoreBreakdown as never}
+                  scorePayload={scorePayload ?? undefined}
+                  cvProfileId={profileId}
+                  pendingImprovements={improvementList}
+                  onDiffPreview={onDiffPreview}
+                  onScoreRefresh={onScoreRefresh}
                   hideJobMatch
                   onAtsKeywordAssist={onAtsKeywordAssist}
                 />
@@ -177,6 +241,40 @@ function CvClinicTripleRightPanelInner({
             ) : (
               <Skeleton height={120} borderRadius={12} />
             )}
+
+            {onRecruiterScan ? (
+              <div className="rounded-xl border border-orange-400/20 bg-orange-500/[0.05] p-4">
+                <div className="flex items-start gap-3">
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-500/15 text-orange-300">
+                    <ScanEye className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-orange-200">Recruiter Scan</p>
+                    <p className="mt-1 text-[11px] leading-relaxed text-white/50">
+                      See what a recruiter notices in the first 6 seconds — reading order,
+                      takeaways, and honest concerns.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="mt-3 h-8 border border-orange-400/30 px-3 text-xs text-orange-200 hover:bg-orange-500/10"
+                      disabled={recruiterScanPending}
+                      onClick={onRecruiterScan}
+                    >
+                      {recruiterScanPending ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Scanning…
+                        </>
+                      ) : (
+                        <>
+                          <ScanEye className="h-3.5 w-3.5" /> Run Recruiter Scan
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             {!isOnRecommendedTemplate ? (
               <div className="flex flex-col gap-3 rounded-xl border border-[rgba(0,201,177,0.15)] bg-white/[0.02] p-4">
@@ -423,12 +521,14 @@ function CvClinicTripleRightPanelInner({
             <ImprovementsPanel
               improvements={improvementList}
               profileId={profileId}
+              acceptAllQuota={acceptAllQuota}
               onDiffPreview={onDiffPreview}
             />
           </>
         )}
         <ScrollContentEnd />
       </div>
+      )}
       {footerSlot ? (
         <div className="shrink-0 border-t border-white/[0.08] bg-[#080A0A] p-3 shadow-[0_-8px_24px_rgba(0,0,0,0.35)]">
           {footerSlot}

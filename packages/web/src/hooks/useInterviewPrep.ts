@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { interviewPrepApi } from '@/lib/interview-prep-api';
@@ -10,9 +11,23 @@ import {
 } from '@/lib/interviewSessionCache';
 import type { AnswerSource, PrepTurnsResponse, SimulateSessionBody } from '@/lib/interview-prep-types';
 
-export const INTERVIEW_PREP_PROGRESS_KEY = ['interview-prep', 'progress'] as const;
-export const INTERVIEW_ADAPTIVE_PROFILE_KEY = ['interview-prep', 'adaptive-profile'] as const;
-export const INTERVIEW_SKILL_PROFILE_KEY = ['interview-prep', 'skill-profile'] as const;
+export const INTERVIEW_PREP_PROGRESS_KEY = queryKeys.interviewPrep.progress();
+export const INTERVIEW_PREP_QUOTA_KEY = queryKeys.interviewPrep.quota();
+export const INTERVIEW_ADAPTIVE_PROFILE_KEY = queryKeys.interviewPrep.adaptiveProfile();
+export const INTERVIEW_SKILL_PROFILE_KEY = queryKeys.interviewPrep.skillProfile();
+
+function invalidateInterviewPrepQuota(queryClient: ReturnType<typeof useQueryClient>) {
+  void queryClient.invalidateQueries({ queryKey: INTERVIEW_PREP_QUOTA_KEY });
+}
+
+export function useInterviewPrepQuota(enabled = true) {
+  return useQuery({
+    queryKey: INTERVIEW_PREP_QUOTA_KEY,
+    queryFn: () => interviewPrepApi.getQuota(),
+    enabled,
+    staleTime: 1000 * 60,
+  });
+}
 
 export function useInterviewPrepProgress(enabled = true) {
   return useQuery({
@@ -43,7 +58,7 @@ export function useSkillProfile(enabled = true) {
 
 export function useEnrichedPrepSession(sessionId: string | null, enabled = true) {
   return useQuery({
-    queryKey: ['interview-prep', 'session', sessionId],
+    queryKey: queryKeys.interviewPrep.session(sessionId ?? ''),
     queryFn: () => interviewPrepApi.getEnrichedSession(sessionId!),
     enabled: Boolean(sessionId) && enabled,
     staleTime: 1000 * 60 * 2,
@@ -54,7 +69,7 @@ export function useEnrichedPrepSession(sessionId: string | null, enabled = true)
 
 export function useInterviewTurns(sessionId: string | null, enabled = true) {
   return useQuery({
-    queryKey: ['interview-prep', 'turns', sessionId],
+    queryKey: queryKeys.interviewPrep.turns(sessionId ?? ''),
     queryFn: () => interviewPrepApi.getTurns(sessionId!),
     enabled: Boolean(sessionId) && enabled,
     staleTime: 1000 * 15,
@@ -74,7 +89,7 @@ export function useSubmitPracticeCoaching(sessionId: string) {
 
 export function useInterviewImprovementPlan(sessionId: string | null, enabled = true) {
   return useQuery({
-    queryKey: ['interview-prep', 'plan', sessionId],
+    queryKey: queryKeys.interviewPrep.plan(sessionId ?? ''),
     queryFn: () => interviewPrepApi.getPlan(sessionId!),
     enabled: Boolean(sessionId) && enabled,
     retry: false,
@@ -84,7 +99,7 @@ export function useInterviewImprovementPlan(sessionId: string | null, enabled = 
 
 export function useSimulationState(sessionId: string | null, enabled = true) {
   return useQuery({
-    queryKey: ['interview-prep', 'simulation-state', sessionId],
+    queryKey: queryKeys.interviewPrep.simulationState(sessionId ?? ''),
     queryFn: async () => {
       const data = await interviewPrepApi.getSimulationState(sessionId!);
       setCachedSimulation(sessionId!, data);
@@ -126,8 +141,9 @@ export function useCreateSimulateSession() {
   return useMutation({
     mutationFn: (body: SimulateSessionBody) => interviewPrepApi.simulateSession(body),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['interview-sessions'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.interview.sessions() });
       void queryClient.invalidateQueries({ queryKey: INTERVIEW_PREP_PROGRESS_KEY });
+      invalidateInterviewPrepQuota(queryClient);
     },
   });
 }

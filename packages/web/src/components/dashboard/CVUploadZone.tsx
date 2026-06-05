@@ -1,17 +1,22 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { UploadCloud } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 import { useDailyAiUsage } from '@/hooks/useDailyAiUsage';
 import { useUploadCV } from '@/hooks/useUploadCV';
-import { api, type CVProfile } from '@/lib/api';
+import { api, type CVProfile, type CvParseImportSummary } from '@/lib/api';
 import { refreshCvStateAfterCvParseSuccess } from '@/lib/cvParseCacheReconcile';
 import {
   canUseAiFromDailyAiUsage,
   DAILY_AI_LIMIT_REACHED_MESSAGE,
 } from '@/lib/ai-daily-usage';
+import {
+  trackConversionFunnelEvent,
+  trackUpgradePrompted,
+} from '@/lib/analytics';
 import { cvParseMutationShouldRetry, getApiErrorMessage, isTransientAiStructuredOutputError } from '@/lib/axios';
 import { useToast } from '@/components/ui/Toast';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -21,6 +26,7 @@ export type CvParseSuccessPayload = {
   profile: CVProfile;
   skillsFound?: number;
   isPartialExtraction?: boolean;
+  importSummary?: CvParseImportSummary | null;
 };
 
 type CVUploadZoneProps = {
@@ -58,6 +64,10 @@ export function CVUploadZone({
       const row = await api.cv.createProfile({ name: profileNameFromUploadFile(file) });
       const profileId = row.id.trim();
       if (!profileId) throw new Error('Could not create CV profile');
+      trackConversionFunnelEvent('cv_created', {
+        cvProfileId: profileId,
+        via: 'upload_parse',
+      });
       /**
        * Never use TanStack `retry` on the whole mutation: each retry would call `createProfile` again and
        * leave orphan empty profiles (duplicate rows in the list). Retry only `parse` below.
@@ -82,8 +92,8 @@ export function CVUploadZone({
     retry: false,
     onSuccess: async (data) => {
       await refreshCvStateAfterCvParseSuccess(queryClient, data.profile);
-      void queryClient.invalidateQueries({ queryKey: ['me'] });
-      void queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
     },
   });
 
@@ -103,6 +113,7 @@ export function CVUploadZone({
 
   const upload = (file: File) => {
     if (!canUseAiFromDailyAiUsage(aiUsage)) {
+      trackUpgradePrompted('cv_upload');
       toast.error(DAILY_AI_LIMIT_REACHED_MESSAGE);
       return;
     }
@@ -116,6 +127,7 @@ export function CVUploadZone({
             profile: data.profile,
             skillsFound: data.skillsFound,
             isPartialExtraction: data.isPartialExtraction,
+            importSummary: data.importSummary,
           }),
         onError: (err) => {
           toast.error(
@@ -133,6 +145,7 @@ export function CVUploadZone({
           profile: data.profile,
           skillsFound: data.skillsFound,
           isPartialExtraction: data.isPartialExtraction,
+          importSummary: data.importSummary,
         }),
       onError: (err) => {
         toast.error(

@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
 import type { CvAssistantRunResult } from '@/components/cv/CVEditContext';
+import { CvAssistantScopeBadge } from '@/components/cv/CvAssistantScopeBadge';
 import { useMobileShell } from '@/components/dashboard/MobileShellContext';
 import { Button } from '@/components/ui/Button';
 import { useDraggableFab } from '@/hooks/useDraggableFab';
@@ -48,6 +49,8 @@ export type AISectionAssistantPanelProps = {
   /** When the drawer opens with a non-empty value, replaces the command textarea once; parent clears via {@link onSeedCommandConsumed}. */
   seedCommand?: string | null;
   onSeedCommandConsumed?: () => void;
+  /** Human label for the targeted section (e.g. Experience). */
+  targetSectionLabel?: string | null;
 };
 
 export function AISectionAssistantPanel({
@@ -59,6 +62,7 @@ export function AISectionAssistantPanel({
   onSubmit,
   seedCommand = null,
   onSeedCommandConsumed,
+  targetSectionLabel = null,
 }: AISectionAssistantPanelProps) {
   const desktopLg = useDesktopLgMedia();
   const { navBottomOffset } = useMobileShell();
@@ -155,10 +159,13 @@ export function AISectionAssistantPanel({
               onClick={(e) => e.stopPropagation()}
             >
               <div className="rounded-2xl border border-white/[0.08] bg-[#0C0F0F] p-3 shadow-[0_14px_32px_rgba(0,0,0,0.45)]">
-                <div className="mb-2 flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">
-                    AI Section Assistant
-                  </p>
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">
+                      AI Section Assistant
+                    </p>
+                    <CvAssistantScopeBadge label="This section" variant="section" />
+                  </div>
                   <button
                     type="button"
                     className="rounded-md p-1 text-white/50 transition hover:bg-white/[0.06] hover:text-white"
@@ -183,6 +190,16 @@ export function AISectionAssistantPanel({
                     />
                   </div>
                 ) : null}
+                {targetSectionLabel ? (
+                  <p className="mb-2 text-[11px] text-white/45">
+                    Target: <span className="text-white/70">{targetSectionLabel}</span>
+                  </p>
+                ) : (
+                  <p className="mb-2 text-[11px] text-white/45">
+                    Use the assistant pin on a section, or open this from a section
+                    context.
+                  </p>
+                )}
                 <textarea
                   data-testid="cv-assistant-command"
                   value={text}

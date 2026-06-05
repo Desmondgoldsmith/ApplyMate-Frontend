@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { richTextPlainText } from './cvRichTextCore';
 import { toPreviewRichTextHtml } from './cvRichTextPreview';
 
 describe('toPreviewRichTextHtml', () => {
@@ -9,6 +10,13 @@ describe('toPreviewRichTextHtml', () => {
     );
     expect(html).toContain('<a href="https://github.com/user/repo"');
     expect(html).toContain('Portfolio</a>');
+  });
+
+  it('extracts visible text from anchor HTML for emptiness checks', () => {
+    expect(richTextPlainText('<a href="https://github.com/user/repo">Portfolio</a>')).toBe(
+      'Portfolio',
+    );
+    expect(richTextPlainText('<a href="https://example.com"></a>')).toBe('');
   });
 
   it('renders anchor hrefs that contain ampersands in query strings', () => {

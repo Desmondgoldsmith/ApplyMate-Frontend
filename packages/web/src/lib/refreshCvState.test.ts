@@ -1,3 +1,4 @@
+import { queryKeys } from '@/lib/queryKeys';
 import { describe, expect, it, vi } from 'vitest';
 
 import { cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
@@ -27,16 +28,16 @@ describe('refreshCvState', () => {
     });
     expect(refetchQueries).toHaveBeenCalledTimes(2);
     expect(refetchQueries).toHaveBeenCalledWith({
-      queryKey: ['cv-profile', 'abc'],
+      queryKey: queryKeys.cv.profile('abc'),
       exact: true,
     });
     expect(refetchQueries).toHaveBeenCalledWith({
-      queryKey: ['cv-sections', 'abc'],
+      queryKey: queryKeys.cv.sections('abc'),
       exact: true,
     });
     expect(invalidateQueries).toHaveBeenCalledTimes(2);
-    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['cv', 'score', 'abc'], exact: true });
-    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['cv-profiles'], exact: true });
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: queryKeys.cv.score('abc'), exact: true });
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: queryKeys.cv.profiles(), exact: true });
   });
 
   it('refetches suggestions with canonical key', async () => {

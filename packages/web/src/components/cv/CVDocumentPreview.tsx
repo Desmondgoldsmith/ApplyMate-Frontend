@@ -3,9 +3,17 @@
 import { EB_Garamond, DM_Sans, Inter } from 'next/font/google';
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 
-import { GripVertical, Upload, X as XIcon } from 'lucide-react';
+import {
+  GripVertical,
+  Upload,
+  X as XIcon,
+  Phone as PhoneIcon,
+  Mail as MailIcon,
+  MapPin as MapPinIcon,
+} from 'lucide-react';
 
 import {
+  filterCvBuilderReferences,
   normalizeBullets,
   newLocalId,
   ensureCvPreviewData,
@@ -13,6 +21,13 @@ import {
   type CVBuilderLanguage,
   type CvTemplateId,
 } from '@/lib/cvBuilder';
+import { CvEditableReferencesList } from '@/components/cv/CvEditableReferencesList';
+import {
+  filterParsedCustomSectionsForEditor,
+  shouldRenderCustomLegacySection,
+  orderedParsedPreviewKeys,
+  parsedCustomMainPlaceholder,
+} from '@/lib/cvParsedCustomSectionUtils';
 import type { CVSectionRecord } from '@/lib/api';
 import {
   dedupePreviewSectionKeys,
@@ -29,18 +44,24 @@ import {
   type SectionReorderDropDetail,
 } from '@/components/cv/cvSectionDrag';
 import { HeaderFloatingControls } from '@/components/cv/HeaderFloatingControls';
+import { OnyxCvDocument } from '@/components/cv/templates/OnyxCvDocument';
 import { InlineField } from '@/components/cv/InlineField';
+import { InlineSkillsCommaField } from '@/components/cv/InlineSkillsCommaField';
+import { persistSectionTitleChange, resolveSectionDisplayTitle } from '@/lib/cvSectionTitlePersist';
 import { EntryToolbar } from '@/components/cv/EntryToolbar';
 import { useToast } from '@/components/ui/Toast';
+import { CvAiPatchDiffView } from '@/components/cv/CvAiPatchDiffView';
 import { CvDiffActionsBusyContext, CvDiffActionPair } from '@/components/cv/cvDiffImprovementActions';
-import {
-  EuropassClassicDoc,
-  EuropassModernDoc,
-  FrenchDoc,
-  GermanDoc,
-  UkDoc,
-} from '@/components/cv/internationalCvDocs';
+import { coerceAiPatchToDisplayString } from '@/lib/cvAiPatchDisplay';
 import { CV_DIFF_EMPTY_PREVIEW_MESSAGE, CV_DIFF_STRUCTURAL_SECTION_MESSAGE } from '@/lib/cvDiffCopy';
+import {
+  gCvDocPreviewDiffMultiSection,
+  gCvDocPreviewStructuralAfter,
+  gCvDocPreviewStructuralBefore,
+  resolveCvPreviewSectionDiff,
+  setCvDocumentPreviewDiffContext,
+  type CvPreviewChangedField,
+} from '@/lib/cvDocumentPreviewDiffContext';
 import { cvStructuralDiffPayloadPresent } from '@/lib/cvDiffPreviewMap';
 import { compressImageFileToCvDataUrl, CV_PHOTO_TOO_LARGE_USER_MESSAGE } from '@/lib/cvPhotoCompress';
 import {
@@ -51,6 +72,7 @@ import {
   formatEduRangeStacked,
   splitCvStoredRange,
 } from '@/lib/cvDate';
+import { normalizeEditableHtml, richTextPlainText } from '@/lib/cvRichTextCore';
 import { toPreviewRichTextHtml } from '@/lib/cvRichTextPreview';
 import { cn } from '@/lib/utils';
 
@@ -71,10 +93,6 @@ const dmSans = DM_Sans({
   weight: ['400', '500', '700'],
   display: 'swap',
 });
-
-/** Render-scoped structural diff payload for `sectionBox` (set by {@link CVDocumentPreview}). */
-let gCvDocPreviewStructuralBefore: unknown;
-let gCvDocPreviewStructuralAfter: unknown;
 
 /** Matches PDF/HTML export footer watermark (`html.builder` parity). */
 function CvPreviewWatermarkFooter() {
@@ -124,14 +142,7 @@ export function reorderSectionKeys(sourceOrder: string[], dragId: string, target
   return next;
 }
 
-type ChangedField = {
-  field?: string;
-  fieldPath?: string;
-  fieldLabel?: string;
-  before: string;
-  after: string;
-  type: 'added' | 'removed' | 'changed';
-};
+type ChangedField = CvPreviewChangedField;
 
 export { CV_DIFF_EMPTY_PREVIEW_MESSAGE } from '@/lib/cvDiffCopy';
 
@@ -159,6 +170,8 @@ type CVDocumentPreviewProps = {
   onReorderSections?: (nextOrder: string[]) => void;
   /** Disables improvement diff Accept/Reject while the parent handles accept/reject API calls. */
   diffActionsDisabled?: boolean;
+  /** When true, show inline diff on every section listed in `diffChangedFields` (global assistant). */
+  diffMultiSection?: boolean;
 };
 
 export function CVDocumentPreview({
@@ -179,40 +192,35 @@ export function CVDocumentPreview({
   sectionOrder,
   onReorderSections,
   diffActionsDisabled = false,
+  diffMultiSection = false,
 }: CVDocumentPreviewProps) {
-  gCvDocPreviewStructuralBefore = diffBefore;
-  gCvDocPreviewStructuralAfter = diffAfter;
+  setCvDocumentPreviewDiffContext({
+    structuralBefore: diffBefore,
+    structuralAfter: diffAfter,
+    multiSection: diffMultiSection,
+  });
   const previewData = ensureCvPreviewData(data);
   const existingSectionPresence = new Set((existingSections ?? []).map((s) => s.type.toLowerCase()));
   const mergedOptionalPresence = new Set([...(optionalSectionPresence ?? new Set<string>()), ...existingSectionPresence]);
   const vis = sectionVisibility ?? undefined;
-  const intlProps = {
-    data: previewData,
-    activeSection,
-    sectionVisibility: vis,
-    diffSection,
-    diffChangedFields,
-    onAcceptDiff,
-    onRejectDiff,
-    optionalSectionPresence: mergedOptionalPresence,
-  } as const;
   const wrapBusy = (node: React.ReactNode) => (
     <CvDiffActionsBusyContext.Provider value={diffActionsDisabled}>{node}</CvDiffActionsBusyContext.Provider>
   );
-  if (template === 'europass-classic') {
-    return wrapBusy(<EuropassClassicDoc {...intlProps} />);
-  }
-  if (template === 'europass-modern') {
-    return wrapBusy(<EuropassModernDoc {...intlProps} />);
-  }
-  if (template === 'french') {
-    return wrapBusy(<FrenchDoc {...intlProps} />);
-  }
-  if (template === 'german') {
-    return wrapBusy(<GermanDoc {...intlProps} />);
-  }
-  if (template === 'uk') {
-    return wrapBusy(<UkDoc {...intlProps} />);
+  if (template === 'onyx') {
+    return wrapBusy(
+      <OnyxCvDocument
+        data={previewData}
+        activeSection={activeSection}
+        sectionVisibility={vis}
+        diffSection={diffSection}
+        diffChangedFields={diffChangedFields}
+        onAcceptDiff={onAcceptDiff}
+        onRejectDiff={onRejectDiff}
+        optionalSectionPresence={mergedOptionalPresence}
+        sectionOrder={sectionOrder}
+        onReorderSections={onReorderSections}
+      />,
+    );
   }
   if (template === 'modern') {
     return wrapBusy(
@@ -372,7 +380,7 @@ function experienceItemWrapClass(activeSection: string | null | undefined, jobId
   const itemKey = `experience${CV_PREVIEW_ITEM_SEP}${jobId}`;
   const itemActive = activeSection === itemKey;
   return cn(
-    'relative rounded-[4px] transition-all duration-300',
+    'relative rounded-[4px] transition-[box-shadow] duration-200',
     itemActive ? 'ring-1 ring-inset ring-[rgba(0,201,177,0.35)]' : '',
   );
 }
@@ -395,8 +403,13 @@ function sectionBox(
   isOuterSectionActive?: (active: string | null | undefined) => boolean,
 ) {
   const isActive = isOuterSectionActive ? isOuterSectionActive(activeSection) : activeSection === id;
-  const isDiff = diffSection === id;
-  const hasChanges = isDiff && changedFields && changedFields.length > 0;
+  const { isDiff, fields: sectionChangedFields, sectionDiffIndex } =
+    resolveCvPreviewSectionDiff(id, diffSection, changedFields);
+  const hasChanges = isDiff && sectionChangedFields && sectionChangedFields.length > 0;
+  const sectionDiffCallbackIndex =
+    sectionDiffIndex != null && sectionDiffIndex >= 0
+      ? sectionDiffIndex
+      : undefined;
   const structuralPresent = cvStructuralDiffPayloadPresent(
     gCvDocPreviewStructuralBefore,
     gCvDocPreviewStructuralAfter,
@@ -421,7 +434,7 @@ function sectionBox(
       id={`cv-preview-${id}`}
       style={{ breakInside: 'avoid-page', pageBreakInside: 'avoid' }}
       className={cn(
-        'relative transition-all duration-300',
+        'relative transition-[box-shadow] duration-200',
         isActive && !isDiff ? 'rounded-[4px] ring-1 ring-inset ring-[rgba(0,201,177,0.35)]' : '',
         isDiff ? 'rounded-[4px] pb-1' : '',
         className,
@@ -441,8 +454,8 @@ function sectionBox(
             className="flex items-center justify-end gap-1.5"
             rejectLabel="✕ Reject all"
             acceptLabel="✓ Accept all"
-            onReject={() => onReject?.()}
-            onAccept={() => onAccept?.()}
+            onReject={() => onReject?.(sectionDiffCallbackIndex)}
+            onAccept={() => onAccept?.(sectionDiffCallbackIndex)}
           />
         </div>
       )}
@@ -453,8 +466,8 @@ function sectionBox(
             className="flex items-center justify-end gap-1.5"
             rejectLabel="✕ Reject all"
             acceptLabel="✓ Accept all"
-            onReject={() => onReject?.()}
-            onAccept={() => onAccept?.()}
+            onReject={() => onReject?.(sectionDiffCallbackIndex)}
+            onAccept={() => onAccept?.(sectionDiffCallbackIndex)}
           />
         </div>
       )}
@@ -463,38 +476,50 @@ function sectionBox(
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#047857]">
             AI Suggested Changes
           </p>
-          {changedFields!.map((cf, i) => (
+          {sectionChangedFields!.map((cf, i) => {
+            const sectionHint = id;
+            const beforeDisplay = coerceAiPatchToDisplayString(
+              cf.before,
+              sectionHint,
+              cf.fieldPath ?? cf.field ?? '',
+            );
+            const afterDisplay = coerceAiPatchToDisplayString(
+              cf.after,
+              sectionHint,
+              cf.fieldPath ?? cf.field ?? '',
+            );
+            const fieldCallbackIndex =
+              sectionDiffCallbackIndex ??
+              cf.sectionDiffIndex ??
+              (sectionChangedFields!.length === 1 ? undefined : i);
+            return (
             <div key={i} className="mb-2.5 rounded-lg border border-[#22C55E]/35 bg-[#ECFDF5] p-2.5 last:mb-0">
-              <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.08em] text-[#065F46]">
-                  {formatDiffTitle((cf.fieldLabel ?? cf.fieldPath ?? cf.field ?? '').trim())}
-              </span>
-              {cf.before ? (
-                <div className="mb-2 rounded-md border border-rose-300 bg-rose-50 px-2 py-1.5 text-[10px] leading-snug text-rose-700">
-                  <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-rose-500">Current version</p>
-                  <p className="max-h-[min(40vh,320px)] overflow-y-auto whitespace-pre-wrap break-words">{cf.before}</p>
-                </div>
-              ) : null}
-              {cf.after ? (
-                <div className="rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1.5 text-[10px] leading-snug text-emerald-800">
-                  <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-emerald-600">AI suggestion</p>
-                  <p className="max-h-[min(40vh,320px)] overflow-y-auto whitespace-pre-wrap break-words">{cf.after}</p>
-                </div>
-              ) : null}
+              <CvAiPatchDiffView
+                title={formatDiffTitle((cf.fieldLabel ?? cf.fieldPath ?? cf.field ?? '').trim())}
+                before={beforeDisplay}
+                after={afterDisplay}
+                compact
+              />
               <CvDiffActionPair
                 className="mt-2 flex items-center justify-end gap-1.5"
                 rejectLabel="✕ Reject"
                 acceptLabel="✓ Accept"
-                onReject={() => onReject?.(i)}
-                onAccept={() => onAccept?.(i)}
+                onReject={() => onReject?.(fieldCallbackIndex)}
+                onAccept={() => onAccept?.(fieldCallbackIndex)}
               />
             </div>
-          ))}
+            );
+          })}
           <CvDiffActionPair
             className="mt-3 flex items-center justify-end gap-1.5"
-            rejectLabel="✕ Reject all"
-            acceptLabel="✓ Accept all"
-            onReject={() => onReject?.()}
-            onAccept={() => onAccept?.()}
+            rejectLabel={
+              gCvDocPreviewDiffMultiSection ? '✕ Reject section' : '✕ Reject all'
+            }
+            acceptLabel={
+              gCvDocPreviewDiffMultiSection ? '✓ Accept section' : '✓ Accept all'
+            }
+            onReject={() => onReject?.(sectionDiffCallbackIndex)}
+            onAccept={() => onAccept?.(sectionDiffCallbackIndex)}
           />
         </div>
       )}
@@ -573,7 +598,7 @@ function projectPayloadBullets(project: unknown): string[] {
 }
 
 function normalizeBulletInput(value: string): string {
-  return value.replace(/\r?\n+/g, ' ').trim();
+  return normalizeEditableHtml(value);
 }
 
 /** True when the contenteditable has no visible text at keydown time (React value can still lag until blur). */
@@ -712,7 +737,8 @@ function ClassicDoc({
 
   const meaningfulExpCount = data.experience.items.filter((x) => x.title.trim() || x.company.trim()).length;
   const isRecentGrad = meaningfulExpCount <= 1;
-  const sectionTitle = (sectionId: string, fallback: string) => sectionTitleOverrides[sectionId] ?? fallback;
+  const sectionTitle = (sectionId: string, fallback: string) =>
+    resolveSectionDisplayTitle(sectionId, fallback, data, sectionTitleOverrides);
   const sectionIsActive = (sectionId: string) =>
     ctx?.focusedSection === sectionId || ctx?.focusedEntrySection === sectionId;
   const reorderPreviewSections = (targetSectionId: string) => {
@@ -836,7 +862,10 @@ function ClassicDoc({
                 placeholder={fallback}
                 sectionId={sectionId}
                 entryId={titleEntryId}
-                onChange={(v) => setSectionTitleOverrides((prev) => ({ ...prev, [sectionId]: v.trim() || fallback }))}
+                onChange={(v) => {
+                  const title = persistSectionTitleChange(sectionId, v, fallback, data, ctx?.onUpdate);
+                  setSectionTitleOverrides((prev) => ({ ...prev, [sectionId]: title }));
+                }}
                 className="font-bold uppercase text-black"
               />
             ) : (
@@ -963,7 +992,7 @@ function ClassicDoc({
                     />
                   </div>
                 ) : (
-                  data.summary.text.trim()
+                  <RichText text={data.summary.text} />
                 )}
               </div>
             </>,
@@ -1347,52 +1376,26 @@ function ClassicDoc({
                 ) : null}
                 <span>
                   {inline && ctx
-                    ? cat.skills.map((skill, skillIdx) => (
-                      <span key={`${cat.id}-skill-${skillIdx}`}>
-                        <InlineField
-                          value={skill}
-                          placeholder="Skill"
-                          sectionId="skills"
-                          entryId={cat.id}
-                          startEditingWhenEmpty
-                          onChange={(v) =>
-                            ctx.onUpdate({
-                              skills: {
-                                categories: data.skills.categories.map((row) =>
-                                  row.id === cat.id
-                                    ? { ...row, skills: row.skills.map((s, i) => (i === skillIdx ? v : s)) }
-                                    : row,
-                                ),
-                              },
-                            })
-                          }
-                          onInputKeyDown={(e) => {
-                            if (e.key === ',' || e.key === 'Tab') {
-                              e.preventDefault();
-                              ctx.onUpdate({
-                                skills: {
-                                  categories: data.skills.categories.map((row) =>
-                                    row.id === cat.id ? { ...row, skills: [...row.skills, ''] } : row,
-                                  ),
-                                },
-                              });
-                            }
-                            if (e.key === 'Backspace' && skill === '' && cat.skills.length > 1) {
-                              e.preventDefault();
-                              ctx.onUpdate({
-                                skills: {
-                                  categories: data.skills.categories.map((row) =>
-                                    row.id === cat.id ? { ...row, skills: row.skills.filter((_, i) => i !== skillIdx) } : row,
-                                  ),
-                                },
-                              });
-                            }
-                          }}
-                          className="text-black"
-                        />
-                        {skillIdx < cat.skills.length - 1 ? <span>, </span> : null}
-                      </span>
-                    ))
+                    ? (
+                      <InlineSkillsCommaField
+                        skills={cat.skills}
+                        onChange={(next) =>
+                          ctx.onUpdate({
+                            skills: {
+                              categories: data.skills.categories.map((row) =>
+                                row.id === cat.id ? { ...row, skills: next } : row,
+                              ),
+                            },
+                          })
+                        }
+                        onFocus={() => {
+                          ctx.setFocusedSection('skills');
+                          ctx.setFocusedEntryId(cat.id);
+                          ctx.setFocusedEntrySection('skills');
+                        }}
+                        className="text-black"
+                      />
+                    )
                     : cat.skills.join(', ')}
                 </span>
               </p>
@@ -1851,7 +1854,7 @@ function ClassicDoc({
             <div className="mt-1.5 space-y-1.5 text-left text-[9pt] leading-[1.32] text-black">
               {(inline && ctx ? data.projects : data.projects.filter((proj) => {
                 const pAny = proj as unknown as Record<string, unknown>;
-                return stripHtmlTags(proj.name || '').trim() || stripHtmlTags(proj.description || '').trim() || projectPayloadTech(pAny).length > 0 || projectPayloadBullets(pAny).length > 0 || (proj.url || '').trim();
+                return stripHtmlTags(proj.name || '').trim() || richTextPlainText(proj.description || '').length > 0 || projectPayloadTech(pAny).length > 0 || projectPayloadBullets(pAny).length > 0 || (proj.url || '').trim();
               })).map((proj, projIdx) => {
                 const pAny = proj as unknown as Record<string, unknown>;
                 const rawBullets =
@@ -1948,7 +1951,7 @@ function ClassicDoc({
                     ) : null}
                     <p className="font-bold">
                       {inline && ctx ? (
-                        <InlineField value={stripHtmlTags(proj.name || '')} placeholder="Project name" sectionId="projects" entryId={proj.id} onChange={(v) => ctx.onUpdate({ projects: data.projects.map((row) => row.id === proj.id ? { ...row, name: v } : row) })} className="font-bold text-black" />
+                        <InlineField value={proj.name || ''} placeholder="Project name" sectionId="projects" entryId={proj.id} onChange={(v) => ctx.onUpdate({ projects: data.projects.map((row) => row.id === proj.id ? { ...row, name: v } : row) })} className="font-bold text-black" />
                       ) : (
                         stripHtmlTags(proj.name || '') || 'Project'
                       )}
@@ -1995,7 +1998,7 @@ function ClassicDoc({
                         ) : null}
                       </p>
                     ) : null}
-                    {entryFieldOn(`projects:${proj.id}`, 'bullets') && (editLines.some((x) => stripHtmlTags(x).trim()) || inline) ? (
+                    {entryFieldOn(`projects:${proj.id}`, 'bullets') && (editLines.some((x) => richTextPlainText(x).length > 0) || inline) ? (
                       <ul className="mt-2 list-none space-y-0.5 pl-0 text-[9pt] leading-[1.35] text-black">
                         {(editLines.length > 0 ? editLines : ['']).map((b, bIdx) => (
                           <li key={`${proj.id}-b-${bIdx}`} className="flex items-start gap-1.5">
@@ -2393,7 +2396,7 @@ function ClassicDoc({
                     {inline && ctx?.focusedEntryId === l.id ? (
                       <EntryToolbar
                         sectionType="languages"
-                        onAddEntry={() => ctx.onUpdate({ languages: [...data.languages, { id: newLocalId(), language: '', proficiency: 'Intermediate' }] })}
+                        onAddEntry={() => ctx.onUpdate({ languages: [...data.languages, { id: newLocalId(), language: '', proficiency: '' }] })}
                         onMoveUp={() => {
                           if (lIdx === 0) return;
                           const next = [...data.languages];
@@ -2419,7 +2422,7 @@ function ClassicDoc({
                     <span className="font-semibold">
                       {inline && ctx ? <InlineField value={l.language} placeholder="Language" sectionId="languages" entryId={l.id} onChange={(v) => ctx.onUpdate({ languages: data.languages.map((row) => row.id === l.id ? { ...row, language: v } : row) })} className="font-semibold text-black" /> : lang}
                     </span>
-                    {inline && ctx ? <span className="shrink-0 text-black"><InlineField value={l.proficiency ?? ''} placeholder="Level" sectionId="languages" entryId={l.id} onChange={(v) => ctx.onUpdate({ languages: data.languages.map((row) => row.id === l.id ? { ...row, proficiency: v as CVBuilderLanguage['proficiency'] } : row) })} className="text-black" /></span> : (level ? <span className="shrink-0 text-black">{level}</span> : null)}
+                    {inline && ctx ? <span className="shrink-0 text-black"><InlineField value={l.proficiency ?? ''} placeholder="e.g. Fluent, Intermediate" sectionId="languages" entryId={l.id} onChange={(v) => ctx.onUpdate({ languages: data.languages.map((row) => row.id === l.id ? { ...row, proficiency: v as CVBuilderLanguage['proficiency'] } : row) })} className="text-black" /></span> : (level ? <span className="shrink-0 text-black">{level}</span> : null)}
                   </li>
                 );
               })}
@@ -2428,7 +2431,7 @@ function ClassicDoc({
                   <button
                     type="button"
                     className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
-                    onClick={() => ctx.onUpdate({ languages: [{ id: newLocalId(), language: '', proficiency: 'Intermediate' }] })}
+                    onClick={() => ctx.onUpdate({ languages: [{ id: newLocalId(), language: '', proficiency: '' }] })}
                   >
                     + Click to add language
                   </button>
@@ -2446,7 +2449,11 @@ function ClassicDoc({
       : null;
 
   const referencesEl =
-    optionalSectionShown(optionalSectionPresence, 'references', data.references.length > 0) && vis('references')
+    optionalSectionShown(
+      optionalSectionPresence,
+      'references',
+      filterCvBuilderReferences(data.references).length > 0 || Boolean(inline && ctx),
+    ) && vis('references')
       ? (
         <CVSectionWrapper sectionId="references">
           {sectionBox(
@@ -2455,19 +2462,11 @@ function ClassicDoc({
             'mb-3',
             <>
               {renderSectionTitle('references', 'References', () => ctx?.onUpdate({ references: [] }))}
-              <div className="mt-1.5 space-y-1.5 text-left text-[9pt] leading-[1.32] text-black">
-                {(inline && ctx ? data.references : data.references.filter((r) =>
-                  r.name.trim() || r.title.trim() || r.company.trim() || r.email.trim() || r.phone.trim(),
-                )).map((r) => (
-                  <p key={r.id}>
-                    <span className="font-bold">{r.name.trim() || 'Reference'}</span>
-                    {r.title.trim() ? <span> · {r.title.trim()}</span> : null}
-                    {r.company.trim() ? <span> · {r.company.trim()}</span> : null}
-                    {r.email.trim() ? <span> · {r.email.trim()}</span> : null}
-                    {r.phone.trim() ? <span> · {r.phone.trim()}</span> : null}
-                  </p>
-                ))}
-              </div>
+              <CvEditableReferencesList
+                references={data.references}
+                layout="compact"
+                textClassName="text-left text-[9pt] leading-[1.32] text-black"
+              />
             </>,
             diffSection,
             diffChangedFields,
@@ -2479,7 +2478,7 @@ function ClassicDoc({
       : null;
 
   const customEl =
-    (inline || data.customSections.some((x) => x.title.trim() || x.body.trim())) && vis('custom-legacy')
+    shouldRenderCustomLegacySection(data, inline) && vis('custom-legacy')
       ? (
         <CVSectionWrapper sectionId="custom-legacy">
           {sectionBox(
@@ -2555,7 +2554,7 @@ function ClassicDoc({
       : null;
 
   const parsedByKey: Record<string, ReactNode> = {};
-  const parsedEls = data.parsedCustomSections.map((block) => {
+  const parsedEls = filterParsedCustomSectionsForEditor(data.parsedCustomSections).map((block) => {
     const node =
       block.title.trim() || block.items.some((i) => i.text.trim() || i.subItems.length) ? (
       <Fragment key={block.sectionId}>
@@ -2708,7 +2707,7 @@ function ClassicDoc({
                             <p className="font-bold">
                               <InlineField
                                 value={item.text}
-                                placeholder="Item title"
+                                placeholder={parsedCustomMainPlaceholder(block.sectionType)}
                                 sectionId={`parsed-${block.sectionId}`}
                                 entryId={item.id}
                                 onChange={(v) =>
@@ -2791,7 +2790,7 @@ function ClassicDoc({
                                               ),
                                             });
                                           }
-                                          if (e.key === 'Backspace' && line === '' && (item.subItems.length || 1) > 1) {
+                                          if (e.key === 'Backspace' && cvBulletFieldDomIsEmpty(e) && (item.subItems.length || 1) > 1) {
                                             e.preventDefault();
                                             ctx.onUpdate({
                                               parsedCustomSections: data.parsedCustomSections.map((b) =>
@@ -3228,7 +3227,8 @@ function ModernDoc({
     </h3>
   );
 
-  const sectionTitle = (sectionId: string, fallback: string) => sectionTitleOverrides[sectionId] ?? fallback;
+  const sectionTitle = (sectionId: string, fallback: string) =>
+    resolveSectionDisplayTitle(sectionId, fallback, data, sectionTitleOverrides);
   const sectionIsActive = (sectionId: string) =>
     ctx?.focusedSection === sectionId || ctx?.focusedEntrySection === sectionId;
   const reorderPreviewSections = (targetSectionId: string) => {
@@ -3360,7 +3360,10 @@ function ModernDoc({
               placeholder={fallback}
               sectionId={sectionId}
               entryId={titleEntryId}
-              onChange={(v) => setSectionTitleOverrides((prev) => ({ ...prev, [sectionId]: v.trim() || fallback }))}
+              onChange={(v) => {
+                const title = persistSectionTitleChange(sectionId, v, fallback, data, ctx?.onUpdate);
+                setSectionTitleOverrides((prev) => ({ ...prev, [sectionId]: title }));
+              }}
               className="font-bold uppercase"
             />
           ) : (
@@ -3757,50 +3760,24 @@ function ModernDoc({
                   <span className="font-bold">{cat.name.trim()}: </span>
                 ) : null}
                 <span className="font-normal">
-                  {cat.skills.map((skill, skillIdx) => (
-                    <span key={`${cat.id}-skill-${skillIdx}`}>
-                      <InlineField
-                        value={skill}
-                        placeholder="Skill"
-                        sectionId="skills"
-                        entryId={cat.id}
-                        startEditingWhenEmpty
-                        onChange={(v) =>
-                          ctx.onUpdate({
-                            skills: {
-                              categories: data.skills.categories.map((row) =>
-                                row.id === cat.id ? { ...row, skills: row.skills.map((s, i) => (i === skillIdx ? v : s)) } : row,
-                              ),
-                            },
-                          })
-                        }
-                        onInputKeyDown={(e) => {
-                          if (e.key === ',' || e.key === 'Tab') {
-                            e.preventDefault();
-                            ctx.onUpdate({
-                              skills: {
-                                categories: data.skills.categories.map((row) =>
-                                  row.id === cat.id ? { ...row, skills: [...row.skills, ''] } : row,
-                                ),
-                              },
-                            });
-                          }
-                          if (e.key === 'Backspace' && skill === '' && cat.skills.length > 1) {
-                            e.preventDefault();
-                            ctx.onUpdate({
-                              skills: {
-                                categories: data.skills.categories.map((row) =>
-                                  row.id === cat.id ? { ...row, skills: row.skills.filter((_, i) => i !== skillIdx) } : row,
-                                ),
-                              },
-                            });
-                          }
-                        }}
-                        className="text-[#374151]"
-                      />
-                      {skillIdx < cat.skills.length - 1 ? <span>, </span> : null}
-                    </span>
-                  ))}
+                  <InlineSkillsCommaField
+                    skills={cat.skills}
+                    onChange={(next) =>
+                      ctx.onUpdate({
+                        skills: {
+                          categories: data.skills.categories.map((row) =>
+                            row.id === cat.id ? { ...row, skills: next } : row,
+                          ),
+                        },
+                      })
+                    }
+                    onFocus={() => {
+                      ctx.setFocusedSection('skills');
+                      ctx.setFocusedEntryId(cat.id);
+                      ctx.setFocusedEntrySection('skills');
+                    }}
+                    className="text-[#374151]"
+                  />
                 </span>
               </p>
             </div>
@@ -3820,7 +3797,7 @@ function ModernDoc({
               type="button"
               className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
               onClick={() =>
-                ctx.onUpdate({ languages: [{ id: newLocalId(), language: '', proficiency: 'Intermediate' }] })
+                ctx.onUpdate({ languages: [{ id: newLocalId(), language: '', proficiency: '' }] })
               }
             >
               + Click to add language
@@ -3853,7 +3830,7 @@ function ModernDoc({
                     sectionType="languages"
                     onAddEntry={() =>
                       ctx.onUpdate({
-                        languages: [...data.languages, { id: newLocalId(), language: '', proficiency: 'Intermediate' }],
+                        languages: [...data.languages, { id: newLocalId(), language: '', proficiency: '' }],
                       })
                     }
                     onMoveUp={() => {
@@ -3906,7 +3883,7 @@ function ModernDoc({
                       <span className="shrink-0 text-black/60">
                         <InlineField
                           value={l.proficiency ?? ''}
-                          placeholder="Level"
+                          placeholder="e.g. Fluent, Intermediate"
                           sectionId="languages"
                           entryId={l.id}
                           onChange={(v) =>
@@ -4191,7 +4168,7 @@ function ModernDoc({
                 />
               </div>
             ) : (
-              data.summary.text.trim()
+              <RichText text={data.summary.text} />
             )}
           </div>
         </>,
@@ -4956,7 +4933,7 @@ function ModernDoc({
                       ) : null}
                       <p className="font-bold">
                         <InlineField
-                          value={stripHtmlTags(pr.name)}
+                          value={pr.name || ''}
                           placeholder="Project name"
                           sectionId="projects"
                           entryId={pr.id}
@@ -5348,7 +5325,7 @@ function ModernDoc({
     ) : null;
 
   const mainCustom =
-    (inline || data.customSections.some((x) => x.title.trim() || x.body.trim())) && vis('custom-legacy') ? (
+    shouldRenderCustomLegacySection(data, inline) && vis('custom-legacy') ? (
       <CVSectionWrapper sectionId="custom-legacy">
       {sectionBox(
         'custom-legacy',
@@ -5449,7 +5426,7 @@ function ModernDoc({
     ) : null;
 
   const parsedMainByKey: Record<string, ReactNode> = {};
-  const mainParsed = data.parsedCustomSections.map((block) => {
+  const mainParsed = filterParsedCustomSectionsForEditor(data.parsedCustomSections).map((block) => {
     const node =
       block.title.trim() || block.items.some((i) => i.text.trim() || i.subItems.length) ? (
       <Fragment key={block.sectionId}>
@@ -5602,7 +5579,7 @@ function ModernDoc({
                             <p className="font-semibold">
                               <InlineField
                                 value={item.text}
-                                placeholder="Item title"
+                                placeholder={parsedCustomMainPlaceholder(block.sectionType)}
                                 sectionId={`parsed-${block.sectionId}`}
                                 entryId={item.id}
                                 onChange={(v) =>
@@ -5685,7 +5662,7 @@ function ModernDoc({
                                               ),
                                             });
                                           }
-                                          if (e.key === 'Backspace' && line === '' && (item.subItems.length || 1) > 1) {
+                                          if (e.key === 'Backspace' && cvBulletFieldDomIsEmpty(e) && (item.subItems.length || 1) > 1) {
                                             e.preventDefault();
                                             ctx.onUpdate({
                                               parsedCustomSections: data.parsedCustomSections.map((b) =>
@@ -5795,11 +5772,14 @@ function ModernDoc({
     'achievements',
     'references',
   ] as const;
-  const parsedKeysOrderedModern = data.parsedCustomSections
-    .filter((b) => b.title.trim() || b.items.some((i) => i.text.trim() || i.subItems.length))
-    .map((b) => `parsed-${b.sectionId}`);
+  const parsedKeysOrderedModern = orderedParsedPreviewKeys(
+    sectionOrder,
+    filterParsedCustomSectionsForEditor(data.parsedCustomSections).filter(
+      (b) => b.title.trim() || b.items.some((i) => i.text.trim() || i.subItems.length) || Boolean(inline && ctx),
+    ),
+  );
   const showCustomModern =
-    (inline || data.customSections.some((x) => x.title.trim() || x.body.trim())) && vis('custom-legacy');
+    shouldRenderCustomLegacySection(data, inline) && vis('custom-legacy');
   const defaultModernMainWalk = [
     'summary',
     'experience',
@@ -5902,7 +5882,11 @@ function ModernDoc({
             }
             if (id === 'references') {
               return vis('references') &&
-                optionalSectionShown(optionalSectionPresence, 'references', data.references.length > 0 || Boolean(inline && ctx)) ? (
+                optionalSectionShown(
+                  optionalSectionPresence,
+                  'references',
+                  filterCvBuilderReferences(data.references).length > 0 || Boolean(inline && ctx),
+                ) ? (
                 <CVSectionWrapper key={id} sectionId="references">
                   {sectionBox(
                     'references',
@@ -5910,19 +5894,11 @@ function ModernDoc({
                     '',
                     <>
                       {renderSectionTitle('references', 'References', () => ctx?.onUpdate({ references: [] }))}
-                      <div className="mt-1.5 space-y-1.5 text-[9pt] leading-[1.32] text-black">
-                        {(inline && ctx ? data.references : data.references.filter((r) =>
-                          r.name.trim() || r.title.trim() || r.company.trim() || r.email.trim() || r.phone.trim(),
-                        )).map((r) => (
-                          <p key={r.id}>
-                            <span className="font-semibold">{r.name.trim() || 'Reference'}</span>
-                            {r.title.trim() ? <span> · {r.title.trim()}</span> : null}
-                            {r.company.trim() ? <span> · {r.company.trim()}</span> : null}
-                            {r.email.trim() ? <span> · {r.email.trim()}</span> : null}
-                            {r.phone.trim() ? <span> · {r.phone.trim()}</span> : null}
-                          </p>
-                        ))}
-                      </div>
+                      <CvEditableReferencesList
+                        references={data.references}
+                        layout="compact"
+                        textClassName="text-[9pt] leading-[1.32] text-black"
+                      />
                     </>,
                     diffSection,
                     diffChangedFields,
@@ -6055,7 +6031,8 @@ function CreativeDoc({
     </div>
   );
 
-  const sectionTitle = (sectionId: string, fallback: string) => sectionTitleOverrides[sectionId] ?? fallback;
+  const sectionTitle = (sectionId: string, fallback: string) =>
+    resolveSectionDisplayTitle(sectionId, fallback, data, sectionTitleOverrides);
   const sectionIsActive = (sectionId: string) =>
     ctx?.focusedSection === sectionId || ctx?.focusedEntrySection === sectionId;
   const reorderPreviewSections = (targetSectionId: string) => {
@@ -6184,7 +6161,10 @@ function CreativeDoc({
               placeholder={fallback}
               sectionId={sectionId}
               entryId={titleEntryId}
-              onChange={(v) => setSectionTitleOverrides((prev) => ({ ...prev, [sectionId]: v.trim() || fallback }))}
+              onChange={(v) => {
+                const title = persistSectionTitleChange(sectionId, v, fallback, data, ctx?.onUpdate);
+                setSectionTitleOverrides((prev) => ({ ...prev, [sectionId]: title }));
+              }}
               className="font-bold uppercase"
             />
           ) : (
@@ -6508,7 +6488,7 @@ function CreativeDoc({
                       />
                     </div>
                   ) : (
-                    data.summary.text.trim()
+                    <RichText text={data.summary.text} />
                   )}
                 </div>
               </>,
@@ -7249,52 +7229,24 @@ function CreativeDoc({
                             <span className="mb-1.5 block text-[11px] font-bold text-[#007A7B]">{cat.name.trim()}</span>
                           ) : null}
                           {inline && ctx ? (
-                            <span>
-                              {cat.skills.map((skill, skillIdx) => (
-                                <span key={`${cat.id}-skill-${skillIdx}`}>
-                                  <InlineField
-                                    value={skill}
-                                    placeholder="Skill"
-                                    sectionId="skills"
-                                    entryId={cat.id}
-                                    startEditingWhenEmpty
-                                    onChange={(v) =>
-                                      ctx.onUpdate({
-                                        skills: {
-                                          categories: data.skills.categories.map((row) =>
-                                            row.id === cat.id ? { ...row, skills: row.skills.map((s, i) => (i === skillIdx ? v : s)) } : row,
-                                          ),
-                                        },
-                                      })
-                                    }
-                                    onInputKeyDown={(e) => {
-                                      if (e.key === ',' || e.key === 'Tab') {
-                                        e.preventDefault();
-                                        ctx.onUpdate({
-                                          skills: {
-                                            categories: data.skills.categories.map((row) =>
-                                              row.id === cat.id ? { ...row, skills: [...row.skills, ''] } : row,
-                                            ),
-                                          },
-                                        });
-                                      }
-                                      if (e.key === 'Backspace' && skill === '' && cat.skills.length > 1) {
-                                        e.preventDefault();
-                                        ctx.onUpdate({
-                                          skills: {
-                                            categories: data.skills.categories.map((row) =>
-                                              row.id === cat.id ? { ...row, skills: row.skills.filter((_, i) => i !== skillIdx) } : row,
-                                            ),
-                                          },
-                                        });
-                                      }
-                                    }}
-                                    className="text-[#1a1a1a]"
-                                  />
-                                  {skillIdx < cat.skills.length - 1 ? <span>, </span> : null}
-                                </span>
-                              ))}
-                            </span>
+                            <InlineSkillsCommaField
+                              skills={cat.skills}
+                              onChange={(next) =>
+                                ctx.onUpdate({
+                                  skills: {
+                                    categories: data.skills.categories.map((row) =>
+                                      row.id === cat.id ? { ...row, skills: next } : row,
+                                    ),
+                                  },
+                                })
+                              }
+                              onFocus={() => {
+                                ctx.setFocusedSection('skills');
+                                ctx.setFocusedEntryId(cat.id);
+                                ctx.setFocusedEntrySection('skills');
+                              }}
+                              className="text-[#1a1a1a]"
+                            />
                           ) : (
                             <div className="flex flex-wrap">
                               {cat.skills
@@ -7339,7 +7291,7 @@ function CreativeDoc({
                         const pAny = proj as unknown as Record<string, unknown>;
                         return (
                           stripHtmlTags(proj.name || '').trim() ||
-                          stripHtmlTags(proj.description || '').trim() ||
+                          richTextPlainText(proj.description || '').length > 0 ||
                           projectPayloadTech(pAny).length > 0 ||
                           projectPayloadBullets(pAny).length > 0 ||
                           (proj.url || '').trim()
@@ -7442,7 +7394,7 @@ function CreativeDoc({
                         <p className="font-bold">
                           {inline && ctx ? (
                             <InlineField
-                              value={stripHtmlTags(proj.name || '')}
+                              value={proj.name || ''}
                               placeholder="Project name"
                               sectionId="projects"
                               entryId={proj.id}
@@ -7521,7 +7473,7 @@ function CreativeDoc({
                             ) : null}
                           </p>
                         ) : null}
-                        {entryFieldOn(`projects:${proj.id}`, 'bullets') && (editLines.some((x) => stripHtmlTags(x).trim()) || inline) ? (
+                        {entryFieldOn(`projects:${proj.id}`, 'bullets') && (editLines.some((x) => richTextPlainText(x).length > 0) || inline) ? (
                           <ul className="mt-2 list-none space-y-0.5 pl-0 text-[9.5pt] leading-[1.35] text-[#1a1a1a]">
                             {(editLines.length > 0 ? editLines : ['']).map((b, bIdx) => (
                               <li key={`${proj.id}-b-${bIdx}`} className="flex items-start gap-1.5">
@@ -7844,7 +7796,7 @@ function CreativeDoc({
                             <EntryToolbar
                               sectionType="languages"
                               onAddEntry={() =>
-                                ctx.onUpdate({ languages: [...data.languages, { id: newLocalId(), language: '', proficiency: 'Intermediate' }] })
+                                ctx.onUpdate({ languages: [...data.languages, { id: newLocalId(), language: '', proficiency: '' }] })
                               }
                               onMoveUp={() => {
                                 if (lIdx === 0) return;
@@ -7888,7 +7840,7 @@ function CreativeDoc({
                             <span className="shrink-0 text-[#1a1a1a]/75">
                               <InlineField
                                 value={l.proficiency ?? ''}
-                                placeholder="Level"
+                                placeholder="e.g. Fluent, Intermediate"
                                 sectionId="languages"
                                 entryId={l.id}
                                 onChange={(v) =>
@@ -7914,7 +7866,7 @@ function CreativeDoc({
                         type="button"
                         className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
                         onClick={() =>
-                          ctx.onUpdate({ languages: [{ id: newLocalId(), language: '', proficiency: 'Intermediate' }] })
+                          ctx.onUpdate({ languages: [{ id: newLocalId(), language: '', proficiency: '' }] })
                         }
                       >
                         + Click to add language
@@ -8073,7 +8025,11 @@ function CreativeDoc({
         </div>
 
         <div style={{ order: creativeOrd('references', 8) }} className="min-w-0">
-        {optionalSectionShown(optionalSectionPresence, 'references', data.references.length > 0 || Boolean(inline && ctx)) && vis('references')
+        {optionalSectionShown(
+          optionalSectionPresence,
+          'references',
+          filterCvBuilderReferences(data.references).length > 0 || Boolean(inline && ctx),
+        ) && vis('references')
           ? (
             <CVSectionWrapper sectionId="references">
               {sectionBox(
@@ -8082,146 +8038,12 @@ function CreativeDoc({
                 'mb-3',
                 <>
                   {renderSectionTitle('references', 'References', () => ctx?.onUpdate({ references: [] }))}
-                  <div className="mt-2.5 space-y-1.5 text-left text-[9.5pt] leading-[1.32] text-[#1a1a1a]">
-                    {(inline && ctx
-                      ? data.references
-                      : data.references.filter((r) => r.name.trim() || r.title.trim() || r.company.trim() || r.email.trim() || r.phone.trim())
-                    ).map((r, rIdx) => (
-                      <div
-                        key={r.id}
-                        data-entry-id={r.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          ctx?.setFocusedSection('references');
-                          ctx?.setFocusedEntryId(r.id);
-                          ctx?.setFocusedEntrySection('references');
-                        }}
-                        style={{
-                          outline: ctx?.focusedEntryId === r.id ? '1.5px dashed #00C9B1' : 'none',
-                          outlineOffset: '3px',
-                          borderRadius: '3px',
-                          position: 'relative',
-                        }}
-                      >
-                        {inline && ctx?.focusedEntryId === r.id ? (
-                          <EntryToolbar
-                            sectionType="references"
-                            onAddEntry={() =>
-                              ctx.onUpdate({
-                                references: [
-                                  ...data.references,
-                                  { id: newLocalId(), name: '', title: '', company: '', email: '', phone: '' },
-                                ],
-                              })
-                            }
-                            onMoveUp={() => {
-                              if (rIdx === 0) return;
-                              const next = [...data.references];
-                              [next[rIdx - 1], next[rIdx]] = [next[rIdx], next[rIdx - 1]];
-                              ctx.onUpdate({ references: next });
-                            }}
-                            onMoveDown={() => {
-                              if (rIdx >= data.references.length - 1) return;
-                              const next = [...data.references];
-                              [next[rIdx], next[rIdx + 1]] = [next[rIdx + 1], next[rIdx]];
-                              ctx.onUpdate({ references: next });
-                            }}
-                            onDelete={() => {
-                              ctx.onUpdate({ references: data.references.filter((row) => row.id !== r.id) });
-                              ctx.setFocusedEntryId(null);
-                              ctx.setFocusedEntrySection(null);
-                            }}
-                            showMoveUp={rIdx > 0}
-                            showMoveDown={rIdx < data.references.length - 1}
-                            showDatePicker={false}
-                          />
-                        ) : null}
-                        <p>
-                          <span className="font-semibold">
-                            {inline && ctx ? (
-                              <InlineField
-                                value={r.name}
-                                placeholder="Reference name"
-                                sectionId="references"
-                                entryId={r.id}
-                                onChange={(v) =>
-                                  ctx.onUpdate({
-                                    references: data.references.map((row) => (row.id === r.id ? { ...row, name: v } : row)),
-                                  })
-                                }
-                                className="font-semibold text-[#1a1a1a]"
-                              />
-                            ) : (
-                              r.name.trim() || 'Reference'
-                            )}
-                          </span>
-                          {inline && ctx ? (
-                            <>
-                              <span className="text-[#1a1a1a]/75"> · </span>
-                              <InlineField
-                                value={r.title}
-                                placeholder="Title"
-                                sectionId="references"
-                                entryId={r.id}
-                                onChange={(v) =>
-                                  ctx.onUpdate({
-                                    references: data.references.map((row) => (row.id === r.id ? { ...row, title: v } : row)),
-                                  })
-                                }
-                                className="text-[#1a1a1a]"
-                              />
-                              <span className="text-[#1a1a1a]/75"> · </span>
-                              <InlineField
-                                value={r.company}
-                                placeholder="Company"
-                                sectionId="references"
-                                entryId={r.id}
-                                onChange={(v) =>
-                                  ctx.onUpdate({
-                                    references: data.references.map((row) => (row.id === r.id ? { ...row, company: v } : row)),
-                                  })
-                                }
-                                className="text-[#1a1a1a]"
-                              />
-                              <span className="text-[#1a1a1a]/75"> · </span>
-                              <InlineField
-                                value={r.email}
-                                placeholder="Email"
-                                sectionId="references"
-                                entryId={r.id}
-                                onChange={(v) =>
-                                  ctx.onUpdate({
-                                    references: data.references.map((row) => (row.id === r.id ? { ...row, email: v } : row)),
-                                  })
-                                }
-                                className="text-[#1a1a1a]"
-                              />
-                              <span className="text-[#1a1a1a]/75"> · </span>
-                              <InlineField
-                                value={r.phone}
-                                placeholder="Phone"
-                                sectionId="references"
-                                entryId={r.id}
-                                onChange={(v) =>
-                                  ctx.onUpdate({
-                                    references: data.references.map((row) => (row.id === r.id ? { ...row, phone: v } : row)),
-                                  })
-                                }
-                                className="text-[#1a1a1a]"
-                              />
-                            </>
-                          ) : (
-                            <>
-                              {r.title.trim() ? <span> · {r.title.trim()}</span> : null}
-                              {r.company.trim() ? <span> · {r.company.trim()}</span> : null}
-                              {r.email.trim() ? <span> · {r.email.trim()}</span> : null}
-                              {r.phone.trim() ? <span> · {r.phone.trim()}</span> : null}
-                            </>
-                          )}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                  <CvEditableReferencesList
+                    references={data.references}
+                    layout="inline-separated"
+                    textClassName="text-left text-[9.5pt] leading-[1.32] text-[#1a1a1a]"
+                    className="mt-2.5"
+                  />
                 </>,
                 diffSection,
                 diffChangedFields,
@@ -8234,7 +8056,7 @@ function CreativeDoc({
         </div>
 
         <div style={{ order: creativeOrd('custom-legacy', 9) }} className="min-w-0">
-        {(inline || data.customSections.some((x) => x.title.trim() || x.body.trim())) && vis('custom-legacy')
+        {shouldRenderCustomLegacySection(data, inline) && vis('custom-legacy')
           ? (
             <CVSectionWrapper sectionId="custom-legacy">
               {sectionBox(
@@ -8333,7 +8155,7 @@ function CreativeDoc({
           : null}
         </div>
 
-        {data.parsedCustomSections.map((block, blockIdx) =>
+        {filterParsedCustomSectionsForEditor(data.parsedCustomSections).map((block, blockIdx) =>
           block.title.trim() || block.items.some((i) => i.text.trim() || i.subItems.length) ? (
             <div
               key={block.sectionId}
@@ -8490,7 +8312,7 @@ function CreativeDoc({
                                   <div className="font-bold">
                                     <InlineField
                                       value={item.text}
-                                      placeholder="Item title"
+                                      placeholder={parsedCustomMainPlaceholder(block.sectionType)}
                                       sectionId={`parsed-${block.sectionId}`}
                                       entryId={item.id}
                                       onChange={(v) =>
@@ -8573,7 +8395,7 @@ function CreativeDoc({
                                                     ),
                                                   });
                                                 }
-                                                if (e.key === 'Backspace' && line === '' && (item.subItems.length || 1) > 1) {
+                                                if (e.key === 'Backspace' && cvBulletFieldDomIsEmpty(e) && (item.subItems.length || 1) > 1) {
                                                   e.preventDefault();
                                                   ctx.onUpdate({
                                                     parsedCustomSections: data.parsedCustomSections.map((b) =>
@@ -8805,7 +8627,8 @@ function ProfessionalDoc({
     }));
   };
 
-  const sectionTitle = (sectionId: string, fallback: string) => sectionTitleOverrides[sectionId] ?? fallback;
+  const sectionTitle = (sectionId: string, fallback: string) =>
+    resolveSectionDisplayTitle(sectionId, fallback, data, sectionTitleOverrides);
   const sectionIsActive = (sectionId: string) =>
     ctx?.focusedSection === sectionId || ctx?.focusedEntrySection === sectionId;
 
@@ -8935,7 +8758,10 @@ function ProfessionalDoc({
               placeholder={fallback}
               sectionId={sectionId}
               entryId={titleEntryId}
-              onChange={(v) => setSectionTitleOverrides((prev) => ({ ...prev, [sectionId]: v.trim() || fallback }))}
+              onChange={(v) => {
+                const title = persistSectionTitleChange(sectionId, v, fallback, data, ctx?.onUpdate);
+                setSectionTitleOverrides((prev) => ({ ...prev, [sectionId]: title }));
+              }}
               className="font-extrabold uppercase text-black"
             />
           ) : (
@@ -9628,57 +9454,24 @@ function ProfessionalDoc({
                     ) : null}
                     <span className="font-normal">
                       {inline && ctx ? (
-                        cat.skills.map((skill, skillIdx) => (
-                          <span key={`${cat.id}-skill-${skillIdx}`}>
-                            <InlineField
-                              value={skill}
-                              placeholder="Skill"
-                              sectionId="skills"
-                              entryId={cat.id}
-                              startEditingWhenEmpty
-                              onChange={(v) =>
-                                ctx.onUpdate({
-                                  skills: {
-                                    categories: data.skills.categories.map((row) =>
-                                      row.id === cat.id
-                                        ? {
-                                            ...row,
-                                            skills: row.skills.map((s, i) => (i === skillIdx ? v : s)),
-                                          }
-                                        : row,
-                                    ),
-                                  },
-                                })
-                              }
-                              onInputKeyDown={(e) => {
-                                if (e.key === ',' || e.key === 'Tab') {
-                                  e.preventDefault();
-                                  ctx.onUpdate({
-                                    skills: {
-                                      categories: data.skills.categories.map((row) =>
-                                        row.id === cat.id ? { ...row, skills: [...row.skills, ''] } : row,
-                                      ),
-                                    },
-                                  });
-                                }
-                                if (e.key === 'Backspace' && skill === '' && cat.skills.length > 1) {
-                                  e.preventDefault();
-                                  ctx.onUpdate({
-                                    skills: {
-                                      categories: data.skills.categories.map((row) =>
-                                        row.id === cat.id
-                                          ? { ...row, skills: row.skills.filter((_, i) => i !== skillIdx) }
-                                          : row,
-                                      ),
-                                    },
-                                  });
-                                }
-                              }}
-                              className="text-black"
-                            />
-                            {skillIdx < cat.skills.length - 1 ? <span>, </span> : null}
-                          </span>
-                        ))
+                        <InlineSkillsCommaField
+                          skills={cat.skills}
+                          onChange={(next) =>
+                            ctx.onUpdate({
+                              skills: {
+                                categories: data.skills.categories.map((row) =>
+                                  row.id === cat.id ? { ...row, skills: next } : row,
+                                ),
+                              },
+                            })
+                          }
+                          onFocus={() => {
+                            ctx.setFocusedSection('skills');
+                            ctx.setFocusedEntryId(cat.id);
+                            ctx.setFocusedEntrySection('skills');
+                          }}
+                          className="text-black"
+                        />
                       ) : (
                         cat.skills.join(', ')
                       )}
@@ -10255,7 +10048,7 @@ function ProfessionalDoc({
                       ) : null}
                       <p className="font-extrabold">
                         <InlineField
-                          value={stripHtmlTags(pr.name)}
+                          value={pr.name || ''}
                           placeholder="Project name"
                           sectionId="projects"
                           entryId={pr.id}
@@ -10656,7 +10449,7 @@ function ProfessionalDoc({
                   className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
                   onClick={() =>
                     ctx.onUpdate({
-                      languages: [{ id: newLocalId(), language: '', proficiency: 'Intermediate' }],
+                      languages: [{ id: newLocalId(), language: '', proficiency: '' }],
                     })
                   }
                 >
@@ -10686,7 +10479,7 @@ function ProfessionalDoc({
                       sectionType="languages"
                       onAddEntry={() =>
                         ctx.onUpdate({
-                          languages: [...data.languages, { id: newLocalId(), language: '', proficiency: 'Intermediate' }],
+                          languages: [...data.languages, { id: newLocalId(), language: '', proficiency: '' }],
                         })
                       }
                       onMoveUp={() => {
@@ -10738,7 +10531,7 @@ function ProfessionalDoc({
                           <span> — </span>
                           <InlineField
                             value={l.proficiency ?? ''}
-                            placeholder="Level"
+                            placeholder="e.g. Fluent, Intermediate"
                             sectionId="languages"
                             entryId={l.id}
                             onChange={(v) =>
@@ -10771,7 +10564,11 @@ function ProfessionalDoc({
     ) : null;
 
   const referencesEl =
-    optionalSectionShown(optionalSectionPresence, 'references', data.references.length > 0) && vis('references') ? (
+    optionalSectionShown(
+      optionalSectionPresence,
+      'references',
+      filterCvBuilderReferences(data.references).length > 0 || Boolean(inline && ctx),
+    ) && vis('references') ? (
       <CVSectionWrapper sectionId="references">
       {sectionBox(
         'references',
@@ -10781,19 +10578,12 @@ function ProfessionalDoc({
           {renderSectionTitle('references', 'References', () =>
             ctx?.onUpdate({ references: [] })
           )}
-          <div className="mt-1.5 space-y-1.5 text-[8.5pt] leading-tight text-black" style={{ fontFamily: professionalFont }}>
-            {(inline && ctx ? data.references : data.references.filter((r) =>
-              r.name.trim() || r.title.trim() || r.company.trim() || r.email.trim() || r.phone.trim(),
-            )).map((r) => (
-              <p key={r.id}>
-                <span className="font-extrabold">{r.name.trim() || 'Reference'}</span>
-                {r.title.trim() ? <span> · {r.title.trim()}</span> : null}
-                {r.company.trim() ? <span> · {r.company.trim()}</span> : null}
-                {r.email.trim() ? <span> · {r.email.trim()}</span> : null}
-                {r.phone.trim() ? <span> · {r.phone.trim()}</span> : null}
-              </p>
-            ))}
-          </div>
+          <CvEditableReferencesList
+            references={data.references}
+            layout="compact"
+            textClassName="text-[8.5pt] leading-tight text-black"
+            className="leading-tight"
+          />
         </>,
         diffSection,
         diffChangedFields,
@@ -10860,7 +10650,7 @@ function ProfessionalDoc({
                   />
                 </div>
               ) : (
-                data.summary.text.trim()
+                <RichText text={data.summary.text} />
               )}
             </div>
           </>,
@@ -10873,7 +10663,7 @@ function ProfessionalDoc({
     ) : null;
 
   const parsedByKey: Record<string, ReactNode> = {};
-  const parsedEls = data.parsedCustomSections.map((block) => {
+  const parsedEls = filterParsedCustomSectionsForEditor(data.parsedCustomSections).map((block) => {
     const node =
       block.title.trim() || block.items.some((i) => i.text.trim() || i.subItems.length) ? (
       <Fragment key={block.sectionId}>
@@ -11111,7 +10901,7 @@ function ProfessionalDoc({
                                         ),
                                       });
                                     }
-                                    if (e.key === 'Backspace' && line === '' && (item.subItems.length || 1) > 1) {
+                                    if (e.key === 'Backspace' && cvBulletFieldDomIsEmpty(e) && (item.subItems.length || 1) > 1) {
                                       e.preventDefault();
                                       ctx.onUpdate({
                                         parsedCustomSections: data.parsedCustomSections.map((b) =>
@@ -11199,7 +10989,7 @@ function ProfessionalDoc({
   });
 
   const customEl =
-    data.customSections.some((x) => x.title.trim() || x.body.trim()) && vis('custom-legacy') ? (
+    shouldRenderCustomLegacySection(data, inline) && vis('custom-legacy') ? (
       <CVSectionWrapper sectionId="custom-legacy">
         {sectionBox(
           'custom-legacy',

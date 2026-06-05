@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { useJobAnalyses } from '@/hooks/useJobAnalyses';
 import type { JobAnalysisSummary, JobSalaryEstimate } from '@/lib/api';
+import { formatSalaryRangeCompact } from '@/lib/jobSalaryEstimate';
 import { cn } from '@/lib/utils';
 
 type SavedPanelView = 'applications' | 'analyzed';
@@ -31,17 +32,6 @@ function formatRelativeAnalyzed(iso: string): string {
   if (weeks < 8) return `${weeks} week${weeks === 1 ? '' : 's'} ago`;
   const months = Math.floor(days / 30);
   return `${Math.max(1, months)} month${months === 1 ? '' : 's'} ago`;
-}
-
-function formatSalaryCompact(est: JobSalaryEstimate): string {
-  const fmt = (n: number) => {
-    if (!Number.isFinite(n)) return '?';
-    if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
-    if (Math.abs(n) >= 1000) return `${Math.round(n / 1000)}K`;
-    return `${Math.round(n)}`;
-  };
-  const cur = est.currency?.trim() || '';
-  return `${cur} ${fmt(est.min)} – ${fmt(est.max)} / yr`;
 }
 
 function matchBadgeClass(score: number): string {
@@ -105,7 +95,7 @@ function AnalyzedJobCard({ item, onOpen }: { item: JobAnalysisSummary; onOpen: (
   const rel = formatRelativeAnalyzed(item.updatedAt || item.createdAt);
   const salaryLine =
     item.salaryEstimate && typeof item.salaryEstimate === 'object'
-      ? formatSalaryCompact(item.salaryEstimate)
+      ? formatSalaryRangeCompact(item.salaryEstimate)
       : null;
 
   return (

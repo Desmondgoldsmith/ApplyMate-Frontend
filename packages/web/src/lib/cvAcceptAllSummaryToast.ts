@@ -48,5 +48,27 @@ export function buildAcceptAllSuggestionsSummaryMessage(
   if (overflow) {
     parts.push('batch capped');
   }
+  const aiCalls =
+    typeof r.acceptAllAiCalls === 'number' && Number.isFinite(r.acceptAllAiCalls)
+      ? Math.max(0, Math.floor(r.acceptAllAiCalls))
+      : null;
+  if (aiCalls === 0) {
+    parts.push('no daily AI use charged');
+  } else if (aiCalls === 1) {
+    parts.push('1 daily AI use');
+  } else if (aiCalls != null && aiCalls > 1) {
+    parts.push(`${aiCalls} daily AI uses`);
+  }
   return parts.join(' · ');
+}
+
+/** Prefer server `message`, then structured rollup. */
+export function buildAcceptAllSuccessToastMessage(
+  r: CvSuggestionsBulkMutationResult,
+  fallbackAppliedCount?: number,
+): string {
+  const summary = buildAcceptAllSuggestionsSummaryMessage(r, fallbackAppliedCount);
+  const server = r.message?.trim();
+  if (server && summary) return `${server} (${summary})`;
+  return server || summary;
 }

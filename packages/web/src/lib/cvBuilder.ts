@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 import {
   api,
   type CVProfile,
@@ -15,22 +17,14 @@ export type CvTemplateId =
   | 'modern'
   | 'creative'
   | 'professional'
-  | 'europass-classic'
-  | 'europass-modern'
-  | 'french'
-  | 'german'
-  | 'uk';
+  | 'onyx';
 
 export const CV_TEMPLATE_IDS: readonly CvTemplateId[] = [
   'classic',
   'modern',
   'creative',
   'professional',
-  'europass-classic',
-  'europass-modern',
-  'french',
-  'german',
-  'uk',
+  'onyx',
 ];
 
 export function isCvTemplateId(v: string | undefined | null): v is CvTemplateId {
@@ -137,7 +131,7 @@ export type CVBuilderCertification = {
 export type CVBuilderLanguage = {
   id: string;
   language: string;
-  proficiency: 'Native' | 'Fluent' | 'Professional' | 'Intermediate' | 'Basic';
+  proficiency: '' | 'Native' | 'Fluent' | 'Professional' | 'Intermediate' | 'Basic';
   /** CEFR breakdown — used by Europass templates */
   listening?: string;
   reading?: string;
@@ -154,6 +148,35 @@ export type CVBuilderReference = {
   email: string;
   phone: string;
 };
+
+/** UK-style placeholder rows importers sometimes add — not a real reference entry. */
+export function isCvReferenceUponRequestPlaceholder(ref: {
+  name?: string;
+  title?: string;
+  company?: string;
+  email?: string;
+  phone?: string;
+}): boolean {
+  const blob = [ref.name, ref.title, ref.company, ref.email, ref.phone]
+    .map((v) => (typeof v === 'string' ? v : ''))
+    .join(' ')
+    .toLowerCase();
+  return (
+    /\bavailable\s+upon\s+request\b/.test(blob) ||
+    /\breferences?\s+available\s+upon\s+request\b/.test(blob) ||
+    /\bupon\s+request\b/.test(blob)
+  );
+}
+
+export function filterCvBuilderReferences(refs: CVBuilderReference[]): CVBuilderReference[] {
+  return refs.filter((r) => !isCvReferenceUponRequestPlaceholder(r));
+}
+
+export function cvReferenceHasContent(ref: CVBuilderReference): boolean {
+  return Boolean(
+    ref.name.trim() || ref.title.trim() || ref.company.trim() || ref.email.trim() || ref.phone.trim(),
+  );
+}
 
 export type CVBuilderAchievement = {
   id: string;
@@ -312,9 +335,11 @@ export function coerceStructuredTextInCvBuilderData(data: CVBuilderData): CVBuil
   const base = ensureCvPreviewData(data);
   const profOrder = ['Native', 'Fluent', 'Professional', 'Intermediate', 'Basic'] as const;
   const coerceProf = (p: CVBuilderLanguage['proficiency']): CVBuilderLanguage['proficiency'] => {
+    if (p === '') return '';
     if (typeof p === 'string' && (profOrder as readonly string[]).includes(p)) return p;
     const t = normalizeText(p as unknown).trim();
-    return (profOrder as readonly string[]).includes(t) ? (t as CVBuilderLanguage['proficiency']) : 'Intermediate';
+    if (!t) return '';
+    return (profOrder as readonly string[]).includes(t) ? (t as CVBuilderLanguage['proficiency']) : '';
   };
   return {
     ...base,
@@ -381,14 +406,16 @@ export function coerceStructuredTextInCvBuilderData(data: CVBuilderData): CVBuil
         l.spokenProduction !== undefined ? normalizeText(l.spokenProduction as unknown) : undefined,
       writing: l.writing !== undefined ? normalizeText(l.writing as unknown) : undefined,
     })),
-    references: base.references.map((r) => ({
-      ...r,
-      name: normalizeText(r.name as unknown),
-      title: normalizeText(r.title as unknown),
-      company: normalizeText(r.company as unknown),
-      email: normalizeText(r.email as unknown),
-      phone: normalizeText(r.phone as unknown),
-    })),
+    references: filterCvBuilderReferences(
+      base.references.map((r) => ({
+        ...r,
+        name: normalizeText(r.name as unknown),
+        title: normalizeText(r.title as unknown),
+        company: normalizeText(r.company as unknown),
+        email: normalizeText(r.email as unknown),
+        phone: normalizeText(r.phone as unknown),
+      })),
+    ),
     customSections: base.customSections.map((c) => ({
       ...c,
       title: normalizeText(c.title as unknown),
@@ -1206,7 +1233,12 @@ export function transformSectionsToCVBuilderData(
     }
   }
 
-  const customSec = sorted.find((s) => s.type.toLowerCase() === 'custom');
+  const customSlugSections = sorted.filter((s) => s.type.startsWith('custom_'));
+  const hasCustomSlugSections = customSlugSections.length > 0;
+
+  const customSec = !hasCustomSlugSections
+    ? sorted.find((s) => s.type.toLowerCase() === 'custom')
+    : undefined;
   if (customSec?.data?.items && Array.isArray(customSec.data.items)) {
     base.customSections = (customSec.data.items as Record<string, unknown>[]).map((o) => ({
       id: str(o.id) || newLocalId(),
@@ -1216,9 +1248,26 @@ export function transformSectionsToCVBuilderData(
   }
 
   const LEGACY_CUSTOM_TYPES = new Set(['publications', 'volunteering', 'interests']);
-  base.parsedCustomSections = sorted
-    .filter((s) => s.type.startsWith('custom_') || LEGACY_CUSTOM_TYPES.has(s.type.toLowerCase()))
+  const slugParsed = customSlugSections.map((s) => mapSectionToParsedCustom(s));
+  const slugTitleKeys = new Set(
+    slugParsed.map((b) => normalizedCustomSectionKey(b.title, b.sectionType)),
+  );
+  const legacyParsed = sorted
+    .filter((s) => LEGACY_CUSTOM_TYPES.has(s.type.toLowerCase()))
+    .filter((s) => {
+      const block = mapSectionToParsedCustom(s);
+      return !slugTitleKeys.has(normalizedCustomSectionKey(block.title, s.type));
+    })
     .map((s) => mapSectionToParsedCustom(s));
+
+  base.parsedCustomSections = filterReferenceUponRequestParsedBlocks([
+    ...slugParsed,
+    ...legacyParsed,
+  ]);
+
+  if (hasCustomSlugSections) {
+    base.customSections = [];
+  }
 
   for (const s of sorted) {
     const t = s.type.toLowerCase();
@@ -1249,7 +1298,7 @@ export function transformSectionsToCVBuilderData(
           str(o.proficiency) || str(o.level) || str(o.fluency) || str(o.proficiencyLevel);
         const norm = rawProf.trim();
         const match = LANGUAGE_PROFICIENCY_LEVELS.find((l) => l.toLowerCase() === norm.toLowerCase());
-        const proficiency = (match ?? 'Fluent') as CVBuilderLanguage['proficiency'];
+        const proficiency = (match ?? '') as CVBuilderLanguage['proficiency'];
         const cefr = (key: string, alt?: string) => {
           const v = str(o[key]).trim() || (alt ? str(o[alt]).trim() : '');
           return v || undefined;
@@ -1279,14 +1328,16 @@ export function transformSectionsToCVBuilderData(
       });
     }
     if (t === 'references' && s.data?.items && Array.isArray(s.data.items)) {
-      base.references = (s.data.items as Record<string, unknown>[]).map((o) => ({
-        id: str((o as { id?: string }).id) || newLocalId(),
-        name: str(o.name),
-        title: str(o.title),
-        company: str(o.company),
-        email: str(o.email),
-        phone: str(o.phone),
-      }));
+      base.references = filterCvBuilderReferences(
+        (s.data.items as Record<string, unknown>[]).map((o) => ({
+          id: str((o as { id?: string }).id) || newLocalId(),
+          name: str(o.name),
+          title: str(o.title),
+          company: str(o.company),
+          email: str(o.email),
+          phone: str(o.phone),
+        })),
+      );
     }
   }
 
@@ -1300,10 +1351,48 @@ export function transformSectionsToCVBuilderData(
   return base;
 }
 
+function normalizedCustomSectionKey(title: string, type: string): string {
+  const fromTitle = title
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '')
+    .slice(0, 36);
+  if (fromTitle) return fromTitle;
+  return type
+    .toLowerCase()
+    .replace(/^custom_?/, '')
+    .replace(/_\d+$/, '');
+}
+
+function filterReferenceUponRequestParsedBlocks(
+  blocks: CVBuilderParsedCustomSection[],
+): CVBuilderParsedCustomSection[] {
+  return blocks.filter((b) => {
+    const title = b.title.trim().toLowerCase();
+    const refLike = title === 'reference' || title === 'references';
+    if (!refLike) return true;
+    const blob = [
+      b.title,
+      ...b.items.map((i) => i.text),
+      ...b.items.flatMap((i) => i.subItems),
+    ]
+      .join(' ')
+      .toLowerCase();
+    return !(
+      /\bavailable\s+upon\s+request\b/.test(blob) ||
+      /\breferences?\s+available\s+upon\s+request\b/.test(blob) ||
+      /\bupon\s+request\b/.test(blob)
+    );
+  });
+}
+
 function stripExpId(items: CVBuilderExperienceItem[]): Record<string, unknown>[] {
   return items.map(({ id: _id, bullets, ...rest }) => ({
     ...rest,
-    bullets: bullets.map((b) => b.trim()).filter(Boolean),
+    bullets: bullets
+      .map((b) => (typeof b === 'string' ? b : String(b ?? '')).trim())
+      .filter(Boolean),
   }));
 }
 
@@ -1534,7 +1623,7 @@ export function buildCvProfilePatch(
   if (p.hobbies?.trim()) structured.hobbies = p.hobbies.trim();
   if (data.summary.text?.trim()) structured.summary = data.summary.text.trim();
 
-  structured.references = (data.references ?? []).map(({ id: _id, ...r }) => ({
+  structured.references = filterCvBuilderReferences(data.references ?? []).map(({ id: _id, ...r }) => ({
     name: r.name.trim(),
     title: r.title.trim(),
     company: r.company.trim(),
@@ -1544,6 +1633,149 @@ export function buildCvProfilePatch(
 
   if (Object.keys(structured).length) patch.structured = structured;
   return patch;
+}
+
+/** Onyx template picker thumbnail — matches the Olivia Schumacher reference layout. */
+export function cvOnyxTemplatePreviewSampleData(): CVBuilderData {
+  return {
+    personal: {
+      name: 'Olivia Schumacher',
+      email: 'hello@reallygreatsite.com',
+      phone: '+123-456-7890',
+      location: '123 Anywhere St., Any City',
+      headline: 'Business Consultant',
+      website: '',
+      linkedin: '',
+      github: '',
+      portfolio: '',
+      extras: [],
+      dateOfBirth: '',
+      placeOfBirth: '',
+      nationality: '',
+      gender: '',
+      maritalStatus: '',
+      drivingLicence: '',
+      photoUrl: '',
+      hobbies: '',
+    },
+    summary: {
+      text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam quis nostrud exercitation.',
+    },
+    experience: {
+      items: [
+        {
+          id: 'ox-e1',
+          title: 'Business Consultant',
+          company: 'Aldenaire & Partners',
+          location: '',
+          startDate: '2020-01',
+          endDate: '',
+          current: true,
+          bullets: [
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+          ],
+        },
+        {
+          id: 'ox-e2',
+          title: 'Business Consultant',
+          company: 'Aldenaire & Partners',
+          location: '',
+          startDate: '2015-01',
+          endDate: '2020-01',
+          current: false,
+          bullets: [
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+          ],
+        },
+        {
+          id: 'ox-e3',
+          title: 'Business Consultant',
+          company: 'Aldenaire & Partners',
+          location: '',
+          startDate: '2010-01',
+          endDate: '2015-01',
+          current: false,
+          bullets: [
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+          ],
+        },
+        {
+          id: 'ox-e4',
+          title: 'Business Consultant',
+          company: 'Aldenaire & Partners',
+          location: '',
+          startDate: '2006-01',
+          endDate: '2010-01',
+          current: false,
+          bullets: [
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+          ],
+        },
+      ],
+    },
+    education: {
+      items: [
+        {
+          id: 'ox-ed1',
+          degree: 'Master of Business Management',
+          field: '',
+          school: 'Wardiere University',
+          startYear: '2006-09',
+          endYear: '2008-06',
+          grade: '',
+        },
+        {
+          id: 'ox-ed2',
+          degree: 'Bachelor of Business Management',
+          field: '',
+          school: 'Wardiere University',
+          startYear: '2002-09',
+          endYear: '2006-06',
+          grade: '',
+        },
+      ],
+    },
+    skills: {
+      categories: [
+        {
+          id: 'ox-sk1',
+          name: '',
+          skills: [
+            'Management Skills',
+            'Creativity',
+            'Digital Marketing',
+            'Negotiation',
+            'Critical Thinking',
+            'Leadership',
+          ],
+        },
+      ],
+    },
+    projects: [],
+    certifications: [],
+    languages: [],
+    achievements: [],
+    references: [
+      {
+        id: 'ox-r1',
+        name: 'Estelle Darcy',
+        title: 'CEO',
+        company: 'Wardiere Inc.',
+        email: 'hello@reallygreatsite.com',
+        phone: '+123-456-7890',
+      },
+      {
+        id: 'ox-r2',
+        name: 'Harper Richard',
+        title: 'CEO',
+        company: 'Wardiere Inc.',
+        email: 'hello@reallygreatsite.com',
+        phone: '+123-456-7890',
+      },
+    ],
+    customSections: [],
+    parsedCustomSections: [],
+  };
 }
 
 /** Rich sample CV for template picker thumbnails */
@@ -1648,6 +1880,12 @@ export function cvTemplatePreviewSampleData(): CVBuilderData {
     customSections: [],
     parsedCustomSections: [],
   };
+}
+
+/** Template-specific thumbnail sample (Onyx uses its own reference layout). */
+export function cvTemplatePreviewSampleDataFor(template: CvTemplateId): CVBuilderData {
+  if (template === 'onyx') return cvOnyxTemplatePreviewSampleData();
+  return cvTemplatePreviewSampleData();
 }
 
 function stripEduId(items: CVBuilderEducationItem[]): Record<string, unknown>[] {
@@ -1794,7 +2032,8 @@ function buildCvBuilderBatchSectionEntries(
     const row = findSectionByTypeLoose(mutable, type);
     const order = row?.order ?? nextOrder(mutable);
     const visible = row ? row.hidden !== true : true;
-    entries.push({ type: type.toLowerCase(), order, visible, data: payload });
+    const id = row?.id?.trim() || undefined;
+    entries.push({ id, type: type.toLowerCase(), order, visible, data: payload });
   };
 
   pushEntry('summary', { text: data.summary.text });
@@ -1832,7 +2071,15 @@ function buildCvBuilderBatchSectionEntries(
       { includeWhenEmpty: true },
     );
   }
-  if (data.customSections.length > 0) {
+  if (data.references.length > 0 || findSectionByTypeLoose(mutable, 'references')) {
+    pushEntry(
+      'references',
+      { items: filterCvBuilderReferences(data.references).map(({ id: _i, ...r }) => r) },
+      { includeWhenEmpty: true },
+    );
+  }
+  const hasCustomSlugRows = mutable.some((s) => s.type.startsWith('custom_'));
+  if (data.customSections.length > 0 && !hasCustomSlugRows) {
     pushEntry(
       'custom',
       { items: data.customSections.map(({ id: _i, title, body }) => ({ title, body })) },
@@ -1844,14 +2091,18 @@ function buildCvBuilderBatchSectionEntries(
     if (!block.sectionId?.trim()) continue;
     const row = mutable.find((s) => s.id === block.sectionId.trim());
     if (!row?.type) continue;
-    pushEntry(
-      row.type,
-      {
-        title: block.title,
-        items: block.items.map(parsedCustomItemToPayload),
-      },
-      { includeWhenEmpty: true },
-    );
+    const payload = {
+      title: block.title,
+      items: block.items.map(parsedCustomItemToPayload),
+    };
+    if (Object.keys(payload).length === 0) continue;
+    entries.push({
+      id: row.id?.trim() || undefined,
+      type: row.type.toLowerCase(),
+      order: row.order ?? nextOrder(mutable),
+      visible: row.hidden !== true,
+      data: payload,
+    });
   }
 
   entries.sort((a, b) => a.order - b.order || a.type.localeCompare(b.type));
@@ -1930,6 +2181,14 @@ async function persistCvBuilderSectionsSequential(
       {
         items: data.achievements.map(achievementToSectionPayload),
       },
+      cvProfileId,
+    );
+  }
+  if (data.references.length || mutable.some((s) => s.type.toLowerCase() === 'references')) {
+    await upsertSectionData(
+      mutable,
+      'references',
+      { items: filterCvBuilderReferences(data.references).map(({ id: _i, ...r }) => r) },
       cvProfileId,
     );
   }
@@ -2270,7 +2529,29 @@ export async function saveCVBuilderData(
       if (br.sections.length > 0) result.sections = br.sections;
       return result;
     } catch (e) {
-      if (!isBatchUpsertRouteUnsupportedError(e)) throw e;
+      if (!isBatchUpsertRouteUnsupportedError(e)) {
+        const status = axios.isAxiosError(e) ? e.response?.status : undefined;
+        if (status === 409 || status === 500) {
+          try {
+            mutable = await api.cv.getSections(true, cvProfileId);
+            const retryEntries = buildCvBuilderBatchSectionEntries(data, opts?.template, mutable);
+            const br = await api.cv.batchUpsertProfileSections(cvProfileId, {
+              sections: retryEntries,
+            });
+            logCvBuilderSavePerfDev('batchUpsert.retry', tBatch, {
+              updated: br.updated,
+              unchanged: br.unchanged,
+            });
+            result.usedBatch = true;
+            result.batch = { updated: br.updated, unchanged: br.unchanged };
+            if (br.sections.length > 0) result.sections = br.sections;
+            return result;
+          } catch {
+            throw e;
+          }
+        }
+        throw e;
+      }
       logCvBuilderSavePerfDev('batchUpsert.fallback', tBatch, { reason: 'route_unsupported' });
     }
   }

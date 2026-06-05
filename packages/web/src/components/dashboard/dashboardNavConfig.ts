@@ -94,15 +94,16 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
   },
   {
     id: 'cv',
-    label: 'CV Clinic',
-    shortLabel: 'CV',
+    label: 'Resume Clinic',
+    shortLabel: 'Resume',
     href: '/dashboard/cv',
     icon: FileText,
     always: true,
+    tourAttr: 'nav-cv-clinic',
   },
   {
     id: 'cv-profiles',
-    label: 'CV Profiles',
+    label: 'Resume Profiles',
     shortLabel: 'Profiles',
     href: '/dashboard/cv-profiles',
     icon: Library,
@@ -115,6 +116,7 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
     href: '/dashboard/interview',
     icon: BrainCircuit,
     feature: 'interviews',
+    tourAttr: 'nav-interview-prep',
   },
   {
     id: 'student',

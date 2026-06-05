@@ -1,5 +1,6 @@
 'use client';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import type { ApplicationTrackerStatus } from '@/lib/api';
@@ -17,8 +18,8 @@ export function useUpdateApplicationStatus() {
     mutationFn: ({ id, status }: { id: string; status: ApplicationTrackerStatus | string }) =>
       api.applications.updateStatus(id, status),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['applications'] });
-      void queryClient.invalidateQueries({ queryKey: ['job-history'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
       invalidateNotificationList(queryClient);
       scheduleUnreadNotificationCountInvalidate(queryClient);
       invalidateGrowthQueries(queryClient);
@@ -32,7 +33,7 @@ export function useUpdateApplicationNotes() {
   return useMutation({
     mutationFn: ({ id, notes }: { id: string; notes: string }) => api.applications.updateNotes(id, notes),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['applications'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
       invalidateNotificationList(queryClient);
       scheduleUnreadNotificationCountInvalidate(queryClient);
       invalidateTodayPlanQueries(queryClient);

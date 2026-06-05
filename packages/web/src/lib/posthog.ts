@@ -1,5 +1,7 @@
 import posthog from 'posthog-js';
 
+import { resolveObservabilityEnvironment } from '@/lib/observability/env';
+
 export type PostHogClient = typeof posthog;
 
 let initialized = false;
@@ -32,7 +34,7 @@ export function initPostHog(): PostHogClient | null {
     loaded: (client) => {
       client.register({
         app: 'applymate-web',
-        environment: process.env.NODE_ENV,
+        environment: resolveObservabilityEnvironment(),
       });
     },
   });

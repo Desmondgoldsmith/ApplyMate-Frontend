@@ -51,12 +51,12 @@ function buildBaseTrail(pathname: string): BreadcrumbItem[] {
   }
 
   if (path.startsWith('/dashboard/cv-profiles')) {
-    crumbs.push({ label: 'CV Profiles', href: '/dashboard/cv-profiles' });
+    crumbs.push({ label: 'Resume Profiles', href: '/dashboard/cv-profiles' });
     return crumbs;
   }
 
   if (path.startsWith('/dashboard/cv')) {
-    crumbs.push({ label: 'CV Clinic', href: '/dashboard/cv' });
+    crumbs.push({ label: 'Resume Clinic', href: '/dashboard/cv' });
     return crumbs;
   }
 

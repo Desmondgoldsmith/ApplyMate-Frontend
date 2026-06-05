@@ -108,7 +108,7 @@ export function deriveAppliedPrepFromJobHistory(
       daysUntilInterview: null,
       confidence: null,
       ctaLabel: 'Start interview practice',
-      ctaHref: `/dashboard/interview-prep?jobAnalysisId=${encodeURIComponent(jobAnalysisId)}`,
+      ctaHref: `/dashboard/interview?jobAnalysisId=${encodeURIComponent(jobAnalysisId)}`,
       lastUpdatedAt: row.createdAt ?? null,
     });
   }

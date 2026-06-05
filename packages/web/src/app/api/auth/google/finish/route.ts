@@ -8,7 +8,10 @@ import {
   GoogleAuthExchangeError,
 } from '@/lib/auth-google-exchange';
 import { isGoogleAuthConfigured } from '@/lib/auth-options';
-import { APPLYMATE_AUTH_COOKIE } from '@/lib/authCookie';
+import {
+  APPLYMATE_AUTH_COOKIE,
+  APPLYMATE_REFRESH_COOKIE,
+} from '@/lib/authCookie';
 import { googleAuthRedirectErrorParam } from '@/lib/google-auth-errors';
 import {
   parseGoogleOAuthIntent,
@@ -81,7 +84,7 @@ export async function GET(request: NextRequest) {
   });
 
   try {
-    const { accessToken } = await exchangeGoogleIdTokenWithBackend({
+    const { accessToken, refreshToken } = await exchangeGoogleIdTokenWithBackend({
       idToken,
       intent,
       name: typeof jwt?.name === 'string' ? jwt.name : undefined,
@@ -91,12 +94,16 @@ export async function GET(request: NextRequest) {
     const completeUrl = new URL('/oauth-complete', request.url);
     completeUrl.searchParams.set('intent', intent);
     const response = NextResponse.redirect(completeUrl);
-    response.cookies.set(APPLYMATE_AUTH_COOKIE, accessToken, {
+    const cookieOpts = {
       path: '/',
-      sameSite: 'lax',
+      sameSite: 'lax' as const,
       secure: process.env.NODE_ENV === 'production',
       httpOnly: false,
-    });
+    };
+    response.cookies.set(APPLYMATE_AUTH_COOKIE, accessToken, cookieOpts);
+    if (refreshToken?.trim()) {
+      response.cookies.set(APPLYMATE_REFRESH_COOKIE, refreshToken.trim(), cookieOpts);
+    }
     return response;
   } catch (err) {
     if (process.env.NODE_ENV === 'development') {

@@ -5,7 +5,10 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from
 import { createPortal } from 'react-dom';
 
 import { useCVEdit } from '@/components/cv/CVEditContext';
+import { useCvOverlayZIndex } from '@/components/cv/CvOverlayLayerContext';
+import { CvAssistantScopeBadge } from '@/components/cv/CvAssistantScopeBadge';
 import { Button } from '@/components/ui/Button';
+import { cvSectionAssistantPopoverTitle } from '@/lib/cvSectionAssistantBranding';
 import { getCvSectionAssistantSuggestions } from '@/lib/cvSectionAssistantSuggestions';
 import { cn } from '@/lib/utils';
 
@@ -16,64 +19,61 @@ type CvSectionAssistantInlineProps = {
   sectionId: string;
 };
 
-function findCvPaperRoot(): HTMLElement | null {
-  if (typeof document === 'undefined') return null;
-  return document.querySelector<HTMLElement>('[data-cv-document-root]');
-}
-
 export function CvSectionAssistantInline({ sectionId }: CvSectionAssistantInlineProps) {
   const ctx = useCVEdit();
+  const overlayZ = useCvOverlayZIndex();
   const pinWrapRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
-  const [clarifyAnswer, setClarifyAnswer] = useState('');
   const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
   const [popoverPos, setPopoverPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const titleId = useId();
 
   const run = ctx?.runCvAssistantCommand;
   const busy = ctx?.cvAssistantBusy === true;
-  const clarificationQuestion = ctx?.cvAssistantClarificationQuestion ?? null;
+  const busyMessage = ctx?.cvAssistantBusyMessage ?? null;
 
   const bundle = ctx?.data ? getCvSectionAssistantSuggestions(sectionId, ctx.data) : { suggestions: [] };
+  const sectionTitle = cvSectionAssistantPopoverTitle(sectionId, ctx?.data);
 
   useLayoutEffect(() => {
-    setPortalHost(findCvPaperRoot() ?? document.body);
+    // Portal to <body> (not the CV paper root) so the popover escapes the paper's
+    // stacking context and layers above the sticky options/templates bar.
+    setPortalHost(document.body);
   }, []);
 
   const syncPopoverPosition = useCallback(() => {
     const pin = pinWrapRef.current;
     const pop = popoverRef.current;
-    const paper = findCvPaperRoot();
-    if (!pin || !paper) return;
-    const section = pin.closest<HTMLElement>('[data-cv-section]');
-    if (!section) return;
+    if (!pin) return;
 
-    const sr = section.getBoundingClientRect();
-    const wr = paper.getBoundingClientRect();
-    const pw = Math.min(POPOVER_W, Math.max(200, wr.width - GAP * 2));
+    // Anchor to the (always-visible) trigger pin and clamp to the viewport, so the
+    // popover never lands at the bottom of a long section out of view.
+    const pr = pin.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const pw = Math.min(POPOVER_W, Math.max(200, vw - GAP * 2));
     const ph = pop?.offsetHeight ?? 280;
-    const margin = GAP;
 
-    const spaceBelow = wr.bottom - sr.bottom - margin;
-    const spaceAbove = sr.top - wr.top - margin;
-
-    let top = sr.bottom + margin;
-    if (spaceBelow < ph && spaceAbove >= ph) {
-      top = sr.top - ph - margin;
-    } else if (spaceBelow < ph && spaceAbove < ph) {
-      top = Math.min(Math.max(wr.top + margin, sr.bottom + margin), window.innerHeight - ph - margin);
+    let top = pr.bottom + GAP;
+    if (top + ph > vh - GAP) {
+      const above = pr.top - ph - GAP;
+      top = above >= GAP ? above : Math.max(GAP, vh - ph - GAP);
     }
+    // Final clamp guarantees the popover stays fully within the viewport.
+    top = Math.max(GAP, Math.min(top, vh - ph - GAP));
 
-    let left = sr.right - pw;
-    left = Math.max(wr.left + margin, Math.min(left, wr.right - pw - margin));
+    let left = pr.right - pw;
+    left = Math.max(GAP, Math.min(left, vw - pw - GAP));
 
     setPopoverPos({ top, left });
   }, []);
 
   useLayoutEffect(() => {
     if (!open) return;
+    // Bring the trigger into view first, then position the popover beside it.
+    pinWrapRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     syncPopoverPosition();
     const pop = popoverRef.current;
     const ro = pop ? new ResizeObserver(() => syncPopoverPosition()) : null;
@@ -88,7 +88,7 @@ export function CvSectionAssistantInline({ sectionId }: CvSectionAssistantInline
       window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', onScroll);
     };
-  }, [open, syncPopoverPosition, clarificationQuestion, text, bundle.hint, bundle.suggestions.length]);
+  }, [open, syncPopoverPosition, text, bundle.hint, bundle.suggestions.length]);
 
   useEffect(() => {
     if (!open) return;
@@ -113,7 +113,6 @@ export function CvSectionAssistantInline({ sectionId }: CvSectionAssistantInline
 
   useEffect(() => {
     setText('');
-    setClarifyAnswer('');
     setOpen(false);
   }, [sectionId]);
 
@@ -122,20 +121,14 @@ export function CvSectionAssistantInline({ sectionId }: CvSectionAssistantInline
     const command = text.trim();
     if (command.length < 8) return;
     try {
-      const result =
-        clarificationQuestion && clarifyAnswer.trim().length > 0
-          ? await run(command, [{ question: clarificationQuestion, answer: clarifyAnswer.trim() }], sectionId)
-          : await run(command, undefined, sectionId);
-      if (clarificationQuestion && clarifyAnswer.trim().length > 0) {
-        setClarifyAnswer('');
-      }
+      const result = await run(command, undefined, sectionId);
       if (result === 'ok') {
         setOpen(false);
       }
     } catch {
       /* parent toasts errors */
     }
-  }, [clarificationQuestion, clarifyAnswer, run, text, sectionId]);
+  }, [run, text, sectionId]);
 
   if (!run) return null;
 
@@ -144,16 +137,23 @@ export function CvSectionAssistantInline({ sectionId }: CvSectionAssistantInline
       ref={popoverRef}
       id={titleId}
       role="dialog"
-      aria-label="AI section assistant"
-      className="fixed z-[205] w-[min(248px,calc(100vw-24px))] max-h-[min(420px,52vh)] overflow-y-auto rounded-xl border border-slate-200/90 bg-white p-2.5 text-slate-800 shadow-[0_12px_40px_rgba(15,23,42,0.22)]"
-      style={{ top: popoverPos.top, left: popoverPos.left }}
+      aria-label={sectionTitle}
+      className="fixed w-[min(248px,calc(100vw-24px))] max-h-[min(420px,52vh)] overflow-y-auto rounded-xl border border-slate-200/90 bg-white p-2.5 text-slate-800 shadow-[0_12px_40px_rgba(15,23,42,0.22)]"
+      style={{ top: popoverPos.top, left: popoverPos.left, zIndex: overlayZ + 5 }}
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
       <div className="mb-1.5 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#00C9B1]" />
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">AI assistant</p>
+          <p className="text-[10px] font-semibold tracking-tight text-slate-700">
+            {sectionTitle}
+          </p>
+          <CvAssistantScopeBadge
+            label="This section"
+            variant="section"
+            className="normal-case"
+          />
         </div>
         <button
           type="button"
@@ -198,19 +198,6 @@ export function CvSectionAssistantInline({ sectionId }: CvSectionAssistantInline
         <span className="relative bg-white px-2">or</span>
       </div>
 
-      {clarificationQuestion ? (
-        <div className="mb-2 rounded-lg border border-amber-300/60 bg-amber-50 px-2 py-1.5">
-          <p className="text-[10px] font-semibold text-amber-800">Clarification</p>
-          <p className="mt-0.5 text-[10px] text-amber-950/90">{clarificationQuestion}</p>
-          <input
-            value={clarifyAnswer}
-            onChange={(e) => setClarifyAnswer(e.target.value)}
-            placeholder="Your answer…"
-            className="mt-1.5 h-8 w-full rounded-md border border-amber-200/80 bg-white px-2 text-[11px] text-slate-900 outline-none focus:ring-2 focus:ring-[#00C9B1]/35"
-          />
-        </div>
-      ) : null}
-
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
@@ -219,14 +206,17 @@ export function CvSectionAssistantInline({ sectionId }: CvSectionAssistantInline
         className="mb-2 w-full resize-y rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5 text-[11px] text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#00C9B1]/50 focus:ring-2 focus:ring-[#00C9B1]/25"
       />
 
+      {busy && busyMessage ? (
+        <p className="mb-2 flex items-center gap-1.5 text-[10px] text-slate-500">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          {busyMessage}
+        </p>
+      ) : null}
+
       <Button
         type="button"
         className="h-8 w-full gap-1.5 text-[11px]"
-        disabled={
-          busy ||
-          text.trim().length < 8 ||
-          (Boolean(clarificationQuestion) && clarifyAnswer.trim().length === 0)
-        }
+        disabled={busy || text.trim().length < 8}
         onClick={() => void onRun()}
       >
         {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
@@ -237,10 +227,10 @@ export function CvSectionAssistantInline({ sectionId }: CvSectionAssistantInline
 
   return (
     <>
-      <div ref={pinWrapRef} className="pointer-events-auto absolute right-2 top-2 z-[55]">
+      <div ref={pinWrapRef} className="pointer-events-auto absolute right-2 top-2 z-[1002]">
         <button
           type="button"
-          title="AI assistant for this section"
+          title={sectionTitle}
           aria-expanded={open}
           aria-controls={open ? titleId : undefined}
           onClick={(e) => {
@@ -250,7 +240,7 @@ export function CvSectionAssistantInline({ sectionId }: CvSectionAssistantInline
           }}
           onPointerDown={(e) => e.stopPropagation()}
           className={cn(
-            'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-white',
+            'relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-white',
             'bg-[#00C9B1] text-white shadow-[0_2px_10px_rgba(0,0,0,0.22)] ring-2 ring-[#007a7b]/35',
             'transition-shadow hover:shadow-[0_3px_14px_rgba(0,0,0,0.28)] hover:ring-[#005f60]/45',
             'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00C9B1]',
