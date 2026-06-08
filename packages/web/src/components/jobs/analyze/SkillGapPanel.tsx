@@ -9,6 +9,7 @@ import {
   DAILY_AI_LIMIT_REACHED_MESSAGE,
 } from '@/lib/ai-daily-usage';
 import type { JobAnalysis } from '@/lib/api';
+import { getTailorChecklistSkills } from '@/lib/skillCoverage';
 import { cn } from '@/lib/utils';
 
 type MissingSkill = NonNullable<JobAnalysis['missingSkills']>[number];
@@ -47,7 +48,7 @@ export function SkillGapPanel({
   onCreateTailorDraft,
   onResumeTailoring,
 }: SkillGapPanelProps) {
-  const missingSkills = analysis.missingSkills ?? [];
+  const missingSkills = getTailorChecklistSkills(analysis);
 
   if (missingSkills.length === 0) {
     return (

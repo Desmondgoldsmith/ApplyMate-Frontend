@@ -4,7 +4,9 @@ import { Loader2, Mic } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/Button';
+import { CvProfileDownloadActions } from '@/components/dashboard/CvProfileDownloadActions';
 import type { JobAnalysis } from '@/lib/api';
+import { resolveSourceCvProfileId } from '@/lib/skillCoverage';
 
 export type JobHubSavePanelAiUsage = {
   isPaidTier: boolean;
@@ -25,6 +27,7 @@ export type JobHubSavePanelProps = {
   cvProfileId: string | undefined;
   tailoredCvProfileId: string | null | undefined;
   sourceCvProfileId: string | null | undefined;
+  exportTemplate?: string | null;
   onGenerateCoverLetter: () => void;
 };
 
@@ -43,12 +46,15 @@ export function JobHubSavePanel({
   cvProfileId,
   tailoredCvProfileId,
   sourceCvProfileId,
+  exportTemplate,
   onGenerateCoverLetter,
 }: JobHubSavePanelProps) {
   const router = useRouter();
+  const downloadCvProfileId = resolveSourceCvProfileId(analysis, cvProfileId ?? selectedProfileId);
 
   return (
-    <div className="flex flex-col items-stretch gap-2.5 sm:flex-row sm:flex-wrap">
+    <div className="space-y-4">
+      <div className="flex flex-col items-stretch gap-2.5 sm:flex-row sm:flex-wrap">
       <Button
         variant="ghost"
         title={
@@ -125,6 +131,14 @@ export function JobHubSavePanel({
         />
         Start Mock Interview
       </Button>
+      </div>
+      {downloadCvProfileId ? (
+        <CvProfileDownloadActions
+          cvProfileId={downloadCvProfileId}
+          jobAnalysisId={analysis.id}
+          template={exportTemplate}
+        />
+      ) : null}
     </div>
   );
 }

@@ -24,6 +24,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { JobAnalysisCard } from '@/components/dashboard/JobAnalysisCard';
+import { CvProfileDownloadActions } from '@/components/dashboard/CvProfileDownloadActions';
 import { ScoreImprovementGuideCard } from '@/components/job-analysis/ScoreImprovementGuideCard';
 import { AiRecruiterReportSection } from '@/components/job-analysis/AiRecruiterReportSection';
 import { Button } from '@/components/ui/Button';
@@ -383,6 +384,16 @@ export function JobHubDetailPanel({
     jobListingId: analysisForCard?.jobListingId ?? job.boardDiscoveryId,
     enabled: Boolean(job.jobAnalysisId || job.boardDiscoveryId),
   });
+
+  const sourceCvProfileIdForDownload = useMemo(() => {
+    const a = analysisForCard as
+      | (JobAnalysis & {
+          cvProfileId?: string | null;
+          sourceCvProfileId?: string | null;
+        })
+      | null;
+    return a?.sourceCvProfileId?.trim() || a?.cvProfileId?.trim() || '';
+  }, [analysisForCard]);
 
   const bestCvProfileIdForClinic = useMemo(() => {
     const a = analysisForCard as
@@ -1395,6 +1406,13 @@ export function JobHubDetailPanel({
                 >
                   Open tailored CV in editor
                 </Link>
+              ) : null}
+              {job.jobAnalysisId && sourceCvProfileIdForDownload ? (
+                <CvProfileDownloadActions
+                  cvProfileId={sourceCvProfileIdForDownload}
+                  jobAnalysisId={job.jobAnalysisId}
+                  compact
+                />
               ) : null}
               {job.jobAnalysisId ? (
                 <Link

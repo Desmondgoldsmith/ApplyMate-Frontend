@@ -2,9 +2,15 @@ import type { JobSalaryEstimate } from '@/lib/api';
 
 export type JobSalaryEstimateSource = 'job_description' | 'ai_estimate';
 
+function noteImpliesNoPostingBand(est: JobSalaryEstimate): boolean {
+  const note = est.note?.trim().toLowerCase() ?? '';
+  return note.includes('no specific pay band');
+}
+
 export function resolveSalaryEstimateSource(
   est: JobSalaryEstimate,
 ): JobSalaryEstimateSource {
+  if (noteImpliesNoPostingBand(est)) return 'ai_estimate';
   const raw = String(est.source ?? est.dataSource ?? '')
     .trim()
     .toLowerCase();
@@ -15,8 +21,9 @@ export function resolveSalaryEstimateSource(
 }
 
 export function salaryEstimateSourceLabel(est: JobSalaryEstimate): string {
+  if (noteImpliesNoPostingBand(est)) return 'AI estimate';
   const label = est.sourceLabel?.trim();
-  if (label) return label;
+  if (label && !noteImpliesNoPostingBand(est)) return label;
   return resolveSalaryEstimateSource(est) === 'job_description'
     ? 'From job posting'
     : 'AI estimate';

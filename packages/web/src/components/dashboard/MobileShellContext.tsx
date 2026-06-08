@@ -34,6 +34,23 @@ export function MobileShellProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const syncForViewport = () => {
+      if (mq.matches) {
+        setNavVisibleState(false);
+        try {
+          sessionStorage.setItem(STORAGE_KEY, 'false');
+        } catch {
+          /* ignore */
+        }
+      }
+    };
+    syncForViewport();
+    mq.addEventListener('change', syncForViewport);
+    return () => mq.removeEventListener('change', syncForViewport);
+  }, []);
+
   const setNavVisible = useCallback((visible: boolean) => {
     setNavVisibleState(visible);
     try {

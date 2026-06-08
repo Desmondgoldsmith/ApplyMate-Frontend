@@ -7,7 +7,7 @@ import type { JobMatchFactor, JobMatchFactorsBreakdown } from '@/lib/jobMatchFac
 import { factorBarColor, factorTextColor } from '@/lib/jobMatchFactorsBreakdown';
 import { cn } from '@/lib/utils';
 
-const MAX_CHIPS = 5;
+const MAX_CHIPS = 24;
 
 function FactorChips({
   variant,

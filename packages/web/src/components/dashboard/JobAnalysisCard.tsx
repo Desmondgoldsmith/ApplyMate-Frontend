@@ -3,7 +3,9 @@ import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 
 import { JobAnalysisV2Panel } from '@/components/job-analysis/JobAnalysisV2Panel';
+import { LocationEligibilityCallout } from '@/components/job-analysis/LocationEligibilityCallout';
 import { MatchScoreFactorsBreakdown } from '@/components/job-analysis/MatchScoreFactorsBreakdown';
+import { SkillCoverageGrid } from '@/components/job-analysis/SkillCoverageGrid';
 import { JobSalaryEstimatePanel } from '@/components/job-analysis/JobSalaryEstimatePanel';
 import { Button } from '@/components/ui/Button';
 import { MatchScoreBar } from '@/components/ui/MatchScoreBar';
@@ -46,7 +48,7 @@ export function JobAnalysisCard({
     [acceptedSkillNames],
   );
 
-  const skillBarSkills = (analysis.missingSkills ?? []).slice(0, 6).map((skill) => ({
+  const skillBarSkills = (analysis.missingSkills ?? []).map((skill) => ({
     name: skill.name,
     matched: acceptedLower.has(skill.name.trim().toLowerCase()),
   }));
@@ -82,6 +84,9 @@ export function JobAnalysisCard({
           <p className="text-sm font-medium text-white/80">Updating match…</p>
         </div>
       ) : null}
+      {analysis.locationEligibility ? (
+        <LocationEligibilityCallout eligibility={analysis.locationEligibility} />
+      ) : null}
       {hasV2 && !hideAiReport ? (
         <JobAnalysisV2Panel
           analysis={analysis}
@@ -98,7 +103,7 @@ export function JobAnalysisCard({
               analysis.scoreSource === 'heuristic'
                 ? 'Estimated match'
                 : analysis.scoreSource === 'ai'
-                  ? 'AI match'
+                  ? 'AI analyzed'
                   : 'Match score'
             }
             isTailored={resolvedTailoredForScore}
@@ -143,13 +148,17 @@ export function JobAnalysisCard({
         <JobSalaryEstimatePanel estimate={salary} />
       ) : null}
 
+      {analysis.skillCoverage?.length ? (
+        <SkillCoverageGrid items={analysis.skillCoverage} />
+      ) : null}
+
       <div>
         <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">
           {resolvedTailoredForScore
             ? 'Skills added to your CV'
             : analysis.scoreSource === 'heuristic'
-              ? 'Skill gaps (estimate)'
-              : 'Skills to highlight'}
+              ? 'Gaps to address (estimate)'
+              : 'Gaps to address'}
         </h3>
         <div className="flex flex-wrap gap-2">
           {(analysis.missingSkills ?? []).map((skill) => {

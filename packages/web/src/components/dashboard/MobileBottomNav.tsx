@@ -102,7 +102,7 @@ export function MobileBottomNav() {
             <motion.button
               type="button"
               aria-label="Close more menu"
-              className="fixed inset-0 z-[42] bg-black/55 md:hidden"
+              className="fixed inset-0 z-[42] bg-black/55 lg:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -112,7 +112,7 @@ export function MobileBottomNav() {
             <motion.div
               style={{ bottom: submenuBottom }}
               data-tour="mobile-more-sheet"
-              className="fixed inset-x-0 z-[43] mx-2 rounded-2xl border border-[#00C9B1]/30 bg-[#0C0F0F]/98 p-2 shadow-[0_-10px_28px_rgba(0,0,0,0.38)] backdrop-blur-md md:hidden"
+              className="fixed inset-x-0 z-[43] mx-2 rounded-2xl border border-[#00C9B1]/30 bg-[#0C0F0F]/98 p-2 shadow-[0_-10px_28px_rgba(0,0,0,0.38)] backdrop-blur-md lg:hidden"
               initial={{ y: 16, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 16, opacity: 0 }}
@@ -180,7 +180,7 @@ export function MobileBottomNav() {
             <motion.button
               type="button"
               aria-label="Close jobs menu"
-              className="fixed inset-0 z-[42] bg-black/55 md:hidden"
+              className="fixed inset-0 z-[42] bg-black/55 lg:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -190,7 +190,7 @@ export function MobileBottomNav() {
             <motion.div
               style={{ bottom: submenuBottom }}
               data-tour="mobile-jobs-sheet"
-              className="fixed inset-x-0 z-[43] mx-2 max-h-[min(70vh,420px)] overflow-hidden rounded-2xl border border-[#00C9B1]/30 bg-[#0C0F0F]/98 shadow-[0_-10px_28px_rgba(0,0,0,0.38)] backdrop-blur-md md:hidden"
+              className="fixed inset-x-0 z-[43] mx-2 max-h-[min(70vh,420px)] overflow-hidden rounded-2xl border border-[#00C9B1]/30 bg-[#0C0F0F]/98 shadow-[0_-10px_28px_rgba(0,0,0,0.38)] backdrop-blur-md lg:hidden"
               initial={{ y: 16, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 16, opacity: 0 }}
@@ -262,7 +262,7 @@ export function MobileBottomNav() {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-            className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#00C9B1]/20 bg-[#0C0F0F]/95 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-8px_24px_rgba(0,0,0,0.35)] backdrop-blur-md md:hidden"
+            className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#00C9B1]/20 bg-[#0C0F0F]/95 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-8px_24px_rgba(0,0,0,0.35)] backdrop-blur-md lg:hidden"
             aria-label="Main navigation"
             data-tour="mobile-bottom-nav"
           >

@@ -203,18 +203,26 @@ function statusToStage(app: ApplicationItem): HubStage | null {
   }
 }
 
+function historyHasAnalysis(hist: JobHistoryItem | undefined): boolean {
+  if (!hist) return false;
+  if (typeof hist.hasAnalysis === 'boolean') return hist.hasAnalysis;
+  if (typeof hist.analyzeSource === 'string' && hist.analyzeSource.trim()) return true;
+  return false;
+}
+
 function inferDefaultStage(
   hist: JobHistoryItem | undefined,
   app: ApplicationItem | undefined,
 ): HubStage {
-  if (hist && !app) return 'analyzed';
-  if (!app) return hist ? 'analyzed' : 'bookmarked';
+  const analyzed = historyHasAnalysis(hist);
+  if (hist && analyzed && !app) return 'analyzed';
+  if (!app) return analyzed ? 'analyzed' : 'bookmarked';
   const fromStatus = statusToStage(app);
   if (fromStatus && fromStatus !== 'applied') return fromStatus;
   /** Saved analysis does not imply you applied — stay in Analyzed / Applying until you move the stage. */
-  if (app.status === 'applied' && hist) return 'analyzed';
+  if (app.status === 'applied' && analyzed) return 'analyzed';
   if (app.status === 'applied') return 'applied';
-  if (hist) return 'analyzed';
+  if (analyzed) return 'analyzed';
   return 'bookmarked';
 }
 
@@ -325,7 +333,7 @@ export function mergeTrackedJobs(
           ? app.matchScore
           : null;
     const createdAt = hist?.createdAt ?? app?.createdAt ?? null;
-    const hasAnalysis = Boolean(hist);
+    const hasAnalysis = historyHasAnalysis(hist);
     const sem = inferOriginAndState({
       app,
       hasAnalysis,
@@ -336,7 +344,7 @@ export function mergeTrackedJobs(
     const overrideStage = overrides[overrideKey] ?? overrides[key];
     const fromServer = hist?.pipelineStatus
       ? hubPipelineStageToHubStage(hist.pipelineStatus, {
-          hasJobAnalysis: true,
+          hasJobAnalysis: hasAnalysis,
         })
       : null;
     let stage: HubStage;

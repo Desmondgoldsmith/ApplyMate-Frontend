@@ -702,6 +702,21 @@ export type JobAnalysis = {
   scoreImprovement?: ScoreImprovementGuide;
   /** Transparent match score factors (3.3). */
   factorsBreakdown?: JobMatchFactorsBreakdown | null;
+  /** Soft notice when posting location may not match user profile region. */
+  locationEligibility?: LocationEligibility | null;
+  /** AI-detected requirements from the posting with CV match status. */
+  skillCoverage?: Array<{
+    skill: string;
+    status: 'found' | 'missing' | string;
+    importance: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  }>;
+};
+
+export type LocationEligibility = {
+  jobLocations?: string[];
+  detectedUserCountryCode?: string | null;
+  detectedUserCountryName?: string | null;
+  message: string;
 };
 
 export type {
@@ -730,6 +745,8 @@ function looksLikeJobAnalysisRow(o: Record<string, unknown>): boolean {
     return true;
   if (o.analysisV2 != null || o.analysis_v2 != null) return true;
   if (o.factorsBreakdown != null || o.factors_breakdown != null) return true;
+  if (Array.isArray(o.skillCoverage) && o.skillCoverage.length > 0) return true;
+  if (Array.isArray(o.skill_coverage) && o.skill_coverage.length > 0) return true;
   return false;
 }
 
@@ -1130,6 +1147,33 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
     body.factorsBreakdown ?? body.factors_breakdown,
   );
 
+  const locationEligibility = parseLocationEligibility(
+    body.locationEligibility ?? body.location_eligibility,
+  );
+
+  const skillCoverageRaw = body.skillCoverage ?? body.skill_coverage;
+  let skillCoverage: JobAnalysis['skillCoverage'];
+  if (Array.isArray(skillCoverageRaw) && skillCoverageRaw.length > 0) {
+    const parsed: NonNullable<JobAnalysis['skillCoverage']> = [];
+    for (const item of skillCoverageRaw) {
+      if (!item || typeof item !== 'object') continue;
+      const o = item as Record<string, unknown>;
+      const skill =
+        (typeof o.skill === 'string' && o.skill.trim()) ||
+        (typeof o.name === 'string' && o.name.trim()) ||
+        '';
+      if (!skill) continue;
+      const statusRaw =
+        typeof o.status === 'string' ? o.status.trim().toLowerCase() : 'missing';
+      parsed.push({
+        skill,
+        status: statusRaw === 'found' ? 'found' : 'missing',
+        importance: parseSkillImportance(o.importance),
+      });
+    }
+    skillCoverage = parsed.length > 0 ? parsed : undefined;
+  }
+
   return {
     id: pickJobAnalysisId(body),
     title: typeof body.title === 'string' ? body.title : undefined,
@@ -1168,6 +1212,41 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
     ...(analysisV2 ? { analysisV2 } : {}),
     ...(scoreImprovement ? { scoreImprovement } : {}),
     ...(factorsBreakdown ? { factorsBreakdown } : {}),
+    ...(locationEligibility ? { locationEligibility } : {}),
+    ...(skillCoverage?.length ? { skillCoverage } : {}),
+  };
+}
+
+function parseLocationEligibility(raw: unknown): LocationEligibility | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const o = raw as Record<string, unknown>;
+  const message =
+    (typeof o.message === 'string' && o.message.trim()) ||
+    (typeof o.hint === 'string' && o.hint.trim()) ||
+    '';
+  if (!message) return null;
+  const jobLocations = Array.isArray(o.jobLocations ?? o.job_locations)
+    ? (o.jobLocations ?? o.job_locations)
+        .filter((item): item is string => typeof item === 'string' && Boolean(item.trim()))
+        .map((item) => item.trim())
+    : undefined;
+  const detectedUserCountryCode =
+    typeof o.detectedUserCountryCode === 'string'
+      ? o.detectedUserCountryCode
+      : typeof o.detected_user_country_code === 'string'
+        ? o.detected_user_country_code
+        : null;
+  const detectedUserCountryName =
+    typeof o.detectedUserCountryName === 'string'
+      ? o.detectedUserCountryName
+      : typeof o.detected_user_country_name === 'string'
+        ? o.detected_user_country_name
+        : null;
+  return {
+    message,
+    ...(jobLocations?.length ? { jobLocations } : {}),
+    ...(detectedUserCountryCode ? { detectedUserCountryCode } : {}),
+    ...(detectedUserCountryName ? { detectedUserCountryName } : {}),
   };
 }
 
@@ -1253,6 +1332,10 @@ export type JobHistoryItem = {
     suggestedNextStep?: string | null;
   };
   analysisV2?: JobAnalysisV2;
+  /** True when analyzeSource is set (scored/analyzed), false for bookmark-only extension saves. */
+  hasAnalysis?: boolean;
+  analyzeSource?: string | null;
+  savedVia?: string | null;
 };
 
 /** Paginated `GET /jobs/history` (items + total for UI paging). */
@@ -6603,6 +6686,27 @@ function normalizeJobHistoryItem(raw: unknown): JobHistoryItem {
     o.applicationAssist ?? o.application_assist,
   );
   const applyUrlHist = pickApplyUrlFromRecord(o);
+  const hasAnalysisRaw = o.hasAnalysis ?? o.has_analysis;
+  const hasAnalysis =
+    typeof hasAnalysisRaw === 'boolean'
+      ? hasAnalysisRaw
+      : typeof o.analyzeSource === 'string' && o.analyzeSource.trim()
+        ? true
+        : typeof o.analyze_source === 'string' && o.analyze_source.trim()
+          ? true
+          : undefined;
+  const analyzeSource =
+    typeof o.analyzeSource === 'string'
+      ? o.analyzeSource
+      : typeof o.analyze_source === 'string'
+        ? o.analyze_source
+        : null;
+  const savedVia =
+    typeof o.savedVia === 'string'
+      ? o.savedVia
+      : typeof o.saved_via === 'string'
+        ? o.saved_via
+        : null;
   return {
     id,
     jobTitle,
@@ -6623,6 +6727,9 @@ function normalizeJobHistoryItem(raw: unknown): JobHistoryItem {
       ? { jobListingSourceHash: jobListingSourceHashHist }
       : {}),
     ...(applyUrlHist ? { applyUrl: applyUrlHist } : {}),
+    ...(hasAnalysis !== undefined ? { hasAnalysis } : {}),
+    ...(analyzeSource ? { analyzeSource } : {}),
+    ...(savedVia ? { savedVia } : {}),
     ...(pipelineStatus ? { pipelineStatus } : {}),
     ...(typeof o.origin === 'string' ? { origin: o.origin } : {}),
     ...(typeof o.state === 'string' ? { state: o.state } : {}),

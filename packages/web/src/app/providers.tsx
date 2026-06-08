@@ -5,14 +5,16 @@ import { SessionProvider } from 'next-auth/react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { PostHogProvider } from '@/components/analytics/PostHogProvider';
+import { ExtensionAuthBridge } from '@/components/extension/ExtensionAuthBridge';
 import { ForceDarkTheme } from '@/components/theme/ForceDarkTheme';
 import { SmoothScrollProvider } from '@/components/smooth-scroll-provider';
 import { ToastViewport } from '@/components/ui/Toast';
 import {
   setupAuthRefreshInterceptor,
   startAuthTokenRefreshScheduler,
+  tryRestoreSessionFromApiCookie,
 } from '@/lib/authRefresh';
-import { subscribeAuthLogout } from '@/lib/authSync';
+import { isPublicAuthPath, subscribeAuthLogout } from '@/lib/authSync';
 import { axiosClient, shouldRetryFailedQuery } from '@/lib/axios';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -21,6 +23,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const hydrateFromStorage = useAuthStore((s) => s.hydrateFromStorage);
   useLayoutEffect(() => {
     hydrateFromStorage();
+    if (!useAuthStore.getState().isAuthenticated && !isPublicAuthPath()) {
+      void tryRestoreSessionFromApiCookie();
+    }
     if (!refreshInterceptorReady.current) {
       setupAuthRefreshInterceptor(axiosClient);
       refreshInterceptorReady.current = true;
@@ -58,6 +63,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <PostHogProvider>
           <ForceDarkTheme />
+          <ExtensionAuthBridge />
           <SmoothScrollProvider>
             {children}
             <ToastViewport />

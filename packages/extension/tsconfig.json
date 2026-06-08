@@ -1,18 +1,24 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
     "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "types": ["chrome", "vite/client"],
     "paths": {
-      "@/*": ["./*"],
-      "@applymate/shared": ["../../shared/src/index.ts"],
-      "@applymate/shared/*": ["../../shared/src/*"]
-    },
-    "types": ["chrome"]
+      "@/*": ["./src/*"]
+    }
   },
-  "include": [
-    "./**/*.ts",
-    "./scripts/**/*.mjs"
-  ],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src"]
 }

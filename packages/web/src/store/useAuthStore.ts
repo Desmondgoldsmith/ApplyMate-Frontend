@@ -85,6 +85,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       removeLegacyTokenFromLocalStorage();
       clearStoredWizard();
       clearApplymateAuthCookies();
+      void import('@/lib/extensionAuthHandoff').then((m) =>
+        m.clearExtensionTokenIfInstalled(),
+      );
       if (!opts?.skipBroadcast) {
         broadcastAuthLogout();
       }

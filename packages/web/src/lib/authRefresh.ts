@@ -11,6 +11,7 @@ import {
 import {
   mapNormalizedUserToAuthUser,
   normalizeAuthResponse,
+  normalizeRefreshResponse,
 } from '@/lib/auth-response';
 import {
   broadcastAuthTokensUpdated,
@@ -77,6 +78,50 @@ function getRefreshTokenForRequest(): string | null {
 }
 
 let refreshInFlight: Promise<boolean> | null = null;
+
+async function postRefreshWithApiCookie(): Promise<boolean> {
+  try {
+    const res = await axiosClient.post<unknown>(
+      '/auth/refresh',
+      {},
+      { skipAuthRefresh: true },
+    );
+    throwIfApiFailureResponse(res.data, res.status);
+    const normalized = normalizeRefreshResponse(res.data);
+    const user = mapNormalizedUserToAuthUser(normalized.user);
+    useAuthStore
+      .getState()
+      .setAuth(user, normalized.accessToken, normalized.refreshToken);
+    broadcastAuthTokensUpdated();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Restore a web session when the extension (or API HttpOnly refresh cookie) is still valid
+ * but readable web cookies are missing or expired.
+ */
+export async function tryRestoreSessionFromApiCookie(): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+
+  const token = readApplymateTokenFromCookie()?.trim();
+  if (token) {
+    const exp = decodeJwtExp(token);
+    if (exp == null || exp * 1000 > Date.now() + 30_000) {
+      useAuthStore.getState().hydrateFromStorage();
+      return useAuthStore.getState().isAuthenticated;
+    }
+  }
+
+  const refresh = readApplymateRefreshTokenFromCookie()?.trim();
+  if (refresh) {
+    return refreshAccessToken();
+  }
+
+  return postRefreshWithApiCookie();
+}
 
 async function postRefresh(refreshToken: string) {
   const res = await axiosClient.post<unknown>(

@@ -9,6 +9,7 @@ import {
   readApplymateRefreshTokenFromCookie,
   readApplymateTokenFromCookie,
 } from '@/lib/authCookie';
+import { handoffExtensionTokenIfInstalled } from '@/lib/extensionAuthHandoff';
 import { parseGoogleOAuthIntent } from '@/lib/google-oauth-intent';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -43,6 +44,7 @@ function OAuthCompleteContent() {
           /* fall back to user flag */
         }
         setAuth(user, token, readApplymateRefreshTokenFromCookie());
+        await handoffExtensionTokenIfInstalled(token);
 
         if (intent === 'register') {
           captureEvent('auth_register_completed', { provider: 'google' });

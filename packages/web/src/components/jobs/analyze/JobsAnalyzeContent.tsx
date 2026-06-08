@@ -52,11 +52,12 @@ import {
   DAILY_AI_LIMIT_REACHED_MESSAGE,
 } from '@/lib/ai-daily-usage';
 import { resolveCvProfileIdForSavedJob } from '@/lib/jobAnalysisCvContext';
+import { getTailorChecklistSkills } from '@/lib/skillCoverage';
 import {
   consumePrefetchByContextToken,
   FRESH_ANALYZE_PREFILL_SESSION,
 } from '@/lib/jobHubPrefill';
-import { getApiErrorMessage } from '@/lib/axios';
+import { axiosClient, getApiErrorMessage } from '@/lib/axios';
 import {
   readJobLoopSteps,
   writeJobLoopSteps,
@@ -144,6 +145,16 @@ export function JobsAnalyzeContent() {
   const [mobileTab, setMobileTab] = useState<'analyze' | 'results' | 'history'>(
     'analyze',
   );
+  const [isExtensionSession, setIsExtensionSession] = useState(false);
+  const [returnToUrl, setReturnToUrl] = useState<string | null>(null);
+  const [extensionSessionId, setExtensionSessionId] = useState<string | null>(
+    null,
+  );
+  const [extensionTailoringComplete, setExtensionTailoringComplete] =
+    useState(false);
+  const [extensionTailoredCvId, setExtensionTailoredCvId] = useState<
+    string | null
+  >(null);
 
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -161,6 +172,10 @@ export function JobsAnalyzeContent() {
   const cleanAnalyzerParam = searchParams.get('clean');
   const fromBoardFromUrl = searchParams.get('fromBoard') === '1';
   const cvProfileIdFromUrl = searchParams.get('cvProfileId')?.trim() ?? '';
+  const sourceFromUrl = searchParams.get('source');
+  const sessionIdFromUrl = searchParams.get('sessionId')?.trim() ?? '';
+  const returnToFromUrl = searchParams.get('returnTo');
+  const cvIdFromExtensionUrl = searchParams.get('cvId')?.trim() ?? '';
 
   const analyze = useAnalyzeJob();
   const generate = useGenerateContent();
@@ -191,6 +206,9 @@ export function JobsAnalyzeContent() {
   /** From Job Hub “Analyze” prefill — PATCH bookmark after first successful analyze. */
   const pendingHubBookmarkIdRef = useRef<string | null>(null);
   const listingAutoAnalyzeRef = useRef(false);
+  const extensionBootstrapRef = useRef(false);
+  const extensionAutoTailorPendingRef = useRef(false);
+  const extensionCompleteCalledRef = useRef(false);
   /** When init loads job-board listing into the form, URL may still hold jobListingId; also used if URL is stripped early. */
   const analyzeJobListingIdRef = useRef<string | null>(null);
   /** Employer posting URL from GET /job-discovery/:id — sent on POST /jobs/analyze when known. */
@@ -205,16 +223,15 @@ export function JobsAnalyzeContent() {
   /** After listing hydrate from Job Board: show results-panel skeleton until AI analyze finishes. */
   const [awaitingListingAnalysis, setAwaitingListingAnalysis] = useState(false);
 
-  const skillsInitKey = useMemo(
-    () =>
-      `${analysis?.id ?? 'no-id'}|${(analysis?.missingSkills ?? [])
-        .map((s) => `${s.name}:${s.importance}`)
-        .join(';')}`,
-    [analysis],
-  );
+  const skillsInitKey = useMemo(() => {
+    if (!analysis) return 'no-analysis';
+    return `${analysis.id ?? 'no-id'}|${getTailorChecklistSkills(analysis)
+      .map((s) => `${s.name}:${s.importance}`)
+      .join(';')}`;
+  }, [analysis]);
 
   useEffect(() => {
-    const skills = analysis?.missingSkills ?? [];
+    const skills = analysis ? getTailorChecklistSkills(analysis) : [];
     if (skills.length === 0) {
       setSelectedSkillNames([]);
       return;
@@ -594,6 +611,13 @@ export function JobsAnalyzeContent() {
       setSelectedProfileId(cvProfileIdFromUrl);
       return;
     }
+    if (
+      cvIdFromExtensionUrl &&
+      cvProfiles.some((p) => p.id === cvIdFromExtensionUrl)
+    ) {
+      setSelectedProfileId(cvIdFromExtensionUrl);
+      return;
+    }
     if (selectedProfileId !== null) return;
     const defaultProfile = cvProfiles.find((p) => p.isDefault);
     if (defaultProfile) {
@@ -607,7 +631,7 @@ export function JobsAnalyzeContent() {
     if (cv?.id) {
       setSelectedProfileId(cv.id);
     }
-  }, [cvProfileIdFromUrl, cvProfiles, selectedProfileId, cv?.id]);
+  }, [cvProfileIdFromUrl, cvIdFromExtensionUrl, cvProfiles, selectedProfileId, cv?.id]);
 
   const selectedProfile = useMemo((): CvProfileSummary | null => {
     const hit = cvProfiles.find((p) => p.id === selectedProfileId);
@@ -749,6 +773,7 @@ export function JobsAnalyzeContent() {
 
       applyDetail(detail);
       setViewingSavedAnalysis(true);
+      setMobileTab('results');
       try {
         sessionStorage.setItem(STORAGE_LAST_JOB_ID, jobId);
       } catch {
@@ -952,6 +977,53 @@ export function JobsAnalyzeContent() {
         return;
       }
 
+      /** Extension "Open full analyzer" — prefill title, company, and description from query params. */
+      if (sourceFromUrl === 'extension' && !sessionIdFromUrl) {
+        const jobTitle = searchParams.get('jobTitle')?.trim() ?? '';
+        const companyParam = searchParams.get('company')?.trim() ?? '';
+        const descriptionParam = searchParams.get('description')?.trim() ?? '';
+        if (jobTitle || companyParam || descriptionParam) {
+          try {
+            sessionStorage.removeItem(STORAGE_FORM_KEY);
+            sessionStorage.removeItem(STORAGE_ANALYSIS_KEY);
+            sessionStorage.removeItem(STORAGE_COMPLETED_TAILOR_KEY);
+            sessionStorage.removeItem(STORAGE_LAST_JOB_ID);
+          } catch {
+            /* ignore */
+          }
+          setActiveJobId(null);
+          setTitle(jobTitle);
+          setCompany(companyParam);
+          setDescription(descriptionParam);
+          setAnalysis(null);
+          setGenerated(null);
+          setViewingSavedAnalysis(false);
+          setTailorDraft(null);
+          setTailorSidebarOpen(false);
+          setError(null);
+          setRematching(false);
+          setScoreBeforeTailor(null);
+          setTailoringCompleted(false);
+          sessionBootstrapped.current = true;
+          router.replace('/dashboard/jobs/analyze');
+          if (!cancelled) setHydrated(true);
+          return;
+        }
+      }
+
+      if (sourceFromUrl === 'extension' && sessionIdFromUrl) {
+        const jobTitle = searchParams.get('jobTitle')?.trim() ?? '';
+        const companyParam = searchParams.get('company')?.trim() ?? '';
+        const descriptionParam = searchParams.get('description')?.trim() ?? '';
+        if (jobTitle) setTitle(jobTitle);
+        if (companyParam) setCompany(companyParam);
+        if (descriptionParam) setDescription(descriptionParam);
+        if (cvIdFromExtensionUrl) setSelectedProfileId(cvIdFromExtensionUrl);
+        sessionBootstrapped.current = true;
+        if (!cancelled) setHydrated(true);
+        return;
+      }
+
       if (jobListingIdFromUrl && !jobIdFromUrl) {
         if (jobListingBootstrapDoneRef.current === jobListingIdFromUrl) {
           sessionBootstrapped.current = true;
@@ -1016,6 +1088,14 @@ export function JobsAnalyzeContent() {
       }
 
       if (jobId) {
+        if (sourceFromUrl === 'extension') {
+          const jobTitle = searchParams.get('jobTitle')?.trim() ?? '';
+          const companyParam = searchParams.get('company')?.trim() ?? '';
+          const descriptionParam = searchParams.get('description')?.trim() ?? '';
+          if (jobTitle) setTitle(jobTitle);
+          if (companyParam) setCompany(companyParam);
+          if (descriptionParam) setDescription(descriptionParam);
+        }
         if (lastInitJobId.current === jobId && sessionBootstrapped.current) {
           if (!cancelled) setHydrated(true);
           return;
@@ -1125,11 +1205,14 @@ export function JobsAnalyzeContent() {
     jobListingIdFromUrl,
     contextTokenFromUrl,
     openTailorFromUrl,
+    sourceFromUrl,
+    sessionIdFromUrl,
     activeJobId,
     freshAnalyzerParam,
     cleanAnalyzerParam,
     fromBoardFromUrl,
     router,
+    searchParams,
     setActiveJobId,
     toast,
   ]);
@@ -1916,6 +1999,135 @@ export function JobsAnalyzeContent() {
     handleCreateTailorDraft,
   ]);
 
+  /** Extension sidebar: hydrate job + CV from tailor session, then auto-analyze + tailor. */
+  useEffect(() => {
+    if (!hydrated) return;
+    if (sourceFromUrl !== 'extension' || !sessionIdFromUrl) return;
+    if (extensionBootstrapRef.current) return;
+    extensionBootstrapRef.current = true;
+
+    setIsExtensionSession(true);
+    setExtensionSessionId(sessionIdFromUrl);
+    setReturnToUrl(returnToFromUrl);
+
+    const jobTitleParam = searchParams.get('jobTitle')?.trim() ?? '';
+    const companyParam = searchParams.get('company')?.trim() ?? '';
+    const descriptionParam = searchParams.get('description')?.trim() ?? '';
+    if (jobTitleParam) setTitle(jobTitleParam);
+    if (companyParam) setCompany(companyParam);
+    if (descriptionParam) setDescription(descriptionParam);
+    if (cvIdFromExtensionUrl) setSelectedProfileId(cvIdFromExtensionUrl);
+
+    void (async () => {
+      try {
+        const res = await axiosClient.get<{
+          success: boolean;
+          data: {
+            cvId?: string;
+            jobTitle?: string;
+            company?: string;
+            jobDescription?: string;
+            returnToUrl?: string;
+          };
+        }>(`extension/tailor/session/${sessionIdFromUrl}`);
+        const session = res.data?.data;
+        if (session?.jobTitle) setTitle(session.jobTitle);
+        if (session?.company) setCompany(session.company);
+        if (session?.jobDescription) setDescription(session.jobDescription);
+        if (session?.returnToUrl) setReturnToUrl(session.returnToUrl);
+        if (session?.cvId?.trim()) setSelectedProfileId(session.cvId.trim());
+      } catch {
+        const jobTitle = searchParams.get('jobTitle');
+        const companyParam = searchParams.get('company');
+        const descriptionParam = searchParams.get('description');
+        if (jobTitle) setTitle(jobTitle);
+        if (companyParam) setCompany(companyParam);
+        if (descriptionParam) setDescription(descriptionParam);
+        if (cvIdFromExtensionUrl) setSelectedProfileId(cvIdFromExtensionUrl);
+      }
+
+      window.setTimeout(() => {
+        extensionAutoTailorPendingRef.current = true;
+        runAnalyze({});
+      }, 500);
+    })();
+  }, [
+    hydrated,
+    sourceFromUrl,
+    sessionIdFromUrl,
+    returnToFromUrl,
+    cvIdFromExtensionUrl,
+    searchParams,
+    runAnalyze,
+  ]);
+
+  useEffect(() => {
+    if (!isExtensionSession || !extensionAutoTailorPendingRef.current) return;
+    if (!analysis?.id?.trim()) return;
+    extensionAutoTailorPendingRef.current = false;
+    const timer = window.setTimeout(() => {
+      void handleTailorFirst();
+    }, 100);
+    return () => window.clearTimeout(timer);
+  }, [isExtensionSession, analysis?.id, handleTailorFirst]);
+
+  useEffect(() => {
+    if (!isExtensionSession || !extensionSessionId) return;
+    if (!tailorSectionComplete) return;
+    const tailoredCvId = analysis?.tailoredCvProfileId?.trim();
+    if (!tailoredCvId) return;
+    if (extensionCompleteCalledRef.current) return;
+    extensionCompleteCalledRef.current = true;
+
+    void (async () => {
+      try {
+        const res = await axiosClient.post<{
+          success: boolean;
+          data: {
+            returnToUrl?: string;
+            tailoredCvId?: string;
+          };
+        }>('extension/tailor/complete', {
+          sessionId: extensionSessionId,
+          tailoredCvId,
+        });
+        if (res.data?.success && res.data.data) {
+          setExtensionTailoringComplete(true);
+          setExtensionTailoredCvId(
+            res.data.data.tailoredCvId?.trim() || tailoredCvId,
+          );
+          if (res.data.data.returnToUrl?.trim()) {
+            setReturnToUrl(res.data.data.returnToUrl.trim());
+          }
+        }
+      } catch {
+        /* fail silently — return button still works via stored returnToUrl */
+      }
+    })();
+  }, [
+    isExtensionSession,
+    extensionSessionId,
+    tailorSectionComplete,
+    analysis?.tailoredCvProfileId,
+  ]);
+
+  const handleReturnToJobListing = useCallback(() => {
+    const tailoredId =
+      extensionTailoredCvId ?? analysis?.tailoredCvProfileId?.trim() ?? '';
+    if (returnToUrl) {
+      try {
+        const url = new URL(returnToUrl);
+        url.searchParams.set('tailorComplete', 'true');
+        if (tailoredId) url.searchParams.set('tailoredCvId', tailoredId);
+        window.location.href = url.toString();
+        return;
+      } catch {
+        /* fall through */
+      }
+    }
+    window.history.back();
+  }, [analysis?.tailoredCvProfileId, extensionTailoredCvId, returnToUrl]);
+
   const handleGenerateCoverLetter = useCallback(() => {
     if (!analysis) return;
                             if (!canUseAiFromDailyAiUsage(aiUsage)) {
@@ -2013,6 +2225,42 @@ export function JobsAnalyzeContent() {
 
   return (
     <>
+      {isExtensionSession && extensionTailoringComplete ? (
+        <div className="sticky top-0 z-50 flex items-center justify-between border-b border-[rgba(0,201,177,0.20)] bg-[#0F1512] px-6 py-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[rgba(52,211,153,0.30)] bg-[rgba(52,211,153,0.15)] text-[13px] text-[#34D399]"
+              aria-hidden
+            >
+              ✓
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[#F0F4F2]">
+                CV tailored successfully
+              </p>
+              <p className="mt-0.5 text-xs text-white/50">
+                Your tailored CV has been saved.
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center">
+            <button
+              type="button"
+              onClick={handleReturnToJobListing}
+              className="rounded-lg bg-[#00C9B1] px-4 py-2 text-sm font-semibold text-[#080B0A] transition-colors duration-150 hover:bg-[#00b5a0]"
+            >
+              Return to job listing →
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsExtensionSession(false)}
+              className="ml-3 cursor-pointer border-none bg-transparent text-xs text-white/40 no-underline hover:text-white/70"
+            >
+              Stay on dashboard
+            </button>
+          </div>
+        </div>
+      ) : null}
                         <motion.div
         initial={{ opacity: 0, y: 16 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -2212,6 +2460,7 @@ export function JobsAnalyzeContent() {
                         cvProfileId={cv?.id}
                         tailoredCvProfileId={analysis.tailoredCvProfileId}
                         sourceCvProfileId={analysis.sourceCvProfileId}
+                        exportTemplate={selectedProfile?.template ?? cv?.template ?? null}
                         onGenerateCoverLetter={handleGenerateCoverLetter}
                       />
                       <CoverLetterPanel

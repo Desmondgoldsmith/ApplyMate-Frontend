@@ -16,6 +16,7 @@ import { useToast } from '@/components/ui/Toast';
 import { captureEvent } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { getLoginErrorMessage } from '@/lib/auth-login-message';
+import { handoffExtensionTokenIfRequested } from '@/lib/extensionAuthHandoff';
 import { useAuthStore } from '@/store/useAuthStore';
 
 const schema = z.object({
@@ -54,6 +55,7 @@ function LoginPageContent() {
     try {
       const result = await api.auth.login(form);
       setAuth(result.user, result.accessToken, result.refreshToken);
+      await handoffExtensionTokenIfRequested(result.accessToken);
       captureEvent('auth_login_completed');
       toast.success('Signed in successfully');
       let onboardingDone = result.user.onboardingCompleted === true;

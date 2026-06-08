@@ -1,6 +1,4 @@
-# Package-local ignores
-
 dist/
+node_modules/
 .env
-.env.*
-!.env.example
+.env.local

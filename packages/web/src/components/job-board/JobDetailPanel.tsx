@@ -164,7 +164,7 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
           ai.scoreSource === 'heuristic'
             ? ('Estimated match' as const)
             : ai.scoreSource === 'ai'
-              ? ('AI match' as const)
+              ? ('AI analyzed' as const)
               : ('Match score' as const),
         isPreview: false,
         footnote,

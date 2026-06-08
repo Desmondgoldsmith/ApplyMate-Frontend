@@ -51,6 +51,17 @@ describe('jobSalaryEstimate', () => {
     expect(salaryEstimateSourceLabel(aiEstimate)).toBe('AI estimate');
   });
 
+  it('treats note without explicit pay band as AI estimate', () => {
+    const ambiguous: JobSalaryEstimate = {
+      ...postingEstimate,
+      source: 'job_description',
+      sourceLabel: 'From job posting',
+      note: 'No specific pay band was stated in the posting.',
+    };
+    expect(resolveSalaryEstimateSource(ambiguous)).toBe('ai_estimate');
+    expect(salaryEstimateSourceLabel(ambiguous)).toBe('AI estimate');
+  });
+
   it('formats amounts with Intl and local currency', () => {
     const ghs = formatSalaryAmount(120_000, 'GHS');
     expect(ghs).toMatch(/120/);
