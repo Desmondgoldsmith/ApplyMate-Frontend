@@ -10,7 +10,10 @@ import {
   type ScoreImprovementGuide,
   type ScoreImprovementItem,
 } from '@/lib/scoreImprovement';
+import { stripAnalysisUserCopy } from '@/lib/jobAnalysisAts';
 import { cn } from '@/lib/utils';
+
+const MAX_GUIDE_ITEMS = 3;
 
 function GuideRow({ item }: { item: ScoreImprovementItem }) {
   return (
@@ -35,12 +38,24 @@ function GuideRow({ item }: { item: ScoreImprovementItem }) {
 
 export function ScoreImprovementGuideCard({
   guide,
+  readinessNote,
   className,
 }: {
   guide: ScoreImprovementGuide;
+  /** Fallback when post-tailor guide omits `interviewReminder`. */
+  readinessNote?: string | null;
   className?: string;
 }) {
   const bandLabel = SCORE_BAND_LABELS[guide.scoreBand];
+  const interviewCopy = stripAnalysisUserCopy(
+    guide.interviewReminder ?? readinessNote ?? '',
+  );
+  const guideItems = guide.items.slice(0, MAX_GUIDE_ITEMS);
+  const beforeTailor = guide.scoreBeforeTailoring;
+  const showScoreDelta =
+    beforeTailor != null &&
+    Number.isFinite(beforeTailor) &&
+    Math.round(beforeTailor) !== Math.round(guide.currentScore);
 
   return (
     <section
@@ -62,19 +77,31 @@ export function ScoreImprovementGuideCard({
         </Badge>
       </div>
 
-      <p className="mt-3 text-[14px] font-medium leading-snug text-white/90">{guide.headline}</p>
+      <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <p className="text-[28px] font-bold tabular-nums leading-none text-white">
+          {guide.currentScore}%
+        </p>
+        {showScoreDelta ? (
+          <p className="text-[12px] font-medium text-emerald-300/90">
+            up from {Math.round(beforeTailor!)}%
+          </p>
+        ) : null}
+      </div>
+
+      <p className="mt-2 text-[14px] font-medium leading-snug text-white/90">{guide.headline}</p>
       <p className="mt-2 text-[12px] leading-relaxed text-white/48">{guide.ceilingHint}</p>
 
-      <ul className="mt-4 space-y-2.5" role="list">
-        {guide.items.map((item) => (
-          <GuideRow key={item.id} item={item} />
-        ))}
-      </ul>
+      {guideItems.length > 0 ? (
+        <ul className="mt-4 space-y-2.5" role="list">
+          {guideItems.map((item) => (
+            <GuideRow key={item.id} item={item} />
+          ))}
+        </ul>
+      ) : null}
 
-      <p className="mt-4 text-[11px] leading-relaxed text-white/38">
-        Use <span className="font-medium text-white/50">Gaps to address</span> and{' '}
-        <span className="font-medium text-white/50">Tailor</span> to improve how your CV reads.
-      </p>
+      {interviewCopy ? (
+        <p className="mt-4 text-[11px] leading-relaxed text-white/42">{interviewCopy}</p>
+      ) : null}
     </section>
   );
 }

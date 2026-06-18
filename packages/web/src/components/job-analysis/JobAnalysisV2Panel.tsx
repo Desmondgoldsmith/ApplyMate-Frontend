@@ -1,7 +1,11 @@
 'use client';
 
 import type { JobAnalysis } from '@/lib/api';
-import { ANALYSIS_AXIS_META } from '@/lib/jobAnalysisV2';
+import {
+  ANALYSIS_AXIS_META,
+  resolveAnalysisV2Axes,
+  resolveAxisTooltips,
+} from '@/lib/jobAnalysisV2';
 
 import { AnalysisAxisCard } from '@/components/job-analysis/AnalysisAxisCard';
 import { MatchScoreFactorsBreakdown } from '@/components/job-analysis/MatchScoreFactorsBreakdown';
@@ -36,7 +40,9 @@ export function JobAnalysisV2Panel({
 
   const isTailored =
     isTailoredOverride ??
-    Boolean(analysis.isTailored || analysis.scoreBeforeTailoring != null);
+    Boolean(analysis.isTailored);
+  const axisTooltips = resolveAxisTooltips(v2, analysis.factorsBreakdown);
+  const displayAxes = resolveAnalysisV2Axes(v2, analysis.factorsBreakdown);
 
   return (
     <div className="space-y-5">
@@ -48,18 +54,25 @@ export function JobAnalysisV2Panel({
       </div>
 
       {!embeddedInReport && analysis.factorsBreakdown?.factors.length ? (
-        <MatchScoreFactorsBreakdown breakdown={analysis.factorsBreakdown} />
+        <MatchScoreFactorsBreakdown
+          breakdown={analysis.factorsBreakdown}
+          scoreFormulaTooltip={analysis.scoreFormulaTooltip}
+          headlineCompositionNote={analysis.headlineCompositionNote}
+        />
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {ANALYSIS_AXIS_META.map((axis) => (
-          <AnalysisAxisCard
-            key={axis.key}
-            label={axis.label}
-            score={v2.axes[axis.key]}
-            tooltip={axis.tooltip}
-          />
-        ))}
+        {ANALYSIS_AXIS_META.map((axis) => {
+          const meta = v2.axisMeta?.find((item) => item.key === axis.key);
+          return (
+            <AnalysisAxisCard
+              key={axis.key}
+              label={meta?.label ?? axis.label}
+              score={displayAxes[axis.key]}
+              tooltip={axisTooltips[axis.key]}
+            />
+          );
+        })}
       </div>
 
       <AttackPlanPanel attackPlan={v2.attackPlan} />

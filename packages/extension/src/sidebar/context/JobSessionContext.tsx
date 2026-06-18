@@ -20,8 +20,9 @@ import type {
   MessageAction,
   SaveState,
 } from '@/shared/types';
-import { isRichScore } from '@/shared/job-session';
-import { cvApi } from '@/shared/api';
+import { isAlignedExtensionScore, isRichScore } from '@/shared/job-session';
+import { jobContentFingerprint } from '@/shared/job-content-fingerprint';
+import { jobUrlsMatch } from '@/shared/job-page-url';
 
 type ScoreUiState = CvTabState['scoreState'];
 type CoverLetterUiState = CvTabState['coverLetterState'];
@@ -36,6 +37,7 @@ type JobSessionContextValue = {
   setScoreState: (state: ScoreUiState) => void;
   coverLetterState: CoverLetterUiState;
   setCoverLetterState: (state: CoverLetterUiState) => void;
+  busyOperation: 'scoring' | 'coverLetter' | null;
   selectedCvId: string | null;
   setSelectedCvId: (cvId: string) => void;
   profiles: CvProfile[];
@@ -43,6 +45,9 @@ type JobSessionContextValue = {
   dashboardUrl: string | null;
   aiUsage: AiUsageSnapshot | null;
   pinnedFromOtherTab: boolean;
+  pendingNewJob: ExtractedJob | null;
+  switchToPendingNewJob: () => Promise<void>;
+  dismissPendingNewJob: () => void;
   jobLoading: boolean;
   refreshJob: () => Promise<void>;
   reloadPageForJob: () => Promise<void>;
@@ -73,12 +78,22 @@ function sessionToUi(session: ExtensionJobSession | null): {
       status: 'saved',
       jobId: session.check.jobId,
       jobStatus: session.check.status,
+      companyLogoUrl: session.check.companyLogoUrl ?? null,
+    };
+  } else if (session.score?.jobAnalysisId && (session.score.persisted || session.jobAnalysisId)) {
+    saveState = {
+      status: 'saved',
+      jobId: session.score.jobAnalysisId,
+      jobStatus: session.check?.status ?? 'analyzed',
+      companyLogoUrl: session.check?.companyLogoUrl ?? null,
     };
   }
 
   return {
     job: session.extractedJob,
-    scoreState: session.score ? { status: 'done', result: session.score } : { status: 'idle' },
+    scoreState: isAlignedExtensionScore(session.score)
+      ? { status: 'done', result: session.score! }
+      : { status: 'idle' },
     coverLetterState: session.coverLetter
       ? { status: 'done', result: session.coverLetter }
       : { status: 'idle' },
@@ -95,11 +110,15 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
   const [coverLetterState, setCoverLetterState] = useState<CoverLetterUiState>({
     status: 'idle',
   });
+  const [busyOperation, setBusyOperation] = useState<'scoring' | 'coverLetter' | null>(null);
   const [selectedCvId, setSelectedCvIdState] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<CvProfile[]>([]);
+  const profilesRef = useRef(profiles);
+  profilesRef.current = profiles;
   const [profilesLoading, setProfilesLoading] = useState(true);
   const [pinnedFromOtherTab, setPinnedFromOtherTab] = useState(false);
-  const [jobLoading, setJobLoading] = useState(true);
+  const [pendingNewJob, setPendingNewJob] = useState<ExtractedJob | null>(null);
+  const [jobLoading, setJobLoading] = useState(false);
   const [dashboardUrl, setDashboardUrl] = useState<string | null>(null);
   const [aiUsage, setAiUsage] = useState<AiUsageSnapshot | null>(null);
   const focusedSessionUrlRef = useRef<string | null>(null);
@@ -107,9 +126,33 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
     undefined,
   );
 
-  const applySession = useCallback((session: ExtensionJobSession | null) => {
+  const resetAnalysisUi = useCallback(() => {
+    setScoreState({ status: 'idle' });
+    setCoverLetterState({ status: 'idle' });
+    setSaveState({ status: 'idle' });
+    setJobAnalysisId(null);
+    setCheckResult(null);
+    setDashboardUrl(null);
+    setBusyOperation(null);
+  }, []);
+
+  const syncPinnedFromOtherTab = useCallback(
+    (activeUrl: string, jobUrl: string | null | undefined) => {
+      setPinnedFromOtherTab(
+        Boolean(activeUrl?.trim() && jobUrl?.trim() && !jobUrlsMatch(activeUrl, jobUrl)),
+      );
+    },
+    [],
+  );
+
+  const applySession = useCallback(
+    (
+      session: ExtensionJobSession | null,
+      inFlight?: 'scoring' | 'coverLetter' | null,
+    ) => {
     const ui = sessionToUi(session);
-    setCurrentJob(ui.job);
+
+    setCurrentJob(() => ui.job);
     setJobAnalysisId(
       session?.jobAnalysisId ??
         session?.check?.jobId ??
@@ -117,8 +160,36 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
         null,
     );
     setCheckResult(session?.check ?? null);
-    setSaveState(ui.saveState);
+    setSaveState((prev) => {
+      const next = ui.saveState;
+      if (!session) return next;
+      if (
+        prev.status === 'saved' &&
+        next.status === 'idle' &&
+        session.jobAnalysisId &&
+        prev.jobId === session.jobAnalysisId
+      ) {
+        return prev;
+      }
+      return next;
+    });
     setScoreState((prev) => {
+      if (!session) return inFlight === 'scoring' ? { status: 'loading' } : { status: 'idle' };
+
+      if (inFlight === 'scoring' && !session.score) {
+        return { status: 'loading' };
+      }
+
+      if (!session.score && !session.check?.hasAnalysis) {
+        if (prev.status === 'loading') return prev;
+        return { status: 'idle' };
+      }
+
+      if (!isAlignedExtensionScore(session.score) && session.check?.hasAnalysis) {
+        if (inFlight === 'scoring') return { status: 'loading' };
+        return { status: 'idle' };
+      }
+
       if (
         prev.status === 'done' &&
         isRichScore(prev.result) &&
@@ -130,9 +201,37 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
       }
       return ui.scoreState;
     });
-    setCoverLetterState(ui.coverLetterState);
-    if (session?.selectedCvId) {
+    setCoverLetterState((prev) => {
+      if (!session) {
+        return inFlight === 'coverLetter' ? { status: 'loading' } : { status: 'idle' };
+      }
+      if (inFlight === 'coverLetter' && !session.coverLetter?.coverLetter?.trim()) {
+        return { status: 'loading' };
+      }
+      if (session.coverLetter?.coverLetter?.trim()) {
+        return { status: 'done', result: session.coverLetter };
+      }
+      if (prev.status === 'loading') return prev;
+      return { status: 'idle' };
+    });
+    setBusyOperation(inFlight ?? null);
+    if (!session) {
+      const defaultProfile =
+        profilesRef.current.find((p) => p.isDefault) ?? profilesRef.current[0];
+      setSelectedCvIdState(defaultProfile?.id ?? null);
+    } else if (session.selectedCvId) {
       setSelectedCvIdState(session.selectedCvId);
+    } else {
+      const serverCvId =
+        session?.score?.selectedCvProfileId?.trim() ||
+        session?.check?.selectedCvProfileId?.trim();
+      if (serverCvId) {
+        setSelectedCvIdState(serverCvId);
+      } else {
+        const defaultProfile =
+          profilesRef.current.find((p) => p.isDefault) ?? profilesRef.current[0];
+        setSelectedCvIdState(defaultProfile?.id ?? null);
+      }
     }
     setDashboardUrl(
       session?.score?.dashboardUrl ??
@@ -140,7 +239,9 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
         session?.coverLetter?.dashboardUrl ??
         null,
     );
-  }, []);
+  },
+    [],
+  );
 
   const hydrateSessionCore = useCallback(
     async (showLoading: boolean) => {
@@ -151,30 +252,24 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
         } satisfies MessageAction)) as GetJobSessionResponse | undefined;
 
         focusedSessionUrlRef.current = response?.session?.pageUrl ?? null;
-        applySession(response?.session ?? null);
+        applySession(response?.session ?? null, response?.inFlight ?? null);
 
         if (response?.session?.extractedJob) {
           const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
           const activeUrl = tab?.url ?? '';
           const jobUrl = response.session.extractedJob.sourceUrl;
-          setPinnedFromOtherTab(
-            Boolean(
-              activeUrl &&
-                jobUrl &&
-                activeUrl !== jobUrl &&
-                (activeUrl.includes('/dashboard') || activeUrl.includes('localhost')),
-            ),
-          );
+          syncPinnedFromOtherTab(activeUrl, jobUrl);
         } else {
           setPinnedFromOtherTab(false);
         }
       } catch {
+        if (!showLoading) return;
         applySession(null);
       } finally {
         if (showLoading) setJobLoading(false);
       }
     },
-    [applySession],
+    [applySession, syncPinnedFromOtherTab],
   );
 
   const hydrateSession = useCallback(
@@ -193,8 +288,16 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
   );
 
   const refreshJob = useCallback(async () => {
-    await hydrateSession();
-  }, [hydrateSession]);
+    setJobLoading(true);
+    try {
+      await chrome.runtime.sendMessage({ action: 'probeActiveJob' } satisfies MessageAction);
+      await hydrateSessionCore(true);
+    } catch {
+      await hydrateSessionCore(true);
+    } finally {
+      setJobLoading(false);
+    }
+  }, [hydrateSessionCore]);
 
   const reloadPageForJob = useCallback(async () => {
     setJobLoading(true);
@@ -243,8 +346,43 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
       /* ignore */
     }
     applySession(null);
+    resetAnalysisUi();
     setPinnedFromOtherTab(false);
-  }, [applySession]);
+    setPendingNewJob(null);
+  }, [applySession, resetAnalysisUi]);
+
+  const switchToPendingNewJob = useCallback(async () => {
+    if (!pendingNewJob) return;
+    const job = pendingNewJob;
+    setPendingNewJob(null);
+    setJobLoading(true);
+    try {
+      await chrome.runtime.sendMessage({
+        action: 'switchToNewJob',
+        job,
+      } satisfies MessageAction);
+      await hydrateSessionCore(false);
+    } finally {
+      setJobLoading(false);
+    }
+  }, [hydrateSessionCore, pendingNewJob]);
+
+  const dismissPendingNewJob = useCallback(async () => {
+    const url = pendingNewJob?.sourceUrl;
+    setPendingNewJob(null);
+    try {
+      await chrome.runtime.sendMessage({
+        action: 'dismissPendingNewJob',
+        url,
+      } satisfies MessageAction);
+      await hydrateSessionCore(false);
+    } catch {
+      /* ignore */
+    }
+  }, [hydrateSessionCore, pendingNewJob]);
+
+  const pendingNewJobRef = useRef<ExtractedJob | null>(null);
+  pendingNewJobRef.current = pendingNewJob;
 
   const setSelectedCvId = useCallback((cvId: string) => {
     setSelectedCvIdState(cvId);
@@ -255,23 +393,51 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void hydrateSession();
+    void hydrateSessionCore(false);
     void chrome.runtime.sendMessage({ action: 'getCvProfiles' } satisfies MessageAction);
-    void cvApi
-      .getAiUsage()
-      .then(setAiUsage)
-      .catch(() => {
-        /* usage badge stays loading until an AI action returns aiUsage */
-      });
-  }, [hydrateSession]);
+    void chrome.runtime.sendMessage({ action: 'getAiUsage' } satisfies MessageAction);
+  }, [hydrateSessionCore]);
 
   useEffect(() => {
     const onMessage = (message: MessageAction) => {
       if (!message || typeof message !== 'object') return;
 
       if (message.action === 'activeTabChanged' && 'url' in message) {
-        focusedSessionUrlRef.current = message.url;
+        const activeUrl = message.url;
+        const sessionUrl =
+          'sessionUrl' in message && typeof message.sessionUrl === 'string'
+            ? message.sessionUrl
+            : focusedSessionUrlRef.current;
+        focusedSessionUrlRef.current = sessionUrl ?? null;
+        syncPinnedFromOtherTab(activeUrl, sessionUrl);
+        if (pendingNewJobRef.current) return;
         void hydrateSession({ silent: true });
+        return;
+      }
+      if (message.action === 'sidebarOpened') {
+        void hydrateSession({ silent: true });
+        void chrome.runtime.sendMessage({ action: 'probeActiveJob' } satisfies MessageAction);
+        return;
+      }
+      if (message.action === 'pendingNewJob' && 'job' in message) {
+        setPendingNewJob(message.job);
+        if ('previousJob' in message && message.previousJob) {
+          setCurrentJob(message.previousJob);
+          focusedSessionUrlRef.current =
+            ('previousUrl' in message && typeof message.previousUrl === 'string'
+              ? message.previousUrl
+              : message.previousJob.sourceUrl) ?? null;
+        }
+        return;
+      }
+      if (message.action === 'jobCleared') {
+        applySession(null);
+        resetAnalysisUi();
+        setPinnedFromOtherTab(false);
+        setSelectedCvIdState(() => {
+          const defaultProfile = profiles.find((p) => p.isDefault) ?? profiles[0];
+          return defaultProfile?.id ?? null;
+        });
         return;
       }
       if (message.action === 'jobSessionUpdated' && 'session' in message) {
@@ -282,16 +448,34 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
           return;
         }
         applySession(message.session);
+        void chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
+          const jobUrl =
+            message.session.extractedJob?.sourceUrl ?? message.session.pageUrl;
+          syncPinnedFromOtherTab(tab?.url ?? '', jobUrl);
+        });
         return;
       }
       if (message.action === 'jobExtracted' && 'job' in message) {
+        if (pendingNewJobRef.current) return;
         if (
           focusedSessionUrlRef.current &&
           message.job.sourceUrl !== focusedSessionUrlRef.current
         ) {
           return;
         }
-        setCurrentJob(message.job);
+        const nextJob = message.job;
+        setCurrentJob((prev) => {
+          if (
+            prev &&
+            jobContentFingerprint(prev) !== jobContentFingerprint(nextJob)
+          ) {
+            resetAnalysisUi();
+          }
+          return nextJob;
+        });
+        void chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
+          syncPinnedFromOtherTab(tab?.url ?? '', nextJob.sourceUrl);
+        });
         return;
       }
       if (message.action === 'jobCheckResult' && 'result' in message) {
@@ -310,6 +494,7 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
             status: 'saved',
             jobId: message.result.jobId,
             jobStatus: message.result.status ?? 'saved',
+            companyLogoUrl: message.result.companyLogoUrl ?? null,
           });
         }
         if (message.result.dashboardUrl) {
@@ -329,13 +514,21 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
         });
         return;
       }
+      if (message.action === 'cvScoreStarted') {
+        setBusyOperation('scoring');
+        setScoreState({ status: 'loading' });
+        return;
+      }
       if (message.action === 'cvScoreResult' && 'result' in message) {
+        setBusyOperation(null);
         setScoreState({ status: 'done', result: message.result });
         setDashboardUrl(message.result.dashboardUrl ?? null);
         if (message.result.aiUsage) setAiUsage(message.result.aiUsage);
         if (message.result.jobAnalysisId) {
           setJobAnalysisId(message.result.jobAnalysisId);
         }
+        const serverCvId = message.result.selectedCvProfileId?.trim();
+        if (serverCvId) setSelectedCvIdState(serverCvId);
         return;
       }
       if (message.action === 'aiUsageUpdated' && 'aiUsage' in message) {
@@ -343,10 +536,17 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
         return;
       }
       if (message.action === 'cvScoreError' && 'message' in message) {
+        setBusyOperation(null);
         setScoreState({ status: 'error', message: message.message });
         return;
       }
+      if (message.action === 'coverLetterStarted') {
+        setBusyOperation('coverLetter');
+        setCoverLetterState({ status: 'loading' });
+        return;
+      }
       if (message.action === 'coverLetterResult' && 'result' in message) {
+        setBusyOperation(null);
         setCoverLetterState({ status: 'done', result: message.result });
         if (message.result.dashboardUrl) {
           setDashboardUrl(message.result.dashboardUrl);
@@ -354,6 +554,7 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
         return;
       }
       if (message.action === 'coverLetterError' && 'message' in message) {
+        setBusyOperation(null);
         setCoverLetterState({ status: 'error', message: message.message });
         return;
       }
@@ -362,9 +563,10 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
           status: 'saved',
           jobId: message.jobId,
           jobStatus: message.jobStatus,
+          companyLogoUrl: message.companyLogoUrl ?? null,
         });
         setJobAnalysisId(message.jobId);
-        void hydrateSession({ silent: true });
+        return;
       }
       if (message.action === 'saveError') {
         setSaveState({ status: 'error', message: message.message });
@@ -373,7 +575,7 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
 
     chrome.runtime.onMessage.addListener(onMessage);
     return () => chrome.runtime.onMessage.removeListener(onMessage);
-  }, [applySession, hydrateSession]);
+  }, [applySession, hydrateSession, profiles, resetAnalysisUi, syncPinnedFromOtherTab]);
 
   const value = useMemo(
     () => ({
@@ -386,6 +588,7 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
       setScoreState,
       coverLetterState,
       setCoverLetterState,
+      busyOperation,
       selectedCvId,
       setSelectedCvId,
       profiles,
@@ -393,6 +596,9 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
       dashboardUrl,
       aiUsage,
       pinnedFromOtherTab,
+      pendingNewJob,
+      switchToPendingNewJob,
+      dismissPendingNewJob,
       jobLoading,
       refreshJob,
       reloadPageForJob,
@@ -401,6 +607,7 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
     }),
     [
       aiUsage,
+      busyOperation,
       checkResult,
       clearJob,
       coverLetterState,

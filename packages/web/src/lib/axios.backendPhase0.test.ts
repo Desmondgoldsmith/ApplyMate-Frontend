@@ -3,9 +3,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   AUTH_RATE_LIMIT_USER_MESSAGE,
+  BACKEND_TIMEOUT_ERROR_CODE,
+  BACKEND_UNREACHABLE_ERROR_CODE,
   GENERIC_SERVER_ERROR_USER_MESSAGE,
   getApiErrorMessage,
   isAuthRateLimitError,
+  isBackendConnectionError,
   isDailyAiLimitApiError,
   shouldRetryFailedQuery,
 } from '@/lib/axios';
@@ -68,5 +71,34 @@ describe('backend Phase 0 — auth throttle & safe 5xx', () => {
     expect(shouldRetryFailedQuery(0, axiosErr(403, '/users/me'))).toBe(false);
     expect(shouldRetryFailedQuery(0, axiosErr(500, '/users/me'))).toBe(true);
     expect(shouldRetryFailedQuery(2, axiosErr(500, '/users/me'))).toBe(false);
+  });
+
+  it('shouldRetryFailedQuery skips backend unreachable and 502 proxy failures', () => {
+    const networkErr = new AxiosError('Network Error', 'ERR_NETWORK');
+    expect(shouldRetryFailedQuery(0, networkErr)).toBe(false);
+    expect(
+      shouldRetryFailedQuery(
+        0,
+        axiosErr(502, '/jobs/x', {
+          success: false,
+          error: { code: BACKEND_UNREACHABLE_ERROR_CODE, message: 'down' },
+        }),
+      ),
+    ).toBe(false);
+    expect(isBackendConnectionError(networkErr)).toBe(true);
+    expect(
+      isBackendConnectionError(
+        axiosErr(502, '/jobs/x', {
+          error: { code: BACKEND_TIMEOUT_ERROR_CODE },
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      getApiErrorMessage(
+        axiosErr(502, '/jobs/x', {
+          error: { code: BACKEND_UNREACHABLE_ERROR_CODE, message: 'Cannot reach' },
+        }),
+      ),
+    ).toContain('Cannot reach');
   });
 });

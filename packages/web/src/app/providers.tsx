@@ -16,6 +16,7 @@ import {
 } from '@/lib/authRefresh';
 import { isPublicAuthPath, subscribeAuthLogout } from '@/lib/authSync';
 import { axiosClient, shouldRetryFailedQuery } from '@/lib/axios';
+import { NEXTAUTH_API_BASE_PATH } from '@/lib/nextauth-api';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -23,14 +24,27 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const hydrateFromStorage = useAuthStore((s) => s.hydrateFromStorage);
   useLayoutEffect(() => {
     hydrateFromStorage();
-    if (!useAuthStore.getState().isAuthenticated && !isPublicAuthPath()) {
-      void tryRestoreSessionFromApiCookie();
-    }
     if (!refreshInterceptorReady.current) {
       setupAuthRefreshInterceptor(axiosClient);
       refreshInterceptorReady.current = true;
     }
   }, [hydrateFromStorage]);
+
+  useEffect(() => {
+    const setReady = useAuthStore.getState().setAuthSessionReady;
+    if (isPublicAuthPath()) {
+      setReady(true);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      await tryRestoreSessionFromApiCookie();
+      if (!cancelled) setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     return subscribeAuthLogout(() => {
@@ -50,8 +64,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         defaultOptions: {
           queries: {
             staleTime: 60 * 1000,
-            /** Avoid retry storms on 401/403/429 (backend auth throttle + session expiry). */
+            /** Avoid retry storms on 401/403/429/502 and dead backend (ECONNRESET). */
             retry: shouldRetryFailedQuery,
+            retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
             refetchOnWindowFocus: true,
           },
         },
@@ -59,7 +74,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
+    <SessionProvider
+      basePath={NEXTAUTH_API_BASE_PATH}
+      refetchInterval={0}
+      refetchOnWindowFocus={false}
+    >
       <QueryClientProvider client={queryClient}>
         <PostHogProvider>
           <ForceDarkTheme />

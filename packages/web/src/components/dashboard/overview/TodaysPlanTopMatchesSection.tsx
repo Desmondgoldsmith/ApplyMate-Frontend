@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { MatchScoreRing } from '@/components/dashboard/MatchScoreRing';
+import { CompanyLogo } from '@/components/ui/CompanyLogo';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { trackFunnelEvent } from '@/lib/actionFunnel';
 import { resolveExecutionDestination } from '@/lib/executionRouting';
@@ -16,7 +17,6 @@ import { isAppliedOrLaterState, type TodayPlanItem, type TodayPlanPayload } from
 import { formatConfidenceShort } from '@/lib/todayPlanLabels';
 import { TOOLTIP_JOB_MATCH_SCORE } from '@/lib/dashboardIntelligenceTooltips';
 import { cn } from '@/lib/utils';
-import { companyInitial } from '@/components/dashboard/overview/dashboardOverviewHelpers';
 
 export function TodaysPlanTopMatchesSection({
   items,
@@ -90,9 +90,12 @@ export function TodaysPlanTopMatchesSection({
           const inner = (
             <>
               <div className="flex min-w-0 flex-1 gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(0,201,177,0.15)] text-[14px] font-semibold text-[#00C9B1] sm:h-10 sm:w-10">
-                  {companyInitial(company)}
-                </div>
+                <CompanyLogo
+                  company={company}
+                  logoUrl={it.companyLogoUrl}
+                  size="md"
+                  className="sm:h-10 sm:w-10"
+                />
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="min-w-0 truncate text-[14px] font-semibold text-white">

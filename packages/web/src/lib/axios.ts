@@ -15,6 +15,10 @@ declare module 'axios' {
 
 import { readApplymateTokenFromCookie } from '@/lib/authCookie';
 import { CV_PHOTO_TOO_LARGE_USER_MESSAGE } from '@/lib/cvPhotoCompress';
+import {
+  BACKEND_TIMEOUT_ERROR_CODE,
+  BACKEND_UNREACHABLE_ERROR_CODE,
+} from '@/lib/devBackendProxy';
 import { applyNgrokSkipHeaders } from '@/lib/ngrokTunnel';
 import {
   readRequestIdFromHeaders,
@@ -38,7 +42,7 @@ function readAccessTokenFromMemory(): string | undefined {
  * e.g. http://localhost:3000/api/ — must include the `/api` segment (Nest `setGlobalPrefix('api')`).
  * If the frontend is on :3001 and the API on :3000, the API must allow CORS for :3001.
  */
-function resolveApiBaseUrl(): string {
+function resolveAbsoluteApiBaseUrl(): string {
   const fromEnv = process.env.NEXT_PUBLIC_API_URL?.trim();
   if (fromEnv) {
     return fromEnv.endsWith('/') ? fromEnv : `${fromEnv}/`;
@@ -46,11 +50,33 @@ function resolveApiBaseUrl(): string {
   return 'http://localhost:3000/api/';
 }
 
+export {
+  BACKEND_TIMEOUT_ERROR_CODE,
+  BACKEND_UNREACHABLE_ERROR_CODE,
+} from '@/lib/devBackendProxy';
+
+/** Dev-only browser proxy prefix (see `app/backend-api/[...path]/route.ts`). */
+export const DEV_BROWSER_API_PREFIX = '/backend-api/';
+
+function resolveApiBaseUrl(): string {
+  const absolute = resolveAbsoluteApiBaseUrl();
+  // Dev browser: same-origin proxy avoids CORS to :3000. Must not use `/api/` — NextAuth lives there.
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return DEV_BROWSER_API_PREFIX;
+    }
+  }
+  return absolute;
+}
+
 export const API_BASE_URL = resolveApiBaseUrl();
 
 export const axiosClient = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
+  /** Fail fast when Nest is hung; dev proxy uses the same ceiling. */
+  timeout: 90_000,
 });
 
 axiosClient.interceptors.response.use((response) => {
@@ -335,15 +361,38 @@ export function isAuthRateLimitError(error: unknown): boolean {
   );
 }
 
-/** TanStack Query: avoid hammering the API after throttling or auth failures. */
+/** True when the browser could not complete a request (proxy reset, Nest down, offline). */
+export function isBackendConnectionError(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false;
+  const ax = error as AxiosError<ErrorBody>;
+  if (ax.response?.status === 502) {
+    const nested = readNestedApiError(ax.response.data);
+    return (
+      nested.code === BACKEND_UNREACHABLE_ERROR_CODE ||
+      nested.code === BACKEND_TIMEOUT_ERROR_CODE
+    );
+  }
+  const msg = `${ax.code ?? ''} ${ax.message ?? ''}`.toLowerCase();
+  return (
+    ax.code === 'ERR_NETWORK' ||
+    ax.code === 'ECONNABORTED' ||
+    ax.code === 'ETIMEDOUT' ||
+    msg.includes('network error') ||
+    msg.includes('socket hang up') ||
+    msg.includes('econnreset')
+  );
+}
+
+/** TanStack Query: avoid retry storms on throttling, auth failures, or dead backend. */
 export function shouldRetryFailedQuery(
   failureCount: number,
   error: unknown,
 ): boolean {
   if (failureCount >= 2) return false;
+  if (isBackendConnectionError(error)) return false;
   if (!axios.isAxiosError(error)) return true;
   const s = error.response?.status;
-  if (s === 429 || s === 401 || s === 403) return false;
+  if (s === 429 || s === 401 || s === 403 || s === 502 || s === 503) return false;
   return true;
 }
 
@@ -559,6 +608,17 @@ function getApiErrorMessageBase(error: unknown): string {
 
     if (isAuthRateLimitError(error)) {
       return AUTH_RATE_LIMIT_USER_MESSAGE;
+    }
+
+    if (isBackendConnectionError(error)) {
+      const nested = readNestedApiError(ax.response?.data);
+      if (nested.code === BACKEND_TIMEOUT_ERROR_CODE) {
+        return 'The API server took too long to respond. Try again, or restart the Nest backend if it is stuck.';
+      }
+      if (nested.message?.trim()) {
+        return nested.message.trim();
+      }
+      return 'Cannot reach the API server. Confirm the backend is running on port 3000 (or your NEXT_PUBLIC_API_URL) and try again.';
     }
 
     if (nested.code === 'RATE_LIMITED') {

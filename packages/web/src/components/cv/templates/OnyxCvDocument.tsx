@@ -22,6 +22,7 @@ import { EntryToolbar } from '@/components/cv/EntryToolbar';
 import { HeaderFloatingControls } from '@/components/cv/HeaderFloatingControls';
 import { InlineField } from '@/components/cv/InlineField';
 import { InlineSkillsCommaField } from '@/components/cv/InlineSkillsCommaField';
+import { SkillsRichComma } from '@/components/cv/SkillsRichComma';
 import { persistSectionTitleChange, resolveSectionDisplayTitle } from '@/lib/cvSectionTitlePersist';
 import { useToast } from '@/components/ui/Toast';
 import {
@@ -1065,13 +1066,9 @@ export function OnyxCvDocument({
             )}
           </div>
         ) : flatSkills.length ? (
-          <ul className="list-disc space-y-0.5 pl-4 marker:text-white">
-            {flatSkills.map((skill, i) => (
-              <li key={`skill-${i}`} className="text-[9pt] text-white/95">
-                {skill}
-              </li>
-            ))}
-          </ul>
+          <div className="text-[9pt] text-white/95">
+            <SkillsRichComma skills={flatSkills} />
+          </div>
         ) : (
           <p className="text-[9pt] text-white/60">Add skills in the editor.</p>
         )}

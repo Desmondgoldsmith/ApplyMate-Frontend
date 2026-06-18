@@ -2,6 +2,12 @@
 
 import { memo, useEffect, useRef, useState } from 'react';
 
+import { CvRichTextSpan } from '@/components/cv/CvRichTextSpan';
+import {
+  resolveSkillsFromCommaInput,
+  richTextPlainText,
+  skillLabelForCommaField,
+} from '@/lib/cvRichTextCore';
 import { cn } from '@/lib/utils';
 
 /** Comma-separated skills field — commas stay visible while typing; commits on blur. */
@@ -18,22 +24,21 @@ export const CategorySkillsInput = memo(function CategorySkillsInput({
   label?: string;
   hint?: string;
 }) {
-  const [text, setText] = useState(() => skills.join(', '));
+  const [text, setText] = useState(() =>
+    skills.map((s) => skillLabelForCommaField(s)).filter(Boolean).join(', '),
+  );
   const focusedRef = useRef(false);
 
   useEffect(() => {
     if (!focusedRef.current) {
-      setText(skills.join(', '));
+      setText(skills.map((s) => skillLabelForCommaField(s)).filter(Boolean).join(', '));
     }
   }, [skills]);
 
   const commit = (raw: string) => {
-    const next = raw
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const next = resolveSkillsFromCommaInput(raw, skills);
     onChange(next);
-    setText(next.join(', '));
+    setText(next.map((s) => skillLabelForCommaField(s)).filter(Boolean).join(', '));
   };
 
   return (
@@ -73,12 +78,12 @@ export const CategorySkillsInput = memo(function CategorySkillsInput({
               key={`${s}-${i}`}
               className="inline-flex items-center gap-1 rounded-full bg-[#00C9B1]/15 px-2 py-0.5 text-[11px] text-[#00C9B1]"
             >
-              {s}
+              <CvRichTextSpan html={s} className="text-[#00C9B1]" />
               <button
                 type="button"
                 className="text-white/50 hover:text-white"
                 onClick={() => onChange(skills.filter((x) => x !== s))}
-                aria-label={`Remove ${s}`}
+                aria-label={`Remove ${skillLabelForCommaField(s)}`}
               >
                 ✕
               </button>

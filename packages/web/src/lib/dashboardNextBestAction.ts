@@ -4,6 +4,7 @@ import type { TodayPlanPayload } from '@/lib/today-plan';
 export type NextBestActionVm = {
   headline: string;
   supporting: string | null;
+  relevantActivityLabel: string | null;
   confidence: number | null;
   priority: number | null;
   category: string | null;
@@ -29,6 +30,7 @@ function fromRecommendedMovePayload(plan: TodayPlanPayload | null | undefined): 
   return {
     headline,
     supporting: rm.supporting?.trim() || null,
+    relevantActivityLabel: rm.relevantActivityLabel?.trim() || null,
     confidence: clampPct(rm.confidence),
     priority: clampPct(rm.priority),
     category: rm.category?.trim() || null,

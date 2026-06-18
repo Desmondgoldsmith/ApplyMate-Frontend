@@ -4,14 +4,13 @@ import { Check, ChevronDown, Loader2, RotateCcw, X } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
+import { PreTailorGapChecklist, type TailorMissingSkill } from '@/components/dashboard/PreTailorGapChecklist';
+import { TailorChangeHighlights } from '@/components/dashboard/TailorChangeHighlights';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
-import { api, type CvTailorDraft, type CvTailorDraftEntry } from '@/lib/api';
+import { api, type CvTailorDraft, type CvTailorDraftEntry, type TailorMutationResponse } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
-import { coerceAiPatchSectionBlob } from '@/lib/cvAiPatchDisplay';
-import { buildLineDiff, type CvTailorDiffLine } from '@/lib/cvTailorDiff';
-import { TailorChangeHighlights } from '@/components/dashboard/TailorChangeHighlights';
 import { rehydrateCvBuilderAfterStructuredPersist } from '@/lib/cvStructuredDraftCommit';
 import { cn } from '@/lib/utils';
 
@@ -21,35 +20,13 @@ function sectionTitle(sectionType: string): string {
   return `${s.charAt(0).toUpperCase()}${s.slice(1)} section`;
 }
 
-function InlineDiff({ lines }: { lines: CvTailorDiffLine[] }) {
-  if (lines.length === 0) {
-    return <p className="text-xs text-white/35">No textual diff</p>;
-  }
-  return (
-    <div className="space-y-1 font-mono text-[11px] leading-relaxed">
-      {lines.map((line, i) => (
-        <p
-          key={`${i}-${line.type}-${line.text.slice(0, 24)}`}
-          className={cn(
-            'rounded px-2 py-0.5',
-            line.type === 'added' && 'bg-emerald-500/15 text-emerald-200',
-            line.type === 'removed' && 'bg-rose-500/15 text-rose-200 line-through',
-            line.type === 'same' && 'text-white/45',
-          )}
-        >
-          {line.type === 'added' ? '+ ' : line.type === 'removed' ? '− ' : '  '}
-          {line.text}
-        </p>
-      ))}
-    </div>
-  );
-}
-
 function TailorSuggestionCard({
   entry,
   draftId,
   onUpdated,
+  onTailorMutation,
   onCvRehydrated,
+  onAcceptSucceeded,
   accepting,
   rejecting,
   reverting,
@@ -61,7 +38,9 @@ function TailorSuggestionCard({
   entry: CvTailorDraftEntry;
   draftId: string;
   onUpdated: (d: CvTailorDraft) => void;
+  onTailorMutation?: (result: TailorMutationResponse) => void;
   onCvRehydrated: () => void;
+  onAcceptSucceeded?: () => void;
   accepting: boolean;
   rejecting: boolean;
   reverting: boolean;
@@ -73,18 +52,6 @@ function TailorSuggestionCard({
   const toast = useToast();
   const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState(entry.status === 'pending');
-  const beforeDisplay = useMemo(
-    () => coerceAiPatchSectionBlob(entry.before, entry.sectionType),
-    [entry.before, entry.sectionType],
-  );
-  const afterDisplay = useMemo(
-    () => coerceAiPatchSectionBlob(entry.after, entry.sectionType),
-    [entry.after, entry.sectionType],
-  );
-  const diffLines = useMemo(
-    () => buildLineDiff(beforeDisplay, afterDisplay),
-    [beforeDisplay, afterDisplay],
-  );
 
   const invalidateCv = useCallback(
     async (profileId: string) => {
@@ -98,7 +65,9 @@ function TailorSuggestionCard({
     try {
       const result = await api.cv.acceptTailorSection(draftId, entry.sectionId);
       onUpdated(result.draft);
+      onTailorMutation?.(result);
       await invalidateCv(result.draft.cvProfileId);
+      onAcceptSucceeded?.();
       toast.success('Change applied to your CV');
     } catch (e) {
       toast.error(getApiErrorMessage(e) || 'Could not accept change');
@@ -112,6 +81,7 @@ function TailorSuggestionCard({
     try {
       const result = await api.cv.rejectTailorSection(draftId, entry.sectionId);
       onUpdated(result.draft);
+      onTailorMutation?.(result);
       toast.success('Suggestion dismissed');
     } catch (e) {
       toast.error(getApiErrorMessage(e) || 'Could not reject change');
@@ -130,6 +100,7 @@ function TailorSuggestionCard({
     try {
       const result = await api.cv.revertPatch(patchId);
       onUpdated(result.draft);
+      onTailorMutation?.(result);
       await invalidateCv(result.draft.cvProfileId);
       toast.success('Reverted last accepted change');
     } catch (e) {
@@ -151,19 +122,17 @@ function TailorSuggestionCard({
     );
 
   return (
-    <article className="rounded-xl border border-white/[0.08] bg-white/[0.025] p-3">
+    <article className="rounded-xl border border-white/[0.08] bg-white/[0.02]">
       <button
         type="button"
-        className="flex w-full items-center justify-between gap-2 text-left"
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
       >
-        <div className="min-w-0">
-          <h4 className="truncate text-[13px] font-semibold text-white">{sectionTitle(entry.sectionType)}</h4>
-          {entry.changedFields.length > 0 ? (
-            <p className="mt-0.5 truncate text-[10px] text-white/40">
-              {entry.changedFields.join(', ')}
-            </p>
+        <div>
+          <p className="text-[14px] font-semibold text-white">{sectionTitle(entry.sectionType)}</p>
+          {entry.summary?.trim() ? (
+            <p className="mt-0.5 line-clamp-2 text-[12px] text-white/45">{entry.summary.trim()}</p>
           ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -173,16 +142,15 @@ function TailorSuggestionCard({
       </button>
 
       {expanded ? (
-        <div className="mt-3 space-y-3 border-t border-white/[0.06] pt-3">
+        <div className="mt-3 space-y-3 border-t border-white/[0.06] px-4 pb-4 pt-3">
           <TailorChangeHighlights
             sectionType={entry.sectionType}
-            beforeRaw={beforeDisplay}
-            afterRaw={afterDisplay}
+            beforeRaw={entry.before}
+            afterRaw={entry.after}
             changedFields={entry.changedFields}
+            displayDiff={entry.displayDiff}
+            summary={entry.summary}
           />
-          {diffLines.some((l) => l.type !== 'same') ? (
-            <InlineDiff lines={diffLines} />
-          ) : null}
           {entry.status === 'pending' ? (
             <div className="flex gap-2">
               <Button
@@ -209,12 +177,12 @@ function TailorSuggestionCard({
             <Button
               type="button"
               variant="ghost"
-              className="w-full gap-1.5 border border-white/12 text-white/60"
-              disabled={reverting}
+              className="gap-1.5 border border-amber-400/35 text-amber-100"
+              disabled={accepting || rejecting || reverting}
               onClick={() => void revert()}
             >
               {reverting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
-              Revert this change
+              Undo accept
             </Button>
           ) : null}
         </div>
@@ -226,18 +194,24 @@ function TailorSuggestionCard({
 export type TailorChangePanelProps = {
   draft: CvTailorDraft | null;
   onDraftUpdate: (draft: CvTailorDraft) => void;
+  onTailorMutation?: (result: TailorMutationResponse) => void;
   onCvRehydrated?: () => void;
+  onAcceptSucceeded?: () => void;
   jobTitle?: string | null;
   jobCompany?: string | null;
+  missingSkills?: TailorMissingSkill[];
   className?: string;
 };
 
 export function TailorChangePanel({
   draft,
   onDraftUpdate,
+  onTailorMutation,
   onCvRehydrated,
+  onAcceptSucceeded,
   jobTitle,
   jobCompany,
+  missingSkills = [],
   className,
 }: TailorChangePanelProps) {
   const [busySectionId, setBusySectionId] = useState<string | null>(null);
@@ -276,37 +250,48 @@ export function TailorChangePanel({
       <div className="app-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
         {!draft ? (
           <p className="text-sm text-white/45">No tailor draft loaded.</p>
-        ) : sorted.length === 0 ? (
-          <p className="text-sm text-white/45">No section suggestions in this draft.</p>
         ) : (
-          sorted.map((entry) => (
-            <TailorSuggestionCard
-              key={entry.sectionId}
-              entry={entry}
-              draftId={draft.id}
-              onUpdated={onDraftUpdate}
-              onCvRehydrated={() => onCvRehydrated?.()}
-              accepting={busySectionId === entry.sectionId && busyAction === 'accept'}
-              rejecting={busySectionId === entry.sectionId && busyAction === 'reject'}
-              reverting={busySectionId === entry.sectionId && busyAction === 'revert'}
-              onAcceptStart={() => {
-                setBusySectionId(entry.sectionId);
-                setBusyAction('accept');
-              }}
-              onRejectStart={() => {
-                setBusySectionId(entry.sectionId);
-                setBusyAction('reject');
-              }}
-              onRevertStart={() => {
-                setBusySectionId(entry.sectionId);
-                setBusyAction('revert');
-              }}
-              onBusyEnd={() => {
-                setBusySectionId(null);
-                setBusyAction(null);
-              }}
+          <>
+            <PreTailorGapChecklist
+              missingSkills={missingSkills}
+              selectedSkills={draft.selectedSkills}
+              plannedSections={draft.plannedSections}
             />
-          ))
+            {sorted.length === 0 ? (
+              <p className="text-sm text-white/45">No section suggestions in this draft.</p>
+            ) : (
+              sorted.map((entry) => (
+                <TailorSuggestionCard
+                  key={entry.sectionId}
+                  entry={entry}
+                  draftId={draft.id}
+                  onUpdated={onDraftUpdate}
+                  onTailorMutation={onTailorMutation}
+                  onCvRehydrated={() => onCvRehydrated?.()}
+                  onAcceptSucceeded={onAcceptSucceeded}
+                  accepting={busySectionId === entry.sectionId && busyAction === 'accept'}
+                  rejecting={busySectionId === entry.sectionId && busyAction === 'reject'}
+                  reverting={busySectionId === entry.sectionId && busyAction === 'revert'}
+                  onAcceptStart={() => {
+                    setBusySectionId(entry.sectionId);
+                    setBusyAction('accept');
+                  }}
+                  onRejectStart={() => {
+                    setBusySectionId(entry.sectionId);
+                    setBusyAction('reject');
+                  }}
+                  onRevertStart={() => {
+                    setBusySectionId(entry.sectionId);
+                    setBusyAction('revert');
+                  }}
+                  onBusyEnd={() => {
+                    setBusySectionId(null);
+                    setBusyAction(null);
+                  }}
+                />
+              ))
+            )}
+          </>
         )}
       </div>
     </div>

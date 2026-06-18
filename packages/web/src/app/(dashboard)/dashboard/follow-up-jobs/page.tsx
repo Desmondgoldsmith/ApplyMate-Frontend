@@ -2,8 +2,10 @@
 
 import { useMemo } from 'react';
 
+import { Button } from '@/components/ui/Button';
+import { GlowCard } from '@/components/ui/GlowCard';
 import { useCvProfileRowsDisplay } from '@/hooks/useCvProfileRowsDisplay';
-import { useTodayPlan } from '@/hooks/useTodayPlan';
+import { useDashboardFollowUpJobs } from '@/hooks/useDashboardFollowUpJobs';
 
 import { FollowUpJobsSkeleton } from './FollowUpJobsSkeleton';
 import { FollowUpJobsView } from './FollowUpJobsView';
@@ -22,16 +24,31 @@ export default function FollowUpJobsPage() {
     }
   }, []);
 
-  const todayPlan = useTodayPlan({
+  const followUpQuery = useDashboardFollowUpJobs({
     cvProfileId: defaultProfile?.id ?? null,
     timezone: browserTz,
+    focusFeedMaxItems: 100,
   });
 
-  if (todayPlan.isLoading) {
+  if (followUpQuery.isLoading && !followUpQuery.data) {
     return <FollowUpJobsSkeleton />;
   }
 
+  if (followUpQuery.isError) {
+    return (
+      <GlowCard contentClassName="p-6">
+        <p className="text-sm text-rose-200">Could not load your follow-up queue.</p>
+        <Button className="mt-4" variant="ghost" onClick={() => void followUpQuery.refetch()}>
+          Retry
+        </Button>
+      </GlowCard>
+    );
+  }
+
   return (
-    <FollowUpJobsView jobs={todayPlan.data?.followUpJobs ?? []} serverTotalCount={todayPlan.data?.followUpJobsTotalCount ?? null} />
+    <FollowUpJobsView
+      jobs={followUpQuery.data?.followUpJobs ?? []}
+      serverTotalCount={followUpQuery.data?.followUpJobsTotalCount ?? null}
+    />
   );
 }

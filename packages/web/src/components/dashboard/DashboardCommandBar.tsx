@@ -4,14 +4,12 @@ import { Megaphone } from 'lucide-react';
 import Link from 'next/link';
 import { useId, useMemo } from 'react';
 
-import { InfoHint } from '@/components/ui/InfoHint';
 import {
   directiveFromFollowUpIntelligence,
   directiveFromOpportunityDetection,
   directiveFromStrategicRecommendation,
   sanitizeFollowUpDirectiveMessage,
 } from '@/lib/dashboardCommandCopy';
-import { tooltipCommandBarConfidence } from '@/lib/dashboardIntelligenceTooltips';
 import { canonicalDashboardHref } from '@/lib/dashboardHrefDedupe';
 import { descriptiveFollowUpLeadIn } from '@/lib/followUpJobsUiCopy';
 import { resolveFollowUpJobsListHref } from '@/lib/followUpListRoute';
@@ -171,16 +169,13 @@ export function DashboardCommandBar({
     }
     return sanitizeFollowUpDirectiveMessage(legacyTop!.directive);
   })();
-  const confidence =
-    fromApiBar != null ? fromApiBar.confidence : legacyTop!.confidence;
   const ctaLabel =
     fromApiBar != null ? fromApiBar.ctaLabel : legacyTop!.ctaLabel;
   const ctaHref =
     fromApiBar != null ? fromApiBar.ctaHref : legacyTop!.ctaHref;
-  const confidenceTooltipSource =
+  const noticeSource =
     fromApiBar != null ? fromApiBar.source : legacyTop!.source;
-  const confidenceTooltip = tooltipCommandBarConfidence(confidenceTooltipSource);
-  const noticeLabel = noticeEyebrow(confidenceTooltipSource as CommandNoticeSource);
+  const noticeLabel = noticeEyebrow(noticeSource as CommandNoticeSource);
 
   const followUpQueueJobs = plan?.followUpJobs ?? [];
   const followUpQueueTotal = plan?.followUpJobsTotalCount ?? null;
@@ -257,20 +252,13 @@ export function DashboardCommandBar({
                 {followUpSupportingSnippet}
               </p>
             ) : null}
-            <div className="mt-4 flex flex-col gap-3 border-t border-white/[0.08] pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-4 sm:gap-y-2">
+            <div className="mt-4 border-t border-white/[0.08] pt-4">
               <Link
                 href={ctaHref}
                 className="inline-flex min-h-[40px] w-full shrink-0 items-center justify-center rounded-full border border-transparent bg-[var(--teal)] px-[18px] py-2 text-[13px] font-semibold text-[#080b0a] transition-[filter,transform] duration-150 hover:brightness-110 hover:[transform:scale(1.01)] active:scale-[0.99] sm:w-auto"
               >
                 {ctaLabel}
               </Link>
-              <p className="flex flex-wrap items-center gap-1 text-[11px] text-[var(--text-muted)]">
-                <span className="inline-flex items-center gap-1">
-                  <span>Priority signal</span>
-                  <InfoHint text={confidenceTooltip} buttonAriaLabel="What does priority signal mean?" />
-                </span>
-                <span className="tabular-nums text-[var(--text-muted)]">{confidence}%</span>
-              </p>
             </div>
           </div>
         </div>

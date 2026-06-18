@@ -154,7 +154,7 @@ export function MobileBottomNav() {
                       <Icon
                         className={cn(
                           'h-[17px] w-[17px] shrink-0',
-                          active ? 'text-[#00C9B1]' : 'text-white/55',
+                          active ? 'text-[#00C9B1]' : 'text-[rgba(240,244,242,0.35)]',
                         )}
                       />
                       <span className="line-clamp-2 w-full text-center">
@@ -190,27 +190,25 @@ export function MobileBottomNav() {
             <motion.div
               style={{ bottom: submenuBottom }}
               data-tour="mobile-jobs-sheet"
-              className="fixed inset-x-0 z-[43] mx-2 max-h-[min(70vh,420px)] overflow-hidden rounded-2xl border border-[#00C9B1]/30 bg-[#0C0F0F]/98 shadow-[0_-10px_28px_rgba(0,0,0,0.38)] backdrop-blur-md lg:hidden"
+              className="fixed inset-x-0 z-[43] mx-2 max-h-[min(70vh,420px)] overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#0F1512] shadow-[0_-10px_28px_rgba(0,0,0,0.38)] backdrop-blur-md lg:hidden"
               initial={{ y: 16, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 16, opacity: 0 }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             >
-              <div className="mb-1 flex items-center justify-between px-3 py-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/45">
-                  Jobs workspace
-                </p>
+              <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] px-3 py-2.5">
+                <p className="text-[15px] font-semibold text-[#F0F4F2]">Jobs</p>
                 <button
                   type="button"
                   onClick={() => setJobsMenuOpen(false)}
-                  className="rounded-md border border-white/12 p-1.5 text-white/55 hover:border-[#00C9B1]/40 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]"
+                  className="rounded-md border border-white/12 p-1.5 text-white/55 hover:border-[#00C9B1]/40 hover:bg-[rgba(0,201,177,0.05)] hover:text-[#00C9B1]"
                   aria-label="Close jobs menu"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <div className="app-scrollbar scroll-content-end-pad max-h-[min(58vh,340px)] overflow-y-auto px-2 pb-4">
-                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+              <div className="app-scrollbar scroll-content-end-pad max-h-[min(58vh,340px)] overflow-y-auto p-2 pb-4">
+                <div className="flex flex-col gap-2">
                   {jobSuite.children.map((item) => {
                     const Icon = item.icon;
                     const active = isDashboardNavActive(pathname, item.href);
@@ -222,26 +220,24 @@ export function MobileBottomNav() {
                         href={item.href}
                         {...(tourAttr ? { 'data-tour': tourAttr } : {})}
                         className={cn(
-                          'flex min-h-[3.7rem] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium leading-tight text-white/55 transition-colors',
+                          'flex h-[60px] w-full min-w-0 items-center gap-3 rounded-[10px] border border-[rgba(255,255,255,0.08)] bg-[#0F1512] px-3 text-[13px] font-medium text-[rgba(240,244,242,0.60)] transition-colors',
                           active &&
-                            'bg-[#00C9B1]/18 text-white shadow-[inset_0_0_0_1px_rgba(0,201,177,0.35)]',
+                            'border-[#00C9B1]/40 bg-[rgba(0,201,177,0.05)] text-[#F0F4F2]',
                           !active &&
-                            'hover:bg-white/[0.06] hover:text-white/80',
+                            'hover:border-[#00C9B1]/40 hover:bg-[rgba(0,201,177,0.05)] hover:text-[#F0F4F2]',
                           soon && 'opacity-75',
                         )}
                         onClick={() => setJobsMenuOpen(false)}
                       >
                         <Icon
                           className={cn(
-                            'h-[17px] w-[17px] shrink-0',
-                            active ? 'text-[#00C9B1]' : 'text-white/55',
+                            'h-6 w-6 shrink-0',
+                            active ? 'text-[#00C9B1]' : 'text-[rgba(240,244,242,0.60)]',
                           )}
                         />
-                        <span className="line-clamp-2 w-full text-center">
-                          {item.shortLabel}
-                        </span>
+                        <span className="min-w-0 flex-1 text-left">{item.shortLabel}</span>
                         {soon ? (
-                          <span className="text-[8px] font-semibold uppercase tracking-wide text-[#00C9B1]">
+                          <span className="text-[10px] font-semibold uppercase tracking-wide text-[#00C9B1]">
                             Soon
                           </span>
                         ) : null}
@@ -262,7 +258,7 @@ export function MobileBottomNav() {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-            className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#00C9B1]/20 bg-[#0C0F0F]/95 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-8px_24px_rgba(0,0,0,0.35)] backdrop-blur-md lg:hidden"
+            className="fixed bottom-0 left-0 right-0 z-40 border-t border-[rgba(255,255,255,0.08)] bg-[#0F1512]/95 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-8px_24px_rgba(0,0,0,0.35)] backdrop-blur-md lg:hidden"
             aria-label="Main navigation"
             data-tour="mobile-bottom-nav"
           >
@@ -282,10 +278,9 @@ export function MobileBottomNav() {
                       data-tour="nav-jobs-workspace"
                       onClick={() => setJobsMenuOpen((v) => !v)}
                       className={cn(
-                        'flex min-h-[4.1rem] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium leading-tight text-white/50 transition-colors active:scale-[0.98]',
-                        active &&
-                          'bg-[#00C9B1]/18 text-white shadow-[inset_0_0_0_1px_rgba(0,201,177,0.35)]',
-                        !active && 'hover:bg-white/[0.06] hover:text-white/80',
+                        'flex min-h-[4.1rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium leading-tight transition-colors active:scale-[0.98]',
+                        active ? 'text-[#00C9B1]' : 'text-[rgba(240,244,242,0.35)] hover:text-[rgba(240,244,242,0.60)]',
+                        !active && 'hover:bg-white/[0.04]',
                       )}
                       aria-expanded={jobsMenuOpen}
                       aria-haspopup="menu"
@@ -293,10 +288,10 @@ export function MobileBottomNav() {
                       <Briefcase
                         className={cn(
                           'h-[18px] w-[18px] shrink-0',
-                          active ? 'text-[#00C9B1]' : 'text-white/55',
+                          active ? 'text-[#00C9B1]' : 'text-[rgba(240,244,242,0.35)]',
                         )}
                       />
-                      <span className="line-clamp-2 w-full text-center">
+                      <span className={cn('line-clamp-2 w-full text-center', active && 'text-[#00C9B1]')}>
                         {item.shortLabel}
                       </span>
                     </button>
@@ -311,18 +306,19 @@ export function MobileBottomNav() {
                     key={item.id}
                     href={item.href}
                     {...(tourAttr ? { 'data-tour': tourAttr } : {})}
-                    className={cn(
-                      'flex min-h-[4.1rem] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium leading-tight text-white/50 transition-colors active:scale-[0.98]',
-                      active &&
-                        'bg-[#00C9B1]/18 text-white shadow-[inset_0_0_0_1px_rgba(0,201,177,0.35)]',
-                      !active && 'hover:bg-white/[0.06] hover:text-white/80',
-                      soon && 'opacity-75',
-                    )}
+                      className={cn(
+                        'flex min-h-[4.1rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium leading-tight transition-colors active:scale-[0.98]',
+                        active
+                          ? 'text-[#00C9B1]'
+                          : 'text-[rgba(240,244,242,0.35)] hover:text-[rgba(240,244,242,0.60)]',
+                        !active && 'hover:bg-white/[0.04]',
+                        soon && 'opacity-75',
+                      )}
                   >
                     <Icon
                       className={cn(
                         'h-[18px] w-[18px] shrink-0',
-                        active ? 'text-[#00C9B1]' : 'text-white/55',
+                        active ? 'text-[#00C9B1]' : 'text-[rgba(240,244,242,0.35)]',
                       )}
                     />
                     <span className="line-clamp-2 w-full text-center">
@@ -342,10 +338,11 @@ export function MobileBottomNav() {
                 data-tour="nav-more-menu"
                 onClick={() => setMoreOpen((v) => !v)}
                 className={cn(
-                  'flex min-h-[4.1rem] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium leading-tight text-white/50 transition-colors',
+                  'flex min-h-[4.1rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium leading-tight transition-colors',
                   moreActive || moreOpen
-                    ? 'bg-[#00C9B1]/18 text-white shadow-[inset_0_0_0_1px_rgba(0,201,177,0.35)]'
-                    : 'hover:bg-white/[0.06] hover:text-white/80',
+                    ? 'text-[#00C9B1]'
+                    : 'text-[rgba(240,244,242,0.35)] hover:text-[rgba(240,244,242,0.60)]',
+                  !(moreActive || moreOpen) && 'hover:bg-white/[0.04]',
                 )}
                 aria-label="More navigation options"
                 aria-expanded={moreOpen}
@@ -354,10 +351,10 @@ export function MobileBottomNav() {
                 <MoreHorizontal
                   className={cn(
                     'h-[18px] w-[18px] shrink-0',
-                    moreActive || moreOpen ? 'text-[#00C9B1]' : 'text-white/55',
+                    moreActive || moreOpen ? 'text-[#00C9B1]' : 'text-[rgba(240,244,242,0.35)]',
                   )}
                 />
-                <span className="w-full text-center">More</span>
+                <span className={cn('w-full text-center', (moreActive || moreOpen) && 'text-[#00C9B1]')}>More</span>
               </button>
             </div>
           </motion.nav>

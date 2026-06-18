@@ -30,7 +30,7 @@ describe('cvSectionAssistantBranding', () => {
           items: [],
         },
       ],
-    } as CVBuilderData;
+    } as unknown as CVBuilderData;
 
     expect(resolveCvSectionAssistantDisplayName(`parsed-${uuid}`, data)).toBe('Something New');
     expect(cvSectionAssistantPopoverTitle(`parsed-${uuid}`, data)).toBe('Something New assistant');
@@ -47,7 +47,7 @@ describe('cvSectionAssistantBranding', () => {
           items: [],
         },
       ],
-    } as CVBuilderData;
+    } as unknown as CVBuilderData;
 
     expect(resolveCvSectionAssistantDisplayName(`parsed-${uuid}`, data)).toBe('Publications');
     expect(cvSectionAssistantPopoverTitle(`parsed-${uuid}`, data)).toBe('Publications assistant');

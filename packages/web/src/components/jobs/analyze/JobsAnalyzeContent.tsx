@@ -51,11 +51,17 @@ import {
   canUseAiFromDailyAiUsage,
   DAILY_AI_LIMIT_REACHED_MESSAGE,
 } from '@/lib/ai-daily-usage';
-import { resolveCvProfileIdForSavedJob } from '@/lib/jobAnalysisCvContext';
+import { resolveCvProfileIdForSavedJob, resolveSelectedCvProfileId } from '@/lib/jobAnalysisCvContext';
+import { isCompletedJobAnalysis } from '@/lib/jobAnalysisComplete';
 import { getTailorChecklistSkills } from '@/lib/skillCoverage';
+import {
+  displayScoreBeforeTailorForAnalysis,
+  resolveTailorUiState,
+} from '@/lib/tailorAnalysisUi';
 import {
   consumePrefetchByContextToken,
   FRESH_ANALYZE_PREFILL_SESSION,
+  readHubJobPrefillSession,
 } from '@/lib/jobHubPrefill';
 import { axiosClient, getApiErrorMessage } from '@/lib/axios';
 import {
@@ -77,9 +83,16 @@ import {
   markExecutionComplete,
   recordExecutionCheckpoint,
 } from '@/lib/executionMemory';
-import { resolveAnalysisAfterTailorMutation } from '@/lib/applyTailorMutation';
+import { resolveAnalysisAfterTailorMutation, commitTailorJobAnalysis } from '@/lib/applyTailorMutation';
+import { acceptedTailorSkillNames } from '@/lib/tailorAcceptedSkills';
 import { mergeTailorEstimatedScores } from '@/lib/tailorMatchScore';
 import { invalidateTodayPlanQueries } from '@/lib/today-plan';
+import {
+  ANALYZE_PROGRESS_PHRASES,
+  COVER_LETTER_PROGRESS_PHRASES,
+  TAILOR_PROGRESS_PHRASES,
+  useProgressPhrases,
+} from '@/lib/operationProgress';
 import { ensureArray } from '@/lib/ensure-array';
 import { openExternalJobApplyUrl } from '@/lib/jobApplyUrl';
 import { applyUrlAnalyzePayload } from '@/lib/jobApplyUrlPick';
@@ -103,6 +116,7 @@ import {
   historyRowKey,
   jobAnalyzeFormSchema,
   jobHistoryItemToDetail,
+  jobAnalyzeContentFingerprint,
   loadCompletedTailorDraft,
   loadPersistedAnalysis,
   loadPersistedForm,
@@ -134,6 +148,7 @@ export function JobsAnalyzeContent() {
   const [tailorDraft, setTailorDraft] = useState<CvTailorDraft | null>(null);
   const [tailorSidebarOpen, setTailorSidebarOpen] = useState(false);
   const [tailorSubmitting, setTailorSubmitting] = useState(false);
+  const [tailorDraftLoading, setTailorDraftLoading] = useState(false);
   const [rematching, setRematching] = useState(false);
   const [selectedSkillNames, setSelectedSkillNames] = useState<string[]>([]);
   const [scoreBeforeTailor, setScoreBeforeTailor] = useState<number | null>(
@@ -272,7 +287,7 @@ export function JobsAnalyzeContent() {
       if (candidates.length === 0) return prev;
 
       const scoreMatch = candidates.find(
-        (x) => Math.round(x.matchScore) === Math.round(prev.matchScore ?? NaN),
+        (x) => Math.round(x.matchScore ?? NaN) === Math.round(prev.matchScore ?? NaN),
       );
       const sorted = [...candidates].sort(
         (a, b) =>
@@ -345,6 +360,7 @@ export function JobsAnalyzeContent() {
     [tailoringFormProfileId, title, company, description],
   );
   const tailoringFpRef = useRef<string | null>(null);
+  const jobContentFpRef = useRef<string | null>(null);
   const tailorAiBlocked =
     !aiUsage.isPaidTier && !aiUsage.isLoading && (aiUsage.remaining ?? 0) === 0;
 
@@ -380,9 +396,7 @@ export function JobsAnalyzeContent() {
         if (!next) return prev;
         analysisMergeRef.current = next;
         persistSessionSnapshot(title, company, description, next);
-        queryClient.setQueryData(queryKeys.jobs.analysisCurrent(), next);
-        void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
+        commitTailorJobAnalysis(next, queryClient);
         return next;
       });
     },
@@ -519,14 +533,11 @@ export function JobsAnalyzeContent() {
         setTailoringCompleted(Boolean(merged.isTailored === true));
       }
 
-      if (tailorBaselineScoreRef.current == null) {
+      if (tailorBaselineScoreRef.current == null && merged.isTailored) {
         const lockFrom =
-          merged.scoreBeforeTailoring != null &&
-          Number.isFinite(merged.scoreBeforeTailoring)
+          merged.scoreBeforeTailoring != null && Number.isFinite(merged.scoreBeforeTailoring)
             ? merged.scoreBeforeTailoring
-            : nextDraft
-              ? merged.matchScore
-              : null;
+            : null;
         if (lockFrom != null && Number.isFinite(lockFrom)) {
           tailorBaselineScoreRef.current = Math.round(lockFrom);
         }
@@ -664,12 +675,21 @@ export function JobsAnalyzeContent() {
   }, [generated, candidateDisplayName]);
 
   const applyDetail = useCallback((detail: JobDetailForForm) => {
+    jobContentFpRef.current = jobAnalyzeContentFingerprint(
+      detail.title,
+      detail.company,
+      detail.description,
+    );
     setTitle(detail.title);
     setCompany(detail.company);
     setDescription(detail.description);
 
     const incoming = detail.analysis;
-    if (!incoming || typeof incoming !== 'object') {
+    if (
+      !incoming ||
+      typeof incoming !== 'object' ||
+      !isCompletedJobAnalysis(incoming)
+    ) {
       analysisMergeRef.current = null;
       setAnalysis(null);
       setTailorDraft(null);
@@ -745,7 +765,13 @@ export function JobsAnalyzeContent() {
   const loadJobById = useCallback(
     async (
       jobId: string,
-      opts?: { clearUrl?: boolean; openTailor?: boolean },
+      opts?: {
+        clearUrl?: boolean;
+        openTailor?: boolean;
+        fallbackTitle?: string;
+        fallbackCompany?: string;
+        fallbackDescription?: string;
+      },
     ) => {
       let detail: JobDetailForForm | null = null;
       let usedHistoryFallback = false;
@@ -771,14 +797,62 @@ export function JobsAnalyzeContent() {
         usedHistoryFallback = true;
       }
 
+      if (!detail.title.trim() && opts?.fallbackTitle?.trim()) {
+        detail = { ...detail, title: opts.fallbackTitle.trim() };
+      }
+      if (!detail.company.trim() && opts?.fallbackCompany?.trim()) {
+        detail = { ...detail, company: opts.fallbackCompany.trim() };
+      }
+      if (!detail.description.trim() && opts?.fallbackDescription?.trim()) {
+        detail = { ...detail, description: opts.fallbackDescription.trim() };
+      }
+      if (!detail.description.trim()) {
+        const hubPrefill = readHubJobPrefillSession(jobId);
+        if (hubPrefill?.description?.trim()) {
+          detail = { ...detail, description: hubPrefill.description.trim() };
+        }
+      }
+      if (!detail.description.trim() && typeof window !== 'undefined') {
+        try {
+          const fromStorage = window.localStorage
+            .getItem('applymate_prefill_jd')
+            ?.trim();
+          if (fromStorage) {
+            detail = { ...detail, description: fromStorage };
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+
+      const completed = isCompletedJobAnalysis(detail.analysis);
       applyDetail(detail);
-      setViewingSavedAnalysis(true);
-      setMobileTab('results');
+
       try {
         sessionStorage.setItem(STORAGE_LAST_JOB_ID, jobId);
       } catch {
         /* ignore */
       }
+
+      if (!completed) {
+        setViewingSavedAnalysis(false);
+        setMobileTab('analyze');
+        setGenerated(null);
+        setCoverLetterAiBaseline(null);
+        if (opts?.clearUrl) {
+          router.replace('/dashboard/jobs/analyze', { scroll: false });
+        }
+        setActiveJobId(null);
+        if (usedHistoryFallback && !detail.description) {
+          toast.error(
+            'Loaded title and company. The full job description is not available from history. Paste it again to analyze.',
+          );
+        }
+        return true;
+      }
+
+      setViewingSavedAnalysis(true);
+      setMobileTab('results');
 
       const boardCv =
         fromBoardFromUrl &&
@@ -823,7 +897,7 @@ export function JobsAnalyzeContent() {
 
       if (usedHistoryFallback && !detail.description) {
         toast.error(
-          'Loaded title and company. The full job description is not available from history—paste it again to generate a cover letter.',
+          'Loaded title and company. The full job description is not available from history. Paste it again to generate a cover letter.',
         );
       }
       if (opts?.openTailor && detail.tailorDraft?.id?.trim()) {
@@ -977,8 +1051,8 @@ export function JobsAnalyzeContent() {
         return;
       }
 
-      /** Extension "Open full analyzer" — prefill title, company, and description from query params. */
-      if (sourceFromUrl === 'extension' && !sessionIdFromUrl) {
+      /** Extension "Open full analyzer" — prefill form only when no saved analysis id is linked. */
+      if (sourceFromUrl === 'extension' && !sessionIdFromUrl && !jobIdFromUrl) {
         const jobTitle = searchParams.get('jobTitle')?.trim() ?? '';
         const companyParam = searchParams.get('company')?.trim() ?? '';
         const descriptionParam = searchParams.get('description')?.trim() ?? '';
@@ -1103,6 +1177,9 @@ export function JobsAnalyzeContent() {
         const loaded = await loadJobByIdRef.current(jobId, {
           clearUrl: Boolean(jobIdFromUrl),
           openTailor: Boolean(jobIdFromUrl && openTailorFromUrl),
+          fallbackTitle: searchParams.get('jobTitle')?.trim() ?? '',
+          fallbackCompany: searchParams.get('company')?.trim() ?? '',
+          fallbackDescription: searchParams.get('description')?.trim() ?? '',
         });
         if (cancelled) return;
         if (loaded) lastInitJobId.current = jobId;
@@ -1185,8 +1262,14 @@ export function JobsAnalyzeContent() {
       setTitle(prefillTitle.trim() ? prefillTitle : form.title);
       setCompany(prefillCompany.trim() ? prefillCompany : form.company);
       const hasPrefillDescription = prefillJobDescription.trim().length > 0;
-      setDescription(
-        hasPrefillDescription ? prefillJobDescription : form.description,
+      const nextDescription = hasPrefillDescription
+        ? prefillJobDescription
+        : form.description;
+      setDescription(nextDescription);
+      jobContentFpRef.current = jobAnalyzeContentFingerprint(
+        prefillTitle.trim() ? prefillTitle : form.title,
+        prefillCompany.trim() ? prefillCompany : form.company,
+        nextDescription,
       );
       setAnalysis(hasPrefillDescription ? null : persistedAnalysis);
       if (!hasPrefillDescription && persistedAnalysis) {
@@ -1244,6 +1327,34 @@ export function JobsAnalyzeContent() {
       sessionStorage.removeItem(STORAGE_ANALYSIS_KEY);
     }
   }, [hydrated, analysis]);
+
+  const jobContentFp = useMemo(
+    () => jobAnalyzeContentFingerprint(title, company, description),
+    [title, company, description],
+  );
+
+  /** Drop stale analysis when the user edits or clears the job description. */
+  useEffect(() => {
+    if (!hydrated) return;
+    if (jobContentFpRef.current === null) {
+      jobContentFpRef.current = jobContentFp;
+      return;
+    }
+    if (jobContentFpRef.current === jobContentFp) return;
+    jobContentFpRef.current = jobContentFp;
+    analysisMergeRef.current = null;
+    setAnalysis(null);
+    setGenerated(null);
+    setCoverLetterAiBaseline(null);
+    setCoverLetterEditing(false);
+    setCoverLetterDraft('');
+    setViewingSavedAnalysis(false);
+    setSelectedSkillNames([]);
+    setScoreBeforeTailor(null);
+    tailorBaselineScoreRef.current = null;
+    setTailoringCompleted(false);
+    setError(null);
+  }, [hydrated, jobContentFp]);
 
   /** Drop tailor UI when JD or CV selection changes (skip until first hydrate to avoid wiping session restore). */
   useEffect(() => {
@@ -1303,8 +1414,18 @@ export function JobsAnalyzeContent() {
     setTailoringCompleted(false);
     setSelectedSkillNames([]);
     tailoringFpRef.current = null;
+    jobContentFpRef.current = null;
     setAwaitingListingAnalysis(false);
     setMobileTab('analyze');
+    const defaultProfile =
+      cvProfiles.find((p) => p.isDefault) ?? cvProfiles[0] ?? null;
+    if (defaultProfile) {
+      setSelectedProfileId(defaultProfile.id);
+    } else if (cv?.id) {
+      setSelectedProfileId(cv.id);
+    } else {
+      setSelectedProfileId(null);
+    }
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem(STORAGE_FORM_KEY);
       sessionStorage.removeItem(STORAGE_ANALYSIS_KEY);
@@ -1363,7 +1484,7 @@ export function JobsAnalyzeContent() {
       await navigator.clipboard.writeText(coverLetterDisplay);
       toast.success('Cover letter copied');
     } catch {
-      toast.error('Could not copy — try selecting the text manually');
+      toast.error('Could not copy. Try selecting the text manually');
     }
   }, [coverLetterDisplay, toast]);
 
@@ -1377,7 +1498,7 @@ export function JobsAnalyzeContent() {
       });
       toast.success('PDF downloaded');
     } catch {
-      toast.error('Could not create PDF — try again');
+      toast.error('Could not create PDF. Try again');
     }
   }, [company, coverLetterDisplay, title, toast]);
 
@@ -1397,7 +1518,7 @@ export function JobsAnalyzeContent() {
       setTailoringCompleted(false);
       analysisMergeRef.current = res;
       setAnalysis(res);
-      const matchedCv = (res.sourceCvProfileId ?? res.cvProfileId ?? '').trim();
+      const matchedCv = resolveSelectedCvProfileId(res, cv?.id ?? null);
       if (matchedCv && cvProfiles.some((p) => p.id === matchedCv)) {
         setSelectedProfileId(matchedCv);
       }
@@ -1653,10 +1774,9 @@ export function JobsAnalyzeContent() {
       return;
     }
     const jobId = (analysis?.id ?? jobAnalysisIdForTailor).trim();
-    if (!jobId) {
-      setTailorSidebarOpen(true);
-      return;
-    }
+    setTailorSidebarOpen(true);
+    if (!jobId) return;
+    setTailorDraftLoading(true);
     try {
       const detail = await api.jobs.getJob(jobId);
       if (detail.tailorDraft?.id?.trim()) {
@@ -1667,22 +1787,14 @@ export function JobsAnalyzeContent() {
       }
     } catch {
       /* sidebar can still show export-only state */
+    } finally {
+      setTailorDraftLoading(false);
     }
-    setTailorSidebarOpen(true);
   }, [analysis?.id, jobAnalysisIdForTailor, tailorDraftForCurrentJob]);
 
-  const tailorSectionComplete = useMemo(
-    () =>
-      Boolean(
-        tailoringCompleted ||
-        analysis?.isTailored ||
-        tailorDraftForCurrentJob?.status === 'completed',
-      ),
-    [
-      tailoringCompleted,
-      analysis?.isTailored,
-      tailorDraftForCurrentJob?.status,
-    ],
+  const isTailorComplete = useMemo(
+    () => analysis?.isTailored === true,
+    [analysis?.isTailored],
   );
 
   const lastCheckpointKeyRef = useRef<string | null>(null);
@@ -1740,7 +1852,7 @@ export function JobsAnalyzeContent() {
 
   // Mark completion so continuation disappears once the workflow is done.
   useEffect(() => {
-    if (!tailorSectionComplete) return;
+    if (!isTailorComplete) return;
     if (!jobAnalysisIdForTailor) return;
     const entityId = jobListingIdForTailor
       ? canonicalWorkflowEntityId('job', jobListingIdForTailor)
@@ -1751,16 +1863,12 @@ export function JobsAnalyzeContent() {
     }).catch(() => {
       /* non-blocking */
     });
-  }, [tailorSectionComplete, jobAnalysisIdForTailor, jobListingIdForTailor]);
+  }, [isTailorComplete, jobAnalysisIdForTailor, jobListingIdForTailor]);
 
-  /** Prefer local state (live tailor flow); fall back to API so Score Change survives fingerprint/profile churn. */
-  const displayScoreBeforeTailor = useMemo(() => {
-    if (scoreBeforeTailor != null && Number.isFinite(scoreBeforeTailor))
-      return scoreBeforeTailor;
-    const a = analysis?.scoreBeforeTailoring;
-    if (a != null && Number.isFinite(a)) return a;
-    return null;
-  }, [scoreBeforeTailor, analysis?.scoreBeforeTailoring]);
+  const displayScoreBeforeTailor = useMemo(
+    () => displayScoreBeforeTailorForAnalysis(analysis, scoreBeforeTailor),
+    [scoreBeforeTailor, analysis],
+  );
 
   useEffect(() => {
     const id = analysis?.id?.trim();
@@ -1803,25 +1911,19 @@ export function JobsAnalyzeContent() {
 
   const acceptedSkillNames = useMemo(() => {
     if (!tailorDraftForCurrentJob) return [];
-    if (tailorSectionComplete) {
-      return tailorDraftForCurrentJob.selectedSkills ?? [];
-    }
-    const drafts = tailorDraftForCurrentJob.drafts;
-    const skillsDraft = drafts.find(
-      (d: CvTailorDraftEntry) =>
-        d.sectionType === 'skills' && d.status === 'accepted',
-    );
-    if (skillsDraft) {
+    const fromDiff = acceptedTailorSkillNames(tailorDraftForCurrentJob);
+    if (fromDiff.length > 0) return fromDiff;
+    if (isTailorComplete) {
       return tailorDraftForCurrentJob.selectedSkills ?? [];
     }
     return [];
-  }, [tailorDraftForCurrentJob, tailorSectionComplete]);
+  }, [tailorDraftForCurrentJob, isTailorComplete]);
 
   const fullyCompleteRef = useRef(false);
   fullyCompleteRef.current = !!(
     analysis &&
     (Boolean(generated?.trim()) || Boolean(analysis.hasCoverLetter)) &&
-    tailorSectionComplete
+    isTailorComplete
   );
 
   useEffect(() => {
@@ -1866,9 +1968,19 @@ export function JobsAnalyzeContent() {
     })}`;
   }, [loopReminderRows]);
 
-  const coverLetterDone = hasCoverLetter || Boolean(analysis?.hasCoverLetter);
+  const coverLetterDone =
+    analysis?.checklistSuggestions?.find((s) => s.id === 'auto_cover_letter')
+      ?.completed === true ||
+    hasCoverLetter ||
+    Boolean(analysis?.hasCoverLetter);
   const savedDone =
-    Boolean(loopSteps.savedToHub) || viewingSavedAnalysis || coverLetterDone;
+    analysis?.checklistSuggestions?.find((s) => s.id === 'auto_save')?.completed ===
+      true ||
+    Boolean(loopSteps.savedToHub) ||
+    viewingSavedAnalysis;
+  const tailorDoneFromChecklist =
+    analysis?.checklistSuggestions?.find((s) => s.id === 'auto_tailor_cv')
+      ?.completed === true;
 
   const handleSkipCoverLetter = useCallback(() => {
     updateLoopSteps({ coverLetterSkipped: true });
@@ -1975,7 +2087,26 @@ export function JobsAnalyzeContent() {
     [analysis?.id, company, loopReminders.createReminder, title, toast],
   );
 
-  const analysisMutationBusy = analyze.isPending || aiReportPending;
+  const analysisMutationBusy =
+    analyze.isPending || aiReportPending || generate.isPending || tailorSubmitting;
+  const analyzeProgressLabel = useProgressPhrases(
+    analyze.isPending || aiReportPending || awaitingListingAnalysis,
+    ANALYZE_PROGRESS_PHRASES,
+  );
+  const coverLetterProgressLabel = useProgressPhrases(
+    generate.isPending,
+    COVER_LETTER_PROGRESS_PHRASES,
+  );
+  const tailorProgressLabel = useProgressPhrases(
+    tailorSubmitting || tailorDraftLoading,
+    TAILOR_PROGRESS_PHRASES,
+  );
+  const resultsLoadingLabel =
+    generate.isPending
+      ? coverLetterProgressLabel
+      : tailorSubmitting || tailorDraftLoading
+        ? tailorProgressLabel
+        : analyzeProgressLabel;
   const listingAutoBlockedByCv =
     Boolean(jobListingIdFromUrl) && cvProfiles.length > 1 && !selectedProfileId;
   const showEmptyStateLoader =
@@ -1987,13 +2118,17 @@ export function JobsAnalyzeContent() {
     hydrated && Boolean(analysis) && analysisMutationBusy;
 
   const handleTailorFirst = useCallback(() => {
-    if (tailorSectionComplete || tailorDraftForCurrentJob) {
-                            void openTailorPanel();
-                            return;
-                          }
-                          void handleCreateTailorDraft();
+    const tailorUi = resolveTailorUiState(
+      analysis,
+      Boolean(tailorDraftForCurrentJob),
+    );
+    if (tailorUi.tailorCtaMode === 'view' || tailorUi.tailorCtaMode === 'continue') {
+      void openTailorPanel();
+      return;
+    }
+    void handleCreateTailorDraft();
   }, [
-    tailorSectionComplete,
+    analysis,
     tailorDraftForCurrentJob,
     openTailorPanel,
     handleCreateTailorDraft,
@@ -2073,7 +2208,7 @@ export function JobsAnalyzeContent() {
 
   useEffect(() => {
     if (!isExtensionSession || !extensionSessionId) return;
-    if (!tailorSectionComplete) return;
+    if (!isTailorComplete) return;
     const tailoredCvId = analysis?.tailoredCvProfileId?.trim();
     if (!tailoredCvId) return;
     if (extensionCompleteCalledRef.current) return;
@@ -2107,7 +2242,7 @@ export function JobsAnalyzeContent() {
   }, [
     isExtensionSession,
     extensionSessionId,
-    tailorSectionComplete,
+    isTailorComplete,
     analysis?.tailoredCvProfileId,
   ]);
 
@@ -2317,9 +2452,11 @@ export function JobsAnalyzeContent() {
               onSelectedProfileChange={setSelectedProfileId}
               onClearForm={clearForm}
               onSubmit={submit}
-              analyzePending={analyze.isPending}
+              analyzePending={analysisMutationBusy}
+              analyzeProgressLabel={analyzeProgressLabel}
               aiReportPending={aiReportPending}
               viewingSavedAnalysis={viewingSavedAnalysis}
+              analysisIsTailored={Boolean(analysis?.isTailored)}
               activeAnalysisId={analysis?.id}
               onSelectHistoryJob={loadJobById}
               analyzeClassName={cn(mobileTab !== 'analyze' && 'max-lg:hidden')}
@@ -2350,7 +2487,10 @@ export function JobsAnalyzeContent() {
                 </p>
                             </div>
             ) : showEmptyStateLoader ? (
-              <AnalyzerResultsLoadingShell variant="empty" />
+              <AnalyzerResultsLoadingShell
+                variant="empty"
+                progressLabel={analyzeProgressLabel}
+              />
             ) : !analysis ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-12 text-center">
                 <Search className="h-12 w-12 text-white/25" aria-hidden />
@@ -2366,7 +2506,10 @@ export function JobsAnalyzeContent() {
             ) : (
               <div className="relative min-h-[200px]">
                 {showResultsRefreshing ? (
-                  <AnalyzerResultsLoadingShell variant="overlay" />
+                  <AnalyzerResultsLoadingShell
+                    variant="overlay"
+                    progressLabel={resultsLoadingLabel}
+                  />
                 ) : null}
                 <div
                   className={cn(
@@ -2379,7 +2522,7 @@ export function JobsAnalyzeContent() {
                         analysis={analysis}
                         rematching={rematching}
                         displayScoreBeforeTailor={displayScoreBeforeTailor}
-                        tailorSectionComplete={tailorSectionComplete}
+                        isTailorComplete={isTailorComplete}
                         acceptedSkillNames={acceptedSkillNames}
                         resolvedApplyUrl={resolvedApplyUrl}
                         analyzePending={analyze.isPending}
@@ -2388,7 +2531,7 @@ export function JobsAnalyzeContent() {
                         onApplyNow={handleApplyOnCompanySite}
                       />
                       <NextStepsPanel
-                        tailorDone={tailorSectionComplete}
+                        tailorDone={tailorDoneFromChecklist || isTailorComplete}
                         coverLetterDone={coverLetterDone}
                         coverLetterSkipped={Boolean(
                           loopSteps.coverLetterSkipped,
@@ -2416,7 +2559,7 @@ export function JobsAnalyzeContent() {
                       <div className="min-w-0 max-w-full overflow-x-hidden rounded-2xl border border-[#00C9B1]/15 bg-[#0C0F0F] p-4 sm:p-6">
                         <SkillGapPanel
                           analysis={analysis}
-                          tailorSectionComplete={tailorSectionComplete}
+                          isTailorComplete={isTailorComplete}
                           selectedSkillNames={selectedSkillNames}
                           onToggleSkill={toggleSkillSelected}
                           tailorSubmitting={tailorSubmitting}
@@ -2431,10 +2574,11 @@ export function JobsAnalyzeContent() {
                             void handleCreateTailorDraft()
                           }
                           onResumeTailoring={() => setTailorSidebarOpen(true)}
+                          onOpenTailorEditor={() => void openTailorPanel()}
                         />
                         <TailoringPanel
                           analysis={analysis}
-                          tailorSectionComplete={tailorSectionComplete}
+                          isTailorComplete={isTailorComplete}
                           displayScoreBeforeTailor={displayScoreBeforeTailor}
                           hasTailorDraftForJob={Boolean(tailorDraftForCurrentJob)}
                           rematching={rematching}
@@ -2524,14 +2668,14 @@ export function JobsAnalyzeContent() {
           variant="primary"
           onClick={submit}
           disabled={
-            analyze.isPending || (cvProfiles.length > 1 && !selectedProfileId)
+            analysisMutationBusy || (cvProfiles.length > 1 && !selectedProfileId)
           }
           className="min-h-[48px] rounded-[10px] bg-gradient-to-br from-[#00C9B1] to-[#00A896] text-[15px] font-semibold text-[#080A0A] shadow-[0_6px_24px_rgba(0,201,177,0.35)]"
         >
           {analyze.isPending || aiReportPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 shrink-0 animate-spin" />
-              {aiReportPending ? 'Running AI report…' : 'Analyzing…'}
+              {analyzeProgressLabel}
             </>
           ) : (
             <>
@@ -2546,6 +2690,7 @@ export function JobsAnalyzeContent() {
         open={tailorSidebarOpen}
         onClose={() => setTailorSidebarOpen(false)}
         draft={tailorDraftForCurrentJob ?? tailorDraft}
+        draftLoading={tailorDraftLoading}
         onTailorMutation={applyTailorMutation}
         jobTitle={analysis?.title ?? title}
         jobCompany={analysis?.company ?? company}
@@ -2561,6 +2706,8 @@ export function JobsAnalyzeContent() {
           analysis?.tailoredCvName ?? tailorDraft?.tailoredCvName ?? null
         }
         jobAnalysisId={jobAnalysisIdForTailor || null}
+        isTailored={analysis?.isTailored === true}
+        missingSkills={analysis?.missingSkills ?? []}
       />
     </>
   );

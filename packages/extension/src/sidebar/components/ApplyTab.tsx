@@ -10,8 +10,8 @@ function TabPlaceholder({ title, subtitle }: { title: string; subtitle: string }
 export function ApplyTab() {
   return (
     <TabPlaceholder
-      title="Apply"
-      subtitle="Autofill job applications with one click — coming in Phase 4."
+      title="Autofill"
+      subtitle="Prefill job application forms with your CV details — coming soon."
     />
   );
 }

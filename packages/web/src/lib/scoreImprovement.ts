@@ -15,6 +15,7 @@ export type ScoreImprovementGuide = {
   scoreBand: ScoreImprovementBand;
   headline: string;
   ceilingHint: string;
+  interviewReminder?: string;
   items: ScoreImprovementItem[];
 };
 
@@ -66,10 +67,18 @@ function parseItem(row: unknown, index: number): ScoreImprovementItem | null {
 
   return {
     id,
-    title,
-    detail,
+    title: stripScoreImprovementCopy(title),
+    detail: stripScoreImprovementCopy(detail),
     axis: parseAxis(o.axis),
   };
+}
+
+function stripScoreImprovementCopy(text: string): string {
+  return text
+    .replace(/\bJD\b/g, 'job description')
+    .replace(/\s*[—–]\s*/g, ', ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
 }
 
 /** Parse `scoreImprovement` from GET /jobs/:id or tailor payloads (post-tailor only). */
@@ -81,20 +90,29 @@ export function parseScoreImprovementGuide(raw: unknown): ScoreImprovementGuide 
   if (!Array.isArray(itemsRaw)) return undefined;
 
   const items: ScoreImprovementItem[] = [];
-  for (let i = 0; i < itemsRaw.length && items.length < 3; i++) {
+  for (let i = 0; i < itemsRaw.length && items.length < 5; i++) {
     const item = parseItem(itemsRaw[i], i);
     if (item) items.push(item);
   }
   if (items.length === 0) return undefined;
 
-  const headline =
+  const headline = stripScoreImprovementCopy(
     (typeof o.headline === 'string' && o.headline.trim()) ||
-    (typeof o.summary === 'string' && o.summary.trim()) ||
-    '';
-  const ceilingHint =
+      (typeof o.summary === 'string' && o.summary.trim()) ||
+      '',
+  );
+  const ceilingHint = stripScoreImprovementCopy(
     (typeof o.ceilingHint === 'string' && o.ceilingHint.trim()) ||
-    (typeof o.ceiling_hint === 'string' && o.ceiling_hint.trim()) ||
+      (typeof o.ceiling_hint === 'string' && o.ceiling_hint.trim()) ||
+      '',
+  );
+  const interviewReminderRaw =
+    (typeof o.interviewReminder === 'string' && o.interviewReminder.trim()) ||
+    (typeof o.interview_reminder === 'string' && o.interview_reminder.trim()) ||
     '';
+  const interviewReminder = interviewReminderRaw
+    ? stripScoreImprovementCopy(interviewReminderRaw)
+    : undefined;
 
   if (!headline || !ceilingHint) return undefined;
 
@@ -112,6 +130,7 @@ export function parseScoreImprovementGuide(raw: unknown): ScoreImprovementGuide 
     scoreBand: parseBand(o.scoreBand ?? o.score_band),
     headline,
     ceilingHint,
+    ...(interviewReminder ? { interviewReminder } : {}),
     items,
   };
 }
@@ -147,7 +166,7 @@ export function formatSeniorityLabel(raw: string): string {
  * Prefer backend fixes in `build-score-improvement-guide.ts` — see docs.
  */
 export function humanizeScoreImprovementDetail(detail: string): string {
-  let out = detail.trim();
+  let out = stripScoreImprovementCopy(detail);
   if (!out) return out;
 
   out = out.replace(
@@ -168,7 +187,7 @@ export function humanizeScoreImprovementDetail(detail: string): string {
   if (/targets mid-level experience.*reads as mid-level on your cv/i.test(out)) {
     out = out.replace(
       /targets mid-level experience;\s*your cv reads as mid-level on your cv\.?/i,
-      'You and the role are both mid-level on paper. The gap is more about years, scope, or must-have depth—not title alone.',
+      'You and the role are both mid-level on paper. The gap is more about years, scope, or must-have depth, not title alone.',
     );
   }
 

@@ -1,6 +1,8 @@
 'use client';
 
+import { DashboardExpandableText } from '@/components/dashboard/DashboardExpandableText';
 import { InfoHint } from '@/components/ui/InfoHint';
+import { cleanAiText } from '@/lib/dashboardDisplayCopy';
 import { cn } from '@/lib/utils';
 
 export type DashboardStatChip = {
@@ -16,6 +18,7 @@ export type DashboardStatChip = {
 type Props = {
   chips: DashboardStatChip[];
   loading?: boolean;
+  className?: string;
 };
 
 function parsePrimaryNumber(chip: DashboardStatChip): number | null {
@@ -74,6 +77,27 @@ function statusColorClass(chip: DashboardStatChip): string {
   return 'text-[var(--text-secondary)]';
 }
 
+function StatChipStatus({ chip }: { chip: DashboardStatChip }) {
+  const status = cleanAiText(chip.status.trim());
+  if (!status) return <span className="text-[var(--text-muted)]">{'\u00a0'}</span>;
+
+  if (chip.key === 'predictive_outlook') {
+    return (
+      <DashboardExpandableText
+        text={status}
+        maxChars={120}
+        className={statusColorClass(chip)}
+      />
+    );
+  }
+
+  return (
+    <p className={cn('w-full text-[12px] font-medium leading-snug', statusColorClass(chip))}>
+      {status}
+    </p>
+  );
+}
+
 function StatChipButton({ c, gridClassName }: { c: DashboardStatChip; gridClassName?: string }) {
   return (
     <button
@@ -83,15 +107,16 @@ function StatChipButton({ c, gridClassName }: { c: DashboardStatChip; gridClassN
         el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }}
       className={cn(
-        'flex min-h-[128px] min-w-[148px] shrink-0 snap-start flex-col rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3 text-left transition-[border-color,background-color,transform] duration-150 hover:-translate-y-px hover:border-[var(--border-default)] hover:bg-[var(--bg-surface-hover)] md:min-h-[132px] md:min-w-0',
+        'flex min-h-[128px] w-full shrink-0 flex-col rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-[10px] py-1.5 text-left transition-[border-color,background-color,transform] duration-150 hover:-translate-y-px hover:border-[var(--border-default)] hover:bg-[var(--bg-surface-hover)] md:min-h-[132px] md:min-w-0 md:px-4 md:py-3',
+        c.key === 'predictive_outlook' && 'min-h-[128px] h-auto',
         gridClassName,
       )}
     >
       {/* Row 1: label + hint — fixed block height so all cards align */}
       <div className="flex h-10 shrink-0 items-start gap-2">
         <p
-          className="line-clamp-2 min-w-0 flex-1 uppercase leading-tight tracking-[0.08em] text-[var(--text-muted)]"
-          style={{ fontSize: '10px', fontWeight: 'var(--weight-medium)' }}
+          className="line-clamp-2 min-w-0 flex-1 uppercase leading-tight tracking-[0.08em] text-[var(--text-muted)] text-[11px] md:text-[10px]"
+          style={{ fontWeight: 'var(--weight-medium)' }}
         >
           {c.label}
         </p>
@@ -115,31 +140,34 @@ function StatChipButton({ c, gridClassName }: { c: DashboardStatChip; gridClassN
       {/* Row 2: value — fixed height for baseline alignment */}
       <div className="flex h-10 shrink-0 items-center">
         <p
-          className={cn('tabular-nums leading-none', valueColorClass(c))}
-          style={{ fontSize: '24px', fontWeight: 'var(--weight-bold)' }}
+          className={cn('tabular-nums leading-none text-[24px] md:text-[24px]', valueColorClass(c))}
+          style={{ fontWeight: 'var(--weight-bold)' }}
         >
           {c.value}
         </p>
       </div>
-      {/* Row 3: status — fixed height; empty still reserves space */}
-      <div className="mt-auto flex min-h-[2.25rem] shrink-0 items-start pt-0.5">
-        <p className={cn('line-clamp-2 w-full text-[12px] font-medium leading-snug', statusColorClass(c))}>
-          {c.status.trim() ? c.status : '\u00a0'}
-        </p>
+      {/* Row 3: status — expands for outlook description */}
+      <div
+        className={cn(
+          'mt-auto flex shrink-0 items-start pt-0.5',
+          c.key === 'predictive_outlook' ? 'min-h-0' : 'min-h-[2.25rem]',
+        )}
+      >
+        <StatChipStatus chip={c} />
       </div>
     </button>
   );
 }
 
-export function DashboardStatsRow({ chips, loading }: Props) {
+export function DashboardStatsRow({ chips, loading, className }: Props) {
   if (loading) {
     return (
-      <>
-        <div className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden">
+      <div className={className}>
+        <div className="flex flex-col gap-2.5 md:hidden">
           {[0, 1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="h-[132px] min-w-[148px] shrink-0 snap-start animate-pulse rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)]"
+              className="h-[132px] w-full animate-pulse rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)]"
             />
           ))}
         </div>
@@ -157,7 +185,7 @@ export function DashboardStatsRow({ chips, loading }: Props) {
             />
           ))}
         </div>
-      </>
+      </div>
     );
   }
 
@@ -167,8 +195,8 @@ export function DashboardStatsRow({ chips, loading }: Props) {
   const row2 = chips.slice(3);
 
   return (
-    <>
-      <div className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden">
+    <div className={className}>
+      <div className="flex flex-col gap-2.5 md:hidden">
         {chips.map((c) => (
           <StatChipButton key={c.key} c={c} />
         ))}
@@ -190,6 +218,6 @@ export function DashboardStatsRow({ chips, loading }: Props) {
           </div>
         ) : null}
       </div>
-    </>
+    </div>
   );
 }

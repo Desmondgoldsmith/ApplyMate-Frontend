@@ -7,7 +7,7 @@ export default function InterviewsRedirectPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/dashboard/interview');
+    router.replace('/dashboard/interview-prep');
   }, [router]);
 
   return null;

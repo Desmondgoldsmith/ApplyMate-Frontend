@@ -28,7 +28,7 @@ const LEVERAGE_LABELS: Record<(typeof LEVERAGE_ORDER)[number], string> = {
   cv_improvement: 'CV improvement',
   job_matching: 'Job matching',
   applications: 'Applications',
-  interview_preparation: 'Interview preparation',
+  interview_preparation: 'Interview prep',
 };
 
 function normalizeStrongestLeverage(raw: string): (typeof LEVERAGE_ORDER)[number] | null {

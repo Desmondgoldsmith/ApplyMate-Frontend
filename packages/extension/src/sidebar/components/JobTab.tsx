@@ -7,8 +7,11 @@ import type {
   SaveState,
 } from '@/shared/types';
 import { isLikelyJobUrl } from '@/shared/job-page-url';
+import { isExtractedJobIncomplete } from '@/shared/extracted-job';
+import { openWebAppTabWithAnalyzerPrefill, openWebAppTabWithHubPrefill } from '@/shared/web-hub-prefill';
 
 import { useJobSession } from '../context/JobSessionContext';
+import { CompanyLogoBadge } from './CompanyLogoBadge';
 const TOKENS = {
   bg: '#080B0A',
   surface: '#0F1512',
@@ -34,6 +37,12 @@ const WEB_APP_BASE =
 
 const JOB_HUB_URL = `${WEB_APP_BASE}/dashboard/jobs`;
 
+function jobHubDetailUrl(jobAnalysisId?: string | null): string {
+  const id = jobAnalysisId?.trim();
+  if (!id) return JOB_HUB_URL;
+  return `${JOB_HUB_URL}?jobId=${encodeURIComponent(id)}`;
+}
+
 type Action =
   | { type: 'set'; state: JobExtractionState }
   | { type: 'ready'; job: ExtractedJob }
@@ -48,7 +57,7 @@ function reducer(_: JobExtractionState, action: Action): JobExtractionState {
     case 'error':
       return { status: 'error', message: action.message };
     default:
-      return { status: 'detecting' };
+      return { status: 'not-a-job-page' };
   }
 }
 
@@ -156,7 +165,7 @@ function NotAJobPageView({
         }}
       >
         {onJobListingPage
-          ? 'This looks like a job listing page, but ApplyMate has not read the posting yet. Refresh the page to load the job into the extension.'
+          ? 'Job details could not be read from this page. Click Reload tab below, or refresh the tab and open the extension again.'
           : 'Open a job listing on LinkedIn, Indeed, a company careers page, or any site with a job description — or paste a job link below.'}
       </p>
       {onJobListingPage ? (
@@ -178,7 +187,7 @@ function NotAJobPageView({
           }}
           onClick={onReloadPage}
         >
-          {reloading ? 'Refreshing page…' : 'Refresh page to detect job'}
+          {reloading ? 'Reloading tab…' : 'Reload tab'}
         </button>
       ) : null}
       {!showUrlInput ? (
@@ -302,10 +311,12 @@ function SaveJobButton({
   job,
   saveState,
   setSaveState,
+  hasAnalysis,
 }: {
   job: ExtractedJob;
   saveState: SaveState;
   setSaveState: (state: SaveState) => void;
+  hasAnalysis: boolean;
 }) {
   const handleSave = () => {
     if (saveState.status === 'saving' || saveState.status === 'saved') return;
@@ -321,6 +332,7 @@ function SaveJobButton({
         jobType: job.jobType ?? undefined,
         experienceLevel: job.experienceLevel ?? undefined,
         postedDate: job.postedDate ?? undefined,
+        ...(job.logoCandidateUrl?.trim() ? { logoCandidateUrl: job.logoCandidateUrl.trim() } : {}),
         sourceUrl: job.sourceUrl,
         sourceSite: job.sourceSite,
       },
@@ -328,10 +340,16 @@ function SaveJobButton({
   };
 
   const openJobHub = () => {
-    void chrome.tabs.create({ url: JOB_HUB_URL });
+    const jobId = saveState.status === 'saved' ? saveState.jobId : null;
+    void openWebAppTabWithHubPrefill(jobHubDetailUrl(jobId), jobId, {
+      title: job.title,
+      company: job.company ?? '',
+      description: job.description ?? '',
+    });
   };
 
   if (saveState.status === 'saved') {
+    const savedLogoUrl = saveState.companyLogoUrl;
     return (
       <div>
         <button
@@ -351,9 +369,15 @@ function SaveJobButton({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 6,
+            gap: 8,
           }}
         >
+          <CompanyLogoBadge
+            company={job.company || job.title}
+            logoUrl={savedLogoUrl}
+            size={24}
+            shape="circle"
+          />
           <span aria-hidden>✓</span>
           <span>Saved to Job Hub</span>
         </button>
@@ -398,7 +422,7 @@ function SaveJobButton({
               e.currentTarget.style.textDecoration = 'none';
             }}
           >
-            View in Job Hub →
+            View in Hub →
           </button>
         </div>
       </div>
@@ -447,6 +471,35 @@ function SaveJobButton({
   }
 
   const saving = saveState.status === 'saving';
+
+  if (hasAnalysis && saveState.status === 'idle') {
+    return (
+      <div>
+        <button
+          type="button"
+          disabled={saving}
+          onClick={handleSave}
+          style={{
+            width: '100%',
+            padding: 11,
+            background: TOKENS.teal10,
+            border: `1px solid ${TOKENS.teal30}`,
+            color: TOKENS.primary,
+            fontSize: 13,
+            fontWeight: 600,
+            borderRadius: 8,
+            cursor: saving ? 'not-allowed' : 'pointer',
+            fontFamily: TOKENS.font,
+          }}
+        >
+          {saving ? 'Saving…' : 'Save analyzed job to Hub'}
+        </button>
+        <p style={{ margin: '8px 0 0', fontSize: 11, color: TOKENS.textMuted, lineHeight: 1.5 }}>
+          Analysis is ready — save to keep this role in Job Hub.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <button
@@ -508,6 +561,9 @@ function JobReadyView({
   pinnedFromOtherTab,
   jobAnalysisId,
   hasAnalysis,
+  onReloadPage,
+  reloading,
+  scoreCompanyLogoUrl,
 }: {
   job: ExtractedJob;
   saveState: SaveState;
@@ -516,8 +572,12 @@ function JobReadyView({
   pinnedFromOtherTab: boolean;
   jobAnalysisId: string | null;
   hasAnalysis: boolean;
+  onReloadPage: () => void;
+  reloading: boolean;
+  scoreCompanyLogoUrl?: string | null;
 }) {
   const [descExpanded, setDescExpanded] = useState(false);
+  const incompleteJob = isExtractedJobIncomplete(job);
 
   const badgeParts = [job.sourceSite];
   if (!hasAnalysis && job.extractedBy === 'ai-fallback') {
@@ -528,32 +588,19 @@ function JobReadyView({
     (v): v is string => Boolean(v?.trim()),
   );
 
+  const displayLogoUrl =
+    saveState.status === 'saved'
+      ? saveState.companyLogoUrl
+      : scoreCompanyLogoUrl ?? job.logoCandidateUrl;
+
   const openAnalyzer = () => {
     const analysisId =
       jobAnalysisId ?? (saveState.status === 'saved' ? saveState.jobId : null);
-    if (analysisId) {
-      const params = new URLSearchParams({
-        source: 'extension',
-        jobId: analysisId,
-        jobTitle: job.title,
-        company: job.company ?? '',
-      });
-      if (job.description?.trim()) {
-        params.set('description', job.description);
-      }
-      void chrome.tabs.create({
-        url: `${WEB_APP_BASE}/dashboard/jobs/analyze?${params.toString()}`,
-      });
-      return;
-    }
-    const params = new URLSearchParams({
-      source: 'extension',
-      jobTitle: job.title,
+    void openWebAppTabWithAnalyzerPrefill(WEB_APP_BASE, {
+      jobAnalysisId: analysisId,
+      title: job.title,
       company: job.company ?? '',
       description: job.description ?? '',
-    });
-    void chrome.tabs.create({
-      url: `${WEB_APP_BASE}/dashboard/jobs/analyze?${params.toString()}`,
     });
   };
 
@@ -575,8 +622,51 @@ function JobReadyView({
 
   return (
     <div style={{ fontFamily: TOKENS.font }}>
+      {incompleteJob ? (
+        <div
+          style={{
+            marginBottom: 12,
+            background: TOKENS.surface,
+            border: `1px solid ${TOKENS.borderDefault}`,
+            borderRadius: 12,
+            padding: 14,
+          }}
+        >
+          <p style={{ margin: 0, fontSize: 12, lineHeight: 1.6, color: TOKENS.textSecondary }}>
+            Job details could not be read from this page. Click{' '}
+            <strong style={{ color: TOKENS.textPrimary }}>Reload tab</strong> below, or refresh the
+            tab and open the extension again.
+          </p>
+          <button
+            type="button"
+            disabled={reloading}
+            onClick={onReloadPage}
+            style={{
+              marginTop: 12,
+              width: '100%',
+              background: reloading ? TOKENS.teal10 : TOKENS.primary,
+              border: 'none',
+              borderRadius: 8,
+              padding: '10px 12px',
+              color: reloading ? TOKENS.textSecondary : '#080B0A',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: reloading ? 'wait' : 'pointer',
+              fontFamily: TOKENS.font,
+            }}
+          >
+            {reloading ? 'Reloading tab…' : 'Reload tab'}
+          </button>
+        </div>
+      ) : null}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', flex: 1, minWidth: 0, gap: 12 }}>
+          <CompanyLogoBadge
+            company={job.company || job.title}
+            logoUrl={displayLogoUrl}
+            size={40}
+          />
+          <div style={{ flex: 1, minWidth: 0 }}>
         <span
           style={{
             display: 'inline-block',
@@ -632,6 +722,7 @@ function JobReadyView({
             Kept from a previous job page — clear when you are done.
           </p>
         ) : null}
+        </div>
         </div>
         <button
           type="button"
@@ -724,32 +815,40 @@ function JobReadyView({
       {divider}
 
       <div>
-        <SaveJobButton job={job} saveState={saveState} setSaveState={setSaveState} />
+        <SaveJobButton
+          job={job}
+          saveState={saveState}
+          setSaveState={setSaveState}
+          hasAnalysis={hasAnalysis}
+        />
         <button
           type="button"
           onClick={openAnalyzer}
           style={{
             marginTop: 8,
             width: '100%',
-            background: 'transparent',
-            border: `1px solid ${TOKENS.borderDefault}`,
+            background: hasAnalysis ? TOKENS.primary : 'transparent',
+            color: hasAnalysis ? TOKENS.bg : TOKENS.textSecondary,
+            border: hasAnalysis ? 'none' : `1px solid ${TOKENS.borderDefault}`,
             borderRadius: 8,
             padding: 10,
             fontSize: 13,
-            color: TOKENS.textSecondary,
+            fontWeight: 600,
             cursor: 'pointer',
             fontFamily: TOKENS.font,
           }}
           onMouseEnter={(e) => {
+            if (hasAnalysis) return;
             e.currentTarget.style.borderColor = TOKENS.borderHover;
             e.currentTarget.style.color = TOKENS.textPrimary;
           }}
           onMouseLeave={(e) => {
+            if (hasAnalysis) return;
             e.currentTarget.style.borderColor = TOKENS.borderDefault;
             e.currentTarget.style.color = TOKENS.textSecondary;
           }}
         >
-          Open full analyzer →
+          {hasAnalysis ? 'Gaps & tailor →' : 'Open Analyzer →'}
         </button>
       </div>
     </div>
@@ -762,7 +861,6 @@ export function JobTab() {
     saveState,
     setSaveState,
     pinnedFromOtherTab,
-    jobLoading,
     jobAnalysisId,
     checkResult,
     scoreState,
@@ -772,29 +870,31 @@ export function JobTab() {
     clearJob,
   } = useJobSession();
 
-  const [state, dispatch] = useReducer(reducer, { status: 'detecting' } satisfies JobExtractionState);
+  const [state, dispatch] = useReducer(reducer, { status: 'not-a-job-page' } satisfies JobExtractionState);
   const [onJobListingPage, setOnJobListingPage] = useState(false);
   const [reloadingPage, setReloadingPage] = useState(false);
   const [importingUrl, setImportingUrl] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
 
   useEffect(() => {
-    void chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
-      setOnJobListingPage(Boolean(tab?.url && isLikelyJobUrl(tab.url)));
-    });
-  }, [currentJob, jobLoading, state.status]);
+    const syncJobListingPage = () => {
+      void chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
+        setOnJobListingPage(Boolean(tab?.url && isLikelyJobUrl(tab.url)));
+      });
+    };
+    syncJobListingPage();
+    const id = window.setInterval(syncJobListingPage, 1200);
+    return () => window.clearInterval(id);
+  }, [currentJob, state.status]);
 
   useEffect(() => {
-    if (jobLoading) {
-      dispatch({ type: 'set', state: { status: 'detecting' } });
-      return;
-    }
     if (currentJob) {
       dispatch({ type: 'ready', job: currentJob });
       return;
     }
+    if (reloadingPage || importingUrl) return;
     dispatch({ type: 'set', state: { status: 'not-a-job-page' } });
-  }, [currentJob, jobLoading]);
+  }, [currentJob, reloadingPage, importingUrl]);
 
   useEffect(() => {
     if (state.status !== 'ready') return;
@@ -809,10 +909,6 @@ export function JobTab() {
   useEffect(() => {
     const onMessage = (message: MessageAction) => {
       if (!message || typeof message !== 'object') return;
-      if (message.action === 'jobExtracted' && 'job' in message) {
-        dispatch({ type: 'ready', job: message.job });
-        return;
-      }
       if (message.action === 'extractionError' && 'message' in message) {
         dispatch({ type: 'error', message: message.message });
       }
@@ -821,11 +917,8 @@ export function JobTab() {
     return () => chrome.runtime.onMessage.removeListener(onMessage);
   }, []);
 
-  const refreshExtraction = () => void refreshJob();
-
   const reloadPage = () => {
     setReloadingPage(true);
-    dispatch({ type: 'set', state: { status: 'detecting' } });
     void reloadPageForJob().finally(() => {
       setReloadingPage(false);
     });
@@ -834,7 +927,6 @@ export function JobTab() {
   const handleImportUrl = (url: string) => {
     setImportError(null);
     setImportingUrl(true);
-    dispatch({ type: 'set', state: { status: 'detecting' } });
     void importJobFromUrl(url)
       .then((result) => {
         if (!result.ok) {
@@ -847,40 +939,11 @@ export function JobTab() {
       });
   };
 
-  if (state.status === 'detecting') {
-    return (
-      <div>
-        <SpinnerRow label={reloadingPage ? 'Refreshing page…' : 'Scanning page...'} />
-        {onJobListingPage && !reloadingPage ? (
-          <button
-            type="button"
-            style={{
-              marginTop: 12,
-              width: '100%',
-              background: TOKENS.primary,
-              border: 'none',
-              borderRadius: 8,
-              padding: '11px 12px',
-              color: '#080B0A',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontFamily: TOKENS.font,
-            }}
-            onClick={reloadPage}
-          >
-            Refresh page to detect job
-          </button>
-        ) : null}
-      </div>
-    );
-  }
-
   if (state.status === 'extracting') {
     return <SpinnerRow label="Extracting job details..." />;
   }
 
-  if (state.status === 'not-a-job-page') {
+  if (state.status === 'not-a-job-page' || (reloadingPage && !currentJob)) {
     return (
       <NotAJobPageView
         onReloadPage={reloadPage}
@@ -894,7 +957,7 @@ export function JobTab() {
   }
 
   if (state.status === 'error') {
-    return <ErrorView message={state.message} onRetry={() => void refreshExtraction()} />;
+    return <ErrorView message={state.message} onRetry={() => void refreshJob()} />;
   }
 
   if (state.status === 'ready') {
@@ -913,6 +976,11 @@ export function JobTab() {
           checkResult?.hasAnalysis ||
             (scoreState.status === 'done' && scoreState.result.matchScore != null),
         )}
+        onReloadPage={reloadPage}
+        reloading={reloadingPage}
+        scoreCompanyLogoUrl={
+          scoreState.status === 'done' ? scoreState.result.companyLogoUrl ?? null : null
+        }
       />
     );
   }

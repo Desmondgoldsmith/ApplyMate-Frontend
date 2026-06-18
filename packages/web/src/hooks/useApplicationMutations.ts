@@ -17,8 +17,10 @@ export function useUpdateApplicationStatus() {
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: ApplicationTrackerStatus | string }) =>
       api.applications.updateStatus(id, status),
-    onSuccess: () => {
+    onSuccess: (app, { id }) => {
+      queryClient.setQueryData(queryKeys.applications.detail(id), app);
       void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.detail(id) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
       invalidateNotificationList(queryClient);
       scheduleUnreadNotificationCountInvalidate(queryClient);

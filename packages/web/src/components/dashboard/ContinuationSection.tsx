@@ -6,9 +6,8 @@ import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { DashboardCollapsibleSection } from '@/components/dashboard/DashboardCollapsibleSection';
-import { InfoHint } from '@/components/ui/InfoHint';
+import { cleanAiText } from '@/lib/dashboardDisplayCopy';
 import { mapApiContinuationHref } from '@/lib/executionRouting';
-import { TOOLTIP_CONTINUATION_RESUME_SIGNAL } from '@/lib/dashboardIntelligenceTooltips';
 import { sortContinuationItemsNewestFirst, type DashboardContinuationItemPayload } from '@/lib/today-plan';
 import { cn } from '@/lib/utils';
 
@@ -71,8 +70,6 @@ function activityPillClass(last: string): string {
 
 function ContinuationMeta({ item }: { item: DashboardContinuationItemPayload }) {
   const last = item.lastActiveLabel?.trim() ?? '';
-  const conf =
-    typeof item.confidence === 'number' && Number.isFinite(item.confidence) ? Math.round(item.confidence) : null;
   const mins =
     typeof item.estimatedMinutes === 'number' && Number.isFinite(item.estimatedMinutes)
       ? Math.round(item.estimatedMinutes)
@@ -89,20 +86,12 @@ function ContinuationMeta({ item }: { item: DashboardContinuationItemPayload }) 
       </span>,
     );
   }
-  if (conf != null) {
-    segments.push(
-      <span key="conf" className="inline-flex items-center gap-1 text-[11px] text-[var(--text-muted)]">
-        <span className="tabular-nums">Signal {conf}%</span>
-        <InfoHint text={TOOLTIP_CONTINUATION_RESUME_SIGNAL} buttonAriaLabel="What is signal?" />
-      </span>,
-    );
-  }
   if (mins != null) {
     segments.push(
       <span
         key="mins"
         className="text-[11px] text-[var(--text-muted)]"
-        title="Rough time to complete what is left in this flow—not the full interview or calendar block."
+        title="Rough time to finish what is left in this flow, not the full interview or calendar block."
       >
         {continuationTimeEstimateLabel(item.type, mins)}
       </span>,
@@ -128,9 +117,9 @@ function ContinuationMeta({ item }: { item: DashboardContinuationItemPayload }) 
 }
 
 function ContinuationTaskCard({ item }: { item: DashboardContinuationItemPayload }) {
-  const title = item.title.trim();
-  const subtitle = item.subtitle?.trim() || '';
-  const description = item.description.trim();
+  const title = cleanAiText(item.title.trim());
+  const subtitle = cleanAiText(item.subtitle?.trim() ?? '');
+  const description = cleanAiText(item.description.trim());
   const Icon = TYPE_ICON[item.type] ?? FileText;
 
   return (
@@ -152,9 +141,9 @@ function ContinuationTaskCard({ item }: { item: DashboardContinuationItemPayload
           <Icon className="h-4 w-4" strokeWidth={2} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-semibold leading-snug text-[var(--text-primary)]">{title}</p>
+          <p className="truncate text-[14px] font-semibold leading-snug text-[var(--text-primary)] max-[480px]:whitespace-normal max-[480px]:line-clamp-2 sm:truncate">{title}</p>
           {subtitle ? (
-            <p className="truncate text-[12px] font-medium leading-snug text-[var(--text-secondary)]">{subtitle}</p>
+            <p className="text-[12px] font-medium leading-snug text-[var(--text-secondary)] max-[480px]:whitespace-normal max-[480px]:line-clamp-2 sm:truncate">{subtitle}</p>
           ) : null}
           {description ? (
             <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">{description}</p>
@@ -166,7 +155,7 @@ function ContinuationTaskCard({ item }: { item: DashboardContinuationItemPayload
       <Link
         href={mapApiContinuationHref(item.ctaHref)}
         className={cn(
-          'inline-flex min-h-[40px] w-full shrink-0 items-center justify-center rounded-full border border-[var(--border-default)] px-3.5 py-2 text-[12px] font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--border-hover)] sm:w-auto sm:min-h-0',
+          'inline-flex min-h-[40px] w-full shrink-0 items-center justify-center rounded-full border border-[var(--border-default)] px-3.5 py-2 text-[12px] font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--border-hover)] max-[480px]:w-full sm:w-auto sm:min-h-0',
         )}
       >
         {item.ctaLabel}
@@ -175,7 +164,7 @@ function ContinuationTaskCard({ item }: { item: DashboardContinuationItemPayload
   );
 }
 
-const DASHBOARD_CONTINUATION_HOME_CAP = 3;
+const DASHBOARD_CONTINUATION_HOME_CAP = 2;
 
 export function ContinuationSection({ items, continuationCount }: ContinuationSectionProps) {
   if (!items.length) return null;
@@ -203,7 +192,7 @@ export function ContinuationSection({ items, continuationCount }: ContinuationSe
   return (
     <DashboardCollapsibleSection
       storageKey="continuation"
-      title="Continue Where You Left Off"
+      title="Pick up where you left off"
       countBadge={countBadge}
       headerRight={headerRight}
     >

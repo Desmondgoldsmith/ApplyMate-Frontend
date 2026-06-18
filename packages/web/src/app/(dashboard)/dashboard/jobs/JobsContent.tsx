@@ -62,8 +62,10 @@ import { downloadCoverLetterPdf } from '@/lib/cover-letter-pdf';
 import { substituteCoverLetterCandidateName } from '@/lib/cover-letter-placeholders';
 import { normalizeText } from '@/lib/normalizeText';
 import { getDisplayName } from '@/lib/display-name';
-import { resolveAnalysisAfterTailorMutation } from '@/lib/applyTailorMutation';
+import { resolveAnalysisAfterTailorMutation, commitTailorJobAnalysis } from '@/lib/applyTailorMutation';
+import { acceptedTailorSkillNames } from '@/lib/tailorAcceptedSkills';
 import { mergeTailorEstimatedScores } from '@/lib/tailorMatchScore';
+import { displayScoreBeforeTailorForAnalysis } from '@/lib/tailorAnalysisUi';
 import { invalidateTodayPlanQueries } from '@/lib/today-plan';
 import { ensureArray } from '@/lib/ensure-array';
 import { cn } from '@/lib/utils';
@@ -228,8 +230,9 @@ function mergeJobAnalysisForApply(prev: JobAnalysis | null, incoming: JobAnalysi
 
   const base: JobAnalysis = { ...incoming };
 
-  if (incoming.isTailored === undefined && prev.isTailored === true) {
-    base.isTailored = true;
+  if (incoming.isTailored === false) {
+    base.scoreImprovement = undefined;
+    base.skillsAddedToCv = undefined;
   }
 
   const incName = incoming.tailoredCvName;
@@ -280,6 +283,32 @@ function mergeJobAnalysisForApply(prev: JobAnalysis | null, incoming: JobAnalysi
 
   if (incoming.analysisV2 === undefined && prev.analysisV2) {
     base.analysisV2 = prev.analysisV2;
+  }
+
+  if (
+    (incoming.matchCvProfileId === undefined || incoming.matchCvProfileId === null) &&
+    prev.matchCvProfileId
+  ) {
+    base.matchCvProfileId = prev.matchCvProfileId;
+  }
+
+  if (incoming.factorsBreakdown === undefined && prev.factorsBreakdown && incoming.isTailored !== false) {
+    base.factorsBreakdown = prev.factorsBreakdown;
+  }
+
+  if (incoming.matchScoreBenchmark === undefined && prev.matchScoreBenchmark) {
+    base.matchScoreBenchmark = prev.matchScoreBenchmark;
+  }
+
+  if (incoming.atsRiskItems === undefined && prev.atsRiskItems?.length) {
+    base.atsRiskItems = prev.atsRiskItems;
+  }
+
+  if (
+    incoming.interviewReadinessNote === undefined &&
+    prev.interviewReadinessNote
+  ) {
+    base.interviewReadinessNote = prev.interviewReadinessNote;
   }
 
   return base;
@@ -386,7 +415,7 @@ export function JobsContent() {
       if (candidates.length === 0) return prev;
 
       const scoreMatch = candidates.find(
-        (x) => Math.round(x.matchScore) === Math.round(prev.matchScore ?? NaN),
+        (x) => Math.round(x.matchScore ?? NaN) === Math.round(prev.matchScore ?? NaN),
       );
       const sorted = [...candidates].sort(
         (a, b) =>
@@ -436,9 +465,7 @@ export function JobsContent() {
         if (!next) return prev;
         analysisMergeRef.current = next;
         persistSessionSnapshot(title, company, description, next);
-        queryClient.setQueryData(queryKeys.jobs.analysisCurrent(), next);
-        void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
+        commitTailorJobAnalysis(next, queryClient);
         return next;
       });
     },
@@ -554,13 +581,11 @@ export function JobsContent() {
         setTailoringCompleted(Boolean(merged.isTailored === true));
       }
 
-      if (tailorBaselineScoreRef.current == null) {
+      if (tailorBaselineScoreRef.current == null && merged.isTailored) {
         const lockFrom =
           merged.scoreBeforeTailoring != null && Number.isFinite(merged.scoreBeforeTailoring)
             ? merged.scoreBeforeTailoring
-            : nextDraft
-              ? merged.matchScore
-              : null;
+            : null;
         if (lockFrom != null && Number.isFinite(lockFrom)) {
           tailorBaselineScoreRef.current = Math.round(lockFrom);
         }
@@ -1107,23 +1132,13 @@ export function JobsContent() {
     [tailoringCompleted, analysis?.isTailored, tailorDraftForCurrentJob?.status],
   );
 
-  const displayScoreBeforeTailor = useMemo(() => {
-    if (scoreBeforeTailor != null && Number.isFinite(scoreBeforeTailor)) return scoreBeforeTailor;
-    const a = analysis?.scoreBeforeTailoring;
-    if (a != null && Number.isFinite(a)) return a;
-    return null;
-  }, [scoreBeforeTailor, analysis?.scoreBeforeTailoring]);
+  const displayScoreBeforeTailor = useMemo(
+    () => displayScoreBeforeTailorForAnalysis(analysis, scoreBeforeTailor),
+    [analysis, scoreBeforeTailor],
+  );
 
   const acceptedSkillNames = useMemo(() => {
-    if (!tailorDraftForCurrentJob) return [];
-    const drafts = tailorDraftForCurrentJob.drafts;
-    const skillsDraft = drafts.find(
-      (d: CvTailorDraftEntry) => d.sectionType === 'skills' && d.status === 'accepted',
-    );
-    if (skillsDraft) {
-      return tailorDraftForCurrentJob.selectedSkills;
-    }
-    return [];
+    return acceptedTailorSkillNames(tailorDraftForCurrentJob);
   }, [tailorDraftForCurrentJob]);
 
   const fullyCompleteRef = useRef(false);
@@ -1325,7 +1340,7 @@ export function JobsContent() {
               analysis={analysis}
               rematchInProgress={rematching}
               scoreBeforeTailor={displayScoreBeforeTailor}
-              isTailored={tailorSectionComplete}
+              isTailored={analysis?.isTailored === true}
               acceptedSkillNames={acceptedSkillNames}
               showTailorAction={true}
             />
@@ -1335,7 +1350,7 @@ export function JobsContent() {
                   <h3 className="mb-3 text-sm font-semibold text-white">Tailor your CV to this job</h3>
                   <p className="text-xs text-white/45">No skill gaps were returned for this job.</p>
                 </>
-              ) : tailorSectionComplete ? (
+              ) : analysis?.isTailored === true ? (
                 <>
                   <div className="mb-4 flex items-start gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2.5">
                     <span className="mt-0.5 text-emerald-400" aria-hidden>
@@ -1649,6 +1664,8 @@ export function JobsContent() {
       currentScore={analysis?.matchScore ?? null}
       tailoredCvName={analysis?.tailoredCvName ?? tailorDraft?.tailoredCvName ?? null}
       jobAnalysisId={jobAnalysisIdForTailor || null}
+      isTailored={analysis?.isTailored === true}
+      missingSkills={analysis?.missingSkills ?? []}
     />
     </>
   );

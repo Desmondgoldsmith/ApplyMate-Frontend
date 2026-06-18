@@ -6,6 +6,8 @@ export const DASHBOARD_ROUTES = {
   jobAnalyze: '/dashboard/jobs/analyze',
   jobs: '/dashboard/jobs',
   interview: '/dashboard/interview',
+  /** Dashboard interview activity list (upcoming + prep cards). */
+  interviewPrepList: '/dashboard/interview-prep',
   cv: '/dashboard/cv',
   followUpJobs: '/dashboard/follow-up-jobs',
 } as const;
@@ -81,15 +83,15 @@ export function buildJobHubAliasRedirect(searchParams: URLSearchParams): string 
   return `${DASHBOARD_ROUTES.jobs}${suffix ? `?${suffix}` : ''}`;
 }
 
-/** Legacy `/dashboard/interview-prep` → `/dashboard/interview` (preserves query). */
-export function buildInterviewPrepAliasRedirect(searchParams: URLSearchParams): string {
+/** Legacy `/dashboard/interviews` → `/dashboard/interview-prep` list (preserves query). */
+export function buildInterviewsAliasRedirect(searchParams: URLSearchParams): string {
   const qp = new URLSearchParams();
   searchParams.forEach((value, key) => {
     const val = value.trim();
     if (val) qp.set(key, val);
   });
   const suffix = qp.toString();
-  return `${DASHBOARD_ROUTES.interview}${suffix ? `?${suffix}` : ''}`;
+  return `${DASHBOARD_ROUTES.interviewPrepList}${suffix ? `?${suffix}` : ''}`;
 }
 
 /** Rewrite legacy dashboard alias paths to canonical URLs (in-app links & notifications). */
@@ -113,14 +115,27 @@ export function normalizeDashboardRoute(href: string): string {
       return `${destUrl.pathname}${destUrl.search}${u.hash}`;
     }
 
-    if (path === '/dashboard/interview-prep') {
-      const dest = buildInterviewPrepAliasRedirect(u.searchParams);
+    if (path === '/dashboard/interviews') {
+      const dest = buildInterviewsAliasRedirect(u.searchParams);
       const destUrl = new URL(dest, 'https://applymate.local');
       return `${destUrl.pathname}${destUrl.search}${u.hash}`;
     }
 
     if (path === '/dashboard/cv-clinic') {
       u.pathname = DASHBOARD_ROUTES.cv;
+      return `${u.pathname}${u.search}${u.hash}`;
+    }
+
+    if (path === '/dashboard/job-archive' || path === '/dashboard/jobs/archived') {
+      u.pathname = '/dashboard/jobs/archive';
+      return `${u.pathname}${u.search}${u.hash}`;
+    }
+
+    /** Backend quiet-app CTAs: `/dashboard/jobs/{applicationId}` → query form Job Hub expects. */
+    const jobsAppPath = path.match(/^\/dashboard\/jobs\/([^/]+)$/);
+    if (jobsAppPath?.[1] && !u.searchParams.has('applicationId') && !u.searchParams.has('jobId')) {
+      u.pathname = DASHBOARD_ROUTES.jobs;
+      u.searchParams.set('applicationId', jobsAppPath[1]);
       return `${u.pathname}${u.search}${u.hash}`;
     }
 

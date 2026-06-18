@@ -4,18 +4,20 @@ import { BarChart2 } from 'lucide-react';
 import Link from 'next/link';
 
 import { MatchScoreRing } from '@/components/dashboard/MatchScoreRing';
+import { CompanyLogo } from '@/components/ui/CompanyLogo';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useJobHistory } from '@/hooks/useJobHistory';
 import type { JobHistoryItem } from '@/lib/api';
 import { ensureArray } from '@/lib/ensure-array';
+import { historyItemHasCompletedAnalysis } from '@/lib/jobAnalysisComplete';
+import { prefillJobAnalyzerInStorage } from '@/lib/jobHubPrefill';
 import { formatRelativeEdited } from '@/lib/format-relative-edited';
 import { isAppliedOrLaterState } from '@/lib/today-plan';
 import { scanLabelForJobHistoryRow } from '@/lib/todayPlanLabels';
-import { TOOLTIP_JOB_MATCH_SCORE } from '@/lib/dashboardIntelligenceTooltips';
+import { TOOLTIP_RECENT_ANALYSES } from '@/lib/dashboardIntelligenceTooltips';
 import { cn } from '@/lib/utils';
-import { companyInitial } from '@/components/dashboard/overview/dashboardOverviewHelpers';
 
 export function RecentAnalysesPanel({
   history,
@@ -49,7 +51,14 @@ export function RecentAnalysesPanel({
 
   const nextStepForAnalysis = (
     item: JobHistoryItem,
-  ): { label: string; href: string } => {
+  ): { label: string; href: string; prefill?: boolean } => {
+    if (!historyItemHasCompletedAnalysis(item)) {
+      return {
+        label: 'Analyze this job',
+        href: '/dashboard/jobs/analyze?clean=1',
+        prefill: true,
+      };
+    }
     if (isInterviewStage(item)) {
       const qp = new URLSearchParams();
       qp.set('jobAnalysisId', item.id);
@@ -104,8 +113,8 @@ export function RecentAnalysesPanel({
             Recent analyses
           </h2>
           <InfoHint
-            text={TOOLTIP_JOB_MATCH_SCORE}
-            buttonAriaLabel="What are match scores?"
+            text={TOOLTIP_RECENT_ANALYSES}
+            buttonAriaLabel="About recent analyses"
           />
         </div>
         <Link
@@ -117,7 +126,7 @@ export function RecentAnalysesPanel({
       </div>
 
       <div className="space-y-3">
-        {history.isLoading ? (
+        {history.isLoading && !history.data ? (
           <>
             <Skeleton height={64} borderRadius={12} />
             <Skeleton height={64} borderRadius={12} />
@@ -146,9 +155,16 @@ export function RecentAnalysesPanel({
           items.map((item) => {
             const company = item.company ?? 'Unknown';
             const title = item.jobTitle || item.title || 'Untitled role';
-            const score = item.matchScore ?? 0;
+            const analyzed = historyItemHasCompletedAnalysis(item);
+            const score = analyzed
+              ? typeof item.matchScore === 'number' && Number.isFinite(item.matchScore)
+                ? item.matchScore
+                : null
+              : null;
             const next = nextStepForAnalysis(item);
-            const scan = scanLabelForJobHistoryRow(item);
+            const scan = analyzed
+              ? scanLabelForJobHistoryRow(item)
+              : { label: 'Not analyzed', tone: 'passive' as const };
             const scanTone =
               scan.tone === 'warn'
                 ? 'border-amber-400/35 bg-amber-500/12 text-amber-100'
@@ -161,9 +177,7 @@ export function RecentAnalysesPanel({
                 className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-3.5 transition-[border-color,background-color,box-shadow] duration-200 motion-reduce:transition-none hover:border-white/[0.11] hover:bg-white/[0.045] hover:shadow-[0_12px_36px_-24px_rgba(0,0,0,0.45)]"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(0,201,177,0.15)] text-[13px] font-semibold text-[#00C9B1]">
-                    {companyInitial(company)}
-                  </div>
+                  <CompanyLogo company={company} logoUrl={item.companyLogoUrl} size="md" />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="min-w-0 truncate text-[13px] font-medium text-white">
@@ -190,6 +204,16 @@ export function RecentAnalysesPanel({
                     href={next.href}
                     className="text-[12px] font-medium text-[#00C9B1] hover:underline"
                     onClick={(e) => {
+                      if (next.prefill) {
+                        const jt = (item.jobTitle || item.title || '').trim();
+                        const co = (item.company ?? '').trim();
+                        const description = (
+                          item.description ??
+                          item.jobDescription ??
+                          ''
+                        ).trim();
+                        prefillJobAnalyzerInStorage(jt, co, description);
+                      }
                       const allowedPostApplyLabels = new Set([
                         'Continue in Job Hub',
                         'Prep for interview',

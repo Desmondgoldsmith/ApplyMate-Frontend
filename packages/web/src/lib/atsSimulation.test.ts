@@ -25,6 +25,15 @@ describe('parseAtsSimulationReport', () => {
       seniorityAlignmentScore: 72,
       semanticSimilarityScore: 65,
       formattingParseabilityScore: 88,
+      seniorityAlignment: {
+        score0to100: 72,
+        jobLevel: 'mid',
+        cvLevel: 'mid',
+        jobTitleNormalized: 'mid-level DevOps engineer',
+        cvTitleNormalized: 'mid-level frontend engineer',
+        detail:
+          'The role is a mid-level DevOps engineer; your CV reads as a mid-level frontend engineer. Same experience band, but recruiters may look for DevOps-specific evidence.',
+      },
       recommendations: ['Add metrics to experience bullets.'],
     };
     const r = parseAtsSimulationReport(raw);
@@ -34,6 +43,8 @@ describe('parseAtsSimulationReport', () => {
     expect(r!.dimensions?.keywordMatch?.score0to100).toBe(70);
     expect(r!.keywords?.required?.missing).toEqual(['Kubernetes']);
     expect(r!.hardSkillMatches?.[0]?.matched).toBe(true);
+    expect(r!.seniorityAlignment?.detail).toContain('DevOps');
+    expect(r!.seniorityAlignmentScore).toBe(72);
     expect(r!.recommendations?.[0]).toContain('metrics');
   });
 

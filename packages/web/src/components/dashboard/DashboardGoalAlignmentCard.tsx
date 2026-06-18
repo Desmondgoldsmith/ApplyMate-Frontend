@@ -3,6 +3,9 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 
+import { InfoHint } from '@/components/ui/InfoHint';
+import { TOOLTIP_GOAL_ALIGNMENT } from '@/lib/dashboardIntelligenceTooltips';
+import { sanitizeDashboardDisplayText } from '@/lib/dashboardDisplayCopy';
 import type { CareerGoalProfilePayload, GoalAlignmentPayload } from '@/lib/today-plan';
 import { cn } from '@/lib/utils';
 
@@ -60,11 +63,14 @@ export function DashboardGoalAlignmentCard({ alignment, careerProfile }: Props) 
   const hasSignalsColumn = strongest.length > 0 || gaps.length > 0 || profileHasTargets;
 
   return (
-    <section className="rounded-3xl border border-white/[0.08] bg-gradient-to-br from-white/[0.05] to-white/[0.02] p-5 shadow-[0_22px_52px_-34px_rgba(0,0,0,0.52)] ring-1 ring-white/[0.05] sm:p-6">
+    <section className="rounded-3xl border border-white/[0.08] bg-gradient-to-br from-white/[0.05] to-white/[0.02] p-3.5 shadow-[0_22px_52px_-34px_rgba(0,0,0,0.52)] ring-1 ring-white/[0.05] sm:p-6">
       <div className="grid grid-cols-1 gap-8">
         <div className="min-w-0 space-y-4">
           <div>
-            <p className="text-[11px] font-medium tracking-wide text-white/38">Goal Alignment</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-[11px] font-medium tracking-wide text-white/38">Jobs matching your goals</p>
+              <InfoHint text={TOOLTIP_GOAL_ALIGNMENT} buttonAriaLabel="About jobs matching your goals" />
+            </div>
             {score != null ? (
               <p className="mt-2 text-[22px] font-semibold tabular-nums tracking-tight text-white/95">
                 {score}
@@ -83,9 +89,9 @@ export function DashboardGoalAlignmentCard({ alignment, careerProfile }: Props) 
           ) : null}
 
           {displayHeadline ? (
-            <h2 className="text-[16px] font-semibold leading-snug text-white/92">{displayHeadline}</h2>
+            <h2 className="text-[16px] font-semibold leading-snug text-white/92">{sanitizeDashboardDisplayText(displayHeadline)}</h2>
           ) : null}
-          {supporting ? <p className="text-[13px] leading-relaxed text-white/58">{supporting}</p> : null}
+          {supporting ? <p className="text-[13px] leading-relaxed text-white/58">{sanitizeDashboardDisplayText(supporting)}</p> : null}
         </div>
 
         {hasSignalsColumn ? (

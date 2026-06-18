@@ -88,7 +88,9 @@ import {
   type CvProfileSummary,
   type CvSpellIssue,
   type CvTailorDraft,
+  type TailorMutationResponse,
 } from '@/lib/api';
+import { commitTailorJobAnalysis } from '@/lib/applyTailorMutation';
 import { parseCvMode } from '@/lib/cv-mode.types';
 import { inferCvProfileNameFromProfile } from '@/lib/infer-cv-profile-name';
 import { buildCvNamingForExport } from '@/lib/cv-profile-naming';
@@ -105,6 +107,7 @@ import {
   type CvTemplateId,
   type SaveCVBuilderDataResult,
 } from '@/lib/cvBuilder';
+import { isCvScoreInitialLoading, resolveCvDisplayScore } from '@/lib/cvScoreDisplay';
 import { filterPendingSuggestionsForDisplay } from '@/lib/cv-improvement-merge';
 import {
   buildCvSectionInventory,
@@ -185,6 +188,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
 
 const CV_CLINIC_RIGHT_PCT_KEY = 'cv_clinic_right_pct';
+const CV_TAILOR_RIGHT_PCT_KEY = 'cv_tailor_right_pct';
 const CV_RIGHT_PANEL_COLLAPSED_KEY = 'applymate:cv:rightPanelCollapsed';
 
 /** Dark native select — teal focus/accent matches brand (avoids default browser blue). */
@@ -286,6 +290,21 @@ export function CvClinicPageContent() {
     staleTime: 60_000,
   });
 
+  const handleClinicTailorMutation = useCallback(
+    (result: TailorMutationResponse) => {
+      if (!result.jobAnalysis) return;
+      commitTailorJobAnalysis(result.jobAnalysis, queryClient);
+      if (jobAnalysisIdParam) {
+        queryClient.setQueryData(
+          queryKeys.jobs.analysis(jobAnalysisIdParam),
+          (prev: { analysis?: unknown } | undefined) =>
+            prev ? { ...prev, analysis: result.jobAnalysis } : prev,
+        );
+      }
+    },
+    [jobAnalysisIdParam, queryClient],
+  );
+
   const user = useAuthStore((s) => s.user);
 
   const profilesQuery = useCVProfiles();
@@ -366,7 +385,11 @@ export function CvClinicPageContent() {
   const [mobileCvToolsOpen, setMobileCvToolsOpen] = useState(false);
   const [mobileCvInsightsOpen, setMobileCvInsightsOpen] = useState(false);
   const triplePanelContainerRef = useRef<HTMLDivElement>(null);
-  const [tripleRightPct, setTripleRightPct] = useState(28);
+  const tailorRightPctKey = isTailorMode ? CV_TAILOR_RIGHT_PCT_KEY : CV_CLINIC_RIGHT_PCT_KEY;
+  const tailorRightPctMin = isTailorMode ? 38 : 22;
+  const tailorRightPctMax = isTailorMode ? 52 : 38;
+  const tailorRightPctDefault = isTailorMode ? 42 : 28;
+  const [tripleRightPct, setTripleRightPct] = useState(tailorRightPctDefault);
   const [tripleRightTab, setTripleRightTab] = useState<
     'analysis' | 'improvements' | 'changes'
   >('analysis');
@@ -754,6 +777,7 @@ export function CvClinicPageContent() {
   useEffect(() => {
     if (!hasCv || !targetId?.trim() || !improvements.data?.needsScoring) return;
     if (runScan.isPending || improvements.isFetching) return;
+    if (resolveCvDisplayScore(score.data) != null) return;
     const marker = `${targetId}:${improvements.dataUpdatedAt}`;
     if (autoRescoreMarkerRef.current === marker) return;
     autoRescoreMarkerRef.current = marker;
@@ -775,6 +799,7 @@ export function CvClinicPageContent() {
     improvements.isFetching,
     runScan,
     queryClient,
+    score.data,
   ]);
 
   useEffect(() => {
@@ -855,9 +880,12 @@ export function CvClinicPageContent() {
   );
 
   const displayScoreValue = useMemo(
-    () => score.data?.score,
-    [score.data?.score],
+    () => resolveCvDisplayScore(score.data),
+    [score.data],
   );
+
+  const scoreInitialLoading = isCvScoreInitialLoading(score.isPending, score.data);
+  const scoreRefreshing = score.isFetching && !scoreInitialLoading && displayScoreValue != null;
 
   const displayScoreBreakdown = useMemo(
     () => score.data?.breakdown,
@@ -2659,25 +2687,29 @@ export function CvClinicPageContent() {
     if (typeof window === 'undefined') return;
     try {
       const r = parseFloat(
-        localStorage.getItem(CV_CLINIC_RIGHT_PCT_KEY) ?? '28',
+        localStorage.getItem(tailorRightPctKey) ?? String(tailorRightPctDefault),
       );
-      if (Number.isFinite(r)) setTripleRightPct(Math.min(38, Math.max(22, r)));
+      if (Number.isFinite(r)) {
+        setTripleRightPct(
+          Math.min(tailorRightPctMax, Math.max(tailorRightPctMin, r)),
+        );
+      }
       setRightPanelCollapsed(
         localStorage.getItem(CV_RIGHT_PANEL_COLLAPSED_KEY) === '1',
       );
     } catch {
       /* ignore */
     }
-  }, []);
+  }, [tailorRightPctKey, tailorRightPctDefault, tailorRightPctMin, tailorRightPctMax]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      localStorage.setItem(CV_CLINIC_RIGHT_PCT_KEY, String(tripleRightPct));
+      localStorage.setItem(tailorRightPctKey, String(tripleRightPct));
     } catch {
       /* ignore */
     }
-  }, [tripleRightPct]);
+  }, [tripleRightPct, tailorRightPctKey]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -2705,7 +2737,9 @@ export function CvClinicPageContent() {
 
       const onMove = (ev: PointerEvent) => {
         const delta = ((startX - ev.clientX) / totalW) * 100;
-        setTripleRightPct(Math.min(38, Math.max(22, startPct + delta)));
+        setTripleRightPct(
+          Math.min(tailorRightPctMax, Math.max(tailorRightPctMin, startPct + delta)),
+        );
       };
       const onUp = () => {
         window.removeEventListener('pointermove', onMove);
@@ -2714,7 +2748,7 @@ export function CvClinicPageContent() {
       window.addEventListener('pointermove', onMove);
       window.addEventListener('pointerup', onUp);
     },
-    [tripleRightPct],
+    [tripleRightPct, tailorRightPctMin, tailorRightPctMax],
   );
 
   const cvTopChrome = useMemo(
@@ -2803,7 +2837,7 @@ export function CvClinicPageContent() {
               <span className="text-[10px] font-semibold uppercase tracking-wide text-white/35">
                 Score
               </span>
-              {score.isLoading ? (
+              {scoreInitialLoading ? (
                 <Skeleton height={22} width={44} borderRadius={6} />
               ) : displayScoreValue === null ||
                 displayScoreValue === undefined ? (
@@ -2912,7 +2946,8 @@ export function CvClinicPageContent() {
       profileOptions,
       profiles.length,
       targetId,
-      score.isLoading,
+      scoreInitialLoading,
+      scoreRefreshing,
       score.data,
       displayScoreValue,
       template,
@@ -3060,7 +3095,15 @@ export function CvClinicPageContent() {
         <TailorChangePanel
           draft={tailorDraft}
           onDraftUpdate={setTailorDraft}
-          onCvRehydrated={() => setCvServerHydrateNonce((n) => n + 1)}
+          onTailorMutation={handleClinicTailorMutation}
+          onCvRehydrated={() => {
+            setCvServerHydrateNonce((n) => n + 1);
+            setBuilderSaveStatus('idle');
+          }}
+          onAcceptSucceeded={() => setBuilderSaveStatus('idle')}
+          missingSkills={linkedJobQ.data?.analysis?.missingSkills ?? []}
+          jobTitle={linkedJobQ.data?.title ?? linkedJobQ.data?.analysis?.title}
+          jobCompany={linkedJobQ.data?.company ?? linkedJobQ.data?.analysis?.company}
           className="h-full min-h-0"
         />
       );
@@ -3071,7 +3114,8 @@ export function CvClinicPageContent() {
         tripleRightTab={tripleRightTab}
         onTripleRightTabChange={setTripleRightTab}
         scoreCardMode={scoreCardMode}
-        scoreLoading={score.isLoading}
+        scoreLoading={scoreInitialLoading}
+        scoreRefreshing={scoreRefreshing}
         scoreValue={displayScoreValue}
         scoreBreakdown={displayScoreBreakdown}
         scorePayload={displayScorePayload}
@@ -3104,6 +3148,8 @@ export function CvClinicPageContent() {
     targetId,
     isTailorMode,
     tailorDraft,
+    handleClinicTailorMutation,
+    linkedJobQ.data,
     tripleRightTab,
     scoreCardMode,
     score.isLoading,
@@ -3297,6 +3343,7 @@ export function CvClinicPageContent() {
             showFab={!aiChatOpen && !globalAssistantOpen}
             seedCommand={assistantSeedCommand}
             onSeedCommandConsumed={clearAssistantSeedCommand}
+            fabRightOffsetPct={isTailorMode ? tripleRightPct : null}
           />
           <CvAssistantClarificationModal
             open={clarificationModalOpen && Boolean(clarificationQuestion)}
@@ -3373,7 +3420,7 @@ export function CvClinicPageContent() {
             existingSections={sections}
             initialSuggest={sectionOrderFlow.suggestData}
             onApplied={() => {
-              sectionOrderFlow.invalidateSuggest();
+              sectionOrderFlow.markOrderApplied();
               setCvServerHydrateNonce((n) => n + 1);
             }}
           />
@@ -3574,7 +3621,7 @@ export function CvClinicPageContent() {
                 </button>
               </div>
               {tripleRightTab === 'analysis' ? (
-                !score.isLoading && displayScoreValue != null ? (
+                !scoreInitialLoading && displayScoreValue != null ? (
                   <CVScoreCard
                     mode="compact"
                     score={displayScoreValue}
@@ -3641,14 +3688,14 @@ export function CvClinicPageContent() {
             <span className="text-xs font-semibold text-white/70">
               Score breakdown & tips
             </span>
-            {!score.isLoading &&
+            {!scoreInitialLoading &&
             score.data &&
             score.data.score !== null &&
             score.data.score !== undefined ? (
               <span className="rounded-full bg-[rgba(0,201,177,0.12)] px-2 py-0.5 text-[10px] font-bold tabular-nums text-[#00C9B1]">
                 {score.data.score}/100
               </span>
-            ) : !score.isLoading ? (
+            ) : !scoreInitialLoading ? (
               <span className="animate-pulse rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold text-white/45">
                 Calculating…
               </span>
@@ -3728,7 +3775,7 @@ export function CvClinicPageContent() {
                   <div className="app-scrollbar max-h-[min(65dvh,600px)] min-h-0 space-y-3 overflow-y-auto overscroll-contain px-4 py-3 pb-24 sm:px-5 lg:pb-6">
                     {tripleRightTab === 'analysis' ? (
                       <>
-                        {!score.isLoading ? (
+                        {!scoreInitialLoading ? (
                           displayScoreValue !== null &&
                           displayScoreValue !== undefined ? (
                             <CVScoreCard

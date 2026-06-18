@@ -11,9 +11,9 @@ export const FOLLOW_UP_PAGE = {
   showingRange: (from: number, to: number, total: number) =>
     `Showing ${from}–${to} of ${total} in this list`,
   showingFiltered: (shown: number, totalLoaded: number) =>
-    `${shown} match${shown === 1 ? '' : 'es'} (${totalLoaded} loaded from snapshot)`,
+    `${shown} match${shown === 1 ? '' : 'es'} of ${totalLoaded} loaded`,
   capNote: (loaded: number, serverTotal: number) =>
-    `Snapshot shows ${loaded} of ${serverTotal} queued roles—refresh the dashboard for the newest items.`,
+    `Showing ${loaded} of ${serverTotal} follow-ups. Load more by increasing the list cap or clearing completed items.`,
   cardsLabel: 'Cards',
   tableLabel: 'Table',
   prev: 'Previous',

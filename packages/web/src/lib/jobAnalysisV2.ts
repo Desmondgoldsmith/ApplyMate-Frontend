@@ -1,4 +1,4 @@
-import type { JobAnalysisV2, RecruiterVerdict, ApplyStrategy } from '@/lib/api';
+import type { AnalysisAxisKey, JobAnalysisV2, RecruiterVerdict, ApplyStrategy } from '@/lib/api';
 
 function clampAxis(n: unknown): number {
   const v = typeof n === 'number' ? n : typeof n === 'string' ? parseFloat(n) : NaN;
@@ -24,6 +24,59 @@ function parseApplyStrategy(raw: unknown): ApplyStrategy | null {
   const s = String(raw ?? '').toUpperCase();
   if (s === 'APPLY_NOW' || s === 'TAILOR_FIRST' || s === 'SKIP') return s;
   return null;
+}
+
+const AXIS_KEY_ALIASES: Record<string, AnalysisAxisKey> = {
+  skillmatch: 'skillMatch',
+  skill_match: 'skillMatch',
+  experiencefit: 'experienceFit',
+  experience_fit: 'experienceFit',
+  industryfit: 'industryFit',
+  industry_fit: 'industryFit',
+  evidencestrength: 'evidenceStrength',
+  evidence_strength: 'evidenceStrength',
+};
+
+function parseAxisKey(raw: unknown): AnalysisAxisKey | null {
+  const s = String(raw ?? '').trim();
+  if (!s) return null;
+  if (s === 'skillMatch' || s === 'experienceFit' || s === 'industryFit' || s === 'evidenceStrength') {
+    return s;
+  }
+  return AXIS_KEY_ALIASES[s.toLowerCase().replace(/-/g, '_')] ?? null;
+}
+
+function parsePairedFactorKey(raw: unknown): string | undefined {
+  const s =
+    (typeof raw === 'string' && raw.trim()) ||
+    '';
+  return s || undefined;
+}
+
+function parseAxisMeta(raw: unknown): JobAnalysisV2['axisMeta'] {
+  if (!Array.isArray(raw)) return undefined;
+  const items: NonNullable<JobAnalysisV2['axisMeta']> = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object') continue;
+    const o = entry as Record<string, unknown>;
+    const key = parseAxisKey(o.key ?? o.axis ?? o.id);
+    const description =
+      (typeof o.description === 'string' && o.description.trim()) ||
+      (typeof o.tooltip === 'string' && o.tooltip.trim()) ||
+      '';
+    if (!key || !description) continue;
+    const label = typeof o.label === 'string' && o.label.trim() ? o.label.trim() : undefined;
+    const pairedFactorKey = parsePairedFactorKey(
+      o.pairedFactorKey ?? o.paired_factor_key,
+    );
+    items.push({
+      key,
+      label,
+      description,
+      ...(pairedFactorKey ? { pairedFactorKey } : {}),
+    });
+  }
+  return items.length > 0 ? items : undefined;
 }
 
 export function parseJobAnalysisV2(raw: unknown): JobAnalysisV2 | undefined {
@@ -53,9 +106,9 @@ export function parseJobAnalysisV2(raw: unknown): JobAnalysisV2 | undefined {
       evidenceStrength: clampAxis(axesObj.evidenceStrength ?? axesObj.evidence_strength),
     },
     attackPlan: {
-      topCVFixes: parseStringArray(attack.topCVFixes ?? attack.top_cv_fixes, 3),
-      interviewRisks: parseStringArray(attack.interviewRisks ?? attack.interview_risks, 3),
-      missingEvidence: parseStringArray(attack.missingEvidence ?? attack.missing_evidence, 3),
+      topCVFixes: parseStringArray(attack.topCVFixes ?? attack.top_cv_fixes, 6),
+      interviewRisks: parseStringArray(attack.interviewRisks ?? attack.interview_risks, 6),
+      missingEvidence: parseStringArray(attack.missingEvidence ?? attack.missing_evidence, 6),
       salaryRange:
         typeof attack.salaryRange === 'string'
           ? attack.salaryRange.trim()
@@ -64,7 +117,49 @@ export function parseJobAnalysisV2(raw: unknown): JobAnalysisV2 | undefined {
             : undefined,
     },
     applyStrategy: strategy,
+    axisMeta: parseAxisMeta(body.axisMeta ?? body.axis_meta),
   };
+}
+
+export function resolveAxisTooltips(
+  v2: JobAnalysisV2 | undefined,
+  factorsBreakdown?: { factors: Array<{ key: string; hint?: string }> } | null,
+): Record<AnalysisAxisKey, string> {
+  const defaults = Object.fromEntries(
+    ANALYSIS_AXIS_META.map((axis) => [axis.key, axis.tooltip]),
+  ) as Record<AnalysisAxisKey, string>;
+  if (!v2?.axisMeta?.length) return defaults;
+  const out = { ...defaults };
+  const factorByKey = new Map(
+    (factorsBreakdown?.factors ?? []).map((factor) => [factor.key, factor]),
+  );
+  for (const item of v2.axisMeta) {
+    const pairedKey = item.pairedFactorKey?.trim();
+    const pairedHint = pairedKey ? factorByKey.get(pairedKey)?.hint?.trim() : '';
+    if (pairedHint) {
+      out[item.key] = pairedHint;
+      continue;
+    }
+    if (item.description.trim()) {
+      out[item.key] = item.description.trim();
+    }
+  }
+  return out;
+}
+
+/** Keep v2 evidence axis aligned with the 6th factor row when both are present. */
+export function resolveAnalysisV2Axes(
+  v2: JobAnalysisV2,
+  factorsBreakdown?: { factors: Array<{ key: string; score: number }> } | null,
+): JobAnalysisV2['axes'] {
+  const axes = { ...v2.axes };
+  const evidenceFactor = factorsBreakdown?.factors.find(
+    (factor) => factor.key === 'evidenceStrength',
+  );
+  if (evidenceFactor && Number.isFinite(evidenceFactor.score)) {
+    axes.evidenceStrength = evidenceFactor.score;
+  }
+  return axes;
 }
 
 export const ANALYSIS_AXIS_META = [
@@ -86,6 +181,6 @@ export const ANALYSIS_AXIS_META = [
   {
     key: 'evidenceStrength' as const,
     label: 'Evidence strength',
-    tooltip: 'Quality of proof in your CV: metrics, outcomes, and specific examples.',
+    tooltip: 'How well your CV proves fit for this specific role — not generic CV length.',
   },
 ];

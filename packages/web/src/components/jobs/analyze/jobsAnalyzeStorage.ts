@@ -47,6 +47,15 @@ export function tailoringSessionFingerprint(
   return `${cvProfileId.trim()}\u001f${title.trim()}\u001f${company.trim()}\u001f${jobDescription.trim()}`;
 }
 
+/** Fingerprint for job title/company/description only — stale analysis detection. */
+export function jobAnalyzeContentFingerprint(
+  title: string,
+  company: string,
+  jobDescription: string,
+): string {
+  return `${title.trim()}\u001f${company.trim()}\u001f${jobDescription.trim()}`;
+}
+
 export function saveCompletedTailorDraft(fp: string, draft: CvTailorDraft) {
   if (typeof window === 'undefined') return;
   try {
@@ -197,6 +206,13 @@ export function jobHistoryItemToDetail(item: JobHistoryItem): JobDetailForForm {
   const srcCv = item.cvProfileId?.trim();
   const jl = item.jobListingId?.trim();
   const jh = item.jobListingSourceHash?.trim();
+  const analyzeSource = item.analyzeSource?.trim().toLowerCase();
+  const scoreSource =
+    analyzeSource === 'ai' || analyzeSource === 'gemini'
+      ? 'ai'
+      : item.hasAnalysis === false
+        ? 'heuristic'
+        : undefined;
   return {
     title: jt,
     company: item.company ?? '',
@@ -210,6 +226,9 @@ export function jobHistoryItemToDetail(item: JobHistoryItem): JobDetailForForm {
       isTailored: item.isTailored,
       tailoredCvProfileId: item.tailoredCvProfileId,
       tailoredCvName: item.tailoredCvName,
+      ...(item.hasAnalysis !== undefined ? { hasAnalysis: item.hasAnalysis } : {}),
+      ...(item.analyzeSource ? { analyzeSource: item.analyzeSource } : {}),
+      ...(scoreSource ? { scoreSource } : {}),
       ...(srcCv ? { cvProfileId: srcCv, sourceCvProfileId: srcCv } : {}),
       ...(jl ? { jobListingId: jl } : {}),
       ...(jh ? { jobListingSourceHash: jh } : {}),
@@ -247,8 +266,9 @@ export function mergeJobAnalysisForApply(
 
   const base: JobAnalysis = { ...incoming };
 
-  if (incoming.isTailored === undefined && prev.isTailored === true) {
-    base.isTailored = true;
+  if (incoming.isTailored === false) {
+    base.scoreImprovement = undefined;
+    base.skillsAddedToCv = undefined;
   }
 
   const incName = incoming.tailoredCvName;
@@ -317,6 +337,32 @@ export function mergeJobAnalysisForApply(
 
   if (incoming.analysisV2 === undefined && prev.analysisV2) {
     base.analysisV2 = prev.analysisV2;
+  }
+
+  if (
+    (incoming.matchCvProfileId === undefined || incoming.matchCvProfileId === null) &&
+    prev.matchCvProfileId
+  ) {
+    base.matchCvProfileId = prev.matchCvProfileId;
+  }
+
+  if (incoming.factorsBreakdown === undefined && prev.factorsBreakdown && incoming.isTailored !== false) {
+    base.factorsBreakdown = prev.factorsBreakdown;
+  }
+
+  if (incoming.matchScoreBenchmark === undefined && prev.matchScoreBenchmark) {
+    base.matchScoreBenchmark = prev.matchScoreBenchmark;
+  }
+
+  if (incoming.atsRiskItems === undefined && prev.atsRiskItems?.length) {
+    base.atsRiskItems = prev.atsRiskItems;
+  }
+
+  if (
+    incoming.interviewReadinessNote === undefined &&
+    prev.interviewReadinessNote
+  ) {
+    base.interviewReadinessNote = prev.interviewReadinessNote;
   }
 
   return base;

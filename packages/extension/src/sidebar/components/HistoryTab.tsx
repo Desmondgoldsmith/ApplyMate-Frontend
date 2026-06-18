@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 
 import type { MessageAction, RequestRecentJobsResponse, SavedJob } from '@/shared/types';
 
+import { useJobSession } from '../context/JobSessionContext';
+import { CompanyLogoBadge } from './CompanyLogoBadge';
+
 const TOKENS = {
   bg: '#080B0A',
   surface: '#0F1512',
@@ -233,13 +236,21 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-function JobRow({ job }: { job: SavedJob }) {
+function JobRow({ job, selectedCvId }: { job: SavedJob; selectedCvId: string | null }) {
   const pill = statusPillStyle(job.status);
+
+  const openJob = () => {
+    void chrome.runtime.sendMessage({
+      action: 'openRecentJob',
+      jobId: job.id,
+      cvId: selectedCvId,
+    } satisfies MessageAction);
+  };
 
   return (
     <button
       type="button"
-      onClick={() => void chrome.tabs.create({ url: JOB_HUB_URL })}
+      onClick={openJob}
       style={{
         width: '100%',
         textAlign: 'left',
@@ -269,6 +280,8 @@ function JobRow({ job }: { job: SavedJob }) {
           gap: 8,
         }}
       >
+        <div style={{ display: 'flex', minWidth: 0, alignItems: 'flex-start', gap: 8, flex: 1 }}>
+          <CompanyLogoBadge company={job.company || job.title} logoUrl={job.companyLogoUrl} size={28} />
         <span
           style={{
             fontSize: 13,
@@ -282,6 +295,7 @@ function JobRow({ job }: { job: SavedJob }) {
         >
           {job.title}
         </span>
+        </div>
         <span
           style={{
             borderRadius: 20,
@@ -334,7 +348,7 @@ function JobRow({ job }: { job: SavedJob }) {
   );
 }
 
-function JobsList({ jobs }: { jobs: SavedJob[] }) {
+function JobsList({ jobs, selectedCvId }: { jobs: SavedJob[]; selectedCvId: string | null }) {
   return (
     <div style={{ fontFamily: TOKENS.font }}>
       <div
@@ -363,7 +377,7 @@ function JobsList({ jobs }: { jobs: SavedJob[] }) {
       </div>
       <div>
         {jobs.map((job) => (
-          <JobRow key={job.id} job={job} />
+          <JobRow key={job.id} job={job} selectedCvId={selectedCvId} />
         ))}
       </div>
       <button
@@ -396,6 +410,7 @@ function JobsList({ jobs }: { jobs: SavedJob[] }) {
 
 export function HistoryTab() {
   const [state, setState] = useState<HistoryState>({ status: 'loading' });
+  const { selectedCvId } = useJobSession();
 
   const loadJobs = useCallback(async () => {
     setState({ status: 'loading' });
@@ -431,5 +446,5 @@ export function HistoryTab() {
     return <ErrorState onRetry={() => void loadJobs()} />;
   }
 
-  return <JobsList jobs={state.jobs} />;
+  return <JobsList jobs={state.jobs} selectedCvId={selectedCvId} />;
 }

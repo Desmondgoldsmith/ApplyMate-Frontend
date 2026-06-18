@@ -11,6 +11,7 @@ import { useCvScoreSectionActions } from '@/hooks/useCvScoreSectionActions';
 import { cn } from '@/lib/utils';
 import type {
   ATSCompatibility,
+  AtsStructureIssue,
   CareerStage,
   CVFlag,
   CVImprovement,
@@ -81,6 +82,37 @@ function parseStringArray(raw: unknown): string[] {
     .map((s) => s.trim());
 }
 
+function parseAtsStructureIssues(raw: unknown): AtsStructureIssue[] {
+  if (!Array.isArray(raw)) return [];
+  const out: AtsStructureIssue[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== 'object') continue;
+    const o = row as Record<string, unknown>;
+    const suggestion =
+      (typeof o.suggestion === 'string' && o.suggestion.trim()) ||
+      (typeof o.message === 'string' && o.message.trim()) ||
+      '';
+    if (!suggestion) continue;
+    const type =
+      (typeof o.type === 'string' && o.type.trim()) ||
+      (typeof o.issueType === 'string' && o.issueType.trim()) ||
+      'structure';
+    const severityRaw =
+      typeof o.severity === 'string' ? o.severity.trim().toLowerCase() : 'medium';
+    const affectedSection =
+      (typeof o.affectedSection === 'string' && o.affectedSection.trim()) ||
+      (typeof o.affected_section === 'string' && o.affected_section.trim()) ||
+      undefined;
+    out.push({
+      type,
+      severity: severityRaw,
+      suggestion,
+      ...(affectedSection ? { affectedSection } : {}),
+    });
+  }
+  return out;
+}
+
 function parseAts(raw: unknown): ATSCompatibility {
   if (raw !== null && typeof raw === 'object' && !Array.isArray(raw)) {
     const o = raw as Record<string, unknown>;
@@ -97,6 +129,17 @@ function parseAts(raw: unknown): ATSCompatibility {
         : typeof o.methodology_note === 'string'
           ? o.methodology_note.trim()
           : undefined;
+    const structureIssues = parseAtsStructureIssues(
+      o.structureIssues ?? o.structure_issues,
+    );
+    const structureScoreRaw = o.structureScore ?? o.structure_score;
+    const structureScore =
+      typeof structureScoreRaw === 'number' && Number.isFinite(structureScoreRaw)
+        ? Math.round(structureScoreRaw)
+        : undefined;
+    const structurePassedRaw = o.structurePassed ?? o.structure_passed;
+    const structurePassed =
+      typeof structurePassedRaw === 'boolean' ? structurePassedRaw : undefined;
     if (Number.isFinite(scoreN)) {
       const simulation = parseAtsSimulationReport(o.simulation);
       return {
@@ -106,6 +149,9 @@ function parseAts(raw: unknown): ATSCompatibility {
         passed,
         ...(methodologyNote ? { methodologyNote } : {}),
         ...(simulation ? { simulation } : {}),
+        ...(structureIssues.length > 0 ? { structureIssues } : {}),
+        ...(structureScore !== undefined ? { structureScore } : {}),
+        ...(structurePassed !== undefined ? { structurePassed } : {}),
       };
     }
   }
@@ -647,7 +693,9 @@ export function CVScoreCard({
     br.ats.score > 0 ||
     br.ats.issues.length > 0 ||
     br.ats.passed.length > 0 ||
-    Boolean(br.ats.simulation),
+    Boolean(br.ats.simulation) ||
+    (br.ats.structureIssues?.length ?? 0) > 0 ||
+    br.ats.structureScore != null,
   );
 
   const jobMatch = br.sections.jobMatch;
@@ -812,6 +860,65 @@ export function CVScoreCard({
           </span>
         </div>
       ))}
+
+      {br.ats.structureIssues && br.ats.structureIssues.length > 0 ? (
+        <div className={cn(compactLayout ? 'mt-2' : 'mt-3')}>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <p
+              className={cn(
+                'font-semibold uppercase tracking-widest text-white/45',
+                compactLayout ? 'text-[9px]' : 'text-[10px]',
+              )}
+            >
+              Structural ATS checks
+            </p>
+            {br.ats.structureScore != null ? (
+              <span className="text-[11px] font-semibold tabular-nums text-white/55">
+                {br.ats.structureScore}/100
+              </span>
+            ) : null}
+          </div>
+          {br.ats.structureIssues.map((issue, i) => {
+            const high = String(issue.severity).toLowerCase() === 'high';
+            return (
+              <div
+                key={`struct-${issue.type}-${i}`}
+                className={cn(
+                  'flex items-start gap-2 rounded-lg border',
+                  high
+                    ? 'mb-2 border-rose-500/20 bg-rose-500/[0.07] p-2.5'
+                    : 'mb-2 border-amber-500/15 bg-amber-500/[0.06] p-2.5',
+                  compactLayout && 'p-2',
+                )}
+              >
+                <span
+                  className={cn(
+                    'mt-0.5 shrink-0 text-xs',
+                    high ? 'text-rose-300' : 'text-amber-400',
+                  )}
+                >
+                  ⚠
+                </span>
+                <div className="min-w-0">
+                  {issue.affectedSection ? (
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-white/40">
+                      {issue.affectedSection}
+                    </p>
+                  ) : null}
+                  <p
+                    className={cn(
+                      'leading-relaxed text-white/62',
+                      compactLayout ? 'text-[10px]' : 'text-xs',
+                    )}
+                  >
+                    {issue.suggestion}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
 
       {br.ats.simulation ? (
         <AtsSimulationInsights

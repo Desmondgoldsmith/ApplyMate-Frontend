@@ -7,6 +7,7 @@ import {
   type SemanticOutlookBand,
   type TimelineOutlookBand,
 } from '@/lib/dashboardSemanticOutlook';
+import { pickCompanyLogoUrl } from '@/lib/companyLogo';
 import { normalizeDashboardRoute } from '@/lib/dashboardCanonicalRoutes';
 import { queryKeys } from '@/lib/queryKeys';
 
@@ -43,9 +44,63 @@ export function dashboardFocusQueryKey(params: { cvProfileId?: string | null; ti
   return queryKeys.dashboardFocus.key(cv, tz);
 }
 
+export function dashboardInterviewPrepQueryKey(params: {
+  cvProfileId?: string | null;
+  timezone: string;
+  focusFeedMaxItems?: number;
+}) {
+  const cv = (params.cvProfileId ?? '').trim() || 'default';
+  const tz = (params.timezone ?? 'UTC').trim() || 'UTC';
+  const ffm =
+    typeof params.focusFeedMaxItems === 'number' &&
+    Number.isFinite(params.focusFeedMaxItems) &&
+    params.focusFeedMaxItems >= 1 &&
+    params.focusFeedMaxItems <= 100
+      ? Math.round(params.focusFeedMaxItems)
+      : 'default';
+  return queryKeys.dashboardInterviewPrep.key(cv, tz, ffm);
+}
+
+export function dashboardFollowUpJobsQueryKey(params: {
+  cvProfileId?: string | null;
+  timezone: string;
+  focusFeedMaxItems?: number;
+}) {
+  const cv = (params.cvProfileId ?? '').trim() || 'default';
+  const tz = (params.timezone ?? 'UTC').trim() || 'UTC';
+  const ffm =
+    typeof params.focusFeedMaxItems === 'number' &&
+    Number.isFinite(params.focusFeedMaxItems) &&
+    params.focusFeedMaxItems >= 1 &&
+    params.focusFeedMaxItems <= 100
+      ? Math.round(params.focusFeedMaxItems)
+      : 'default';
+  return queryKeys.dashboardFollowUpJobs.key(cv, tz, ffm);
+}
+
+export function dashboardQuietApplicationsQueryKey(params: {
+  cvProfileId?: string | null;
+  timezone: string;
+  focusFeedMaxItems?: number;
+}) {
+  const cv = (params.cvProfileId ?? '').trim() || 'default';
+  const tz = (params.timezone ?? 'UTC').trim() || 'UTC';
+  const ffm =
+    typeof params.focusFeedMaxItems === 'number' &&
+    Number.isFinite(params.focusFeedMaxItems) &&
+    params.focusFeedMaxItems >= 1 &&
+    params.focusFeedMaxItems <= 100
+      ? Math.round(params.focusFeedMaxItems)
+      : 'default';
+  return queryKeys.dashboardQuietApplications.key(cv, tz, ffm);
+}
+
 export function invalidateTodayPlanQueries(queryClient: QueryClient): void {
   void queryClient.invalidateQueries({ queryKey: queryKeys.todayPlan.root() });
   void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardFocus.root() });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardQuietApplications.root() });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardInterviewPrep.root() });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardFollowUpJobs.root() });
   void queryClient.invalidateQueries({ queryKey: queryKeys.weeklyStallSummary.root() });
 }
 
@@ -77,6 +132,7 @@ export type TodayPlanItem = {
   source?: string | null;
   matchScore?: number | null;
   company?: string | null;
+  companyLogoUrl?: string | null;
   jobTitle?: string | null;
   locationStrategy?: 'local' | 'remote_fallback' | null;
   locationLabel?: string | null;
@@ -735,6 +791,7 @@ export type InterviewPreparationCardPayload = {
   applicationId?: string | null;
   jobAnalysisId?: string | null;
   company?: string | null;
+  companyLogoUrl?: string | null;
   roleTitle?: string | null;
 };
 
@@ -748,6 +805,7 @@ export type UpcomingInterviewItem = {
   headline: string;
   supporting: string;
   company: string | null;
+  companyLogoUrl?: string | null;
   jobTitle: string | null;
   jobAnalysisId: string;
   /** e.g. `applied_prep`, `technical_interview`, `phone_screen` */
@@ -758,6 +816,7 @@ export type UpcomingInterviewItem = {
   ctaLabel: string;
   ctaHref: string;
   lastUpdatedAt: string | null;
+  lastUpdatedLabel?: string | null;
 };
 
 /** @deprecated Use {@link UpcomingInterviewItem}; kept for existing imports. */
@@ -845,6 +904,42 @@ export type DashboardFocusItemPayload = {
   confidence?: number;
   estimatedMinutes?: number;
   dueInDays?: number;
+  lastActivityAt?: string | null;
+  lastActivityLabel?: string | null;
+};
+
+/** Quiet application row — 21+ days without employer reply (server-owned queue). */
+export type DashboardStaleApplicationItemPayload = {
+  id: string;
+  applicationId: string;
+  jobAnalysisId?: string | null;
+  jobTitle: string;
+  company: string;
+  companyLogoUrl?: string | null;
+  lastActivityAt: string;
+  lastActivityLabel: string;
+  daysSinceActivity: number;
+  headline: string;
+  supporting: string;
+  ctaLabel: string;
+  ctaHref: string;
+  secondaryCtaLabel?: string | null;
+  secondaryCtaHref?: string | null;
+  priority: number;
+  /** ISO apply anchor used for quiet eligibility (debug / transparency). */
+  quietEligibilityAnchorAt?: string | null;
+  quietEligibilityReason?: string | null;
+};
+
+export type StaleApplicationNoticePayload = {
+  show: boolean;
+  daysSinceActivity: number;
+  headline: string;
+  supporting: string;
+  primaryCtaLabel: string;
+  primaryCtaHref: string;
+  secondaryCtaLabel?: string | null;
+  secondaryCtaHref?: string | null;
 };
 
 export type DashboardEmptyStatePayload = {
@@ -998,6 +1093,7 @@ export type TodayPlanPayload = {
   continuationCount: number | null;
   /** Phase 17A: Job-specific interview prep CTAs (optional). */
   interviewPreparationCards: InterviewPreparationCardPayload[] | null;
+  interviewPreparationCardsTotalCount: number | null;
   /** Phase 18B: Next interviews snapshot (optional server field → normalized array, possibly empty). */
   upcomingInterviews: UpcomingInterviewItem[];
   upcomingInterviewCount: number | null;
@@ -1006,6 +1102,12 @@ export type TodayPlanPayload = {
    * `null`/`undefined` after normalize → client merges legacy sources; `[]` → server supplied an empty feed.
    */
   focusItems: DashboardFocusItemPayload[] | null;
+  /** Full ranked focus count before home snapshot cap. */
+  focusItemsTotalCount: number | null;
+  /** Quiet applications — 21+ days without reply (max 2 on home snapshot). */
+  staleApplicationItems: DashboardStaleApplicationItemPayload[] | null;
+  staleApplicationItemsTotalCount: number | null;
+  staleApplicationItemsViewAllHref: string | null;
   /** Phase 15: Deterministic empty copy + CTA per section key (optional). */
   dashboardEmptyStates: DashboardEmptyStatesPayload | null;
 };
@@ -1125,6 +1227,7 @@ export type FollowUpJobRowPayload = {
   jobListingId: string | null;
   bookmarkId: string | null;
   companyName: string | null;
+  companyLogoUrl?: string | null;
   jobTitle: string | null;
 };
 
@@ -1269,6 +1372,8 @@ export type RecommendedMovePayload = {
   category: string | null;
   ctaLabel: string | null;
   ctaHref: string | null;
+  relevantActivityAt?: string | null;
+  relevantActivityLabel?: string | null;
 };
 
 export type CareerAchievementsLevelPayload = {
@@ -1682,6 +1787,7 @@ function pickItem(raw: unknown): TodayPlanItem | null {
           ? o.match_score
           : null,
     company: pickStr(o, 'company', 'jobCompany') ?? null,
+    companyLogoUrl: pickCompanyLogoUrl(o),
     jobTitle: pickStr(o, 'jobTitle', 'job_title', 'roleTitle') ?? null,
     locationStrategy: recommendationSource,
     locationLabel: pickStr(o, 'locationLabel', 'location_label') ?? null,
@@ -2088,7 +2194,157 @@ function pickDashboardFocusItem(el: unknown): DashboardFocusItemPayload | null {
   }
   if (estimatedMinutes !== undefined) row.estimatedMinutes = estimatedMinutes;
   if (dueInDays !== undefined) row.dueInDays = dueInDays;
+  const lastActivityAt = pickStrOrNull(o, 'lastActivityAt', 'last_activity_at');
+  const lastActivityLabel = pickStrOrNull(o, 'lastActivityLabel', 'last_activity_label');
+  if (lastActivityAt) row.lastActivityAt = lastActivityAt;
+  if (lastActivityLabel) row.lastActivityLabel = lastActivityLabel;
+  const hrefNorm = normalizeTodayPlanRoute(row.ctaHref);
+  if (hrefNorm) row.ctaHref = hrefNorm;
   return row;
+}
+
+function pickStaleApplicationItem(el: unknown): DashboardStaleApplicationItemPayload | null {
+  if (el === null || typeof el !== 'object' || Array.isArray(el)) return null;
+  const o = el as Record<string, unknown>;
+  const id = String(pickStr(o, 'id') ?? '').trim();
+  const applicationId = String(pickStr(o, 'applicationId', 'application_id') ?? '').trim();
+  const jobTitle = String(pickStr(o, 'jobTitle', 'job_title') ?? '').trim();
+  const company = String(pickStr(o, 'company', 'companyName', 'company_name') ?? '').trim();
+  const lastActivityAt = String(
+    pickStr(o, 'lastActivityAt', 'last_activity_at') ?? '',
+  ).trim();
+  const lastActivityLabel = String(
+    pickStr(o, 'lastActivityLabel', 'last_activity_label') ?? '',
+  ).trim();
+  const headline = String(pickStr(o, 'headline', 'title') ?? '').trim();
+  const supporting = String(pickStr(o, 'supporting', 'description', 'body') ?? '').trim();
+  const ctaLabel = String(pickStr(o, 'ctaLabel', 'cta_label') ?? '').trim();
+  const ctaHrefRaw = String(pickStr(o, 'ctaHref', 'cta_href') ?? '').trim();
+  const priorityRaw = o.priority;
+  const priority =
+    typeof priorityRaw === 'number' && Number.isFinite(priorityRaw)
+      ? priorityRaw
+      : typeof priorityRaw === 'string' && priorityRaw.trim() && Number.isFinite(Number(priorityRaw))
+        ? Number(priorityRaw)
+        : NaN;
+  const daysRaw = o.daysSinceActivity ?? o.days_since_activity;
+  const daysSinceActivity =
+    typeof daysRaw === 'number' && Number.isFinite(daysRaw)
+      ? Math.max(0, Math.round(daysRaw))
+      : typeof daysRaw === 'string' && daysRaw.trim() && Number.isFinite(Number(daysRaw))
+        ? Math.max(0, Math.round(Number(daysRaw)))
+        : NaN;
+  if (
+    !id ||
+    !applicationId ||
+    !jobTitle ||
+    !company ||
+    !lastActivityAt ||
+    !lastActivityLabel ||
+    !headline ||
+    !supporting ||
+    !ctaLabel ||
+    !ctaHrefRaw ||
+    !Number.isFinite(priority) ||
+    !Number.isFinite(daysSinceActivity)
+  ) {
+    return null;
+  }
+  const ctaHref = normalizeTodayPlanRoute(ctaHrefRaw) ?? ctaHrefRaw;
+  const secondaryCtaLabel = pickStrOrNull(o, 'secondaryCtaLabel', 'secondary_cta_label');
+  const secondaryCtaHrefRaw = pickStrOrNull(o, 'secondaryCtaHref', 'secondary_cta_href');
+  const secondaryCtaHref = secondaryCtaHrefRaw
+    ? (normalizeTodayPlanRoute(secondaryCtaHrefRaw) ?? secondaryCtaHrefRaw)
+    : null;
+  const jobAnalysisId = pickStrOrNull(o, 'jobAnalysisId', 'job_analysis_id');
+  const quietEligibilityAnchorAt = pickStrOrNull(
+    o,
+    'quietEligibilityAnchorAt',
+    'quiet_eligibility_anchor_at',
+  );
+  const quietEligibilityReason = pickStrOrNull(
+    o,
+    'quietEligibilityReason',
+    'quiet_eligibility_reason',
+  );
+  return {
+    id,
+    applicationId,
+    jobTitle,
+    company,
+    companyLogoUrl: pickCompanyLogoUrl(o),
+    lastActivityAt,
+    lastActivityLabel,
+    daysSinceActivity,
+    headline,
+    supporting,
+    ctaLabel,
+    ctaHref,
+    priority,
+    ...(jobAnalysisId ? { jobAnalysisId } : {}),
+    ...(secondaryCtaLabel ? { secondaryCtaLabel } : {}),
+    ...(secondaryCtaHref ? { secondaryCtaHref } : {}),
+    ...(quietEligibilityAnchorAt ? { quietEligibilityAnchorAt } : {}),
+    ...(quietEligibilityReason ? { quietEligibilityReason } : {}),
+  };
+}
+
+function pickStaleApplicationItems(raw: unknown): DashboardStaleApplicationItemPayload[] | null {
+  if (!Array.isArray(raw)) return null;
+  const out: DashboardStaleApplicationItemPayload[] = [];
+  for (const el of raw) {
+    const row = pickStaleApplicationItem(el);
+    if (row) out.push(row);
+  }
+  return out;
+}
+
+export function pickStaleApplicationNotice(
+  raw: unknown,
+): StaleApplicationNoticePayload | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const o = raw as Record<string, unknown>;
+  if (o.show !== true) return null;
+  const daysRaw = o.daysSinceActivity ?? o.days_since_activity;
+  const daysSinceActivity =
+    typeof daysRaw === 'number' && Number.isFinite(daysRaw)
+      ? Math.max(0, Math.round(daysRaw))
+      : typeof daysRaw === 'string' && daysRaw.trim() && Number.isFinite(Number(daysRaw))
+        ? Math.max(0, Math.round(Number(daysRaw)))
+        : NaN;
+  const headline = String(pickStr(o, 'headline') ?? '').trim();
+  const supporting = String(pickStr(o, 'supporting', 'body', 'message') ?? '').trim();
+  const primaryCtaLabel = String(
+    pickStr(o, 'primaryCtaLabel', 'primary_cta_label', 'ctaLabel', 'cta_label') ?? '',
+  ).trim();
+  const primaryCtaHrefRaw = String(
+    pickStr(o, 'primaryCtaHref', 'primary_cta_href', 'ctaHref', 'cta_href') ?? '',
+  ).trim();
+  if (
+    !Number.isFinite(daysSinceActivity) ||
+    !headline ||
+    !supporting ||
+    !primaryCtaLabel ||
+    !primaryCtaHrefRaw
+  ) {
+    return null;
+  }
+  const primaryCtaHref = normalizeTodayPlanRoute(primaryCtaHrefRaw) ?? primaryCtaHrefRaw;
+  const secondaryCtaLabel = pickStrOrNull(o, 'secondaryCtaLabel', 'secondary_cta_label');
+  const secondaryCtaHrefRaw = pickStrOrNull(o, 'secondaryCtaHref', 'secondary_cta_href');
+  const secondaryCtaHref = secondaryCtaHrefRaw
+    ? (normalizeTodayPlanRoute(secondaryCtaHrefRaw) ?? secondaryCtaHrefRaw)
+    : null;
+  return {
+    show: true,
+    daysSinceActivity,
+    headline,
+    supporting,
+    primaryCtaLabel,
+    primaryCtaHref,
+    ...(secondaryCtaLabel ? { secondaryCtaLabel } : {}),
+    ...(secondaryCtaHref ? { secondaryCtaHref } : {}),
+  };
 }
 
 function pickDashboardFocusItems(raw: unknown): DashboardFocusItemPayload[] | null {
@@ -2253,6 +2509,7 @@ function pickInterviewPreparationCard(raw: unknown): InterviewPreparationCardPay
     applicationId: pickStrOrNull(o, 'applicationId', 'application_id'),
     jobAnalysisId: pickStrOrNull(o, 'jobAnalysisId', 'job_analysis_id'),
     company: pickStrOrNull(o, 'company', 'companyName', 'company_name'),
+    companyLogoUrl: pickCompanyLogoUrl(o),
     roleTitle: pickStrOrNull(o, 'roleTitle', 'role_title', 'jobTitle', 'job_title'),
   };
 }
@@ -2360,6 +2617,7 @@ function pickUpcomingInterviewCard(raw: unknown): UpcomingInterviewItem | null {
 
   const lastUpdatedAt =
     pickStrOrNull(o, 'lastUpdatedAt', 'last_updated_at', 'updatedAt', 'updated_at') ?? null;
+  const lastUpdatedLabel = pickStrOrNull(o, 'lastUpdatedLabel', 'last_updated_label');
 
   const id = String(pickWireStringLike(o, 'id') ?? '').trim() || jobAnalysisId;
 
@@ -2371,6 +2629,7 @@ function pickUpcomingInterviewCard(raw: unknown): UpcomingInterviewItem | null {
     headline,
     supporting,
     company,
+    companyLogoUrl: pickCompanyLogoUrl(o),
     jobTitle,
     jobAnalysisId,
     stage: stageRaw,
@@ -2380,6 +2639,7 @@ function pickUpcomingInterviewCard(raw: unknown): UpcomingInterviewItem | null {
     ctaLabel,
     ctaHref,
     lastUpdatedAt,
+    ...(lastUpdatedLabel ? { lastUpdatedLabel } : {}),
   };
 }
 
@@ -3408,6 +3668,7 @@ function pickFollowUpJobRow(raw: unknown): FollowUpJobRowPayload | null {
       'employerName',
       'employer_name',
     ),
+    companyLogoUrl: pickCompanyLogoUrl(o),
     jobTitle: pickStrOrNull(o, 'jobTitle', 'job_title', 'roleTitle', 'role_title', 'positionTitle', 'position_title'),
   };
 }
@@ -3838,6 +4099,12 @@ function pickRecommendedMove(raw: unknown): RecommendedMovePayload | null {
     priority = Math.min(100, Math.max(0, Math.round(Number(prRaw))));
   }
   if (!headline?.trim() || !ctaLabel?.trim() || !ctaHref?.trim()) return null;
+  const relevantActivityAt = pickStrOrNull(o, 'relevantActivityAt', 'relevant_activity_at');
+  const relevantActivityLabel = pickStrOrNull(
+    o,
+    'relevantActivityLabel',
+    'relevant_activity_label',
+  );
   return {
     source,
     headline,
@@ -3847,6 +4114,8 @@ function pickRecommendedMove(raw: unknown): RecommendedMovePayload | null {
     category,
     ctaLabel,
     ctaHref,
+    ...(relevantActivityAt ? { relevantActivityAt } : {}),
+    ...(relevantActivityLabel ? { relevantActivityLabel } : {}),
   };
 }
 
@@ -5615,9 +5884,21 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
     commandBar: pickCommandBar(body.commandBar ?? body.command_bar),
     dashboardVitals: pickDashboardVitals(body.dashboardVitals ?? body.dashboard_vitals),
     ...pickContinuationBundle(body),
-    interviewPreparationCards: pickInterviewPreparationCards(
-      body.interviewPreparationCards ?? body.interview_preparation_cards,
-    ),
+    ...(() => {
+      const interviewPreparationCards = pickInterviewPreparationCards(
+        body.interviewPreparationCards ?? body.interview_preparation_cards,
+      );
+      const prepTotalRaw =
+        body.interviewPreparationCardsTotalCount ??
+        body.interview_preparation_cards_total_count;
+      const interviewPreparationCardsTotalCount =
+        typeof prepTotalRaw === 'number' && Number.isFinite(prepTotalRaw)
+          ? Math.max(0, Math.round(prepTotalRaw))
+          : interviewPreparationCards?.length
+            ? interviewPreparationCards.length
+            : null;
+      return { interviewPreparationCards, interviewPreparationCardsTotalCount };
+    })(),
     upcomingInterviews: upcomingInterviewsMerged,
     upcomingInterviewCount: (() => {
       const countRaw = body.upcomingInterviewCount ?? body.upcoming_interview_count;
@@ -5625,7 +5906,142 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
       return upcomingInterviewsMerged.length > 0 ? upcomingInterviewsMerged.length : null;
     })(),
     focusItems: focusItemsEarly,
+    focusItemsTotalCount: (() => {
+      const raw = body.focusItemsTotalCount ?? body.focus_items_total_count;
+      if (typeof raw === 'number' && Number.isFinite(raw)) return Math.max(0, Math.round(raw));
+      return focusItemsEarly?.length ? focusItemsEarly.length : null;
+    })(),
+    staleApplicationItems: pickStaleApplicationItems(
+      body.staleApplicationItems ?? body.stale_application_items,
+    ),
+    staleApplicationItemsTotalCount: (() => {
+      const raw =
+        body.staleApplicationItemsTotalCount ?? body.stale_application_items_total_count;
+      if (typeof raw === 'number' && Number.isFinite(raw)) return Math.max(0, Math.round(raw));
+      const items = pickStaleApplicationItems(
+        body.staleApplicationItems ?? body.stale_application_items,
+      );
+      return items?.length ? items.length : null;
+    })(),
+    staleApplicationItemsViewAllHref:
+      pickStrOrNull(
+        body,
+        'staleApplicationItemsViewAllHref',
+        'stale_application_items_view_all_href',
+      ) ?? null,
     dashboardEmptyStates: pickDashboardEmptyStates(body.dashboardEmptyStates ?? body.dashboard_empty_states),
+  };
+}
+
+/** GET /dashboard/quiet-applications — full quiet queue. */
+export type DashboardQuietApplicationsResponsePayload = {
+  generatedAt: string;
+  staleApplicationItems: DashboardStaleApplicationItemPayload[];
+  staleApplicationItemsTotalCount: number | null;
+};
+
+/** GET /dashboard/interview-prep — full interview activity list. */
+export type DashboardInterviewPrepResponsePayload = {
+  generatedAt: string;
+  upcomingInterviews: UpcomingInterviewItem[];
+  upcomingInterviewCount: number | null;
+  interviewPreparationCards: InterviewPreparationCardPayload[];
+  interviewPreparationCardsTotalCount: number | null;
+};
+
+export function normalizeDashboardInterviewPrep(
+  raw: unknown,
+): DashboardInterviewPrepResponsePayload {
+  const body = unwrapEnvelope(raw);
+  const generatedAt = String(pickStr(body, 'generatedAt', 'generated_at') ?? '').trim();
+  const upcomingWire = resolveWireUpcomingInterviews(body);
+  const focusItems = pickDashboardFocusItems(body.focusItems ?? body.focus_items);
+  const unifiedRaw =
+    body.unifiedPriorities !== null &&
+    typeof body.unifiedPriorities === 'object' &&
+    !Array.isArray(body.unifiedPriorities)
+      ? (body.unifiedPriorities as Record<string, unknown>)
+      : body.unified_priorities !== null &&
+          typeof body.unified_priorities === 'object' &&
+          !Array.isArray(body.unified_priorities)
+        ? (body.unified_priorities as Record<string, unknown>)
+        : null;
+  const unifiedItems =
+    unifiedRaw && unifiedRaw.items !== undefined
+      ? pickUnifiedPriorityItems(unifiedRaw.items)
+      : [];
+  const upcomingInterviews = mergeUpcomingInterviewsFromWireAndFocus(
+    upcomingWire,
+    focusItems,
+    unifiedItems,
+  );
+  const cards =
+    pickInterviewPreparationCards(
+      body.interviewPreparationCards ?? body.interview_preparation_cards,
+    ) ?? [];
+  const upcomingCountRaw = body.upcomingInterviewCount ?? body.upcoming_interview_count;
+  const upcomingInterviewCount =
+    typeof upcomingCountRaw === 'number' && Number.isFinite(upcomingCountRaw)
+      ? Math.max(0, Math.round(upcomingCountRaw))
+      : upcomingInterviews.length > 0
+        ? upcomingInterviews.length
+        : null;
+  const prepTotalRaw =
+    body.interviewPreparationCardsTotalCount ?? body.interview_preparation_cards_total_count;
+  const interviewPreparationCardsTotalCount =
+    typeof prepTotalRaw === 'number' && Number.isFinite(prepTotalRaw)
+      ? Math.max(0, Math.round(prepTotalRaw))
+      : cards.length > 0
+        ? cards.length
+        : null;
+  return {
+    generatedAt: generatedAt || new Date().toISOString(),
+    upcomingInterviews,
+    upcomingInterviewCount,
+    interviewPreparationCards: cards,
+    interviewPreparationCardsTotalCount,
+  };
+}
+
+/** GET /dashboard/follow-up-jobs — full follow-up queue. */
+export type DashboardFollowUpJobsResponsePayload = {
+  generatedAt: string;
+  followUpJobs: FollowUpJobRowPayload[];
+  followUpJobsTotalCount: number | null;
+};
+
+export function normalizeDashboardFollowUpJobs(
+  raw: unknown,
+): DashboardFollowUpJobsResponsePayload {
+  const body = unwrapEnvelope(raw);
+  const generatedAt = String(pickStr(body, 'generatedAt', 'generated_at') ?? '').trim();
+  const followUpJobs = pickFollowUpJobsArray(body.followUpJobs ?? body.follow_up_jobs);
+  return {
+    generatedAt: generatedAt || new Date().toISOString(),
+    followUpJobs,
+    followUpJobsTotalCount: pickFollowUpJobsTotalCount(body),
+  };
+}
+
+export function normalizeDashboardQuietApplications(
+  raw: unknown,
+): DashboardQuietApplicationsResponsePayload {
+  const body = unwrapEnvelope(raw);
+  const generatedAt = String(pickStr(body, 'generatedAt', 'generated_at') ?? '').trim();
+  const items =
+    pickStaleApplicationItems(body.staleApplicationItems ?? body.stale_application_items) ?? [];
+  const totalRaw =
+    body.staleApplicationItemsTotalCount ?? body.stale_application_items_total_count;
+  const staleApplicationItemsTotalCount =
+    typeof totalRaw === 'number' && Number.isFinite(totalRaw)
+      ? Math.max(0, Math.round(totalRaw))
+      : items.length > 0
+        ? items.length
+        : null;
+  return {
+    generatedAt: generatedAt || new Date().toISOString(),
+    staleApplicationItems: items,
+    staleApplicationItemsTotalCount,
   };
 }
 

@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 
 export type TailoringPanelProps = {
   analysis: JobAnalysis;
-  tailorSectionComplete: boolean;
+  isTailorComplete: boolean;
   displayScoreBeforeTailor: number | null;
   hasTailorDraftForJob: boolean;
   rematching: boolean;
@@ -17,10 +17,10 @@ export type TailoringPanelProps = {
   onRematch: () => void;
 };
 
-/** Post-tailor summary and actions (view CV, refresh match score). */
+/** Post-tailor summary — only when `isTailored === true`. */
 export function TailoringPanel({
   analysis,
-  tailorSectionComplete,
+  isTailorComplete,
   displayScoreBeforeTailor,
   hasTailorDraftForJob,
   rematching,
@@ -28,9 +28,7 @@ export function TailoringPanel({
   onOpenTailorPanel,
   onRematch,
 }: TailoringPanelProps) {
-  const missingSkills = analysis.missingSkills ?? [];
-
-  if (!tailorSectionComplete || missingSkills.length === 0) {
+  if (!isTailorComplete) {
     return null;
   }
 
@@ -48,7 +46,7 @@ export function TailoringPanel({
             Changes are saved on your CV.
             {hasTailorDraftForJob
               ? ' Open the panel to review before/after sections and export.'
-              : ' If section details don’t load, use Refresh match score — your tailored CV is still on file.'}
+              : ' If section details do not load, use Refresh match score. Your tailored CV is still on file.'}
           </p>
           {displayScoreBeforeTailor != null &&
           Number.isFinite(displayScoreBeforeTailor) ? (

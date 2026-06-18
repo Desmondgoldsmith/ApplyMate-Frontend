@@ -4,15 +4,12 @@ import { motion, useInView } from 'framer-motion';
 import { Check, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
+import { InfoHint } from '@/components/ui/InfoHint';
 import { cn } from '@/lib/utils';
 
-type Skill = { name: string; matched: boolean };
+import type { MatchScoreBenchmark } from '@/lib/api';
 
-/** Illustrative framing only — not a labor-market percentile; maps fit score to a readable “vs generic CV” band. */
-function illustrativeEdgeVsGenericApplicants(fit: number): number {
-  const x = Math.max(0, Math.min(100, fit));
-  return Math.min(92, Math.max(52, Math.round(52 + x * 0.38)));
-}
+type Skill = { name: string; matched: boolean };
 
 type MatchScoreBarProps = {
   score: number;
@@ -22,6 +19,12 @@ type MatchScoreBarProps = {
   scoreBeforeTailor?: number | null;
   /** When true, show before → after row when `scoreBeforeTailor` is set (even if rematch is flat or down). */
   isTailored?: boolean;
+  /** Backend-authored benchmark copy — replaces legacy illustrative percentile text. */
+  matchScoreBenchmark?: MatchScoreBenchmark | null;
+  /** Server-authored headline formula tooltip. */
+  scoreFormulaTooltip?: string | null;
+  /** Clarifies headline 50/30/20 weighting vs diagnostic factors. */
+  headlineCompositionNote?: string | null;
 };
 
 export function MatchScoreBar({
@@ -30,6 +33,9 @@ export function MatchScoreBar({
   skills = [],
   scoreBeforeTailor,
   isTailored,
+  matchScoreBenchmark,
+  scoreFormulaTooltip,
+  headlineCompositionNote,
 }: MatchScoreBarProps) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-10% 0px' });
@@ -54,9 +60,22 @@ export function MatchScoreBar({
       ? Math.max(0, Math.min(100, scoreBeforeTailor))
       : null;
   const showImprovement =
+    Boolean(isTailored) &&
     before !== null &&
-    Number.isFinite(before) &&
-    (Boolean(isTailored) || Math.round(before) !== Math.round(safeScore));
+    Number.isFinite(before);
+
+  const compositionNote = headlineCompositionNote?.trim() ?? '';
+  const formulaTooltip = scoreFormulaTooltip?.trim() ?? '';
+
+  const benchmarkBlock = matchScoreBenchmark?.shortHeadline ? (
+    <div className="mt-3 space-y-1">
+      <p className="text-[11px] leading-relaxed text-white/65">{matchScoreBenchmark.shortHeadline}</p>
+      {matchScoreBenchmark.disclaimer ? (
+        <p className="text-[10px] leading-relaxed text-white/38">{matchScoreBenchmark.disclaimer}</p>
+      ) : null}
+    </div>
+  ) : null;
+
   useEffect(() => {
     if (!inView) return;
     const start = performance.now();
@@ -106,23 +125,28 @@ export function MatchScoreBar({
                   : `${Math.round(safeScore - before)}% job fit`}
             </span>
           </div>
-          <p className="mt-3 text-[11px] leading-relaxed text-white/42">
-            On this rubric, your CV reads as roughly{' '}
-            <span className="font-semibold text-white/65">
-              stronger than {illustrativeEdgeVsGenericApplicants(safeScore)}% of untailored applications
-            </span>{' '}
-            scored against the same posting (generic CVs that were not tuned to this job text). Illustrative model
-            output — not a hiring guarantee or third-party survey.
-          </p>
+          {benchmarkBlock}
         </div>
       ) : null}
 
       <div className="flex min-w-0 flex-col gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/35">{label}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/35">{label}</p>
+            {formulaTooltip ? (
+              <InfoHint
+                text={formulaTooltip}
+                buttonAriaLabel="How match score is calculated"
+                className="shrink-0"
+              />
+            ) : null}
+          </div>
           <p className="mt-2 max-w-md text-[12px] leading-relaxed text-white/45">
-            {interpretation} — scores reflect how your CV lines up with this role&apos;s description.
+            {interpretation}. Scores reflect how your CV lines up with this role&apos;s description.
           </p>
+          {compositionNote ? (
+            <p className="mt-2 max-w-md text-[11px] leading-relaxed text-white/40">{compositionNote}</p>
+          ) : null}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1 sm:items-end">
           <p className="text-[22px] font-bold tabular-nums leading-none sm:text-2xl">
@@ -142,13 +166,18 @@ export function MatchScoreBar({
           <span className="absolute right-0 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-white/90 shadow-[0_0_8px_rgba(0,201,177,0.45)]" />
         </motion.div>
       </div>
+      {!showImprovement && benchmarkBlock ? (
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-2.5">
+          {benchmarkBlock}
+        </div>
+      ) : null}
       {skills.length ? (
         <div className="mt-4">
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">Gaps to address</p>
           <div className="flex flex-wrap gap-2">
-          {skills.map((skill) => (
+          {skills.map((skill, index) => (
             <div
-              key={skill.name}
+              key={`${skill.name}-${index}`}
               className={
                 skill.matched
                   ? 'inline-flex items-center gap-1.5 rounded-full border border-[#00C9B1]/25 bg-[rgba(0,201,177,0.08)] px-3 py-1.5 text-[12px] font-medium text-[#00C9B1]'

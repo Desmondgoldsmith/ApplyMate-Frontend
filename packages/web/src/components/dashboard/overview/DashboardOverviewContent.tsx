@@ -13,13 +13,12 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import Link from 'next/link';
-import { Suspense, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { DashboardLandscapeCard } from '@/components/dashboard/DashboardLandscapeCard';
-import { DashboardCommandBar } from '@/components/dashboard/DashboardCommandBar';
-import { DashboardDeepDiveShell } from '@/components/dashboard/DashboardDeepDiveShell';
 import { TodaysPlanSection } from '@/components/dashboard/overview/sections/TodaysPlanSection';
+import { QuietApplicationsSection } from '@/components/dashboard/QuietApplicationsSection';
 import { CareerMomentumSection } from '@/components/dashboard/overview/sections/CareerMomentumSection';
 import { PredictiveOutlookSection } from '@/components/dashboard/overview/sections/PredictiveOutlookSection';
 import { GoalAlignmentSection } from '@/components/dashboard/overview/sections/GoalAlignmentSection';
@@ -53,9 +52,7 @@ import {
   PipelineRenderer,
 } from '@/components/dashboard/experience-renderer';
 import { assistantToneHeroAccentClass } from '@/components/dashboard/assistant-voice';
-import { MatchScoreRing } from '@/components/dashboard/MatchScoreRing';
 import { InfoHint } from '@/components/ui/InfoHint';
-import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useCvProfileRowsDisplay } from '@/hooks/useCvProfileRowsDisplay';
@@ -69,7 +66,6 @@ import {
   useGrowthAchievements,
   useGrowthDailyDirection,
   useGrowthMomentumNudges,
-  useGrowthProgress,
   useTrackGrowthEvent,
 } from '@/hooks/useGrowth';
 import type { CvProfileSummary, JobHistoryItem } from '@/lib/api';
@@ -119,8 +115,16 @@ import {
   MOVEMENT_ROLES_FORWARD_HINT,
   MOVEMENT_TYPICAL_FIT_HINT,
 } from '@/lib/dashboardDashboardHints';
-import { TOOLTIP_JOB_MATCH_SCORE } from '@/lib/dashboardIntelligenceTooltips';
+import {
+  TOOLTIP_APPLICATIONS_IN_PROGRESS,
+  TOOLTIP_BEST_MATCH,
+  TOOLTIP_CAREER_MOMENTUM_SCORE,
+  TOOLTIP_DAILY_STREAK,
+  TOOLTIP_JOB_MATCH_SCORE,
+  TOOLTIP_PREDICTIVE_OUTLOOK,
+} from '@/lib/dashboardIntelligenceTooltips';
 import { trackProductEvent } from '@/lib/productAnalytics';
+import { sanitizeDashboardDisplayText, cleanAiText } from '@/lib/dashboardDisplayCopy';
 import { emitDashboardBehaviorEvent } from '@/lib/dashboardBehaviorEvents';
 import {
   atmosphereForMode,
@@ -144,7 +148,6 @@ import {
   type TodayPlanPayload,
 } from '@/lib/today-plan';
 import {
-  formatConfidenceShort,
   scanLabelForJobHistoryRow,
   subtextClassForMomentumType,
 } from '@/lib/todayPlanLabels';
@@ -164,7 +167,8 @@ import { TodaysPlanTopMatchesSection } from '@/components/dashboard/overview/Tod
 import { RecentAnalysesPanelSection } from '@/components/dashboard/overview/sections/RecentAnalysesPanelSection';
 import { AnalyzeNextRoleBanner } from '@/components/dashboard/overview/AnalyzeNextRoleBanner';
 import { GettingStartedChecklist } from '@/components/dashboard/overview/GettingStartedChecklist';
-import { DashboardOverviewLoadingSkeleton } from '@/components/dashboard/overview/DashboardOverviewLoadingSkeleton';
+import { DashboardHeroSkeleton } from '@/components/dashboard/overview/DashboardHeroSkeleton';
+import { DashboardMainContentSkeleton } from '@/components/dashboard/overview/DashboardMainContentSkeleton';
 
 export function DashboardOverviewContent() {
   const { data: user } = useCurrentUser();
@@ -175,7 +179,7 @@ export function DashboardOverviewContent() {
 
   const analytics = useAnalytics();
   const toast = useToast();
-  const { displayRows } = useCvProfileRowsDisplay();
+  const { displayRows, isBootstrapping } = useCvProfileRowsDisplay();
   const effectiveCvCountForCopy = displayRows.length;
   const defaultProfile = useMemo(
     () => displayRows.find((p) => p.isDefault) ?? displayRows[0] ?? null,
@@ -254,7 +258,7 @@ export function DashboardOverviewContent() {
   const heroDominant = isHeroDominant(todayPlan.data);
   const hasUnifiedPriorities =
     (todayPlan.data?.unifiedPriorities.items.length ?? 0) > 0;
-  const heroSubtext =
+  const heroSubtextRaw =
     committedExp?.momentumLine?.trim() ||
     (todayPlan.data
       ? dashboardVm?.momentumLine?.trim() ||
@@ -262,6 +266,7 @@ export function DashboardOverviewContent() {
         growthDirection.data?.identitySignal ||
         getPersonalisedSubtext(effectiveCvCountForCopy, totalJobsAnalyzed)
       : null);
+  const heroSubtext = heroSubtextRaw ? cleanAiText(heroSubtextRaw) : null;
 
   const hasCompressedAssistantNarrative = Boolean(
     todayPlan.data?.assistantNarrative?.headline?.trim() &&
@@ -669,25 +674,13 @@ export function DashboardOverviewContent() {
       (committedExp?.mode || dashboardVm?.mode) === 'recovery')
   );
 
-  const hasExperienceHeroCandidate = Boolean(
-    dashboardVm?.usesExperienceLayer && dashboardVm.hero?.title?.trim(),
-  );
-  const experienceStable = planStableForHero(todayPlan.data);
-  const shouldHoldExperienceUi =
-    Boolean(dashboardVm?.usesExperienceLayer) &&
-    committedExp == null &&
-    (!experienceStable ||
-      todayPlan.isLoading ||
-      todayPlan.isFetching ||
-      hasExperienceHeroCandidate);
-
   /**
-   * Avoid flashing generic dashboard copy before the real today-plan + experience hero is ready.
-   * - Without `todayPlan.data`, many strings fall back to growth/analytics heuristics.
-   * - With experience layer enabled, wait until `committedExp` is committed (hero skeleton already exists).
+   * Skeleton only while there is no today-plan data yet (first load / cold cache).
+   * Do not gate on `isFetchedAfterMount` — with a warm cache and `staleTime`, React Query
+   * may skip refetch on client navigation, which left the dashboard stuck on shimmer forever.
    */
-  const shouldHoldInitialDashboardUi =
-    !todayPlan.data || todayPlan.isLoading || shouldHoldExperienceUi;
+  const showDashboardLoading = isBootstrapping || todayPlan.isPending;
+  const statsRowLoading = showDashboardLoading;
 
   const experienceMode = committedExp?.mode ?? dashboardVm?.mode ?? null;
   const assistantAtmosphere = useMemo(
@@ -725,7 +718,6 @@ export function DashboardOverviewContent() {
     ],
   );
 
-  /** Follow-up card is allowed here alongside the command bar so the queue + “Show all” surface can render. */
   const priorityIntelligenceExcludeIds = useMemo(() => new Set<string>(), []);
 
   const priorityZoneCardIds = useMemo(
@@ -742,18 +734,6 @@ export function DashboardOverviewContent() {
   const secondaryCollapsibleIds = useMemo(
     () => buildSecondaryCardsCollapsibleOrder(),
     [],
-  );
-
-  const isBrandNewUser = useMemo(
-    () =>
-      displayRows.length === 0 &&
-      (analytics.data?.jobsAnalyzed ?? 0) === 0 &&
-      !(todayPlan.data?.unifiedPriorities?.items?.length ?? 0),
-    [
-      displayRows.length,
-      analytics.data?.jobsAnalyzed,
-      todayPlan.data?.unifiedPriorities?.items?.length,
-    ],
   );
 
   const focusItemsRaw = useMemo(
@@ -805,7 +785,7 @@ export function DashboardOverviewContent() {
     const p = todayPlan.data;
     const a = normalizedSectionTitle(p, 'recommended_move', '').trim();
     const b = normalizedSectionTitle(p, 'your_next_best_action', '').trim();
-    return a || b || 'Recommended Move';
+    return a || b || 'What to do next';
   }, [todayPlan.data]);
 
   const careerAchievementsHeading = useMemo(() => {
@@ -893,9 +873,10 @@ export function DashboardOverviewContent() {
                 : 'Steady';
       chips.push({
         key: 'career_momentum',
-        label: 'Career Momentum',
+        label: 'Search Momentum',
         value,
         status: tier,
+        explanation: TOOLTIP_CAREER_MOMENTUM_SCORE,
         scrollTargetId: 'dashboard-deep-career-momentum',
       });
     }
@@ -904,22 +885,28 @@ export function DashboardOverviewContent() {
       const po = plan.predictiveOutlook;
       const band = po.interviewOutlook?.value;
       const bandLabel = band ? formatSemanticOutlookBand(band) : '—';
-      const words =
-        po.headline?.trim()?.split(/\s+/).slice(0, 2).join(' ') || 'On track';
+      const outlookDescription = cleanAiText(
+        po.supporting?.trim() ||
+          po.interviewOutlook?.outlookBasis?.trim() ||
+          po.headline?.trim() ||
+          '',
+      );
       chips.push({
         key: 'predictive_outlook',
-        label: 'Interview Outlook',
+        label: 'Where your search is heading',
         value: bandLabel,
-        status: words,
+        status: outlookDescription || 'On track',
+        explanation: TOOLTIP_PREDICTIVE_OUTLOOK,
         scrollTargetId: 'dashboard-deep-predictive-outlook',
       });
     }
 
     chips.push({
       key: 'best_match',
-      label: 'Best Match',
+      label: 'Best match',
       value: `${Math.round(a?.averageMatchScore ?? 0)}%`,
       status: 'Latest analyses',
+      explanation: TOOLTIP_BEST_MATCH,
       scrollTargetId: 'dashboard-deep-recent-analyses',
     });
 
@@ -942,9 +929,10 @@ export function DashboardOverviewContent() {
       }
       chips.push({
         key: 'applications',
-        label: 'Applications',
+        label: 'Applications in progress',
         value: appValue,
         status: appStatus,
+        explanation: TOOLTIP_APPLICATIONS_IN_PROGRESS,
         scrollTargetId: 'dashboard-deep-summary',
       });
     }
@@ -956,8 +944,8 @@ export function DashboardOverviewContent() {
       const d = Math.max(0, Math.round(plan.habitProgress.currentStreakDays));
       chips.push({
         key: 'streak',
-        label: 'Streak',
-        value: `${d} days`,
+        label: 'Daily streak',
+        value: `${d} ${d === 1 ? 'day' : 'days'}`,
         status:
           plan.habitProgress.streakStatus === 'elite'
             ? 'Elite'
@@ -966,6 +954,7 @@ export function DashboardOverviewContent() {
               : plan.habitProgress.streakStatus === 'building'
                 ? 'Building'
                 : 'Starting',
+        explanation: TOOLTIP_DAILY_STREAK,
         scrollTargetId: 'dashboard-deep-consistency',
       });
     }
@@ -1091,10 +1080,6 @@ export function DashboardOverviewContent() {
   const phase14SecondaryWrapClass =
     'min-w-0 self-start rounded-3xl shadow-[0_24px_60px_-28px_rgba(0,0,0,0.5)] ring-1 ring-white/[0.08] transition-shadow duration-300 hover:shadow-[0_28px_70px_-26px_rgba(0,201,177,0.12)] [&>section]:rounded-3xl [&>section]:border-white/[0.06] [&>section]:shadow-none';
 
-  if (shouldHoldInitialDashboardUi) {
-    return <DashboardOverviewLoadingSkeleton />;
-  }
-
   return (
     <div className="dashboard-premium mx-auto flex min-h-0 w-full max-w-[1280px] flex-1 flex-col pb-10 max-md:pb-16 lg:min-h-0 lg:pb-0">
       <div className="flex min-h-0 flex-1 flex-col gap-10 lg:flex-row lg:gap-8 lg:overflow-hidden">
@@ -1113,302 +1098,277 @@ export function DashboardOverviewContent() {
         >
           <motion.section
             {...sectionMotion}
-            transition={
-              dashboardVm?.usesExperienceLayer
-                ? {
-                    duration: assistantAtmosphere.motionTransition.duration,
-                    ease: assistantAtmosphere.motionTransition.ease as [
-                      number,
-                      number,
-                      number,
-                      number,
-                    ],
-                  }
-                : {
-                    duration: 0.35,
-                    delay: 0,
-                    ease: [0.21, 0.47, 0.32, 0.98] as const,
-                  }
-            }
-            className={cn(
-              'mb-6 max-md:mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-10',
-              'rounded-none border-0 bg-transparent p-0 pb-2 shadow-none ring-0 sm:pb-3',
-              dashboardVm?.usesExperienceLayer &&
-                assistantToneHeroAccentClass(
-                  todayPlan.data?.assistantTone ?? null,
-                ),
-            )}
+            transition={{
+              duration: 0.35,
+              delay: 0,
+              ease: [0.21, 0.47, 0.32, 0.98] as const,
+            }}
+            className="mb-4 max-md:mb-3"
           >
             <div className="min-w-0 max-w-[65ch]">
-              <p
-                className={cn(
-                  assistantAtmosphere.heroTitleClass,
-                  'mb-3 font-normal leading-relaxed tracking-normal text-[var(--text-secondary)]',
-                )}
-              >
+              <p className="mb-0 text-[24px] font-bold leading-[1.2] text-[var(--text-primary)]">
                 {greetingLine(welcomeName)}
               </p>
               {!hasCompressedAssistantNarrative && returnWelcomeLine ? (
-                <p className="mb-4 mt-0 text-[13px] leading-relaxed text-[#9CF5EA]/72">
-                  {returnWelcomeLine}
+                <p className="mt-3 line-clamp-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+                  {cleanAiText(returnWelcomeLine)}
                 </p>
-              ) : null}
-              {/* Phase 5 compressed hero: suppress legacy strip + reasoning when assistantNarrative is present. */}
-              {dashboardVm?.usesExperienceLayer &&
-              !hasCompressedAssistantNarrative ? (
-                <AssistantHeaderRenderer
-                  compact={
-                    Boolean(committedExp?.heroTitle?.trim()) &&
-                    !shouldHoldExperienceUi
-                  }
-                  assistantTone={todayPlan.data?.assistantTone ?? null}
-                  emotionalSummary={todayPlan.data?.emotionalSummary ?? null}
-                  dailyNarrativeSummary={
-                    todayPlan.data?.dailyNarrativeSummary ?? null
-                  }
-                  narrativeProgression={
-                    todayPlan.data?.narrativeProgression ?? null
-                  }
-                  memorySummary={todayPlan.data?.memorySummary ?? null}
-                  assistantReasoning={
-                    todayPlan.data?.assistantReasoning ?? null
-                  }
-                  adaptiveReasoning={todayPlan.data?.adaptiveReasoning ?? []}
-                  assistantState={todayPlan.data?.assistantState ?? null}
-                  humanizedLabels={todayPlan.data?.humanizedLabels ?? null}
-                  personalizationContext={
-                    todayPlan.data?.personalizationContext ?? null
-                  }
-                />
-              ) : null}
-              {shouldHoldExperienceUi ? (
-                <HeroRenderer variant="skeleton" />
-              ) : committedExp?.heroTitle ? (
-                <HeroRenderer
-                  variant="committed"
-                  column="primary"
-                  title={committedExp.heroTitle}
-                  subtitle={committedExp.heroSubtitle}
-                  arcLabel={committedExp.heroArcLabel}
-                  continuityLine={committedExp.heroContinuityLine}
-                  whyMatters={committedExp.heroWhyMatters}
-                  reassuranceWhisper={reassuranceWhisper}
-                  emotionalTone={committedExp.heroEmotionalTone}
-                  mode={committedExp.mode ?? dashboardVm?.mode ?? null}
-                  fatigueAdjusted={committedExp.narrativeFatigueAdjusted}
-                  primaryTitleClass={
-                    hasCompressedAssistantNarrative
-                      ? undefined
-                      : assistantAtmosphere.heroTitleClass
-                  }
-                  compressedVisual={hasCompressedAssistantNarrative}
-                />
-              ) : orchestratedHero?.arcLabel ? (
-                <p className="mt-2 text-[13px] font-medium text-white/72">
-                  {orchestratedHero.arcLabel}
-                </p>
-              ) : heroActionHeadline ? (
-                <p className="mt-2 text-[13px] font-medium text-white/72">
-                  {heroActionHeadline}
-                </p>
-              ) : (
-                <p
-                  className={cn(
-                    'mt-2 text-[13px] font-medium',
-                    subtextClassForMomentumType(dashboardHeader?.momentumType),
-                  )}
-                >
-                  {heroSubtext}
-                </p>
-              )}
-              {dashboardVm?.usesExperienceLayer &&
-              dashboardVm.hero
-                ?.title ? null : orchestratedHero?.supportingLine ? (
-                <p className="mt-1 text-[12px] text-white/50">
-                  {orchestratedHero.supportingLine}
-                </p>
-              ) : heroActionBenefit ? (
-                <p className="mt-1 text-[12px] text-white/50">
-                  {heroActionBenefit}
-                </p>
-              ) : null}
-              {growthDirection.data?.dailyDirection.progressContext &&
-              !heroAction &&
-              !orchestratedHero &&
-              !dashboardVm?.hero?.title ? (
-                <p className="mt-2 inline-flex items-center gap-1.5 text-[12px] text-[#00C9B1]/85">
-                  <TrendingUp className="h-3.5 w-3.5" aria-hidden />
-                  {growthDirection.data.dailyDirection.progressContext}
-                </p>
-              ) : null}
-            </div>
-            <div className="w-full shrink-0 lg:max-w-[38%] lg:pt-0.5 lg:pr-2">
-              {shouldHoldExperienceUi ? (
-                <div
-                  className="flex w-full flex-col items-stretch gap-3 sm:items-end"
-                  aria-hidden
-                >
-                  <Skeleton
-                    className="max-w-[11rem] sm:ml-auto"
-                    height={14}
-                    width="100%"
-                    borderRadius={8}
-                  />
-                  <Skeleton
-                    className="max-w-[13rem] sm:ml-auto"
-                    height={44}
-                    width="100%"
-                    borderRadius={999}
-                  />
-                </div>
-              ) : committedExp?.heroTitle ? (
-                <HeroRenderer
-                  variant="committed"
-                  column="aside"
-                  emotionalTone={committedExp.heroEmotionalTone}
-                  mode={committedExp.mode ?? dashboardVm?.mode ?? null}
-                  fatigueAdjusted={committedExp.narrativeFatigueAdjusted}
-                  showPrimaryCta={committedExp.heroShowCta}
-                  ctaHref={committedExp.heroCtaHref}
-                  ctaLabel={committedExp.heroCtaLabel}
-                  ctaHelper={committedExp.heroCtaHelper}
-                  microcopyBelowCta={hasCompressedAssistantNarrative}
-                  suppressFallbackTip={hasCompressedAssistantNarrative}
-                  minutes={committedExp.heroMinutes}
-                  showLimitInHero={showLimitInHero}
-                  onCtaClick={() => {
-                    if (!committedExp.heroCtaHref) return;
-                    emitDashboardBehaviorEvent({
-                      eventName: 'dashboard_hero_clicked',
-                      context: {
-                        recommendationId:
-                          dashboardVm?.hero?.recommendationId ?? null,
-                        canonicalRoute: committedExp.heroCtaHref,
-                        surfaceKind: 'hero',
-                      },
-                    });
-                    trackProductEvent('recommendation_clicked', {
-                      ctaSource: 'dashboard_experience_hero',
-                      route: committedExp.heroCtaHref,
-                    });
-                  }}
-                />
-              ) : showLimitInHero ? (
-                <AiUsageBadge variant="default" className="w-full sm:w-auto" />
-              ) : orchestratedHero ? (
-                <>
-                  {orchestratedHero.minutes ? (
-                    <p className="text-[12px] font-medium leading-relaxed text-white/35">
-                      Usually takes ~{orchestratedHero.minutes} min
-                    </p>
-                  ) : null}
-                  <Link
-                    href={orchestratedHero.href}
-                    className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-full border border-[#00C9B1]/45 px-4 py-2 text-[13px] font-semibold text-[#00C9B1] transition-colors hover:bg-[#00C9B1] hover:text-[#080A0A]"
-                    onClick={() => {
-                      trackProductEvent('recommendation_clicked', {
-                        ctaSource: 'orchestrated_hero',
-                        route: orchestratedHero.href,
-                      });
-                    }}
-                  >
-                    {orchestratedHero.label}
-                  </Link>
-                </>
-              ) : heroActionHref && heroActionCtaLabel ? (
-                <>
-                  {heroActionMinutes ? (
-                    <p className="text-[12px] font-medium leading-relaxed text-white/35">
-                      Usually takes ~{heroActionMinutes} min
-                    </p>
-                  ) : null}
-                  <Link
-                    href={heroActionHref}
-                    className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-full border border-[#00C9B1]/45 px-4 py-2 text-[13px] font-semibold text-[#00C9B1] transition-colors hover:bg-[#00C9B1] hover:text-[#080A0A]"
-                    onClick={() => {
-                      if (typeof window !== 'undefined') {
-                        console.info('[Dashboard CTA route]', {
-                          recommendationId:
-                            heroAction?.recommendationId ?? null,
-                          title:
-                            heroActionHeadline ??
-                            heroAction?.roleTitle ??
-                            'Hero action',
-                          canonicalRoute:
-                            heroAction?.executionPayload?.canonicalRoute ??
-                            heroAction?.canonicalRoute ??
-                            null,
-                          deepLink: heroAction?.deepLink ?? null,
-                          finalNavigatedRoute: heroActionHref,
-                        });
-                      }
-                      trackProductEvent('recommendation_clicked', {
-                        ctaSource: 'hero_action_context',
-                        actionType: heroAction?.type ?? null,
-                        route: heroActionHref,
-                        recommendationId: heroAction?.recommendationId ?? null,
-                        applicationId: heroAction?.applicationId ?? null,
-                        canonicalJobId: heroAction?.canonicalJobId ?? null,
-                        cvProfileId: heroAction?.cvProfileId ?? null,
-                        executionMode: heroAction?.executionMode ?? null,
-                      });
-                    }}
-                  >
-                    {heroActionCtaLabel}
-                  </Link>
-                </>
-              ) : !dashboardVm?.usesExperienceLayer ? (
-                <p className="text-[12px] font-medium leading-relaxed text-white/35">
-                  Tip: Revisit your top matches weekly — small updates to your
-                  CV often move the needle on fit scores.
-                </p>
-              ) : null}
-              {!shouldHoldExperienceUi &&
-              !dashboardVm?.usesExperienceLayer &&
-              !orchestratedHero &&
-              !(
-                committedExp?.heroTitle &&
-                committedExp.heroShowCta &&
-                committedExp.heroCtaHref &&
-                committedExp.heroCtaLabel
-              ) &&
-              (!heroActionHref || !heroActionCtaLabel) ? (
-                <Link
-                  href={primaryDirectionHref}
-                  className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-full border border-[#00C9B1]/45 px-4 py-2 text-[13px] font-semibold text-[#00C9B1] transition-colors hover:bg-[#00C9B1] hover:text-[#080A0A]"
-                  onClick={() => {
-                    trackGrowthEvent.mutate({
-                      eventName: 'daily_direction_completed',
-                      context: { route: primaryDirectionHref },
-                    });
-                  }}
-                >
-                  Start today&apos;s mission
-                </Link>
               ) : null}
             </div>
           </motion.section>
 
+          {showDashboardLoading ? (
+            <DashboardHeroSkeleton />
+          ) : (
+            <motion.section
+              {...sectionMotion}
+              transition={
+                dashboardVm?.usesExperienceLayer
+                  ? {
+                      duration: assistantAtmosphere.motionTransition.duration,
+                      ease: assistantAtmosphere.motionTransition.ease as [
+                        number,
+                        number,
+                        number,
+                        number,
+                      ],
+                    }
+                  : {
+                      duration: 0.35,
+                      delay: 0,
+                      ease: [0.21, 0.47, 0.32, 0.98] as const,
+                    }
+              }
+              className={cn(
+                'mb-4 max-md:mb-3 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-10',
+                'rounded-none border-0 bg-transparent p-0 shadow-none ring-0',
+                dashboardVm?.usesExperienceLayer &&
+                  assistantToneHeroAccentClass(
+                    todayPlan.data?.assistantTone ?? null,
+                  ),
+              )}
+            >
+              <div className="min-w-0 max-w-[65ch]">
+                {dashboardVm?.usesExperienceLayer &&
+                !hasCompressedAssistantNarrative ? (
+                  <AssistantHeaderRenderer
+                    compact={Boolean(committedExp?.heroTitle?.trim())}
+                    assistantTone={todayPlan.data?.assistantTone ?? null}
+                    emotionalSummary={todayPlan.data?.emotionalSummary ?? null}
+                    dailyNarrativeSummary={
+                      todayPlan.data?.dailyNarrativeSummary ?? null
+                    }
+                    narrativeProgression={
+                      todayPlan.data?.narrativeProgression ?? null
+                    }
+                    memorySummary={todayPlan.data?.memorySummary ?? null}
+                    assistantReasoning={
+                      todayPlan.data?.assistantReasoning ?? null
+                    }
+                    adaptiveReasoning={todayPlan.data?.adaptiveReasoning ?? []}
+                    assistantState={todayPlan.data?.assistantState ?? null}
+                    humanizedLabels={todayPlan.data?.humanizedLabels ?? null}
+                    personalizationContext={
+                      todayPlan.data?.personalizationContext ?? null
+                    }
+                  />
+                ) : null}
+                {committedExp?.heroTitle ? (
+                  <HeroRenderer
+                    variant="committed"
+                    column="primary"
+                    title={committedExp.heroTitle}
+                    subtitle={committedExp.heroSubtitle}
+                    arcLabel={committedExp.heroArcLabel}
+                    continuityLine={committedExp.heroContinuityLine}
+                    whyMatters={committedExp.heroWhyMatters}
+                    reassuranceWhisper={reassuranceWhisper}
+                    emotionalTone={committedExp.heroEmotionalTone}
+                    mode={committedExp.mode ?? dashboardVm?.mode ?? null}
+                    fatigueAdjusted={committedExp.narrativeFatigueAdjusted}
+                    primaryTitleClass={
+                      hasCompressedAssistantNarrative
+                        ? undefined
+                        : assistantAtmosphere.heroTitleClass
+                    }
+                    compressedVisual={hasCompressedAssistantNarrative}
+                  />
+                ) : orchestratedHero?.arcLabel ? (
+                  <p className="mt-2 text-[13px] font-medium text-white/72">
+                    {cleanAiText(orchestratedHero.arcLabel)}
+                  </p>
+                ) : heroActionHeadline ? (
+                  <p className="mt-2 text-[13px] font-medium text-white/72">
+                    {cleanAiText(heroActionHeadline)}
+                  </p>
+                ) : (
+                  <p
+                    className={cn(
+                      'mt-2 text-[13px] font-medium',
+                      subtextClassForMomentumType(dashboardHeader?.momentumType),
+                    )}
+                  >
+                    {cleanAiText(heroSubtext)}
+                  </p>
+                )}
+                {dashboardVm?.usesExperienceLayer &&
+                dashboardVm.hero?.title ? null : orchestratedHero?.supportingLine ? (
+                  <p className="mt-1 text-[12px] text-white/50">
+                    {cleanAiText(orchestratedHero.supportingLine)}
+                  </p>
+                ) : heroActionBenefit ? (
+                  <p className="mt-1 text-[12px] text-white/50">
+                    {cleanAiText(heroActionBenefit)}
+                  </p>
+                ) : null}
+                {growthDirection.data?.dailyDirection.progressContext &&
+                !heroAction &&
+                !orchestratedHero &&
+                !dashboardVm?.hero?.title ? (
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-[12px] text-[#00C9B1]/85">
+                    <TrendingUp className="h-3.5 w-3.5" aria-hidden />
+                    {cleanAiText(growthDirection.data.dailyDirection.progressContext)}
+                  </p>
+                ) : null}
+              </div>
+              <div className="w-full shrink-0 lg:max-w-[38%] lg:pt-0.5 lg:pr-2">
+                {committedExp?.heroTitle ? (
+                  <HeroRenderer
+                    variant="committed"
+                    column="aside"
+                    emotionalTone={committedExp.heroEmotionalTone}
+                    mode={committedExp.mode ?? dashboardVm?.mode ?? null}
+                    fatigueAdjusted={committedExp.narrativeFatigueAdjusted}
+                    showPrimaryCta={committedExp.heroShowCta}
+                    ctaHref={committedExp.heroCtaHref}
+                    ctaLabel={committedExp.heroCtaLabel}
+                    ctaHelper={committedExp.heroCtaHelper}
+                    microcopyBelowCta={hasCompressedAssistantNarrative}
+                    suppressFallbackTip={hasCompressedAssistantNarrative}
+                    minutes={committedExp.heroMinutes}
+                    showLimitInHero={showLimitInHero}
+                    onCtaClick={() => {
+                      if (!committedExp.heroCtaHref) return;
+                      emitDashboardBehaviorEvent({
+                        eventName: 'dashboard_hero_clicked',
+                        context: {
+                          recommendationId:
+                            dashboardVm?.hero?.recommendationId ?? null,
+                          canonicalRoute: committedExp.heroCtaHref,
+                          surfaceKind: 'hero',
+                        },
+                      });
+                      trackProductEvent('recommendation_clicked', {
+                        ctaSource: 'dashboard_experience_hero',
+                        route: committedExp.heroCtaHref,
+                      });
+                    }}
+                  />
+                ) : showLimitInHero ? (
+                  <AiUsageBadge variant="default" className="w-full sm:w-auto" />
+                ) : orchestratedHero ? (
+                  <>
+                    {orchestratedHero.minutes ? (
+                      <p className="text-[12px] font-medium leading-relaxed text-white/35">
+                        Usually takes ~{orchestratedHero.minutes} min
+                      </p>
+                    ) : null}
+                    <Link
+                      href={orchestratedHero.href}
+                      className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-full border border-[#00C9B1]/45 px-4 py-2 text-[13px] font-semibold text-[#00C9B1] transition-colors hover:bg-[#00C9B1] hover:text-[#080A0A]"
+                      onClick={() => {
+                        trackProductEvent('recommendation_clicked', {
+                          ctaSource: 'orchestrated_hero',
+                          route: orchestratedHero.href,
+                        });
+                      }}
+                    >
+                      {orchestratedHero.label}
+                    </Link>
+                  </>
+                ) : heroActionHref && heroActionCtaLabel ? (
+                  <>
+                    {heroActionMinutes ? (
+                      <p className="text-[12px] font-medium leading-relaxed text-white/35">
+                        Usually takes ~{heroActionMinutes} min
+                      </p>
+                    ) : null}
+                    <Link
+                      href={heroActionHref}
+                      className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-full border border-[#00C9B1]/45 px-4 py-2 text-[13px] font-semibold text-[#00C9B1] transition-colors hover:bg-[#00C9B1] hover:text-[#080A0A]"
+                      onClick={() => {
+                        trackProductEvent('recommendation_clicked', {
+                          ctaSource: 'hero_action_context',
+                          actionType: heroAction?.type ?? null,
+                          route: heroActionHref,
+                          recommendationId: heroAction?.recommendationId ?? null,
+                          applicationId: heroAction?.applicationId ?? null,
+                          canonicalJobId: heroAction?.canonicalJobId ?? null,
+                          cvProfileId: heroAction?.cvProfileId ?? null,
+                          executionMode: heroAction?.executionMode ?? null,
+                        });
+                      }}
+                    >
+                      {heroActionCtaLabel}
+                    </Link>
+                  </>
+                ) : !dashboardVm?.usesExperienceLayer ? (
+                  <p className="text-[12px] font-medium leading-relaxed text-white/35">
+                    Tip: Revisit your top matches weekly. Small updates to your CV often
+                    improve fit scores.
+                  </p>
+                ) : null}
+                {!dashboardVm?.usesExperienceLayer &&
+                !orchestratedHero &&
+                !(
+                  committedExp?.heroTitle &&
+                  committedExp.heroShowCta &&
+                  committedExp.heroCtaHref &&
+                  committedExp.heroCtaLabel
+                ) &&
+                (!heroActionHref || !heroActionCtaLabel) ? (
+                  <Link
+                    href={primaryDirectionHref}
+                    className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-full border border-[#00C9B1]/45 px-4 py-2 text-[13px] font-semibold text-[#00C9B1] transition-colors hover:bg-[#00C9B1] hover:text-[#080A0A]"
+                    onClick={() => {
+                      trackGrowthEvent.mutate({
+                        eventName: 'daily_direction_completed',
+                        context: { route: primaryDirectionHref },
+                      });
+                    }}
+                  >
+                    Start today&apos;s mission
+                  </Link>
+                ) : null}
+              </div>
+            </motion.section>
+          )}
+
+          <DashboardStatsRow
+            chips={statsChips}
+            loading={statsRowLoading}
+            className="mb-4 md:mb-6"
+          />
+
+          {showDashboardLoading ? (
+            <DashboardMainContentSkeleton />
+          ) : (
           <div
             data-tour="todays-plan"
             className={cn(
               'flex min-w-0 flex-col',
               dashboardVm?.usesExperienceLayer
                 ? assistantAtmosphere.sectionGapClass
-                : 'gap-[var(--page-gap)] max-md:gap-4',
+                : 'gap-4 max-md:gap-4 md:gap-6',
             )}
           >
-            <DashboardCommandBar
-              plan={todayPlan.data ?? undefined}
-              isBrandNewUser={isBrandNewUser}
-              omitCanonicalCtaHrefs={dashboardPrimaryDedupeHrefs}
-              suppressGenericInterviewPriority={upcomingRowsCount > 0}
+            <ContinuationSection
+              items={continuationList}
+              continuationCount={continuationTotal}
             />
-            <DashboardStatsRow
-              chips={statsChips}
-              loading={analytics.isLoading}
-            />
-            {upcomingInterviews.length > 0 && (
+
+            <InterviewPendingResultBanner className="mb-2" />
+            {upcomingInterviews.length > 0 ? (
               <DashboardUpcomingInterviewsSection
                 interviews={upcomingInterviews}
                 upcomingInterviewCount={
@@ -1416,11 +1376,14 @@ export function DashboardOverviewContent() {
                   upcomingInterviews.length
                 }
               />
-            )}
-            <ContinuationSection
-              items={continuationList}
-              continuationCount={continuationTotal}
-            />
+            ) : null}
+            {!suppressGenericInterviewCoaching ? (
+              <DashboardInterviewPreparationSection
+                cards={todayPlan.data?.interviewPreparationCards ?? []}
+                totalCount={todayPlan.data?.interviewPreparationCardsTotalCount ?? null}
+              />
+            ) : null}
+
             {recommendedMove ? (
               <DashboardRecommendedMoveSection
                 action={recommendedMove}
@@ -1436,13 +1399,16 @@ export function DashboardOverviewContent() {
                 }
               />
             ) : null}
-            <TodaysPlanSection items={focusItems} />
-            <InterviewPendingResultBanner className="mb-2" />
-            {!suppressGenericInterviewCoaching ? (
-              <DashboardInterviewPreparationSection
-                cards={todayPlan.data?.interviewPreparationCards ?? []}
-              />
-            ) : null}
+            <TodaysPlanSection
+              items={focusItems}
+              totalCount={todayPlan.data?.focusItemsTotalCount ?? null}
+            />
+            <QuietApplicationsSection
+              items={todayPlan.data?.staleApplicationItems ?? []}
+              totalCount={todayPlan.data?.staleApplicationItemsTotalCount ?? null}
+              viewAllHref={todayPlan.data?.staleApplicationItemsViewAllHref ?? null}
+              plan={todayPlan.data ?? null}
+            />
 
             {showMergedPipelineCard || showStandaloneLandscapeCard ? (
               <motion.section
@@ -1455,7 +1421,7 @@ export function DashboardOverviewContent() {
                   ease: [0.21, 0.47, 0.32, 0.98],
                 }}
                 className="scroll-mt-4 flex flex-col gap-6"
-                aria-label="Where things stand"
+                aria-label="Your pipeline at a glance"
               >
                 {showMergedPipelineCard ? (
                   <PipelineRenderer
@@ -1475,7 +1441,7 @@ export function DashboardOverviewContent() {
                         todayPlan.data,
                         'search_at_a_glance',
                         '',
-                      )?.trim() || 'Where things stand'
+                      )?.trim() || 'Your pipeline at a glance'
                     }
                     primaryLineFallback={null}
                     disableOuterMotion
@@ -1899,6 +1865,7 @@ export function DashboardOverviewContent() {
               />
             ) : null}
           </div>
+          )}
 
           <CreateCVProfileModal
             open={createCvOpen}
@@ -1925,7 +1892,9 @@ export function DashboardOverviewContent() {
                 toast.info('Refreshed your current priorities.');
               }}
             />
-            <DashboardUpgradeCard className="mt-8 lg:mt-10" />
+            {!showDashboardLoading ? (
+              <DashboardUpgradeCard className="mt-8 lg:mt-10" />
+            ) : null}
           </div>
         </motion.div>
       </div>

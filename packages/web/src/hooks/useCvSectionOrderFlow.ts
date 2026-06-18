@@ -9,6 +9,7 @@ import {
   cvSectionOrderSuggestQueryKey,
   mergeSectionOrderSuggestWithClientFallback,
   readSectionOrderBannerDismissed,
+  sectionOrderMatchesSuggested,
   sectionsOrderIsSuboptimal,
   writeSectionOrderBannerDismissed,
   type CvSectionOrderSuggestResult,
@@ -46,11 +47,30 @@ export function useCvSectionOrderFlow(
 
   const showProactiveBanner = useMemo(() => {
     if (!pid || bannerDismissed) return false;
-    if (sectionRows.length > 0 && sectionsOrderIsSuboptimal(sectionRows)) return true;
     const data = effectiveSuggestData;
-    if (!data) return false;
-    return data.showProactiveSuggestion && !data.isOptimal;
+    if (data?.isOptimal) return false;
+    if (data?.suggestedOrder?.length && sectionOrderMatchesSuggested(sectionRows, data.suggestedOrder)) {
+      return false;
+    }
+    if (data && data.showProactiveSuggestion === false) return false;
+    if (sectionRows.length > 0 && sectionsOrderIsSuboptimal(sectionRows)) return true;
+    if (data && !data.isOptimal) return true;
+    return false;
   }, [pid, bannerDismissed, effectiveSuggestData, sectionRows]);
+
+  const invalidateSuggest = useCallback(() => {
+    if (!pid) return;
+    void queryClient.invalidateQueries({
+      queryKey: cvSectionOrderSuggestQueryKey(pid),
+    });
+  }, [pid, queryClient]);
+
+  const markOrderApplied = useCallback(() => {
+    if (!pid) return;
+    writeSectionOrderBannerDismissed(pid);
+    setBannerDismissed(true);
+    invalidateSuggest();
+  }, [pid, invalidateSuggest]);
 
   const openSuggestModal = useCallback(
     (prefetch?: CvSectionOrderSuggestResult | null) => {
@@ -69,13 +89,6 @@ export function useCvSectionOrderFlow(
     setBannerDismissed(true);
   }, [pid]);
 
-  const invalidateSuggest = useCallback(() => {
-    if (!pid) return;
-    void queryClient.invalidateQueries({
-      queryKey: cvSectionOrderSuggestQueryKey(pid),
-    });
-  }, [pid, queryClient]);
-
   return {
     modalOpen,
     setModalOpen,
@@ -84,6 +97,7 @@ export function useCvSectionOrderFlow(
     showProactiveBanner,
     openSuggestModal,
     dismissBanner,
+    markOrderApplied,
     invalidateSuggest,
     bannerDismissed,
   };

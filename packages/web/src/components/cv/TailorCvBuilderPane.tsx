@@ -18,6 +18,7 @@ import { isCvTemplateId, type CvTemplateId } from '@/lib/cvBuilder';
 export function TailorCvBuilderPane({
   profileId,
   rehydrateNonce = 0,
+  forceRehydrateNonce = 0,
   highlightSectionId = null,
   highlightNonce = 0,
   highlightAction = 'accepted',
@@ -31,6 +32,8 @@ export function TailorCvBuilderPane({
 }: {
   profileId: string;
   rehydrateNonce?: number;
+  /** Bump after tailor accept/revert so builder rehydrates even when dirty. */
+  forceRehydrateNonce?: number;
   highlightSectionId?: string | null;
   highlightNonce?: number;
   highlightAction?: 'accepted' | 'reverted';
@@ -91,6 +94,7 @@ export function TailorCvBuilderPane({
       tailorHighlightNonce={highlightNonce}
       tailorHighlightAction={highlightAction}
       externalServerHydrateNonce={rehydrateNonce}
+      forceServerHydrateNonce={forceRehydrateNonce}
       onStructuredPersisted={onStructuredPersisted}
       modalLayerZIndex={100070}
       onExportPdf={onExportPdf}

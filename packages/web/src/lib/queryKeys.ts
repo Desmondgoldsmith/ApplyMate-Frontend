@@ -82,6 +82,7 @@ export const queryKeys = {
 
   applications: {
     root: () => ['applications'] as const,
+    detail: (id: string) => ['applications', 'detail', id] as const,
   },
 
   hub: {
@@ -131,6 +132,24 @@ export const queryKeys = {
     root: () => ['dashboard-focus'] as const,
     key: (cvProfileId: string, timezone: string) =>
       ['dashboard-focus', cvProfileId, timezone] as const,
+  },
+
+  dashboardQuietApplications: {
+    root: () => ['dashboard-quiet-applications'] as const,
+    key: (cvProfileId: string, timezone: string, focusFeedMaxItems: number | 'default') =>
+      ['dashboard-quiet-applications', cvProfileId, timezone, focusFeedMaxItems] as const,
+  },
+
+  dashboardInterviewPrep: {
+    root: () => ['dashboard-interview-prep'] as const,
+    key: (cvProfileId: string, timezone: string, focusFeedMaxItems: number | 'default') =>
+      ['dashboard-interview-prep', cvProfileId, timezone, focusFeedMaxItems] as const,
+  },
+
+  dashboardFollowUpJobs: {
+    root: () => ['dashboard-follow-up-jobs'] as const,
+    key: (cvProfileId: string, timezone: string, focusFeedMaxItems: number | 'default') =>
+      ['dashboard-follow-up-jobs', cvProfileId, timezone, focusFeedMaxItems] as const,
   },
 
   weeklyStallSummary: {

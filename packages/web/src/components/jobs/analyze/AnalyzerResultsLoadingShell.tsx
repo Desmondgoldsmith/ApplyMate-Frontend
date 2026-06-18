@@ -4,20 +4,26 @@ import { Loader2 } from 'lucide-react';
 
 export function AnalyzerResultsLoadingShell({
   variant,
+  progressLabel,
+  progressHint,
 }: {
   variant: 'empty' | 'overlay';
+  progressLabel?: string;
+  progressHint?: string;
 }) {
+  const headline = progressLabel?.trim() || 'Running AI analysis…';
+  const hint =
+    progressHint?.trim() ||
+    "We're scoring your fit, surfacing skill gaps, and drafting recruiter context. This usually takes a few seconds.";
+
   const inner = (
     <>
       <Loader2
         className="mb-4 h-12 w-12 shrink-0 animate-spin text-[#00C9B1]"
         aria-hidden
       />
-      <p className="text-lg font-semibold text-white">Running AI analysis…</p>
-      <p className="mt-3 max-w-md text-sm leading-relaxed text-white/50">
-        We&apos;re scoring your fit, surfacing skill gaps, and drafting
-        recruiter context. This usually takes a few seconds.
-      </p>
+      <p className="text-lg font-semibold text-white">{headline}</p>
+      <p className="mt-3 max-w-md text-sm leading-relaxed text-white/50">{hint}</p>
       <div className="mt-10 w-full max-w-md space-y-3">
         <div className="h-3 w-2/3 animate-pulse rounded-full bg-white/[0.08]" />
         <div className="h-3 w-full animate-pulse rounded-full bg-white/[0.06]" />

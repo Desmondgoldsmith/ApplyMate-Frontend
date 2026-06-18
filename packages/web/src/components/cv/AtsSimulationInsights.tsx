@@ -13,9 +13,14 @@ function formatWeightPct(w: number | undefined): string {
   return '—';
 }
 
-/** Prefer dimension hint; else ratio of explicit hard-skill match rows. */
+/** Prefer hardSkillsMatch dimension; else ratio of explicit hard-skill match rows. */
 function hardSkillsMatchPercent(sim: AtsSimulationReport): number | undefined {
-  const fromDim = dimensionScoreByHint(sim.dimensions, ['skill', 'hardskill', 'hard', 'skills']);
+  const fromDim = dimensionScoreByHint(sim.dimensions, [
+    'hardskillsmatch',
+    'hardskillmatch',
+    'hardskills',
+    'hardskill',
+  ]);
   if (fromDim !== undefined) return fromDim;
   const rows = sim.hardSkillMatches;
   if (!rows?.length) return undefined;
@@ -86,12 +91,16 @@ function collectPresent(sim: AtsSimulationReport): { label: string; words: strin
 export function AtsSimulationInsights({ simulation, compact, onRequestKeywordAssist }: AtsSimulationInsightsProps) {
   const dims = simulation.dimensions;
   const keywordMatch =
-    dimensionScoreByHint(dims, ['keyword', 'keywords', 'lexical']) ??
+    dimensionScoreByHint(dims, ['keywordmatch', 'keyword', 'keywords', 'lexical']) ??
     simulation.coveragePercent ??
     simulation.overallScore;
   const hardSkills = hardSkillsMatchPercent(simulation);
   const title = simulation.titleAlignmentScore ?? dimensionScoreByHint(dims, ['title', 'role']);
-  const seniority = simulation.seniorityAlignmentScore ?? dimensionScoreByHint(dims, ['senior', 'level']);
+  const seniority =
+    simulation.seniorityAlignment?.score0to100 ??
+    simulation.seniorityAlignmentScore ??
+    dimensionScoreByHint(dims, ['senior', 'level']);
+  const seniorityDetail = simulation.seniorityAlignment?.detail?.trim();
   const semantic = simulation.semanticSimilarityScore ?? dimensionScoreByHint(dims, ['semantic', 'similarity']);
   const formatting =
     simulation.formattingParseabilityScore ?? dimensionScoreByHint(dims, ['format', 'parse', 'layout']);
@@ -134,14 +143,14 @@ export function AtsSimulationInsights({ simulation, compact, onRequestKeywordAss
         <MetricCell
           label="Keyword match"
           value={pct(keywordMatch)}
-          hint="Heuristic overlap between your CV and important terms from the job context."
+          hint="Lexical overlap between your CV text and important terms from the job description."
           compact={compact}
           testId="ats-metric-keyword-match"
         />
         <MetricCell
           label="Hard skills match"
           value={pct(hardSkills)}
-          hint="Structured / canonical skill overlap when the simulation provides it."
+          hint="Canonical skill entities from the job vs your skills section — may differ from keyword match."
           compact={compact}
           testId="ats-metric-hard-skills"
         />
@@ -154,6 +163,7 @@ export function AtsSimulationInsights({ simulation, compact, onRequestKeywordAss
         <MetricCell
           label="Seniority alignment"
           value={pct(seniority)}
+          hint={seniorityDetail || 'How your experience level and title read vs the role.'}
           compact={compact}
           testId="ats-metric-seniority-alignment"
         />
@@ -170,6 +180,15 @@ export function AtsSimulationInsights({ simulation, compact, onRequestKeywordAss
           testId="ats-metric-formatting"
         />
       </div>
+
+      {seniorityDetail ? (
+        <p
+          className="text-[11px] leading-relaxed text-white/55"
+          data-testid="ats-seniority-detail"
+        >
+          {seniorityDetail}
+        </p>
+      ) : null}
 
       {dims && Object.keys(dims).length > 0 ? (
         <div className="space-y-1.5" data-testid="ats-simulation-dimensions">
@@ -198,7 +217,12 @@ export function AtsSimulationInsights({ simulation, compact, onRequestKeywordAss
 
       {simulation.hardSkillMatches && simulation.hardSkillMatches.length > 0 ? (
         <div data-testid="ats-hard-skill-matches">
-          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wider text-white/35">Hard skill signals</p>
+          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wider text-white/35">
+            Hard skill ontology matches
+          </p>
+          <p className="mb-1.5 text-[10px] leading-snug text-white/38">
+            Canonical skills from the job — separate from lexical keyword hits above.
+          </p>
           <ul className="max-h-28 space-y-1 overflow-y-auto text-[11px] text-white/60">
             {simulation.hardSkillMatches.slice(0, 24).map((m, i) => (
               <li key={`${m.term ?? i}-${i}`} className="flex flex-wrap gap-1">
@@ -218,7 +242,9 @@ export function AtsSimulationInsights({ simulation, compact, onRequestKeywordAss
       {missingGroups.length > 0 ? (
         <div data-testid="ats-missing-keywords">
           <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-amber-200/90">Missing keywords</p>
+            <p className="text-[9px] font-semibold uppercase tracking-wider text-amber-200/90">
+              Missing keywords (lexical)
+            </p>
             {assistPrompt && onRequestKeywordAssist ? (
               <button
                 type="button"
@@ -232,7 +258,7 @@ export function AtsSimulationInsights({ simulation, compact, onRequestKeywordAss
             ) : null}
           </div>
           <p className="mb-1.5 text-[10px] leading-snug text-white/40">
-            Prioritized gaps vs the job context. Use Assistant only for truthful wording grounded in your CV.
+            JD token/phrase gaps vs your CV text. Hard skill ontology matches are listed separately.
           </p>
           {missingGroups.map((g) => (
             <div key={g.label} className="mb-2">

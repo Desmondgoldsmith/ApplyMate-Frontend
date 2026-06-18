@@ -46,6 +46,8 @@ function urgencyToDot(u: DashboardFocusItemPayload['urgency']): FocusUrgencyDot 
 
 function phase15MetaLine(row: DashboardFocusItemPayload): string {
   const parts: string[] = [];
+  const activity = row.lastActivityLabel?.trim();
+  if (activity) parts.push(activity);
   if (typeof row.confidence === 'number' && Number.isFinite(row.confidence)) {
     parts.push(`Confidence ${Math.round(row.confidence)}%`);
   }

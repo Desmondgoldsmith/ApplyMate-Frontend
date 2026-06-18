@@ -47,6 +47,7 @@ import { HeaderFloatingControls } from '@/components/cv/HeaderFloatingControls';
 import { OnyxCvDocument } from '@/components/cv/templates/OnyxCvDocument';
 import { InlineField } from '@/components/cv/InlineField';
 import { InlineSkillsCommaField } from '@/components/cv/InlineSkillsCommaField';
+import { SkillsRichComma } from '@/components/cv/SkillsRichComma';
 import { persistSectionTitleChange, resolveSectionDisplayTitle } from '@/lib/cvSectionTitlePersist';
 import { EntryToolbar } from '@/components/cv/EntryToolbar';
 import { useToast } from '@/components/ui/Toast';
@@ -544,8 +545,14 @@ function stripHtmlTags(value: string): string {
     .trim();
 }
 
+function skillsCommaList(skills: string[]): string {
+  return skills.map((s) => stripHtmlTags(s)).filter(Boolean).join(', ');
+}
+
 function expertiseLine(data: CVBuilderData): string {
-  const all = data.skills.categories.flatMap((c) => c.skills);
+  const all = data.skills.categories.flatMap((c) =>
+    c.skills.map((s) => stripHtmlTags(s)).filter(Boolean),
+  );
   const top = all.slice(0, 8);
   if (top.length) return top.join('  |  ');
   return 'Frontend Engineering  |  Product Development  |  Performance Optimization';
@@ -1396,7 +1403,7 @@ function ClassicDoc({
                         className="text-black"
                       />
                     )
-                    : cat.skills.join(', ')}
+                    : <SkillsRichComma skills={cat.skills} />}
                 </span>
               </p>
             </div>
@@ -1784,7 +1791,7 @@ function ClassicDoc({
                     {normalizeBullets(x.bullets as unknown as string | string[] | undefined).map((b, i) => (
                       <li key={i} className="mb-[3px] flex items-start gap-1.5">
                         <span className="mt-0.5 shrink-0">•</span>
-                        <span>{b}</span>
+                        <RichText text={b} />
                       </li>
                     ))}
                   </ul>
@@ -3620,7 +3627,7 @@ function ModernDoc({
             allSkillCats.map((c) => (
               <div key={c.id} className="border-l-2 pl-2" style={{ borderColor: accent }}>
                 <p className="font-bold text-[#111827]">{c.name?.trim() ? `${c.name.trim()}: ` : null}</p>
-                <p className="mt-0.5 font-normal">{c.skills.length ? c.skills.join(', ') : ''}</p>
+                <p className="mt-0.5 font-normal">{c.skills.length ? skillsCommaList(c.skills) : ''}</p>
               </div>
             ))
           ) : (
@@ -4479,7 +4486,7 @@ function ModernDoc({
                     {normalizeBullets(x.bullets as unknown as string | string[] | undefined).map((b, i) => (
                       <li key={i} className="flex items-start gap-1.5">
                         <span className="mt-0.5 shrink-0">•</span>
-                        <span>{b}</span>
+                        <RichText text={b} />
                       </li>
                     ))}
                   </ul>
@@ -6798,7 +6805,7 @@ function CreativeDoc({
                             {normalizeBullets(x.bullets as unknown as string | string[] | undefined).map((b, i) => (
                               <li key={i} className="flex items-start gap-1.5">
                                 <span className="mt-0.5 shrink-0">•</span>
-                                <span>{b}</span>
+                                <RichText text={b} />
                               </li>
                             ))}
                           </ul>
@@ -9473,7 +9480,7 @@ function ProfessionalDoc({
                           className="text-black"
                         />
                       ) : (
-                        cat.skills.join(', ')
+                        skillsCommaList(cat.skills)
                       )}
                     </span>
                   </p>
@@ -9865,7 +9872,7 @@ function ProfessionalDoc({
                           {normalizeBullets(x.bullets as unknown as string | string[] | undefined).map((b, i) => (
                             <li key={i} className="flex items-start gap-1.5">
                               <span className="mt-0.5 shrink-0">•</span>
-                              <span>{b}</span>
+                              <RichText text={b} />
                             </li>
                           ))}
                         </ul>

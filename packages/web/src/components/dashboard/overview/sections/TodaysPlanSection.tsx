@@ -3,28 +3,24 @@
 import { DashboardFocusSection } from '@/components/dashboard/DashboardFocusSection';
 import { useDashboardTodayPlanQuery } from '@/hooks/useDashboardTodayPlanQuery';
 import type { FocusItem } from '@/lib/dashboardFocusMerge';
-import {
-  dashboardEmptyStateFor,
-  normalizedSectionTitle,
-} from '@/lib/today-plan';
+import { dashboardEmptyStateFor, normalizedSectionTitle } from '@/lib/today-plan';
 
 export type TodaysPlanSectionProps = {
   items: FocusItem[];
+  totalCount?: number | null;
 };
 
-/** Today&apos;s focus feed (items merged upstream; plan metadata fetched here). */
-export function TodaysPlanSection({ items }: TodaysPlanSectionProps) {
+/** Today&apos;s focus feed (server-ranked; quiet apps live in a separate section). */
+export function TodaysPlanSection({ items, totalCount }: TodaysPlanSectionProps) {
   const todayPlan = useDashboardTodayPlanQuery();
 
   return (
     <DashboardFocusSection
       items={items}
-      sectionHeading={normalizedSectionTitle(
-        todayPlan.data,
-        'focus',
-        'Your Focus',
-      )}
+      totalCount={totalCount ?? todayPlan.data?.focusItemsTotalCount ?? null}
+      sectionHeading={normalizedSectionTitle(todayPlan.data, 'focus', 'Your focus')}
       phase15Empty={dashboardEmptyStateFor(todayPlan.data, 'focus')}
     />
   );
 }
+

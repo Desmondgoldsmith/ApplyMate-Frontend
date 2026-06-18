@@ -1,4 +1,5 @@
 import { GoogleAuthExchangeError } from '@/lib/google-auth-exchange-error';
+import { NEXTAUTH_API_BASE_PATH } from '@/lib/nextauth-api';
 
 /** Query param values on `/login?error=` after Google OAuth finish failures. */
 export type GoogleOAuthErrorParam =
@@ -91,7 +92,7 @@ export function googleOAuthErrorToastMessage(
     case 'GoogleSignInFailed':
     case 'GOOGLE_TOKEN_INVALID':
       if (!detail) {
-        return 'Google sign-in failed. Restart the dev server, open /api/auth/google/status (should show googleAuthConfigured: true), then try again.';
+        return `Google sign-in failed. Restart the dev server, open ${NEXTAUTH_API_BASE_PATH}/google/status (should show googleAuthConfigured: true), then try again.`;
       }
       return withDetail(
         'Google sign-in failed. Try again or use email and password.',

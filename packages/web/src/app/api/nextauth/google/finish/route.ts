@@ -19,6 +19,7 @@ import {
 } from '@/lib/google-oauth-intent';
 import { API_BASE_URL } from '@/lib/axios';
 
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 function authPageRedirect(

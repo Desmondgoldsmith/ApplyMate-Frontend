@@ -3,7 +3,6 @@
 import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  AlertCircle,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
@@ -24,11 +23,20 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { JobAnalysisCard } from '@/components/dashboard/JobAnalysisCard';
+import { StaleApplicationNoticeBanner } from '@/components/dashboard/StaleApplicationNoticeBanner';
+import { JobHubGuidancePanel } from '@/components/job-hub/JobHubGuidancePanel';
+import { JobHubPipelineStepper } from '@/components/job-hub/JobHubPipelineStepper';
 import { CvProfileDownloadActions } from '@/components/dashboard/CvProfileDownloadActions';
 import { ScoreImprovementGuideCard } from '@/components/job-analysis/ScoreImprovementGuideCard';
+import { InterviewReadinessSection } from '@/components/job-analysis/InterviewReadinessSection';
 import { AiRecruiterReportSection } from '@/components/job-analysis/AiRecruiterReportSection';
+import { JobDescriptionHighlightsPanel } from '@/components/job-board/JobDescriptionHighlightsPanel';
 import { Button } from '@/components/ui/Button';
+import { CompanyLogo } from '@/components/ui/CompanyLogo';
 import { useToast } from '@/components/ui/Toast';
+import { useApplication } from '@/hooks/useApplication';
+import { useHubBookmarks } from '@/hooks/useHubBookmarks';
+import { usePatchJobHubGuidance } from '@/hooks/usePatchJobHubGuidance';
 import { useDailyAiUsage } from '@/hooks/useDailyAiUsage';
 import { useJobApplyUrl } from '@/hooks/useJobApplyUrl';
 import { useGenerateContent } from '@/hooks/useGenerateContent';
@@ -39,9 +47,23 @@ import {
   type JobAnalysis,
 } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
+import { patchJobHistoryDisplayScore } from '@/lib/jobHistoryCache';
 import { openExternalJobApplyUrl } from '@/lib/jobApplyUrl';
+import { resolveSelectedCvProfileId } from '@/lib/jobAnalysisCvContext';
 import { shouldShowScoreImprovementGuide } from '@/lib/scoreImprovement';
 import { downloadCoverLetterPdf } from '@/lib/cover-letter-pdf';
+import {
+  enrichGuidancePayload,
+  hubPipelineStepIdToHubStage,
+  isGuidanceTaskUserToggleable,
+  isJobHubGuidanceArchiveHref,
+  optimisticPipelineStepper,
+  parseJobHubDetailTabFromHref,
+  type JobHubGuidancePayload,
+  type JobHubPipelineStep,
+  type JobHubPipelineStepperPayload,
+} from '@/lib/jobHubGuidance';
+import { coalesceJobHubEmailTemplateQueryParam } from './jobHubEmailTemplates';
 import { normalizeText } from '@/lib/normalizeText';
 import { cn } from '@/lib/utils';
 
@@ -57,10 +79,12 @@ import {
   hubReminderStatusLabel,
 } from '@/lib/hubReminderDueStatus';
 import { notifyDueHubRemindersFromCache } from '@/lib/hubReminderNotifications';
-import { prefillJobAnalyzerInStorage } from '@/lib/jobHubPrefill';
 import {
-  HUB_STAGE_LABELS,
-  HUB_STAGES,
+  prefillJobAnalyzerInStorage,
+  readHubJobPrefillSession,
+} from '@/lib/jobHubPrefill';
+import { isCompletedJobAnalysis } from '@/lib/jobAnalysisComplete';
+import {
   canRemoveTrackedJobFromHub,
   type HubStage,
   type TrackedJob,
@@ -141,12 +165,6 @@ function formatReminderWhen(iso: string) {
   });
 }
 
-function formatAssistLabel(field: string): string {
-  return field
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
 export function JobHubDetailPanel({
   job,
   onClose,
@@ -188,11 +206,91 @@ export function JobHubDetailPanel({
   const [emailExtra, setEmailExtra] = useState('');
   const [emailDraft, setEmailDraft] = useState<FollowUpEmailDraft | null>(null);
 
+  const applicationDetail = useApplication(job.applicationId);
+  const hubBookmarks = useHubBookmarks();
+  const patchGuidance = usePatchJobHubGuidance();
+  const staleApplicationNotice = applicationDetail.data?.staleApplicationNotice ?? null;
+
+  const bookmarkRow = useMemo(() => {
+    const id = job.hubBookmarkId?.trim();
+    if (!id) return null;
+    return hubBookmarks.data?.find((b) => b.id === id) ?? null;
+  }, [hubBookmarks.data, job.hubBookmarkId]);
+
   const jobDetail = useQuery({
     queryKey: queryKeys.jobs.analysis(job.jobAnalysisId ?? ''),
     queryFn: () => api.jobs.getJob(job.jobAnalysisId!),
     enabled: Boolean(job.jobAnalysisId),
+    retry: 1,
   });
+
+  useEffect(() => {
+    const detail = jobDetail.data;
+    const id = job.jobAnalysisId?.trim();
+    if (!detail || !id) return;
+    patchJobHistoryDisplayScore(queryClient, id, detail.matchScore);
+  }, [jobDetail.data, job.jobAnalysisId, queryClient]);
+
+  const hubContext = useMemo((): {
+    pipelineStepper: JobHubPipelineStepperPayload | null;
+    guidance: JobHubGuidancePayload | null;
+  } => {
+    const fromApp = applicationDetail.data;
+    if (fromApp?.pipelineStepper || fromApp?.guidance) {
+      return {
+        pipelineStepper: fromApp.pipelineStepper ?? null,
+        guidance: fromApp.guidance ?? null,
+      };
+    }
+    const fromJob = jobDetail.data;
+    if (fromJob?.pipelineStepper || fromJob?.guidance) {
+      return {
+        pipelineStepper: fromJob.pipelineStepper ?? null,
+        guidance: fromJob.guidance ?? null,
+      };
+    }
+    if (bookmarkRow?.pipelineStepper || bookmarkRow?.guidance) {
+      return {
+        pipelineStepper: bookmarkRow.pipelineStepper ?? null,
+        guidance: bookmarkRow.guidance ?? null,
+      };
+    }
+    return { pipelineStepper: null, guidance: null };
+  }, [
+    applicationDetail.data,
+    bookmarkRow?.guidance,
+    bookmarkRow?.pipelineStepper,
+    jobDetail.data,
+  ]);
+
+  const [localGuidance, setLocalGuidance] = useState<JobHubGuidancePayload | null>(null);
+  const [localStepper, setLocalStepper] = useState<JobHubPipelineStepperPayload | null>(null);
+  const guidance = localGuidance ?? hubContext.guidance;
+  const pipelineStepper = localStepper ?? hubContext.pipelineStepper;
+  const displayGuidance = useMemo(
+    () =>
+      guidance
+        ? enrichGuidancePayload(guidance, {
+            applicationId: job.applicationId,
+            jobAnalysisId: job.jobAnalysisId,
+            hubBookmarkId: job.hubBookmarkId,
+          })
+        : null,
+    [guidance, job.applicationId, job.hubBookmarkId, job.jobAnalysisId],
+  );
+
+  useEffect(() => {
+    setLocalGuidance(null);
+    setLocalStepper(null);
+  }, [job.key]);
+
+  useEffect(() => {
+    setLocalStepper(null);
+  }, [hubContext.pipelineStepper?.currentStepId]);
+
+  useEffect(() => {
+    setLocalGuidance(null);
+  }, [hubContext.guidance?.generatedAt, hubContext.guidance?.percentComplete]);
 
   const generated = useQuery({
     queryKey: queryKeys.jobs.generated(job.jobAnalysisId ?? ''),
@@ -204,7 +302,7 @@ export function JobHubDetailPanel({
   const bookmarkDiscoveryDetail = useQuery({
     queryKey: queryKeys.jobs.discoveryDetail(bookmarkListingId),
     queryFn: () => api.jobDiscovery.getDetail(bookmarkListingId),
-    enabled: Boolean(bookmarkListingId) && !job.jobAnalysisId && tab === 'description',
+    enabled: Boolean(bookmarkListingId) && tab === 'description',
   });
 
   const noteScope = useMemo(() => hubNoteScopeFromJob(job), [job]);
@@ -315,7 +413,29 @@ export function JobHubDetailPanel({
       throw new Error('Missing job context');
     },
     onSuccess: (draft) => {
-      setEmailDraft(draft);
+      setEmailDraft({ subject: draft.subject, body: draft.body });
+      if (draft.guidance) setLocalGuidance(draft.guidance);
+      if (draft.pipelineStepper) setLocalStepper(draft.pipelineStepper);
+      if (job.applicationId) {
+        queryClient.setQueryData(queryKeys.applications.detail(job.applicationId), (prev: unknown) => {
+          if (prev === null || typeof prev !== 'object') return prev;
+          return {
+            ...(prev as Record<string, unknown>),
+            ...(draft.guidance ? { guidance: draft.guidance } : {}),
+            ...(draft.pipelineStepper ? { pipelineStepper: draft.pipelineStepper } : {}),
+          };
+        });
+      }
+      if (job.jobAnalysisId) {
+        queryClient.setQueryData(queryKeys.jobs.analysis(job.jobAnalysisId), (prev: unknown) => {
+          if (prev === null || typeof prev !== 'object') return prev;
+          return {
+            ...(prev as Record<string, unknown>),
+            ...(draft.guidance ? { guidance: draft.guidance } : {}),
+            ...(draft.pipelineStepper ? { pipelineStepper: draft.pipelineStepper } : {}),
+          };
+        });
+      }
       toast.success('Draft generated');
     },
     onError: (e) => toast.error(getApiErrorMessage(e)),
@@ -374,6 +494,40 @@ export function JobHubDetailPanel({
         }
       : null;
 
+  const hasCompletedAnalysis = useMemo(() => {
+    if (!job.jobAnalysisId || !analysisForCard) return false;
+    if (job.hasAnalysis === false) return false;
+    return isCompletedJobAnalysis(analysisForCard);
+  }, [analysisForCard, job.hasAnalysis, job.jobAnalysisId]);
+
+  /** Bookmark-only / extension saves already expose `hasAnalysis: false` on the hub row. */
+  const knownUnanalyzedJob = job.hasAnalysis === false;
+
+  const showAnalysisDetailLoading = Boolean(
+    job.jobAnalysisId &&
+      jobDetail.isLoading &&
+      !jobDetail.isError &&
+      !knownUnanalyzedJob,
+  );
+
+  const hubPrefill = readHubJobPrefillSession(job.jobAnalysisId);
+  const descriptionFromAnalysis = (detail?.description ?? '').trim();
+  const descriptionFromDiscovery = (
+    (bookmarkDiscoveryDetail.data?.description ?? '').trim() ||
+    (job.boardDescription ?? '').trim()
+  ).trim();
+  const descriptionFromExtensionPrefill = (hubPrefill?.description ?? '').trim();
+  const descriptionHighlights =
+    detail?.descriptionHighlights ?? bookmarkDiscoveryDetail.data?.descriptionHighlights ?? null;
+  const descriptionBody =
+    descriptionFromAnalysis ||
+    descriptionFromDiscovery ||
+    descriptionFromExtensionPrefill;
+  const showDescriptionLoading =
+    !descriptionBody &&
+    ((Boolean(job.jobAnalysisId) && jobDetail.isFetching) ||
+      (Boolean(bookmarkListingId) && bookmarkDiscoveryDetail.isFetching));
+
   const tailoredCvProfileIdForLink = analysisForCard?.tailoredCvProfileId?.trim() ?? '';
   const showTailoredCvInBuilderLink =
     Boolean(job.jobAnalysisId) &&
@@ -386,13 +540,7 @@ export function JobHubDetailPanel({
   });
 
   const sourceCvProfileIdForDownload = useMemo(() => {
-    const a = analysisForCard as
-      | (JobAnalysis & {
-          cvProfileId?: string | null;
-          sourceCvProfileId?: string | null;
-        })
-      | null;
-    return a?.sourceCvProfileId?.trim() || a?.cvProfileId?.trim() || '';
+    return resolveSelectedCvProfileId(analysisForCard) ?? '';
   }, [analysisForCard]);
 
   const bestCvProfileIdForClinic = useMemo(() => {
@@ -423,7 +571,10 @@ export function JobHubDetailPanel({
       const title = job.title ?? '';
       const company = job.company ?? '';
       let description =
-        jobDetail.data?.description?.trim() ?? (job.boardDescription?.trim() || '');
+        jobDetail.data?.description?.trim() ||
+        job.boardDescription?.trim() ||
+        readHubJobPrefillSession(job.jobAnalysisId)?.description?.trim() ||
+        '';
       const discoveryId = (job.boardDiscoveryId ?? '').trim();
       if (job.jobAnalysisId && !description) {
         try {
@@ -449,7 +600,13 @@ export function JobHubDetailPanel({
       prefillJobAnalyzerInStorage(title, company, description, {
         hubBookmarkId: job.hubBookmarkId ?? undefined,
       });
-      router.push('/dashboard/jobs/analyze?clean=1');
+      if (job.jobAnalysisId?.trim() && hasCompletedAnalysis) {
+        router.push(
+          `/dashboard/jobs/analyze?jobId=${encodeURIComponent(job.jobAnalysisId.trim())}`,
+        );
+      } else {
+        router.push('/dashboard/jobs/analyze?clean=1');
+      }
     } finally {
       setAnalyzeNavigateBusy(false);
     }
@@ -460,12 +617,82 @@ export function JobHubDetailPanel({
     job.boardDescription,
     job.boardDiscoveryId,
     job.hubBookmarkId,
+    hasCompletedAnalysis,
     jobDetail.data?.description,
     queryClient,
     router,
   ]);
 
   const canGenerateEmail = Boolean(job.applicationId || job.jobAnalysisId);
+
+  const handlePipelineStepClick = useCallback(
+    (step: JobHubPipelineStep) => {
+      const base = hubContext.pipelineStepper;
+      if (base) {
+        setLocalStepper(optimisticPipelineStepper(base, step.id));
+      }
+      const hubStage = hubPipelineStepIdToHubStage(step.id, { hasAnalysis: job.hasAnalysis });
+      if (!hubStage) return;
+      onStageChange(job, hubStage);
+    },
+    [hubContext.pipelineStepper, job, onStageChange],
+  );
+
+  const handleGuidanceNavigate = useCallback(
+    (href: string) => {
+      if (isJobHubGuidanceArchiveHref(href)) {
+        onRequestHubArchive?.(job);
+        return;
+      }
+      const tabFromHref = parseJobHubDetailTabFromHref(href);
+      if (tabFromHref) {
+        setTab(tabFromHref);
+        if (tabFromHref === 'email') {
+          try {
+            const u = new URL(href, 'https://applymate.local');
+            const tpl = coalesceJobHubEmailTemplateQueryParam(u.searchParams.get('template'));
+            if (tpl) setEmailTemplate(tpl);
+          } catch {
+            /* ignore malformed href */
+          }
+        }
+        return;
+      }
+      router.push(href);
+    },
+    [job, onRequestHubArchive, router],
+  );
+
+  const handleGuidanceToggle = useCallback(
+    (taskId: string, userCompleted: boolean) => {
+      const task = (displayGuidance ?? guidance)?.tasks.find((t) => t.id === taskId);
+      if (task && !isGuidanceTaskUserToggleable(task)) return;
+
+      if (job.applicationId) {
+        patchGuidance.mutate(
+          { scope: 'application', applicationId: job.applicationId, taskId, userCompleted },
+          { onSuccess: (g) => setLocalGuidance(g) },
+        );
+        return;
+      }
+      patchGuidance.mutate(
+        {
+          scope: 'hub',
+          jobAnalysisId: job.jobAnalysisId,
+          bookmarkId: job.hubBookmarkId,
+          taskId,
+          userCompleted,
+        },
+        { onSuccess: (g) => setLocalGuidance(g) },
+      );
+    },
+    [displayGuidance, guidance, job.applicationId, job.hubBookmarkId, job.jobAnalysisId, patchGuidance],
+  );
+
+  const hubContextLoading =
+    Boolean(job.applicationId && applicationDetail.isLoading) ||
+    Boolean(job.jobAnalysisId && jobDetail.isLoading) ||
+    Boolean(job.hubBookmarkId && hubBookmarks.isLoading);
 
   return (
     <div
@@ -478,23 +705,32 @@ export function JobHubDetailPanel({
         className,
       )}
     >
-      <header className="shrink-0 border-b border-white/[0.06] px-3 py-3 sm:px-4 sm:py-4 lg:px-6">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h1 className="text-lg font-semibold tracking-tight text-white sm:text-xl lg:text-2xl">{job.title}</h1>
-            <p className="mt-1 text-sm text-white/55">{job.company}</p>
-            {job.createdAt ? (
-              <p className="mt-1 text-xs text-white/35">{formatRelativeSaved(job.createdAt)}</p>
-            ) : null}
-            {resolvedApplyUrl ? (
-              <Button
-                type="button"
-                className="mt-3 h-9 gap-2 bg-[#00C9B1] px-4 text-[12px] font-semibold text-[#080A0A] hover:bg-[#00C9B1]"
-                onClick={() => openExternalJobApplyUrl(resolvedApplyUrl)}
-              >
-                Apply on company site
-              </Button>
-            ) : null}
+      <header className="shrink-0 border-b border-white/[0.06] px-3 py-2 sm:px-4 lg:px-6">
+        <div className="flex items-start justify-between gap-2 sm:gap-3">
+          <div className="flex min-w-0 flex-1 items-start gap-3">
+            <CompanyLogo
+              company={job.company}
+              logoUrl={job.companyLogoUrl}
+              size="lg"
+              shape="rounded"
+              className="mt-0.5"
+            />
+            <div className="min-w-0 flex-1">
+            <h1 className="text-base font-semibold tracking-tight text-white sm:text-lg lg:text-xl">{job.title}</h1>
+            <p className="mt-0.5 text-[13px] text-white/55">{job.company}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-white/35">
+              {job.createdAt ? <span>{formatRelativeSaved(job.createdAt)}</span> : null}
+              {resolvedApplyUrl ? (
+                <button
+                  type="button"
+                  className="font-semibold text-[#00C9B1] hover:underline"
+                  onClick={() => openExternalJobApplyUrl(resolvedApplyUrl)}
+                >
+                  Apply on company site
+                </button>
+              ) : null}
+            </div>
+            </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {canRemoveTrackedJobFromHub(job) &&
@@ -520,26 +756,36 @@ export function JobHubDetailPanel({
           </div>
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-1 overflow-x-auto pb-1 sm:mt-4 sm:gap-1.5">
-          {HUB_STAGES.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => onStageChange(job, s)}
-              className={cn(
-                'whitespace-nowrap rounded-lg border px-2 py-1.5 text-[10px] font-semibold transition-colors sm:px-2.5 sm:text-[11px]',
-                s === job.stage
-                  ? cn(TEAL.pillActive)
-                  : 'border-white/10 bg-white/[0.02] text-white/45 hover:border-[#00C9B1]/35 hover:bg-[#00C9B1]/10 hover:text-[#00C9B1]/90',
-              )}
-            >
-              {HUB_STAGE_LABELS[s]}
-            </button>
-          ))}
-        </div>
+        {pipelineStepper || hubContextLoading ? (
+          <div className="relative z-10 mt-2 min-w-0">
+            {pipelineStepper ? (
+              <JobHubPipelineStepper
+                compact
+                stepper={pipelineStepper}
+                onStepClick={handlePipelineStepClick}
+                disabled={hubManagePending}
+              />
+            ) : (
+              <div className="h-8 animate-pulse rounded-md bg-white/[0.04]" aria-hidden />
+            )}
+          </div>
+        ) : null}
+
+        {displayGuidance ? (
+          <div className="relative z-20 mt-1 min-w-0">
+            <JobHubGuidancePanel
+              guidance={displayGuidance}
+              onToggleTask={handleGuidanceToggle}
+              togglePendingTaskId={
+                patchGuidance.isPending ? (patchGuidance.variables?.taskId ?? null) : null
+              }
+              onNavigate={handleGuidanceNavigate}
+            />
+          </div>
+        ) : null}
 
         {job.stage === 'accepted' && onShareWin ? (
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-2 flex flex-wrap gap-2">
             <Button
               type="button"
               variant="ghost"
@@ -568,89 +814,11 @@ export function JobHubDetailPanel({
           </div>
         ) : null}
 
-        {job.applicationAssist ? (
-          <div className="mt-3 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/45">Apply assist</p>
-            <p className="mt-1 text-[12px] text-white/60">
-              {job.applicationAssist.suggestedNextStep?.trim() ||
-                job.nextRecommendedAction?.trim() ||
-                'Complete the checklist below to apply faster with less friction.'}
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <span className={cn(
-                'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px]',
-                job.applicationAssist.hasCvReady
-                  ? 'border-emerald-400/35 bg-emerald-500/10 text-emerald-200'
-                  : 'border-white/15 bg-white/[0.03] text-white/55',
-              )}>
-                {job.applicationAssist.hasCvReady ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
-                CV ready
-              </span>
-              <span className={cn(
-                'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px]',
-                job.applicationAssist.hasTailoredCv
-                  ? 'border-emerald-400/35 bg-emerald-500/10 text-emerald-200'
-                  : 'border-white/15 bg-white/[0.03] text-white/55',
-              )}>
-                {job.applicationAssist.hasTailoredCv ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
-                Tailored CV
-              </span>
-              <span className={cn(
-                'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px]',
-                job.applicationAssist.hasCoverLetterDraft
-                  ? 'border-emerald-400/35 bg-emerald-500/10 text-emerald-200'
-                  : 'border-white/15 bg-white/[0.03] text-white/55',
-              )}>
-                {job.applicationAssist.hasCoverLetterDraft ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
-                Cover letter draft
-              </span>
-            </div>
-            {job.applicationAssist.missingFields.length > 0 ? (
-              <p className="mt-2 text-[12px] text-white/50">
-                Missing: {job.applicationAssist.missingFields.map(formatAssistLabel).join(', ')}
-              </p>
-            ) : null}
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                className="h-8 border border-white/[0.08] px-2.5 text-[11px]"
-                onClick={() =>
-                  router.push(
-                    bestCvProfileIdForClinic
-                      ? `/dashboard/cv?profileId=${encodeURIComponent(bestCvProfileIdForClinic)}`
-                      : '/dashboard/cv',
-                  )
-                }
-              >
-                Open CV Clinic
-              </Button>
-              {Boolean(job.jobAnalysisId) && !job.applicationAssist.hasTailoredCv ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="h-8 border border-[#00C9B1]/35 px-2.5 text-[11px] text-[#00C9B1] hover:bg-[#00C9B1]/12"
-                  onClick={() =>
-                    router.push(`/dashboard/jobs/analyze?jobId=${encodeURIComponent(job.jobAnalysisId!)}&openTailor=1`)
-                  }
-                >
-                  Tailor CV for this job
-                </Button>
-              ) : null}
-              <Button
-                type="button"
-                variant="ghost"
-                className="h-8 border border-white/[0.08] px-2.5 text-[11px]"
-                onClick={() => void openAnalyzePrefilled()}
-                disabled={analyzeNavigateBusy}
-              >
-                {analyzeNavigateBusy ? 'Opening…' : 'Open Analyzer'}
-              </Button>
-            </div>
-          </div>
+        {staleApplicationNotice?.show ? (
+          <StaleApplicationNoticeBanner notice={staleApplicationNotice} className="mt-2" />
         ) : null}
 
-        <nav className="mt-3 flex gap-0 overflow-x-auto border-b border-white/[0.06] pb-px sm:mt-4 sm:gap-1">
+        <nav className="mt-2 flex gap-0 overflow-x-auto border-b border-white/[0.06] pb-px sm:gap-1">
           {TABS.map((t) => {
             const Icon = t.icon;
             const active = tab === t.id;
@@ -674,13 +842,20 @@ export function JobHubDetailPanel({
         </nav>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto app-scrollbar overscroll-contain touch-pan-y [webkit-overflow-scrolling:touch] px-3 py-4 pb-24 sm:px-4 sm:py-5 lg:px-6 lg:pb-6">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y app-scrollbar [webkit-overflow-scrolling:touch] px-3 py-4 pb-10 sm:px-4 sm:py-5 lg:px-6">
         {tab === 'analysis' ? (
           <>
-            {!job.jobAnalysisId ? (
+            {showAnalysisDetailLoading ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-16">
+                <Loader2 className={cn('h-8 w-8 animate-spin', TEAL.text)} />
+                <p className="text-sm text-white/45">Loading job…</p>
+              </div>
+            ) : !hasCompletedAnalysis ? (
               <div className="border-t border-white/[0.08] pt-5">
-                <p className="text-sm text-white/55">
-                  Run the job analyzer to see your fit score, gaps, and tailored CV options for this role.
+                <p className="text-sm font-medium text-white/80">No analysis on this job yet</p>
+                <p className="mt-2 text-sm text-white/55">
+                  Run the job analyzer to see your fit score, skill gaps, and tailored CV options for
+                  this role.
                 </p>
                 <div className="mt-4">
                   <Button
@@ -688,14 +863,9 @@ export function JobHubDetailPanel({
                     disabled={analyzeNavigateBusy}
                     onClick={() => void openAnalyzePrefilled()}
                   >
-                    {analyzeNavigateBusy ? 'Opening…' : 'Open analyzer'}
+                    {analyzeNavigateBusy ? 'Opening…' : 'Analyze this job'}
                   </Button>
                 </div>
-              </div>
-            ) : jobDetail.isLoading ? (
-              <div className="flex flex-col items-center justify-center gap-2 py-16">
-                <Loader2 className={cn('h-8 w-8 animate-spin', TEAL.text)} />
-                <p className="text-sm text-white/45">Loading job…</p>
               </div>
             ) : jobDetail.isError ? (
               <p className="text-sm text-rose-200">{getApiErrorMessage(jobDetail.error)}</p>
@@ -708,21 +878,25 @@ export function JobHubDetailPanel({
                   isTailored={Boolean(analysisForCard.isTailored)}
                   showTailorAction={true}
                   hideAiReport
+                  factorsDefaultOpen
                   applyUrl={resolvedApplyUrl}
                   onApplyNow={() => {
                     if (resolvedApplyUrl) openExternalJobApplyUrl(resolvedApplyUrl);
                   }}
                 />
                 {shouldShowScoreImprovementGuide(analysisForCard.scoreImprovement) ? (
-                  <ScoreImprovementGuideCard guide={analysisForCard.scoreImprovement!} />
+                  <ScoreImprovementGuideCard
+                    guide={analysisForCard.scoreImprovement!}
+                    readinessNote={analysisForCard.interviewReadinessNote}
+                  />
+                ) : analysisForCard.interviewReadinessNote ? (
+                  <InterviewReadinessSection note={analysisForCard.interviewReadinessNote} />
                 ) : null}
                 <AiRecruiterReportSection
                   analysis={analysisForCard}
                   defaultOpen={Boolean(analysisForCard.analysisV2)}
                   applyUrl={resolvedApplyUrl}
-                  isTailored={Boolean(
-                    analysisForCard.isTailored || analysisForCard.scoreBeforeTailoring != null,
-                  )}
+                  isTailored={Boolean(analysisForCard.isTailored)}
                   onApplyNow={() => {
                     if (resolvedApplyUrl) openExternalJobApplyUrl(resolvedApplyUrl);
                   }}
@@ -733,86 +907,59 @@ export function JobHubDetailPanel({
         ) : null}
 
         {tab === 'description' ? (
-          job.jobAnalysisId ? (
-            jobDetail.isLoading ? (
-              <Loader2 className={cn('h-8 w-8 animate-spin', TEAL.text)} />
-            ) : jobDetail.isError ? (
-              <p className="text-sm text-rose-200">{getApiErrorMessage(jobDetail.error)}</p>
-            ) : detail ? (
-              <div className="border-t border-white/[0.08] pt-5">
-                <h2 className="text-sm font-semibold text-white">Job description</h2>
-                <p className="mt-1 max-w-3xl text-xs leading-relaxed text-white/40">
-                  Full job ad from your saved analysis.
-                </p>
-                <div
-                  className={cn(
-                    'mt-4',
-                    layoutVariant === 'sheet'
-                      ? ''
-                      : 'max-h-[min(78vh,900px)] overflow-y-auto app-scrollbar',
-                  )}
-                >
-                  <p className="whitespace-pre-wrap text-sm leading-[1.65] text-white/80">
-                    {(detail.description ?? '').trim() || 'No description on file.'}
-                  </p>
-                </div>
-              </div>
-            ) : null
-          ) : bookmarkListingId ? (
-            bookmarkDiscoveryDetail.isLoading ? (
-              <div className="flex items-center gap-2 border-t border-white/[0.08] pt-5 text-sm text-white/45">
-                <Loader2 className={cn('h-6 w-6 animate-spin', TEAL.text)} aria-hidden />
-                Loading description…
-              </div>
-            ) : bookmarkDiscoveryDetail.isError ? (
-              <p className="border-t border-white/[0.08] pt-5 text-sm text-rose-200">
-                {getApiErrorMessage(bookmarkDiscoveryDetail.error)}
+          showDescriptionLoading ? (
+            <div className="flex items-center gap-2 border-t border-white/[0.08] pt-5 text-sm text-white/45">
+              <Loader2 className={cn('h-6 w-6 animate-spin', TEAL.text)} aria-hidden />
+              Loading description…
+            </div>
+          ) : descriptionBody ? (
+            <div className="border-t border-white/[0.08] pt-5">
+              <h2 className="text-sm font-semibold text-white">Job description</h2>
+              <p className="mt-1 max-w-3xl text-xs leading-relaxed text-white/40">
+                {hasCompletedAnalysis
+                  ? 'Full job ad from your saved analysis.'
+                  : 'From your saved job ad (full text when we have it).'}
               </p>
-            ) : (
-              <div className="border-t border-white/[0.08] pt-5">
-                <h2 className="text-sm font-semibold text-white">Job description</h2>
-                <p className="mt-1 max-w-3xl text-xs leading-relaxed text-white/40">
-                  From your saved job ad (full text when we have it).
-                </p>
-                <div
-                  className={cn(
-                    'mt-4',
-                    layoutVariant === 'sheet'
-                      ? ''
-                      : 'max-h-[min(78vh,900px)] overflow-y-auto app-scrollbar',
-                  )}
-                >
-                  <p className="whitespace-pre-wrap text-sm leading-[1.65] text-white/80">
-                    {(
-                      (bookmarkDiscoveryDetail.data?.description ?? '').trim() ||
-                      (job.boardDescription ?? '').trim()
-                    ).trim() || 'No description stored for this bookmark yet.'}
-                  </p>
-                </div>
-                <p className="mt-4 text-sm text-white/45">
-                  Want the full workflow? Open the analyzer — we&apos;ll fill in what we know.
-                </p>
-                <Button
-                  className="mt-3 bg-[#00C9B1] text-[#080A0A] hover:bg-[#00C9B1]"
-                  disabled={analyzeNavigateBusy}
-                  onClick={() => void openAnalyzePrefilled()}
-                >
-                  {analyzeNavigateBusy ? 'Opening…' : 'Open analyzer'}
-                </Button>
+              <div className="mt-4">
+                <JobDescriptionHighlightsPanel
+                  description={descriptionBody}
+                  highlights={descriptionHighlights}
+                  className="pb-2"
+                />
               </div>
-            )
+              {!hasCompletedAnalysis ? (
+                <>
+                  <p className="mt-4 text-sm text-white/45">
+                    Want the full workflow? Open the analyzer — we&apos;ll fill in what we know.
+                  </p>
+                  <Button
+                    className="mt-3 bg-[#00C9B1] text-[#080A0A] hover:bg-[#00C9B1]"
+                    disabled={analyzeNavigateBusy}
+                    onClick={() => void openAnalyzePrefilled()}
+                  >
+                    {analyzeNavigateBusy ? 'Opening…' : 'Analyze this job'}
+                  </Button>
+                </>
+              ) : null}
+            </div>
+          ) : jobDetail.isError && !bookmarkDiscoveryDetail.isError ? (
+            <p className="border-t border-white/[0.08] pt-5 text-sm text-rose-200">
+              {getApiErrorMessage(jobDetail.error)}
+            </p>
+          ) : bookmarkDiscoveryDetail.isError ? (
+            <p className="border-t border-white/[0.08] pt-5 text-sm text-rose-200">
+              {getApiErrorMessage(bookmarkDiscoveryDetail.error)}
+            </p>
           ) : (
             <div className="border-t border-white/[0.08] pt-5">
-              <p className="text-sm text-white/45">
-                No discovery listing is linked to this row, so the description cannot be loaded here.
-              </p>
+              <p className="text-sm text-white/45">No description stored for this role yet.</p>
               <p className="mt-2 text-sm text-white/45">Try the analyzer — you can paste the ad there.</p>
               <Button
                 className="mt-4 bg-[#00C9B1] text-[#080A0A] hover:bg-[#00C9B1]"
                 disabled={analyzeNavigateBusy}
                 onClick={() => void openAnalyzePrefilled()}
               >
-                {analyzeNavigateBusy ? 'Opening…' : 'Open analyzer'}
+                {analyzeNavigateBusy ? 'Opening…' : 'Analyze this job'}
               </Button>
             </div>
           )
@@ -907,6 +1054,16 @@ export function JobHubDetailPanel({
                         {
                           onSuccess: () => {
                             toast.success('Cover letter generated');
+                            if (job.applicationId) {
+                              void queryClient.invalidateQueries({
+                                queryKey: queryKeys.applications.detail(job.applicationId),
+                              });
+                            }
+                            if (job.jobAnalysisId) {
+                              void queryClient.invalidateQueries({
+                                queryKey: queryKeys.jobs.analysis(job.jobAnalysisId),
+                              });
+                            }
                           },
                           onError: (err) => {
                             toast.error(getApiErrorMessage(err));
@@ -930,14 +1087,7 @@ export function JobHubDetailPanel({
               {generated.isLoading ? (
                 <Loader2 className={cn('mt-4 h-6 w-6 animate-spin', TEAL.text)} />
               ) : coverBody ? (
-                <div
-                  className={cn(
-                    'mt-3',
-                    layoutVariant === 'sheet'
-                      ? ''
-                      : 'max-h-[min(60vh,560px)] overflow-y-auto app-scrollbar',
-                  )}
-                >
+                <div className="mt-3 pb-2">
                   <p className="whitespace-pre-wrap text-sm leading-relaxed text-white/80">{coverBody}</p>
                 </div>
               ) : (

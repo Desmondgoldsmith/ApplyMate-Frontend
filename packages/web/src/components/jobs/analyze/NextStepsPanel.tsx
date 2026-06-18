@@ -272,7 +272,7 @@ export function NextStepsPanel({
           title="Generate cover letter"
           description={
             coverStatus === 'locked'
-              ? 'Unlocks after tailoring — or skip if you do not need one.'
+              ? 'Unlocks after tailoring, or skip if you do not need one.'
               : 'Create a tailored cover letter for this application.'
           }
         >
@@ -339,7 +339,7 @@ export function NextStepsPanel({
           description={
             applyAvailable
               ? 'Open the job posting and submit your application.'
-              : 'No posting link found for this job — apply from the source listing.'
+              : 'No posting link found for this job. Apply from the source listing.'
           }
         >
           <button

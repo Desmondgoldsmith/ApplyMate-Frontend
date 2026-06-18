@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { CvProfileDownloadActions } from '@/components/dashboard/CvProfileDownloadActions';
 import type { JobAnalysis } from '@/lib/api';
-import { resolveSourceCvProfileId } from '@/lib/skillCoverage';
+import { resolveSelectedCvProfileId } from '@/lib/jobAnalysisCvContext';
 
 export type JobHubSavePanelAiUsage = {
   isPaidTier: boolean;
@@ -50,7 +50,8 @@ export function JobHubSavePanel({
   onGenerateCoverLetter,
 }: JobHubSavePanelProps) {
   const router = useRouter();
-  const downloadCvProfileId = resolveSourceCvProfileId(analysis, cvProfileId ?? selectedProfileId);
+  const downloadCvProfileId =
+    resolveSelectedCvProfileId(analysis, cvProfileId ?? selectedProfileId) ?? '';
 
   return (
     <div className="space-y-4">

@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { JobInputFormField } from '@/components/jobs/analyze/JobInputFormField';
 import { Button } from '@/components/ui/Button';
+import { CompanyLogo } from '@/components/ui/CompanyLogo';
 import { useJobHistory } from '@/hooks/useJobHistory';
 import type { CvProfileSummary, JobHistoryItem } from '@/lib/api';
 import { AI_PROMPT_INPUT_JOB_DESCRIPTION_MAX_CHARS } from '@/lib/ai-prompt-input.limits';
@@ -32,7 +33,10 @@ export type JobInputFormProps = {
   onSubmit: () => void;
   analyzePending: boolean;
   aiReportPending: boolean;
+  analyzeProgressLabel?: string;
   viewingSavedAnalysis: boolean;
+  /** When true, primary CTA labels full re-analyze (post-tailor sync uses API scores). */
+  analysisIsTailored?: boolean;
   activeAnalysisId: string | undefined;
   onSelectHistoryJob: (jobId: string) => Promise<unknown>;
   /** Extra classes for the header + CV selector + form group (used by the mobile tab switch). */
@@ -59,7 +63,9 @@ export function JobInputForm({
   onSubmit,
   analyzePending,
   aiReportPending,
+  analyzeProgressLabel,
   viewingSavedAnalysis,
+  analysisIsTailored = false,
   activeAnalysisId,
   onSelectHistoryJob,
   analyzeClassName,
@@ -220,12 +226,17 @@ export function JobInputForm({
           {analyzePending || aiReportPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 shrink-0 animate-spin" />
-              {aiReportPending ? 'Running AI report…' : 'Analyzing…'}
+              {analyzeProgressLabel?.trim() ||
+                (aiReportPending ? 'Running AI report…' : 'Analyzing…')}
             </>
           ) : (
             <>
               <Search className="mr-2 h-4 w-4 shrink-0" aria-hidden />
-              {viewingSavedAnalysis ? 'Refresh analysis' : 'Analyze job'}
+              {viewingSavedAnalysis
+                ? analysisIsTailored
+                  ? 'Re-analyze job (full AI)'
+                  : 'Refresh analysis'
+                : 'Analyze job'}
             </>
           )}
         </Button>
@@ -269,9 +280,11 @@ export function JobInputForm({
                         : 'border-white/[0.06] bg-[#0F1512] hover:border-white/[0.1] hover:bg-[#182019]',
                     )}
                   >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.1] bg-[#141C18] text-[13px] font-semibold text-white/60">
-                      {(item.company ?? '?').charAt(0).toUpperCase()}
-                    </span>
+                    <CompanyLogo
+                      company={item.company ?? 'Unknown company'}
+                      logoUrl={item.companyLogoUrl}
+                      size="md"
+                    />
                     <div className="min-w-0 flex-1 overflow-hidden">
                       <p className="truncate text-[13px] font-semibold text-[#F0F4F2]">
                         {item.company ?? 'Unknown company'}

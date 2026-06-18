@@ -42,6 +42,7 @@ import {
 import { BuilderRichTextField } from '@/components/cv/BuilderRichTextField';
 import { CategorySkillsInput } from '@/components/cv/CategorySkillsInput';
 import { CvDateField } from '@/components/cv/CvDateField';
+import { CvRichTextSpan } from '@/components/cv/CvRichTextSpan';
 import { CVDocumentPreview } from '@/components/cv/CVDocumentPreview';
 import { CvDiffMobileActionBar } from '@/components/cv/CvDiffMobileActionBar';
 import { CvImprovementDiffTruthPanel } from '@/components/cv/CvImprovementDiffTruthPanel';
@@ -81,6 +82,7 @@ import {
   professionalSectionRank,
 } from '@/lib/cvSectionProfessionalOrder';
 import { filterParsedCustomSectionsForEditor, shouldRenderCustomLegacySection } from '@/lib/cvParsedCustomSectionUtils';
+import { containsCvChangeMarker, richTextPlainText } from '@/lib/cvRichTextCore';
 import {
   readStoredPreviewSectionOrder,
   writeStoredPreviewSectionOrder,
@@ -650,6 +652,11 @@ export type CVBuilderProps = {
    */
   serverHydrateNonce?: number;
   /**
+   * Tailor accept/revert: always rehydrate from server even when the editor is dirty, and clear
+   * save-error banners (structured persist already updated sections on the backend).
+   */
+  forceServerHydrateNonce?: number;
+  /**
    * After generator or structured AI accept refetched the server, parent bumps `serverHydrateNonce`
    * so the builder rehydrates from fresh `initialData`.
    */
@@ -710,6 +717,7 @@ export function CVBuilder({
   cvAssistantClarificationQuestion,
   deferIncompletePreviewBadges: deferIncompletePreviewBadgesProp = false,
   serverHydrateNonce = 0,
+  forceServerHydrateNonce = 0,
   improvementDiffTruthPanel = false,
   improvementDiffTruthfulness = null,
   improvementDiffPerformance = null,
@@ -1450,6 +1458,27 @@ export function CVBuilder({
   const initialDataForServerHydrateRef = useRef(initialData);
   initialDataForServerHydrateRef.current = initialData;
   const lastServerHydrateNonceRef = useRef(0);
+  const lastForceServerHydrateNonceRef = useRef(0);
+
+  const applyServerHydrateFromInitialData = useCallback(
+    (nonce: number, reason: 'hydrate' | 'force') => {
+      const t0 = performance.now();
+      const snap =
+        initialDataForServerHydrateRef.current ??
+        emptyCVBuilderData({ email: emailDefault, name: user?.name });
+      setData(coerceStructuredTextInCvBuilderData(snap));
+      setDirty(false);
+      lastPersistedFingerprintRef.current = computeCvBuilderSaveFingerprint(
+        snap,
+        selectedTemplate,
+        sectionsRef.current,
+      );
+      setSaveStatus('idle');
+      logCvBuilderSavePerfDev('hydrate.apply', t0, { nonce, reason });
+    },
+    [emailDefault, user?.name, selectedTemplate, sectionsRef],
+  );
+
   useEffect(() => {
     if (mode !== 'dashboard') return;
     if (
@@ -1463,27 +1492,26 @@ export function CVBuilder({
       return;
     }
     lastServerHydrateNonceRef.current = serverHydrateNonce;
-    const t0 = performance.now();
-    const snap =
-      initialDataForServerHydrateRef.current ??
-      emptyCVBuilderData({ email: emailDefault, name: user?.name });
-    setData(coerceStructuredTextInCvBuilderData(snap));
-    setDirty(false);
-    lastPersistedFingerprintRef.current = computeCvBuilderSaveFingerprint(
-      snap,
-      selectedTemplate,
-      sectionsRef.current,
-    );
-    logCvBuilderSavePerfDev('hydrate.apply', t0, { nonce: serverHydrateNonce });
+    applyServerHydrateFromInitialData(serverHydrateNonce, 'hydrate');
   }, [
     mode,
     serverHydrateNonce,
-    emailDefault,
-    user?.name,
-    selectedTemplate,
     isTailorView,
     dirty,
+    applyServerHydrateFromInitialData,
   ]);
+
+  useEffect(() => {
+    if (mode !== 'dashboard') return;
+    if (
+      !forceServerHydrateNonce ||
+      forceServerHydrateNonce === lastForceServerHydrateNonceRef.current
+    )
+      return;
+    lastForceServerHydrateNonceRef.current = forceServerHydrateNonce;
+    lastServerHydrateNonceRef.current = serverHydrateNonce;
+    applyServerHydrateFromInitialData(forceServerHydrateNonce, 'force');
+  }, [mode, forceServerHydrateNonce, serverHydrateNonce, applyServerHydrateFromInitialData]);
 
   useEffect(() => {
     if (!externalPatch || externalPatchNonce <= 0) return;
@@ -2198,6 +2226,9 @@ export function CVBuilder({
           refreshProfile: true,
           refreshSections: true,
         });
+        if (saved.sections.length > 0) {
+          queryClient.setQueryData(queryKeys.cv.sections(profileId), saved.sections);
+        }
         writeSectionOrderBannerDismissed(profileId);
         void queryClient.invalidateQueries({
           queryKey: cvSectionOrderSuggestQueryKey(profileId),
@@ -3664,6 +3695,23 @@ export function CVBuilder({
                         Put each achievement on its own line. You don&apos;t
                         need • or dashes — we format those on your CV.
                       </p>
+                      {job.bullets.some(containsCvChangeMarker) ? (
+                        <div className="space-y-2">
+                          <ul className="list-disc space-y-1.5 pl-4 text-sm text-white/85 marker:text-[#00C9B1]">
+                            {job.bullets
+                              .filter((bullet) => richTextPlainText(bullet).length > 0)
+                              .map((bullet, bulletIdx) => (
+                                <li key={`${job.id}-marker-bullet-${bulletIdx}`}>
+                                  <CvRichTextSpan html={bullet} />
+                                </li>
+                              ))}
+                          </ul>
+                          <p className="text-[10px] leading-relaxed text-white/40">
+                            Tailor highlights are shown in the CV preview. Edit those bullets
+                            there so underlines stay intact.
+                          </p>
+                        </div>
+                      ) : (
                       <textarea
                         className={cn(fieldClass, 'min-h-[100px]')}
                         placeholder={
@@ -3679,6 +3727,7 @@ export function CVBuilder({
                         }}
                         onFocus={() => jumpToSection('experience', job.id)}
                       />
+                      )}
                       <Button
                         type="button"
                         variant="ghost"
@@ -3981,6 +4030,15 @@ export function CVBuilder({
               with AI&quot; for a first draft, then edit in your own voice.
             </p>
             <div className="relative">
+              {containsCvChangeMarker(normalizeText(data.summary?.text as unknown)) ? (
+                <BuilderRichTextField
+                  value={normalizeText(data.summary?.text as unknown)}
+                  onChange={(text) => update({ summary: { text } })}
+                  onFocus={() => jumpToSection('summary')}
+                  minHeightClass="min-h-[120px]"
+                  placeholder="2–3 short sentences: who you are, what you do best, and what you want next."
+                />
+              ) : (
               <textarea
                 className={cn(fieldClass, 'min-h-[120px] resize-y')}
                 placeholder="2–3 short sentences: who you are, what you do best, and what you want next."
@@ -3989,6 +4047,7 @@ export function CVBuilder({
                 onFocus={() => jumpToSection('summary')}
                 maxLength={500}
               />
+              )}
               <p className="mt-1 text-right text-[11px] text-white/25">
                 {normalizeText(data.summary?.text as unknown).length} / 500
               </p>

@@ -1,16 +1,18 @@
 'use client';
 
 import { JobAnalysisCard } from '@/components/dashboard/JobAnalysisCard';
+import { InterviewReadinessSection } from '@/components/job-analysis/InterviewReadinessSection';
 import { ScoreImprovementGuideCard } from '@/components/job-analysis/ScoreImprovementGuideCard';
 import { AiRecruiterReportSection } from '@/components/job-analysis/AiRecruiterReportSection';
 import type { JobAnalysis } from '@/lib/api';
 import { shouldShowScoreImprovementGuide } from '@/lib/scoreImprovement';
+import { displayScoreBeforeTailorForAnalysis } from '@/lib/tailorAnalysisUi';
 
 export type MatchScorePanelProps = {
   analysis: JobAnalysis;
   rematching: boolean;
   displayScoreBeforeTailor: number | null;
-  tailorSectionComplete: boolean;
+  isTailorComplete: boolean;
   acceptedSkillNames: string[];
   resolvedApplyUrl: string | null | undefined;
   analyzePending: boolean;
@@ -24,7 +26,7 @@ export function MatchScorePanel({
   analysis,
   rematching,
   displayScoreBeforeTailor,
-  tailorSectionComplete,
+  isTailorComplete,
   acceptedSkillNames,
   resolvedApplyUrl,
   analyzePending,
@@ -32,6 +34,8 @@ export function MatchScorePanel({
   onTailorFirst,
   onApplyNow,
 }: MatchScorePanelProps) {
+  const scoreBefore = displayScoreBeforeTailorForAnalysis(analysis, displayScoreBeforeTailor);
+
   return (
     <>
       <JobAnalysisCard
@@ -39,21 +43,27 @@ export function MatchScorePanel({
         analysis={analysis}
         hideAiReport
         rematchInProgress={rematching}
-        scoreBeforeTailor={displayScoreBeforeTailor}
-        isTailored={tailorSectionComplete}
+        scoreBeforeTailor={scoreBefore}
+        isTailored={isTailorComplete}
         acceptedSkillNames={acceptedSkillNames}
         applyUrl={resolvedApplyUrl}
         onTailorFirst={onTailorFirst}
         onApplyNow={onApplyNow}
+        factorsDefaultOpen
       />
       {shouldShowScoreImprovementGuide(analysis.scoreImprovement) ? (
-        <ScoreImprovementGuideCard guide={analysis.scoreImprovement!} />
+        <ScoreImprovementGuideCard
+          guide={analysis.scoreImprovement!}
+          readinessNote={analysis.interviewReadinessNote}
+        />
+      ) : analysis.interviewReadinessNote ? (
+        <InterviewReadinessSection note={analysis.interviewReadinessNote} />
       ) : null}
       <AiRecruiterReportSection
         analysis={analysis}
         loading={analyzePending || aiReportPending}
         applyUrl={resolvedApplyUrl}
-        isTailored={tailorSectionComplete}
+        isTailored={isTailorComplete}
         onTailorFirst={onTailorFirst}
         onApplyNow={onApplyNow}
       />

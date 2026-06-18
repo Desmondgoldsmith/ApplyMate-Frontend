@@ -1,5 +1,8 @@
 'use client';
 
+import { InfoHint } from '@/components/ui/InfoHint';
+import { TOOLTIP_DAILY_STREAK } from '@/lib/dashboardIntelligenceTooltips';
+import { sanitizeDashboardDisplayText } from '@/lib/dashboardDisplayCopy';
 import type { HabitProgressPayload } from '@/lib/today-plan';
 import { cn } from '@/lib/utils';
 
@@ -37,14 +40,17 @@ export function DashboardHabitProgressCard({ data }: Props) {
 
   const encouragement =
     weekDays != null && weekDays > 0
-      ? `${weekDays} active days this week. Keep it going — consistent search activity compounds.`
+      ? `${weekDays} active days this week. Keep it going with consistent search activity.`
       : encouragementRaw;
 
   return (
-    <section className="rounded-3xl border border-white/[0.07] bg-white/[0.025] p-5 shadow-[0_18px_44px_-30px_rgba(0,0,0,0.45)] ring-1 ring-white/[0.05] sm:p-6">
+    <section className="rounded-3xl border border-white/[0.07] bg-white/[0.025] p-3.5 shadow-[0_18px_44px_-30px_rgba(0,0,0,0.45)] ring-1 ring-white/[0.05] sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-medium tracking-wide text-white/38">Consistency</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-[11px] font-medium tracking-wide text-white/38">Daily streak</p>
+            <InfoHint text={TOOLTIP_DAILY_STREAK} buttonAriaLabel="About daily streak" />
+          </div>
           {streakLabel ? (
             <p className="mt-2 text-[17px] font-semibold leading-snug text-white/92">{streakLabel}</p>
           ) : null}
@@ -85,7 +91,7 @@ export function DashboardHabitProgressCard({ data }: Props) {
 
       {encouragement ? (
         <p className={cn('mt-4 text-[13px] leading-relaxed text-white/65', score != null ? '' : 'mt-5')}>
-          {encouragement}
+          {sanitizeDashboardDisplayText(encouragement)}
         </p>
       ) : null}
     </section>

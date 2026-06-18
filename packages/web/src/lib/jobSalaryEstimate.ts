@@ -61,14 +61,46 @@ export function formatSalaryAmount(n: number, currency: string): string {
   }
 }
 
+function formatSalaryBasisLabel(basis: string | undefined): string {
+  const basisRaw = basis?.toLowerCase() ?? 'annual';
+  if (basisRaw === 'annual' || basisRaw === 'year' || basisRaw === 'yearly') return 'year';
+  if (basisRaw === 'hourly' || basisRaw === 'hour') return 'hour';
+  if (basisRaw === 'monthly' || basisRaw === 'month') return 'month';
+  return String(basis ?? 'annual').replace(/_/g, ' ');
+}
+
+/** Headline range from parsed min/max — never the raw posting excerpt. */
 export function formatSalaryRange(est: JobSalaryEstimate): string {
   const a = formatSalaryAmount(est.min, est.currency);
   const b = formatSalaryAmount(est.max, est.currency);
-  const basis =
-    est.basis?.toLowerCase() === 'annual' || !est.basis
-      ? 'year'
-      : String(est.basis).replace(/_/g, ' ');
-  return `${a} – ${b} / ${basis}`;
+  return `${a} to ${b} / ${formatSalaryBasisLabel(est.basis)}`;
+}
+
+const SALARY_POSTING_JUNK_MARKERS = [
+  /\bRole Overview\s*:/i,
+  /\bAbout (the )?role\s*:/i,
+  /\bWe are hiring\b/i,
+  /\bResponsibilities\s*:/i,
+  /\bJob [Dd]escription\s*:/i,
+];
+
+function truncateSalaryPostingExcerpt(text: string): string {
+  let cut = text.length;
+  for (const marker of SALARY_POSTING_JUNK_MARKERS) {
+    const match = text.match(marker);
+    if (match?.index != null && match.index > 0 && match.index < cut) {
+      cut = match.index;
+    }
+  }
+  return text.slice(0, cut).trim().replace(/[.,;:]+$/, '');
+}
+
+/** Verbatim compensation phrase from the posting (body copy, not the headline). */
+export function formatSalaryPostingExcerpt(est: JobSalaryEstimate): string | null {
+  const raw = est.postingText?.trim();
+  if (!raw) return null;
+  const excerpt = truncateSalaryPostingExcerpt(raw);
+  return excerpt || null;
 }
 
 export function formatSalaryRangeCompact(est: JobSalaryEstimate): string {

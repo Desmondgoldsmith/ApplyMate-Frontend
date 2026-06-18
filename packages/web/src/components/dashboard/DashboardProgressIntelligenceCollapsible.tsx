@@ -15,7 +15,7 @@ type Props = {
 
 export function DashboardProgressIntelligenceCollapsible({
   children,
-  title = 'Your Progress Intelligence',
+  title = 'Your progress',
 }: Props) {
   const [open, setOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);

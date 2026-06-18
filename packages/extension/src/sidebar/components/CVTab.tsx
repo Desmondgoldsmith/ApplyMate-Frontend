@@ -1,6 +1,16 @@
 import { useEffect, useState, type Dispatch, type ReactNode } from 'react';
 
-import { gapLabelsFromScore } from '@/shared/job-session';
+import { coverLetterBlockReason } from '@/shared/cover-letter-payload';
+import { downloadCoverLetterPdf } from '@/shared/cover-letter-pdf';
+import { cvScoreBlockReason } from '@/shared/cv-score-payload';
+import { factorByKey, warnFactorScoreInconsistency } from '@/shared/factors-breakdown';
+import { allGapLabelsFromScore, strengthsFromScore } from '@/shared/job-session';
+import {
+  COVER_LETTER_PROGRESS_PHRASES,
+  SCORE_PROGRESS_PHRASES,
+  useProgressPhrases,
+} from '@/shared/operation-progress';
+import { humanScoreSummary } from '@/shared/score-display-copy';
 import type {
   CvScoreResult,
   CvTabState,
@@ -8,6 +18,11 @@ import type {
   MessageAction,
   TailorStatus,
 } from '@/shared/types';
+
+import {
+  openWebAppTabWithAnalyzerPrefill,
+  openWebAppTabWithHubPrefill,
+} from '@/shared/web-hub-prefill';
 
 import { useJobSession } from '../context/JobSessionContext';
 
@@ -45,6 +60,14 @@ const TOKENS = {
 const WEB_APP_BASE =
   import.meta.env.VITE_WEB_APP_URL?.replace(/\/$/, '') ?? 'http://localhost:3001';
 
+const JOB_HUB_URL = `${WEB_APP_BASE}/dashboard/jobs`;
+
+function jobHubDetailUrl(jobAnalysisId?: string | null): string {
+  const id = jobAnalysisId?.trim();
+  if (!id) return JOB_HUB_URL;
+  return `${JOB_HUB_URL}?jobId=${encodeURIComponent(id)}`;
+}
+
 const CV_BUILDER_URL = `${WEB_APP_BASE}/dashboard/cv`;
 const CV_PROFILES_URL = `${WEB_APP_BASE}/dashboard/cv-profiles`;
 
@@ -77,47 +100,52 @@ function scoreColor(value: number): string {
   return TOKENS.red;
 }
 
-function scoreLabelPillStyle(
-  label: CvScoreResult['scoreLabel'],
-): { background: string; border: string; color: string } {
-  switch (label) {
-    case 'Excellent':
+function scoreLabelPillStyle(label: string): {
+  background: string;
+  border: string;
+  color: string;
+} {
+  const key = label.trim().toLowerCase();
+  if (key.includes('excellent')) {
       return {
         background: 'rgba(52,211,153,0.12)',
         border: 'rgba(52,211,153,0.25)',
         color: TOKENS.green,
       };
-    case 'Strong':
+  }
+  if (key.includes('strong')) {
       return {
         background: TOKENS.teal12,
         border: TOKENS.teal25,
         color: TOKENS.primary,
       };
-    case 'Good':
+  }
+  if (key.includes('good')) {
       return {
         background: 'rgba(96,165,250,0.12)',
         border: 'rgba(96,165,250,0.25)',
         color: TOKENS.blue,
       };
-    case 'Fair':
+  }
+  if (key.includes('fair') || key.includes('partial')) {
       return {
         background: 'rgba(245,158,11,0.12)',
         border: 'rgba(245,158,11,0.25)',
         color: TOKENS.amber,
       };
-    case 'Weak':
+  }
+  if (key.includes('weak') || key.includes('low')) {
       return {
         background: 'rgba(248,113,113,0.12)',
         border: 'rgba(248,113,113,0.25)',
         color: TOKENS.red,
       };
-    default:
-      return {
+  }
+  return {
         background: 'rgba(255,255,255,0.06)',
         border: 'rgba(255,255,255,0.10)',
-        color: TOKENS.textSecondary,
-      };
-  }
+    color: TOKENS.textSecondary,
+  };
 }
 
 function Divider() {
@@ -167,12 +195,69 @@ function SectionLabel({ children }: { children: ReactNode }) {
   );
 }
 
+function SkillList({
+  items,
+  tone,
+}: {
+  items: string[];
+  tone: 'strength' | 'gap';
+}) {
+  if (items.length === 0) {
+    return (
+      <p style={{ margin: 0, fontSize: 11, color: TOKENS.textMuted, lineHeight: 1.5 }}>
+        None listed
+      </p>
+    );
+  }
+
+  const accent = tone === 'strength' ? TOKENS.green : TOKENS.red;
+  const bg = tone === 'strength' ? TOKENS.green06 : 'rgba(248,113,113,0.05)';
+
+  return (
+    <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+      {items.map((item, index) => (
+        <li
+          key={`${item}-${index}`}
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 8,
+            padding: '6px 8px',
+            marginBottom: index < items.length - 1 ? 4 : 0,
+            borderRadius: 6,
+            background: bg,
+            fontSize: 11,
+            lineHeight: 1.45,
+            color: tone === 'strength' ? 'rgba(167,243,208,0.95)' : 'rgba(254,202,202,0.95)',
+          }}
+        >
+          <span
+            style={{
+              flexShrink: 0,
+              marginTop: 1,
+              fontSize: 10,
+              fontWeight: 700,
+              color: accent,
+            }}
+            aria-hidden
+          >
+            {tone === 'strength' ? '✓' : '·'}
+          </span>
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function CvSelectorSection({
   state,
   dispatch,
+  disabled,
 }: {
   state: CvTabState;
   dispatch: Dispatch<CvTabAction>;
+  disabled?: boolean;
 }) {
   const selectedProfile = state.profiles.find((p) => p.id === state.selectedCvId);
 
@@ -245,6 +330,7 @@ function CvSelectorSection({
       <SectionLabel>Using CV</SectionLabel>
       <select
         value={state.selectedCvId ?? ''}
+        disabled={disabled}
         onChange={(e) => dispatch({ type: 'selectCv', cvId: e.target.value })}
         style={{
           width: '100%',
@@ -378,22 +464,144 @@ function ScoreRing({ score, animatedScore }: { score: number; animatedScore: num
   );
 }
 
+function FactorChip({
+  label,
+  tone,
+}: {
+  label: string;
+  tone: 'found' | 'missing';
+}) {
+  const styles =
+    tone === 'found'
+      ? {
+          background: TOKENS.green10,
+          border: `1px solid ${TOKENS.green20}`,
+          color: TOKENS.green,
+        }
+      : {
+          background: 'rgba(248,113,113,0.10)',
+          border: '1px solid rgba(248,113,113,0.25)',
+          color: TOKENS.red,
+        };
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        maxWidth: '100%',
+        borderRadius: 999,
+        padding: '2px 8px',
+        fontSize: 10,
+        fontWeight: 500,
+        lineHeight: 1.4,
+        ...styles,
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
+function FactorChips({
+  factor,
+}: {
+  factor: NonNullable<ReturnType<typeof factorByKey>>;
+}) {
+  warnFactorScoreInconsistency(factor);
+  const found = factor.found ?? [];
+  const missing = factor.missing ?? [];
+  if (found.length === 0 && missing.length === 0) return null;
+
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+      {found.map((label) => (
+        <FactorChip key={`found-${label}`} label={label} tone="found" />
+      ))}
+      {missing.map((label) => (
+        <FactorChip key={`missing-${label}`} label={label} tone="missing" />
+      ))}
+    </div>
+  );
+}
+
+function FactorBreakdownChips({ scoreResult }: { scoreResult: CvScoreResult }) {
+  const skillsFactor = factorByKey(scoreResult.factorsBreakdown, 'skillsMatch');
+  const atsFactor = factorByKey(scoreResult.factorsBreakdown, 'keywordCoverage');
+  if (!skillsFactor && !atsFactor) return null;
+
+  const sections: Array<{
+    title: string;
+    factor: NonNullable<ReturnType<typeof factorByKey>>;
+  }> = [];
+  if (skillsFactor) {
+    sections.push({
+      title: 'How well your experience matches what this role needs',
+      factor: skillsFactor,
+    });
+  }
+  if (atsFactor) {
+    sections.push({
+      title: 'How ATS-friendly your CV is for this role',
+      factor: atsFactor,
+    });
+  }
+  if (sections.length === 0) return null;
+
+  return (
+    <div style={{ marginTop: 14 }}>
+      {sections.map((section) => (
+        <div key={section.factor.key} style={{ marginBottom: 14 }}>
+          <p
+            style={{
+              margin: '0 0 8px',
+              fontSize: 11,
+              fontWeight: 600,
+              color: TOKENS.textPrimary,
+              lineHeight: 1.45,
+            }}
+          >
+            {section.title}
+          </p>
+          <FactorChips factor={section.factor} />
+          {section.factor.explanation?.trim() ? (
+            <p
+              style={{
+                margin: '8px 0 0',
+                fontSize: 11,
+                color: TOKENS.textSecondary,
+                lineHeight: 1.45,
+              }}
+            >
+              {section.factor.explanation.trim()}
+            </p>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function MatchScoreSection({
   state,
   dispatch,
   currentJob,
   jobAnalysisId,
-  dashboardUrl,
   hasAnalysis,
+  busyOperation,
 }: {
   state: CvTabState;
   dispatch: Dispatch<CvTabAction>;
   currentJob: ExtractedJob;
   jobAnalysisId: string | null;
-  dashboardUrl: string | null;
   hasAnalysis: boolean;
+  busyOperation: 'scoring' | 'coverLetter' | null;
 }) {
   const [animatedScore, setAnimatedScore] = useState(0);
+  const scoreProgressLabel = useProgressPhrases(
+    state.scoreState.status === 'loading',
+    SCORE_PROGRESS_PHRASES,
+  );
+  const isBusy = busyOperation != null;
+  const scoreBlocked = isBusy && busyOperation !== 'scoring';
 
   useEffect(() => {
     if (state.scoreState.status !== 'done') {
@@ -410,12 +618,40 @@ function MatchScoreSection({
       ? scoreLabelPillStyle(state.scoreState.result.scoreLabel)
       : null;
 
-  const analysisUrl =
-    dashboardUrl ??
+  const resolvedJobAnalysisId =
+    jobAnalysisId ??
     (state.scoreState.status === 'done'
-      ? state.scoreState.result.dashboardUrl
-      : null) ??
-    `${WEB_APP_BASE}/dashboard/jobs`;
+      ? state.scoreState.result.jobAnalysisId ?? null
+      : null);
+
+  const openAnalyzer = () => {
+    void openWebAppTabWithAnalyzerPrefill(WEB_APP_BASE, {
+      jobAnalysisId: resolvedJobAnalysisId,
+      title: currentJob.title,
+      company: currentJob.company ?? '',
+      description: currentJob.description ?? '',
+    });
+  };
+
+  const openHub = () => {
+    void openWebAppTabWithHubPrefill(
+      jobHubDetailUrl(resolvedJobAnalysisId),
+      resolvedJobAnalysisId,
+      {
+        title: currentJob.title,
+        company: currentJob.company ?? '',
+        description: currentJob.description ?? '',
+      },
+    );
+  };
+
+  const scoreBlockReason = cvScoreBlockReason({
+    cvId: state.selectedCvId,
+    jobTitle: currentJob.title,
+    jobDescription: currentJob.description,
+    sourceUrl: currentJob.sourceUrl,
+  });
+  const canAnalyze = scoreBlockReason === null;
 
   const cardStyle = {
     background: TOKENS.surface,
@@ -436,7 +672,37 @@ function MatchScoreSection({
         }}
       >
         <SectionLabel>Match score</SectionLabel>
-        {state.scoreState.status === 'done' && pillStyle ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {state.scoreState.status === 'done' &&
+          (state.scoreState.result.isTailored ||
+            state.scoreState.result.tailorStatus === 'in_progress') ? (
+            <span
+              style={{
+                borderRadius: 20,
+                padding: '3px 10px',
+                fontSize: 10,
+                fontWeight: 600,
+                background:
+                  state.scoreState.result.tailorStatus === 'in_progress'
+                    ? 'rgba(245,158,11,0.12)'
+                    : 'rgba(0,201,177,0.12)',
+                border:
+                  state.scoreState.result.tailorStatus === 'in_progress'
+                    ? '1px solid rgba(245,158,11,0.35)'
+                    : '1px solid rgba(0,201,177,0.35)',
+                color:
+                  state.scoreState.result.tailorStatus === 'in_progress'
+                    ? '#FBBF24'
+                    : '#00C9B1',
+              }}
+            >
+              {state.scoreState.result.tailorStatusLabel?.trim() ||
+                (state.scoreState.result.tailorStatus === 'in_progress'
+                  ? 'Tailoring in progress'
+                  : 'Tailored for this role')}
+            </span>
+          ) : null}
+          {state.scoreState.status === 'done' && pillStyle ? (
           <span
             style={{
               borderRadius: 20,
@@ -451,6 +717,7 @@ function MatchScoreSection({
             {state.scoreState.result.scoreLabel}
           </span>
         ) : null}
+        </div>
       </div>
 
       {state.scoreState.status === 'idle' ? (
@@ -463,42 +730,53 @@ function MatchScoreSection({
               lineHeight: 1.5,
             }}
           >
-            See how well your CV matches this job across skills, experience, keywords, seniority,
-            and industry.
+            {canAnalyze
+              ? 'See how well your CV matches this job across skills, experience, keywords, seniority, and industry.'
+              : scoreBlockReason}
           </p>
           <button
             type="button"
+            disabled={!canAnalyze || scoreBlocked}
             onClick={() => {
-              if (!state.selectedCvId) return;
+              if (!state.selectedCvId || !canAnalyze || scoreBlocked) return;
               dispatch({ type: 'setScoreState', state: { status: 'loading' } });
-              void chrome.runtime.sendMessage({
+              void chrome.runtime
+                .sendMessage({
                 action: 'getCvScore',
                 cvId: state.selectedCvId,
-                jobDescription: currentJob.description,
-                jobTitle: currentJob.title,
-                company: currentJob.company,
+                jobDescription: currentJob.description.trim(),
+                jobTitle: currentJob.title.trim(),
+                company: currentJob.company?.trim() || undefined,
                 jobAnalysisId,
                 sourceUrl: currentJob.sourceUrl,
                 sourceSite: currentJob.sourceSite,
-              } satisfies MessageAction);
+              } satisfies MessageAction)
+                .catch(() => {
+                  dispatch({
+                    type: 'setScoreState',
+                    state: { status: 'error', message: 'Could not start analysis. Try again.' },
+                  });
+                });
             }}
             style={{
               width: '100%',
               padding: 10,
-              background: TOKENS.teal10,
-              border: `1px solid ${TOKENS.teal25}`,
+              background: canAnalyze && !scoreBlocked ? TOKENS.teal10 : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${canAnalyze && !scoreBlocked ? TOKENS.teal25 : TOKENS.borderDefault}`,
               borderRadius: 8,
-              color: TOKENS.primary,
+              color: canAnalyze && !scoreBlocked ? TOKENS.primary : TOKENS.textDisabled,
               fontSize: 13,
               fontWeight: 600,
-              cursor: 'pointer',
+              cursor: canAnalyze && !scoreBlocked ? 'pointer' : 'not-allowed',
               fontFamily: TOKENS.font,
               transition: 'all 0.15s ease',
             }}
             onMouseEnter={(e) => {
+              if (!canAnalyze) return;
               e.currentTarget.style.background = TOKENS.teal18;
             }}
             onMouseLeave={(e) => {
+              if (!canAnalyze) return;
               e.currentTarget.style.background = TOKENS.teal10;
             }}
           >
@@ -518,8 +796,8 @@ function MatchScoreSection({
           }}
         >
           <InlineSpinner />
-          <span style={{ fontSize: 12, color: 'rgba(240,244,242,0.40)' }}>
-            Analysing your CV...
+          <span style={{ fontSize: 12, color: 'rgba(240,244,242,0.50)' }}>
+            {scoreProgressLabel}
           </span>
         </div>
       ) : null}
@@ -558,7 +836,14 @@ function MatchScoreSection({
 
       {state.scoreState.status === 'done' ? (() => {
         const scoreResult = state.scoreState.result;
-        const gapLabels = gapLabelsFromScore(scoreResult);
+        const gapLabels = allGapLabelsFromScore(scoreResult);
+        const strengthLabels = strengthsFromScore(scoreResult);
+        const beforeTailor = scoreResult.scoreBeforeTailoring;
+        const showTailorDelta =
+          scoreResult.isTailored === true &&
+          beforeTailor != null &&
+          Number.isFinite(beforeTailor) &&
+          Math.round(beforeTailor) !== Math.round(scoreResult.matchScore);
         const salaryNote = scoreResult.salaryEstimate?.note?.toLowerCase() ?? '';
         const salaryFromPosting =
           scoreResult.salaryEstimate?.source === 'job_description' &&
@@ -568,6 +853,31 @@ function MatchScoreSection({
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             <ScoreRing score={scoreResult.matchScore} animatedScore={animatedScore} />
             <div style={{ flex: 1 }}>
+              {showTailorDelta ? (
+                <p
+                  style={{
+                    margin: '0 0 6px',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: TOKENS.green,
+                  }}
+                >
+                  {Math.round(beforeTailor!)}% → {Math.round(scoreResult.matchScore)}%
+                  {scoreResult.tailoredCvName
+                    ? ` · ${scoreResult.tailoredCvName}`
+                    : ''}
+                </p>
+              ) : scoreResult.isTailored && scoreResult.tailoredCvName ? (
+                <p
+                  style={{
+                    margin: '0 0 6px',
+                    fontSize: 11,
+                    color: TOKENS.textSecondary,
+                  }}
+                >
+                  {scoreResult.tailoredCvName}
+                </p>
+              ) : null}
               <p
                 style={{
                   margin: 0,
@@ -578,23 +888,17 @@ function MatchScoreSection({
                   textTransform: 'uppercase',
                 }}
               >
-                {(() => {
-                  const cached = scoreResult.fromCache ? 'Cached · ' : '';
-                  if (scoreResult.scoreSource === 'heuristic') return `${cached}Estimated match`;
-                  if (scoreResult.scoreSource === 'ai') return `${cached}AI analyzed`;
-                  return `${cached}AI analyzed`;
-                })()}
+                {scoreResult.fromCache ? 'Saved analysis' : 'Match summary'}
               </p>
               <p
                 style={{
                   margin: '4px 0 0',
                   fontSize: 12,
                   color: TOKENS.textSecondary,
-                  lineHeight: 1.5,
+                  lineHeight: 1.55,
                 }}
               >
-                Gaps below come from the server — open the full analyzer for tailoring and salary
-                detail.
+                {humanScoreSummary(scoreResult)}
               </p>
             </div>
           </div>
@@ -655,7 +959,7 @@ function MatchScoreSection({
             <div>
               <p
                 style={{
-                  margin: '0 0 6px',
+                  margin: '0 0 8px',
                   fontSize: 10,
                   fontWeight: 600,
                   color: 'rgba(52,211,153,0.80)',
@@ -665,43 +969,12 @@ function MatchScoreSection({
               >
                 Strengths
               </p>
-              {scoreResult.topStrengths.slice(0, 3).map((item) => (
-                <div
-                  key={item}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 6,
-                    marginBottom: 4,
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 4,
-                      height: 4,
-                      borderRadius: '50%',
-                      background: TOKENS.green,
-                      flexShrink: 0,
-                      marginTop: 5,
-                    }}
-                    aria-hidden
-                  />
-                  <span
-                    style={{
-                      fontSize: 11,
-                      color: TOKENS.textSecondary,
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {item}
-                  </span>
-                </div>
-              ))}
+              <SkillList items={strengthLabels} tone="strength" />
             </div>
             <div>
               <p
                 style={{
-                  margin: '0 0 6px',
+                  margin: '0 0 8px',
                   fontSize: 10,
                   fontWeight: 600,
                   color: 'rgba(248,113,113,0.80)',
@@ -711,40 +984,11 @@ function MatchScoreSection({
               >
                 Gaps
               </p>
-              {gapLabels.map((item) => (
-                <div
-                  key={item}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 6,
-                    marginBottom: 4,
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 4,
-                      height: 4,
-                      borderRadius: '50%',
-                      background: TOKENS.red,
-                      flexShrink: 0,
-                      marginTop: 5,
-                    }}
-                    aria-hidden
-                  />
-                  <span
-                    style={{
-                      fontSize: 11,
-                      color: TOKENS.textSecondary,
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {item}
-                  </span>
-                </div>
-              ))}
+              <SkillList items={gapLabels} tone="gap" />
             </div>
           </div>
+
+          <FactorBreakdownChips scoreResult={scoreResult} />
 
           {scoreResult.recommendation ? (
             <p
@@ -774,25 +1018,57 @@ function MatchScoreSection({
             </p>
           ) : null}
 
-          <button
-            type="button"
-            onClick={() => void chrome.tabs.create({ url: analysisUrl })}
+          <div
             style={{
               marginTop: 12,
-              width: '100%',
-              padding: 10,
-              background: TOKENS.primary,
-              color: TOKENS.bg,
-              fontSize: 13,
-              fontWeight: 600,
-              borderRadius: 8,
-              border: 'none',
-              cursor: 'pointer',
-              fontFamily: TOKENS.font,
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: 8,
             }}
           >
-            View full analysis in ApplyMate →
-          </button>
+            <button
+              type="button"
+              onClick={openAnalyzer}
+              style={{
+                padding: 10,
+                background: TOKENS.primary,
+                color: TOKENS.bg,
+                fontSize: 12,
+                fontWeight: 600,
+                borderRadius: 8,
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: TOKENS.font,
+              }}
+            >
+              Gaps &amp; tailor →
+            </button>
+            <button
+              type="button"
+              onClick={openHub}
+              style={{
+                padding: 10,
+                background: 'transparent',
+                color: TOKENS.textSecondary,
+                fontSize: 12,
+                fontWeight: 600,
+                borderRadius: 8,
+                border: `1px solid ${TOKENS.borderDefault}`,
+                cursor: 'pointer',
+                fontFamily: TOKENS.font,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = TOKENS.borderHover;
+                e.currentTarget.style.color = TOKENS.textPrimary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = TOKENS.borderDefault;
+                e.currentTarget.style.color = TOKENS.textSecondary;
+              }}
+            >
+              Track in Hub
+            </button>
+          </div>
 
           <button
             type="button"
@@ -828,14 +1104,22 @@ function CoverLetterSection({
   dispatch,
   currentJob,
   jobAnalysisId,
+  busyOperation,
 }: {
   state: CvTabState;
   dispatch: Dispatch<CvTabAction>;
   currentJob: ExtractedJob;
   jobAnalysisId: string | null;
+  busyOperation: 'scoring' | 'coverLetter' | null;
 }) {
   const [editedLetter, setEditedLetter] = useState('');
   const [copied, setCopied] = useState(false);
+  const letterProgressLabel = useProgressPhrases(
+    state.coverLetterState.status === 'loading',
+    COVER_LETTER_PROGRESS_PHRASES,
+  );
+  const isBusy = busyOperation != null;
+  const letterBlocked = isBusy && busyOperation !== 'coverLetter';
 
   useEffect(() => {
     if (state.coverLetterState.status === 'done') {
@@ -850,6 +1134,15 @@ function CoverLetterSection({
     padding: 16,
     fontFamily: TOKENS.font,
   };
+
+  const coverLetterBlock = coverLetterBlockReason({
+    cvId: state.selectedCvId,
+    jobTitle: currentJob.title,
+    jobDescription: currentJob.description,
+    company: currentJob.company,
+    sourceUrl: currentJob.sourceUrl,
+  });
+  const canGenerateCoverLetter = coverLetterBlock === null;
 
   const handleCopy = async () => {
     try {
@@ -875,42 +1168,56 @@ function CoverLetterSection({
               lineHeight: 1.5,
             }}
           >
-            Generate a tailored cover letter using your CV and this job description.
+            {canGenerateCoverLetter
+              ? 'Generate a tailored cover letter using your CV and this job description.'
+              : coverLetterBlock}
           </p>
           <button
             type="button"
+            disabled={!canGenerateCoverLetter || letterBlocked}
             onClick={() => {
-              if (!state.selectedCvId) return;
+              if (!state.selectedCvId || !canGenerateCoverLetter || letterBlocked) return;
               dispatch({ type: 'setCoverLetterState', state: { status: 'loading' } });
-              void chrome.runtime.sendMessage({
+              void chrome.runtime
+                .sendMessage({
                 action: 'generateCoverLetter',
                 cvId: state.selectedCvId,
-                jobDescription: currentJob.description,
-                jobTitle: currentJob.title,
-                company: currentJob.company,
+                jobDescription: currentJob.description.trim(),
+                jobTitle: currentJob.title.trim(),
+                company: (currentJob.company ?? '').trim(),
                 jobLocation: currentJob.location?.trim() ? currentJob.location : undefined,
                 jobType: currentJob.jobType ?? undefined,
                 jobAnalysisId,
                 sourceUrl: currentJob.sourceUrl,
-              } satisfies MessageAction);
+              } satisfies MessageAction)
+                .catch(() => {
+                  dispatch({
+                    type: 'setCoverLetterState',
+                    state: { status: 'error', message: 'Could not start cover letter generation. Try again.' },
+                  });
+                });
             }}
             style={{
               width: '100%',
               padding: 10,
-              background: TOKENS.teal10,
-              border: `1px solid ${TOKENS.teal25}`,
+              background:
+                canGenerateCoverLetter && !letterBlocked ? TOKENS.teal10 : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${canGenerateCoverLetter && !letterBlocked ? TOKENS.teal25 : TOKENS.borderDefault}`,
               borderRadius: 8,
-              color: TOKENS.primary,
+              color:
+                canGenerateCoverLetter && !letterBlocked ? TOKENS.primary : TOKENS.textDisabled,
               fontSize: 13,
               fontWeight: 600,
-              cursor: 'pointer',
+              cursor: canGenerateCoverLetter && !letterBlocked ? 'pointer' : 'not-allowed',
               fontFamily: TOKENS.font,
               transition: 'all 0.15s ease',
             }}
             onMouseEnter={(e) => {
+              if (!canGenerateCoverLetter) return;
               e.currentTarget.style.background = TOKENS.teal18;
             }}
             onMouseLeave={(e) => {
+              if (!canGenerateCoverLetter) return;
               e.currentTarget.style.background = TOKENS.teal10;
             }}
           >
@@ -930,8 +1237,8 @@ function CoverLetterSection({
           }}
         >
           <InlineSpinner />
-          <span style={{ fontSize: 12, color: 'rgba(240,244,242,0.40)' }}>
-            Writing your cover letter...
+          <span style={{ fontSize: 12, color: 'rgba(240,244,242,0.50)' }}>
+            {letterProgressLabel}
           </span>
         </div>
       ) : null}
@@ -996,6 +1303,20 @@ function CoverLetterSection({
               {state.coverLetterState.result.wordCount} words
             </span>
           </div>
+          {!jobAnalysisId?.trim() &&
+          !state.coverLetterState.result.jobAnalysisId?.trim() ? (
+            <p
+              style={{
+                margin: '0 0 12px',
+                fontSize: 11,
+                color: TOKENS.amber,
+                lineHeight: 1.5,
+              }}
+            >
+              Run &quot;Get match score&quot; first to save this cover letter to your Job Hub
+              history.
+            </p>
+          ) : null}
           <textarea
             value={editedLetter}
             onChange={(e) => setEditedLetter(e.target.value)}
@@ -1049,9 +1370,13 @@ function CoverLetterSection({
             </button>
             <button
               type="button"
-              onClick={() =>
-                dispatch({ type: 'setCoverLetterState', state: { status: 'idle' } })
-              }
+              onClick={() => {
+                void downloadCoverLetterPdf({
+                  body: editedLetter,
+                  title: currentJob.title.trim(),
+                  company: (currentJob.company ?? '').trim(),
+                });
+              }}
               style={{
                 flex: 1,
                 padding: 9,
@@ -1071,7 +1396,7 @@ function CoverLetterSection({
                 e.currentTarget.style.borderColor = TOKENS.borderDefault;
               }}
             >
-              Regenerate
+              Download PDF
             </button>
           </div>
         </div>
@@ -1439,6 +1764,8 @@ function TailorCvSection({
 export function CVTab() {
   const session = useJobSession();
   const [tailorState, setTailorState] = useState<TailorStatus>({ status: 'idle' });
+  const busyOperation = session.busyOperation;
+  const isBusy = busyOperation != null;
 
   const state: CvTabState = {
     profiles: session.profiles,
@@ -1527,7 +1854,26 @@ export function CVTab() {
   }, []);
 
   const hasProfiles = !state.profilesLoading && state.profiles.length > 0;
-  const showJobSections = hasProfiles && state.currentJob !== null && state.selectedCvId;
+  const hasScore = state.scoreState.status === 'done';
+  const hasCoverLetter = state.coverLetterState.status === 'done';
+  const scoreOnlyJob: ExtractedJob | null = hasScore
+    ? {
+        title: 'Saved job analysis',
+        company: '',
+        location: '',
+        description: '',
+        salary: null,
+        jobType: null,
+        experienceLevel: null,
+        postedDate: null,
+        sourceUrl: '',
+        sourceSite: 'saved',
+        confidence: 'medium',
+        extractedBy: 'manual',
+      }
+    : null;
+  const displayJob = state.currentJob ?? scoreOnlyJob;
+  const showJobSections = hasProfiles && state.selectedCvId && displayJob != null;
 
   return (
     <div
@@ -1537,38 +1883,65 @@ export function CVTab() {
         fontFamily: TOKENS.font,
       }}
     >
-      <CvSelectorSection state={state} dispatch={dispatch} />
+      <CvSelectorSection state={state} dispatch={dispatch} disabled={isBusy} />
 
       {!hasProfiles ? null : (
         <>
           <Divider />
 
-          {state.currentJob === null ? <NoJobWarning /> : null}
+          {state.currentJob === null && !hasScore ? <NoJobWarning /> : null}
+
+          {state.currentJob === null && hasScore ? (
+            <div
+              style={{
+                marginBottom: 12,
+                borderRadius: 8,
+                border: `1px solid ${TOKENS.teal20border}`,
+                background: TOKENS.teal05,
+                padding: '10px 12px',
+                fontFamily: TOKENS.font,
+              }}
+            >
+              <p style={{ margin: 0, fontSize: 11, lineHeight: 1.5, color: TOKENS.textSecondary }}>
+                Showing match analysis from a job page you visited earlier. Return to that listing or
+                use Clear on the Job tab when you are done.
+              </p>
+            </div>
+          ) : null}
 
           {showJobSections ? (
             <>
               <MatchScoreSection
                 state={state}
                 dispatch={dispatch}
-                currentJob={state.currentJob!}
+                currentJob={displayJob!}
                 jobAnalysisId={session.jobAnalysisId}
-                dashboardUrl={session.dashboardUrl}
                 hasAnalysis={Boolean(session.checkResult?.hasAnalysis)}
+                busyOperation={busyOperation}
               />
-              <Divider />
-              <CoverLetterSection
-                state={state}
-                dispatch={dispatch}
-                currentJob={state.currentJob!}
-                jobAnalysisId={session.jobAnalysisId}
-              />
-              <Divider />
-              <TailorCvSection
-                currentJob={state.currentJob!}
-                selectedCvId={state.selectedCvId}
-                tailorState={tailorState}
-                setTailorState={setTailorState}
-              />
+              {state.currentJob || hasCoverLetter ? (
+                <>
+                  <Divider />
+                  <CoverLetterSection
+                    state={state}
+                    dispatch={dispatch}
+                    currentJob={state.currentJob ?? displayJob!}
+                    jobAnalysisId={session.jobAnalysisId}
+                    busyOperation={busyOperation}
+                  />
+                  {state.currentJob ? (
+                    <>
+                      <Divider />
+                      <TailorCvSection
+                        currentJob={state.currentJob}
+                        selectedCvId={state.selectedCvId}
+                        tailorState={tailorState}
+                        setTailorState={setTailorState}
+                      />
+                    </>
+                  ) : null}
+                </>
+              ) : null}
             </>
           ) : null}
         </>

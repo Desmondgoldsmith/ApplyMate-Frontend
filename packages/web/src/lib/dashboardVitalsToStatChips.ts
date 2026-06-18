@@ -1,4 +1,12 @@
 import type { DashboardStatChip } from '@/components/dashboard/DashboardStatsRow';
+import { cleanAiText } from '@/lib/dashboardDisplayCopy';
+import {
+  TOOLTIP_APPLICATIONS_IN_PROGRESS,
+  TOOLTIP_BEST_MATCH,
+  TOOLTIP_CAREER_MOMENTUM_SCORE,
+  TOOLTIP_DAILY_STREAK,
+  TOOLTIP_PREDICTIVE_OUTLOOK,
+} from '@/lib/dashboardIntelligenceTooltips';
 import { formatSemanticOutlookBand } from '@/lib/dashboardSemanticOutlook';
 import type { DashboardVitalsPayload, TodayPlanPayload } from '@/lib/today-plan';
 import { normalizedSectionTitle } from '@/lib/today-plan';
@@ -22,11 +30,11 @@ export function dashboardVitalsToStatChips(
   vitals: DashboardVitalsPayload,
   plan?: TodayPlanPayload | null,
 ): DashboardStatChip[] {
-  const titleMomentum = normalizedSectionTitle(plan, 'momentum', 'Career momentum');
-  const titleOutlook = normalizedSectionTitle(plan, 'predictive_outlook', 'Interview outlook');
-  const titleBestMatch = normalizedSectionTitle(plan, 'best_match', 'Best role fit');
-  const titleApplications = normalizedSectionTitle(plan, 'applications', 'Active applications');
-  const titleStreak = normalizedSectionTitle(plan, 'consistency', 'Consistency streak');
+  const titleMomentum = normalizedSectionTitle(plan, 'career_momentum', 'Search Momentum');
+  const titleOutlook = normalizedSectionTitle(plan, 'predictive_outlook', 'Where your search is heading');
+  const titleBestMatch = normalizedSectionTitle(plan, 'best_match', 'Best match');
+  const titleApplications = normalizedSectionTitle(plan, 'applications', 'Applications in progress');
+  const titleStreak = normalizedSectionTitle(plan, 'consistency', 'Daily streak');
 
   const chips: DashboardStatChip[] = [];
 
@@ -36,14 +44,14 @@ export function dashboardVitalsToStatChips(
     const narrative =
       v.label && !isRedundantSupportingLine(v.label, titleMomentum) ? v.label.trim() : '';
     let status = '';
-    if (tier && narrative) status = `${tier} · ${narrative}`;
-    else status = tier || narrative;
+    if (tier && narrative) status = `${tier}, ${cleanAiText(narrative)}`;
+    else status = cleanAiText(tier || narrative);
     chips.push({
       key: 'career_momentum',
       label: titleMomentum,
       value: `${v.score}/100`,
       status,
-      explanation: v.explanation?.trim() || undefined,
+      explanation: cleanAiText(v.explanation?.trim()) || TOOLTIP_CAREER_MOMENTUM_SCORE,
       scrollTargetId: 'dashboard-deep-career-momentum',
     });
   }
@@ -70,8 +78,8 @@ export function dashboardVitalsToStatChips(
       key: 'best_match',
       label: titleBestMatch,
       value: `${v.score}%`,
-      status: v.company?.trim() ?? '',
-      explanation: v.explanation?.trim() || undefined,
+      status: cleanAiText(v.company?.trim() ?? ''),
+      explanation: cleanAiText(v.explanation?.trim()) || TOOLTIP_BEST_MATCH,
       scrollTargetId: 'dashboard-deep-recent-analyses',
     });
   }
@@ -83,7 +91,7 @@ export function dashboardVitalsToStatChips(
       label: titleApplications,
       value: String(v.count),
       status: '',
-      explanation: v.explanation?.trim() || undefined,
+      explanation: cleanAiText(v.explanation?.trim()) || TOOLTIP_APPLICATIONS_IN_PROGRESS,
       scrollTargetId: 'dashboard-deep-summary',
     });
   }
@@ -95,7 +103,7 @@ export function dashboardVitalsToStatChips(
       label: titleStreak,
       value: `${d} ${d === 1 ? 'day' : 'days'}`,
       status: '',
-      explanation: vitals.streak.explanation?.trim() || undefined,
+      explanation: cleanAiText(vitals.streak.explanation?.trim()) || TOOLTIP_DAILY_STREAK,
       scrollTargetId: 'dashboard-deep-consistency',
     });
   }

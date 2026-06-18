@@ -18,6 +18,37 @@ export type FreshAnalyzePrefillPayload = {
   resumeWorkingStep?: string;
 };
 
+/** Extension → Job Hub: raw JD before backend `GET /jobs/:id` has description. */
+export const HUB_JOB_PREFILL_SESSION_PREFIX = 'applymate:hub-job-prefill:';
+
+export function hubJobPrefillSessionKey(jobAnalysisId: string): string {
+  return `${HUB_JOB_PREFILL_SESSION_PREFIX}${jobAnalysisId.trim()}`;
+}
+
+export function readHubJobPrefillSession(
+  jobAnalysisId: string | null | undefined,
+): Pick<FreshAnalyzePrefillPayload, 'title' | 'company' | 'description'> | null {
+  if (typeof window === 'undefined') return null;
+  const id = String(jobAnalysisId ?? '').trim();
+  if (!id) return null;
+  try {
+    const raw = window.sessionStorage.getItem(hubJobPrefillSessionKey(id));
+    if (!raw?.trim()) return null;
+    const p = JSON.parse(raw) as {
+      title?: unknown;
+      company?: unknown;
+      description?: unknown;
+    };
+    const title = typeof p.title === 'string' ? p.title : '';
+    const company = typeof p.company === 'string' ? p.company : '';
+    const description = typeof p.description === 'string' ? p.description : '';
+    if (!title.trim() && !company.trim() && !description.trim()) return null;
+    return { title, company, description };
+  } catch {
+    return null;
+  }
+}
+
 type NextActionPrefetchCacheEntry = {
   contextToken?: string | null;
   prefill?: {

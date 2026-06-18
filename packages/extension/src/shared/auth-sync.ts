@@ -75,7 +75,17 @@ function normalizeUser(user: User | undefined): User | null {
   };
 }
 
+let syncInFlight: Promise<ExtensionAuthSyncResult> | null = null;
+
 export async function syncExtensionAuth(): Promise<ExtensionAuthSyncResult> {
+  if (syncInFlight) return syncInFlight;
+  syncInFlight = syncExtensionAuthImpl().finally(() => {
+    syncInFlight = null;
+  });
+  return syncInFlight;
+}
+
+async function syncExtensionAuthImpl(): Promise<ExtensionAuthSyncResult> {
   if (Date.now() - webLogoutAt < WEB_LOGOUT_BLOCK_MS) {
     await clearToken();
     return { ok: false };

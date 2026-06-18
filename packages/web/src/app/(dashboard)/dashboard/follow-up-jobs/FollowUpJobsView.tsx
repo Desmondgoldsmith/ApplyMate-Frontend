@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
+import { CompanyLogo } from '@/components/ui/CompanyLogo';
 import { GlowCard } from '@/components/ui/GlowCard';
 import type { FollowUpJobRowPayload } from '@/lib/today-plan';
 import { FOLLOW_UP_PAGE } from '@/lib/followUpJobsPageCopy';
@@ -64,7 +65,7 @@ function FollowUpJobCard({
     typeof row.daysSinceApplication === 'number' && Number.isFinite(row.daysSinceApplication)
       ? Math.max(0, Math.round(row.daysSinceApplication))
       : null;
-  const Icon = variant.Icon;
+  const company = row.companyName?.trim() || 'Company';
 
   return (
     <article
@@ -79,14 +80,12 @@ function FollowUpJobCard({
       />
       <div className="flex flex-col gap-2.5 pl-1">
         <div className="flex items-start gap-2.5">
-          <div
-            className={cn(
-              'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors',
-              variant.iconWrap,
-            )}
-          >
-            <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
-          </div>
+          <CompanyLogo
+            company={company}
+            logoUrl={row.companyLogoUrl}
+            size="md"
+            shape="rounded"
+          />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-1.5">
               <span
@@ -147,7 +146,7 @@ function FollowUpJobsTable({ rows }: { rows: FollowUpJobRowPayload[] }) {
             const href = row.ctaHref?.trim();
             const label = row.ctaLabel?.trim() || FOLLOW_UP_PAGE.openAction;
             const sourceLabel = followUpJobSourceDisplayLabel(row.source);
-            const Icon = variant.Icon;
+            const company = row.companyName?.trim() || 'Company';
             return (
               <tr key={row.id} className="border-b border-white/[0.05] transition-colors hover:bg-white/[0.03]">
                 <td className="px-3 py-3 pl-4 align-middle">
@@ -157,15 +156,24 @@ function FollowUpJobsTable({ rows }: { rows: FollowUpJobRowPayload[] }) {
                       variant.pill,
                     )}
                   >
-                    <Icon className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden />
                     {variant.shortLabel}
                   </span>
                 </td>
                 <td className="max-w-[260px] px-3 py-3 align-middle lg:max-w-md">
-                  <p className="text-[12px] font-semibold text-white/90">{title}</p>
+                  <div className="flex items-start gap-2.5">
+                    <CompanyLogo
+                      company={company}
+                      logoUrl={row.companyLogoUrl}
+                      size="sm"
+                      shape="rounded"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-[12px] font-semibold text-white/90">{title}</p>
                   {row.headline?.trim() ? (
                     <p className="mt-0.5 text-[11px] text-white/45 line-clamp-2">{row.headline.trim()}</p>
                   ) : null}
+                    </div>
+                  </div>
                 </td>
                 <td className="whitespace-nowrap px-3 py-3 align-middle text-[11px] text-white/55">
                   {sourceLabel}

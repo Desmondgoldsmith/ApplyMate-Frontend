@@ -3,11 +3,7 @@
 import Link from 'next/link';
 
 import { DashboardCollapsibleSection } from '@/components/dashboard/DashboardCollapsibleSection';
-import { InfoHint } from '@/components/ui/InfoHint';
-import {
-  TOOLTIP_UPCOMING_APPLIED_PREP_PRIORITY,
-  TOOLTIP_UPCOMING_INTERVIEW_PREP_PRIORITY,
-} from '@/lib/dashboardIntelligenceTooltips';
+import { CompanyLogo } from '@/components/ui/CompanyLogo';
 import type { UpcomingInterviewItem } from '@/lib/today-plan';
 import {
   isAppliedPrepUpcomingRow,
@@ -21,13 +17,7 @@ type Props = {
   upcomingInterviewCount?: number | null;
 };
 
-const DASHBOARD_UPCOMING_HOME_CAP = 3;
-
-function companyInitial(company: string): string {
-  const t = company.trim();
-  if (!t) return '?';
-  return t.charAt(0).toUpperCase();
-}
+const DASHBOARD_UPCOMING_HOME_CAP = 2;
 
 function timingLine(card: UpcomingInterviewItem): string | null {
   if (isAppliedPrepUpcomingRow(card)) return null;
@@ -58,9 +48,9 @@ function sectionIntroCopy(rows: UpcomingInterviewItem[]): string {
     return 'Prepare for scheduled interviews and get interview-ready for roles you have just applied to.';
   }
   if (hasApplied) {
-    return 'You have applied — practice now while you wait to hear back.';
+    return 'You have applied. Practice now while you wait to hear back.';
   }
-  return 'Prepare for the conversations already on your calendar.';
+  return 'Get ready for your upcoming interviews.';
 }
 
 /** Render only when `interviews.length > 0` (caller requirement). */
@@ -83,7 +73,7 @@ export function DashboardUpcomingInterviewsSection({ interviews, upcomingIntervi
   const headerRight =
     showViewAll ? (
       <Link
-        href="/dashboard/interviews"
+        href="/dashboard/interview-prep"
         className="inline-flex flex-wrap items-center gap-x-1.5 text-[12px] font-medium leading-snug text-[var(--text-teal)] transition-opacity hover:opacity-80 hover:underline"
       >
         <span>View all →</span>
@@ -96,7 +86,7 @@ export function DashboardUpcomingInterviewsSection({ interviews, upcomingIntervi
   return (
     <DashboardCollapsibleSection
       storageKey="upcoming_interviews"
-      title="Interview preparation"
+      title="Interview prep"
       countBadge={countBadge}
       headerRight={headerRight}
     >
@@ -108,18 +98,18 @@ export function DashboardUpcomingInterviewsSection({ interviews, upcomingIntervi
         {visible.map((card, idx) => {
           const appliedPrep = isAppliedPrepUpcomingRow(card);
           const timing = timingLine(card);
-          const conf =
-            typeof card.confidence === 'number' && Number.isFinite(card.confidence)
-              ? Math.round(card.confidence)
-              : null;
           const company = (card.company ?? '').trim();
           const headline = card.headline.trim();
           const jobTitle = (card.jobTitle ?? '').trim();
           const supporting = card.supporting.trim();
           const titleLine = appliedPrep ? headline || jobTitle || company : jobTitle || headline;
+          const updatedLabel = card.lastUpdatedLabel?.trim() || null;
           const subParts = appliedPrep
-            ? [supporting || (jobTitle && company ? `${jobTitle} · ${company}` : company || jobTitle)]
-            : [company, timing].filter(Boolean);
+            ? [
+                supporting || (jobTitle && company ? `${jobTitle} · ${company}` : company || jobTitle),
+                updatedLabel,
+              ]
+            : [company, timing, updatedLabel].filter(Boolean);
           const subLine = subParts.filter(Boolean).join(appliedPrep ? ' ' : ' · ');
 
           return (
@@ -131,25 +121,21 @@ export function DashboardUpcomingInterviewsSection({ interviews, upcomingIntervi
               )}
             >
               <div className="flex min-w-0 flex-1 items-center gap-3.5">
-                <div
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-[13px] font-semibold text-[var(--text-teal)]"
-                  style={{
-                    background: 'var(--teal-10)',
-                    borderColor: 'var(--border-teal)',
-                  }}
-                  aria-hidden
-                >
-                  {companyInitial(company || titleLine)}
-                </div>
+                <CompanyLogo
+                  company={company || titleLine}
+                  logoUrl={card.companyLogoUrl}
+                  size="md"
+                  shape="rounded"
+                />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] font-semibold leading-snug text-[var(--text-primary)]">
+                  <p className="text-[14px] font-semibold leading-snug text-[var(--text-primary)] max-[480px]:line-clamp-2 max-[480px]:whitespace-normal sm:truncate">
                     {titleLine}
                   </p>
                   {subLine ? (
                     <p
                       className={cn(
                         'text-[12px] leading-snug text-[var(--text-secondary)]',
-                        appliedPrep ? 'line-clamp-2' : 'truncate',
+                        'max-[480px]:line-clamp-2 max-[480px]:whitespace-normal sm:truncate',
                       )}
                     >
                       {subLine}
@@ -157,34 +143,11 @@ export function DashboardUpcomingInterviewsSection({ interviews, upcomingIntervi
                   ) : null}
                 </div>
               </div>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
-                {conf != null ? (
-                  <div className="flex items-center gap-1.5 sm:justify-end">
-                    <span
-                      className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium text-[var(--text-teal)]"
-                      style={{
-                        background: 'var(--teal-10)',
-                        borderColor: 'var(--border-teal)',
-                      }}
-                    >
-                      {conf}% {appliedPrep ? 'prep priority' : 'priority'}
-                      <InfoHint
-                        text={
-                          appliedPrep
-                            ? TOOLTIP_UPCOMING_APPLIED_PREP_PRIORITY
-                            : TOOLTIP_UPCOMING_INTERVIEW_PREP_PRIORITY
-                        }
-                        buttonAriaLabel={
-                          appliedPrep ? 'What is prep priority?' : 'What is interview prep priority?'
-                        }
-                      />
-                    </span>
-                  </div>
-                ) : null}
+              <div className="flex flex-col gap-2 max-[480px]:w-full sm:flex-row sm:items-center sm:justify-end sm:gap-3">
                 <Link
                   href={card.ctaHref}
                   className={cn(
-                    'inline-flex min-h-[40px] w-full items-center justify-center rounded-full border border-[var(--border-default)] px-3.5 py-1.5 text-center text-[12px] font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--border-hover)] sm:w-auto sm:min-h-0 sm:shrink-0',
+                    'inline-flex min-h-[40px] w-full items-center justify-center rounded-full border border-[var(--border-default)] px-3.5 py-1.5 text-center text-[12px] font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--border-hover)] max-[480px]:w-full sm:w-auto sm:min-h-0 sm:shrink-0',
                   )}
                   style={{ background: 'transparent' }}
                 >

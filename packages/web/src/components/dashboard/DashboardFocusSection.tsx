@@ -1,17 +1,21 @@
 'use client';
 
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 import { DashboardCollapsibleSection } from '@/components/dashboard/DashboardCollapsibleSection';
 import type { DashboardEmptyStatePayload } from '@/lib/today-plan';
 import type { FocusItem } from '@/lib/dashboardFocusMerge';
+import { sanitizeDashboardDisplayText, sanitizeFocusMetaLine } from '@/lib/dashboardDisplayCopy';
 import { cn } from '@/lib/utils';
 
-/** Dashboard home: show this many focus rows; full list at `/dashboard/focus`. */
-const DASHBOARD_FOCUS_HOME_CAP = 3;
+/** Dashboard home: server caps at 2; slice defensively for legacy payloads. */
+const DASHBOARD_FOCUS_HOME_CAP = 2;
 
 type Props = {
   items: FocusItem[];
+  /** Full ranked count before home snapshot cap. */
+  totalCount?: number | null;
   /** From `normalizedSectionTitles.focus` when provided by API. */
   sectionHeading?: string;
   phase15Empty?: DashboardEmptyStatePayload | null;
@@ -55,22 +59,25 @@ export function DashboardFocusRow({
           <Dot kind={it.dot} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-semibold leading-snug text-white/92">
-            {it.title}
+          <p className="text-[14px] font-semibold leading-snug text-white/92 max-[480px]:whitespace-normal max-[480px]:line-clamp-2 sm:truncate">
+            {sanitizeDashboardDisplayText(it.title)}
           </p>
           <p className="mt-0.5 line-clamp-2 text-[13px] leading-relaxed text-white/55">
-            {it.subtitle}
+            {sanitizeDashboardDisplayText(it.subtitle)}
           </p>
-          {it.metaLine?.trim() ? (
+          {(() => {
+            const meta = sanitizeFocusMetaLine(it.metaLine);
+            return meta ? (
             <p className="mt-1.5 text-[11px] font-medium text-white/40">
-              {it.metaLine}
+              {meta}
             </p>
-          ) : null}
+            ) : null;
+          })()}
         </div>
       </div>
       <Link
         href={it.ctaHref}
-        className="inline-flex min-h-[40px] w-full shrink-0 items-center justify-center rounded-full border border-white/[0.12] px-3.5 py-1.5 text-center text-[12px] font-medium text-white/85 transition-colors hover:border-[#00C9B1]/40 hover:text-[#00C9B1] sm:w-auto sm:min-h-0"
+        className="inline-flex min-h-[40px] w-full max-[480px]:mt-1 shrink-0 items-center justify-center rounded-full border border-white/[0.12] px-3.5 py-1.5 text-center text-[12px] font-medium text-white/85 transition-colors hover:border-[#00C9B1]/40 hover:text-[#00C9B1] max-[480px]:w-full sm:w-auto sm:min-h-0"
       >
         {it.ctaLabel}
       </Link>
@@ -86,14 +93,19 @@ export function DashboardFocusRow({
 
 export function DashboardFocusSection({
   items,
+  totalCount,
   sectionHeading,
   phase15Empty,
 }: Props) {
   const visibleItems = items.slice(0, DASHBOARD_FOCUS_HOME_CAP);
-  const showShowAll = items.length > DASHBOARD_FOCUS_HOME_CAP;
-  const moreCount = Math.max(0, items.length - visibleItems.length);
+  const total =
+    typeof totalCount === 'number' && Number.isFinite(totalCount)
+      ? Math.max(0, Math.round(totalCount))
+      : items.length;
+  const showShowAll = total > DASHBOARD_FOCUS_HOME_CAP;
+  const moreCount = Math.max(0, total - visibleItems.length);
 
-  const heading = sectionHeading?.trim() || 'Your Focus';
+  const heading = sectionHeading?.trim() || 'Your focus';
 
   if (items.length === 0) {
     const custom = phase15Empty?.message?.trim();
@@ -113,8 +125,8 @@ export function DashboardFocusSection({
           </h2>
         </div>
         <p className="mt-3 text-[13px] leading-relaxed text-[var(--text-secondary)]">
-          {custom ||
-            'When you analyze roles or move applications forward, your top actions will collect here — one ranked list, no competing widgets.'}
+          {sanitizeDashboardDisplayText(custom) ||
+            'When you analyze roles or move applications forward, your top actions will collect here in one ranked list.'}
         </p>
         <Link
           href={emptyHref}
@@ -126,7 +138,7 @@ export function DashboardFocusSection({
     );
   }
 
-  const countBadge = `${items.length} item${items.length === 1 ? '' : 's'}`;
+  const countBadge = `${total} item${total === 1 ? '' : 's'}`;
 
   const headerRight = showShowAll ? (
     <Link

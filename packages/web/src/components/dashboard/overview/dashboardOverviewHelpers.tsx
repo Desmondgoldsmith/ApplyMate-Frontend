@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { DashboardDeepDiveShell } from '@/components/dashboard/DashboardDeepDiveShell';
 import { buildDashboardViewModel } from '@/lib/dashboardViewModel';
 import { formatSemanticOutlookBand } from '@/lib/dashboardSemanticOutlook';
+import { cleanAiText } from '@/lib/dashboardDisplayCopy';
 import {
   effectiveDeterministicIndexValue,
   type CareerMomentumPayload,
@@ -66,7 +67,7 @@ export function getPersonalisedSubtext(
   totalJobsAnalyzed: number,
 ): string {
   if (cvProfileCount === 0) {
-    return "Let's get your CV set up — it takes less than 2 minutes.";
+    return "Let's get your CV set up. It takes less than 2 minutes.";
   }
   if (totalJobsAnalyzed === 0) {
     return 'Your CV is ready. Paste a job description to see how well you match.';
@@ -92,15 +93,15 @@ export function tierWordFromMomentum(tier: CareerMomentumPayload['tier']): strin
 export function deepDiveCareerMomentumSummary(data: CareerMomentumPayload): string {
   const v = effectiveDeterministicIndexValue(data.momentumIndex, data.score);
   const scorePart = v != null ? `${v}/100` : '—';
-  return `Career Momentum · ${scorePart} · ${tierWordFromMomentum(data.tier)}`;
+  return `Search Momentum · ${scorePart} · ${tierWordFromMomentum(data.tier)}`;
 }
 
 export function deepDivePredictiveSummary(data: PredictiveOutlookPayload): string {
   const band = data.interviewOutlook?.value;
   const bandLabel = band ? formatSemanticOutlookBand(band) : '—';
-  const hint =
-    data.headline?.trim()?.split(/\s+/).slice(0, 2).join(' ') || 'Outlook';
-  return `Interview Outlook · ${bandLabel} · ${hint}`;
+  const hint = cleanAiText(data.supporting?.trim() || data.headline?.trim() || 'Outlook');
+  const shortHint = hint.length > 48 ? `${hint.slice(0, 48).trimEnd()}…` : hint;
+  return `Where your search is heading · ${bandLabel} · ${shortHint}`;
 }
 
 export function deepDiveGoalSummary(alignment: GoalAlignmentPayload): string {
@@ -108,7 +109,7 @@ export function deepDiveGoalSummary(alignment: GoalAlignmentPayload): string {
     typeof alignment.score === 'number' && Number.isFinite(alignment.score)
       ? Math.max(0, Math.min(100, Math.round(alignment.score)))
       : null;
-  return score != null ? `Goal Alignment · ${score}/100` : 'Goal Alignment';
+  return score != null ? `Jobs matching your goals · ${score}/100` : 'Jobs matching your goals';
 }
 
 export function deepDiveHabitSummary(data: HabitProgressPayload): string {
@@ -117,7 +118,7 @@ export function deepDiveHabitSummary(data: HabitProgressPayload): string {
     Number.isFinite(data.currentStreakDays)
       ? Math.max(0, Math.round(data.currentStreakDays))
       : null;
-  const streakPart = d != null ? `${d}-Day Streak` : 'Consistency';
+  const streakPart = d != null ? `${d}-Day Streak` : 'Daily streak';
   const band = data.streakStatus ? HABIT_BAND_LABEL[data.streakStatus] : '';
   return band ? `${streakPart} · ${band}` : streakPart;
 }

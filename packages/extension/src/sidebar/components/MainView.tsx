@@ -7,6 +7,7 @@ import { ApplyTab } from './ApplyTab';
 import { CVTab } from './CVTab';
 import { HistoryTab } from './HistoryTab';
 import { JobTab } from './JobTab';
+import { PendingNewJobBanner } from './PendingNewJobBanner';
 
 type TabId = 'job' | 'cv' | 'apply' | 'history';
 
@@ -60,8 +61,8 @@ function TabIconHistory({ active }: { active: boolean }) {
 
 const TABS: TabDef[] = [
   { id: 'job', label: 'Job', icon: (active) => <TabIconBriefcase active={active} /> },
-  { id: 'cv', label: 'CV', icon: (active) => <TabIconCv active={active} /> },
-  { id: 'apply', label: 'Apply', icon: (active) => <TabIconApply active={active} /> },
+  { id: 'cv', label: 'Analysis', icon: (active) => <TabIconCv active={active} /> },
+  { id: 'apply', label: 'Autofill', icon: (active) => <TabIconApply active={active} /> },
   { id: 'history', label: 'History', icon: (active) => <TabIconHistory active={active} /> },
 ];
 
@@ -154,20 +155,29 @@ export function MainView({ user }: MainViewProps) {
         </nav>
 
         <div className="am-scroll flex-1 overflow-y-auto p-4">
-          <div style={{ display: activeTab === 'job' ? 'block' : 'none' }}>
-            <JobTab />
-          </div>
-          <div style={{ display: activeTab === 'cv' ? 'block' : 'none' }}>
-            <CVTab />
-          </div>
-          <div style={{ display: activeTab === 'apply' ? 'block' : 'none' }}>
-            <ApplyTab />
-          </div>
-          <div style={{ display: activeTab === 'history' ? 'block' : 'none' }}>
-            <HistoryTab />
-          </div>
+          <SidebarBody activeTab={activeTab} />
         </div>
       </div>
     </JobSessionProvider>
+  );
+}
+
+function SidebarBody({ activeTab }: { activeTab: TabId }) {
+  return (
+    <>
+      <PendingNewJobBanner />
+      <div style={{ display: activeTab === 'job' ? 'block' : 'none' }}>
+        <JobTab />
+      </div>
+      <div style={{ display: activeTab === 'cv' ? 'block' : 'none' }}>
+        <CVTab />
+      </div>
+      <div style={{ display: activeTab === 'apply' ? 'block' : 'none' }}>
+        <ApplyTab />
+      </div>
+      <div style={{ display: activeTab === 'history' ? 'block' : 'none' }}>
+        <HistoryTab />
+      </div>
+    </>
   );
 }

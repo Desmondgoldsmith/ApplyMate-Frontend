@@ -8,6 +8,7 @@ import { createPortal } from 'react-dom';
 
 import { GlowCard } from '@/components/ui/GlowCard';
 import { Button } from '@/components/ui/Button';
+import { CompanyLogo } from '@/components/ui/CompanyLogo';
 import { useToast } from '@/components/ui/Toast';
 import { useApplications } from '@/hooks/useApplications';
 import { useUpdateApplicationStatus } from '@/hooks/useApplicationMutations';
@@ -360,7 +361,9 @@ function ApplicationCard({
     >
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
+          <div className="flex min-w-0 flex-1 gap-3">
+            <CompanyLogo company={item.company} logoUrl={item.companyLogoUrl} size="md" />
+            <div className="min-w-0">
             {highlighted ? (
               <span className="mb-1 inline-flex w-fit items-center rounded-md border border-[#00C9B1]/45 bg-[#00C9B1]/18 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#86FFFF]">
                 From notification
@@ -371,6 +374,7 @@ function ApplicationCard({
             {item.createdAt ? (
               <p className="mt-1 text-xs text-white/35">Applied {formatSavedDate(item.createdAt)}</p>
             ) : null}
+            </div>
           </div>
           <div className="relative shrink-0" ref={menuRef}>
             <button

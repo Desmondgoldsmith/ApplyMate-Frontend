@@ -17,10 +17,10 @@ export function useGrowthDailyDirection() {
   return useQuery({
     queryKey: queryKeys.growth.dailyDirection(),
     queryFn: () => api.growth.getDailyDirection(),
-    staleTime: 0,
+    staleTime: 120_000,
     gcTime: 5 * 60_000,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: 'always',
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -28,10 +28,10 @@ export function useGrowthProgress(window: GrowthProgressWindow) {
   return useQuery({
     queryKey: queryKeys.growth.progress(window),
     queryFn: () => api.growth.getProgress(window),
-    staleTime: 0,
+    staleTime: 120_000,
     gcTime: 5 * 60_000,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: 'always',
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -39,10 +39,10 @@ export function useGrowthMomentumNudges() {
   return useQuery({
     queryKey: queryKeys.growth.momentumNudges(),
     queryFn: () => api.growth.getMomentumNudges(),
-    staleTime: 0,
+    staleTime: 120_000,
     gcTime: 5 * 60_000,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: 'always',
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -50,10 +50,10 @@ export function useGrowthAchievements() {
   return useQuery({
     queryKey: queryKeys.growth.achievements(),
     queryFn: () => api.growth.getAchievements(),
-    staleTime: 0,
+    staleTime: 120_000,
     gcTime: 5 * 60_000,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: 'always',
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 }
 

@@ -9,6 +9,7 @@ import { createPortal } from 'react-dom';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { TailorCvBuilderPane } from '@/components/cv/TailorCvBuilderPane';
+import { PreTailorGapChecklist, type TailorMissingSkill } from '@/components/dashboard/PreTailorGapChecklist';
 import { TailorChangeHighlights } from '@/components/dashboard/TailorChangeHighlights';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -339,6 +340,7 @@ function sectionTitle(sectionType: string): string {
   return `${s.charAt(0).toUpperCase()}${s.slice(1)} section`;
 }
 
+
 export type CvTailoringSidebarProps = {
   open: boolean;
   onClose: () => void;
@@ -359,9 +361,27 @@ export type CvTailoringSidebarProps = {
   tailoredCvName?: string | null;
   /** Saved job analysis — enables tailored export filename on GET …/export/pdf?jobAnalysisId= */
   jobAnalysisId?: string | null;
+  /** When true, show post-tailor score delta (after rematch). */
+  isTailored?: boolean;
+  /** Pre-tailor skill gaps from job analysis (shown before reviewing draft cards). */
+  missingSkills?: TailorMissingSkill[];
+  /** True while the tailor draft is being fetched after opening the panel. */
+  draftLoading?: boolean;
   /** drawer = narrow right panel; split = full-screen with CV builder on the left. */
   layout?: 'drawer' | 'split';
 };
+
+function TailorDraftLoadingState({ label = 'Loading tailoring draft…' }: { label?: string }) {
+  return (
+    <div className="flex min-h-[min(320px,50vh)] flex-1 flex-col items-center justify-center px-6 text-center">
+      <Loader2 className="h-10 w-10 animate-spin text-[#00C9B1]" aria-hidden />
+      <p className="mt-4 text-sm font-medium text-white/70">{label}</p>
+      <p className="mt-2 max-w-xs text-xs leading-relaxed text-white/40">
+        Pulling section suggestions and gap checklist for this role.
+      </p>
+    </div>
+  );
+}
 
 export function CvTailoringSidebar({
   open,
@@ -377,6 +397,9 @@ export function CvTailoringSidebar({
   currentScore,
   tailoredCvName,
   jobAnalysisId,
+  isTailored = false,
+  missingSkills = [],
+  draftLoading = false,
   layout = 'split',
 }: CvTailoringSidebarProps) {
   const toast = useToast();
@@ -388,6 +411,7 @@ export function CvTailoringSidebar({
   const [acceptAllLoading, setAcceptAllLoading] = useState(false);
   const [exportingFormat, setExportingFormat] = useState<'pdf' | 'docx' | null>(null);
   const [builderHydrateNonce, setBuilderHydrateNonce] = useState(0);
+  const [forceRehydrateNonce, setForceRehydrateNonce] = useState(0);
   const [builderHighlight, setBuilderHighlight] = useState<{
     sectionId: string;
     nonce: number;
@@ -411,6 +435,11 @@ export function CvTailoringSidebar({
       queryFn: () => api.cv.getProfileById(id),
     });
     setBuilderHydrateNonce((n) => n + 1);
+  };
+
+  const rehydrateBuilderAfterTailorPersist = async (cvProfileId: string) => {
+    await invalidateCv(cvProfileId);
+    setForceRehydrateNonce((n) => n + 1);
   };
 
   const pendingDrafts = useMemo(
@@ -475,7 +504,7 @@ export function CvTailoringSidebar({
     try {
       const result = await api.cv.acceptAllTailorSections(draft.id);
       onTailorMutation(result);
-      await invalidateCv(result.draft.cvProfileId);
+      await rehydrateBuilderAfterTailorPersist(result.draft.cvProfileId);
       toast.success('All changes applied to your CV');
       onTailoringCvPersisted?.();
     } catch (e) {
@@ -553,12 +582,13 @@ export function CvTailoringSidebar({
             <TailorCvBuilderPane
               profileId={cvProfileId}
               rehydrateNonce={builderHydrateNonce}
+              forceRehydrateNonce={forceRehydrateNonce}
               highlightSectionId={builderHighlight?.sectionId ?? null}
               highlightNonce={builderHighlight?.nonce ?? 0}
               highlightAction={builderHighlight?.action ?? 'accepted'}
               onAutosaved={() => onTailoringCvPersisted?.()}
               onStructuredPersisted={async () => {
-                await invalidateCv(cvProfileId);
+                await rehydrateBuilderAfterTailorPersist(cvProfileId);
               }}
               tailorChangesBadgeCount={pendingDrafts.length}
               tailorRightSlot={
@@ -568,11 +598,19 @@ export function CvTailoringSidebar({
                 >
             {!isSplit ? <p className="mb-4 text-[13px] leading-snug text-white/45">{titleLine}</p> : null}
 
-            {scoreBeforeTailor != null &&
+            {draft ? (
+              <PreTailorGapChecklist
+                missingSkills={missingSkills}
+                selectedSkills={draft.selectedSkills}
+                plannedSections={draft.plannedSections}
+              />
+            ) : null}
+
+            {isTailored &&
+            scoreBeforeTailor != null &&
             Number.isFinite(scoreBeforeTailor) &&
             currentScore != null &&
-            Number.isFinite(currentScore) &&
-            (draft?.drafts.some((d) => d.status === 'accepted') || draft?.status === 'completed') ? (
+            Number.isFinite(currentScore) ? (
               <div
                 className={cn(
                   'mb-5 rounded-xl border border-white/[0.07] px-4 py-3',
@@ -678,7 +716,7 @@ export function CvTailoringSidebar({
                     entries={pendingDrafts}
                     draft={draft}
                     onTailorMutation={onTailorMutation}
-                    invalidateCv={invalidateCv}
+                    invalidateCv={rehydrateBuilderAfterTailorPersist}
                     onTailoringCvPersisted={onTailoringCvPersisted}
                     onSectionAccepted={onSectionAccepted}
                     onBuilderHighlight={setBuilderHighlight}
@@ -697,7 +735,7 @@ export function CvTailoringSidebar({
                     entries={acceptedDrafts}
                     draft={draft}
                     onTailorMutation={onTailorMutation}
-                    invalidateCv={invalidateCv}
+                    invalidateCv={rehydrateBuilderAfterTailorPersist}
                     onTailoringCvPersisted={onTailoringCvPersisted}
                     onSectionAccepted={onSectionAccepted}
                     onBuilderHighlight={setBuilderHighlight}
@@ -716,7 +754,7 @@ export function CvTailoringSidebar({
                     entries={rejectedDrafts}
                     draft={draft}
                     onTailorMutation={onTailorMutation}
-                    invalidateCv={invalidateCv}
+                    invalidateCv={rehydrateBuilderAfterTailorPersist}
                     onTailoringCvPersisted={onTailoringCvPersisted}
                     onSectionAccepted={onSectionAccepted}
                     onBuilderHighlight={setBuilderHighlight}
@@ -729,6 +767,8 @@ export function CvTailoringSidebar({
               </div>
             ) : draft ? (
               <p className="text-sm text-white/45">No section drafts in this response.</p>
+            ) : draftLoading ? (
+              <TailorDraftLoadingState />
             ) : (
               <p className="text-sm text-white/45">No draft loaded.</p>
             )}
@@ -794,6 +834,8 @@ export function CvTailoringSidebar({
               }
             />
           </div>
+        ) : draftLoading ? (
+          <TailorDraftLoadingState />
         ) : (
           <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden px-6 text-center text-sm text-white/45">
             No draft loaded.
@@ -1047,6 +1089,8 @@ function SectionDiffCardWrapper({
         beforeRaw={liveEntry.before}
         afterRaw={liveEntry.after}
         changedFields={liveEntry.changedFields}
+        displayDiff={liveEntry.displayDiff}
+        summary={liveEntry.summary}
         className="mb-3"
       />
 

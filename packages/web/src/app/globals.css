@@ -461,6 +461,59 @@ input.auth-input:-webkit-autofill:active {
   }
 }
 
+/* Job Hub detail — compact pipeline stepper */
+.pipeline-chevron-compact {
+  display: flex;
+  min-width: 52px;
+  height: 28px;
+  clip-path: polygon(
+    0 0,
+    calc(100% - 8px) 0,
+    100% 50%,
+    calc(100% - 8px) 100%,
+    0 100%,
+    8px 50%
+  );
+}
+.pipeline-chevron-compact:not(:first-child) {
+  margin-left: -7px;
+}
+@media (min-width: 640px) {
+  .pipeline-chevron-compact {
+    min-width: 58px;
+    height: 30px;
+    clip-path: polygon(
+      0 0,
+      calc(100% - 10px) 0,
+      100% 50%,
+      calc(100% - 10px) 100%,
+      0 100%,
+      10px 50%
+    );
+  }
+  .pipeline-chevron-compact:not(:first-child) {
+    margin-left: -9px;
+  }
+}
+
+@keyframes hub-guidance-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(0, 201, 177, 0.22),
+      0 0 14px rgba(0, 201, 177, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(0, 201, 177, 0.42),
+      0 0 22px rgba(0, 201, 177, 0.26);
+  }
+}
+
+.hub-guidance-glow {
+  animation: hub-guidance-glow 2.8s ease-in-out infinite;
+}
+
 @keyframes dashboard-ai-pulse {
   0%,
   100% {
@@ -545,4 +598,13 @@ input.auth-input:-webkit-autofill:active {
   animation: tailor-revert-flash-keyframes 2.4s ease-out;
   border-radius: 12px;
   scroll-margin-top: 5rem;
+}
+
+/* Tailor-applied edits — visible in builder; stripped server-side on PDF/DOCX export. */
+.cv-change-marker,
+u.cv-change-marker {
+  text-decoration: underline;
+  text-decoration-color: rgba(0, 201, 177, 0.7);
+  text-underline-offset: 2px;
+  background-color: rgba(0, 201, 177, 0.08);
 }

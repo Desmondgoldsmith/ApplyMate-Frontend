@@ -20,6 +20,15 @@ export type AtsHardSkillMatch = {
   matched?: boolean;
 };
 
+export type AtsSeniorityAlignment = {
+  score0to100: number;
+  jobLevel?: string;
+  cvLevel?: string;
+  jobTitleNormalized?: string;
+  cvTitleNormalized?: string;
+  detail?: string;
+};
+
 export type AtsSimulationReport = {
   overallScore?: number;
   coveragePercent?: number;
@@ -37,7 +46,37 @@ export type AtsSimulationReport = {
   quantifiedAchievementsScore?: number;
   sectionCompletenessScore?: number;
   recommendations?: string[];
+  seniorityAlignment?: AtsSeniorityAlignment;
 };
+
+function parseSeniorityAlignment(raw: unknown): AtsSeniorityAlignment | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const score =
+    num(o.score0to100) ??
+    num(o.score0To100) ??
+    num(o.score) ??
+    num(o.score_0_to_100);
+  if (score === undefined) return undefined;
+  return {
+    score0to100: Math.round(Math.min(100, Math.max(0, score))),
+    jobLevel: typeof o.jobLevel === 'string' ? o.jobLevel : typeof o.job_level === 'string' ? o.job_level : undefined,
+    cvLevel: typeof o.cvLevel === 'string' ? o.cvLevel : typeof o.cv_level === 'string' ? o.cv_level : undefined,
+    jobTitleNormalized:
+      typeof o.jobTitleNormalized === 'string'
+        ? o.jobTitleNormalized
+        : typeof o.job_title_normalized === 'string'
+          ? o.job_title_normalized
+          : undefined,
+    cvTitleNormalized:
+      typeof o.cvTitleNormalized === 'string'
+        ? o.cvTitleNormalized
+        : typeof o.cv_title_normalized === 'string'
+          ? o.cv_title_normalized
+          : undefined,
+    detail: typeof o.detail === 'string' ? o.detail.trim() : undefined,
+  };
+}
 
 function num(v: unknown): number | undefined {
   if (typeof v === 'number' && Number.isFinite(v)) return v;
@@ -129,7 +168,17 @@ export function parseAtsSimulationReport(raw: unknown): AtsSimulationReport | un
     quantifiedAchievementsScore: num(src.quantifiedAchievementsScore ?? src.quantified_achievements_score),
     sectionCompletenessScore: num(src.sectionCompletenessScore ?? src.section_completeness_score),
     recommendations: strList(src.recommendations),
+    seniorityAlignment: parseSeniorityAlignment(
+      src.seniorityAlignment ?? src.seniority_alignment,
+    ),
   };
+
+  if (
+    out.seniorityAlignment &&
+    out.seniorityAlignmentScore === undefined
+  ) {
+    out.seniorityAlignmentScore = out.seniorityAlignment.score0to100;
+  }
 
   const hasAny =
     out.overallScore !== undefined ||
@@ -143,7 +192,8 @@ export function parseAtsSimulationReport(raw: unknown): AtsSimulationReport | un
     out.formattingParseabilityScore !== undefined ||
     out.quantifiedAchievementsScore !== undefined ||
     out.sectionCompletenessScore !== undefined ||
-    (out.recommendations && out.recommendations.length > 0);
+    (out.recommendations && out.recommendations.length > 0) ||
+    out.seniorityAlignment !== undefined;
 
   return hasAny ? out : undefined;
 }

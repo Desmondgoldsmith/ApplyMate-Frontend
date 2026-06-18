@@ -22,6 +22,11 @@ export async function clearToken(): Promise<void> {
   await chrome.storage.session.remove([TOKEN_KEY, EXPIRES_AT_KEY, USER_CACHE_KEY]);
 }
 
+/** Clear draggable icon position saved in local storage. */
+export async function clearIconPosition(): Promise<void> {
+  await chrome.storage.local.remove(ICON_POS_KEY);
+}
+
 export async function getCachedUser(): Promise<User | null> {
   const stored = await chrome.storage.session.get(USER_CACHE_KEY);
   const raw = stored[USER_CACHE_KEY];

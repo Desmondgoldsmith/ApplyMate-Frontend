@@ -13,9 +13,25 @@ import {
 } from './aiBackgroundJob';
 import { ensureArray } from './ensure-array';
 import {
+  pickCompanyLogoSource,
+  pickCompanyLogoUrl,
+  type CompanyLogoSource,
+} from './companyLogo';
+
+export {
+  companyInitial,
+  readCompanyLogo,
+  type CompanyLogoSource,
+} from './companyLogo';
+import {
   normalizeDashboardFocus,
+  normalizeDashboardFollowUpJobs,
+  normalizeDashboardInterviewPrep,
+  normalizeDashboardQuietApplications,
   normalizeSinceLastVisit,
   normalizeTodayPlan,
+  pickStaleApplicationNotice,
+  type StaleApplicationNoticePayload,
 } from './today-plan';
 import type { AtsSimulationReport } from './atsSimulation';
 import {
@@ -23,6 +39,10 @@ import {
   normalizeWeeklyStallSummary,
 } from './weekly-stall-summary';
 import { parseJobAnalysisV2 } from './jobAnalysisV2';
+import {
+  parsePresentationGaps,
+  type PresentationGap,
+} from './presentationGaps';
 import {
   parseJobMatchFactorsBreakdown,
   type JobMatchFactorsBreakdown,
@@ -32,6 +52,18 @@ import {
   type ScoreImprovementGuide,
 } from './scoreImprovement';
 import { pickApplyUrlFromRecord } from './jobApplyUrlPick';
+import {
+  applyKeywordOnlyToFactorsBreakdown,
+  parseSkillCoverageFromUnknown,
+} from './skillCoverage';
+import { parseTailorUiFields } from './tailorAnalysisUi';
+import {
+  parseJobHubContextEnrichment,
+  parseJobHubGuidance,
+  type JobHubContextEnrichment,
+  type JobHubGuidancePayload,
+  type JobHubPipelineStepperPayload,
+} from './jobHubGuidance';
 import {
   normalizeCvAssistantSectionCommandResponse,
   normalizeCvGlobalAssistantCommandResponse,
@@ -63,6 +95,7 @@ import { resolveExportFilename } from './exportFilenameFromResponse';
 import {
   coerceAiPatchSectionBlob,
   coerceAiPatchToDisplayString,
+  preserveTailorSectionBlob,
 } from './cvAiPatchDisplay';
 import {
   extractCvParseImportSummary,
@@ -639,14 +672,22 @@ export type HubPipelineStage =
 export type RecruiterVerdict = 'STRONG' | 'COMPETITIVE' | 'WEAK';
 export type ApplyStrategy = 'APPLY_NOW' | 'TAILOR_FIRST' | 'SKIP';
 
+export type AnalysisAxisKey =
+  | 'skillMatch'
+  | 'experienceFit'
+  | 'industryFit'
+  | 'evidenceStrength';
+
+export type AnalysisAxisMeta = {
+  key: AnalysisAxisKey;
+  label?: string;
+  description: string;
+  pairedFactorKey?: string;
+};
+
 export type JobAnalysisV2 = {
   recruiterVerdict: RecruiterVerdict;
-  axes: {
-    skillMatch: number;
-    experienceFit: number;
-    industryFit: number;
-    evidenceStrength: number;
-  };
+  axes: Record<AnalysisAxisKey, number>;
   attackPlan: {
     topCVFixes: string[];
     interviewRisks: string[];
@@ -654,6 +695,13 @@ export type JobAnalysisV2 = {
     salaryRange?: string;
   };
   applyStrategy: ApplyStrategy;
+  /** Server-authored tooltips pairing v1 factors with v2 axes. */
+  axisMeta?: AnalysisAxisMeta[];
+};
+
+export type MatchScoreBenchmark = {
+  shortHeadline: string;
+  disclaimer?: string;
 };
 
 export type JobAnalysis = {
@@ -661,9 +709,17 @@ export type JobAnalysis = {
   title?: string;
   company?: string;
   matchScore: number;
+  /** Stored DB score from analyze time (detail may derive a different display `matchScore`). */
+  lastMatchScore?: number | null;
+  companyLogoUrl?: string | null;
+  companyLogoSource?: CompanyLogoSource | null;
   scoreBeforeTailoring?: number | null;
   /** Profile used for the match (API `cvProfileId`). */
   cvProfileId?: string | null;
+  /** CV profile used for match scoring (`tailoredCvProfileId` when tailored). */
+  matchCvProfileId?: string | null;
+  /** CV the UI should select (`tailoredCvProfileId ?? cvProfileId`). */
+  selectedCvProfileId?: string | null;
   /** Legacy / alternate keys merged here for older payloads. */
   sourceCvProfileId?: string | null;
   tailoredCvProfileId?: string | null;
@@ -678,7 +734,10 @@ export type JobAnalysis = {
   /** True when POST /jobs/analyze returned an existing row without running AI. */
   reusedExistingAnalysis?: boolean;
   /** How the match score was produced (persisted + preview analyze). */
-  scoreSource?: 'heuristic' | 'ai' | string;
+  scoreSource?: 'heuristic' | 'ai' | 'gemini' | string;
+  /** When API includes explicit AI completion flag (mirrors GET /jobs/history). */
+  hasAnalysis?: boolean;
+  analyzeSource?: string | null;
   /** Present on some GET /jobs/:id payloads when the API embeds the active draft. */
   tailorDraft?: CvTailorDraft | null;
   breakdown?: {
@@ -689,7 +748,12 @@ export type JobAnalysis = {
   missingSkills?: Array<{
     name: string;
     importance: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+    tier?: 'required' | 'preferred' | 'mentioned';
+    gapAdviceType?: 'add_skill' | 'use_in_bullets' | 'soft_context' | 'exclude';
+    requirementKind?: 'tool' | 'phrase';
   }>;
+  /** Descriptor gaps — weave into bullets, not skills list. */
+  presentationGaps?: PresentationGap[];
   strengths?: string[];
   recommendation?: 'STRONG_MATCH' | 'MEDIUM_MATCH' | 'LOW_MATCH';
   createdAt?: string;
@@ -702,14 +766,47 @@ export type JobAnalysis = {
   scoreImprovement?: ScoreImprovementGuide;
   /** Transparent match score factors (3.3). */
   factorsBreakdown?: JobMatchFactorsBreakdown | null;
+  /** Human-readable score formula for "Why this score?" tooltip. */
+  scoreFormulaTooltip?: string | null;
+  /** Explains headline 50/30/20 weighting vs diagnostic factors. */
+  headlineCompositionNote?: string | null;
+  /** Model-authored percentile framing vs untailored CVs on this posting. */
+  matchScoreBenchmark?: MatchScoreBenchmark | null;
   /** Soft notice when posting location may not match user profile region. */
   locationEligibility?: LocationEligibility | null;
+  /** Skills found semantically but not verbatim on CV (ATS risk). */
+  atsRiskItems?: string[];
+  /** Skills the user selected during tailoring (GET /jobs/:id when isTailored). */
+  skillsAddedToCv?: string[];
+  /** Interview prep note on every analyze / job detail response. */
+  interviewReadinessNote?: string | null;
   /** AI-detected requirements from the posting with CV match status. */
   skillCoverage?: Array<{
     skill: string;
     status: 'found' | 'missing' | string;
     importance: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+    tier?: 'required' | 'preferred' | 'mentioned';
+    foundLiterally?: boolean;
+    keywordOnly?: boolean;
+    orGroupId?: string;
+    requirementKind?: 'tool' | 'phrase';
   }>;
+  /** Server-authored next-step ticks (Save, Analyze, Tailor, Cover letter). */
+  checklistSuggestions?: JobChecklistSuggestion[];
+  /** Tailor workflow — partial vs complete (GET /jobs/:id, tailor accept). */
+  tailorStatus?: 'none' | 'in_progress' | 'completed';
+  tailorDraftId?: string | null;
+  tailorEditorOpenable?: boolean;
+  tailorCtaLabel?: string;
+  tailorCtaMode?: 'start' | 'continue' | 'view';
+  pendingTailorSections?: string[];
+};
+
+export type JobChecklistSuggestion = {
+  id: string;
+  label: string;
+  auto: boolean;
+  completed?: boolean;
 };
 
 export type LocationEligibility = {
@@ -825,6 +922,15 @@ function parseSkillImportance(
   return 'LOW';
 }
 
+function parseSkillRequirementTier(
+  raw: unknown,
+): 'required' | 'preferred' | 'mentioned' | undefined {
+  if (typeof raw !== 'string') return undefined;
+  const t = raw.trim().toLowerCase();
+  if (t === 'required' || t === 'preferred' || t === 'mentioned') return t;
+  return undefined;
+}
+
 function parseOptionalNumberField(v: unknown): number | null {
   if (v === null || v === undefined) return null;
   const n =
@@ -838,7 +944,7 @@ function parseOptionalNumberField(v: unknown): number | null {
 
 function normalizeStrengthsList(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
-  return raw
+  const items = raw
     .map((x) => {
       if (typeof x === 'string') return x;
       if (
@@ -859,7 +965,26 @@ function normalizeStrengthsList(raw: unknown): string[] {
       }
       return null;
     })
-    .filter((s): s is string => Boolean(s && s.trim()));
+    .filter((s): s is string => Boolean(s && s.trim()))
+    .map((s) => s.trim());
+
+  const generic = new Set(
+    [
+      'strong communicator',
+      'team player',
+      'detail oriented',
+      'detail-oriented',
+      'hard worker',
+      'quick learner',
+      'self starter',
+      'self-starter',
+      'problem solver',
+      'problem-solver',
+    ].map((s) => s.toLowerCase()),
+  );
+  const specific = items.filter((s) => !generic.has(s.toLowerCase()));
+  if (specific.length >= 2) return specific.slice(0, 6);
+  return items.slice(0, 6);
 }
 
 /** Persisted analysis id — GET /jobs/:id uses route id; POST /analyze often returns jobId or nested analysis. */
@@ -906,6 +1031,75 @@ function pickJobAnalysisId(body: Record<string, unknown>): string | undefined {
     if (aid.trim()) return aid.trim();
   }
   return undefined;
+}
+
+function parseDescriptionHighlightsFromUnknown(
+  raw: unknown,
+): JobDescriptionHighlights | null | undefined {
+  if (raw === null || raw === undefined) return undefined;
+  if (typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const o = raw as Record<string, unknown>;
+  const termsRaw = o.terms;
+  const sectionsRaw = o.sections;
+  const terms: JobDescriptionHighlightTerm[] = Array.isArray(termsRaw)
+    ? termsRaw
+        .filter(
+          (item): item is Record<string, unknown> =>
+            item !== null && typeof item === 'object' && !Array.isArray(item),
+        )
+        .map((item) => ({
+          text: typeof item.text === 'string' ? item.text.trim() : '',
+          ...(typeof item.category === 'string' ? { category: item.category } : {}),
+          ...(typeof item.importance === 'string'
+            ? { importance: item.importance }
+            : {}),
+        }))
+        .filter((item) => item.text.length > 0)
+    : [];
+  const sections: JobDescriptionHighlightSection[] = Array.isArray(sectionsRaw)
+    ? sectionsRaw
+        .filter(
+          (item): item is Record<string, unknown> =>
+            item !== null && typeof item === 'object' && !Array.isArray(item),
+        )
+        .map((item) => {
+          const formatRaw = String(item.format ?? 'paragraph').toLowerCase();
+          const format =
+            formatRaw === 'bullets' || formatRaw === 'bullet'
+              ? 'bullets'
+              : 'paragraph';
+          const itemsRaw = item.items;
+          const items = Array.isArray(itemsRaw)
+            ? itemsRaw.filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+            : undefined;
+          return {
+            id: typeof item.id === 'string' ? item.id : '',
+            title: typeof item.title === 'string' ? item.title : '',
+            format,
+            ...(typeof item.body === 'string' ? { body: item.body } : {}),
+            ...(items?.length ? { items } : {}),
+          };
+        })
+    : [];
+  const extractedAt =
+    typeof o.extractedAt === 'string'
+      ? o.extractedAt
+      : typeof o.extracted_at === 'string'
+        ? o.extracted_at
+        : undefined;
+  const extractVersion =
+    typeof o.extractVersion === 'number'
+      ? o.extractVersion
+      : typeof o.extract_version === 'number'
+        ? o.extract_version
+        : undefined;
+  if (terms.length === 0 && sections.length === 0) return null;
+  return {
+    terms,
+    sections,
+    ...(extractedAt ? { extractedAt } : {}),
+    ...(extractVersion !== undefined ? { extractVersion } : {}),
+  };
 }
 
 /** Shared parsing for salary blocks on job analysis payloads (nested or top-level). */
@@ -986,6 +1180,39 @@ function parseSalaryEstimateFromUnknown(
       : typeof se.preferred_currency_code === 'string'
         ? se.preferred_currency_code
         : undefined;
+  const postingText =
+    typeof se.postingText === 'string'
+      ? se.postingText.trim()
+      : typeof se.posting_text === 'string'
+        ? se.posting_text.trim()
+        : '';
+  if (postingText) {
+    return {
+      currency: currency || 'USD',
+      min: Number.isFinite(min) ? min : 0,
+      max: Number.isFinite(max) ? max : 0,
+      median: Number.isFinite(median)
+        ? median
+        : Number.isFinite(min) && Number.isFinite(max)
+          ? (min + max) / 2
+          : 0,
+      basis,
+      confidence,
+      note,
+      postingText,
+      ...(source ? { source } : {}),
+      ...(sourceLabel?.trim() ? { sourceLabel: sourceLabel.trim() } : {}),
+      ...(disclaimer?.trim() ? { disclaimer: disclaimer.trim() } : {}),
+      ...(dataSource ? { dataSource } : {}),
+      ...(marketLocation?.trim() ? { marketLocation: marketLocation.trim() } : {}),
+      ...(marketCountryCode?.trim()
+        ? { marketCountryCode: marketCountryCode.trim() }
+        : {}),
+      ...(preferredCurrencyCode?.trim()
+        ? { preferredCurrencyCode: preferredCurrencyCode.trim() }
+        : {}),
+    };
+  }
   if (currency && Number.isFinite(min) && Number.isFinite(max)) {
     return {
       currency,
@@ -1011,6 +1238,51 @@ function parseSalaryEstimateFromUnknown(
   return null;
 }
 
+function parseMatchScoreBenchmark(raw: unknown): MatchScoreBenchmark | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const o = raw as Record<string, unknown>;
+  const shortHeadlineRaw =
+    (typeof o.shortHeadline === 'string' && o.shortHeadline.trim()) ||
+    (typeof o.short_headline === 'string' && o.short_headline.trim()) ||
+    '';
+  if (!shortHeadlineRaw) return null;
+  const shortHeadline = shortHeadlineRaw
+    .replace(/\s*[—–]\s*/g, ', ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  const disclaimerRaw =
+    (typeof o.disclaimer === 'string' && o.disclaimer.trim()) || undefined;
+  const disclaimer = disclaimerRaw
+    ? disclaimerRaw.replace(/\s*[—–]\s*/g, ', ').replace(/\s{2,}/g, ' ').trim()
+    : undefined;
+  return { shortHeadline, disclaimer };
+}
+
+function parseChecklistSuggestions(raw: unknown): JobChecklistSuggestion[] | undefined {
+  if (!Array.isArray(raw) || raw.length === 0) return undefined;
+  const items: JobChecklistSuggestion[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object') continue;
+    const o = entry as Record<string, unknown>;
+    const id =
+      (typeof o.id === 'string' && o.id.trim()) ||
+      (typeof o.key === 'string' && o.key.trim()) ||
+      '';
+    const label =
+      (typeof o.label === 'string' && o.label.trim()) ||
+      (typeof o.title === 'string' && o.title.trim()) ||
+      '';
+    if (!id || !label) continue;
+    items.push({
+      id,
+      label,
+      auto: o.auto === true,
+      ...(o.completed === true ? { completed: true } : {}),
+    });
+  }
+  return items.length > 0 ? items : undefined;
+}
+
 function normalizeJobAnalysis(raw: unknown): JobAnalysis {
   const body = drillToJobAnalysisRow(raw);
   const rawScore =
@@ -1028,6 +1300,17 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
         : Number(rawScore);
   const matchScore = Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0;
 
+  const lastScoreRaw = body.lastMatchScore ?? body.last_match_score;
+  const lastScoreNum =
+    typeof lastScoreRaw === 'number'
+      ? lastScoreRaw
+      : typeof lastScoreRaw === 'string'
+        ? parseFloat(lastScoreRaw)
+        : Number(lastScoreRaw);
+  const lastMatchScore = Number.isFinite(lastScoreNum)
+    ? Math.max(0, Math.min(100, lastScoreNum))
+    : null;
+
   const missing: NonNullable<JobAnalysis['missingSkills']> = [];
   const ms =
     body.missingSkills ?? body.missing_skills ?? body.gaps ?? body.skillGaps;
@@ -1041,7 +1324,27 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
         (typeof o.skillName === 'string' && o.skillName.trim()) ||
         '';
       if (!name) continue;
-      missing.push({ name, importance: parseSkillImportance(o.importance) });
+      const tier = parseSkillRequirementTier(o.tier);
+      const gapAdviceRaw = o.gapAdviceType ?? o.gap_advice_type;
+      const gapAdviceType =
+        typeof gapAdviceRaw === 'string' && gapAdviceRaw.trim()
+          ? (gapAdviceRaw.trim().toLowerCase() as NonNullable<
+              JobAnalysis['missingSkills']
+            >[number]['gapAdviceType'])
+          : undefined;
+      if (gapAdviceType === 'exclude') continue;
+      const requirementKindRaw = o.requirementKind ?? o.requirement_kind ?? o.kind;
+      const requirementKind =
+        requirementKindRaw === 'tool' || requirementKindRaw === 'phrase'
+          ? requirementKindRaw
+          : undefined;
+      missing.push({
+        name,
+        importance: parseSkillImportance(o.importance),
+        ...(tier ? { tier } : {}),
+        ...(gapAdviceType ? { gapAdviceType } : {}),
+        ...(requirementKind ? { requirementKind } : {}),
+      });
     }
   }
 
@@ -1143,15 +1446,56 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
       ? scoreSourceRaw.trim().toLowerCase()
       : undefined;
 
-  const factorsBreakdown = parseJobMatchFactorsBreakdown(
+  const hasAnalysisRaw = body.hasAnalysis ?? body.has_analysis;
+  const hasAnalysis =
+    typeof hasAnalysisRaw === 'boolean' ? hasAnalysisRaw : undefined;
+  const analyzeSourceRaw = body.analyzeSource ?? body.analyze_source;
+  const analyzeSource =
+    typeof analyzeSourceRaw === 'string' && analyzeSourceRaw.trim()
+      ? analyzeSourceRaw.trim()
+      : null;
+
+  const factorsBreakdownRaw = parseJobMatchFactorsBreakdown(
     body.factorsBreakdown ?? body.factors_breakdown,
   );
+
+  const matchScoreBenchmark = parseMatchScoreBenchmark(
+    body.matchScoreBenchmark ?? body.match_score_benchmark,
+  );
+
+  const selectedCvProfileIdRaw =
+    (typeof body.selectedCvProfileId === 'string' && body.selectedCvProfileId.trim()) ||
+    (typeof body.selected_cv_profile_id === 'string' &&
+      body.selected_cv_profile_id.trim()) ||
+    null;
+
+  const matchCvProfileIdRaw =
+    (typeof body.matchCvProfileId === 'string' && body.matchCvProfileId.trim()) ||
+    (typeof body.match_cv_profile_id === 'string' && body.match_cv_profile_id.trim()) ||
+    null;
+  const matchCvProfileId =
+    matchCvProfileIdRaw ?? sourceCvProfileId ?? cvProfileIdTrim ?? null;
+
+  const selectedCvProfileId =
+    selectedCvProfileIdRaw ??
+    tailoredCvProfileId ??
+    sourceCvProfileId ??
+    cvProfileIdTrim ??
+    null;
 
   const locationEligibility = parseLocationEligibility(
     body.locationEligibility ?? body.location_eligibility,
   );
 
-  const skillCoverageRaw = body.skillCoverage ?? body.skill_coverage;
+  const skillCoverageRaw =
+    body.skillCoverage ??
+    body.skill_coverage ??
+    ((): unknown => {
+      const fb = body.factorsBreakdown ?? body.factors_breakdown;
+      if (!fb || typeof fb !== 'object' || Array.isArray(fb)) return undefined;
+      const nested = fb as Record<string, unknown>;
+      return nested.skillCoverage ?? nested.skill_coverage;
+    })();
   let skillCoverage: JobAnalysis['skillCoverage'];
   if (Array.isArray(skillCoverageRaw) && skillCoverageRaw.length > 0) {
     const parsed: NonNullable<JobAnalysis['skillCoverage']> = [];
@@ -1165,20 +1509,102 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
       if (!skill) continue;
       const statusRaw =
         typeof o.status === 'string' ? o.status.trim().toLowerCase() : 'missing';
+      const tier = parseSkillRequirementTier(o.tier);
+      const foundLiterallyRaw = o.foundLiterally ?? o.found_literally;
+      const keywordOnlyRaw = o.keywordOnly ?? o.keyword_only;
+      const orGroupIdRaw = o.orGroupId ?? o.or_group_id;
+      const orGroupId =
+        typeof orGroupIdRaw === 'string' && orGroupIdRaw.trim()
+          ? orGroupIdRaw.trim()
+          : undefined;
       parsed.push({
         skill,
         status: statusRaw === 'found' ? 'found' : 'missing',
         importance: parseSkillImportance(o.importance),
+        ...(tier ? { tier } : {}),
+        ...(typeof foundLiterallyRaw === 'boolean'
+          ? { foundLiterally: foundLiterallyRaw }
+          : {}),
+        ...(keywordOnlyRaw === true ? { keywordOnly: true } : {}),
+        ...(orGroupId ? { orGroupId } : {}),
       });
     }
     skillCoverage = parsed.length > 0 ? parsed : undefined;
   }
+  if (!skillCoverage?.length) {
+    skillCoverage = parseSkillCoverageFromUnknown(skillCoverageRaw);
+  }
+
+  const scoreFormulaTooltipRaw =
+    body.scoreFormulaTooltip ?? body.score_formula_tooltip;
+  const scoreFormulaTooltip =
+    typeof scoreFormulaTooltipRaw === 'string' && scoreFormulaTooltipRaw.trim()
+      ? scoreFormulaTooltipRaw.trim()
+      : null;
+
+  const headlineCompositionRaw =
+    body.headlineCompositionNote ?? body.headline_composition_note;
+  const headlineCompositionNote =
+    typeof headlineCompositionRaw === 'string' && headlineCompositionRaw.trim()
+      ? headlineCompositionRaw.trim()
+      : null;
+
+  const presentationGaps = parsePresentationGaps(
+    body.presentationGaps ?? body.presentation_gaps,
+  );
+
+  const checklistSuggestions = parseChecklistSuggestions(
+    body.checklistSuggestions ?? body.checklist_suggestions,
+  );
+
+  const hasEmbeddedTailorDraft = Boolean(
+    (typeof body.tailorDraft === 'object' &&
+      body.tailorDraft &&
+      typeof (body.tailorDraft as Record<string, unknown>).id === 'string') ||
+      (typeof body.tailor_draft === 'object' &&
+        body.tailor_draft &&
+        typeof (body.tailor_draft as Record<string, unknown>).id === 'string'),
+  );
+  const tailorUi = parseTailorUiFields(body, hasEmbeddedTailorDraft || isTailored === true);
+  const effectiveIsTailored = tailorUi.isTailorComplete === true;
+
+  const factorsBreakdown = effectiveIsTailored
+    ? factorsBreakdownRaw
+    : applyKeywordOnlyToFactorsBreakdown(factorsBreakdownRaw, skillCoverage);
+
+  const skillsAddedRaw = body.skillsAddedToCv ?? body.skills_added_to_cv;
+  let skillsAddedToCv = Array.isArray(skillsAddedRaw)
+    ? skillsAddedRaw
+        .filter((x): x is string => typeof x === 'string' && Boolean(x.trim()))
+        .map((x) => x.trim())
+    : undefined;
+  if (!skillsAddedToCv?.length && effectiveIsTailored && tailorDraft?.selectedSkills?.length) {
+    skillsAddedToCv = tailorDraft.selectedSkills;
+  }
+  if (!effectiveIsTailored) {
+    skillsAddedToCv = undefined;
+  }
+
+  const atsRiskRaw = body.atsRiskItems ?? body.ats_risk_items;
+  const atsRiskItems = Array.isArray(atsRiskRaw)
+    ? atsRiskRaw
+        .filter((x): x is string => typeof x === 'string' && Boolean(x.trim()))
+        .map((x) => x.trim())
+    : undefined;
+
+  const interviewReadinessRaw =
+    body.interviewReadinessNote ?? body.interview_readiness_note;
+  const interviewReadinessNote =
+    typeof interviewReadinessRaw === 'string' && interviewReadinessRaw.trim()
+      ? interviewReadinessRaw.trim()
+      : null;
 
   return {
     id: pickJobAnalysisId(body),
     title: typeof body.title === 'string' ? body.title : undefined,
     company: typeof body.company === 'string' ? body.company : undefined,
     matchScore,
+    ...(lastMatchScore != null ? { lastMatchScore } : {}),
     scoreBeforeTailoring: parseOptionalNumberField(
       body.scoreBeforeTailoring ?? body.score_before_tailoring,
     ),
@@ -1189,9 +1615,11 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
     ...(applyUrlRaw ? { applyUrl: applyUrlRaw } : {}),
     ...(reusedExistingAnalysis ? { reusedExistingAnalysis: true } : {}),
     ...(scoreSource ? { scoreSource } : {}),
+    ...(hasAnalysis !== undefined ? { hasAnalysis } : {}),
+    ...(analyzeSource ? { analyzeSource } : {}),
     tailoredCvProfileId,
     tailoredCvName,
-    isTailored,
+    ...(effectiveIsTailored ? { isTailored: true } : isTailored === false ? { isTailored: false } : {}),
     hasCoverLetter,
     tailorDraft,
     breakdown:
@@ -1210,10 +1638,35 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
       return st ? { status: st } : {};
     })(),
     ...(analysisV2 ? { analysisV2 } : {}),
-    ...(scoreImprovement ? { scoreImprovement } : {}),
+    ...(effectiveIsTailored && scoreImprovement ? { scoreImprovement } : {}),
     ...(factorsBreakdown ? { factorsBreakdown } : {}),
+    ...(matchScoreBenchmark ? { matchScoreBenchmark } : {}),
+    ...(matchCvProfileId ? { matchCvProfileId } : {}),
+    ...(selectedCvProfileId ? { selectedCvProfileId } : {}),
     ...(locationEligibility ? { locationEligibility } : {}),
+    ...(atsRiskItems?.length ? { atsRiskItems } : {}),
+    ...(skillsAddedToCv?.length ? { skillsAddedToCv } : {}),
+    ...(interviewReadinessNote ? { interviewReadinessNote } : {}),
     ...(skillCoverage?.length ? { skillCoverage } : {}),
+    ...(scoreFormulaTooltip ? { scoreFormulaTooltip } : {}),
+    ...(headlineCompositionNote ? { headlineCompositionNote } : {}),
+    ...(presentationGaps?.length ? { presentationGaps } : {}),
+    ...(checklistSuggestions?.length ? { checklistSuggestions } : {}),
+    ...(tailorUi.tailorStatus && tailorUi.tailorStatus !== 'none'
+      ? { tailorStatus: tailorUi.tailorStatus }
+      : {}),
+    ...(tailorUi.tailorDraftId ? { tailorDraftId: tailorUi.tailorDraftId } : {}),
+    ...(tailorUi.tailorEditorOpenable ? { tailorEditorOpenable: true } : {}),
+    ...(tailorUi.tailorCtaLabel ? { tailorCtaLabel: tailorUi.tailorCtaLabel } : {}),
+    ...(tailorUi.tailorCtaMode ? { tailorCtaMode: tailorUi.tailorCtaMode } : {}),
+    ...(tailorUi.pendingTailorSections?.length
+      ? { pendingTailorSections: tailorUi.pendingTailorSections }
+      : {}),
+    companyLogoUrl: pickCompanyLogoUrl(body),
+    ...((): { companyLogoSource?: CompanyLogoSource | null } => {
+      const src = pickCompanyLogoSource(body);
+      return src !== undefined ? { companyLogoSource: src } : {};
+    })(),
   };
 }
 
@@ -1225,8 +1678,9 @@ function parseLocationEligibility(raw: unknown): LocationEligibility | null {
     (typeof o.hint === 'string' && o.hint.trim()) ||
     '';
   if (!message) return null;
-  const jobLocations = Array.isArray(o.jobLocations ?? o.job_locations)
-    ? (o.jobLocations ?? o.job_locations)
+  const locationsRaw = o.jobLocations ?? o.job_locations;
+  const jobLocations = Array.isArray(locationsRaw)
+    ? locationsRaw
         .filter((item): item is string => typeof item === 'string' && Boolean(item.trim()))
         .map((item) => item.trim())
     : undefined;
@@ -1257,6 +1711,11 @@ export type CvTailorDraftStatus =
   | 'partially_accepted'
   | 'completed';
 
+export type TailorDisplayDiff = {
+  added: string[];
+  removed: string[];
+};
+
 export type CvTailorDraftEntry = {
   sectionId: string;
   sectionType: string;
@@ -1264,6 +1723,10 @@ export type CvTailorDraftEntry = {
   after: string;
   status: CvTailorDraftSectionStatus;
   changedFields: string[];
+  /** Single human line from backend — shown once in UI, not duplicated in changedFields. */
+  summary?: string | null;
+  /** Plain-text added/removed lines for diff UI (no cv-change-marker HTML). */
+  displayDiff?: TailorDisplayDiff;
   /** Phase 4 patch registry id when returned by tailor-draft. */
   patchId?: string | null;
 };
@@ -1283,6 +1746,8 @@ export type CvTailorDraft = {
   selectedSkills: string[];
   status: CvTailorDraftStatus;
   drafts: CvTailorDraftEntry[];
+  /** Section types included in this draft plan (stable after accept/reject). */
+  plannedSections?: string[];
   tailoredCvName?: string | null;
 };
 
@@ -1296,8 +1761,8 @@ export type JobHistoryItem = {
   id: string;
   jobTitle: string;
   company: string;
-  matchScore: number;
-  recommendation: string;
+  matchScore: number | null;
+  recommendation: string | null;
   createdAt: string;
   scoreBeforeTailoring: number | null;
   tailoredCvProfileId: string | null;
@@ -1336,6 +1801,9 @@ export type JobHistoryItem = {
   hasAnalysis?: boolean;
   analyzeSource?: string | null;
   savedVia?: string | null;
+  descriptionHighlights?: JobDescriptionHighlights | null;
+  companyLogoUrl: string | null;
+  companyLogoSource?: CompanyLogoSource | null;
 };
 
 /** Paginated `GET /jobs/history` (items + total for UI paging). */
@@ -1443,6 +1911,8 @@ export type JobAnalysisSummary = {
   jobListingSourceHash?: string | null;
   applyUrl?: string | null;
   recommendation?: string;
+  companyLogoUrl?: string | null;
+  companyLogoSource?: CompanyLogoSource | null;
 };
 
 /** Full analyzed job from GET /jobs/:jobId (form + analysis). */
@@ -1451,6 +1921,7 @@ export type JobDetailForForm = {
   company: string;
   description: string;
   analysis: JobAnalysis;
+  descriptionHighlights?: JobDescriptionHighlights | null;
   /** Resolved hub column from GET /jobs/:id. */
   hubPipelineStage?: HubPipelineStage;
   /** Embedded cover letter + answers when generated. */
@@ -1462,6 +1933,11 @@ export type JobDetailForForm = {
   tailorDraft?: CvTailorDraft | null;
   /** Pending hub CRM reminders for this analysis (server-filtered). */
   hubReminders?: HubReminderItem[];
+  pipelineStepper?: JobHubPipelineStepperPayload | null;
+  guidance?: JobHubGuidancePayload | null;
+  applicationAssist?: ApplicationItem['applicationAssist'];
+  companyLogoUrl?: string | null;
+  companyLogoSource?: CompanyLogoSource | null;
 };
 
 function normalizeJobDetailForForm(
@@ -1498,7 +1974,7 @@ function normalizeJobDetailForForm(
         : undefined);
   }
 
-  const desc =
+  let desc =
     typeof o.description === 'string'
       ? o.description
       : typeof o.jobDescription === 'string'
@@ -1506,6 +1982,31 @@ function normalizeJobDetailForForm(
         : typeof o.job_description === 'string'
           ? o.job_description
           : '';
+  if (!desc.trim() && nestedJob) {
+    desc =
+      (typeof nestedJob.description === 'string' ? nestedJob.description : '') ||
+      (typeof nestedJob.jobDescription === 'string'
+        ? nestedJob.jobDescription
+        : '') ||
+      (typeof nestedJob.job_description === 'string'
+        ? nestedJob.job_description
+        : '');
+  }
+  if (!desc.trim() && nestedAnalysis) {
+    desc =
+      (typeof nestedAnalysis.description === 'string'
+        ? nestedAnalysis.description
+        : '') ||
+      (typeof nestedAnalysis.jobDescription === 'string'
+        ? nestedAnalysis.jobDescription
+        : '') ||
+      (typeof nestedAnalysis.job_description === 'string'
+        ? nestedAnalysis.job_description
+        : '');
+  }
+  if (!desc.trim() && mergedSalary?.postingText?.trim()) {
+    desc = mergedSalary.postingText.trim();
+  }
   const na =
     nestedAnalysis !== null
       ? (nestedAnalysis as Record<string, unknown>)
@@ -1551,6 +2052,16 @@ function normalizeJobDetailForForm(
           .map((x) => normalizeHubReminderItem(x))
       : undefined;
 
+  const descriptionHighlights =
+    parseDescriptionHighlightsFromUnknown(
+      o.descriptionHighlights ??
+        o.description_highlights ??
+        nestedJob?.descriptionHighlights ??
+        nestedJob?.description_highlights ??
+        nestedAnalysis?.descriptionHighlights ??
+        nestedAnalysis?.description_highlights,
+    ) ?? undefined;
+
   const hubPipelineStage =
     parseHubPipelineStage(o.hubPipelineStage ?? o.hub_pipeline_stage) ??
     parseHubPipelineStage(o.status) ??
@@ -1578,11 +2089,19 @@ function normalizeJobDetailForForm(
     }
   }
 
+  const companyLogoUrl =
+    pickCompanyLogoUrl(o) ?? analysis.companyLogoUrl ?? null;
+  const companyLogoSource =
+    pickCompanyLogoSource(o) ?? analysis.companyLogoSource;
+
   return {
     title: (typeof o.title === 'string' ? o.title : analysis.title) ?? '',
     company:
       (typeof o.company === 'string' ? o.company : analysis.company) ?? '',
+    companyLogoUrl,
+    ...(companyLogoSource !== undefined ? { companyLogoSource } : {}),
     description: desc,
+    ...(descriptionHighlights !== undefined ? { descriptionHighlights } : {}),
     analysis: {
       ...analysis,
       id: analysis.id ?? (typeof o.id === 'string' ? o.id : fallbackId),
@@ -1613,6 +2132,14 @@ function normalizeJobDetailForForm(
     ...(hubPipelineStage ? { hubPipelineStage } : {}),
     ...(generatedContent ? { generatedContent } : {}),
     ...(hubRemindersParsed ? { hubReminders: hubRemindersParsed } : {}),
+    ...parseJobHubContextEnrichment(o),
+    ...(parseApplicationAssist(o.applicationAssist ?? o.application_assist)
+      ? {
+          applicationAssist: parseApplicationAssist(
+            o.applicationAssist ?? o.application_assist,
+          ),
+        }
+      : {}),
   };
 }
 
@@ -1674,6 +2201,7 @@ export interface JobListingDto {
   applicationId?: string;
   ranking?: JobListingRanking;
   explanation?: JobListingExplanation;
+  descriptionHighlights?: JobDescriptionHighlights | null;
 }
 
 /** Parsed from axios `response.data` after POST /job-discovery/:jobListingId/bookmark (top-level `success`, nested `data` row). */
@@ -1876,6 +2404,10 @@ export function normalizeJobListingDto(raw: unknown): JobListingDto {
     locationStrategyRaw === 'local' || locationStrategyRaw === 'remote_fallback'
       ? locationStrategyRaw
       : null;
+  const descriptionHighlights =
+    parseDescriptionHighlightsFromUnknown(
+      o.descriptionHighlights ?? o.description_highlights,
+    ) ?? undefined;
   return {
     id: String(o.id ?? ''),
     title: typeof o.title === 'string' ? o.title : '',
@@ -2051,6 +2583,7 @@ export function normalizeJobListingDto(raw: unknown): JobListingDto {
     ...(parseJobExplanation(o.explanation)
       ? { explanation: parseJobExplanation(o.explanation) }
       : {}),
+    ...(descriptionHighlights !== undefined ? { descriptionHighlights } : {}),
   };
 }
 
@@ -2211,6 +2744,13 @@ export type HubBookmarkItem = {
     missingFields: string[];
     suggestedNextStep?: string | null;
   };
+  /** False for bookmark-only extension saves that have a linked analysis row without AI scoring. */
+  hasAnalysis?: boolean;
+  descriptionHighlights?: JobDescriptionHighlights | null;
+  pipelineStepper?: JobHubPipelineStepperPayload | null;
+  guidance?: JobHubGuidancePayload | null;
+  companyLogoUrl: string | null;
+  companyLogoSource?: CompanyLogoSource | null;
 };
 
 export type HubGlobalNoteItem = {
@@ -2273,11 +2813,22 @@ function normalizeHubBookmarkItem(o: Record<string, unknown>): HubBookmarkItem {
   const applicationAssist = parseApplicationAssist(
     o.applicationAssist ?? o.application_assist,
   );
+  const hasAnalysisRaw = o.hasAnalysis ?? o.has_analysis;
+  const hasAnalysis =
+    typeof hasAnalysisRaw === 'boolean' ? hasAnalysisRaw : undefined;
+  const descriptionHighlights =
+    parseDescriptionHighlightsFromUnknown(
+      o.descriptionHighlights ?? o.description_highlights,
+    ) ?? undefined;
+  const companyLogoUrl = pickCompanyLogoUrl(o);
+  const companyLogoSource = pickCompanyLogoSource(o);
   return {
     id,
     jobListingId,
     title: typeof o.title === 'string' ? o.title : 'Untitled role',
     company: typeof o.company === 'string' ? o.company : '—',
+    companyLogoUrl,
+    ...(companyLogoSource !== undefined ? { companyLogoSource } : {}),
     descriptionSnippet:
       typeof o.descriptionSnippet === 'string'
         ? o.descriptionSnippet
@@ -2329,6 +2880,9 @@ function normalizeHubBookmarkItem(o: Record<string, unknown>): HubBookmarkItem {
         ? { reasonText: o.reason_text }
         : {}),
     ...(applicationAssist ? { applicationAssist } : {}),
+    ...(hasAnalysis !== undefined ? { hasAnalysis } : {}),
+    ...(descriptionHighlights !== undefined ? { descriptionHighlights } : {}),
+    ...parseJobHubContextEnrichment(o),
   };
 }
 
@@ -2383,9 +2937,38 @@ export type ApplicationItem = {
     missingFields: string[];
     suggestedNextStep?: string | null;
   };
+  staleApplicationNotice?: StaleApplicationNoticePayload | null;
+  hubPipelineStage?: HubPipelineStage;
+  pipelineStepper?: JobHubPipelineStepperPayload | null;
+  guidance?: JobHubGuidancePayload | null;
+  companyLogoUrl?: string | null;
+  companyLogoSource?: CompanyLogoSource | null;
 };
 
+export type { JobHubGuidancePayload, JobHubPipelineStepperPayload };
+
 export type JobSalaryEstimateSource = 'job_description' | 'ai_estimate';
+
+export type JobDescriptionHighlightTerm = {
+  text: string;
+  category?: string;
+  importance?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | string;
+};
+
+export type JobDescriptionHighlightSection = {
+  id: string;
+  title: string;
+  format: 'paragraph' | 'bullets' | string;
+  body?: string;
+  items?: string[];
+};
+
+export type JobDescriptionHighlights = {
+  terms: JobDescriptionHighlightTerm[];
+  sections: JobDescriptionHighlightSection[];
+  extractedAt?: string;
+  extractVersion?: number;
+};
 
 export type JobSalaryEstimate = {
   currency: string;
@@ -2395,6 +2978,8 @@ export type JobSalaryEstimate = {
   basis: string;
   confidence: 'high' | 'medium' | 'low';
   note: string;
+  /** Verbatim compensation phrase from the posting when available. */
+  postingText?: string;
   /** Primary provenance — drives badge + disclaimer. */
   source?: JobSalaryEstimateSource;
   sourceLabel?: string;
@@ -2410,6 +2995,29 @@ export type FollowUpEmailDraft = {
   subject: string;
   body: string;
 };
+
+/** POST …/email-templates/generate — draft plus optional refreshed hub enrichment. */
+export type FollowUpEmailTemplateGenerateResult = FollowUpEmailDraft &
+  JobHubContextEnrichment;
+
+function parseFollowUpEmailTemplateGenerateResult(
+  raw: unknown,
+): FollowUpEmailTemplateGenerateResult {
+  const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
+  const enrichment = parseJobHubContextEnrichment(body);
+  return {
+    subject: typeof body.subject === 'string' ? body.subject : '',
+    body:
+      typeof body.body === 'string'
+        ? body.body
+        : typeof body.emailBody === 'string'
+          ? body.emailBody
+          : typeof body.message === 'string'
+            ? body.message
+            : '',
+    ...enrichment,
+  };
+}
 
 export type ApplicationReminderStatus =
   | 'pending'
@@ -2611,10 +3219,11 @@ export type CvReorderSectionsResult = {
 
 /** POST /cv/profiles/:id/sections/batch-upsert — Phase 4 autosave body item. */
 export type CvBatchUpsertSectionInput = {
-  /** Existing section row UUID — required so batch-upsert updates in place (reorder + autosave). */
+  /** Existing section row UUID — required so batch-upsert updates in place. */
   id?: string;
   type: string;
-  order: number;
+  /** Only sent for new rows without `id`. Reorder uses PATCH …/sections/reorder. */
+  order?: number;
   visible: boolean;
   data: Record<string, unknown>;
 };
@@ -2877,6 +3486,14 @@ export type CvImprovementPartialMutationResult = CvTruthfulnessMeta &
   };
 
 /** ATS block nested under score `breakdown` when the API provides it. */
+export type AtsStructureIssue = {
+  type: string;
+  severity: 'high' | 'medium' | 'low' | string;
+  suggestion: string;
+  affectedSection?: string;
+};
+
+/** ATS block nested under score `breakdown` when the API provides it. */
 export type ATSCompatibility = {
   score: number;
   compatible: boolean;
@@ -2886,6 +3503,9 @@ export type ATSCompatibility = {
   methodologyNote?: string;
   /** Job-aware ATS simulation report; absent when job context is insufficient. */
   simulation?: AtsSimulationReport;
+  structureIssues?: AtsStructureIssue[];
+  structureScore?: number;
+  structurePassed?: boolean;
 };
 
 export type CareerStage = 'student' | 'early' | 'mid' | 'senior';
@@ -3265,10 +3885,14 @@ function normalizeApplicationItem(raw: unknown): ApplicationItem {
   const applicationAssist = parseApplicationAssist(
     o.applicationAssist ?? o.application_assist,
   );
+  const companyLogoUrl = pickCompanyLogoUrl(o);
+  const companyLogoSource = pickCompanyLogoSource(o);
   return {
     id: String(o.id ?? ''),
     title: String(o.title ?? 'Untitled role'),
     company: String(o.company ?? 'Unknown company'),
+    companyLogoUrl,
+    ...(companyLogoSource !== undefined ? { companyLogoSource } : {}),
     url: typeof o.url === 'string' ? o.url : undefined,
     matchScore:
       typeof o.matchScore === 'number' && Number.isFinite(o.matchScore)
@@ -3301,6 +3925,19 @@ function normalizeApplicationItem(raw: unknown): ApplicationItem {
           ? o.reason_text
           : undefined,
     ...(applicationAssist ? { applicationAssist } : {}),
+    staleApplicationNotice: pickStaleApplicationNotice(
+      o.staleApplicationNotice ?? o.stale_application_notice,
+    ),
+    ...(() => {
+      const hubPipelineStage = parseHubPipelineStage(
+        o.hubPipelineStage ?? o.hub_pipeline_stage,
+      );
+      const enrichment = parseJobHubContextEnrichment(o);
+      return {
+        ...(hubPipelineStage ? { hubPipelineStage } : {}),
+        ...enrichment,
+      };
+    })(),
   };
 }
 
@@ -3869,9 +4506,21 @@ function hybridFieldsForCvScore(
 function normalizeCVScore(raw: unknown): CVScorePayload {
   const body = unwrapApiDataEnvelope(raw);
   const o = body as Record<string, unknown>;
-  const rawScore = o.score ?? o.overallScore ?? o.cvScore ?? o.value ?? o.overall;
   const breakdown = pickCvScoreBreakdown(o);
   const hybridFields = hybridFieldsForCvScore(o, breakdown);
+  const breakdownOverall =
+    breakdown && typeof breakdown.overall === 'number'
+      ? breakdown.overall
+      : breakdown && typeof breakdown.overallScore === 'number'
+        ? breakdown.overallScore
+        : undefined;
+  const rawScore =
+    o.score ??
+    o.overallScore ??
+    o.cvScore ??
+    o.value ??
+    o.overall ??
+    breakdownOverall;
   if (rawScore === null || rawScore === undefined) {
     const improvements = normalizeCVImprovementsFromDetailedEnvelope(raw);
     return {
@@ -4546,6 +5195,19 @@ export function normalizeTailorMutationResponse(
   };
 }
 
+function parseTailorDisplayDiff(raw: unknown): TailorDisplayDiff | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const added = Array.isArray(o.added)
+    ? o.added.filter((x): x is string => typeof x === 'string' && Boolean(x.trim()))
+    : [];
+  const removed = Array.isArray(o.removed)
+    ? o.removed.filter((x): x is string => typeof x === 'string' && Boolean(x.trim()))
+    : [];
+  if (added.length === 0 && removed.length === 0) return undefined;
+  return { added, removed };
+}
+
 function normalizeCvTailorDraft(raw: unknown): CvTailorDraft {
   const body = unwrapApiDataEnvelope(raw);
   /** Some stacks double-wrap `{ success, data: { data: draft } }` after a proxy. */
@@ -4584,16 +5246,26 @@ function normalizeCvTailorDraft(raw: unknown): CvTailorDraft {
           : null;
       const sectionId = String(d.sectionId ?? d.section_id ?? '').trim();
       const sectionType = String(d.sectionType ?? d.section_type ?? '').trim();
+      const summaryRaw = d.summary;
+      const summary =
+        typeof summaryRaw === 'string' && summaryRaw.trim() ? summaryRaw.trim() : null;
+      const displayDiff = parseTailorDisplayDiff(d.displayDiff ?? d.display_diff);
       return {
         sectionId,
         sectionType,
-        before: coerceAiPatchSectionBlob(d.before, sectionType),
-        after: coerceAiPatchSectionBlob(d.after, sectionType),
+        before: preserveTailorSectionBlob(d.before, sectionType),
+        after: preserveTailorSectionBlob(d.after, sectionType),
         status,
         changedFields: cf,
+        summary,
+        ...(displayDiff ? { displayDiff } : {}),
         patchId,
       };
     });
+  const plannedRaw = row.plannedSections ?? row.planned_sections;
+  const plannedSections = Array.isArray(plannedRaw)
+    ? plannedRaw.filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+    : undefined;
   const top = row.status;
   const status: CvTailorDraftStatus =
     top === 'pending' || top === 'partially_accepted' || top === 'completed'
@@ -4616,6 +5288,7 @@ function normalizeCvTailorDraft(raw: unknown): CvTailorDraft {
     selectedSkills: skills,
     status,
     drafts,
+    ...(plannedSections?.length ? { plannedSections } : {}),
     tailoredCvName,
   };
 }
@@ -6604,20 +7277,27 @@ function normalizeJobHistoryItem(raw: unknown): JobHistoryItem {
     '';
   const company = typeof o.company === 'string' ? o.company : '';
   const rawScore = o.matchScore ?? o.score ?? o.match_score;
-  const n =
-    typeof rawScore === 'number'
-      ? rawScore
-      : typeof rawScore === 'string'
-        ? parseFloat(rawScore)
-        : Number(rawScore);
-  const matchScore = Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0;
+  let matchScore: number | null = null;
+  if (rawScore !== null && rawScore !== undefined) {
+    const n =
+      typeof rawScore === 'number'
+        ? rawScore
+        : typeof rawScore === 'string'
+          ? parseFloat(rawScore)
+          : Number(rawScore);
+    if (Number.isFinite(n)) {
+      matchScore = Math.max(0, Math.min(100, n));
+    }
+  }
   const rec = o.recommendation;
   const recommendation =
-    typeof rec === 'string'
-      ? rec
-      : rec != null && typeof rec === 'object'
-        ? JSON.stringify(rec)
-        : '';
+    rec === null || rec === undefined
+      ? null
+      : typeof rec === 'string'
+        ? rec
+        : rec != null && typeof rec === 'object'
+          ? JSON.stringify(rec)
+          : null;
   const createdAt =
     typeof o.createdAt === 'string'
       ? o.createdAt
@@ -6688,13 +7368,7 @@ function normalizeJobHistoryItem(raw: unknown): JobHistoryItem {
   const applyUrlHist = pickApplyUrlFromRecord(o);
   const hasAnalysisRaw = o.hasAnalysis ?? o.has_analysis;
   const hasAnalysis =
-    typeof hasAnalysisRaw === 'boolean'
-      ? hasAnalysisRaw
-      : typeof o.analyzeSource === 'string' && o.analyzeSource.trim()
-        ? true
-        : typeof o.analyze_source === 'string' && o.analyze_source.trim()
-          ? true
-          : undefined;
+    typeof hasAnalysisRaw === 'boolean' ? hasAnalysisRaw : undefined;
   const analyzeSource =
     typeof o.analyzeSource === 'string'
       ? o.analyzeSource
@@ -6707,6 +7381,12 @@ function normalizeJobHistoryItem(raw: unknown): JobHistoryItem {
       : typeof o.saved_via === 'string'
         ? o.saved_via
         : null;
+  const descriptionHighlights =
+    parseDescriptionHighlightsFromUnknown(
+      o.descriptionHighlights ?? o.description_highlights,
+    ) ?? undefined;
+  const companyLogoUrl = pickCompanyLogoUrl(o);
+  const companyLogoSource = pickCompanyLogoSource(o);
   return {
     id,
     jobTitle,
@@ -6757,6 +7437,9 @@ function normalizeJobHistoryItem(raw: unknown): JobHistoryItem {
     jobDescription:
       typeof o.jobDescription === 'string' ? o.jobDescription : undefined,
     salaryEstimate,
+    ...(descriptionHighlights !== undefined ? { descriptionHighlights } : {}),
+    companyLogoUrl,
+    ...(companyLogoSource !== undefined ? { companyLogoSource } : {}),
   };
 }
 
@@ -7323,12 +8006,34 @@ const jobs = {
   patchPipeline: async (
     jobAnalysisId: string,
     payload: { stage: HubPipelineStage },
-  ): Promise<void> => {
+  ): Promise<JobHubContextEnrichment> => {
     const res = await axiosClient.patch<unknown>(
       `/jobs/${encodeURIComponent(jobAnalysisId)}/pipeline`,
       payload,
     );
     throwIfApiFailureResponse(res.data, res.status);
+    const body = unwrapApiDataEnvelope(res.data);
+    const o =
+      body !== null && typeof body === 'object' && !Array.isArray(body)
+        ? (body as Record<string, unknown>)
+        : {};
+    return parseJobHubContextEnrichment(o);
+  },
+  patchHubGuidance: async (payload: {
+    taskId: string;
+    userCompleted: boolean;
+    timezone?: string;
+    jobAnalysisId?: string;
+    bookmarkId?: string;
+  }): Promise<JobHubGuidancePayload> => {
+    const res = await axiosClient.patch<unknown>('/jobs/job-hub/guidance', payload);
+    throwIfApiFailureResponse(res.data, res.status);
+    const body = unwrapApiDataEnvelope(res.data);
+    const guidance = parseJobHubGuidance(body.guidance ?? body);
+    if (!guidance) {
+      throw new Error('Invalid guidance response');
+    }
+    return guidance;
   },
   /**
    * Optional: same contract as `applications.generateEmailTemplate` when there is no application row.
@@ -7337,24 +8042,13 @@ const jobs = {
   generateEmailTemplate: async (
     jobId: string,
     payload: { templateType: string; extraContext?: string },
-  ): Promise<FollowUpEmailDraft> => {
+  ): Promise<FollowUpEmailTemplateGenerateResult> => {
     const res = await axiosClient.post<unknown>(
       `/jobs/${encodeURIComponent(jobId)}/email-templates/generate`,
       payload,
     );
     throwIfApiFailureResponse(res.data, res.status);
-    const body = unwrapApiDataEnvelope(res.data) as Record<string, unknown>;
-    return {
-      subject: typeof body.subject === 'string' ? body.subject : '',
-      body:
-        typeof body.body === 'string'
-          ? body.body
-          : typeof body.emailBody === 'string'
-            ? body.emailBody
-            : typeof body.message === 'string'
-              ? body.message
-              : '',
-    };
+    return parseFollowUpEmailTemplateGenerateResult(res.data);
   },
   /** GET /jobs/:jobId/notes — jobId is JobAnalysis id; newest first. */
   listNotes: async (jobId: string): Promise<HubNoteEntry[]> => {
@@ -7935,7 +8629,18 @@ const applications = {
     /** Links the tracker row to JobAnalysis — required for dashboard proactive interview prep. */
     jobAnalysisId?: string;
   }) => {
-    const res = await axiosClient.post<unknown>('/applications', payload);
+    const body: Record<string, unknown> = {
+      title: payload.title,
+      company: payload.company,
+    };
+    if (payload.url?.trim()) body.url = payload.url.trim();
+    if (payload.status) body.status = payload.status;
+    if (payload.notes?.trim()) body.notes = payload.notes.trim();
+    if (payload.jobAnalysisId?.trim()) body.jobAnalysisId = payload.jobAnalysisId.trim();
+    if (typeof payload.matchScore === 'number' && Number.isFinite(payload.matchScore)) {
+      body.matchScore = Math.max(0, Math.round(payload.matchScore));
+    }
+    const res = await axiosClient.post<unknown>('/applications', body);
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeApplicationItem(res.data);
   },
@@ -7944,6 +8649,13 @@ const applications = {
     throwIfApiFailureResponse(res.data, res.status);
     const raw = unwrapApiDataEnvelope(res.data);
     return ensureArray<unknown>(raw).map(normalizeApplicationItem);
+  },
+  getById: async (id: string) => {
+    const res = await axiosClient.get<unknown>(
+      `/applications/${encodeURIComponent(id)}`,
+    );
+    throwIfApiFailureResponse(res.data, res.status);
+    return normalizeApplicationItem(res.data);
   },
   updateStatus: async (
     id: string,
@@ -7979,6 +8691,22 @@ const applications = {
     });
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeApplicationItem(res.data);
+  },
+  patchGuidance: async (
+    applicationId: string,
+    payload: { taskId: string; userCompleted: boolean; timezone?: string },
+  ): Promise<JobHubGuidancePayload> => {
+    const res = await axiosClient.patch<unknown>(
+      `/applications/${encodeURIComponent(applicationId)}/guidance`,
+      payload,
+    );
+    throwIfApiFailureResponse(res.data, res.status);
+    const body = unwrapApiDataEnvelope(res.data);
+    const guidance = parseJobHubGuidance(body.guidance ?? body);
+    if (!guidance) {
+      throw new Error('Invalid guidance response');
+    }
+    return guidance;
   },
   listNotes: async (applicationId: string): Promise<HubNoteEntry[]> => {
     const res = await axiosClient.get<unknown>(
@@ -8047,24 +8775,13 @@ const applications = {
       jobAnalysisId?: string | null;
       extraContext?: string;
     },
-  ): Promise<FollowUpEmailDraft> => {
+  ): Promise<FollowUpEmailTemplateGenerateResult> => {
     const res = await axiosClient.post<unknown>(
       `/applications/${encodeURIComponent(id)}/email-templates/generate`,
       payload,
     );
     throwIfApiFailureResponse(res.data, res.status);
-    const body = unwrapApiDataEnvelope(res.data) as Record<string, unknown>;
-    return {
-      subject: typeof body.subject === 'string' ? body.subject : '',
-      body:
-        typeof body.body === 'string'
-          ? body.body
-          : typeof body.emailBody === 'string'
-            ? body.emailBody
-            : typeof body.message === 'string'
-              ? body.message
-              : '',
-    };
+    return parseFollowUpEmailTemplateGenerateResult(res.data);
   },
   /**
    * Schedule a reminder (email + in-app notification at remindAt).
@@ -8323,6 +9040,78 @@ const dashboard = {
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeDashboardFocus(res.data);
   },
+  getInterviewPrep: async (params?: {
+    cvProfileId?: string;
+    timezone?: string;
+    locale?: string;
+    focusFeedMaxItems?: number;
+  }) => {
+    const ffm =
+      typeof params?.focusFeedMaxItems === 'number' &&
+      Number.isFinite(params.focusFeedMaxItems) &&
+      params.focusFeedMaxItems >= 1 &&
+      params.focusFeedMaxItems <= 100
+        ? Math.round(params.focusFeedMaxItems)
+        : undefined;
+    const res = await axiosClient.get<unknown>('/dashboard/interview-prep', {
+      params: {
+        ...(params?.cvProfileId ? { cvProfileId: params.cvProfileId } : {}),
+        ...(params?.timezone ? { timezone: params.timezone } : {}),
+        ...(params?.locale ? { locale: params.locale } : {}),
+        ...(ffm != null ? { focusFeedMaxItems: ffm } : {}),
+      },
+    });
+    throwIfApiFailureResponse(res.data, res.status);
+    return normalizeDashboardInterviewPrep(res.data);
+  },
+  getFollowUpJobs: async (params?: {
+    cvProfileId?: string;
+    timezone?: string;
+    locale?: string;
+    focusFeedMaxItems?: number;
+  }) => {
+    const ffm =
+      typeof params?.focusFeedMaxItems === 'number' &&
+      Number.isFinite(params.focusFeedMaxItems) &&
+      params.focusFeedMaxItems >= 1 &&
+      params.focusFeedMaxItems <= 100
+        ? Math.round(params.focusFeedMaxItems)
+        : undefined;
+    const res = await axiosClient.get<unknown>('/dashboard/follow-up-jobs', {
+      params: {
+        ...(params?.cvProfileId ? { cvProfileId: params.cvProfileId } : {}),
+        ...(params?.timezone ? { timezone: params.timezone } : {}),
+        ...(params?.locale ? { locale: params.locale } : {}),
+        ...(ffm != null ? { focusFeedMaxItems: ffm } : {}),
+      },
+    });
+    throwIfApiFailureResponse(res.data, res.status);
+    return normalizeDashboardFollowUpJobs(res.data);
+  },
+  getQuietApplications: async (params?: {
+    cvProfileId?: string;
+    timezone?: string;
+    locale?: string;
+    focusFeedMaxItems?: number;
+  }) => {
+    const ffm =
+      typeof params?.focusFeedMaxItems === 'number' &&
+      Number.isFinite(params.focusFeedMaxItems) &&
+      params.focusFeedMaxItems >= 1 &&
+      params.focusFeedMaxItems <= 100
+        ? Math.round(params.focusFeedMaxItems)
+        : undefined;
+    const res = await axiosClient.get<unknown>('/dashboard/quiet-applications', {
+      params: {
+        ...(params?.cvProfileId ? { cvProfileId: params.cvProfileId } : {}),
+        ...(params?.timezone ? { timezone: params.timezone } : {}),
+        ...(params?.locale ? { locale: params.locale } : {}),
+        ...(ffm != null ? { focusFeedMaxItems: ffm } : {}),
+      },
+    });
+    throwIfApiFailureResponse(res.data, res.status);
+    return normalizeDashboardQuietApplications(res.data);
+  },
   getWeeklyStallSummary: async (params?: { limit?: number }) => {
     const limit = clampWeeklyStallLimit(params?.limit);
     const res = await axiosClient.get<unknown>(
@@ -8383,16 +9172,21 @@ const dashboard = {
       jobListingIds.length === 0
     )
       return null;
-    const res = await axiosClient.post<unknown>(
-      '/dashboard/next-action-prefetch',
-      {
-        ...(priorityIds.length > 0 ? { priorityIds } : {}),
-        ...(jobAnalysisIds.length > 0 ? { jobAnalysisIds } : {}),
-        ...(jobListingIds.length > 0 ? { jobListingIds } : {}),
-      },
-    );
-    throwIfApiFailureResponse(res.data, res.status);
-    return unwrapApiDataEnvelope(res.data);
+    try {
+      const res = await axiosClient.post<unknown>(
+        '/dashboard/next-action-prefetch',
+        {
+          ...(priorityIds.length > 0 ? { priorityIds } : {}),
+          ...(jobAnalysisIds.length > 0 ? { jobAnalysisIds } : {}),
+          ...(jobListingIds.length > 0 ? { jobListingIds } : {}),
+        },
+      );
+      throwIfApiFailureResponse(res.data, res.status);
+      return unwrapApiDataEnvelope(res.data);
+    } catch {
+      // Best-effort warm cache — do not surface when API is down or proxy resets.
+      return null;
+    }
   },
 };
 

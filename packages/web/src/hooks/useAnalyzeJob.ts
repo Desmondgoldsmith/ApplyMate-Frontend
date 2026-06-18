@@ -20,6 +20,7 @@ export function useAnalyzeJob() {
         id: `optimistic-${Date.now()}`,
         jobTitle: input.title ?? '',
         company: input.company ?? '',
+        companyLogoUrl: null,
         matchScore: 0,
         recommendation: '',
         createdAt: new Date().toISOString(),

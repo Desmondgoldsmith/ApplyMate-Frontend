@@ -11,7 +11,7 @@ export function useDashboardTodayPlanQuery() {
   const searchParams = useSearchParams();
   const includeHiddenDashboardCards =
     searchParams.get('includeHiddenDashboardCards') === 'true';
-  const { displayRows } = useCvProfileRowsDisplay();
+  const { displayRows, isBootstrapping } = useCvProfileRowsDisplay();
   const defaultProfile = useMemo(
     () => displayRows.find((p) => p.isDefault) ?? displayRows[0] ?? null,
     [displayRows],
@@ -28,5 +28,6 @@ export function useDashboardTodayPlanQuery() {
     cvProfileId: defaultProfile?.id ?? null,
     timezone: browserTz,
     includeHiddenDashboardCards,
+    enabled: !isBootstrapping,
   });
 }

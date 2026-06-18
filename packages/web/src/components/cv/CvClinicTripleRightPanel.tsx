@@ -33,6 +33,7 @@ export type CvClinicTripleRightPanelProps = {
   onTripleRightTabChange: (tab: CvClinicTripleRightTab) => void;
   scoreCardMode: 'compact' | 'full';
   scoreLoading: boolean;
+  scoreRefreshing?: boolean;
   scoreValue: number | null | undefined;
   scoreBreakdown?: unknown;
   scorePayload?: CVScorePayload | null;
@@ -82,6 +83,7 @@ function CvClinicTripleRightPanelInner({
   onTripleRightTabChange,
   scoreCardMode,
   scoreLoading,
+  scoreRefreshing = false,
   scoreValue,
   scoreBreakdown,
   scorePayload,
@@ -208,7 +210,11 @@ function CvClinicTripleRightPanelInner({
           <div className="space-y-3 px-3">
             {!scoreLoading ? (
               scoreValue !== null && scoreValue !== undefined ? (
-                <CVScoreCard
+                <div className="space-y-2">
+                  {scoreRefreshing ? (
+                    <p className="text-[10px] font-medium text-white/40">Updating score…</p>
+                  ) : null}
+                  <CVScoreCard
                   mode={scoreCardMode}
                   score={scoreValue}
                   breakdown={scoreBreakdown as never}
@@ -220,6 +226,7 @@ function CvClinicTripleRightPanelInner({
                   hideJobMatch
                   onAtsKeywordAssist={onAtsKeywordAssist}
                 />
+                </div>
               ) : (
                 <Button
                   type="button"

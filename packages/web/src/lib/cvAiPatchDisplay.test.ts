@@ -55,8 +55,8 @@ describe('cvAiPatchDisplay', () => {
         {
           fieldPath: 'summary.text',
           field: 'Summary',
-          before: { action: 'replace', field: 'summary', oldValue: 'Old' },
-          after: { action: 'replace', field: 'summary', value: 'New' },
+          before: 'Old',
+          after: 'New',
           type: 'changed',
         },
       ],

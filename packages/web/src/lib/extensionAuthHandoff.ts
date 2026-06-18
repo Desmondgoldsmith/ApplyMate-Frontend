@@ -48,7 +48,7 @@ function readChromeRuntime(): ChromeRuntime | null {
   if (typeof window === 'undefined') return null;
   const runtime = (window as Window & { chrome?: { runtime?: ChromeRuntime } }).chrome
     ?.runtime;
-  return runtime?.sendMessage ? runtime : null;
+  return runtime ?? null;
 }
 
 /** After web login, mint and pass extension JWT when ?source=extension. */

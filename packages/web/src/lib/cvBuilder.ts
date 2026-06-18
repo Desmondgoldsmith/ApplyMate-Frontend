@@ -9,6 +9,7 @@ import {
 import { normalizeProfessionalHeadlineTitle } from '@/lib/infer-cv-profile-name';
 import { isPayloadTooLargeError } from '@/lib/axios';
 import { logCvDevPerf } from '@/lib/cvDevPerf';
+import { richTextPlainText } from '@/lib/cvRichTextCore';
 import { normalizeText } from '@/lib/normalizeText';
 
 /** --- CV layout keys (keep in sync across builder, preview, onboarding, API) --- */
@@ -369,7 +370,10 @@ export function coerceStructuredTextInCvBuilderData(data: CVBuilderData): CVBuil
       categories: base.skills.categories.map((c) => ({
         ...c,
         name: normalizeText(c.name as unknown),
-        skills: (Array.isArray(c.skills) ? c.skills : []).map((s) => normalizeText(s as unknown)),
+        skills: (Array.isArray(c.skills) ? c.skills : []).map((s) => {
+          const normalized = normalizeText(s as unknown);
+          return richTextPlainText(normalized) || normalized;
+        }),
       })),
     },
     projects: base.projects.map((p) => ({
@@ -2021,6 +2025,13 @@ export function logCvBuilderSavePerfDev(
   }
 }
 
+function normalizeSectionOrder(order: unknown): number {
+  if (order == null || order === '') return 0;
+  const n = typeof order === 'number' ? order : typeof order === 'string' ? parseFloat(order) : NaN;
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.round(n));
+}
+
 function buildCvBuilderBatchSectionEntries(
   data: CVBuilderData,
   template: CvTemplateId | undefined,
@@ -2030,10 +2041,16 @@ function buildCvBuilderBatchSectionEntries(
   const pushEntry = (type: string, payload: Record<string, unknown>, opts?: { includeWhenEmpty?: boolean }) => {
     if (!opts?.includeWhenEmpty && Object.keys(payload).length === 0) return;
     const row = findSectionByTypeLoose(mutable, type);
-    const order = row?.order ?? nextOrder(mutable);
+    const order = normalizeSectionOrder(row?.order ?? nextOrder(mutable));
     const visible = row ? row.hidden !== true : true;
     const id = row?.id?.trim() || undefined;
-    entries.push({ id, type: type.toLowerCase(), order, visible, data: payload });
+    entries.push({
+      id,
+      type: type.toLowerCase(),
+      order,
+      visible,
+      data: payload,
+    });
   };
 
   pushEntry('summary', { text: data.summary.text });
@@ -2099,13 +2116,17 @@ function buildCvBuilderBatchSectionEntries(
     entries.push({
       id: row.id?.trim() || undefined,
       type: row.type.toLowerCase(),
-      order: row.order ?? nextOrder(mutable),
+      order: normalizeSectionOrder(row.order ?? nextOrder(mutable)),
       visible: row.hidden !== true,
       data: payload,
     });
   }
 
-  entries.sort((a, b) => a.order - b.order || a.type.localeCompare(b.type));
+  entries.sort((a, b) => {
+    const ao = a.order ?? 0;
+    const bo = b.order ?? 0;
+    return ao - bo || a.type.localeCompare(b.type);
+  });
   return entries;
 }
 

@@ -23,7 +23,7 @@
     {
       "matches": ["<all_urls>"],
       "js": ["src/content/detector.ts", "src/content/job-bridge.ts"],
-      "run_at": "document_idle"
+      "run_at": "document_start"
     }
   ],
   "side_panel": {
@@ -47,5 +47,11 @@
       "http://localhost:3000/*",
       "http://localhost:3001/*"
     ]
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*", "icons/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }

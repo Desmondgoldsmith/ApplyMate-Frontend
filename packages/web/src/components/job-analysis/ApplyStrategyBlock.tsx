@@ -15,7 +15,7 @@ const STRATEGY_COPY: Record<
 > = {
   APPLY_NOW: {
     primary: 'Apply now',
-    detail: 'Your profile is competitive — prioritize this application.',
+    detail: 'Your profile is competitive. Prioritize this application.',
   },
   TAILOR_FIRST: {
     primary: 'Tailor first',
@@ -55,7 +55,7 @@ export function ApplyStrategyBlock({
   const copy = isTailored && displayStrategy === 'TAILOR_FIRST'
     ? {
         primary: 'Apply now',
-        detail: 'You have tailored your CV for this role — apply when you are ready.',
+        detail: 'You have tailored your CV for this role. Apply when you are ready.',
       }
     : STRATEGY_COPY[displayStrategy];
 

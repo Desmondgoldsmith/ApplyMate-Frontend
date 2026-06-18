@@ -12,10 +12,10 @@ export function useAnalytics() {
     /** Scope per auth session to avoid stale cross-account analytics. */
     queryKey: queryKeys.analytics.root(accessToken ?? ''),
     queryFn: api.analytics.getOverview,
-    staleTime: 0,
+    staleTime: 60_000,
     gcTime: 5 * 60_000,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: 'always',
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
     enabled: Boolean(accessToken),
   });
 }

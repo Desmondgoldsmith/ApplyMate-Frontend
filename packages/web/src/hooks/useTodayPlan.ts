@@ -11,6 +11,7 @@ export function useTodayPlan(params: {
   includeHiddenDashboardCards?: boolean;
   /** Optional focus feed cap (1–100) on GET /dashboard/today-plan. */
   focusFeedMaxItems?: number;
+  enabled?: boolean;
 }) {
   const cv = (params.cvProfileId ?? '').trim() || undefined;
   const tz = (params.timezone ?? 'UTC').trim() || 'UTC';
@@ -37,9 +38,10 @@ export function useTodayPlan(params: {
         ...(ffm != null ? { focusFeedMaxItems: ffm } : {}),
       }),
     /** Fresh counts (pipeline snapshot, digest) when returning from Job Hub / interviews — client navigation does not refocus the window. */
-    staleTime: 0,
+    staleTime: 60_000,
     gcTime: 5 * 60_000,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: 'always',
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    enabled: params.enabled !== false,
   });
 }

@@ -75,8 +75,8 @@ export function AiRecruiterReportSection({
               {loading
                 ? 'Generating deep analysis…'
                 : hasReport
-                  ? 'Verdict, axes, and attack plan — expand to review'
-                  : 'Report missing for this save — expand for details'}
+                  ? 'Verdict, axes, and attack plan. Expand to review.'
+                  : 'Report missing for this save. Expand for details.'}
             </p>
           </div>
         </div>

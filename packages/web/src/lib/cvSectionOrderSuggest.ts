@@ -198,6 +198,26 @@ export function changeBySectionId(
   return changes.find((c) => c.sectionId === sectionId);
 }
 
+/** Visible section row ids in persisted order. */
+export function currentVisibleSectionOrderIds(sections: CVSectionRecord[]): string[] {
+  return [...sections]
+    .filter((s) => s.hidden !== true)
+    .sort((a, b) => (a.order !== b.order ? a.order - b.order : a.id.localeCompare(b.id)))
+    .map((s) => s.id);
+}
+
+/** True when visible rows already match the server's suggested order. */
+export function sectionOrderMatchesSuggested(
+  sections: CVSectionRecord[],
+  suggestedOrder: string[],
+): boolean {
+  if (!suggestedOrder.length || !sections.length) return false;
+  const current = currentVisibleSectionOrderIds(sections);
+  const { visible } = splitSuggestedOrder(current, suggestedOrder);
+  if (visible.length !== current.length) return false;
+  return visible.every((id, index) => current[index] === id);
+}
+
 /** True when visible section rows are not in canonical professional type order. */
 export function sectionsOrderIsSuboptimal(sections: CVSectionRecord[]): boolean {
   const visible = [...sections]
@@ -269,7 +289,14 @@ export function mergeSectionOrderSuggestWithClientFallback(
 ): CvSectionOrderSuggestResult | null {
   const client = buildClientSectionOrderSuggest(sections);
   if (!apiResult) return client;
-  if (apiResult.isOptimal && client) return client;
+  if (apiResult.isOptimal) return apiResult;
+  if (sectionOrderMatchesSuggested(sections, apiResult.suggestedOrder)) {
+    return {
+      ...apiResult,
+      isOptimal: true,
+      showProactiveSuggestion: false,
+    };
+  }
   if (!apiResult.isOptimal) return apiResult;
-  return apiResult;
+  return client ?? apiResult;
 }

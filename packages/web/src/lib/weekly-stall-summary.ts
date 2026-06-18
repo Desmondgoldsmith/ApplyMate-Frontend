@@ -1,3 +1,4 @@
+import { pickCompanyLogoUrl } from '@/lib/companyLogo';
 import { queryKeys } from '@/lib/queryKeys';
 
 import type { TodayPlanCta } from './today-plan';
@@ -27,6 +28,7 @@ export type WeeklyStallSummaryItem = {
   kind: WeeklyStallItemKind;
   title: string;
   company: string;
+  companyLogoUrl?: string | null;
   stage?: string | null;
   applicationId?: string | null;
   jobAnalysisId?: string | null;
@@ -124,6 +126,7 @@ function pickItem(raw: unknown): WeeklyStallSummaryItem | null {
     kind,
     title,
     company,
+    companyLogoUrl: pickCompanyLogoUrl(o),
     stage: o.stage === null ? null : pickStr(o, 'stage') ?? null,
     applicationId: ids.applicationId,
     jobAnalysisId: ids.jobAnalysisId,

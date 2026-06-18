@@ -4,6 +4,7 @@ import { CircleDollarSign } from 'lucide-react';
 
 import type { JobSalaryEstimate } from '@/lib/api';
 import {
+  formatSalaryPostingExcerpt,
   formatSalaryRange,
   isLowConfidenceAiEstimate,
   resolveSalaryEstimateSource,
@@ -31,6 +32,8 @@ export function JobSalaryEstimatePanel({
   const disclaimer = estimate.disclaimer?.trim() ?? '';
   const note = estimate.note?.trim() ?? '';
   const market = estimate.marketLocation?.trim() ?? '';
+  const rangeHeadline = formatSalaryRange(estimate);
+  const postingExcerpt = formatSalaryPostingExcerpt(estimate);
 
   if (variant === 'compact') {
     return (
@@ -47,11 +50,11 @@ export function JobSalaryEstimatePanel({
         </span>
         <p
           className={cn(
-            'text-xs text-white/70',
+            'text-xs font-medium text-white/80',
             lowConfidence && 'text-white/45',
           )}
         >
-          {formatSalaryRange(estimate)}
+          {rangeHeadline}
         </p>
       </div>
     );
@@ -93,12 +96,27 @@ export function JobSalaryEstimatePanel({
 
       <p
         className={cn(
-          'mt-3 text-[22px] font-bold leading-tight',
+          'mt-3 text-lg font-semibold leading-snug tracking-tight sm:text-xl',
           lowConfidence ? 'text-white/55' : 'text-white',
         )}
       >
-        {formatSalaryRange(estimate)}
+        {rangeHeadline}
       </p>
+
+      {postingExcerpt ? (
+        <blockquote
+          className={cn(
+            'mt-3 border-l-2 pl-3.5 text-[13px] leading-relaxed text-white/65',
+            fromPosting ? 'border-emerald-500/35' : 'border-amber-500/35',
+          )}
+        >
+          {postingExcerpt}
+        </blockquote>
+      ) : null}
+
+      {note ? (
+        <p className="mt-3 text-[12px] leading-relaxed text-white/50">{note}</p>
+      ) : null}
 
       {disclaimer ? (
         <p
@@ -111,10 +129,6 @@ export function JobSalaryEstimatePanel({
         >
           {disclaimer}
         </p>
-      ) : null}
-
-      {note ? (
-        <p className="mt-3 text-[12px] leading-relaxed text-white/50">{note}</p>
       ) : null}
 
       {!fromPosting && market ? (

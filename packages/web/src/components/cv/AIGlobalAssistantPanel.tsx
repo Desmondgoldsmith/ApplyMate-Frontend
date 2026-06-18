@@ -51,6 +51,8 @@ export type AIGlobalAssistantPanelProps = {
   ) => Promise<void>;
   seedCommand?: string | null;
   onSeedCommandConsumed?: () => void;
+  /** When set (desktop), shift FAB left of a right sidebar (% of viewport). */
+  fabRightOffsetPct?: number | null;
 };
 
 export function AIGlobalAssistantPanel({
@@ -64,6 +66,7 @@ export function AIGlobalAssistantPanel({
   onSubmit,
   seedCommand = null,
   onSeedCommandConsumed,
+  fabRightOffsetPct = null,
 }: AIGlobalAssistantPanelProps) {
   const desktopLg = useDesktopLgMedia();
   const { navBottomOffset } = useMobileShell();
@@ -135,7 +138,10 @@ export function AIGlobalAssistantPanel({
             desktopLg
               ? {
                   bottom: '0.75rem',
-                  right: 'clamp(5.5rem, 22vw, 17.5rem)',
+                  right:
+                    fabRightOffsetPct != null && Number.isFinite(fabRightOffsetPct)
+                      ? `calc(${fabRightOffsetPct}% + 1rem)`
+                      : 'clamp(5.5rem, 22vw, 17.5rem)',
                   transform: `translate3d(${drag.offset.x}px, ${drag.offset.y}px, 0)`,
                 }
               : {

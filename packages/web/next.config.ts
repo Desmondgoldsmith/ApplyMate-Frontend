@@ -17,6 +17,15 @@ import { resolveSentryRelease } from './sentry.shared.config';
 const nextConfig: NextConfig = {
   /** Compile the shared workspace package from source (no pre-build step). */
   transpilePackages: ['@applymate/shared'],
+
+  /**
+   * Dev browser API uses `/backend-api/*` → `src/app/backend-api/[...path]/route.ts`
+   * (timeout + clean 502 JSON). Do not rewrite here — Next rewrites log noisy ECONNRESET
+   * when Nest hangs or restarts mid-request.
+   */
+  async rewrites() {
+    return [];
+  },
 };
 
 const sentryRelease = resolveSentryRelease();

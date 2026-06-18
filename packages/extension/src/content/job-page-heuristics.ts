@@ -1,3 +1,9 @@
+import { getLinkedInDetailPane } from '@/content/linkedin-extractor';
+import {
+  getJobDetailRoot,
+  isExcludedNonJobSiteUrl,
+  looksLikeSplitViewJobListingPage,
+} from '@/content/job-detail-scope';
 import {
   isApplyMateAppUrl,
   isKnownJobBoardUrl,
@@ -8,23 +14,41 @@ const JOB_SIGNAL_PATTERN =
   /\b(responsibilities|requirements|qualifications|what you.ll do|about the role|job description|apply now|how to apply|benefits|experience required|we are looking for|you will|key duties|about the job|who you are)\b/i;
 
 const NEGATIVE_PAGE_PATTERN =
-  /\b(blog post|newsletter|press release|cookie policy|privacy policy|terms of service|shopping cart|sign in to continue)\b/i;
+  /\b(blog post|newsletter|press release|cookie policy|privacy policy|terms of service|shopping cart|sign in to continue|conversation with gemini|you said|gemini said|clear chat|new notebook|chatgpt|claude said)\b/i;
+
+function heuristicRoot(doc: Document): Element | null {
+  const url = doc.defaultView?.location.href ?? '';
+  const detailRoot = getJobDetailRoot(doc, url);
+  if (detailRoot) return detailRoot;
+  if (url.includes('linkedin.com') && url.includes('/jobs/')) {
+    return getLinkedInDetailPane(doc);
+  }
+  if (looksLikeSplitViewJobListingPage(url, doc)) return null;
+  return doc.body;
+}
 
 export function pageHasJobPostingSignals(doc: Document = document): boolean {
-  const body = doc.body;
-  if (!body) return false;
+  const url = doc.defaultView?.location.href ?? '';
+  if (isExcludedNonJobSiteUrl(url)) return false;
 
-  const text = body.innerText ?? '';
+  const root = heuristicRoot(doc);
+  if (!root) return false;
+
+  const text =
+    (root instanceof HTMLElement ? root.innerText : null) ??
+    root.textContent ??
+    '';
   if (text.length < 350) return false;
 
   const keywordHits = text.match(new RegExp(JOB_SIGNAL_PATTERN.source, 'gi'))?.length ?? 0;
   if (keywordHits < 2) return false;
 
   const titleEl =
-    doc.querySelector('h1') ??
-    doc.querySelector('[data-automation-id="jobPostingHeader"]') ??
-    doc.querySelector('[class*="job-title"]') ??
-    doc.querySelector('[class*="posting-title"]');
+    root.querySelector('h1') ??
+    root.querySelector('h2') ??
+    root.querySelector('[data-automation-id="jobPostingHeader"]') ??
+    root.querySelector('[class*="job-title"]') ??
+    root.querySelector('[class*="posting-title"]');
   const title = titleEl?.textContent?.trim() ?? '';
   if (title.length < 3 || title.length > 180) return false;
 
@@ -41,6 +65,7 @@ export function pageHasSingleJobPostingSignals(doc: Document = document): boolea
 
 export function shouldMonitorPageForJob(url: string, doc: Document = document): boolean {
   if (isApplyMateAppUrl(url)) return false;
+  if (isExcludedNonJobSiteUrl(url)) return false;
   if (isKnownJobBoardUrl(url) || urlLooksLikeJobListing(url)) return true;
   return pageHasJobPostingSignals(doc);
 }
@@ -51,6 +76,7 @@ export function shouldShowFloatingJobIcon(
   doc: Document = document,
 ): boolean {
   if (isApplyMateAppUrl(url)) return false;
+  if (isExcludedNonJobSiteUrl(url)) return false;
   if (hasExtractedJob) return true;
   if (isKnownJobBoardUrl(url)) return true;
   if (pageHasJobPostingSignals(doc)) return true;

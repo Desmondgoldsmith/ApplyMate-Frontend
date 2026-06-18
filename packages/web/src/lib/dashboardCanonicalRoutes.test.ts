@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  buildInterviewPrepAliasRedirect,
+  buildInterviewsAliasRedirect,
   buildJobAnalyzerAliasRedirect,
   buildJobHubAliasRedirect,
   normalizeDashboardRoute,
@@ -28,19 +28,20 @@ describe('dashboardCanonicalRoutes', () => {
     );
   });
 
-  it('redirects interview-prep preserving query', () => {
-    const dest = buildInterviewPrepAliasRedirect(
+  it('redirects legacy /dashboard/interviews to interview-prep list', () => {
+    const dest = buildInterviewsAliasRedirect(
       new URLSearchParams({ jobAnalysisId: 'ja-9' }),
     );
-    expect(dest).toBe('/dashboard/interview?jobAnalysisId=ja-9');
+    expect(dest).toBe('/dashboard/interview-prep?jobAnalysisId=ja-9');
   });
 
   it('normalizes legacy alias hrefs for in-app use', () => {
     expect(normalizeDashboardRoute('/dashboard/job-hub?jobAnalysisId=x&focus=analysis')).toBe(
       '/dashboard/jobs?jobId=x&focus=analysis',
     );
+    expect(normalizeDashboardRoute('/dashboard/interviews')).toBe('/dashboard/interview-prep');
     expect(normalizeDashboardRoute('/dashboard/interview-prep?jobAnalysisId=y')).toBe(
-      '/dashboard/interview?jobAnalysisId=y',
+      '/dashboard/interview-prep?jobAnalysisId=y',
     );
   });
 });

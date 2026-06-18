@@ -9,5 +9,7 @@ export function useApplications() {
   return useQuery({
     queryKey: queryKeys.applications.root(),
     queryFn: () => api.applications.getAll(),
+    staleTime: 60_000,
+    refetchOnMount: true,
   });
 }

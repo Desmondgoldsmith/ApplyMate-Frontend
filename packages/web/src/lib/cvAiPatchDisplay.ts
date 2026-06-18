@@ -307,6 +307,31 @@ export function coerceAiPatchSectionBlob(
   return assistantSectionBlobToDisplayString(section, value).trim();
 }
 
+function isStructuredTailorJsonString(raw: string): boolean {
+  const t = raw.trim();
+  if (!t.startsWith('{') && !t.startsWith('[')) return false;
+  try {
+    const parsed = JSON.parse(t) as unknown;
+    return parsed !== null && typeof parsed === 'object';
+  } catch {
+    return false;
+  }
+}
+
+/** Keep backend structured section JSON intact for tailor diff UI. */
+export function preserveTailorSectionBlob(
+  value: unknown,
+  sectionType: string,
+): string {
+  if (typeof value === 'string' && isStructuredTailorJsonString(value)) {
+    return value.trim();
+  }
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return JSON.stringify(value);
+  }
+  return coerceAiPatchSectionBlob(value, sectionType);
+}
+
 export function trimCvDiffDisplay(text: string, max = 12000): string {
   return trimToMax(text, max);
 }

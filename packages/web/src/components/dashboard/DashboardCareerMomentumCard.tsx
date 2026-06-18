@@ -12,9 +12,9 @@ import {
 } from '@/lib/today-plan';
 import {
   deterministicIndexTooltipText,
-  TOOLTIP_CAREER_MOMENTUM_CONFIDENCE,
   TOOLTIP_CAREER_MOMENTUM_SCORE,
 } from '@/lib/dashboardIntelligenceTooltips';
+import { cleanAiText } from '@/lib/dashboardDisplayCopy';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -43,15 +43,10 @@ function tierLabel(tier: CareerMomentumTier | null): string | null {
 }
 
 export function DashboardCareerMomentumCard({ data, phase15Empty }: Props) {
-  const headline = data.headline?.trim() || '';
-  const supporting = data.supporting?.trim() || '';
-  const opportunity = data.opportunity?.trim() || '';
+  const headline = cleanAiText(data.headline?.trim() ?? '');
+  const supporting = cleanAiText(data.supporting?.trim() ?? '');
+  const opportunity = cleanAiText(data.opportunity?.trim() ?? '');
   const strengths = data.strengths ?? [];
-
-  const confidence =
-    typeof data.confidence === 'number' && Number.isFinite(data.confidence)
-      ? Math.min(100, Math.max(0, Math.round(data.confidence)))
-      : null;
 
   const momentumValue = effectiveDeterministicIndexValue(data.momentumIndex, data.score);
   const momentumTooltipText = deterministicIndexTooltipText(data.momentumIndex, TOOLTIP_CAREER_MOMENTUM_SCORE);
@@ -61,7 +56,7 @@ export function DashboardCareerMomentumCard({ data, phase15Empty }: Props) {
       className={cn(
         'relative overflow-hidden rounded-3xl border border-white/[0.08]',
         'bg-gradient-to-br from-[#0a1614]/95 via-[#080A0A] to-[#080A0A]',
-        'p-5 sm:p-7',
+        'p-3.5 sm:p-6 md:p-7',
         'shadow-[0_24px_52px_-28px_rgba(0,201,177,0.16)] ring-1 ring-white/[0.05]',
       )}
     >
@@ -71,20 +66,20 @@ export function DashboardCareerMomentumCard({ data, phase15Empty }: Props) {
       />
 
       <div className="relative space-y-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9CF5EA]/65">Career Momentum</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9CF5EA]/65">Search Momentum</p>
 
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
+        <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between md:gap-8">
           <div className="min-w-0 flex-1 space-y-3">
             <div className="flex flex-wrap items-start gap-2">
               {headline ? (
                 <>
-                  <p className="text-[clamp(1.5rem,4.5vw,2.25rem)] font-semibold tabular-nums tracking-tight text-white/92">
+                  <p className="text-[28px] font-semibold tabular-nums tracking-tight text-white/92 md:text-[clamp(1.5rem,4.5vw,2.25rem)]">
                     {headline}
                   </p>
                   <InfoHint
                     text={momentumTooltipText}
                     buttonClassName="mt-1 align-top"
-                    buttonAriaLabel="What is career momentum?"
+                    buttonAriaLabel="What is search momentum?"
                   />
                 </>
               ) : null}
@@ -112,8 +107,8 @@ export function DashboardCareerMomentumCard({ data, phase15Empty }: Props) {
                   data.momentumIndex?.label?.trim()
                     ? data.momentumIndex.label.trim()
                     : headline
-                      ? `Career momentum: ${headline}`
-                      : 'Career momentum index'
+                      ? `Search momentum: ${headline}`
+                      : 'Search momentum index'
                 }
                 className="mx-auto shrink-0 sm:mx-0"
               />
@@ -123,7 +118,7 @@ export function DashboardCareerMomentumCard({ data, phase15Empty }: Props) {
                 </p>
               ) : null}
               {!headline ? (
-                <InfoHint text={momentumTooltipText} buttonAriaLabel="What is career momentum?" />
+                <InfoHint text={momentumTooltipText} buttonAriaLabel="What is search momentum?" />
               ) : null}
             </div>
           ) : null}
@@ -134,7 +129,7 @@ export function DashboardCareerMomentumCard({ data, phase15Empty }: Props) {
             <p className="text-[13px] leading-relaxed text-white/58 sm:text-[14px]">{supporting}</p>
           ) : data.tier === 'steady' ? (
             <p className="text-[13px] leading-relaxed text-white/58 sm:text-[14px]">
-              You&apos;re staying consistent — that&apos;s what moves the needle.
+              You are keeping your search active. Good work.
             </p>
           ) : null}
 
@@ -159,24 +154,6 @@ export function DashboardCareerMomentumCard({ data, phase15Empty }: Props) {
                 Where to focus next
               </p>
               <p className="mt-2 text-[13px] leading-relaxed text-white/78 sm:text-[14px]">{opportunity}</p>
-            </div>
-          ) : null}
-
-          {confidence != null ? (
-            <div className="max-w-sm">
-              <div className="flex items-center justify-between gap-3 text-[11px] font-medium text-white/35">
-                <span className="inline-flex items-center gap-1.5">
-                  <span>Momentum clarity</span>
-                  <InfoHint text={TOOLTIP_CAREER_MOMENTUM_CONFIDENCE} buttonAriaLabel="What is momentum clarity?" />
-                </span>
-                <span className="tabular-nums text-white/45">{confidence}%</span>
-              </div>
-              <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/[0.06]">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#00C9B1]/70 to-[#9CF5EA]/45"
-                  style={{ width: `${confidence}%` }}
-                />
-              </div>
             </div>
           ) : null}
 

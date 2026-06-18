@@ -2,15 +2,23 @@ import { Check, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 
+import { AtsRiskPanel } from '@/components/job-analysis/AtsRiskPanel';
 import { JobAnalysisV2Panel } from '@/components/job-analysis/JobAnalysisV2Panel';
 import { LocationEligibilityCallout } from '@/components/job-analysis/LocationEligibilityCallout';
 import { MatchScoreFactorsBreakdown } from '@/components/job-analysis/MatchScoreFactorsBreakdown';
-import { SkillCoverageGrid } from '@/components/job-analysis/SkillCoverageGrid';
+import { PresentationGapsPanel } from '@/components/job-analysis/PresentationGapsPanel';
 import { JobSalaryEstimatePanel } from '@/components/job-analysis/JobSalaryEstimatePanel';
+import { SkillTierBadge } from '@/components/job-analysis/SkillTierBadge';
+import { RequirementKindBadge } from '@/components/job-analysis/RequirementKindBadge';
 import { Button } from '@/components/ui/Button';
+import { CompanyLogo } from '@/components/ui/CompanyLogo';
 import { MatchScoreBar } from '@/components/ui/MatchScoreBar';
 
 import type { JobAnalysis } from '@/lib/api';
+import { resolveAtsRiskItems } from '@/lib/jobAnalysisAts';
+import { getGapDisplaySkills } from '@/lib/skillCoverage';
+import { effectiveIsTailoredForAnalysis } from '@/lib/tailorAnalysisUi';
+import { cn } from '@/lib/utils';
 
 export function JobAnalysisCard({
   analysis,
@@ -48,12 +56,27 @@ export function JobAnalysisCard({
     [acceptedSkillNames],
   );
 
-  const skillBarSkills = (analysis.missingSkills ?? []).map((skill) => ({
-    name: skill.name,
-    matched: acceptedLower.has(skill.name.trim().toLowerCase()),
-  }));
+  const resolvedTailoredForScore = useMemo(
+    () =>
+      isTailored != null
+        ? Boolean(isTailored)
+        : effectiveIsTailoredForAnalysis(analysis),
+    [analysis, isTailored],
+  );
 
-  const resolvedTailoredForScore = Boolean(isTailored || analysis.isTailored);
+  const gapSkills = useMemo(() => getGapDisplaySkills(analysis), [analysis]);
+
+  const skillsAddedToCv = useMemo(() => {
+    if (!resolvedTailoredForScore) return [];
+    const fromApi = analysis.skillsAddedToCv ?? [];
+    if (fromApi.length > 0) return fromApi;
+    return [];
+  }, [analysis.skillsAddedToCv, resolvedTailoredForScore]);
+
+  const atsRiskItems = useMemo(() => {
+    if (resolvedTailoredForScore) return [];
+    return resolveAtsRiskItems(analysis);
+  }, [analysis, resolvedTailoredForScore]);
 
   const salary = analysis.salaryEstimate;
   const cvMeta = analysis as JobAnalysis & {
@@ -71,9 +94,27 @@ export function JobAnalysisCard({
   const fallbackCvProfileId = (cvMeta.cvProfileId ?? '').trim();
   const hasV2 = Boolean(analysis.analysisV2);
   const factorsBreakdown = analysis.factorsBreakdown;
+  const headerCompany = (analysis.company ?? '').trim() || 'Company';
+  const headerTitle = (analysis.title ?? '').trim();
 
   return (
     <div className="relative min-w-0 max-w-full space-y-6 overflow-x-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-6">
+      {headerTitle || headerCompany !== 'Company' ? (
+        <div className="flex items-start gap-3 border-b border-white/[0.06] pb-4">
+          <CompanyLogo
+            company={headerCompany}
+            logoUrl={analysis.companyLogoUrl}
+            size="lg"
+            shape="rounded"
+          />
+          <div className="min-w-0">
+            {headerTitle ? (
+              <p className="text-base font-semibold leading-snug text-white sm:text-lg">{headerTitle}</p>
+            ) : null}
+            <p className={cn('text-[13px] text-white/55', headerTitle && 'mt-0.5')}>{headerCompany}</p>
+          </div>
+        </div>
+      ) : null}
       {rematchInProgress ? (
         <div
           className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-2xl bg-[#0C0F0F]/88 backdrop-blur-[2px]"
@@ -108,8 +149,15 @@ export function JobAnalysisCard({
             }
             isTailored={resolvedTailoredForScore}
             scoreBeforeTailor={scoreBeforeTailor ?? null}
-            skills={skillBarSkills}
+            matchScoreBenchmark={analysis.matchScoreBenchmark}
+            scoreFormulaTooltip={analysis.scoreFormulaTooltip}
+            headlineCompositionNote={analysis.headlineCompositionNote}
           />
+          {resolvedTailoredForScore ? (
+            <p className="mt-2 text-[11px] leading-relaxed text-white/45">
+              Scores reflect your tailored CV for this role.
+            </p>
+          ) : null}
           {analysis.scoreSource === 'heuristic' ? (
             <p className="mt-2 text-[11px] leading-relaxed text-white/40">
               Quick estimate only. Use Job Analyzer for a full AI gap review and tailoring list.
@@ -124,7 +172,13 @@ export function JobAnalysisCard({
               breakdown={factorsBreakdown}
               className="mt-3"
               defaultOpen={factorsDefaultOpen}
+              scoreFormulaTooltip={analysis.scoreFormulaTooltip}
+              headlineCompositionNote={analysis.headlineCompositionNote}
+              isTailored={resolvedTailoredForScore}
             />
+          ) : null}
+          {!resolvedTailoredForScore && atsRiskItems.length > 0 ? (
+            <AtsRiskPanel items={atsRiskItems} className="mt-3" />
           ) : null}
         </>
       ) : null}
@@ -148,10 +202,6 @@ export function JobAnalysisCard({
         <JobSalaryEstimatePanel estimate={salary} />
       ) : null}
 
-      {analysis.skillCoverage?.length ? (
-        <SkillCoverageGrid items={analysis.skillCoverage} />
-      ) : null}
-
       <div>
         <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">
           {resolvedTailoredForScore
@@ -161,7 +211,23 @@ export function JobAnalysisCard({
               : 'Gaps to address'}
         </h3>
         <div className="flex flex-wrap gap-2">
-          {(analysis.missingSkills ?? []).map((skill) => {
+          {resolvedTailoredForScore
+            ? skillsAddedToCv.length > 0
+              ? skillsAddedToCv.map((skill) => (
+                  <span
+                    key={skill}
+                    className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-[12px] font-medium text-emerald-200"
+                  >
+                    {skill}
+                    <span className="ml-1.5 text-[10px] font-semibold text-emerald-300/90">Added</span>
+                  </span>
+                ))
+              : (
+                  <p className="text-[12px] leading-relaxed text-white/45">
+                    No additional skills were added during tailoring.
+                  </p>
+                )
+            : gapSkills.map((skill) => {
             const accepted =
               resolvedTailoredForScore || acceptedLower.has(skill.name.trim().toLowerCase());
             if (accepted) {
@@ -181,10 +247,14 @@ export function JobAnalysisCard({
               <span
                 key={skill.name}
                 title={`${skill.name} (${skill.importance})`}
-                className="inline-flex items-center rounded-full border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] px-3.5 py-1.5 text-[12px] font-medium text-[rgba(239,68,68,0.92)]"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] px-3.5 py-1.5 text-[12px] font-medium text-[rgba(239,68,68,0.92)]"
               >
                 {skill.name}
-                <span className="ml-1.5 text-[10px] font-semibold uppercase tracking-wide text-white/35">
+                <SkillTierBadge tier={skill.tier} />
+                {skill.requirementKind ? (
+                  <RequirementKindBadge kind={skill.requirementKind} />
+                ) : null}
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-white/35">
                   {skill.importance}
                 </span>
               </span>
@@ -192,6 +262,10 @@ export function JobAnalysisCard({
           })}
         </div>
       </div>
+
+      {!resolvedTailoredForScore && analysis.presentationGaps?.length ? (
+        <PresentationGapsPanel gaps={analysis.presentationGaps} />
+      ) : null}
 
       <div>
         <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">Your strengths</h3>

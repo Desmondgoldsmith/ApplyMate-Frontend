@@ -10,9 +10,9 @@ export function useWeeklyStallSummary(params?: { limit?: number }) {
   return useQuery({
     queryKey: weeklyStallSummaryQueryKey({ limit }),
     queryFn: () => api.dashboard.getWeeklyStallSummary({ limit }),
-    staleTime: 0,
+    staleTime: 60_000,
     gcTime: 5 * 60_000,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: 'always',
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 }

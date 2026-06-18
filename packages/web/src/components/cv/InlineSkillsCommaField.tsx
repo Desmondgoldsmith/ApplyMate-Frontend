@@ -2,6 +2,10 @@
 
 import { memo, useEffect, useRef, useState } from 'react';
 
+import {
+  resolveSkillsFromCommaInput,
+  skillLabelForCommaField,
+} from '@/lib/cvRichTextCore';
 import { cn } from '@/lib/utils';
 
 /** One wide comma-separated skills field for inline CV preview editing. */
@@ -20,22 +24,21 @@ export const InlineSkillsCommaField = memo(function InlineSkillsCommaField({
   placeholder?: string;
   placeholderTone?: 'default' | 'onDark';
 }) {
-  const [text, setText] = useState(() => skills.filter(Boolean).join(', '));
+  const [text, setText] = useState(() =>
+    skills.map((s) => skillLabelForCommaField(s)).filter(Boolean).join(', '),
+  );
   const focusedRef = useRef(false);
 
   useEffect(() => {
     if (!focusedRef.current) {
-      setText(skills.filter(Boolean).join(', '));
+      setText(skills.map((s) => skillLabelForCommaField(s)).filter(Boolean).join(', '));
     }
   }, [skills]);
 
   const commit = (raw: string) => {
-    const next = raw
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    onChange(next.length > 0 ? next : ['']);
-    setText(next.join(', '));
+    const next = resolveSkillsFromCommaInput(raw, skills);
+    onChange(next);
+    setText(next.map((s) => skillLabelForCommaField(s)).filter(Boolean).join(', '));
   };
 
   return (

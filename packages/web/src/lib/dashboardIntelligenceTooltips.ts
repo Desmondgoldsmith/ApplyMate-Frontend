@@ -3,7 +3,6 @@ import type { DashboardCommandBarSource, DeterministicIndexScorePayload } from '
 
 /**
  * Plain-language tooltips for dashboard intelligence scores (from today-plan).
- * Avoid internal field names, weights, or jargon like “pipeline,” “orchestration,” “leverage.”
  */
 
 /** Prefer backend `DeterministicIndexScore` copy when present; otherwise use `fallback`. */
@@ -14,16 +13,14 @@ export function deterministicIndexTooltipText(
   if (!meta) return fallback;
   const chunks: string[] = [];
   const label = meta.label?.trim();
-  if (label) chunks.push(label);
+  if (label) chunks.push(label.replace(/\s*—\s*/g, ', '));
   const desc = meta.description?.trim();
-  if (desc) chunks.push(desc);
+  if (desc) chunks.push(desc.replace(/\s*—\s*/g, ', '));
   const interp = meta.interpretation?.trim();
-  if (interp) chunks.push(interp);
-  const band = meta.confidenceBand?.trim();
-  if (band) chunks.push(`Signal band: ${band}`);
+  if (interp) chunks.push(interp.replace(/\s*—\s*/g, ', '));
   const disc = meta.disclaimer?.trim();
-  if (disc) chunks.push(disc);
-  if (chunks.length > 0) return chunks.join('\n\n');
+  if (disc) chunks.push(disc.replace(/\s*—\s*/g, ', '));
+  if (chunks.length > 0) return chunks.join(' ');
   return fallback;
 }
 
@@ -35,111 +32,120 @@ export function predictiveOutlookDisclaimerFootnote(
 ): string {
   const i = interview?.disclaimer?.trim();
   const o = offer?.disclaimer?.trim();
-  if (i && o && i !== o) return `${i}\n\n${o}`;
-  if (i) return i;
-  if (o) return o;
+  if (i && o && i !== o) return `${i.replace(/\s*—\s*/g, ', ')}\n\n${o.replace(/\s*—\s*/g, ', ')}`;
+  if (i) return i.replace(/\s*—\s*/g, ', ');
+  if (o) return o.replace(/\s*—\s*/g, ', ');
   return fallback;
 }
 
 export const TOOLTIP_CAREER_MOMENTUM_SCORE =
-  'Career momentum is a composite index (0–100) from several things we already know about your search: your CV, how well saved roles fit you, applications (including drafts), applications that moved forward, interviews, follow-ups, and recent activity on your dashboard.\n\nHigher means stronger momentum right now. It updates when your activity changes.\n\nThe tier tag is a simple band for your score—a quick label, not a separate grade.';
+  'How active your job search is right now, based on your applications, interviews, and recent activity.';
 
 export const TOOLTIP_CAREER_MOMENTUM_CONFIDENCE =
-  'How reliable the momentum index is from the data we have—not CV quality (use CV score / CV clinic for that).';
+  'How active your job search is right now, based on your applications, interviews, and recent activity.';
 
 export const TOOLTIP_CONFIDENCE_STRATEGIC_COACHING =
-  'How strongly this coaching suggestion fits what we should highlight now—not progress as a % or job match.';
+  'How well this coaching suggestion fits what you should focus on today.';
 
 export const TOOLTIP_CONFIDENCE_OPPORTUNITY =
-  'How strongly we suggest prioritizing this opportunity nudge now—not your overall job-search grade or job match %.';
+  'How strongly we suggest prioritizing this opportunity nudge now.';
 
 export const TOOLTIP_CONFIDENCE_FOLLOWUP =
-  'How strongly we suggest prioritizing this follow-up now—not your job match % or pass/fail odds.';
+  'How strongly we suggest prioritizing this follow-up now.';
 
 export const TOOLTIP_BRIEFING_CONFIDENCE =
-  'How much real activity we had to base this week’s summary on—not how “good” you were or job match %.';
+  'How much real activity we had to base this week’s summary on.';
 
 export const TOOLTIP_CV_SCORE =
-  'This score comes from your CV review in Applymate—higher usually means a stronger profile for matching.';
+  'This score comes from your CV review in ApplyMate. Higher usually means a stronger profile for matching.';
 
 export const TOOLTIP_JOB_MATCH_SCORE =
   'How well this role matches your profile from your saved analysis (0–100).';
 
-/** Phase 6A predictive outlook — semantic bands (not statistical probabilities). */
 export const TOOLTIP_PREDICTIVE_INTERVIEW_OUTLOOK =
-  'This reflects your current activity and pipeline health—not a statistical prediction of interview outcomes.';
+  'Your interview chances based on what you have done so far. This is guidance, not a guarantee.';
 
 export const TOOLTIP_PREDICTIVE_OFFER_OUTLOOK =
-  'This reflects your current activity and pipeline health—not a statistical prediction of offer outcomes.';
+  'Your offer progress based on what you have done so far. This is guidance, not a guarantee.';
 
 export const TOOLTIP_PREDICTIVE_TIMELINE_OUTLOOK =
-  'A qualitative timeline band from your funnel balance and movement—not a week-by-week forecast or deadline.';
+  'A rough estimated timeline based on your current search activity.';
 
-export const TOOLTIP_PREDICTIVE_CONFIDENCE =
-  'How much recent activity we had to build this outlook—not interview or offer odds.';
+export const TOOLTIP_BEST_MATCH =
+  'The highest match score among your recent job analyses.';
 
-/** Upcoming interview row — `upcomingInterviews[].confidence` */
+export const TOOLTIP_APPLICATIONS_IN_PROGRESS =
+  'Jobs you have applied to that are still active.';
+
+export const TOOLTIP_RECENT_ANALYSES =
+  'Jobs you have recently run through the job analyzer.';
+
+export const TOOLTIP_PREDICTIVE_OUTLOOK =
+  'A rough picture of where your search is going. Based on what you have done so far, not a guarantee.';
+
 export const TOOLTIP_UPCOMING_INTERVIEW_PREP_PRIORITY =
-  'How much we suggest prioritizing prep for this interview soon—not job fit, interview odds, or pass/fail.';
+  'How much we suggest prioritizing prep for this interview soon.';
 
-/** Proactive prep row (`stage: applied_prep`) — `upcomingInterviews[].confidence` */
 export const TOOLTIP_UPCOMING_APPLIED_PREP_PRIORITY =
-  'How much we suggest prioritizing practice while you wait to hear back—not job fit or interview odds.';
+  'How much we suggest prioritizing practice while you wait to hear back.';
 
 export const TOOLTIP_STRATEGIC_MOVE_PRIORITY =
-  'How strongly we suggest this strategic move now—not job match % or a second momentum/CV score.';
+  'How strongly we suggest this move right now.';
 
 export const TOOLTIP_NEXT_BEST_ACTION_SIGNAL =
-  'How strongly this action was picked as your next step—not job match % or interview probability.';
+  'How strongly this action was picked as your next step.';
 
-/** Phase 21 — Recommended Move strip (`recommendedMove` from today-plan). */
 export const TOOLTIP_RECOMMENDED_MOVE_SIGNAL =
-  'How strongly this move fits what you should do next—not job match %, interview odds, or a second momentum score.';
+  'How strongly this move fits what you should do next.';
 
 export const TOOLTIP_CONTINUATION_RESUME_SIGNAL =
-  'How confident we are this is the right task to resume—not job match % or a quality grade on the work.';
+  'How confident we are this is the right task to resume.';
 
 export const TOOLTIP_WEEKLY_STRATEGIC_COACHING_FIT =
-  'How well this week’s coaching theme fits what we saw—not your worth or guaranteed outcomes.';
+  'How well this week’s coaching theme fits what we saw in your activity.';
 
-/** Legacy command-bar candidates built from `strategicRecommendation` (same intent as `priority_intelligence`). */
 export type CommandBarConfidenceTooltipSource = DashboardCommandBarSource | 'strategic_recommendation';
 
 export function tooltipCommandBarConfidence(source: CommandBarConfidenceTooltipSource): string {
   switch (source) {
     case 'priority_intelligence':
     case 'strategic_recommendation':
-      return 'How strongly we are surfacing this priority action—not job match % or interview odds.';
+      return 'How strongly we are surfacing this priority action for you today.';
     case 'follow_up_intelligence':
-      return 'How strongly we are surfacing this follow-up—not job match % or pass/fail odds.';
+      return 'How strongly we are surfacing this follow-up for you today.';
     case 'opportunity_detection':
-      return 'How strongly we are surfacing this opportunity nudge—not your overall search grade.';
+      return 'How strongly we are surfacing this opportunity for you today.';
     case 'cv_clinic':
-      return 'How strongly we are surfacing this CV clinic step—not job fit for a single role.';
+      return 'How strongly we are surfacing this CV clinic step for you today.';
     case 'continuation':
-      return 'How strongly we are surfacing this resume task—not a quality grade.';
+      return 'How strongly we are surfacing this resume task for you today.';
     default:
-      return 'How strongly we are surfacing this action—not job match % or interview odds.';
+      return 'How strongly we are surfacing this action for you today.';
   }
 }
 
 export const PREDICTIVE_OUTLOOK_DISCLAIMER =
-  'Outlook badges summarize today’s signals for guidance only. They aren’t predictions or guarantees.';
+  'Outlook badges summarize today’s activity for guidance only. They aren’t predictions or guarantees.';
 
-/** Predictive outlook — pipeline health badge (balanced / active search read). */
 export const TOOLTIP_PIPELINE_HEALTH_BASE =
-  'Pipeline health is a quick read of how balanced and active your job search is right now—things like applications sent, steps moving forward, interviews, follow-ups, and your momentum score. It helps the app pick a time range for the offer outlook. It is not a grade on you and not a promise of results.';
+  'How balanced and active your job search is right now. It helps pick a time range for offer outlook. It is not a grade on you.';
 
 const PIPELINE_HEALTH_LEVEL_HINT = {
-  fragile: 'Fragile — Little movement yet; small steps still help.',
-  building: 'Building — You’re adding activity; keep going.',
-  healthy: 'Healthy — A mix of good signals is showing up.',
-  strong: 'Strong — Several strong signs are working together.',
+  fragile: 'Fragile: little movement yet; small steps still help.',
+  building: 'Building: you’re adding activity; keep going.',
+  healthy: 'Healthy: a mix of good signs is showing up.',
+  strong: 'Strong: several positive signs are working together.',
 } as const;
 
 export type PipelineHealthTooltipLevel = keyof typeof PIPELINE_HEALTH_LEVEL_HINT;
 
 export function tooltipPipelineHealthText(health: PipelineHealthTooltipLevel | null): string {
   if (!health) return TOOLTIP_PIPELINE_HEALTH_BASE;
-  return `${TOOLTIP_PIPELINE_HEALTH_BASE}\n\n${PIPELINE_HEALTH_LEVEL_HINT[health]}`;
+  return `${TOOLTIP_PIPELINE_HEALTH_BASE} ${PIPELINE_HEALTH_LEVEL_HINT[health]}`;
 }
+
+export const TOOLTIP_GOAL_ALIGNMENT =
+  'How well your saved jobs match the roles and industries you said you are looking for.';
+
+export const TOOLTIP_DAILY_STREAK =
+  'The number of days in a row you have been active on ApplyMate.';

@@ -32,6 +32,7 @@ import { useCvSuggestionMutations } from '@/hooks/useCvSuggestionMutations';
 import { useCVImprovements } from '@/hooks/useCVImprovements';
 import { useCVProfileById } from '@/hooks/useCVProfileById';
 import { useCVScore } from '@/hooks/useCVScore';
+import { isCvScoreInitialLoading, resolveCvDisplayScore } from '@/lib/cvScoreDisplay';
 import { useRunCvDetailedScore } from '@/hooks/useRunCvDetailedScore';
 import {
   api,
@@ -197,6 +198,8 @@ export type CvClinicWorkspaceProps = {
   tailorHighlightAction?: 'accepted' | 'reverted';
   /** External hydrate bump (e.g. after a tailor accept/revert persists). Combined with internal. */
   externalServerHydrateNonce?: number;
+  /** Tailor accept/revert: force builder rehydrate even when dirty (clears save-error state). */
+  forceServerHydrateNonce?: number;
   /** Override stacking for builder modals (Template/Sections/Reorder/Clarify) when hosted inside a very-high-z overlay. */
   modalLayerZIndex?: number;
   /** Called after the builder persists a structured/AI change (in addition to the internal hydrate bump). */
@@ -236,6 +239,7 @@ export function CvClinicWorkspace({
   tailorHighlightNonce = 0,
   tailorHighlightAction = 'accepted',
   externalServerHydrateNonce = 0,
+  forceServerHydrateNonce = 0,
   onStructuredPersisted,
   modalLayerZIndex,
   improvementDiffTruthPanel = false,
@@ -263,6 +267,10 @@ export function CvClinicWorkspace({
 
   const score = useCVScore(true, profileId);
   const improvements = useCVImprovements(true, profileId);
+  const displayScoreValue = resolveCvDisplayScore(score.data);
+  const scoreInitialLoading = isCvScoreInitialLoading(score.isPending, score.data);
+  const scoreRefreshing =
+    score.isFetching && !scoreInitialLoading && displayScoreValue != null;
 
   const [tripleRightTab, setTripleRightTab] = useState<
     'analysis' | 'improvements' | 'changes'
@@ -273,9 +281,9 @@ export function CvClinicWorkspace({
   const rightPctStorageKey = isTailoring
     ? 'cv_tailor_right_pct'
     : CV_CLINIC_RIGHT_PCT_KEY;
-  const rightPctMin = isTailoring ? 28 : 20;
-  const rightPctMax = isTailoring ? 44 : 34;
-  const [tripleRightPct, setTripleRightPct] = useState(isTailoring ? 34 : 24);
+  const rightPctMin = isTailoring ? 38 : 20;
+  const rightPctMax = isTailoring ? 52 : 34;
+  const [tripleRightPct, setTripleRightPct] = useState(isTailoring ? 42 : 24);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const [sectionModalOpen, setSectionModalOpen] = useState(false);
@@ -570,7 +578,7 @@ export function CvClinicWorkspace({
     try {
       const r = parseFloat(
         localStorage.getItem(rightPctStorageKey) ??
-          String(isTailoring ? 34 : 24),
+          String(isTailoring ? 42 : 24),
       );
       if (Number.isFinite(r))
         setTripleRightPct(Math.min(rightPctMax, Math.max(rightPctMin, r)));
@@ -2091,8 +2099,9 @@ export function CvClinicWorkspace({
       tripleRightTab={tripleRightTab}
       onTripleRightTabChange={setTripleRightTab}
       scoreCardMode={scoreCardMode}
-      scoreLoading={score.isLoading}
-      scoreValue={score.data?.score}
+      scoreLoading={scoreInitialLoading}
+      scoreRefreshing={scoreRefreshing}
+      scoreValue={displayScoreValue}
       scoreBreakdown={score.data?.breakdown}
       improvementList={improvementList}
       improvementsBadgeCount={improvementsBadgeCount}
@@ -2165,7 +2174,7 @@ export function CvClinicWorkspace({
         existingSections={sections}
         initialSuggest={sectionOrderFlow.suggestData}
         onApplied={() => {
-          sectionOrderFlow.invalidateSuggest();
+          sectionOrderFlow.markOrderApplied();
           setCvServerHydrateNonce((n) => n + 1);
         }}
         layerZIndex={modalLayerZIndex}
@@ -2257,6 +2266,17 @@ export function CvClinicWorkspace({
         </MobileDockFab>
         ) : null}
 
+        {sectionOrderFlow.showProactiveBanner ? (
+          <div className="mb-2 shrink-0 px-3 lg:px-1">
+            <CvSectionOrderProactiveBanner
+              onSuggest={() =>
+                sectionOrderFlow.openSuggestModal(sectionOrderFlow.suggestData)
+              }
+              onDismiss={sectionOrderFlow.dismissBanner}
+            />
+          </div>
+        ) : null}
+
         <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
           {isOnboarding && showOnboardingEditHint ? (
             <motion.div
@@ -2273,16 +2293,6 @@ export function CvClinicWorkspace({
                 We&apos;ll highlight incomplete sections after you begin.
               </p>
             </motion.div>
-          ) : null}
-          {sectionOrderFlow.showProactiveBanner ? (
-            <div className="absolute left-3 right-3 top-3 z-20 lg:left-4 lg:right-auto lg:max-w-md">
-              <CvSectionOrderProactiveBanner
-                onSuggest={() =>
-                  sectionOrderFlow.openSuggestModal(sectionOrderFlow.suggestData)
-                }
-                onDismiss={sectionOrderFlow.dismissBanner}
-              />
-            </div>
           ) : null}
           {showGlobalAssistant ? (
             <CvGlobalAssistantReviewPanel
@@ -2350,6 +2360,7 @@ export function CvClinicWorkspace({
             externalPatch={effectiveExternalPatch}
             externalPatchNonce={effectiveExternalPatchNonce}
             serverHydrateNonce={cvServerHydrateNonce + externalServerHydrateNonce}
+            forceServerHydrateNonce={forceServerHydrateNonce}
             onAiStructuredPersisted={() => {
               setCvServerHydrateNonce((n) => n + 1);
               void onStructuredPersisted?.();
@@ -2382,6 +2393,7 @@ export function CvClinicWorkspace({
             showFab={!globalAssistantOpen}
             seedCommand={assistantSeedCommand}
             onSeedCommandConsumed={() => setAssistantSeedCommand(null)}
+            fabRightOffsetPct={isTailoring ? tripleRightPct : null}
           />
           <RecruiterScanReportPanel
             open={recruiterScanPanelOpen}

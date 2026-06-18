@@ -1,5 +1,45 @@
 /** Shared rich-text sanitize + display for CV builder, inline preview, and export preview. */
 
+export function containsCvChangeMarker(raw: string): boolean {
+  return (
+    /<u\b[^>]*class=["'][^"']*\bcv-change-marker\b[^"']*["'][^>]*>/i.test(raw) ||
+    /&lt;u\b[^&]*cv-change-marker/i.test(raw)
+  );
+}
+
+/** Strip tailor builder markers before client-side export preview (server export strips too). */
+export function stripCvChangeMarkers(raw: string): string {
+  return raw
+    .replace(/<u\b[^>]*class=["'][^"']*\bcv-change-marker\b[^"']*["'][^>]*>/gi, '')
+    .replace(/<\/u>/gi, '');
+}
+
+/** Plain label for comma-separated skills input — does not mutate stored HTML. */
+export function skillLabelForCommaField(raw: string): string {
+  return richTextPlainText(raw) || raw.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/** Commit comma-separated skills while preserving tailor marker HTML on unchanged skills. */
+export function resolveSkillsFromCommaInput(raw: string, previous: string[]): string[] {
+  const segments = raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const pool = [...previous];
+  const next: string[] = [];
+  for (const seg of segments) {
+    const matchIdx = pool.findIndex(
+      (skill) => skillLabelForCommaField(skill).toLowerCase() === seg.toLowerCase(),
+    );
+    if (matchIdx >= 0) {
+      next.push(pool.splice(matchIdx, 1)[0]!);
+    } else {
+      next.push(seg);
+    }
+  }
+  return next.length > 0 ? next : [''];
+}
+
 export function escapeHtml(input: string): string {
   return input
     .replace(/&/g, '&amp;')
@@ -28,6 +68,15 @@ export function sanitizeRichHtml(input: string): string {
     const el = node as HTMLElement;
     const tag = el.tagName.toUpperCase();
     if (tag === 'BR') return '<br/>';
+    if (tag === 'U') {
+      const classes = (el.getAttribute('class') ?? '')
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+      const classAttr = classes.includes('cv-change-marker') ? ' class="cv-change-marker"' : '';
+      const children = Array.from(el.childNodes).map(walk).join('');
+      return `<u${classAttr}>${children}</u>`;
+    }
     if (tag === 'A') {
       const rawHref = (el.getAttribute('href') ?? '').trim();
       const safeHref =

@@ -3,6 +3,7 @@
 import { BookmarkMinus, ChevronDown, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { CompanyLogo } from '@/components/ui/CompanyLogo';
 import { cn } from '@/lib/utils';
 
 import { canRemoveTrackedJobFromHub, HUB_STAGE_LABELS, HUB_STAGES, type HubStage, type TrackedJob } from './jobHubMerge';
@@ -182,11 +183,21 @@ export function JobHubSidebar({
                             sel && 'lg:rounded-l-lg lg:rounded-t-none',
                           )}
                         >
+                          <div className="flex items-start gap-2.5">
+                            <CompanyLogo
+                              company={job.company}
+                              logoUrl={job.companyLogoUrl}
+                              size="sm"
+                              shape="rounded"
+                            />
+                            <div className="min-w-0 flex-1">
                           <p className="break-words text-sm font-semibold leading-snug text-white">{job.title}</p>
                           <p className="mt-1 line-clamp-2 break-words text-xs leading-snug text-white/50">
                             {job.company}
                           </p>
                           <JobHubBadges job={job} className="mt-2" />
+                            </div>
+                          </div>
                         </button>
                         <div
                           className={cn(

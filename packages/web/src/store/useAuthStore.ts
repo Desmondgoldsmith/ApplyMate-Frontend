@@ -36,10 +36,13 @@ type AuthState = {
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  /** False until cookie hydrate + optional refresh restore finish on app boot. */
+  authSessionReady: boolean;
   setAuth: (user: AuthUser, accessToken: string, refreshToken?: string | null) => void;
   clearAuth: (opts?: ClearAuthOptions) => void;
   /** Restore session token from cookie after full reload (memory-only Zustand resets). */
   hydrateFromStorage: () => void;
+  setAuthSessionReady: (ready: boolean) => void;
   /** Merge fields from GET /api/users/me (and PATCH /me) into the cached user. */
   syncUserFromMe: (user: AuthUser) => void;
   setSelectedFeatures: (features: string[]) => void;
@@ -50,6 +53,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   accessToken: null,
   refreshToken: null,
   isAuthenticated: false,
+  authSessionReady: false,
   hydrateFromStorage: () => {
     if (typeof window === 'undefined') return;
     removeLegacyTokenFromLocalStorage();
@@ -78,6 +82,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       accessToken,
       refreshToken: refresh ?? null,
       isAuthenticated: true,
+      authSessionReady: true,
     });
   },
   clearAuth: (opts) => {
@@ -97,8 +102,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
+      authSessionReady: true,
     });
   },
+  setAuthSessionReady: (ready) => set({ authSessionReady: ready }),
   syncUserFromMe: (next) =>
     set((s) => {
       if (!s.isAuthenticated) return s;

@@ -1,9 +1,11 @@
+import { pickCompanyLogoUrl } from '@/lib/companyLogo';
 import type {
   ApplicationItem,
   HubBookmarkItem,
   HubPipelineStage,
   JobHistoryItem,
 } from '@/lib/api';
+import { historyItemHasCompletedAnalysis } from '@/lib/jobAnalysisComplete';
 
 export type HubStage =
   | 'bookmarked'
@@ -57,6 +59,7 @@ export type TrackedJob = {
   applicationId: string | null;
   title: string;
   company: string;
+  companyLogoUrl?: string | null;
   matchScore: number | null;
   createdAt: string | null;
   stage: HubStage;
@@ -205,8 +208,11 @@ function statusToStage(app: ApplicationItem): HubStage | null {
 
 function historyHasAnalysis(hist: JobHistoryItem | undefined): boolean {
   if (!hist) return false;
-  if (typeof hist.hasAnalysis === 'boolean') return hist.hasAnalysis;
-  if (typeof hist.analyzeSource === 'string' && hist.analyzeSource.trim()) return true;
+  return historyItemHasCompletedAnalysis(hist);
+}
+
+function bookmarkHasAnalysis(bookmark: HubBookmarkItem): boolean {
+  if (typeof bookmark.hasAnalysis === 'boolean') return bookmark.hasAnalysis;
   return false;
 }
 
@@ -326,6 +332,7 @@ export function mergeTrackedJobs(
     const title =
       hist?.jobTitle || hist?.title || app?.title || 'Untitled role';
     const company = hist?.company || app?.company || '—';
+    const companyLogoUrl = hist?.companyLogoUrl ?? app?.companyLogoUrl ?? null;
     const matchScore =
       typeof hist?.matchScore === 'number'
         ? hist.matchScore
@@ -369,6 +376,7 @@ export function mergeTrackedJobs(
       applicationId: app?.id ?? null,
       title,
       company,
+      companyLogoUrl,
       matchScore,
       createdAt,
       stage,
@@ -405,12 +413,12 @@ export function mergeTrackedJobs(
     const fallback = linked ? 'analyzed' : 'bookmarked';
     const sem = inferOriginAndState({
       app: undefined,
-      hasAnalysis: Boolean(b.jobAnalysisId),
+      hasAnalysis: bookmarkHasAnalysis(b),
       hasBookmark: true,
     });
     const stage = explicitBm
       ? hubPipelineStageToHubStage(b.hubPipelineStage!, {
-          hasJobAnalysis: Boolean(b.jobAnalysisId),
+          hasJobAnalysis: bookmarkHasAnalysis(b),
         })
       : (overrides[overrideKey] ?? fallback);
     rows.push({
@@ -419,10 +427,11 @@ export function mergeTrackedJobs(
       applicationId: b.applicationId,
       title: b.title,
       company: b.company,
+      companyLogoUrl: b.companyLogoUrl ?? null,
       matchScore: null,
       createdAt: b.bookmarkedAt,
       stage,
-      hasAnalysis: Boolean(b.jobAnalysisId),
+      hasAnalysis: bookmarkHasAnalysis(b),
       boardDiscoveryId: b.jobListingId || null,
       applyUrl: b.url?.trim() || null,
       boardDescription: b.descriptionSnippet?.trim()

@@ -5,6 +5,9 @@ const WEB_APP_ORIGIN = (
   import.meta.env.VITE_WEB_APP_URL ?? 'http://localhost:3001'
 ).replace(/\/$/, '');
 
+/** AI chat, email, and other pages that must never trigger job extraction. */
+export { isExcludedNonJobSiteUrl } from '@/content/job-detail-scope';
+
 /** Our dashboard / analyzer — never treat as an external job posting page. */
 export function isApplyMateAppUrl(url: string | undefined | null): boolean {
   if (!url?.trim()) return false;
@@ -91,5 +94,77 @@ export function normalizeJobPageUrl(raw: string): string | null {
     return parsed.href;
   } catch {
     return null;
+  }
+}
+
+export function isLinkedInJobSearchUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.hostname.includes('linkedin.com') &&
+      /\/jobs\/search/i.test(parsed.pathname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Prefer /jobs/view/{id} for LinkedIn search URLs so check/save/score align. */
+export function canonicalJobViewUrl(raw: string): string | null {
+  const normalized = normalizeJobPageUrl(raw);
+  if (!normalized) return null;
+
+  try {
+    const parsed = new URL(normalized);
+    if (!parsed.hostname.includes('linkedin.com')) {
+      return parsed.href;
+    }
+
+    const viewMatch = parsed.pathname.match(/\/jobs\/view\/(\d+)/i);
+    if (viewMatch?.[1]) {
+      parsed.pathname = `/jobs/view/${viewMatch[1]}/`;
+      parsed.search = '';
+      parsed.hash = '';
+      return parsed.href;
+    }
+
+    const jobId =
+      parsed.searchParams.get('currentJobId') ?? parsed.searchParams.get('jobId');
+    if (jobId && /^\d+$/.test(jobId)) {
+      return `https://www.linkedin.com/jobs/view/${jobId}/`;
+    }
+
+    return parsed.href;
+  } catch {
+    return normalized;
+  }
+}
+
+export function linkedInJobKeyFromUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname.includes('linkedin.com')) return null;
+    const fromQuery =
+      parsed.searchParams.get('currentJobId') ?? parsed.searchParams.get('jobId');
+    if (fromQuery && /^\d+$/.test(fromQuery)) return `linkedin:${fromQuery}`;
+    const pathMatch = parsed.pathname.match(/\/jobs\/view\/(\d+)/i);
+    if (pathMatch?.[1]) return `linkedin:${pathMatch[1]}`;
+  } catch {
+    /* skip */
+  }
+  return null;
+}
+
+/** Loose equality for job listing URLs (LinkedIn id, normalized path). */
+export function jobUrlsMatch(a: string, b: string): boolean {
+  if (!a?.trim() || !b?.trim()) return false;
+  if (a === b) return true;
+  const linkedInA = linkedInJobKeyFromUrl(a);
+  const linkedInB = linkedInJobKeyFromUrl(b);
+  if (linkedInA && linkedInB) return linkedInA === linkedInB;
+  try {
+    return normalizeJobPageUrl(a) === normalizeJobPageUrl(b);
+  } catch {
+    return false;
   }
 }

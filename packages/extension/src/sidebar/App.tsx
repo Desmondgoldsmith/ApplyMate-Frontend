@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { isExtensionContextValid, safeRuntimeSendMessage } from '@/shared/extension-runtime';
 import type { GetAuthStateResponse, MessageAction, User } from '@/shared/types';
 
 import { AuthView } from './components/AuthView';
@@ -23,15 +24,24 @@ export function App() {
   }, []);
 
   const refreshAuth = useCallback(async () => {
+    if (!isExtensionContextValid()) {
+      setUser(null);
+      setStatus('unauthenticated');
+      return;
+    }
     try {
-      const cached = (await chrome.runtime.sendMessage({
+      const cached = (await safeRuntimeSendMessage({
         action: 'getAuthState',
       } satisfies MessageAction)) as GetAuthStateResponse | undefined;
 
       if (applyAuth(cached)) {
-        void chrome.runtime
-          .sendMessage({ action: 'syncAuth' } satisfies MessageAction)
-          .then((synced) => applyAuth(synced as GetAuthStateResponse | undefined))
+        void safeRuntimeSendMessage({ action: 'syncAuth' } satisfies MessageAction)
+          .then((synced) => {
+            const response = synced as GetAuthStateResponse | undefined;
+            if (response?.isAuthenticated && response.user) {
+              applyAuth(response);
+            }
+          })
           .catch(() => {
             /* keep cached session */
           });
@@ -39,7 +49,7 @@ export function App() {
       }
 
       setStatus('loading');
-      const synced = (await chrome.runtime.sendMessage({
+      const synced = (await safeRuntimeSendMessage({
         action: 'syncAuth',
       } satisfies MessageAction)) as GetAuthStateResponse | undefined;
       applyAuth(synced);
@@ -54,6 +64,7 @@ export function App() {
   }, [refreshAuth]);
 
   useEffect(() => {
+    if (!isExtensionContextValid()) return;
     const onMessage = (message: MessageAction) => {
       if (message?.action === 'unauthorized') {
         setUser(null);

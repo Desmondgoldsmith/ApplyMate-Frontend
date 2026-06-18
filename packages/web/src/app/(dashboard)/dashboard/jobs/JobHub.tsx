@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, LayoutGrid, List, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useBreadcrumbTrail } from '@/components/dashboard/BreadcrumbContext';
@@ -38,7 +38,9 @@ import {
   invalidateNotificationList,
   scheduleUnreadNotificationCountInvalidate,
 } from '@/hooks/useNotifications';
+import { resolveTrackedJobMatchScore } from '@/lib/jobHubGuidance';
 import { invalidateTodayPlanQueries } from '@/lib/today-plan';
+import type { JobDetailForForm } from '@/lib/api';
 import { useClientPagination } from '@/hooks/useClientPagination';
 import { cn } from '@/lib/utils';
 
@@ -62,6 +64,7 @@ import { useHubRemindersPrefetch } from '@/hooks/useHubReminders';
 import { useJobHubLegacyMigration } from '@/hooks/useJobHubLegacyMigration';
 import { notifyDueHubRemindersFromCache } from '@/lib/hubReminderNotifications';
 import { prefillJobAnalyzerInStorage } from '@/lib/jobHubPrefill';
+import { isCompletedJobAnalysis } from '@/lib/jobAnalysisComplete';
 import { trackFunnelEvent } from '@/lib/actionFunnel';
 
 type HubView = 'board' | 'list';
@@ -97,13 +100,24 @@ export function JobHub() {
       stage: ReturnType<typeof hubStageToHubPipelineStage>;
       overrideKey: string;
     }) => api.jobs.patchPipeline(args.jobAnalysisId, { stage: args.stage }),
-    onSuccess: (_data, args) => {
+    onSuccess: (enrichment, args) => {
       clearStageOverride(args.overrideKey);
       setOverrides((prev) => {
         const next = { ...prev };
         delete next[args.overrideKey];
         return next;
       });
+      queryClient.setQueryData(
+        queryKeys.jobs.analysis(args.jobAnalysisId),
+        (prev: unknown) => {
+          if (prev === null || typeof prev !== 'object') return prev;
+          return {
+            ...(prev as Record<string, unknown>),
+            ...(enrichment.pipelineStepper ? { pipelineStepper: enrichment.pipelineStepper } : {}),
+            ...(enrichment.guidance ? { guidance: enrichment.guidance } : {}),
+          };
+        },
+      );
       void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analysis(args.jobAnalysisId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
@@ -183,6 +197,42 @@ export function JobHub() {
     return null;
   }, [merged, searchParams]);
 
+  const deepLinkJobId =
+    searchParams.get('jobId')?.trim() || searchParams.get('jobAnalysisId')?.trim() || '';
+  const needsDeepLinkHydrate = Boolean(deepLinkJobId) && hubDataReady && !selectedJob;
+  const deepLinkJobDetail = useQuery({
+    queryKey: queryKeys.jobs.analysis(deepLinkJobId),
+    queryFn: () => api.jobs.getJob(deepLinkJobId),
+    enabled: needsDeepLinkHydrate,
+    retry: 1,
+  });
+
+  const syntheticDetailJob = useMemo((): TrackedJob | null => {
+    if (selectedJob || !deepLinkJobId || !deepLinkJobDetail.data) return null;
+    const d = deepLinkJobDetail.data;
+    const completed = isCompletedJobAnalysis(d.analysis);
+    return {
+      key: `deeplink:${deepLinkJobId}`,
+      jobAnalysisId: deepLinkJobId,
+      applicationId: null,
+      title: d.title?.trim() || d.analysis?.title?.trim() || 'Untitled role',
+      company: d.company?.trim() || d.analysis?.company?.trim() || '—',
+      matchScore:
+        typeof d.analysis?.matchScore === 'number' && Number.isFinite(d.analysis.matchScore)
+          ? d.analysis.matchScore
+          : null,
+      createdAt: d.analysis?.createdAt ?? null,
+      stage: completed ? 'analyzed' : 'bookmarked',
+      hasAnalysis: completed,
+      boardDiscoveryId: d.analysis?.jobListingId?.trim() || null,
+      applyUrl: d.analysis?.applyUrl?.trim() || null,
+      boardDescription: d.description?.trim() || null,
+      origin: 'analysis',
+      state: completed ? 'analyzed' : 'bookmarked',
+      isApplied: false,
+    };
+  }, [deepLinkJobDetail.data, deepLinkJobId, selectedJob]);
+
   const detailJob = useMemo(() => {
     const jid = searchParams.get('jobId')?.trim() || searchParams.get('jobAnalysisId')?.trim();
     const rawKey = searchParams.get('jobKey')?.trim();
@@ -200,12 +250,25 @@ export function JobHub() {
 
     if (pinMatches) return detailJobPin;
     if (selectedJob) return selectedJob;
+    if (syntheticDetailJob) return syntheticDetailJob;
     return null;
-  }, [selectedJob, detailJobPin, searchParams]);
+  }, [selectedJob, detailJobPin, searchParams, syntheticDetailJob]);
 
   useEffect(() => {
     if (selectedJob) setDetailJobPin(selectedJob);
   }, [selectedJob]);
+
+  useEffect(() => {
+    if (syntheticDetailJob) setDetailJobPin(syntheticDetailJob);
+  }, [syntheticDetailJob]);
+
+  useEffect(() => {
+    const jid = deepLinkJobId.trim();
+    if (!jid) return;
+    void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
+  }, [deepLinkJobId, queryClient]);
+
   const legacyFollowUpFocus = useMemo(() => {
     const f = (searchParams.get('focus') ?? '').trim().toLowerCase();
     return f === 'followup' || f === 'follow_up' || f === 'follow-up';
@@ -364,6 +427,12 @@ export function JobHub() {
         return;
       }
 
+      const optimisticJob: TrackedJob = {
+        ...job,
+        stage,
+        isApplied: stage === 'applied' || job.isApplied || stage === 'interviewing' || stage === 'negotiating' || stage === 'offered',
+      };
+      setDetailJobPin((prev) => (prev?.key === job.key ? optimisticJob : prev));
       saveStageOverride(job.key, stage);
       setOverrides((prev) => ({ ...prev, [job.key]: stage }));
 
@@ -384,29 +453,18 @@ export function JobHub() {
             overrideKey: job.key,
           });
         }
+        if (job.hubBookmarkId) {
+          patchBookmarkPipeline.mutate({ bookmarkId: job.hubBookmarkId, hubPipelineStage: pipeline });
+        }
         return;
       }
 
-      /** Proactive dashboard prep needs Application.status=applied + jobAnalysisId, not pipeline alone. */
-      if (stage === 'applied' && job.jobAnalysisId) {
-        void api.applications
-          .create({
-            title: job.title,
-            company: job.company,
-            status: 'applied',
-            matchScore: job.matchScore ?? undefined,
-            jobAnalysisId: job.jobAnalysisId,
-          })
-          .then(() => {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
-            invalidateTodayPlanQueries(queryClient);
-          })
-          .catch((err) => {
-            toast.error(
-              getApiErrorMessage(err) ||
-                'Could not save application status — interview prep may not appear on your dashboard yet.',
-            );
-          });
+      if (job.jobAnalysisId) {
+        patchJobPipeline.mutate({
+          jobAnalysisId: job.jobAnalysisId,
+          stage: pipeline,
+          overrideKey: job.key,
+        });
       }
 
       if (job.hubBookmarkId) {
@@ -423,14 +481,42 @@ export function JobHub() {
             },
           },
         );
-        return;
       }
 
-      if (job.jobAnalysisId) {
-        patchJobPipeline.mutate({
-          jobAnalysisId: job.jobAnalysisId,
-          stage: pipeline,
-          overrideKey: job.key,
+      /** Proactive dashboard prep needs Application.status=applied + jobAnalysisId, not pipeline alone. */
+      if (stage === 'applied' && job.jobAnalysisId) {
+        void (async () => {
+          const jid = job.jobAnalysisId!;
+          let detail =
+            queryClient.getQueryData<JobDetailForForm>(queryKeys.jobs.analysis(jid)) ?? null;
+          if (
+            resolveTrackedJobMatchScore(job, detail?.analysis?.matchScore) === undefined
+          ) {
+            try {
+              detail = await queryClient.fetchQuery({
+                queryKey: queryKeys.jobs.analysis(jid),
+                queryFn: () => api.jobs.getJob(jid),
+              });
+            } catch {
+              /* create without score if detail unavailable */
+            }
+          }
+          const matchScore = resolveTrackedJobMatchScore(job, detail?.analysis?.matchScore);
+          await api.applications.create({
+            title: job.title,
+            company: job.company,
+            status: 'applied',
+            jobAnalysisId: jid,
+            ...(matchScore !== undefined ? { matchScore } : {}),
+          });
+          void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
+          void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
+          invalidateTodayPlanQueries(queryClient);
+        })().catch((err) => {
+          toast.error(
+            getApiErrorMessage(err) ||
+              'Could not save application status — interview prep may not appear on your dashboard yet.',
+          );
         });
       }
     },
@@ -608,6 +694,14 @@ export function JobHub() {
     Boolean(searchParams.get('jobKey')?.trim());
 
   if (detailRequested && !detailJob) {
+    if (needsDeepLinkHydrate && deepLinkJobDetail.isLoading) {
+      return (
+        <div className="w-full space-y-4 overflow-x-hidden py-1" aria-busy="true" aria-label="Loading job">
+          <div className="h-9 w-48 animate-pulse rounded-lg bg-white/[0.06] sm:w-56" />
+          <div className="h-[min(60vh,520px)] animate-pulse rounded-2xl bg-white/[0.04]" />
+        </div>
+      );
+    }
     const fallbackHref = '/dashboard/jobs?view=active&recovered=1';
     return (
       <GlowCard contentClassName="flex flex-col items-center gap-4 p-6 text-center sm:p-8">

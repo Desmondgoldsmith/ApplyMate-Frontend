@@ -63,7 +63,7 @@ export function DashboardCollapsibleSection({
       className={cn('scroll-mt-4 min-w-0', className)}
       {...(dataTour ? { 'data-tour': dataTour } : {})}
     >
-      <div className="flex flex-col gap-2 pb-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+      <div className="flex flex-col items-start gap-2 pb-3 max-sm:gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
         <button
           type="button"
           className="flex min-w-0 cursor-pointer select-none items-center gap-2 border-0 bg-transparent p-0 text-left"
@@ -94,7 +94,7 @@ export function DashboardCollapsibleSection({
         </button>
         {headerRight ? (
           <div
-            className="flex shrink-0 items-center pl-6 sm:pl-0"
+            className="flex shrink-0 items-center pl-0 max-sm:text-[12px] sm:pl-0"
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
             role="presentation"

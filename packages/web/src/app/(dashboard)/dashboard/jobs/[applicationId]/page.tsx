@@ -17,6 +17,26 @@ export default async function JobsApplicationDeepLinkPage({
   const id = typeof applicationId === 'string' ? applicationId.trim() : '';
   const sp = await searchParams;
 
+  /** Static sibling routes — avoid treating `archive` / `analyze` as application IDs. */
+  if (id === 'archive') {
+    const archiveQp = new URLSearchParams();
+    for (const [key, value] of Object.entries(sp)) {
+      if (value === undefined) continue;
+      if (Array.isArray(value)) {
+        for (const part of value) {
+          if (typeof part === 'string' && part) archiveQp.append(key, part);
+        }
+      } else if (typeof value === 'string' && value) {
+        archiveQp.set(key, value);
+      }
+    }
+    const archiveSuffix = archiveQp.toString();
+    redirect(`/dashboard/jobs/archive${archiveSuffix ? `?${archiveSuffix}` : ''}`);
+  }
+  if (id === 'analyze') {
+    redirect('/dashboard/jobs/analyze');
+  }
+
   const qp = new URLSearchParams();
   for (const [key, value] of Object.entries(sp)) {
     if (value === undefined) continue;

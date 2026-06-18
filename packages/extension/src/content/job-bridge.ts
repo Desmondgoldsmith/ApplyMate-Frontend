@@ -1,6 +1,15 @@
-import { collectAiFallbackPayload, extractJobFromPage } from '@/content/extractor';
+import { collectAiFallbackPayload, extractJobFromPage, extractJobFromPageWithRetry } from '@/content/extractor';
+import {
+  getLinkedInActiveJobId,
+  isLinkedInJobsPage,
+  waitForLinkedInDetailPane,
+} from '@/content/linkedin-extractor';
 import { shouldMonitorPageForJob } from '@/content/job-page-heuristics';
 import { isApplyMateAppUrl } from '@/shared/job-page-url';
+import { isExtensionContextValid } from '@/shared/extension-runtime';
+import type { ExtractedJob } from '@/shared/types';
+
+const extensionContextValid = isExtensionContextValid();
 
 type ProbeJobPageMessage = { action: 'probeJobPage' };
 type RunProbeMessage = { action: 'runProbe' };
@@ -27,6 +36,25 @@ function stopPageMonitoring(): void {
   domObserver = undefined;
 }
 
+function linkedInJobIdFromUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const fromQuery =
+      parsed.searchParams.get('currentJobId') ?? parsed.searchParams.get('jobId');
+    if (fromQuery && /^\d+$/.test(fromQuery)) return fromQuery;
+    const pathMatch = parsed.pathname.match(/\/jobs\/view\/(\d+)/i);
+    if (pathMatch?.[1]) return pathMatch[1];
+  } catch {
+    /* skip */
+  }
+  return null;
+}
+
+function jobFingerprint(job: ExtractedJob): string {
+  const linkedInId = linkedInJobIdFromUrl(job.sourceUrl);
+  return `${linkedInId ?? ''}|${job.sourceUrl}|${job.title}|${job.company}`;
+}
+
 async function probeAndNotify(): Promise<void> {
   if (monitoringStopped) return;
   const href = window.location.href;
@@ -34,17 +62,23 @@ async function probeAndNotify(): Promise<void> {
     return;
   }
 
-  const job = await extractJobFromPage();
+  const job = isLinkedInJobsPage(href)
+    ? await extractJobFromPageWithRetry()
+    : await extractJobFromPage();
   if (job) {
-    const fingerprint = `${job.sourceUrl}|${job.title}|${job.company}`;
+    const fingerprint = jobFingerprint(job);
     if (fingerprint === lastNotifiedFingerprint) return;
     lastNotifiedFingerprint = fingerprint;
-    stopPageMonitoring();
+    if (!isLinkedInJobsPage(href)) {
+      stopPageMonitoring();
+    }
     void chrome.runtime.sendMessage({ action: 'jobExtracted', job }).catch(() => {
       /* sidebar may be closed */
     });
     return;
   }
+
+  if (isLinkedInJobsPage(href)) return;
 
   const aiPayload = collectAiFallbackPayload();
   if (!aiPayload) return;
@@ -57,11 +91,53 @@ async function probeAndNotify(): Promise<void> {
   });
 }
 
+let lastLinkedInJobId = '';
+
+function notifyLinkedInJobSwitch(newJobId: string): void {
+  if (lastLinkedInJobId && lastLinkedInJobId !== newJobId) {
+    lastNotifiedFingerprint = '';
+    lastProbeAt = 0;
+  }
+  lastLinkedInJobId = newJobId;
+}
+
+function scheduleLinkedInProbe(): void {
+  const href = window.location.href;
+  if (!isLinkedInJobsPage(href)) return;
+
+  const jobId = getLinkedInActiveJobId();
+  if (!jobId) {
+    void probeAndNotify();
+    return;
+  }
+
+  notifyLinkedInJobSwitch(jobId);
+  void waitForLinkedInDetailPane(jobId, () => {
+    void probeAndNotify();
+  });
+}
+
 function scheduleProbe(): void {
   if (monitoringStopped || !shouldMonitorPageForJob(window.location.href)) return;
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
     const now = Date.now();
+    const href = window.location.href;
+
+    if (isLinkedInJobsPage(href)) {
+      if (now - lastProbeAt < MIN_PROBE_INTERVAL_MS) {
+        const jobId = getLinkedInActiveJobId();
+        if (jobId && jobId !== lastLinkedInJobId) {
+          lastProbeAt = 0;
+        } else {
+          return;
+        }
+      }
+      lastProbeAt = Date.now();
+      scheduleLinkedInProbe();
+      return;
+    }
+
     if (now - lastProbeAt < MIN_PROBE_INTERVAL_MS) return;
     lastProbeAt = now;
     void probeAndNotify();
@@ -119,20 +195,25 @@ function startWarmPoll(): void {
 function bootJobBridge(): void {
   if (isApplyMateAppUrl(window.location.href)) return;
   startDomObserver();
+  void probeAndNotify();
   scheduleProbe();
   startHrefPoll();
   startWarmPoll();
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', bootJobBridge);
-} else {
-  bootJobBridge();
+if (extensionContextValid) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootJobBridge);
+  } else {
+    bootJobBridge();
+  }
 }
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+if (extensionContextValid) {
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if ((message as RunProbeMessage | undefined)?.action === 'runProbe') {
     lastNotifiedFingerprint = '';
+    lastProbeAt = 0;
     void probeAndNotify().finally(() => {
       sendResponse({ ok: true });
     });
@@ -144,6 +225,22 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   void (async () => {
+    const href = window.location.href;
+
+    if (isLinkedInJobsPage(href)) {
+      const jobId = getLinkedInActiveJobId();
+      if (jobId) {
+        await waitForLinkedInDetailPane(jobId, () => {
+          /* ready */
+        });
+      }
+      const job = isLinkedInJobsPage(href)
+        ? await extractJobFromPageWithRetry()
+        : await extractJobFromPage();
+      sendResponse({ job, needsAi: false } satisfies ProbeJobPageResponse);
+      return;
+    }
+
     const job = await extractJobFromPage();
     if (job) {
       sendResponse({ job, needsAi: false } satisfies ProbeJobPageResponse);
@@ -164,6 +261,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   })();
 
   return true;
-});
+  });
+}
 
 export {};

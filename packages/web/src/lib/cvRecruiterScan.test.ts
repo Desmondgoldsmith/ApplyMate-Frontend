@@ -73,27 +73,18 @@ const SECTIONS: CVSectionRecord[] = [
     type: 'experience',
     data: {},
     order: 1,
-    profileId: 'p1',
-    createdAt: '',
-    updatedAt: '',
   },
   {
     id: 'edu-row-1',
     type: 'education',
     data: {},
     order: 2,
-    profileId: 'p1',
-    createdAt: '',
-    updatedAt: '',
   },
   {
     id: 'custom-abc',
     type: 'custom_publications',
     data: {},
     order: 3,
-    profileId: 'p1',
-    createdAt: '',
-    updatedAt: '',
   },
 ];
 

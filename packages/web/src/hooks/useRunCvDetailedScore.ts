@@ -64,11 +64,10 @@ export function useRunCvDetailedScore() {
       });
     },
     onSuccess: (payload, variables) => {
-      const { ephemeralJobPreview } = normalizeRunDetailedVariables(variables);
+      const { ephemeralJobPreview, cvProfileId } = normalizeRunDetailedVariables(variables);
       if (ephemeralJobPreview) return;
 
       const list = payload.improvements ?? [];
-      const cvProfileId = normalizeRunDetailedVariables(variables).cvProfileId;
       const next: CvImprovementsPayload = {
         improvements: list,
         needsScoring: false,
@@ -76,8 +75,8 @@ export function useRunCvDetailedScore() {
       };
       queryClient.setQueryData<CvImprovementsPayload>(cvSuggestionsQueryKey(cvProfileId), next);
       const id = cvProfileId?.trim();
+      queryClient.setQueryData<CVScorePayload>(queryKeys.cv.score(id ?? 'default'), payload);
       if (id) {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.cv.score(id), exact: true });
         void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profile(id), exact: true });
       }
     },

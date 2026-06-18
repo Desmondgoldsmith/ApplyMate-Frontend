@@ -26,4 +26,21 @@ describe('toPreviewRichTextHtml', () => {
     expect(html).toContain('href="https://example.com/path?foo=1&amp;bar=2"');
     expect(html).toContain('Docs</a>');
   });
+
+  it('renders cv-change-marker underline tags from stored HTML', () => {
+    const html = toPreviewRichTextHtml(
+      'Led pipeline with <u class="cv-change-marker">golden datasets</u>',
+    );
+    expect(html).toContain('class="cv-change-marker"');
+    expect(html).toContain('golden datasets');
+  });
+
+  it('stripCvChangeMarkers removes builder-only underline wrappers', async () => {
+    const { stripCvChangeMarkers } = await import('./cvRichTextCore');
+    expect(
+      stripCvChangeMarkers(
+        'Led pipeline with <u class="cv-change-marker">golden datasets</u>',
+      ),
+    ).toBe('Led pipeline with golden datasets');
+  });
 });

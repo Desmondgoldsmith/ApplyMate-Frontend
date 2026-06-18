@@ -6,9 +6,7 @@ import { notificationActionHref } from '@/lib/notificationDeepLink';
 function n(partial: Partial<NotificationItem>): NotificationItem {
   return {
     id: 'n-1',
-    type: 'job',
-    title: 't',
-    body: 'b',
+    message: 'Notification body',
     read: false,
     createdAt: new Date().toISOString(),
     ...partial,

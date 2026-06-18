@@ -16,7 +16,9 @@ export function MobileNavToggleFab() {
       onClick={toggleNav}
       aria-label={navVisible ? 'Hide navigation' : 'Show navigation'}
       aria-expanded={navVisible}
-      style={{ bottom: navBottomOffset }}
+      style={{
+        bottom: navVisible ? '72px' : navBottomOffset,
+      }}
       className={cn(
         'fixed left-3 z-[88] flex h-11 w-11 touch-manipulation items-center justify-center rounded-full border shadow-[0_10px_28px_rgba(0,0,0,0.42)] transition-[border-color,background-color,bottom] duration-200 lg:hidden',
         navVisible

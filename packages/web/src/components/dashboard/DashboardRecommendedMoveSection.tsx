@@ -1,13 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import type { ReactNode } from 'react';
 
-import { InfoHint } from '@/components/ui/InfoHint';
-import {
-  TOOLTIP_RECOMMENDED_MOVE_SIGNAL,
-  TOOLTIP_STRATEGIC_MOVE_PRIORITY,
-} from '@/lib/dashboardIntelligenceTooltips';
+import { sanitizeDashboardDisplayText } from '@/lib/dashboardDisplayCopy';
 import type { NextBestActionVm } from '@/lib/dashboardNextBestAction';
 import { resolveFollowUpJobsListHref } from '@/lib/followUpListRoute';
 import { cn } from '@/lib/utils';
@@ -22,50 +17,6 @@ type Props = {
   followUpJobsViewAllHref?: string | null;
 };
 
-function pctBar(value: number | null): ReactNode {
-  const v =
-    typeof value === 'number' && Number.isFinite(value)
-      ? Math.min(100, Math.max(0, Math.round(value)))
-      : null;
-  return (
-    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
-      <div
-        className="h-full rounded-full bg-[var(--teal)]/85 transition-[width] duration-300 ease-out"
-        style={{ width: `${v != null ? v : 0}%` }}
-      />
-    </div>
-  );
-}
-
-function SignalRow({
-  label,
-  value,
-  tooltip,
-  tooltipAria,
-}: {
-  label: string;
-  value: number | null;
-  tooltip: string;
-  tooltipAria: string;
-}) {
-  const display =
-    typeof value === 'number' && Number.isFinite(value)
-      ? `${Math.round(value)}%`
-      : '—';
-  return (
-    <div className="mt-2.5 first:mt-0">
-      <div className="flex items-center justify-between gap-2 text-[11px] font-medium text-[var(--text-muted)]">
-        <span className="inline-flex items-center gap-0.5">
-          <span>{label}</span>
-          <InfoHint text={tooltip} buttonAriaLabel={tooltipAria} />
-        </span>
-        <span className="tabular-nums">{display}</span>
-      </div>
-      {pctBar(value)}
-    </div>
-  );
-}
-
 export function DashboardRecommendedMoveSection({
   action,
   sectionEyebrow,
@@ -73,8 +24,7 @@ export function DashboardRecommendedMoveSection({
   followUpJobsTotalCount = null,
   followUpJobsViewAllHref = null,
 }: Props) {
-  const supporting = action.supporting?.trim() ?? '';
-  const showPriority = action.priority != null;
+  const supporting = sanitizeDashboardDisplayText(action.supporting?.trim() ?? '');
 
   const snap = Math.max(0, Math.round(followUpJobsSnapshotCount));
   const total =
@@ -106,10 +56,10 @@ export function DashboardRecommendedMoveSection({
         {sectionEyebrow}
       </p>
 
-      <div className="overflow-hidden rounded-2xl border border-[var(--border-teal)] border-l-[3px] border-l-[var(--teal)] bg-[var(--bg-surface)] pl-5 pr-5 py-5 sm:pl-6 sm:pr-6 sm:py-5">
+      <div className="overflow-hidden rounded-2xl border border-[var(--border-teal)] border-l-[3px] border-l-[var(--teal)] bg-[var(--bg-surface)] py-3.5 pl-5 pr-5 sm:py-5 sm:pl-6 sm:pr-6">
         <div className="flex items-start justify-between gap-3">
           <p className="min-w-0 flex-1 text-[15px] font-semibold leading-snug text-[var(--text-primary)]">
-            {action.headline}
+            {sanitizeDashboardDisplayText(action.headline)}
           </p>
           {hasMultipleFollowUps && followUpListHref ? (
             <Link
@@ -121,27 +71,15 @@ export function DashboardRecommendedMoveSection({
           ) : null}
         </div>
         {supporting ? (
-          <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-secondary)] line-clamp-3">
+          <p className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-[var(--text-secondary)]">
             {supporting}
           </p>
         ) : null}
-
-        <div className="mt-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 sm:px-3.5">
-          <SignalRow
-            label="Action signal"
-            value={action.confidence}
-            tooltip={TOOLTIP_RECOMMENDED_MOVE_SIGNAL}
-            tooltipAria="What is Action signal?"
-          />
-          {showPriority ? (
-            <SignalRow
-              label="Priority"
-              value={action.priority}
-              tooltip={TOOLTIP_STRATEGIC_MOVE_PRIORITY}
-              tooltipAria="What is Priority?"
-            />
-          ) : null}
-        </div>
+        {action.relevantActivityLabel?.trim() ? (
+          <p className="mt-2 text-[11px] font-medium text-[var(--text-muted)]">
+            {sanitizeDashboardDisplayText(action.relevantActivityLabel)}
+          </p>
+        ) : null}
 
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <Link

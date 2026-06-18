@@ -4,15 +4,10 @@ import { CheckCircle2, Compass, Loader2, RotateCw } from 'lucide-react';
 import Link from 'next/link';
 
 import { Skeleton } from '@/components/ui/Skeleton';
+import { CompanyLogo } from '@/components/ui/CompanyLogo';
 import { cn } from '@/lib/utils';
 import type { WeeklyStallSummaryPayload } from '@/lib/weekly-stall-summary';
 import { weeklyStallItemHref } from '@/lib/weekly-stall-summary';
-
-function companyInitial(company: string): string {
-  const t = company.trim();
-  if (!t) return '?';
-  return t.charAt(0).toUpperCase();
-}
 
 type PanelProps = {
   data: WeeklyStallSummaryPayload | undefined;
@@ -216,9 +211,7 @@ export function WeeklyStallSummaryPanel({
           );
           const inner = (
             <>
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(0,201,177,0.15)] text-[13px] font-semibold text-[#00C9B1]">
-                {companyInitial(company)}
-              </div>
+              <CompanyLogo company={company} logoUrl={it.companyLogoUrl} size="md" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-semibold text-white">{it.title}</p>
                 <p className="truncate text-[11px] font-medium text-white/40">

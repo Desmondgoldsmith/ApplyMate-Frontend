@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { JobSalaryEstimate } from '@/lib/api';
 import {
   formatSalaryAmount,
+  formatSalaryPostingExcerpt,
   formatSalaryRange,
   resolveSalaryEstimateSource,
   salaryEstimateSourceLabel,
@@ -65,7 +66,26 @@ describe('jobSalaryEstimate', () => {
   it('formats amounts with Intl and local currency', () => {
     const ghs = formatSalaryAmount(120_000, 'GHS');
     expect(ghs).toMatch(/120/);
-    expect(formatSalaryRange(postingEstimate)).toContain('–');
+    expect(formatSalaryRange(postingEstimate)).toContain(' to ');
     expect(formatSalaryRange(postingEstimate)).toContain('/ year');
+  });
+
+  it('keeps posting excerpt separate from headline range', () => {
+    const withPosting: JobSalaryEstimate = {
+      ...postingEstimate,
+      postingText:
+        'Pay and benefits. The annual US base salary range for this role is $271,200 – $406,800.',
+    };
+    expect(formatSalaryRange(withPosting)).toContain(' to ');
+    expect(formatSalaryRange(withPosting)).not.toContain('Pay and benefits');
+    expect(formatSalaryPostingExcerpt(withPosting)).toContain('Pay and benefits');
+  });
+
+  it('truncates salary posting excerpt before role-overview junk', () => {
+    const withJunk: JobSalaryEstimate = {
+      ...postingEstimate,
+      postingText: '$20 - $70/hour Role Overview:We are hiring a developer…',
+    };
+    expect(formatSalaryPostingExcerpt(withJunk)).toBe('$20 - $70/hour');
   });
 });
