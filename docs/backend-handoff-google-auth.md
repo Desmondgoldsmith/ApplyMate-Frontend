@@ -81,7 +81,17 @@ Email/password login unchanged.
 | `NEXTAUTH_SECRET` / `NEXTAUTH_URL` | Frontend only — **must be the Next.js app URL**, not the API |
 | `NEXT_PUBLIC_API_URL`              | Backend base including `/api/`                               |
 
-Google Cloud redirect URI: `{NEXTAUTH_URL or http://localhost:3001}/api/nextauth/callback/google`
+Google Cloud redirect URI: `{NEXTAUTH_URL or http://localhost:3001}/api/auth/callback/google`
+
+Register **both** redirect URIs on the **same** Web OAuth client as `GOOGLE_CLIENT_ID`:
+
+- `http://localhost:3001/api/auth/callback/google`
+- `http://127.0.0.1:3001/api/auth/callback/google` (optional)
+- `https://apply-mate-frontend.vercel.app/api/auth/callback/google`
+
+Authorized JavaScript origins: `http://localhost:3001`, `https://apply-mate-frontend.vercel.app`
+
+Debug: `GET /api/auth/google/status` on local or Vercel.
 
 ### Troubleshooting `OAuthSignin` / `error=undefined`
 

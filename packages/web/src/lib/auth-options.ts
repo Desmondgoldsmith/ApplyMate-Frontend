@@ -3,6 +3,8 @@ import { ensureServerEnv, normalizeNextAuthUrl } from '@/lib/server/ensure-env';
 import type { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 
+import { getNextAuthBaseUrl } from '@/lib/nextauth-url';
+
 export function isGoogleAuthConfigured(): boolean {
   return Boolean(
     process.env.GOOGLE_CLIENT_ID?.trim() &&
@@ -15,6 +17,14 @@ export function getAuthOptions(): NextAuthOptions {
   ensureServerEnv();
   normalizeNextAuthUrl();
 
+  const siteOrigin = (() => {
+    try {
+      return new URL(getNextAuthBaseUrl()).origin;
+    } catch {
+      return process.env.NEXTAUTH_URL?.trim() ?? 'http://localhost:3001';
+    }
+  })();
+
   return {
     secret: process.env.NEXTAUTH_SECRET,
     debug: process.env.NODE_ENV === 'development',
@@ -23,12 +33,14 @@ export function getAuthOptions(): NextAuthOptions {
           GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID ?? '',
             clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+            /**
+             * PKCE cookies often fail on Vercel/serverless (OAuthCallback after account pick).
+             * Confidential web client + client secret — state check alone is sufficient.
+             */
+            checks: ['state'],
             authorization: {
               params: {
-                prompt: 'consent',
-                access_type: 'online',
-                response_type: 'code',
-                scope: 'openid email profile',
+                prompt: 'select_account',
               },
             },
           }),
@@ -62,9 +74,16 @@ export function getAuthOptions(): NextAuthOptions {
         return session;
       },
       async redirect({ url, baseUrl }) {
-        if (url.startsWith('/')) return `${baseUrl}${url}`;
-        if (url.startsWith(baseUrl)) return url;
-        return baseUrl;
+        const origin = siteOrigin || baseUrl;
+        if (url.startsWith('/')) return `${origin}${url}`;
+        try {
+          const target = new URL(url);
+          if (target.origin === new URL(origin).origin) return url;
+        } catch {
+          /* ignore */
+        }
+        if (url.startsWith(origin)) return url;
+        return origin;
       },
     },
   };

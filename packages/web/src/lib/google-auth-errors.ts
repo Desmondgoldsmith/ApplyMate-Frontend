@@ -102,6 +102,10 @@ export function googleOAuthErrorToastMessage(
       return 'Google sign-in is misconfigured. Check GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_SECRET, and NEXTAUTH_URL (must be this app, not the API), then restart the dev server.';
     case 'AccessDenied':
       return 'Google sign-in was denied or could not complete. Try again or use email and password.';
+    case 'OAuthCallback':
+      return withDetail(
+        'Google could not finish sign-in (token exchange failed). On Vercel, confirm GOOGLE_CLIENT_SECRET matches Google Cloud Console exactly (no extra spaces), redeploy, and verify the redirect URI in /api/auth/google/status.',
+      );
     case 'Callback':
       return 'Google callback failed. Add the correct redirect URI in Google Cloud Console (see docs/backend-handoff-google-auth.md).';
     default:
