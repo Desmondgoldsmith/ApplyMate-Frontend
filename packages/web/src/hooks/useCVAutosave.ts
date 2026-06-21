@@ -24,6 +24,8 @@ export type UseCVAutosaveParams = {
   data: CVBuilderData;
   selectedTemplate: CvTemplateId;
   dirty: boolean;
+  /** When true, defer autosave until the improvement diff overlay closes. */
+  isDiffOverlayOpen?: boolean;
   setDirty: Dispatch<SetStateAction<boolean>>;
   setSaveStatus: Dispatch<SetStateAction<CvBuilderSaveStatus>>;
   sectionsRef: MutableRefObject<CVSectionRecord[]>;
@@ -35,17 +37,22 @@ export type UseCVAutosaveParams = {
   toast: ReturnType<typeof useToast>;
 };
 
+export type UseCVAutosaveResult = {
+  flushDashboardAutosave: () => Promise<void>;
+};
+
 /**
  * Dashboard autosave: 800ms debounce, fingerprint no-op skip, queued flush while in-flight.
  * Parent owns `dataRef` / `templateRef` / `lastPersistedFingerprintRef` (server hydrate resets fp).
  */
-export function useCVAutosave(props: UseCVAutosaveParams): void {
+export function useCVAutosave(props: UseCVAutosaveParams): UseCVAutosaveResult {
   const {
     mode,
     profileId,
     data,
     selectedTemplate,
     dirty,
+    isDiffOverlayOpen = false,
     setDirty,
     setSaveStatus,
     sectionsRef,
@@ -134,6 +141,7 @@ export function useCVAutosave(props: UseCVAutosaveParams): void {
 
   useEffect(() => {
     if (mode !== 'dashboard' || !dirty) return;
+    if (isDiffOverlayOpen) return;
     setSaveStatus((s) => (s === 'saving' ? s : 'dirty'));
     if (autosaveTimerRef.current) window.clearTimeout(autosaveTimerRef.current);
     autosaveTimerRef.current = window.setTimeout(() => {
@@ -143,5 +151,7 @@ export function useCVAutosave(props: UseCVAutosaveParams): void {
     return () => {
       if (autosaveTimerRef.current) window.clearTimeout(autosaveTimerRef.current);
     };
-  }, [data, mode, dirty, selectedTemplate, profileId, flushDashboardAutosave, setSaveStatus]);
+  }, [data, mode, dirty, isDiffOverlayOpen, selectedTemplate, profileId, flushDashboardAutosave, setSaveStatus]);
+
+  return { flushDashboardAutosave };
 }

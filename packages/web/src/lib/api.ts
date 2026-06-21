@@ -116,8 +116,17 @@ export type JobSearchUrgency = 'asap' | 'few_months' | 'exploring';
 
 /** GET/PATCH /users/me — partial keys on PATCH merge per key (omit = unchanged). */
 /** Nested UI flags from GET/PATCH /users/me (`User.uiPrefs` on the server). */
+export type TourPagesCompletedPrefs = {
+  dashboard?: boolean;
+  jobBoard?: boolean;
+  jobHub?: boolean;
+  analyzer?: boolean;
+  resumeClinic?: boolean;
+};
+
 export type UserUiPrefs = {
   tourCompleted?: boolean;
+  tourPagesCompleted?: TourPagesCompletedPrefs;
   /** Cross-device job board location preference (Phase 1). */
   jobSearchLocation?: string;
   [key: string]: unknown;
@@ -536,6 +545,29 @@ function normalizeNotificationPrefs(raw: unknown): NotificationPrefs | null {
   return Object.keys(out).length > 0 ? out : null;
 }
 
+function normalizeTourPagesCompleted(raw: unknown): TourPagesCompletedPrefs | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const out: TourPagesCompletedPrefs = {};
+  const keys: Array<[keyof TourPagesCompletedPrefs, string[]]> = [
+    ['dashboard', ['dashboard']],
+    ['jobBoard', ['jobBoard', 'job_board']],
+    ['jobHub', ['jobHub', 'job_hub']],
+    ['analyzer', ['analyzer']],
+    ['resumeClinic', ['resumeClinic', 'resume_clinic']],
+  ];
+  for (const [key, aliases] of keys) {
+    for (const alias of aliases) {
+      const v = o[alias];
+      if (typeof v === 'boolean') {
+        out[key] = v;
+        break;
+      }
+    }
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 function normalizeUiPrefs(raw: unknown): UserUiPrefs | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
@@ -543,8 +575,12 @@ function normalizeUiPrefs(raw: unknown): UserUiPrefs | null {
   const tourCompletedRaw = o.tourCompleted ?? o.tour_completed;
   const tourCompleted =
     typeof tourCompletedRaw === 'boolean' ? tourCompletedRaw : undefined;
+  const tourPagesCompleted = normalizeTourPagesCompleted(
+    o.tourPagesCompleted ?? o.tour_pages_completed,
+  );
   const out: UserUiPrefs = { ...o };
   if (tourCompleted !== undefined) out.tourCompleted = tourCompleted;
+  if (tourPagesCompleted) out.tourPagesCompleted = tourPagesCompleted;
   return Object.keys(out).length > 0 ? out : null;
 }
 
@@ -3211,6 +3247,7 @@ export type CvAssistantCommitResult = {
   profile: CVProfile;
   sections: CVSectionRecord[];
   cvRevisionId?: string | null;
+  aiUsage?: CvApplyImprovementResult['aiUsage'];
 };
 
 export type CvReorderSectionsResult = {
@@ -3285,19 +3322,36 @@ export type CVImprovementItem = {
   priority?: number;
   /** Alias for message when API sends `issue` */
   issue?: string;
+  /** Structured path for the flagged field, e.g. `experience[0].bullets[1]`. */
+  targetFieldPath?: string;
+  /**
+   * `ai_fixable` — show Fix with AI; `user_action_required` — manual edit only
+   * (location, contact fields, portfolio links, etc.).
+   */
+  resolutionType?: 'ai_fixable' | 'user_action_required' | 'ai_template_with_placeholder';
+  /** Present on rejected rows — used server-side to suppress regeneration until content changes. */
+  rejectionFingerprint?: {
+    targetFieldPath?: string;
+    issueType?: string;
+    contentHashAtRejection?: string;
+  };
   /** When true, the server marks this row resolved; hide from active suggestion UI (do not infer from pending paths alone). */
   resolved?: boolean;
   /** Partial accept/reject metadata from backend (canonical field paths). */
   acceptedFieldPaths?: string[];
   pendingFieldPaths?: string[];
+  /** Open AI preview metadata (GET /cv/suggestions after apply). */
+  lastPreviewForSuggestionId?: string;
+  lastPreviewDraftHash?: string;
+  lastPreviewCvRevisionHash?: string;
 };
 
 /** GET /cv/suggestions (and legacy GET /cv/improvements) — open-queue list plus scoring hints. */
 export type CvImprovementsPayload = {
   improvements: CVImprovementItem[];
   /**
-   * When true, a section row changed after `lastScoredAt`; `improvements` may be empty/null until the client
-   * runs a detailed score again (`POST /cv/profiles/:cvProfileId/score/detailed`, or legacy global detailed POST).
+   * When true, section content changed after `lastScoredAt`. Pending suggestions may still be
+   * populated while score refreshes (`scoreStatus: 'refreshing'`).
    */
   needsScoring: boolean;
   /** Prefer for badges when present (pending queue size). */
@@ -3310,6 +3364,8 @@ export type CvImprovementsPayload = {
   structuredRevisionHash?: string | null;
   /** Bulk apply-all quota from server (FREE tier daily cap). */
   acceptAllQuota?: CvAcceptAllQuota | null;
+  /** Last good per-section scores while `needsScoring` is true (avoid 20% placeholders). */
+  lastPublishedSectionScores?: Record<string, number> | null;
 };
 
 /** POST /cv/suggestions/:id/accept|reject — product flows (full suggestion, no field subset). */
@@ -3348,6 +3404,8 @@ export type CvMutationCommitMeta = {
   acceptedSuggestionIds?: string[];
   /** Suggestion ids persisted as terminal rejected (single reject or reject-all). */
   rejectedSuggestionIds?: string[];
+  /** Sibling suggestions auto-resolved when accepting one (Round 4). */
+  autoResolvedIds?: string[];
   /**
    * Whether async rescoring was triggered (accept paths). Reject / reject-all may send `false` explicitly.
    */
@@ -3380,6 +3438,8 @@ export type CvDiffPreviewOpenParams = CvTruthfulnessMeta & {
   }>;
   /** Materialization telemetry for this preview (replaced on each apply). */
   performance?: CvPerformanceMeta;
+  /** Canonical paths from apply preview — use on accept instead of UI-inferred indices. */
+  selectableFieldPaths?: string[];
 };
 
 export type CvSuggestionMutationResult = CvTruthfulnessMeta &
@@ -3395,6 +3455,8 @@ export type CvSuggestionMutationResult = CvTruthfulnessMeta &
     duplicateSuppressed?: boolean;
     /** Draft preview slots still stored on profile after accept (Phase 4.5). */
     remainingDraftPreviews?: number;
+    sectionsSynced?: boolean;
+    updatedSections?: CvAcceptUpdatedSection[];
   };
 
 /** POST /cv/suggestions/accept-all — optional additive batch summary (Phase 5). */
@@ -3406,6 +3468,8 @@ export type CvAcceptAllSummary = {
   skippedAiBudget?: number;
   leftPending?: number;
   queueOverflow?: boolean;
+  /** Count of suggestions not processed due to batch cap (when server sends a number). */
+  queueOverflowCount?: number;
 };
 
 /** POST /cv/suggestions/accept-all | reject-all */
@@ -3424,7 +3488,9 @@ export type CvSuggestionsBulkMutationResult = CvTruthfulnessMeta &
     scoringTriggered?: boolean;
     /** Human-readable server message (e.g. Accept All caps / limits). */
     message?: string;
-    acceptAllQueueOverflow?: boolean;
+    /** True when batch cap hit; may also be a positive count on the wire. */
+    acceptAllQueueOverflow?: boolean | number;
+    acceptAllQueueOverflowCount?: number;
     acceptAllSkippedForAiLimit?: boolean;
     acceptAllDraftReuseCount?: number;
     acceptAllMaxSuggestions?: number;
@@ -3467,7 +3533,24 @@ export type CvApplyImprovementResult = CvTruthfulnessMeta &
     pendingSuggestionsCount?: number;
     cvRevisionId?: string | null;
     remainingDraftPreviews?: number;
+    /** Canonical JSON paths from apply preview — prefer for accept payloads. */
+    selectableFieldPaths?: string[];
+    aiUsage?: {
+      used: number;
+      limit: number;
+      remaining: number;
+      resetsAt?: string;
+      timezone?: string;
+    };
   };
+
+/** Section payload returned on accept — patch editor without refetch. */
+export type CvAcceptUpdatedSection = {
+  type: string;
+  data: Record<string, unknown>;
+  order: number;
+  visible: boolean;
+};
 
 /** POST /cv/improvements/:id/accept|reject — partial field flows. */
 export type CvImprovementPartialMutationResult = CvTruthfulnessMeta &
@@ -3483,6 +3566,9 @@ export type CvImprovementPartialMutationResult = CvTruthfulnessMeta &
     idempotent?: boolean;
     alreadyApplied?: boolean;
     duplicateSuppressed?: boolean;
+    sectionsSynced?: boolean;
+    updatedSections?: CvAcceptUpdatedSection[];
+    aiUsage?: CvApplyImprovementResult['aiUsage'];
   };
 
 /** ATS block nested under score `breakdown` when the API provides it. */
@@ -3612,8 +3698,21 @@ export type ChatConversationHistoryItem = {
 };
 
 export type ChatConversationResponse =
-  | { type: 'message'; message: string }
-  | { type: 'complete'; message: string; extractedData: ChatCreateCVPayload };
+  | { type: 'message'; message: string; followUpQuestion?: string | null }
+  | {
+      type: 'complete';
+      message: string;
+      extractedData: ChatCreateCVPayload;
+      followUpQuestion?: string | null;
+    }
+  | {
+      type: 'validation_error';
+      message: string;
+      code?: string;
+      missing?: string[];
+      followUpQuestion?: string | null;
+      extractedData?: ChatCreateCVPayload;
+    };
 
 export type CvSpellIssue = {
   /** Same as `issueId` when the API sends both. */
@@ -3707,12 +3806,41 @@ function normalizeChatConversationResponse(
   raw: unknown,
 ): ChatConversationResponse {
   const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
+  const followUpQuestion =
+    typeof body.followUpQuestion === 'string'
+      ? body.followUpQuestion
+      : typeof body.follow_up_question === 'string'
+        ? body.follow_up_question
+        : null;
+  const message = String(body.message ?? body.content ?? body.text ?? '');
+  const validationType =
+    body.type === 'validation_error' || body.code === 'CHAT_CV_PAYLOAD_INCOMPLETE';
+  if (validationType) {
+    const missing = Array.isArray(body.missing)
+      ? body.missing.map((m) => String(m))
+      : undefined;
+    let extracted: ChatCreateCVPayload | undefined;
+    if (
+      body.extractedData !== null &&
+      typeof body.extractedData === 'object' &&
+      !Array.isArray(body.extractedData)
+    ) {
+      extracted = body.extractedData as ChatCreateCVPayload;
+    }
+    return {
+      type: 'validation_error',
+      message,
+      code: typeof body.code === 'string' ? body.code : undefined,
+      missing,
+      followUpQuestion,
+      extractedData: extracted,
+    };
+  }
   const complete =
     body.type === 'complete' ||
     body.done === true ||
     body.status === 'complete' ||
     body.phase === 'complete';
-  const message = String(body.message ?? body.content ?? body.text ?? '');
   if (complete) {
     let extracted: Record<string, unknown> = {};
     if (
@@ -3732,9 +3860,10 @@ function normalizeChatConversationResponse(
       type: 'complete',
       message,
       extractedData: extracted as ChatCreateCVPayload,
+      followUpQuestion,
     };
   }
-  return { type: 'message', message };
+  return { type: 'message', message, followUpQuestion };
 }
 
 /** POST /cv/parse-text — structured CV from pasted text. */
@@ -4416,6 +4545,7 @@ function normalizeCvAssistantCommitResult(raw: unknown): CvAssistantCommitResult
     profile: { ...profile, id: profileId },
     sections,
     cvRevisionId,
+    aiUsage: parseCvAiUsageFromEnvelope(raw),
   };
 }
 
@@ -4559,8 +4689,8 @@ function normalizeCVImprovements(raw: unknown): CVImprovementItem[] {
     (Array.isArray(body.tips) && body.tips) ||
     ensureArray<unknown>(body);
   if (!Array.isArray(list)) return [];
-  const rows = list.map((item) => {
-    if (!item || typeof item !== 'object') return {};
+  const rows: CVImprovementItem[] = list.map((item) => {
+    if (!item || typeof item !== 'object') return { message: '' };
     const x = item as Record<string, unknown>;
     const suggestionRaw =
       typeof x.suggestion === 'string'
@@ -4670,6 +4800,69 @@ function normalizeCVImprovements(raw: unknown): CVImprovementItem[] {
       legacyResolved ||
       normalizedStatus === 'accepted' ||
       normalizedStatus === 'rejected';
+    const targetFieldPath =
+      typeof x.targetFieldPath === 'string'
+        ? x.targetFieldPath.trim()
+        : typeof x.target_field_path === 'string'
+          ? x.target_field_path.trim()
+          : undefined;
+    const resolutionTypeRaw =
+      typeof x.resolutionType === 'string'
+        ? x.resolutionType.trim().toLowerCase()
+        : typeof x.resolution_type === 'string'
+          ? x.resolution_type.trim().toLowerCase()
+          : '';
+    const resolutionType: CVImprovementItem['resolutionType'] =
+      resolutionTypeRaw === 'user_action_required'
+        ? 'user_action_required'
+        : resolutionTypeRaw === 'ai_template_with_placeholder'
+          ? 'ai_template_with_placeholder'
+          : resolutionTypeRaw === 'ai_fixable'
+            ? 'ai_fixable'
+            : undefined;
+    const lastPreviewForSuggestionId =
+      typeof x.lastPreviewForSuggestionId === 'string'
+        ? x.lastPreviewForSuggestionId.trim()
+        : typeof x.last_preview_for_suggestion_id === 'string'
+          ? x.last_preview_for_suggestion_id.trim()
+          : undefined;
+    const lastPreviewDraftHash =
+      typeof x.lastPreviewDraftHash === 'string'
+        ? x.lastPreviewDraftHash.trim()
+        : typeof x.last_preview_draft_hash === 'string'
+          ? x.last_preview_draft_hash.trim()
+          : undefined;
+    const lastPreviewCvRevisionHash =
+      typeof x.lastPreviewCvRevisionHash === 'string'
+        ? x.lastPreviewCvRevisionHash.trim()
+        : typeof x.last_preview_cv_revision_hash === 'string'
+          ? x.last_preview_cv_revision_hash.trim()
+          : undefined;
+    const rejectionRaw = x.rejectionFingerprint ?? x.rejection_fingerprint;
+    let rejectionFingerprint: CVImprovementItem['rejectionFingerprint'];
+    if (rejectionRaw && typeof rejectionRaw === 'object' && !Array.isArray(rejectionRaw)) {
+      const rf = rejectionRaw as Record<string, unknown>;
+      rejectionFingerprint = {
+        targetFieldPath:
+          typeof rf.targetFieldPath === 'string'
+            ? rf.targetFieldPath
+            : typeof rf.target_field_path === 'string'
+              ? rf.target_field_path
+              : undefined,
+        issueType:
+          typeof rf.issueType === 'string'
+            ? rf.issueType
+            : typeof rf.issue_type === 'string'
+              ? rf.issue_type
+              : undefined,
+        contentHashAtRejection:
+          typeof rf.contentHashAtRejection === 'string'
+            ? rf.contentHashAtRejection
+            : typeof rf.content_hash_at_rejection === 'string'
+              ? rf.content_hash_at_rejection
+              : undefined,
+      };
+    }
     return {
       id: typeof x.id === 'string' ? x.id : undefined,
       status: normalizedStatus,
@@ -4692,6 +4885,12 @@ function normalizeCVImprovements(raw: unknown): CVImprovementItem[] {
       acceptedFieldPaths,
       pendingFieldPaths,
       resolved: resolvedCompat,
+      ...(targetFieldPath ? { targetFieldPath } : {}),
+      ...(resolutionType ? { resolutionType } : {}),
+      ...(lastPreviewForSuggestionId ? { lastPreviewForSuggestionId } : {}),
+      ...(lastPreviewDraftHash ? { lastPreviewDraftHash } : {}),
+      ...(lastPreviewCvRevisionHash ? { lastPreviewCvRevisionHash } : {}),
+      ...(rejectionFingerprint ? { rejectionFingerprint } : {}),
     };
   });
   return rows.filter(
@@ -4723,6 +4922,20 @@ export function normalizeCvImprovementsGetResponse(
       : typeof body.cvRevisionId === 'string'
         ? body.cvRevisionId
         : undefined;
+  const lastPublishedRaw =
+    body.lastPublishedSectionScores ?? body.last_published_section_scores;
+  let lastPublishedSectionScores: Record<string, number> | null | undefined;
+  if (lastPublishedRaw === null) {
+    lastPublishedSectionScores = null;
+  } else if (lastPublishedRaw && typeof lastPublishedRaw === 'object' && !Array.isArray(lastPublishedRaw)) {
+    const map: Record<string, number> = {};
+    for (const [key, val] of Object.entries(lastPublishedRaw as Record<string, unknown>)) {
+      if (typeof val === 'number' && Number.isFinite(val)) {
+        map[key] = Math.round(Math.max(0, Math.min(100, val)));
+      }
+    }
+    lastPublishedSectionScores = Object.keys(map).length > 0 ? map : null;
+  }
   return {
     improvements: normalizeCVImprovements(raw),
     needsScoring,
@@ -4731,6 +4944,7 @@ export function normalizeCvImprovementsGetResponse(
     lastScoredAt,
     cvRevisionId,
     acceptAllQuota: parseAcceptAllQuota(body.acceptAllQuota ?? body.accept_all_quota),
+    ...(lastPublishedSectionScores !== undefined ? { lastPublishedSectionScores } : {}),
   };
 }
 
@@ -4775,6 +4989,43 @@ function parseTruthfulnessFields(
   };
 }
 
+function parseCvAiUsageFromEnvelope(raw: unknown): CvApplyImprovementResult['aiUsage'] {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const o = raw as Record<string, unknown>;
+  const meta = o.meta;
+  const data = o.data;
+  const from =
+    meta && typeof meta === 'object' && !Array.isArray(meta)
+      ? (meta as Record<string, unknown>).aiUsage ??
+        (meta as Record<string, unknown>).ai_usage
+      : null;
+  const fromData =
+    data && typeof data === 'object' && !Array.isArray(data)
+      ? (data as Record<string, unknown>).aiUsage ??
+        (data as Record<string, unknown>).ai_usage
+      : null;
+  const usage = (from ?? fromData) as Record<string, unknown> | null;
+  if (!usage || typeof usage !== 'object') return undefined;
+  const used = Number(usage.used);
+  const limit = Number(usage.limit);
+  const remaining = Number(usage.remaining);
+  if (!Number.isFinite(used) || !Number.isFinite(limit) || !Number.isFinite(remaining)) {
+    return undefined;
+  }
+  return {
+    used,
+    limit,
+    remaining,
+    resetsAt:
+      typeof usage.resetsAt === 'string'
+        ? usage.resetsAt
+        : typeof usage.resets_at === 'string'
+          ? usage.resets_at
+          : undefined,
+    timezone: typeof usage.timezone === 'string' ? usage.timezone : undefined,
+  };
+}
+
 function parseAcceptAllSummary(
   src: Record<string, unknown>,
 ): CvAcceptAllSummary | undefined {
@@ -4805,8 +5056,13 @@ function parseAcceptAllSummary(
   if (skippedAiBudget !== undefined) out.skippedAiBudget = skippedAiBudget;
   const leftPending = num(o.leftPending ?? o.left_pending);
   if (leftPending !== undefined) out.leftPending = leftPending;
-  if (o.queueOverflow === true || o.queue_overflow === true)
+  const overflowRaw = o.queueOverflow ?? o.queue_overflow;
+  if (overflowRaw === true) out.queueOverflow = true;
+  const overflowCount = num(overflowRaw);
+  if (overflowCount !== undefined && overflowCount > 0) {
     out.queueOverflow = true;
+    out.queueOverflowCount = overflowCount;
+  }
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
@@ -4906,6 +5162,26 @@ function parseOptionalStringIdArray(
     .filter((s) => s.length > 0);
 }
 
+function parseCvAcceptUpdatedSections(raw: unknown): CvAcceptUpdatedSection[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: CvAcceptUpdatedSection[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== 'object') continue;
+    const o = item as Record<string, unknown>;
+    const type = typeof o.type === 'string' ? o.type.trim() : '';
+    if (!type) continue;
+    const order =
+      typeof o.order === 'number' && Number.isFinite(o.order) ? o.order : 0;
+    const visible = o.visible !== false && o.visible !== 0;
+    const data =
+      o.data !== null && typeof o.data === 'object' && !Array.isArray(o.data)
+        ? (o.data as Record<string, unknown>)
+        : {};
+    out.push({ type, data, order, visible });
+  }
+  return out.length > 0 ? out : undefined;
+}
+
 function parseMutationCommitMeta(
   body: Record<string, unknown>,
 ): CvMutationCommitMeta {
@@ -4937,6 +5213,11 @@ function parseMutationCommitMeta(
     'rejectedSuggestionIds',
     'rejected_suggestion_ids',
   );
+  const autoResolvedIds = parseOptionalStringIdArray(
+    body,
+    'autoResolvedIds',
+    'auto_resolved_ids',
+  );
   const scoringTriggered =
     body.scoringTriggered === true
       ? true
@@ -4956,6 +5237,7 @@ function parseMutationCommitMeta(
     transactionLatencyMs,
     acceptedSuggestionIds,
     rejectedSuggestionIds,
+    autoResolvedIds,
     scoringTriggered,
     structuredRevisionHash,
   };
@@ -5000,6 +5282,25 @@ function parseCvSuggestionMutationEnvelope(
     Number.isFinite(src.remainingDraftPreviews)
       ? src.remainingDraftPreviews
       : undefined;
+  const legacyRecord =
+    legacy !== null && typeof legacy === 'object'
+      ? (legacy as Record<string, unknown>)
+      : undefined;
+  const legacyData =
+    legacyRecord?.data !== null &&
+    typeof legacyRecord?.data === 'object' &&
+    !Array.isArray(legacyRecord?.data)
+      ? (legacyRecord.data as Record<string, unknown>)
+      : undefined;
+  const updatedSections =
+    parseCvAcceptUpdatedSections(src.updatedSections ?? src.updated_sections) ??
+    parseCvAcceptUpdatedSections(legacyRecord?.updatedSections ?? legacyRecord?.updated_sections) ??
+    parseCvAcceptUpdatedSections(legacyData?.updatedSections ?? legacyData?.updated_sections);
+  const sectionsSynced =
+    src.sectionsSynced === true ||
+    src.sections_synced === true ||
+    legacyRecord?.sectionsSynced === true ||
+    legacyRecord?.sections_synced === true;
   return {
     suggestion,
     pendingSuggestionsCount,
@@ -5009,6 +5310,8 @@ function parseCvSuggestionMutationEnvelope(
     alreadyApplied,
     duplicateSuppressed,
     ...(remainingDraftPreviews !== undefined ? { remainingDraftPreviews } : {}),
+    ...(sectionsSynced ? { sectionsSynced: true } : {}),
+    ...(updatedSections ? { updatedSections } : {}),
     ...parseTruthfulnessFields(src),
     ...parsePerformanceFields(src),
     ...parseMutationCommitMeta(src),
@@ -5027,6 +5330,15 @@ function parseCvSuggestionsBulkEnvelope(
       : null;
   const src = nested ? { ...body, ...nested } : body;
   const acceptAllSummary = parseAcceptAllSummary(src);
+  const overflowRaw = src.acceptAllQueueOverflow ?? src.accept_all_queue_overflow;
+  const acceptAllQueueOverflowCount =
+    typeof overflowRaw === 'number' && Number.isFinite(overflowRaw) && overflowRaw > 0
+      ? Math.floor(overflowRaw)
+      : acceptAllSummary?.queueOverflowCount;
+  const acceptAllQueueOverflow =
+    overflowRaw === true ||
+    (typeof overflowRaw === 'number' && overflowRaw > 0) ||
+    acceptAllSummary?.queueOverflow === true;
   return {
     acceptedCount:
       typeof src.acceptedCount === 'number' &&
@@ -5066,7 +5378,10 @@ function parseCvSuggestionsBulkEnvelope(
       typeof src.message === 'string' && src.message.trim()
         ? src.message.trim()
         : undefined,
-    acceptAllQueueOverflow: src.acceptAllQueueOverflow === true,
+    acceptAllQueueOverflow,
+    ...(acceptAllQueueOverflowCount !== undefined
+      ? { acceptAllQueueOverflowCount }
+      : {}),
     acceptAllSkippedForAiLimit: src.acceptAllSkippedForAiLimit === true,
     acceptAllDraftReuseCount:
       typeof src.acceptAllDraftReuseCount === 'number' &&
@@ -5890,7 +6205,7 @@ const cv = {
    */
   assistantCommit: async (
     cvProfileId: string,
-    body: { patch: Record<string, unknown>; commandId?: string },
+    body: { patch: Record<string, unknown>; commandId?: string; operation?: string },
   ): Promise<CvAssistantCommitResult> => {
     const res = await axiosClient.post<unknown>(
       `/cv/profiles/${encodeURIComponent(cvProfileId)}/assistant/commit`,
@@ -6477,7 +6792,10 @@ const cv = {
     const res = await axiosClient.post<unknown>(
       '/cv/suggestions/accept-all',
       {},
-      { params: cvProfileId ? { cvProfileId } : {} },
+      {
+        params: cvProfileId ? { cvProfileId } : {},
+        timeout: 90_000,
+      },
     );
     throwIfApiFailureResponse(res.data, res.status);
     return parseCvSuggestionsBulkEnvelope(res.data);
@@ -6621,6 +6939,14 @@ const cv = {
           : undefined,
       ...parseTruthfulnessFields(src),
       ...parsePerformanceFields(src),
+      selectableFieldPaths: sanitizeCvImprovementFieldPaths(
+        (Array.isArray(src.selectableFieldPaths)
+          ? src.selectableFieldPaths
+          : Array.isArray(src.selectable_field_paths)
+            ? src.selectable_field_paths
+            : undefined) as string[] | undefined,
+      ),
+      aiUsage: parseCvAiUsageFromEnvelope(res.data),
     };
   },
   acceptImprovement: async (
@@ -6703,6 +7029,12 @@ const cv = {
       idempotent: body.idempotent === true,
       alreadyApplied: body.alreadyApplied === true,
       duplicateSuppressed: body.duplicateSuppressed === true,
+      sectionsSynced:
+        body.sectionsSynced === true || body.sections_synced === true,
+      updatedSections: parseCvAcceptUpdatedSections(
+        body.updatedSections ?? body.updated_sections,
+      ),
+      aiUsage: parseCvAiUsageFromEnvelope(res.data),
       ...parseTruthfulnessFields(body),
       ...parsePerformanceFields(body),
       ...parseMutationCommitMeta(body),

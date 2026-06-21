@@ -39,6 +39,28 @@ export type CvAiAssessment = {
   improvements?: string[];
 };
 
+export type CvAnalysisUiHints = {
+  showQualityDimensions: boolean;
+  structuralAtsChecksPlacement?: 'after_ats_read_only';
+};
+
+/** Parse `analysisUiHints` from score breakdown (server-driven CV Analysis tab layout). */
+export function parseAnalysisUiHints(source: unknown): CvAnalysisUiHints | null {
+  if (!source || typeof source !== 'object') return null;
+  const o = source as Record<string, unknown>;
+  const raw = o.analysisUiHints ?? o.analysis_ui_hints;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const hints = raw as Record<string, unknown>;
+  const showQualityDimensions = hints.showQualityDimensions !== false;
+  const placementRaw = hints.structuralAtsChecksPlacement ?? hints.structural_ats_checks_placement;
+  const structuralAtsChecksPlacement =
+    placementRaw === 'after_ats_read_only' ? 'after_ats_read_only' : undefined;
+  return {
+    showQualityDimensions,
+    ...(structuralAtsChecksPlacement ? { structuralAtsChecksPlacement } : {}),
+  };
+}
+
 /** Hybrid CV score metadata from GET/POST score endpoints. */
 export type CvHybridScoringMeta = {
   scoringMethod: CvScoringMethod;
@@ -53,6 +75,13 @@ export type CvHybridScoringMeta = {
    * `false` → render heuristic-only UI and never show an empty AI ring.
    */
   aiBreakdownAvailable: boolean;
+  /** Why AI breakdown is missing, when the API sends it. */
+  aiBreakdownUnavailableReason?:
+    | 'insufficient_content'
+    | 'ai_disabled'
+    | 'ai_not_configured'
+    | 'ai_eval_failed'
+    | null;
   /** Which engine produced the ATS read: AI-assisted or basic heuristic checks. */
   atsMode: CvAtsMode;
 };
@@ -214,6 +243,7 @@ export function parseCvHybridScoring(source: unknown): CvHybridScoringMeta | nul
     aiScore,
     aiAssessment,
   });
+  const aiBreakdownUnavailableReason = parseAiBreakdownUnavailableReason(o);
   const atsMode = parseAtsMode(o, { method, aiBreakdownAvailable });
 
   return {
@@ -225,6 +255,7 @@ export function parseCvHybridScoring(source: unknown): CvHybridScoringMeta | nul
     aiAssessment,
     scoringTransparency,
     aiBreakdownAvailable,
+    aiBreakdownUnavailableReason,
     atsMode,
   };
 }
@@ -265,6 +296,23 @@ function parseAtsMode(
   const raw = pickString(o.atsMode ?? o.ats_mode)?.toLowerCase();
   if (raw === 'ai' || raw === 'heuristic') return raw;
   return ctx.aiBreakdownAvailable ? 'ai' : 'heuristic';
+}
+
+function parseAiBreakdownUnavailableReason(
+  o: Record<string, unknown>,
+): CvHybridScoringMeta['aiBreakdownUnavailableReason'] {
+  const raw = pickString(
+    o.aiBreakdownUnavailableReason ?? o.ai_breakdown_unavailable_reason,
+  );
+  if (
+    raw === 'insufficient_content' ||
+    raw === 'ai_disabled' ||
+    raw === 'ai_not_configured' ||
+    raw === 'ai_eval_failed'
+  ) {
+    return raw;
+  }
+  return null;
 }
 
 /** Read hybrid fields already normalized on {@link CVScorePayload}. */

@@ -61,6 +61,7 @@ export function HeaderFloatingControls({ toolbarAlign = 'center' }: { toolbarAli
   const focused = ctx?.focusedSection === 'personal';
   const hp = ctx?.headerPreview ?? DEFAULT_HEADER_PREVIEW;
   const patch = ctx?.setHeaderPreview;
+  const photoUploadEnabled = ctx?.photoUploadEnabled ?? false;
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -85,10 +86,12 @@ export function HeaderFloatingControls({ toolbarAlign = 'center' }: { toolbarAli
   };
 
   const onPickPhoto = () => {
+    if (!photoUploadEnabled) return;
     fileRef.current?.click();
   };
 
   const onFile = (f: FileList | null) => {
+    if (!photoUploadEnabled) return;
     const file = f?.[0];
     if (!file || !ctx?.onUpdate) return;
     if (file.size > 20 * 1024 * 1024) {
@@ -128,17 +131,19 @@ export function HeaderFloatingControls({ toolbarAlign = 'center' }: { toolbarAli
         )}
       >
         <div className="flex items-center gap-1 rounded-full border border-white/10 bg-[#0C0F0F]/95 px-1.5 py-1 shadow-lg backdrop-blur-sm">
-          <button
-            type="button"
-            title="Photo"
-            className="rounded-full p-1.5 text-white/70 transition hover:bg-white/10 hover:text-[#00C9B1]"
-            onClick={(e) => {
-              e.stopPropagation();
-              onPickPhoto();
-            }}
-          >
-            <Camera className="h-4 w-4" />
-          </button>
+          {photoUploadEnabled ? (
+            <button
+              type="button"
+              title="Photo"
+              className="rounded-full p-1.5 text-white/70 transition hover:bg-white/10 hover:text-[#00C9B1]"
+              onClick={(e) => {
+                e.stopPropagation();
+                onPickPhoto();
+              }}
+            >
+              <Camera className="h-4 w-4" />
+            </button>
+          ) : null}
           <button
             ref={btnRef}
             type="button"
@@ -194,30 +199,32 @@ export function HeaderFloatingControls({ toolbarAlign = 'center' }: { toolbarAli
               <ToggleRow label="Location" on={hp.showLocation} onToggle={() => set({ showLocation: !hp.showLocation })} />
               <ToggleRow label="Nationality" on={hp.nationality} onToggle={() => set({ nationality: !hp.nationality })} />
               <ToggleRow label="Date of Birth" on={hp.dateOfBirth} onToggle={() => set({ dateOfBirth: !hp.dateOfBirth })} />
-              <ToggleRow label="Photo" on={hp.showPhoto} onToggle={() => set({ showPhoto: !hp.showPhoto })} />
+              {photoUploadEnabled ? (
+                <>
+                  <ToggleRow label="Photo" on={hp.showPhoto} onToggle={() => set({ showPhoto: !hp.showPhoto })} />
+                  <div className="my-2 border-t border-white/10" />
+                  <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-white/35">Photo style</p>
+                  <div className="flex gap-1">
+                    {(['circle', 'square', 'avatar'] as const).map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => set({ photoStyle: s })}
+                        className={cn(
+                          'flex-1 rounded-lg border px-2 py-1 text-[10px] font-semibold capitalize transition',
+                          hp.photoStyle === s
+                            ? 'border-[#00C9B1] bg-[#00C9B1]/15 text-[#00C9B1]'
+                            : 'border-white/10 text-white/45 hover:border-white/20',
+                        )}
+                      >
+                        {s === 'avatar' ? 'Avatar' : s}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : null}
               <ToggleRow label="Uppercase name" on={hp.uppercaseName} onToggle={() => set({ uppercaseName: !hp.uppercaseName })} />
               <ToggleRow label="Extra field" on={hp.extraField} onToggle={() => set({ extraField: !hp.extraField })} />
-
-              <div className="my-2 border-t border-white/10" />
-
-              <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-white/35">Photo style</p>
-              <div className="flex gap-1">
-                {(['circle', 'square', 'avatar'] as const).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => set({ photoStyle: s })}
-                    className={cn(
-                      'flex-1 rounded-lg border px-2 py-1 text-[10px] font-semibold capitalize transition',
-                      hp.photoStyle === s
-                        ? 'border-[#00C9B1] bg-[#00C9B1]/15 text-[#00C9B1]'
-                        : 'border-white/10 text-white/45 hover:border-white/20',
-                    )}
-                  >
-                    {s === 'avatar' ? 'Avatar' : s}
-                  </button>
-                ))}
-              </div>
             </motion.div>
           ) : null}
         </AnimatePresence>

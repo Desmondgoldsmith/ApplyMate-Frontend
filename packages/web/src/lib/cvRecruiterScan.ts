@@ -293,7 +293,7 @@ export function recruiterScanHeatmapStyle(
   const intensity = Math.max(0, Math.min(100, entry.attentionScore)) / 100;
   return {
     boxShadow: `inset 0 0 0 2px rgba(234, 88, 12, ${0.15 + intensity * 0.55})`,
-    background: `linear-gradient(90deg, rgba(251, 146, 60, ${intensity * 0.14}) 0%, transparent 72%)`,
+    backgroundImage: `linear-gradient(90deg, rgba(251, 146, 60, ${intensity * 0.14}) 0%, transparent 72%)`,
   };
 }
 

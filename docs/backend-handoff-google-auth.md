@@ -81,7 +81,7 @@ Email/password login unchanged.
 | `NEXTAUTH_SECRET` / `NEXTAUTH_URL` | Frontend only — **must be the Next.js app URL**, not the API |
 | `NEXT_PUBLIC_API_URL`              | Backend base including `/api/`                               |
 
-Google Cloud redirect URI: `{NEXTAUTH_URL}/api/auth/callback/google`
+Google Cloud redirect URI: `{NEXTAUTH_URL or http://localhost:3001}/api/nextauth/callback/google`
 
 ### Troubleshooting `OAuthSignin` / `error=undefined`
 

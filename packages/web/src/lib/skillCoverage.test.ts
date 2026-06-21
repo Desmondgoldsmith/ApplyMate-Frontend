@@ -41,6 +41,38 @@ describe('skillCoverage gap quality', () => {
     expect(getGapDisplaySkills(analysis)).toHaveLength(7);
   });
 
+  it('shows no gaps when German OR group is satisfied (empty missingSkills)', () => {
+    const analysis = {
+      matchScore: 78,
+      missingSkills: [],
+      skillCoverage: [
+        {
+          skill: 'React',
+          status: 'found',
+          importance: 'HIGH',
+          tier: 'required',
+          orGroupId: 'auto_or_0',
+        },
+        {
+          skill: 'Vue.js',
+          status: 'found',
+          importance: 'MEDIUM',
+          tier: 'preferred',
+          orGroupId: 'auto_or_0',
+        },
+        {
+          skill: 'Angular',
+          status: 'found',
+          importance: 'MEDIUM',
+          tier: 'preferred',
+          orGroupId: 'auto_or_0',
+        },
+      ],
+    } satisfies JobAnalysis;
+    expect(getGapDisplaySkills(analysis)).toEqual([]);
+    expect(getTailorChecklistSkills(analysis)).toEqual([]);
+  });
+
   it('prefers server missingSkills when present', () => {
     const analysis = {
       matchScore: 70,

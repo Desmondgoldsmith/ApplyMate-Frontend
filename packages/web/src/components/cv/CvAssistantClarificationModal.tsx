@@ -44,7 +44,7 @@ const CLARIFICATION_QUICK_PROMPTS: { label: string; answer: string }[] = [
   {
     label: 'Keep it factual',
     answer:
-      "Only use information already in my CV — don't invent or exaggerate anything.",
+      "Only use information already in my resume. Don't invent or exaggerate anything.",
   },
 ];
 
@@ -108,7 +108,10 @@ export function CvAssistantClarificationModal({
             ) : null}
           </div>
 
-          <div className="max-h-[min(50vh,360px)] space-y-3 overflow-y-auto px-4 py-3">
+          <div
+            className="max-h-[min(50vh,360px)] space-y-3 overflow-y-auto overscroll-y-contain touch-pan-y px-4 py-3 [-webkit-overflow-scrolling:touch]"
+            data-lenis-prevent-wheel
+          >
             {past.length > 0 ? (
               <div className="space-y-2">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-white/35">
@@ -169,7 +172,7 @@ export function CvAssistantClarificationModal({
                 onChange={(e) => setAnswer(e.target.value)}
                 rows={3}
                 disabled={busy}
-                placeholder="Type your answer here — or tap a quick reply above…"
+                placeholder="Type your answer here, or tap a quick reply above…"
                 className="w-full resize-y rounded-xl border border-white/[0.12] bg-[#111616] px-3 py-2 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-[#00C9B1]/35 disabled:opacity-60"
               />
             </label>

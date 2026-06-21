@@ -51,7 +51,6 @@ import {
   modeShellClass,
   PipelineRenderer,
 } from '@/components/dashboard/experience-renderer';
-import { assistantToneHeroAccentClass } from '@/components/dashboard/assistant-voice';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { useToast } from '@/components/ui/Toast';
 import { useAnalytics } from '@/hooks/useAnalytics';
@@ -844,10 +843,7 @@ export function DashboardOverviewContent() {
 
     if (plan?.dashboardVitals) {
       const fromApi = dashboardVitalsToStatChips(plan.dashboardVitals, plan);
-      const hasRealValues = fromApi.some(
-        (c) => c.value !== '—' && c.value.trim() !== '',
-      );
-      if (fromApi.length > 0 && hasRealValues) return fromApi;
+      if (fromApi.length > 0) return fromApi;
     }
 
     const chips: DashboardStatChip[] = [];
@@ -901,11 +897,21 @@ export function DashboardOverviewContent() {
       });
     }
 
+    const bestMatchVital = plan?.dashboardVitals?.bestMatch;
+    const hasRealBestMatch =
+      bestMatchVital?.hasAnalyzedJobs === true &&
+      bestMatchVital.score != null &&
+      Number.isFinite(bestMatchVital.score);
     chips.push({
       key: 'best_match',
       label: 'Best match',
-      value: `${Math.round(a?.averageMatchScore ?? 0)}%`,
-      status: 'Latest analyses',
+      value: hasRealBestMatch ? `${Math.round(bestMatchVital.score!)}%` : '—',
+      status: hasRealBestMatch
+        ? cleanAiText(bestMatchVital.company?.trim() ?? 'Latest analyses')
+        : cleanAiText(
+            bestMatchVital?.emptyStateMessage?.trim() ??
+              'Analyze a job to see your best match',
+          ),
       explanation: TOOLTIP_BEST_MATCH,
       scrollTargetId: 'dashboard-deep-recent-analyses',
     });
@@ -1142,10 +1148,6 @@ export function DashboardOverviewContent() {
               className={cn(
                 'mb-4 max-md:mb-3 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-10',
                 'rounded-none border-0 bg-transparent p-0 shadow-none ring-0',
-                dashboardVm?.usesExperienceLayer &&
-                  assistantToneHeroAccentClass(
-                    todayPlan.data?.assistantTone ?? null,
-                  ),
               )}
             >
               <div className="min-w-0 max-w-[65ch]">

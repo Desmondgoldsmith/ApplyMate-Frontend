@@ -91,11 +91,28 @@ function InlineFieldInner({
   const editSessionDirtyRef = useRef(false);
   const editSessionStartRef = useRef('');
   const commitInFlightRef = useRef(false);
+  const lastDataRevisionRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- keep draft synced when parent value changes
     if (!editing) setDraft(value);
   }, [value, editing]);
+
+  useEffect(() => {
+    const rev = ctx?.dataRevision;
+    if (rev == null) return;
+    if (lastDataRevisionRef.current === undefined) {
+      lastDataRevisionRef.current = rev;
+      return;
+    }
+    if (lastDataRevisionRef.current === rev) return;
+    lastDataRevisionRef.current = rev;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resync after undo/redo
+    setEditing(false);
+    setDraft(value);
+    editSessionDirtyRef.current = false;
+    editSessionStartRef.current = normalizeEditableHtml(toFormattedHtml(value || ''));
+  }, [ctx?.dataRevision, value]);
 
   useEffect(() => {
     if (!startEditingWhenEmpty) return;

@@ -16,6 +16,7 @@ import {
 } from '@/lib/api';
 import {
   AI_QUOTA_UPGRADE_HINT,
+  applyCvAiUsageToAuthCache,
   invalidateDailyAiUsageQuery,
 } from '@/lib/ai-daily-usage';
 import { buildAcceptAllSuccessToastMessage } from '@/lib/cvAcceptAllSummaryToast';
@@ -26,10 +27,18 @@ import {
 } from '@/lib/cvAcceptAllQuota';
 import {
   formatApiErrorForToast,
+  getApiErrorCode,
   getApiErrorMessage,
+  isAcceptAllAbortedTimeoutError,
   isAcceptAllDailyQuotaExhaustedError,
+  isAcceptAllHttpTimeoutError,
+  isAcceptAllInProgressError,
   isDailyAiLimitApiError,
 } from '@/lib/axios';
+import {
+  pollSuggestionsWhileAcceptAllInProgress,
+  refetchCvAfterAcceptAllUncertainty,
+} from '@/lib/cvAcceptAllRecovery';
 import { logCvDevPerf } from '@/lib/cvDevPerf';
 import { logCvMaterializePerformanceDev } from '@/lib/cvApplyPerformanceDev';
 import { logCvMutationErrorDev } from '@/lib/cvMutationDevLog';
@@ -38,15 +47,18 @@ import {
   applyBulkAcceptToImprovementsCache,
   applyBulkRejectToImprovementsCache,
   applySuggestionAcceptToImprovementsCache,
+  applySuggestionPreviewToImprovementsCache,
   applySuggestionRejectToImprovementsCache,
   applySuggestionSelfFixToImprovementsCache,
 } from '@/lib/cvSuggestionsMutationApply';
 import { cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
 import { isCvApplyImprovementTerminalNoDiff, toastCopyForTerminalNoDiffApply } from '@/lib/cvApplyImprovementQueue';
 import { cvOpenParamsFromApplyResult } from '@/lib/cvDiffPreviewMap';
+import { canDisplayCvImprovementDiffPreview } from '@/lib/cvImprovementDiffPreview';
 import { normalizeText } from '@/lib/normalizeText';
 import { shouldShowTruthfulnessAdjustNotice } from '@/lib/cvTruthfulnessUi';
 import { isAiOriginSuggestionId } from '@/lib/cvHybridScoring';
+import { isCvImprovementAiFixable, isCvImprovementTemplateWithPlaceholder, canShowCvImprovementFixWithAI } from '@/lib/cvImprovementFieldPath';
 import {
   CV_SUGGESTION_ACCEPT_ALL_MESSAGES,
   CV_SUGGESTION_APPLYING_MESSAGE,
@@ -64,9 +76,13 @@ type ImprovementsPanelProps = {
   improvements: CVImprovementItem[];
   profileId?: string | null;
   acceptAllQuota?: CvAcceptAllQuota | null;
+  /** Scroll sidebar/preview to the structured field flagged by this suggestion. */
+  onJumpToTarget?: (targetFieldPath: string, sectionFallback?: string) => void;
   /** @deprecated Accept/reject now handled at page level via onDiffPreview flow */
   onApplied?: () => void;
   onDiffPreview?: (params: CvDiffPreviewOpenParams | null) => void;
+  /** Suggestion id when a diff overlay is open — suppresses duplicate Fix with AI. */
+  activePreviewSuggestionId?: string | null;
 };
 
 function PriorityBadge({ priority, severity }: { priority?: number; severity?: string }) {
@@ -94,7 +110,9 @@ function ImprovementsPanelInner({
   improvements,
   profileId,
   acceptAllQuota = null,
+  onJumpToTarget,
   onDiffPreview,
+  activePreviewSuggestionId = null,
 }: ImprovementsPanelProps) {
   const queryClient = useQueryClient();
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -210,6 +228,29 @@ function ImprovementsPanelInner({
     } catch (e) {
       logCvMutationErrorDev('acceptAllSuggestions', e);
       if (prev !== undefined) queryClient.setQueryData(qk, prev);
+      if (isAcceptAllInProgressError(e)) {
+        toast.info(
+          getApiErrorMessage(e) ||
+            'Accept all is already running for this CV. Updating suggestions…',
+        );
+        void pollSuggestionsWhileAcceptAllInProgress(queryClient, profileId);
+        return;
+      }
+      if (isAcceptAllAbortedTimeoutError(e)) {
+        toast.error(
+          getApiErrorMessage(e) ||
+            'Accept all was aborted before saving. Your CV was not modified. Try again with fewer suggestions or apply individually.',
+        );
+        await refetchCvAfterAcceptAllUncertainty(queryClient, profileId);
+        return;
+      }
+      if (isAcceptAllHttpTimeoutError(e)) {
+        toast.error(
+          'Accept all timed out. Refreshing your CV to confirm its current state — do not assume it succeeded.',
+        );
+        await refetchCvAfterAcceptAllUncertainty(queryClient, profileId);
+        return;
+      }
       if (isAcceptAllDailyQuotaExhaustedError(e)) {
         const quota = extractAcceptAllQuotaFromApiBody(
           (e as { response?: { data?: unknown } }).response?.data,
@@ -411,19 +452,52 @@ function ImprovementsPanelInner({
       } else if (result.duplicateSuppressed) {
         toast.info('Showing your saved preview — no new AI run was needed.');
       }
-      onDiffPreview?.(cvOpenParamsFromApplyResult(result, stableId));
+      const item = improvements[idx];
+      const openParams = cvOpenParamsFromApplyResult(
+        result,
+        stableId,
+        item?.section,
+      );
+      if (!canDisplayCvImprovementDiffPreview(openParams)) {
+        toast.error(
+          'Could not display this suggestion for review. Please try refreshing.',
+        );
+        return;
+      }
+      const pendingPaths = (result.changedFields ?? [])
+        .map((cf) => cf.fieldPath?.trim())
+        .filter((p): p is string => Boolean(p));
+      queryClient.setQueryData<CvImprovementsPayload>(qk, (p) =>
+        applySuggestionPreviewToImprovementsCache(p, stableId, {
+          pendingFieldPaths:
+            pendingPaths.length > 0
+              ? pendingPaths
+              : result.selectableFieldPaths?.map((p) => p.trim()).filter(Boolean),
+          lastPreviewDraftHash: result.draftHash,
+          lastPreviewForSuggestionId: stableId,
+        }) ?? p,
+      );
+      onDiffPreview?.(openParams);
       if (shouldShowTruthfulnessAdjustNotice(result)) {
         toast.info('Some suggested edits were adjusted to match your CV. See the preview note for details.');
       }
       if (result.cacheHit !== true && !result.duplicateSuppressed) {
-        invalidateDailyAiUsageQuery(queryClient, accessToken);
+        if (result.aiUsage) {
+          applyCvAiUsageToAuthCache(queryClient, accessToken, result.aiUsage);
+        } else {
+          invalidateDailyAiUsageQuery(queryClient, accessToken);
+        }
       }
     } catch (e) {
       logCvMutationErrorDev('applyImprovement', e);
-      const msg = formatApiErrorForToast(
-        e,
-        'AI could not apply this change. Try again.',
-      );
+      const materializeFailed =
+        getApiErrorCode(e) === 'IMPROVEMENT_MATERIALIZE_FAILED';
+      const msg = materializeFailed
+        ? "Couldn't generate a preview for this suggestion — tap Fix with AI again."
+        : formatApiErrorForToast(
+            e,
+            'AI could not apply this change. Try again.',
+          );
       toast.error(msg);
       if (!isDailyAiLimitApiError(e)) {
         setErrorMap((p) => ({
@@ -456,9 +530,9 @@ function ImprovementsPanelInner({
         >
           <CheckCircle2 className="h-6 w-6 text-emerald-400" strokeWidth={2.25} />
         </motion.div>
-        <p className="text-sm font-semibold text-white/90">All AI suggestions have been resolved.</p>
+        <p className="text-sm font-semibold text-white/90">Your CV looks great — no open suggestions.</p>
         <p className="mt-1 max-w-[240px] text-xs leading-relaxed text-white/45">
-          Run another scan anytime to discover new opportunities after you edit your CV.
+          Run another scan anytime after you edit your CV to discover new opportunities.
         </p>
       </GlowCard>
     );
@@ -560,6 +634,16 @@ function ImprovementsPanelInner({
             const { item, i: idx, key: entryKey } = currentEntry;
             const applying = applyingSet.has(entryKey);
             const error = errorMap[entryKey];
+            const aiFixable = isCvImprovementAiFixable(item);
+            const showFixWithAi = canShowCvImprovementFixWithAI(
+              item,
+              activePreviewSuggestionId,
+            );
+            const templateWithPlaceholder = isCvImprovementTemplateWithPlaceholder(item);
+            const targetPath =
+              item.targetFieldPath?.trim() ||
+              item.pendingFieldPaths?.[0]?.trim() ||
+              '';
 
             return (
               <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] p-3.5">
@@ -593,6 +677,28 @@ function ImprovementsPanelInner({
                   <p className="mt-2 text-xs leading-relaxed text-white/50">{normalizeText(item.suggestion)}</p>
                 )}
 
+                {!aiFixable ? (
+                  <p className="mt-2.5 rounded-md border border-amber-500/20 bg-amber-500/8 px-2.5 py-2 text-[11px] leading-relaxed text-amber-200/90">
+                    This needs information only you have — please add it yourself.
+                  </p>
+                ) : templateWithPlaceholder ? (
+                  <p className="mt-2.5 rounded-md border border-[#00C9B1]/20 bg-[#00C9B1]/8 px-2.5 py-2 text-[11px] leading-relaxed text-[#a8f5ea]/95">
+                    Fix with AI adds bracketed placeholders like [ADD %] — replace them with your real numbers in the preview before accepting.
+                  </p>
+                ) : null}
+
+                {targetPath && onJumpToTarget ? (
+                  <button
+                    type="button"
+                    className="mt-2 text-[11px] font-medium text-[#00C9B1] underline-offset-2 hover:underline"
+                    onClick={() =>
+                      onJumpToTarget(targetPath, item.section ?? undefined)
+                    }
+                  >
+                    Go to field
+                  </button>
+                ) : null}
+
                 {item.example && (
                   <div className="mt-2.5 rounded-md border border-white/[0.06] bg-white/[0.03] p-2.5">
                     <p className="mb-1.5 text-[10px] font-medium uppercase tracking-[0.08em] text-[rgba(0,201,177,0.60)]">
@@ -605,20 +711,22 @@ function ImprovementsPanelInner({
                 {error && <p className="mt-2 text-[11px] text-rose-400">{error}</p>}
 
                 <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                  <button
-                    type="button"
-                    data-testid="cv-improvement-apply-ai"
-                    onClick={() => void handleApplyWithAI(idx)}
-                    disabled={applying}
-                    className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border-0 bg-[#00C9B1] text-xs font-semibold text-[#080B0A] transition hover:brightness-110 disabled:opacity-50 sm:min-w-[7rem] sm:flex-1"
-                  >
-                    {applying ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-[14px] w-[14px]" />
-                    )}
-                    {applying ? APPLY_WITH_AI_LOADING_MESSAGES[applyLoadingPhraseIndex] : 'Fix with AI'}
-                  </button>
+                  {showFixWithAi ? (
+                    <button
+                      type="button"
+                      data-testid="cv-improvement-apply-ai"
+                      onClick={() => void handleApplyWithAI(idx)}
+                      disabled={applying}
+                      className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border-0 bg-[#00C9B1] text-xs font-semibold text-[#080B0A] transition hover:brightness-110 disabled:opacity-50 sm:min-w-[7rem] sm:flex-1"
+                    >
+                      {applying ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-[14px] w-[14px]" />
+                      )}
+                      {applying ? APPLY_WITH_AI_LOADING_MESSAGES[applyLoadingPhraseIndex] : 'Fix with AI'}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     data-testid="cv-improvement-self-fix"

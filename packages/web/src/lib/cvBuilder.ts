@@ -4,6 +4,7 @@ import {
   api,
   type CVProfile,
   type CVSectionRecord,
+  type CvAcceptUpdatedSection,
   type CvBatchUpsertSectionInput,
 } from '@/lib/api';
 import { normalizeProfessionalHeadlineTitle } from '@/lib/infer-cv-profile-name';
@@ -2487,7 +2488,7 @@ export async function saveCVBuilderData(
   const cvProfileId = opts?.cvProfileId?.trim();
 
   if (cvProfileId) {
-    const coreTypes = ['summary', 'experience', 'education', 'skills'] as const;
+    const coreTypes = ['summary', 'experience', 'education', 'projects', 'skills'] as const;
     const missingCore = coreTypes.some((t) => !mutable.some((s) => s.type.toLowerCase() === t));
     if (missingCore) {
       try {
@@ -2611,6 +2612,93 @@ export function countFilledSections(data: CVBuilderData): number {
     String(b?.title ?? '').trim() || (Array.isArray(b?.items) && b.items.some((i) => String(i?.text ?? '').trim())),
   ).length;
   return n;
+}
+
+const ACCEPT_SECTION_TYPE_TO_BUILDER_KEY: Partial<
+  Record<string, keyof CVBuilderData>
+> = {
+  experience: 'experience',
+  education: 'education',
+  skills: 'skills',
+  summary: 'summary',
+  personal: 'personal',
+  projects: 'projects',
+  certifications: 'certifications',
+  languages: 'languages',
+  achievements: 'achievements',
+  references: 'references',
+};
+
+/**
+ * Applies accepted section updates directly to CVBuilderData without
+ * requiring a full server refetch. Called immediately after accept succeeds.
+ */
+export function applyAcceptedSectionsToBuilderData(
+  current: CVBuilderData,
+  updatedSections: CvAcceptUpdatedSection[],
+  existingSections: CVSectionRecord[],
+): CVBuilderData {
+  if (!updatedSections?.length) return current;
+
+  const patchedSections: CVSectionRecord[] = updatedSections.map((s) => {
+    const existing = existingSections.find((e) => e.type === s.type);
+    return {
+      id: existing?.id ?? `accept-patch-${s.type}`,
+      type: s.type,
+      data: s.data,
+      order: s.order,
+      hidden: !s.visible,
+    };
+  });
+
+  const partialUpdate = transformSectionsToCVBuilderData(null, patchedSections, {
+    email: current.personal.email,
+    name: current.personal.name,
+  });
+
+  const updatedTypes = new Set(updatedSections.map((s) => s.type));
+  const result: CVBuilderData = { ...current };
+
+  for (const sectionType of updatedTypes) {
+    if (sectionType === 'contact') {
+      const contactSec = updatedSections.find((s) => s.type === 'contact');
+      const headlineRaw =
+        contactSec?.data?.headline ??
+        contactSec?.data?.title ??
+        contactSec?.data?.professionalHeadline;
+      if (typeof headlineRaw === 'string' && headlineRaw.trim()) {
+        result.personal = {
+          ...result.personal,
+          headline: normalizeProfessionalHeadlineTitle(normalizeText(headlineRaw)),
+        };
+      }
+      continue;
+    }
+    const builderKey = ACCEPT_SECTION_TYPE_TO_BUILDER_KEY[sectionType];
+    if (builderKey) {
+      const key = builderKey as keyof CVBuilderData;
+      if (partialUpdate[key] !== undefined) {
+        (result as Record<keyof CVBuilderData, unknown>)[key] = partialUpdate[key];
+      }
+    }
+  }
+
+  if (partialUpdate.parsedCustomSections.length > 0) {
+    const bySectionId = new Map(
+      partialUpdate.parsedCustomSections.map((block) => [block.sectionId, block]),
+    );
+    const mergedParsed = result.parsedCustomSections.map(
+      (block) => bySectionId.get(block.sectionId) ?? block,
+    );
+    for (const block of partialUpdate.parsedCustomSections) {
+      if (!mergedParsed.some((b) => b.sectionId === block.sectionId)) {
+        mergedParsed.push(block);
+      }
+    }
+    result.parsedCustomSections = mergedParsed;
+  }
+
+  return coerceStructuredTextInCvBuilderData(result);
 }
 
 export function scoreBreakdownFromPayload(

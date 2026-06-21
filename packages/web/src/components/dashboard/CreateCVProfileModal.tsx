@@ -1,10 +1,11 @@
 'use client';
 
-import { FileText, Loader2, MessageSquare, Sparkles, UploadCloud, X } from 'lucide-react';
+import { FileText, Loader2, MessageSquare, Sparkles, UploadCloud } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
+import { CvCreationModalHeader } from '@/components/cv/CvCreationModalHeader';
 import { CvParseImportSummaryPanel } from '@/components/cv/CvParseImportSummaryPanel';
 import { CVUploadZone } from '@/components/dashboard/CVUploadZone';
 import { CVChatInterface } from '@/components/onboarding/CVChatInterface';
@@ -17,10 +18,10 @@ import { useCreateCVProfile } from '@/hooks/useCreateCVProfile';
 import { api, type ChatCreateCVPayload, type CvParseImportSummary } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
 import {
-  CV_READY_TOAST,
   cvEditorPath,
   prefetchCvProfileForEditor,
 } from '@/lib/cvProfileNavigation';
+import { RESUME_READY_TOAST } from '@/lib/resumeDisplayCopy';
 import { cn } from '@/lib/utils';
 
 type CreateCVProfileModalProps = {
@@ -36,7 +37,7 @@ function StepDots({ current }: { current: FlowStep }) {
   const idx = MAIN_STEPS.indexOf(current);
   const activeIdx = idx >= 0 ? idx : MAIN_STEPS.length - 1;
   return (
-    <div className="flex justify-center gap-1.5 pb-2">
+    <div className="flex justify-center gap-1.5 pb-3">
       {MAIN_STEPS.map((_, i) => (
         <div
           key={i}
@@ -89,13 +90,10 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
   const modalWidth =
     step === 'template'
       ? 'max-w-4xl'
-      : step === 'aiChat'
+      : step === 'aiChat' || step === 'buildMethod'
         ? 'max-w-2xl'
-        : step === 'buildMethod'
-          ? 'max-w-2xl'
-          : 'max-w-lg';
+        : 'max-w-lg';
 
-  const showDots = step !== 'upload' && step !== 'aiChat';
   const blockOverlayClose =
     createProfile.isPending || step === 'aiChat' || aiChatBuilding;
 
@@ -112,9 +110,9 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
           template,
           ...(name.trim() ? { name: name.trim() } : {}),
         });
-        await openProfileInBuilder(profileId, { successToast: CV_READY_TOAST });
+        await openProfileInBuilder(profileId, { successToast: RESUME_READY_TOAST });
       } catch (e) {
-        toast.error(getApiErrorMessage(e) || 'Failed to create CV from chat data');
+        toast.error(getApiErrorMessage(e) || 'Failed to create resume from chat data');
       } finally {
         setAiChatBuilding(false);
       }
@@ -128,13 +126,51 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
       {
         onSuccess: (row) => {
           void openProfileInBuilder(row.id, {
-            successToast: "CV profile created — let's build it out manually",
+            successToast: "Resume profile created — let's build it out manually",
           });
         },
         onError: (e) => toast.error(getApiErrorMessage(e)),
       },
     );
   }, [createProfile, name, template, toast, openProfileInBuilder]);
+
+  const goBack = () => {
+    if (step === 'template') setStep('name');
+    else if (step === 'method') setStep('template');
+    else if (step === 'buildMethod' || step === 'upload') setStep('method');
+    else if (step === 'aiChat') setStep('buildMethod');
+  };
+
+  const showBack =
+    step !== 'name' &&
+    !(step === 'upload' && uploadImportSummary) &&
+    !createProfile.isPending;
+
+  const headerTitle =
+    step === 'name'
+      ? 'Name your resume'
+      : step === 'template'
+        ? 'Choose a template'
+        : step === 'method'
+          ? 'How do you want to build it?'
+          : step === 'buildMethod'
+            ? 'Start from scratch'
+            : step === 'aiChat'
+              ? 'Build with AI'
+              : uploadImportSummary
+                ? 'Import complete'
+                : 'Upload your resume';
+
+  const headerSubtitle =
+    step === 'name'
+      ? 'Give it a name so you can find it easily.'
+      : step === 'template'
+        ? 'You can change this later in the editor.'
+        : step === 'upload' && !uploadImportSummary
+          ? "We'll create a profile from your file and keep your template choice."
+          : step === 'upload' && uploadImportSummary
+            ? 'Review what we extracted, then open the editor.'
+            : undefined;
 
   return (
     <Modal
@@ -143,73 +179,56 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
         if (!o && !blockOverlayClose) close();
       }}
       className={cn(
-        'border-0 bg-transparent p-0 shadow-none transition-[max-width] duration-200',
+        'flex max-h-[min(85dvh,880px)] flex-col overflow-hidden border-0 bg-transparent p-0 shadow-none transition-[max-width] duration-200',
         modalWidth,
       )}
       closeOnOverlayClick={!blockOverlayClose}
-      showCloseButton={!blockOverlayClose}
+      showCloseButton={false}
+      scrollBody={false}
+      bodyClassName="flex min-h-0 flex-1 flex-col p-0 pt-0"
     >
       <GlowCard
-        className="border border-[rgba(0,201,177,0.15)] shadow-[0_0_40px_rgba(0,201,177,0.12)]"
-        contentClassName="flex min-h-0 min-w-0 flex-col p-6"
+        className="flex min-h-0 flex-1 flex-col border border-[rgba(0,201,177,0.15)] shadow-[0_0_40px_rgba(0,201,177,0.12)]"
+        contentClassName="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-5 sm:p-6"
       >
-        {showDots ? <StepDots current={step} /> : null}
+        <CvCreationModalHeader
+          title={headerTitle}
+          subtitle={headerSubtitle}
+          onBack={showBack ? goBack : undefined}
+          onClose={blockOverlayClose ? undefined : close}
+          showClose={!blockOverlayClose}
+        />
 
-        {/* ── STEP 1: Name ── */}
-        {step === 'name' ? (
-          <>
-            <h2 className="text-lg font-bold text-white">Name your CV</h2>
-            <p className="mt-2 text-[13px] text-white/55">
-              Give it a name so you can find it easily
-            </p>
-            <div className="mt-5">
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && name.trim()) setStep('template');
-                }}
-                placeholder="e.g. Frontend Engineer CV"
-                className="w-full rounded-xl border border-[rgba(0,201,177,0.15)] bg-[#111616] px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/25 focus:border-[#00C9B1] focus:ring-2 focus:ring-[rgba(0,201,177,0.2)]"
-                autoFocus
-              />
-            </div>
-            <div className="mt-6 flex flex-wrap justify-end gap-3">
-              <Button type="button" variant="ghost" className="border border-white/10" onClick={close}>
-                Cancel
-              </Button>
-              <Button type="button" disabled={!name.trim()} onClick={() => setStep('template')}>
-                Next →
-              </Button>
-            </div>
-          </>
-        ) : step === 'template' ? (
-          /* ── STEP 2: Template ── */
-          <>
-            <h2 className="text-lg font-bold text-white">Choose a template</h2>
-            <p className="mt-2 text-[13px] text-white/55">You can change this later</p>
-            <div className="mt-5 min-h-0 min-w-0 flex-1">
-              <TemplatePicker selectedTemplate={template} onSelect={setTemplate} showHeader={false} />
-            </div>
-            <div className="mt-6 flex flex-wrap justify-between gap-3">
-              <button
-                type="button"
-                className="text-sm text-white/45 transition hover:text-white"
-                onClick={() => setStep('name')}
-              >
-                ← Back
-              </button>
-              <Button type="button" onClick={() => setStep('method')}>
-                Next →
-              </Button>
-            </div>
-          </>
-        ) : step === 'method' ? (
-          /* ── STEP 3: Method ── */
-          <>
-            <h2 className="text-lg font-bold text-white">How do you want to build it?</h2>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        {step !== 'upload' && step !== 'aiChat' && !uploadImportSummary ? (
+          <StepDots current={step} />
+        ) : null}
+
+        <div className="app-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          {step === 'name' ? (
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && name.trim()) setStep('template');
+              }}
+              placeholder="e.g. Frontend Engineer resume"
+              className="w-full rounded-xl border border-[rgba(0,201,177,0.15)] bg-[#111616] px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/25 focus:border-[#00C9B1] focus:ring-2 focus:ring-[rgba(0,201,177,0.2)]"
+              autoFocus
+            />
+          ) : null}
+
+          {step === 'template' ? (
+            <TemplatePicker
+              selectedTemplate={template}
+              onSelect={setTemplate}
+              showHeader={false}
+              layout="onboardingGrid"
+            />
+          ) : null}
+
+          {step === 'method' ? (
+            <div className="grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
                 data-testid="cv-create-method-upload"
@@ -218,8 +237,10 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
               >
                 <UploadCloud className="h-8 w-8 text-[#00C9B1]" />
                 <div>
-                  <p className="text-sm font-semibold text-white">Upload my CV</p>
-                  <p className="mt-1 text-xs text-white/45">Parse your existing CV instantly with AI</p>
+                  <p className="text-sm font-semibold text-white">Upload my resume</p>
+                  <p className="mt-1 text-xs text-white/45">
+                    Parse your existing resume instantly with AI
+                  </p>
                 </div>
               </button>
               <button
@@ -231,174 +252,137 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
                 <Sparkles className="h-8 w-8 text-[#00C9B1]" />
                 <div>
                   <p className="text-sm font-semibold text-white">Start from scratch</p>
-                  <p className="mt-1 text-xs text-white/45">Build with AI chat or fill in the form manually</p>
+                  <p className="mt-1 text-xs text-white/45">
+                    Build with AI chat or fill in the form manually
+                  </p>
                 </div>
               </button>
             </div>
-            <div className="mt-6 flex justify-start">
-              <button
-                type="button"
-                className="text-sm text-white/45 transition hover:text-white"
-                onClick={() => setStep('template')}
-              >
-                ← Back
-              </button>
-            </div>
-          </>
-        ) : step === 'buildMethod' ? (
-          /* ── STEP 3b: AI Chat vs Manual ── */
-          <>
-            {createProfile.isPending ? (
+          ) : null}
+
+          {step === 'buildMethod' ? (
+            createProfile.isPending ? (
               <div className="flex flex-col items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-[#00C9B1]" />
-                <p className="mt-4 text-sm font-semibold text-white/70">Creating your CV…</p>
+                <p className="mt-4 text-sm font-semibold text-white/70">Creating your resume…</p>
               </div>
             ) : (
-              <>
-                <h2 className="text-lg font-bold text-white">How would you like to build your CV?</h2>
-                <p className="mt-2 text-[13px] text-white/55">
-                  Choose the approach that works best for you
-                </p>
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    data-testid="cv-create-ai-chat"
-                    onClick={handleStartAiChat}
-                    className="relative flex flex-col items-start gap-3 rounded-xl border border-[rgba(0,201,177,0.2)] bg-[#111616]/80 p-4 text-left transition hover:border-[#00C9B1]/45 hover:bg-[#00C9B1]/5"
-                  >
-                    <span className="absolute right-3 top-3 rounded-full bg-[#00C9B1]/15 px-2 py-0.5 text-[10px] font-semibold text-[#00C9B1]">
-                      Recommended
-                    </span>
-                    <MessageSquare className="h-8 w-8 text-[#00C9B1]" />
-                    <div>
-                      <p className="text-sm font-semibold text-white">Chat with AI</p>
-                      <p className="mt-1 text-xs text-white/45">
-                        Answer a few questions and our AI will build your CV for you — fast and guided.
-                      </p>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    data-testid="cv-create-manual"
-                    onClick={() => {
-                      createProfile.mutate(
-                        { name: name.trim() || undefined, template },
-                        {
-                          onSuccess: (row) => {
-                            void openProfileInBuilder(row.id, {
-                              successToast: CV_READY_TOAST,
-                            });
-                          },
-                          onError: (e) => toast.error(getApiErrorMessage(e)),
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  data-testid="cv-create-ai-chat"
+                  onClick={handleStartAiChat}
+                  className="relative flex flex-col items-start gap-3 rounded-xl border border-[rgba(0,201,177,0.2)] bg-[#111616]/80 p-4 text-left transition hover:border-[#00C9B1]/45 hover:bg-[#00C9B1]/5"
+                >
+                  <span className="absolute right-3 top-3 rounded-full bg-[#00C9B1]/15 px-2 py-0.5 text-[10px] font-semibold text-[#00C9B1]">
+                    Recommended
+                  </span>
+                  <MessageSquare className="h-8 w-8 text-[#00C9B1]" />
+                  <div>
+                    <p className="text-sm font-semibold text-white">Chat with AI</p>
+                    <p className="mt-1 text-xs text-white/45">
+                      Answer a few questions and our AI will build your resume for you.
+                    </p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  data-testid="cv-create-manual"
+                  onClick={() => {
+                    createProfile.mutate(
+                      { name: name.trim() || undefined, template },
+                      {
+                        onSuccess: (row) => {
+                          void openProfileInBuilder(row.id, {
+                            successToast: RESUME_READY_TOAST,
+                          });
                         },
-                      );
-                    }}
-                    className="flex flex-col items-start gap-3 rounded-xl border border-[rgba(0,201,177,0.2)] bg-[#111616]/80 p-4 text-left transition hover:border-[#00C9B1]/45 hover:bg-[#00C9B1]/5"
-                  >
-                    <FileText className="h-8 w-8 text-[#00C9B1]" />
-                    <div>
-                      <p className="text-sm font-semibold text-white">Fill in manually</p>
-                      <p className="mt-1 text-xs text-white/45">
-                        Prefer to type it yourself? Use our structured form at your own pace.
-                      </p>
-                    </div>
-                  </button>
-                </div>
-                <div className="mt-6 flex justify-start">
-                  <button
-                    type="button"
-                    className="text-sm text-white/45 transition hover:text-white"
-                    onClick={() => setStep('method')}
-                  >
-                    ← Back
-                  </button>
-                </div>
-              </>
-            )}
-          </>
-        ) : step === 'aiChat' ? (
-          /* ── AI Chat Flow ── */
-          <>
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white">Build your CV with AI</h2>
-              <button
-                type="button"
-                onClick={close}
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 text-white/40 transition hover:border-white/25 hover:text-white/70"
-                title="Close"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-            <p className="mt-1 text-[13px] text-white/55">
-              Answer a few questions or paste your full CV — we&apos;ll only ask about
-              what&apos;s missing.
-            </p>
-            <div className="mt-4">
-              {aiChatBuilding ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <Loader2 className="h-8 w-8 animate-spin text-[#00C9B1]" />
-                  <p className="mt-4 text-sm font-semibold text-white/70">Building your CV…</p>
-                </div>
-              ) : (
-                <CVChatInterface
-                  selectedTemplate={template}
-                  onComplete={(data) => void handleAiChatComplete(data)}
-                  onSkip={handleAiChatSkip}
-                />
-              )}
-            </div>
-          </>
-        ) : (
-          /* ── Upload sub-step ── */
-          <>
-            <button
-              type="button"
-              className="mb-4 text-sm text-white/45 transition hover:text-white"
-              onClick={() => setStep('method')}
-            >
-              ← Back
-            </button>
-            <h2 className="text-lg font-bold text-white">Upload your CV</h2>
-            <p className="mt-2 text-[13px] text-white/55">We&apos;ll create a profile from your file.</p>
-            <div className="mt-5">
-              {uploadImportSummary && uploadProfileId ? (
-                <CvParseImportSummaryPanel
-                  importSummary={uploadImportSummary}
-                  profileId={uploadProfileId}
-                  onReviewInBuilder={() => {
-                    void openProfileInBuilder(uploadProfileId, {
-                      successToast: CV_READY_TOAST,
-                    });
+                        onError: (e) => toast.error(getApiErrorMessage(e)),
+                      },
+                    );
                   }}
-                  onContinue={() => {
-                    void openProfileInBuilder(uploadProfileId, {
-                      successToast: null,
-                    });
-                  }}
-                  continueLabel="Open CV editor"
-                />
-              ) : (
-                <CVUploadZone
-                  ensureNewProfileBeforeParse
-                  onSuccess={async ({ profile, importSummary }) => {
-                    const id = profile.id?.trim();
-                    if (!id) {
-                      toast.error('Upload succeeded but no profile id was returned.');
-                      return;
-                    }
-                    if (importSummary) {
-                      setUploadProfileId(id);
-                      setUploadImportSummary(importSummary);
-                      return;
-                    }
-                    await openProfileInBuilder(id, { successToast: CV_READY_TOAST });
-                  }}
-                />
-              )}
-            </div>
-          </>
-        )}
+                  className="flex flex-col items-start gap-3 rounded-xl border border-[rgba(0,201,177,0.2)] bg-[#111616]/80 p-4 text-left transition hover:border-[#00C9B1]/45 hover:bg-[#00C9B1]/5"
+                >
+                  <FileText className="h-8 w-8 text-[#00C9B1]" />
+                  <div>
+                    <p className="text-sm font-semibold text-white">Fill in manually</p>
+                    <p className="mt-1 text-xs text-white/45">
+                      Use our structured form at your own pace.
+                    </p>
+                  </div>
+                </button>
+              </div>
+            )
+          ) : null}
+
+          {step === 'aiChat' ? (
+            aiChatBuilding ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <Loader2 className="h-8 w-8 animate-spin text-[#00C9B1]" />
+                <p className="mt-4 text-sm font-semibold text-white/70">Building your resume…</p>
+              </div>
+            ) : (
+              <CVChatInterface
+                selectedTemplate={template}
+                onComplete={(data) => void handleAiChatComplete(data)}
+                onSkip={handleAiChatSkip}
+              />
+            )
+          ) : null}
+
+          {step === 'upload' ? (
+            uploadImportSummary && uploadProfileId ? (
+              <CvParseImportSummaryPanel
+                embedded
+                importSummary={uploadImportSummary}
+                onContinue={() => {
+                  void openProfileInBuilder(uploadProfileId, {
+                    successToast: RESUME_READY_TOAST,
+                  });
+                }}
+                continueLabel="Open resume editor"
+              />
+            ) : (
+              <CVUploadZone
+                ensureNewProfileBeforeParse
+                profileName={name.trim() || undefined}
+                profileTemplate={template}
+                onSuccess={async ({ profile, importSummary }) => {
+                  const id = profile.id?.trim();
+                  if (!id) {
+                    toast.error('Upload succeeded but no profile id was returned.');
+                    return;
+                  }
+                  if (importSummary) {
+                    setUploadProfileId(id);
+                    setUploadImportSummary(importSummary);
+                    return;
+                  }
+                  await openProfileInBuilder(id, { successToast: RESUME_READY_TOAST });
+                }}
+              />
+            )
+          ) : null}
+        </div>
+
+        {step === 'name' ? (
+          <div className="mt-6 flex shrink-0 flex-wrap justify-end gap-3 border-t border-white/[0.06] pt-4">
+            <Button type="button" variant="ghost" className="border border-white/10" onClick={close}>
+              Cancel
+            </Button>
+            <Button type="button" disabled={!name.trim()} onClick={() => setStep('template')}>
+              Next →
+            </Button>
+          </div>
+        ) : null}
+
+        {step === 'template' ? (
+          <div className="mt-6 flex shrink-0 justify-end border-t border-white/[0.06] pt-4">
+            <Button type="button" onClick={() => setStep('method')}>
+              Next →
+            </Button>
+          </div>
+        ) : null}
       </GlowCard>
     </Modal>
   );

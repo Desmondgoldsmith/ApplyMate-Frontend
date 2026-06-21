@@ -17,8 +17,11 @@ export function useCvSuggestionMutations() {
   const queryClient = useQueryClient();
 
   const reconcileAfterMutation = useCallback(
-    (profileId: string | null | undefined, kind: CvSuggestionMutationReconcileKind) =>
-      reconcileAfterCvSuggestionMutation(queryClient, profileId, kind),
+    (
+      profileId: string | null | undefined,
+      kind: CvSuggestionMutationReconcileKind,
+      options?: import('@/lib/cvSuggestionMutationReconcile').CvSuggestionMutationReconcileOptions,
+    ) => reconcileAfterCvSuggestionMutation(queryClient, profileId, kind, options),
     [queryClient],
   );
 

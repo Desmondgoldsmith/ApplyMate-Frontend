@@ -25,7 +25,7 @@ export function CvChatComposer({
   onSend,
   disabled = false,
   sending = false,
-  placeholder = 'Type an answer or paste your full CV…',
+  placeholder = 'Type an answer or paste your full resume…',
   showPasteHint = true,
   className,
   textareaClassName,
@@ -39,7 +39,7 @@ export function CvChatComposer({
       {showPasteHint ? (
         <p className="mb-2 text-[11px] leading-snug text-white/45">{CV_CHAT_PASTE_HINT}</p>
       ) : null}
-      <div className="flex gap-2">
+      <div className="flex items-end gap-2">
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -64,7 +64,7 @@ export function CvChatComposer({
         />
         <Button
           type="button"
-          className="h-[52px] shrink-0 px-4"
+          className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-0"
           disabled={!canSend}
           onClick={onSend}
           aria-label="Send"

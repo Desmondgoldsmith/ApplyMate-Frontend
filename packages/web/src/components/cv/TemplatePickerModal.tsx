@@ -106,7 +106,7 @@ export function TemplatePickerModal({
           </div>
           {showFooterHint ? (
             <p className="mt-3 text-center text-[11px] text-white/35">
-              Selected template uses a teal border ({TEAL}).
+              Tap a template to apply it. You can switch layouts anytime.
             </p>
           ) : null}
         </div>

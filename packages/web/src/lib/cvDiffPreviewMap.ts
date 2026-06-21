@@ -33,6 +33,7 @@ export function cvStructuralDiffPayloadPresent(before: unknown, after: unknown):
 export function cvOpenParamsFromApplyResult(
   result: CvApplyImprovementResult,
   stableRowId: string,
+  sectionFallback?: string,
 ): CvDiffPreviewOpenParams {
   const suggestionId =
     (typeof result.suggestionId === 'string' && result.suggestionId.trim()) ||
@@ -42,12 +43,20 @@ export function cvOpenParamsFromApplyResult(
   const pointer =
     (result.improvementId?.trim() || (typeof result.pointer === 'string' ? result.pointer.trim() : '')) ||
     stableRowId.trim();
+  const sectionFromField = inferCvApplySectionFromChangedFields(
+    result.changedFields,
+  );
+  const resolvedSection =
+    result.section?.trim() ||
+    sectionFallback?.trim() ||
+    sectionFromField ||
+    'summary';
   return normalizeCvDiffPreviewParams({
     previewMapKey: stableRowId.trim(),
     suggestionId: suggestionId || undefined,
     pointer,
     draftHash: result.draftHash,
-    section: result.section,
+    section: resolvedSection,
     before: result.before,
     after: result.after,
     changedFields: result.changedFields ?? [],
@@ -55,5 +64,15 @@ export function cvOpenParamsFromApplyResult(
     unsupportedChangesDetected: result.unsupportedChangesDetected,
     truthfulnessWarnings: result.truthfulnessWarnings,
     performance: compactDiffPreviewPerformance(result),
+    selectableFieldPaths: result.selectableFieldPaths,
   });
+}
+
+function inferCvApplySectionFromChangedFields(
+  changedFields: CvApplyImprovementResult['changedFields'] | undefined,
+): string | undefined {
+  const firstPath = changedFields?.[0]?.fieldPath?.trim();
+  if (!firstPath) return undefined;
+  const root = /^([a-zA-Z_][\w-]*)/.exec(firstPath)?.[1];
+  return root?.trim() || undefined;
 }

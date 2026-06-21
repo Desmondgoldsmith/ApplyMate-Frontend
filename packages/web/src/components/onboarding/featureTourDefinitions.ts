@@ -5,6 +5,31 @@ export type TourId =
   | 'job-hub'
   | 'job-board';
 
+/** Keys persisted on `uiPrefs.tourPagesCompleted` via PATCH /users/me. */
+export type TourPageApiKey =
+  | 'dashboard'
+  | 'jobBoard'
+  | 'jobHub'
+  | 'analyzer'
+  | 'resumeClinic';
+
+export function tourIdToPageApiKey(tourId: TourId): TourPageApiKey {
+  switch (tourId) {
+    case 'dashboard':
+      return 'dashboard';
+    case 'cv-clinic':
+      return 'resumeClinic';
+    case 'job-analyzer':
+      return 'analyzer';
+    case 'job-hub':
+      return 'jobHub';
+    case 'job-board':
+      return 'jobBoard';
+    default:
+      return 'dashboard';
+  }
+}
+
 export type TourSide = 'top' | 'right' | 'bottom' | 'left';
 
 export type TourStepDef = {

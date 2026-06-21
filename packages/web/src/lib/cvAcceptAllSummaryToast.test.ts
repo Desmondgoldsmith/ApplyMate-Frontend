@@ -20,7 +20,18 @@ describe('buildAcceptAllSuggestionsSummaryMessage', () => {
     expect(msg).toContain('4 applied');
     expect(msg).toContain('1 skipped');
     expect(msg).toContain('1 failed validation');
-    expect(msg).toContain('2 remaining pending');
+    expect(msg).toContain('2 remaining');
+  });
+
+  it('includes overflow count when batch capped', () => {
+    const msg = buildAcceptAllSuggestionsSummaryMessage({
+      acceptAllQueueOverflow: 2,
+      acceptAllQueueOverflowCount: 2,
+      acceptAllSummary: { applied: 12, leftPending: 3 },
+    });
+    expect(msg).toContain('12 applied');
+    expect(msg).toContain('3 remaining');
+    expect(msg).toContain('2 not processed this batch');
   });
 
   it('falls back to legacy counts when summary absent', () => {
@@ -31,7 +42,7 @@ describe('buildAcceptAllSuggestionsSummaryMessage', () => {
     };
     const msg = buildAcceptAllSuggestionsSummaryMessage(r, 5);
     expect(msg).toMatch(/3 applied/);
-    expect(msg).toMatch(/0 remaining pending/);
+    expect(msg).toMatch(/0 remaining/);
   });
 
   it('notes single daily AI use when acceptAllAiCalls is 1', () => {

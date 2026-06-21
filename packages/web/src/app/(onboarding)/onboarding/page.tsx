@@ -4,7 +4,6 @@ import { queryKeys } from '@/lib/queryKeys';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ArrowLeft,
   ArrowRight,
   Check,
   CheckCircle2,
@@ -37,6 +36,13 @@ import {
 } from '@/components/dashboard/CVUploadZone';
 import { CVChatInterface } from '@/components/onboarding/CVChatInterface';
 import { OnboardingDiscovery } from '@/components/onboarding/OnboardingDiscovery';
+import { OnboardingBackLink } from '@/components/onboarding/OnboardingBackLink';
+import {
+  ONBOARDING_SECTION_HEADING_CLASS,
+  ONBOARDING_SECTION_SUBHEADING_CLASS,
+  ONBOARDING_SUBTITLE_CLASS,
+  ONBOARDING_TITLE_CLASS,
+} from '@/components/onboarding/onboardingLayout';
 import { TemplatePicker } from '@/components/onboarding/TemplatePicker';
 import { Button } from '@/components/ui/Button';
 import { GlowCard } from '@/components/ui/GlowCard';
@@ -907,10 +913,8 @@ export default function OnboardingPage() {
             {cvPath === null && cvEntryPhase === 'template' ? (
               <>
                 <div className="flex w-full flex-col items-center text-center">
-                  <button
-                    type="button"
+                  <OnboardingBackLink
                     disabled={saveProgress.isPending}
-                    className="group mb-2 flex min-h-[44px] cursor-pointer items-center gap-1.5 self-start text-[13px] text-[rgba(255,255,255,0.45)] transition-colors duration-200 hover:text-[rgba(255,255,255,0.8)] disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={async () => {
                       setCvPath(null);
                       setCvEntryPhase('template');
@@ -937,21 +941,18 @@ export default function OnboardingPage() {
                         toast.error(getApiErrorMessage(e));
                       }
                     }}
-                  >
-                    <ArrowLeft className="h-4 w-4 shrink-0" strokeWidth={2} />
-                    Back
-                  </button>
+                  />
                   <p
                     className="mt-3 text-center text-[11px] font-medium uppercase text-[#00C9B1]"
                     style={{ letterSpacing: '0.12em' }}
                   >
                     Your resume
                   </p>
-                  <h2 className="mt-3 max-w-[480px] text-[26px] font-bold leading-[1.2] text-white sm:text-[32px]">
+                  <h2 className={cn(ONBOARDING_TITLE_CLASS, 'mt-3')}>
                     Pick your starting template
                   </h2>
-                  <p className="mt-4 max-w-[440px] text-[14px] leading-[1.6] text-[rgba(255,255,255,0.55)] sm:text-[15px]">
-                    You can change this later — it only affects layout.
+                  <p className={ONBOARDING_SUBTITLE_CLASS}>
+                    You can change this later. It only affects layout.
                   </p>
                 </div>
                 <div className="mt-8 w-full">
@@ -967,7 +968,7 @@ export default function OnboardingPage() {
                   />
                 </div>
                 <p className="mt-4 text-center text-[12px] text-[rgba(255,255,255,0.35)]">
-                  Tap a template to continue — you can change it anytime in the clinic.
+                  Tap a template to continue. You can change it anytime in the clinic.
                 </p>
               </>
             ) : null}
@@ -975,31 +976,24 @@ export default function OnboardingPage() {
             {cvPath === null && cvEntryPhase === 'paths' ? (
               <>
                 <div className="flex w-full flex-col items-center text-center">
-                  <button
-                    type="button"
-                    className="group mb-8 flex min-h-[44px] cursor-pointer items-center gap-1.5 self-start text-[13px] text-[rgba(255,255,255,0.45)] transition-colors duration-200 hover:text-[rgba(255,255,255,0.8)]"
-                    onClick={() => setCvEntryPhase('template')}
-                  >
-                    <ArrowLeft className="h-4 w-4 shrink-0" strokeWidth={2} />
-                    Back
-                  </button>
+                  <OnboardingBackLink onClick={() => setCvEntryPhase('template')} />
                   <p
                     className="text-center text-[11px] font-medium uppercase text-[#00C9B1]"
                     style={{ letterSpacing: '0.12em' }}
                   >
                     Your resume
                   </p>
-                  <h2 className="mt-3 max-w-[480px] text-[26px] font-bold leading-[1.2] text-white sm:text-[32px]">
+                  <h2 className={cn(ONBOARDING_TITLE_CLASS, 'mt-3')}>
                     How would you like to add your career information?
                   </h2>
-                  <p className="mt-4 max-w-[440px] text-[14px] leading-[1.6] text-[rgba(255,255,255,0.55)] sm:text-[15px]">
-                    Pick what feels easiest — we&apos;ll score your resume so
+                  <p className={ONBOARDING_SUBTITLE_CLASS}>
+                    Pick what feels easiest. We&apos;ll score your resume so
                     you see value right away.
                   </p>
                   <button
                     type="button"
                     onClick={() => setCvEntryPhase('template')}
-                    className="mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[rgba(0,201,177,0.25)] bg-[rgba(0,201,177,0.15)] px-2.5 py-1 text-[11px] font-medium text-[#00C9B1] transition hover:bg-[rgba(0,201,177,0.22)]"
+                    className="mx-auto mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[rgba(0,201,177,0.25)] bg-[rgba(0,201,177,0.15)] px-2.5 py-1 text-[11px] font-medium text-[#00C9B1] transition hover:bg-[rgba(0,201,177,0.22)]"
                   >
                     <Pencil className="h-3 w-3" strokeWidth={2} />
                     Template:{' '}
@@ -1011,7 +1005,7 @@ export default function OnboardingPage() {
                   <CvEntryPathCard
                     icon={<UploadCloud className="h-6 w-6 text-[#00C9B1]" />}
                     label="Upload my resume"
-                    description="PDF or Word — we parse it, you review, then we score it."
+                    description="PDF or Word. We parse it, you review, then we score it."
                     timeLabel="~1 min"
                     onClick={() => setCvPath('upload')}
                     active={cvPath === 'upload'}
@@ -1019,7 +1013,7 @@ export default function OnboardingPage() {
                   <CvEntryPathCard
                     icon={<PenLine className="h-6 w-6 text-[#00C9B1]" />}
                     label="Do it manually"
-                    description="Edit your resume in the preview — same editor as the clinic."
+                    description="Edit your resume in the preview. Same editor as the clinic."
                     timeLabel="~3 min"
                     onClick={() => setCvPath('manual')}
                     active={cvPath === 'manual'}
@@ -1028,7 +1022,7 @@ export default function OnboardingPage() {
                     recommended
                     icon={<Sparkles className="h-6 w-6 text-[#00C9B1]" />}
                     label="Create with AI"
-                    description="A quick, conversational flow — we draft your resume and score it when you're done."
+                    description="A quick conversational flow. We draft your resume and score it when you're done."
                     timeLabel="~2 min"
                     onClick={() => setCvPath('chat')}
                     active={cvPath === 'chat'}
@@ -1070,17 +1064,13 @@ export default function OnboardingPage() {
                   className="flex min-h-0 flex-1 flex-col overflow-hidden overflow-x-hidden"
                   data-lenis-prevent-wheel
                 >
-                  <div className="app-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto pt-2">
-                    <button
-                      type="button"
-                      className="mb-4 text-sm text-white/45 transition hover:text-white"
+                  <div className="app-scrollbar flex min-h-0 w-full flex-1 flex-col items-center overflow-y-auto pt-2">
+                    <OnboardingBackLink
                       onClick={() => {
                         setCvPath(null);
                         setCvEntryPhase('paths');
                       }}
-                    >
-                      ← Back
-                    </button>
+                    />
                     {onboardingCvProfileQuery.isError ? (
                       <GlowCard contentClassName="p-6 text-center">
                         <p className="text-sm text-white/70">
@@ -1104,7 +1094,8 @@ export default function OnboardingPage() {
                         </p>
                       </GlowCard>
                     ) : (
-                      <CVChatInterface
+                      <div className="w-full">
+                        <CVChatInterface
                         selectedTemplate={selectedTemplate}
                         onSkip={async () => {
                           setFinalScore(null);
@@ -1130,7 +1121,8 @@ export default function OnboardingPage() {
                             profileId: pid,
                           });
                         }}
-                      />
+                        />
+                      </div>
                     )}
                   </div>
                 </motion.div>
@@ -1148,10 +1140,8 @@ export default function OnboardingPage() {
                   className="flex min-h-0 flex-1 flex-col overflow-hidden overflow-x-hidden"
                   data-lenis-prevent-wheel
                 >
-                  <div className="app-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto pt-2">
-                    <button
-                      type="button"
-                      className="mb-4 text-sm text-white/45 transition hover:text-white"
+                  <div className="app-scrollbar flex min-h-0 w-full flex-1 flex-col items-center overflow-y-auto pt-2">
+                    <OnboardingBackLink
                       onClick={() => {
                         setCvPath(null);
                         setCvEntryPhase('paths');
@@ -1160,17 +1150,11 @@ export default function OnboardingPage() {
                         setPasteParsedProfile(null);
                         setPasteParsedProfileId(null);
                       }}
-                    >
-                      ← Back
-                    </button>
+                    />
                     {pasteImportSummary && pasteParsedProfile && !pasteSubmitting ? (
                       <CvParseImportSummaryPanel
+                        embedded
                         importSummary={pasteImportSummary}
-                        profileId={pasteParsedProfileId}
-                        onReviewInBuilder={() => {
-                          const id = pasteParsedProfileId?.trim();
-                          if (id) router.push(cvEditorPath(id));
-                        }}
                         onContinue={() => {
                           const id = pasteParsedProfileId?.trim();
                           const profile = pasteParsedProfile;
@@ -1191,13 +1175,13 @@ export default function OnboardingPage() {
                         contentClassName="flex min-h-0 flex-col overflow-hidden p-5"
                       >
                         <p className="text-xs text-white/55">
-                          Paste your full resume, LinkedIn export, or notes — up to{' '}
+                          Paste your full resume, LinkedIn export, or notes. Up to{' '}
                           {CV_CHAT_INPUT_MAX_CHARS.toLocaleString()} characters
                         </p>
                         <textarea
                           value={pasteText}
                           onChange={(e) => setPasteText(e.target.value)}
-                          placeholder="Paste your resume text, LinkedIn About section, job history notes — anything works. The more you share, the better your resume will be."
+                          placeholder="Paste your resume text, LinkedIn About section, or job history notes. The more you share, the better your resume will be."
                           rows={12}
                           data-lenis-prevent-wheel
                           className="app-scrollbar mt-3 min-h-[220px] max-h-[min(55vh,520px)] flex-1 w-full resize-y overflow-y-auto rounded-xl border border-[rgba(255,255,255,0.10)] bg-[#111616] px-3 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-[#00C9B1]/40"
@@ -1396,28 +1380,23 @@ export default function OnboardingPage() {
                   transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                   className="min-h-0 overflow-x-hidden overflow-y-visible"
                 >
-                  <div className="pt-2">
+                  <div className="flex w-full flex-col items-center pt-2 text-center">
                     {uploadPhase === 'zone' ? (
                       <>
-                        <button
-                          type="button"
-                          className="mb-4 text-sm text-white/45 transition hover:text-white"
-                          onClick={resetCvStep}
-                        >
-                          ← Back
-                        </button>
-                        <h3 className="mb-2 text-xl font-bold text-white">
+                        <OnboardingBackLink onClick={resetCvStep} />
+                        <h3 className={ONBOARDING_SECTION_HEADING_CLASS}>
                           Upload your resume
                         </h3>
-                        <p className="mb-4 text-sm text-white/45">
-                          PDF or Word — we&apos;ll extract the structure
-                          automatically.
+                        <p className={ONBOARDING_SECTION_SUBHEADING_CLASS}>
+                          PDF or Word. We&apos;ll extract the structure automatically.
                         </p>
-                        <CVUploadZone
+                        <div className="w-full">
+                          <CVUploadZone
                           onSuccess={(data) => {
                             void onUploadParsed(data);
                           }}
-                        />
+                          />
+                        </div>
                       </>
                     ) : null}
                     {uploadPhase === 'summary' && uploadImportSummary ? (
@@ -1435,12 +1414,8 @@ export default function OnboardingPage() {
                           ← Upload another file
                         </button>
                         <CvParseImportSummaryPanel
+                          embedded
                           importSummary={uploadImportSummary}
-                          profileId={uploadParsedProfile?.id}
-                          onReviewInBuilder={() => {
-                            const id = uploadParsedProfile?.id?.trim();
-                            if (id) router.push(cvEditorPath(id));
-                          }}
                           onContinue={() => setUploadPhase('score')}
                           continueLabel="See your score"
                         />

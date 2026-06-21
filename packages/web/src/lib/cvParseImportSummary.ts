@@ -61,7 +61,7 @@ export function normalizeCvParseImportSummary(raw: unknown): CvParseImportSummar
     typeof o.message === 'string' && o.message.trim()
       ? o.message.trim()
       : sections.length > 0
-        ? `We found ${sectionCount} sections in your CV — here's what was imported.`
+        ? `We found ${sectionCount} sections in your resume — here's what was imported.`
         : '';
   if (!message && sections.length === 0) return null;
   return { sectionCount, message, sections };

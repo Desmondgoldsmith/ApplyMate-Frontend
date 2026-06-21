@@ -22,7 +22,7 @@ describe('resolveGlobalAssistantPresets', () => {
         label: 'Metrics',
         description: '',
         exampleCommand: 'Custom metrics prompt from API.',
-        affectedScopeLabel: 'Entire CV',
+        affectedScopeLabel: 'Entire resume',
         scope: 'full_cv',
       },
     ]);

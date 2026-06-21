@@ -21,6 +21,7 @@ import {
   resolveStepSelector,
   resolveStepSide,
   stepsForTour,
+  tourIdToPageApiKey,
   tourMeta,
   type TourId,
   type TourStepDef,
@@ -320,7 +321,8 @@ export function FeatureTour() {
       shouldShowDashboardTour(user) &&
       (restarted || !isGlobalTourFinished(user));
     const showPage =
-      tourId !== 'dashboard' && shouldShowPageTour(tourId, user.id);
+      tourId !== 'dashboard' &&
+      shouldShowPageTour(tourId, user.id, user.uiPrefs ?? null);
 
     if (!showGlobalDashboard && !showPage) return;
     if (driverRef.current?.isActive()) return;
@@ -343,7 +345,24 @@ export function FeatureTour() {
       }
     };
 
+    const syncTourPageCompletedApi = (id: TourId) => {
+      void (async () => {
+        const pageKey = tourIdToPageApiKey(id);
+        try {
+          await api.users.updateMe({
+            uiPrefs: { tourPagesCompleted: { [pageKey]: true } },
+          });
+          await queryClient.invalidateQueries({
+            queryKey: queryKeys.auth.me(accessToken ?? ''),
+          });
+        } catch {
+          /* local flags still prevent immediate re-show */
+        }
+      })();
+    };
+
     const syncTourCompletedApi = () => {
+      syncTourPageCompletedApi('dashboard');
       void (async () => {
         if (tourCompletionSyncedRef.current) return;
         tourCompletionSyncedRef.current = true;
@@ -411,8 +430,13 @@ export function FeatureTour() {
           skip.textContent = 'Skip tour';
           skip.addEventListener('click', () => {
             celebrateRef.current = false;
-            if (id === 'dashboard') markGlobalTourSkipped();
-            else markPageTourSkipped(id, user?.id);
+            if (id === 'dashboard') {
+              markGlobalTourSkipped();
+              syncTourCompletedApi();
+            } else {
+              markPageTourSkipped(id, user?.id);
+              syncTourPageCompletedApi(id);
+            }
             if (isNarrowViewport()) closeMobileNavForTour();
             opts.driver.destroy();
           });
@@ -445,6 +469,7 @@ export function FeatureTour() {
                 syncTourCompletedApi();
               } else {
                 markPageTourCompleted(id, user!.id);
+                syncTourPageCompletedApi(id);
               }
             }
             drv.moveNext();

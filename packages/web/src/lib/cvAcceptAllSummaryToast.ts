@@ -4,6 +4,28 @@ function nz(n: number | undefined): number {
   return typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
 }
 
+function nzOverflowCount(r: CvSuggestionsBulkMutationResult): number {
+  if (
+    typeof r.acceptAllQueueOverflowCount === 'number' &&
+    Number.isFinite(r.acceptAllQueueOverflowCount)
+  ) {
+    return Math.max(0, Math.floor(r.acceptAllQueueOverflowCount));
+  }
+  const s = r.acceptAllSummary;
+  if (typeof s?.queueOverflowCount === 'number' && s.queueOverflowCount > 0) {
+    return Math.floor(s.queueOverflowCount);
+  }
+  return 0;
+}
+
+function hasAcceptAllOverflow(r: CvSuggestionsBulkMutationResult): boolean {
+  if (nzOverflowCount(r) > 0) return true;
+  return (
+    r.acceptAllSummary?.queueOverflow === true ||
+    r.acceptAllQueueOverflow === true
+  );
+}
+
 /**
  * User-facing summary after POST /cv/suggestions/accept-all.
  * Uses additive `acceptAllSummary` when present; otherwise falls back to legacy count fields.
@@ -30,7 +52,8 @@ export function buildAcceptAllSuggestionsSummaryMessage(
         ? r.pendingSuggestionsCount
         : r.remainingPendingCount,
   );
-  const overflow = s?.queueOverflow === true || r.acceptAllQueueOverflow === true;
+  const overflowCount = nzOverflowCount(r);
+  const overflow = hasAcceptAllOverflow(r);
 
   const parts: string[] = [];
   parts.push(`${applied} applied`);
@@ -44,9 +67,13 @@ export function buildAcceptAllSuggestionsSummaryMessage(
   if (failedTruth > 0) {
     parts.push(`${failedTruth} failed validation`);
   }
-  parts.push(`${leftPending} remaining pending`);
+  parts.push(`${leftPending} remaining`);
   if (overflow) {
-    parts.push('batch capped');
+    if (overflowCount > 0) {
+      parts.push(`${overflowCount} not processed this batch`);
+    } else {
+      parts.push('batch capped');
+    }
   }
   const aiCalls =
     typeof r.acceptAllAiCalls === 'number' && Number.isFinite(r.acceptAllAiCalls)
@@ -62,13 +89,24 @@ export function buildAcceptAllSuggestionsSummaryMessage(
   return parts.join(' · ');
 }
 
-/** Prefer server `message`, then structured rollup. */
+/** Prefer server `message`, then structured rollup; append overflow CTA when capped. */
 export function buildAcceptAllSuccessToastMessage(
   r: CvSuggestionsBulkMutationResult,
   fallbackAppliedCount?: number,
 ): string {
   const summary = buildAcceptAllSuggestionsSummaryMessage(r, fallbackAppliedCount);
   const server = r.message?.trim();
-  if (server && summary) return `${server} (${summary})`;
-  return server || summary;
+  const base =
+    server && summary ? `${server} (${summary})` : server || summary;
+  if (hasAcceptAllOverflow(r)) {
+    return `${base} — click Accept All again for the rest.`;
+  }
+  return base;
+}
+
+/** Optional info toast when single accept auto-resolves sibling suggestions (Round 4). */
+export function buildAutoResolvedSuggestionsMessage(autoResolvedIds?: string[]): string | null {
+  const n = autoResolvedIds?.map((id) => id.trim()).filter(Boolean).length ?? 0;
+  if (n <= 0) return null;
+  return `Also resolved ${n} related suggestion${n === 1 ? '' : 's'}.`;
 }

@@ -239,7 +239,7 @@ describe('normalizeCvGlobalAssistantOperations', () => {
           label: 'Add metrics',
           description: '',
           exampleCommand: 'Add metrics',
-          affectedScopeLabel: 'Entire CV',
+          affectedScopeLabel: 'Entire resume',
           scope: 'full_cv',
         },
       ],

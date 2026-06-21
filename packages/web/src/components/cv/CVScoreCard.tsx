@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { CvScoreSectionExplainer } from '@/components/cv/CvScoreSectionExplainer';
 import { GlowCard } from '@/components/ui/GlowCard';
@@ -39,10 +39,12 @@ import {
   hybridWeightsSummaryLine,
   hybridWeightsTooltip,
   hybridScoringFromScorePayload,
+  parseAnalysisUiHints,
   parseCvHybridScoring,
   type CvHybridScoringMeta,
 } from '@/lib/cvHybridScoring';
 import type { CVScorePayload } from '@/lib/api';
+import { canShowCvImprovementFixWithAI } from '@/lib/cvImprovementFieldPath';
 
 const RING_VIEW = 80;
 const RING_CX = RING_VIEW / 2;
@@ -309,48 +311,60 @@ export type CVScoreCardProps = {
   onDiffPreview?: (params: CvDiffPreviewOpenParams | null) => void;
   /** Called after a suggestion action so parents can refetch score. */
   onScoreRefresh?: () => void;
+  /** When a diff overlay is open for this suggestion, hide duplicate Fix with AI. */
+  activePreviewSuggestionId?: string | null;
 };
 
 function CvHybridScoringBlock({
   hybrid,
   overallScore,
   compact,
+  showQualityDimensions = true,
 }: {
   hybrid: CvHybridScoringMeta;
   overallScore: number;
   compact: boolean;
+  showQualityDimensions?: boolean;
 }) {
   // AI breakdown unavailable → show a clear heuristic note instead of an empty card.
   if (!hybrid.aiBreakdownAvailable) {
     const structural = hybrid.structuralScore;
+    const insufficient = hybrid.aiBreakdownUnavailableReason === 'insufficient_content';
     return (
       <div className={cn('mt-3 w-full min-w-0', compact ? 'px-1' : 'px-0.5')}>
         <div
           className={cn(
-            'rounded-xl border border-amber-500/20 bg-amber-500/[0.06]',
+            'rounded-xl border bg-amber-500/[0.06]',
+            insufficient ? 'border-[#00C9B1]/25' : 'border-amber-500/20',
             compact ? 'px-2.5 py-2' : 'px-3 py-2.5',
           )}
         >
           <p
             className={cn(
-              'font-medium leading-snug text-amber-100/90',
+              'font-medium leading-snug',
+              insufficient ? 'text-[#7ef4e6]' : 'text-amber-100/90',
               compact ? 'text-[10px]' : 'text-[11px]',
             )}
           >
-            AI analysis unavailable — showing structural checks only.
+            {insufficient
+              ? 'Add summary, experience, or skills to unlock AI quality analysis. Structural score shown below.'
+              : 'AI analysis unavailable. Showing structural checks only.'}
           </p>
-          <p
-            className={cn(
-              'mt-1 leading-snug text-white/45',
-              compact ? 'text-[9px]' : 'text-[10px]',
-            )}
-          >
-            The AI quality review refreshes automatically once AI is available
-            again.
-            {structural != null
-              ? ` Structure score: ${structural}/100.`
-              : ''}
-          </p>
+          {!insufficient ? (
+            <p
+              className={cn(
+                'mt-1 leading-snug text-white/45',
+                compact ? 'text-[9px]' : 'text-[10px]',
+              )}
+            >
+              The AI quality review refreshes automatically once AI is available again.
+              {structural != null ? ` Structure score: ${structural}/100.` : ''}
+            </p>
+          ) : structural != null ? (
+            <p className={cn('mt-1 text-white/45', compact ? 'text-[9px]' : 'text-[10px]')}>
+              Structure score: {structural}/100.
+            </p>
+          ) : null}
         </div>
       </div>
     );
@@ -543,7 +557,7 @@ function CvHybridScoringBlock({
         </div>
       ) : null}
 
-      {dimensionEntries.length > 0 ? (
+      {showQualityDimensions && dimensionEntries.length > 0 ? (
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-2.5">
           <p className="mb-2 text-[9px] font-semibold uppercase tracking-wide text-white/35">
             Quality dimensions
@@ -602,6 +616,7 @@ export function CVScoreCard({
   pendingImprovements = [],
   onDiffPreview,
   onScoreRefresh,
+  activePreviewSuggestionId = null,
 }: CVScoreCardProps) {
   const raw =
     breakdown !== null && typeof breakdown === 'object'
@@ -612,6 +627,11 @@ export function CVScoreCard({
     hybridScoring ??
     hybridScoringFromScorePayload(scorePayload ?? null) ??
     parseCvHybridScoring(raw);
+  const analysisUiHints =
+    parseAnalysisUiHints(raw) ??
+    parseAnalysisUiHints(scorePayload?.breakdown) ??
+    parseAnalysisUiHints(scorePayload);
+  const showQualityDimensions = analysisUiHints?.showQualityDimensions !== false;
   // Never render an empty ring: only show the circle when there is a real score.
   const roundedScore = Math.round(score);
   const showScoreRing = roundedScore > 0;
@@ -623,6 +643,14 @@ export function CVScoreCard({
     onDiffPreview,
     onScoreRefresh,
   );
+  const improvementById = useMemo(() => {
+    const map = new Map<string, CVImprovementItem>();
+    for (const item of pendingImprovements) {
+      const id = item.id?.trim();
+      if (id) map.set(id, item);
+    }
+    return map;
+  }, [pendingImprovements]);
   const [actionBusy, setActionBusy] = useState<{
     key: CvSectionScoreKey;
     kind: 'ai' | 'self';
@@ -754,6 +782,17 @@ export function CVScoreCard({
   const atsHeuristicDisclaimer =
     "These ATS-related items are heuristic checks on structure and text in this product, not a guarantee of how a specific employer's software will score or parse your file.";
 
+  const dedupedAtsIssues =
+    analysisUiHints?.structuralAtsChecksPlacement === 'after_ats_read_only' &&
+    (br.ats.structureIssues?.length ?? 0) > 0
+      ? br.ats.issues.filter((issue) => {
+          const norm = issue.trim().toLowerCase();
+          return !(br.ats.structureIssues ?? []).some(
+            (si) => si.suggestion.trim().toLowerCase() === norm,
+          );
+        })
+      : br.ats.issues;
+
   const atsSectionTitle = atsIsAiRead
     ? 'ATS read (AI-assisted)'
     : 'ATS read (basic checks)';
@@ -841,7 +880,7 @@ export function CVScoreCard({
         </div>
       ))}
 
-      {br.ats.issues.map((issue, i) => (
+      {dedupedAtsIssues.map((issue, i) => (
         <div
           key={`i-${i}`}
           className={cn(
@@ -1051,6 +1090,7 @@ export function CVScoreCard({
               hybrid={hybrid}
               overallScore={score}
               compact={mode === 'compact'}
+              showQualityDimensions={showQualityDimensions}
             />
           ) : null}
           {scorePreview && !hideJobMatch ? (
@@ -1082,6 +1122,17 @@ export function CVScoreCard({
               const weightPct =
                 w !== undefined && w > 0 ? Math.round(w * 100) : null;
               const actionsEnabled = Boolean(cvProfileId?.trim() && explainer?.suggestionId);
+              const suggestionId = explainer?.suggestionId?.trim();
+              const suggestionRow = suggestionId ? improvementById.get(suggestionId) : undefined;
+              const showFixWithAi =
+                actionsEnabled &&
+                Boolean(
+                  suggestionId &&
+                    canShowCvImprovementFixWithAI(
+                      suggestionRow ?? { id: suggestionId },
+                      activePreviewSuggestionId,
+                    ),
+                );
               return (
                 <div
                   key={key}
@@ -1132,7 +1183,7 @@ export function CVScoreCard({
                           : null
                       }
                       onFixWithAi={
-                        actionsEnabled
+                        showFixWithAi && suggestionId
                           ? (id) => runFixWithAi(sectionKey, id)
                           : undefined
                       }
@@ -1232,7 +1283,7 @@ export function CVScoreCard({
                   fontWeight: 600,
                 }}
               >
-                Score may not reflect your actual CV
+                Score may not reflect your actual resume
               </p>
               <p
                 style={{
@@ -1241,8 +1292,8 @@ export function CVScoreCard({
                   lineHeight: 1.5,
                 }}
               >
-                If you uploaded a CV, some sections may not have been extracted
-                correctly. Re-upload your CV from the CV editor page to get an
+                If you uploaded a resume, some sections may not have been extracted
+                correctly. Re-upload your resume from the resume editor page to get an
                 accurate score.
               </p>
             </div>

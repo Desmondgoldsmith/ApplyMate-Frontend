@@ -3,7 +3,9 @@ import type { QueryClient } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
 
-export const CV_READY_TOAST = 'Your CV is ready — here it is.';
+import { RESUME_READY_TOAST } from '@/lib/resumeDisplayCopy';
+
+export const CV_READY_TOAST = RESUME_READY_TOAST;
 
 /** Invalidate and prefetch editor queries so the builder is populated on arrival. */
 export async function prefetchCvProfileForEditor(

@@ -222,13 +222,27 @@ export function JobHubDetailPanel({
     queryFn: () => api.jobs.getJob(job.jobAnalysisId!),
     enabled: Boolean(job.jobAnalysisId),
     retry: 1,
+    staleTime: 60_000,
   });
+
+  const [jobDetailSlowLoad, setJobDetailSlowLoad] = useState(false);
+  useEffect(() => {
+    if (!jobDetail.isLoading) {
+      setJobDetailSlowLoad(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setJobDetailSlowLoad(true), 45_000);
+    return () => window.clearTimeout(timer);
+  }, [jobDetail.isLoading, job.jobAnalysisId]);
 
   useEffect(() => {
     const detail = jobDetail.data;
     const id = job.jobAnalysisId?.trim();
     if (!detail || !id) return;
-    patchJobHistoryDisplayScore(queryClient, id, detail.matchScore);
+    const authoritativeScore = detail.analysis?.matchScore;
+    if (typeof authoritativeScore === 'number' && Number.isFinite(authoritativeScore)) {
+      patchJobHistoryDisplayScore(queryClient, id, authoritativeScore);
+    }
   }, [jobDetail.data, job.jobAnalysisId, queryClient]);
 
   const hubContext = useMemo((): {
@@ -846,9 +860,25 @@ export function JobHubDetailPanel({
         {tab === 'analysis' ? (
           <>
             {showAnalysisDetailLoading ? (
-              <div className="flex flex-col items-center justify-center gap-2 py-16">
+              <div className="flex flex-col items-center justify-center gap-3 py-16">
                 <Loader2 className={cn('h-8 w-8 animate-spin', TEAL.text)} />
                 <p className="text-sm text-white/45">Loading job…</p>
+                {jobDetailSlowLoad ? (
+                  <div className="max-w-sm space-y-3 text-center">
+                    <p className="text-xs leading-relaxed text-white/40">
+                      This is taking longer than usual. The server may still be processing this
+                      job — you can wait or retry.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="border border-white/10 text-xs"
+                      onClick={() => void jobDetail.refetch()}
+                    >
+                      Retry loading
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             ) : !hasCompletedAnalysis ? (
               <div className="border-t border-white/[0.08] pt-5">

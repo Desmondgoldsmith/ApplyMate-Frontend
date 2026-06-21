@@ -8,11 +8,13 @@ import { useCvSuggestionMutations } from '@/hooks/useCvSuggestionMutations';
 import { api, type CvDiffPreviewOpenParams, type CvImprovementsPayload } from '@/lib/api';
 import { isCvApplyImprovementTerminalNoDiff, toastCopyForTerminalNoDiffApply } from '@/lib/cvApplyImprovementQueue';
 import { cvOpenParamsFromApplyResult } from '@/lib/cvDiffPreviewMap';
+import { canDisplayCvImprovementDiffPreview } from '@/lib/cvImprovementDiffPreview';
 import { getApiErrorMessage, isDailyAiLimitApiError } from '@/lib/axios';
 import { logCvMutationErrorDev } from '@/lib/cvMutationDevLog';
 import { logCvSuggestionMutationClientPerf } from '@/lib/cvSuggestionMutationReconcile';
 import {
   applySuggestionAcceptToImprovementsCache,
+  applySuggestionPreviewToImprovementsCache,
   applySuggestionSelfFixToImprovementsCache,
 } from '@/lib/cvSuggestionsMutationApply';
 import { cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
@@ -54,7 +56,27 @@ export function useCvScoreSectionActions(
           onScoreUpdated?.();
           return;
         }
-        onDiffPreview?.(cvOpenParamsFromApplyResult(result, id));
+        const openParams = cvOpenParamsFromApplyResult(result, id);
+        if (!canDisplayCvImprovementDiffPreview(openParams)) {
+          toast.error(
+            'Could not display this suggestion for review. Please try refreshing.',
+          );
+          return;
+        }
+        const pendingPaths = (result.changedFields ?? [])
+          .map((cf) => cf.fieldPath?.trim())
+          .filter((p): p is string => Boolean(p));
+        queryClient.setQueryData<CvImprovementsPayload>(qk, (p) =>
+          applySuggestionPreviewToImprovementsCache(p, id, {
+            pendingFieldPaths:
+              pendingPaths.length > 0
+                ? pendingPaths
+                : result.selectableFieldPaths?.map((p) => p.trim()).filter(Boolean),
+            lastPreviewDraftHash: result.draftHash,
+            lastPreviewForSuggestionId: id,
+          }) ?? p,
+        );
+        onDiffPreview?.(openParams);
         if (shouldShowTruthfulnessAdjustNotice(result)) {
           toast.info('Some suggested edits were adjusted to match your CV. See the preview note for details.');
         }

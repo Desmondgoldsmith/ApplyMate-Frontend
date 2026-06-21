@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 
 import { CvAiPatchDiffView } from '@/components/cv/CvAiPatchDiffView';
 import { CvDiffActionPair } from '@/components/cv/cvDiffImprovementActions';
-import { coerceAiPatchToDisplayString } from '@/lib/cvAiPatchDisplay';
+import { cvDiffFieldDisplayText } from '@/lib/cvAiPatchDisplay';
 import { CV_DIFF_EMPTY_PREVIEW_MESSAGE, CV_DIFF_STRUCTURAL_SECTION_MESSAGE } from '@/lib/cvDiffCopy';
 import { cvStructuralDiffPayloadPresent } from '@/lib/cvDiffPreviewMap';
 import {
@@ -106,12 +106,12 @@ export function cvTemplateSectionBox(
           </p>
           {sectionChangedFields!.map((cf, i) => {
             const sectionHint = id;
-            const beforeDisplay = coerceAiPatchToDisplayString(
+            const beforeDisplay = cvDiffFieldDisplayText(
               cf.before,
               sectionHint,
               cf.fieldPath ?? cf.field ?? '',
             );
-            const afterDisplay = coerceAiPatchToDisplayString(
+            const afterDisplay = cvDiffFieldDisplayText(
               cf.after,
               sectionHint,
               cf.fieldPath ?? cf.field ?? '',
@@ -138,6 +138,7 @@ export function cvTemplateSectionBox(
               </div>
             );
           })}
+          {sectionChangedFields!.length > 1 ? (
           <CvDiffActionPair
             className="mt-3 flex items-center justify-end gap-1.5"
             rejectLabel={gCvDocPreviewDiffMultiSection ? '✕ Reject section' : '✕ Reject all'}
@@ -145,6 +146,7 @@ export function cvTemplateSectionBox(
             onReject={() => onReject?.(sectionDiffCallbackIndex)}
             onAccept={() => onAccept?.(sectionDiffCallbackIndex)}
           />
+          ) : null}
         </div>
       )}
     </div>

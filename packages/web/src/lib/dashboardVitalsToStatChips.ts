@@ -74,11 +74,15 @@ export function dashboardVitalsToStatChips(
 
   if (vitals.bestMatch) {
     const v = vitals.bestMatch;
+    const hasRealMatch =
+      v.hasAnalyzedJobs === true && v.score != null && Number.isFinite(v.score);
     chips.push({
       key: 'best_match',
       label: titleBestMatch,
-      value: `${v.score}%`,
-      status: cleanAiText(v.company?.trim() ?? ''),
+      value: hasRealMatch ? `${v.score}%` : '—',
+      status: hasRealMatch
+        ? cleanAiText(v.company?.trim() ?? '')
+        : cleanAiText(v.emptyStateMessage?.trim() ?? v.label?.trim() ?? 'Analyze a job to see your best match'),
       explanation: cleanAiText(v.explanation?.trim()) || TOOLTIP_BEST_MATCH,
       scrollTargetId: 'dashboard-deep-recent-analyses',
     });

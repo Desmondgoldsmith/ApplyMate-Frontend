@@ -45,11 +45,13 @@ import { CvDateField } from '@/components/cv/CvDateField';
 import { CvRichTextSpan } from '@/components/cv/CvRichTextSpan';
 import { CVDocumentPreview } from '@/components/cv/CVDocumentPreview';
 import { CvDiffMobileActionBar } from '@/components/cv/CvDiffMobileActionBar';
+import { cvDiffPreviewBuilderSection } from '@/lib/cvDiffPreviewSection';
 import { CvImprovementDiffTruthPanel } from '@/components/cv/CvImprovementDiffTruthPanel';
 import { CvTripleShellPreviewColumn } from '@/components/cv/CvTripleShellPreviewColumn';
 import {
   api,
   type CVSectionRecord,
+  type CvAcceptUpdatedSection,
   type CvReorderSectionsResult,
   type CvSpellIssue,
   type CvSpellcheckBulkResult,
@@ -57,6 +59,7 @@ import {
   type CvTruthfulnessMeta,
 } from '@/lib/api';
 import {
+  applyAcceptedSectionsToBuilderData,
   countFilledSections,
   CV_TEMPLATE_IDS,
   computeCvBuilderSaveFingerprint,
@@ -108,6 +111,12 @@ import {
 import { cn } from '@/lib/utils';
 import { CvOverlayLayerProvider } from '@/components/cv/CvOverlayLayerContext';
 import { useCVAutosave } from '@/hooks/useCVAutosave';
+import { useCvUndoRedo } from '@/hooks/useCvUndoRedo';
+import {
+  computeCvUndoFingerprint,
+  CV_UNDO_COALESCE_MS,
+  flushCvInlineEdits,
+} from '@/lib/cvUndoRedo';
 import {
   TAILOR_CV_EDITOR_DIALOG_Z,
   TAILOR_CV_EDITOR_OVERLAY_Z,
@@ -518,7 +527,7 @@ function previewOrderFromSections(sections: CVSectionRecord[]): string[] {
     if (!keys.includes(key)) keys.push(key);
   }
   // Keep core sections visible even when a refetch temporarily returns optional-only rows.
-  for (const core of ['summary', 'experience', 'education', 'skills']) {
+  for (const core of ['summary', 'experience', 'education', 'projects', 'skills']) {
     if (!keys.includes(core)) keys.push(core);
   }
   return dedupePreviewSectionKeys(keys);
@@ -652,6 +661,11 @@ export type CVBuilderProps = {
    */
   serverHydrateNonce?: number;
   /**
+   * When true for the next hydrate triggered by `serverHydrateNonce`, keep undo/redo history
+   * (post-accept background confirmation, autosave echo).
+   */
+  serverHydratePreserveHistoryRef?: React.MutableRefObject<boolean>;
+  /**
    * Tailor accept/revert: always rehydrate from server even when the editor is dirty, and clear
    * save-error banners (structured persist already updated sections on the backend).
    */
@@ -670,10 +684,30 @@ export type CVBuilderProps = {
   assistantAcceptHighlightNonce?: number;
   /** Recruiter Scan: attention heatmap on preview sections (preview section ids). */
   recruiterScanHeatmap?: Record<string, import('@/lib/cvRecruiterScan').CvRecruiterScanReadingPathEntry> | null;
+  /** LanguageTool / spellcheck locale (e.g. en, de, fr). Defaults to en. */
+  spellcheckLanguage?: string;
+  /** Exposes undo/redo controls for toolbar wiring. */
+  onUndoRedoReady?: (controls: {
+    canUndo: boolean;
+    canRedo: boolean;
+    undo: () => void;
+    redo: () => void;
+  }) => void;
+  /**
+   * After undo/redo restores {@link CVBuilderData}, parent may persist + refetch derived
+   * state (suggestions). Must NOT manually re-insert suggestion rows — only invalidate.
+   */
+  onHistoryApplied?: (restored: CVBuilderData, kind: 'undo' | 'redo') => void;
   /** When true with an active improvement diff, show factuality trust copy above the preview. */
   improvementDiffTruthPanel?: boolean;
   improvementDiffTruthfulness?: CvTruthfulnessMeta | null;
   improvementDiffPerformance?: CvPerformanceMeta | null;
+  /** Pause dashboard autosave while an improvement diff overlay is open. */
+  isDiffOverlayOpen?: boolean;
+  /** Parent registers immediate accept patch handler (Apply-with-AI accept). */
+  onImmediateSectionPatchReady?: (
+    patch: (sections: CvAcceptUpdatedSection[]) => void,
+  ) => void;
 };
 
 export function CVBuilder({
@@ -717,10 +751,13 @@ export function CVBuilder({
   cvAssistantClarificationQuestion,
   deferIncompletePreviewBadges: deferIncompletePreviewBadgesProp = false,
   serverHydrateNonce = 0,
+  serverHydratePreserveHistoryRef,
   forceServerHydrateNonce = 0,
   improvementDiffTruthPanel = false,
   improvementDiffTruthfulness = null,
   improvementDiffPerformance = null,
+  isDiffOverlayOpen = false,
+  onImmediateSectionPatchReady,
   onAiStructuredPersisted,
   tailorHighlightSectionId = null,
   tailorHighlightNonce = 0,
@@ -728,6 +765,9 @@ export function CVBuilder({
   assistantAcceptHighlightSectionId = null,
   assistantAcceptHighlightNonce = 0,
   recruiterScanHeatmap = null,
+  spellcheckLanguage = 'en',
+  onUndoRedoReady,
+  onHistoryApplied,
 }: CVBuilderProps) {
   const surfaceLayout = builderContext
     ? resolveCvBuilderSurfaceLayout(builderContext)
@@ -768,6 +808,45 @@ export function CVBuilder({
   const [optionalOpen, setOptionalOpen] = useState(false);
   const [langCefrOpen, setLangCefrOpen] = useState<Record<string, boolean>>({});
   const [dirty, setDirty] = useState(false);
+  const dirtyRef = useRef(false);
+  useEffect(() => {
+    dirtyRef.current = dirty;
+  }, [dirty]);
+
+  const dataRef = useRef(data);
+  const templateRef = useRef(selectedTemplate);
+  dataRef.current = data;
+  templateRef.current = selectedTemplate;
+
+  const [dataRevision, setDataRevision] = useState(0);
+  const undoCoalesceOpenRef = useRef(false);
+  const undoCoalesceTimerRef = useRef<number | null>(null);
+
+  const clearUndoCoalesce = useCallback(() => {
+    if (undoCoalesceTimerRef.current != null) {
+      window.clearTimeout(undoCoalesceTimerRef.current);
+    }
+    undoCoalesceTimerRef.current = window.setTimeout(() => {
+      undoCoalesceOpenRef.current = false;
+      undoCoalesceTimerRef.current = null;
+    }, CV_UNDO_COALESCE_MS);
+  }, []);
+
+  const undoRedo = useCvUndoRedo();
+  const {
+    pushBeforeChange: pushUndoSnapshot,
+    pushSnapshotForced: pushUndoSnapshotForced,
+    undo: undoEdit,
+    redo: redoEdit,
+    canUndo,
+    canRedo,
+    reset: resetUndoStack,
+  } = undoRedo;
+  const onUndoRedoReadyRef = useRef(onUndoRedoReady);
+  onUndoRedoReadyRef.current = onUndoRedoReady;
+  const onHistoryAppliedRef = useRef(onHistoryApplied);
+  onHistoryAppliedRef.current = onHistoryApplied;
+  const flushDashboardAutosaveRef = useRef<(() => Promise<void>) | null>(null);
   const [allowIncompletePreviewBadges, setAllowIncompletePreviewBadges] =
     useState(() => !deferIncompletePreviewBadgesResolved);
   useEffect(() => {
@@ -866,18 +945,78 @@ export function CVBuilder({
     lastPreviewOrderProfileRef.current = null;
   }, [profileId]);
 
+  const canUndoRef = useRef(canUndo);
+  const canRedoRef = useRef(canRedo);
+  canUndoRef.current = canUndo;
+  canRedoRef.current = canRedo;
+
+  const applyHistoryRestore = useCallback(
+    (restored: CVBuilderData | null, kind: 'undo' | 'redo') => {
+      if (!restored) return;
+      if (undoCoalesceTimerRef.current != null) {
+        window.clearTimeout(undoCoalesceTimerRef.current);
+        undoCoalesceTimerRef.current = null;
+      }
+      undoCoalesceOpenRef.current = false;
+      flushCvInlineEdits();
+      dataRef.current = restored;
+      setData(restored);
+      setDataRevision((n) => n + 1);
+      setDirty(true);
+      setSaveStatus('dirty');
+      void (async () => {
+        await flushDashboardAutosaveRef.current?.();
+        onHistoryAppliedRef.current?.(restored, kind);
+      })();
+    },
+    [],
+  );
+
   useEffect(() => {
-    if (mode !== 'dashboard') return;
+    /**
+     * Shared content undo/redo (CVBuilderData snapshots only).
+     * Tailor sidebar "Undo accept" uses CvPatchEngine revert — a separate system; it does
+     * not share this stack. Ctrl+Z here always restores editor content history.
+     */
+    if (mode !== 'dashboard' && mode !== 'onboarding') return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setFocusedPreviewSection(null);
         setFocusedEntryId(null);
         setFocusedEntrySection(null);
+        return;
+      }
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod || e.altKey) return;
+      const isUndo =
+        e.key === 'z' && !e.shiftKey && canUndoRef.current;
+      const isRedo =
+        (e.key === 'y' || (e.key === 'z' && e.shiftKey)) && canRedoRef.current;
+      if (!isUndo && !isRedo) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const target = e.target as HTMLElement | null;
+      const isNativeInput =
+        target != null &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT');
+      if (isNativeInput && target instanceof HTMLElement) {
+        target.blur();
+      }
+      flushCvInlineEdits();
+
+      if (isUndo) {
+        applyHistoryRestore(undoEdit(dataRef.current), 'undo');
+      } else if (isRedo) {
+        applyHistoryRestore(redoEdit(dataRef.current), 'redo');
       }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [mode]);
+    window.addEventListener('keydown', onKey, { capture: true });
+    return () => window.removeEventListener('keydown', onKey, { capture: true });
+  }, [mode, undoEdit, redoEdit, applyHistoryRestore]);
 
   useEffect(() => {
     setKnownSectionTypes(new Set(existingSections?.map((s) => s.type) ?? []));
@@ -903,20 +1042,39 @@ export function CVBuilder({
   );
 
   const lastPersistedFingerprintRef = useRef<string | null>(null);
-  const dataRef = useRef(data);
-  const templateRef = useRef(selectedTemplate);
-  dataRef.current = data;
-  templateRef.current = selectedTemplate;
+
+  useEffect(() => {
+    onUndoRedoReadyRef.current?.({
+      canUndo,
+      canRedo,
+      undo: () => {
+        applyHistoryRestore(undoEdit(dataRef.current), 'undo');
+      },
+      redo: () => {
+        applyHistoryRestore(redoEdit(dataRef.current), 'redo');
+      },
+    });
+  }, [canUndo, canRedo, undoEdit, redoEdit, applyHistoryRestore]);
+
+  useEffect(
+    () => () => {
+      if (undoCoalesceTimerRef.current != null) {
+        window.clearTimeout(undoCoalesceTimerRef.current);
+      }
+    },
+    [],
+  );
 
   const sectionsRef = useRef(existingSections);
   sectionsRef.current = existingSections;
 
-  useCVAutosave({
+  const { flushDashboardAutosave } = useCVAutosave({
     mode,
     profileId,
     data,
     selectedTemplate,
     dirty,
+    isDiffOverlayOpen,
     setDirty,
     setSaveStatus,
     sectionsRef,
@@ -927,6 +1085,16 @@ export function CVBuilder({
     onDashboardSaved,
     toast,
   });
+  flushDashboardAutosaveRef.current = flushDashboardAutosave;
+
+  const prevDiffOverlayOpenRef = useRef(isDiffOverlayOpen);
+  useEffect(() => {
+    const wasOpen = prevDiffOverlayOpenRef.current;
+    prevDiffOverlayOpenRef.current = isDiffOverlayOpen;
+    if (wasOpen && !isDiffOverlayOpen && dirty) {
+      void flushDashboardAutosave();
+    }
+  }, [isDiffOverlayOpen, dirty, flushDashboardAutosave]);
 
   /**
    * When section row ids change for the same profile, merge server `order` into local preview drag order.
@@ -1025,6 +1193,7 @@ export function CVBuilder({
     previousOptionalPresenceRef.current = new Set(optionalSectionPresence);
     if (newlyAdded.length === 0) return;
 
+    pushUndoSnapshot(dataRef.current, 'Section Update');
     setData((prev) => {
       let next = prev;
       let changed = false;
@@ -1088,7 +1257,7 @@ export function CVBuilder({
 
       return changed ? next : prev;
     });
-  }, [mode, optionalSectionPresence]);
+  }, [mode, optionalSectionPresence, pushUndoSnapshot]);
 
   /** Drop importer "available upon request" placeholder rows so they never duplicate real references. */
   useEffect(() => {
@@ -1302,7 +1471,7 @@ export function CVBuilder({
      * the preview always renders them — this is what removed the buggy hide path the user
      * complained about.
      */
-    for (const core of ['summary', 'experience', 'education', 'skills']) {
+    for (const core of ['summary', 'experience', 'education', 'projects', 'skills']) {
       next[core] = true;
     }
     /**
@@ -1362,6 +1531,28 @@ export function CVBuilder({
   const showCefr = TEMPLATE_FIELD_CONFIG.showCefrLanguageBreakdown.includes(
     template as CvTemplateId,
   );
+
+  const prevTemplateForPhotoRef = useRef(selectedTemplate);
+  useEffect(() => {
+    const prev = prevTemplateForPhotoRef.current;
+    prevTemplateForPhotoRef.current = selectedTemplate;
+    if (prev === selectedTemplate) return;
+    const leftOnyx = prev === 'onyx' && selectedTemplate !== 'onyx';
+    if (!leftOnyx && selectedTemplate !== 'onyx') {
+      setHeaderPreviewState((hp) =>
+        hp.showPhoto ? { ...hp, showPhoto: false } : hp,
+      );
+    }
+    if (leftOnyx || (selectedTemplate !== 'onyx' && dataRef.current.personal.photoUrl?.trim())) {
+      setHeaderPreviewState((hp) => ({ ...hp, showPhoto: false }));
+      pushUndoSnapshot(dataRef.current, 'Template change');
+      setData((d) =>
+        d.personal.photoUrl?.trim()
+          ? { ...d, personal: { ...d.personal, photoUrl: '' } }
+          : d,
+      );
+    }
+  }, [selectedTemplate, pushUndoSnapshot]);
 
   const onSplitResizePointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
@@ -1424,12 +1615,23 @@ export function CVBuilder({
 
   const update = useCallback(
     (patch: Partial<CVBuilderData> | ((d: CVBuilderData) => CVBuilderData)) => {
+      const current = dataRef.current;
+      const next =
+        typeof patch === 'function'
+          ? patch(current)
+          : ({ ...current, ...patch } as CVBuilderData);
+      if (computeCvUndoFingerprint(next) === computeCvUndoFingerprint(current)) {
+        return;
+      }
+      if (!undoCoalesceOpenRef.current) {
+        pushUndoSnapshot(current, 'Edit');
+        undoCoalesceOpenRef.current = true;
+      }
+      clearUndoCoalesce();
       setDirty(true);
-      setData((d) =>
-        typeof patch === 'function' ? patch(d) : { ...d, ...patch },
-      );
+      setData(next);
     },
-    [],
+    [pushUndoSnapshot, clearUndoCoalesce],
   );
 
   const mergeDeep = useCallback((base: unknown, patch: unknown): unknown => {
@@ -1466,18 +1668,66 @@ export function CVBuilder({
       const snap =
         initialDataForServerHydrateRef.current ??
         emptyCVBuilderData({ email: emailDefault, name: user?.name });
+      const preserveHistory = serverHydratePreserveHistoryRef?.current === true;
+      if (serverHydratePreserveHistoryRef) {
+        serverHydratePreserveHistoryRef.current = false;
+      }
+      if (preserveHistory && dirtyRef.current) {
+        logCvBuilderSavePerfDev('hydrate.skipDirty', t0, {
+          nonce,
+          reason,
+          preserveHistory,
+        });
+        return;
+      }
       setData(coerceStructuredTextInCvBuilderData(snap));
       setDirty(false);
+      if (!preserveHistory) {
+        resetUndoStack();
+      }
       lastPersistedFingerprintRef.current = computeCvBuilderSaveFingerprint(
         snap,
         selectedTemplate,
         sectionsRef.current,
       );
       setSaveStatus('idle');
-      logCvBuilderSavePerfDev('hydrate.apply', t0, { nonce, reason });
+      logCvBuilderSavePerfDev('hydrate.apply', t0, { nonce, reason, preserveHistory });
     },
-    [emailDefault, user?.name, selectedTemplate, sectionsRef],
+    [
+      emailDefault,
+      user?.name,
+      selectedTemplate,
+      sectionsRef,
+      resetUndoStack,
+      serverHydratePreserveHistoryRef,
+    ],
   );
+
+  const handleImmediateSectionPatch = useCallback(
+    (sections: CvAcceptUpdatedSection[]) => {
+      if (!sections.length) return;
+      if (undoCoalesceTimerRef.current != null) {
+        window.clearTimeout(undoCoalesceTimerRef.current);
+        undoCoalesceTimerRef.current = null;
+      }
+      undoCoalesceOpenRef.current = false;
+      const sectionLabel = sections[0]?.type ?? 'section';
+      const next = applyAcceptedSectionsToBuilderData(
+        dataRef.current,
+        sections,
+        sectionsRef.current ?? [],
+      );
+      pushUndoSnapshotForced(dataRef.current, `AI Accept: ${sectionLabel}`);
+      dataRef.current = next;
+      setData(next);
+      setDataRevision((n) => n + 1);
+    },
+    [pushUndoSnapshotForced],
+  );
+
+  useEffect(() => {
+    onImmediateSectionPatchReady?.(handleImmediateSectionPatch);
+  }, [handleImmediateSectionPatch, onImmediateSectionPatchReady]);
 
   useEffect(() => {
     if (mode !== 'dashboard') return;
@@ -1515,12 +1765,13 @@ export function CVBuilder({
 
   useEffect(() => {
     if (!externalPatch || externalPatchNonce <= 0) return;
+    pushUndoSnapshot(dataRef.current, 'Assistant change');
     setDirty(true);
     setData((prev) => {
       const merged = mergeDeep(prev, externalPatch) as CVBuilderData;
       return coerceStructuredTextInCvBuilderData(merged);
     });
-  }, [externalPatch, externalPatchNonce, mergeDeep]);
+  }, [externalPatch, externalPatchNonce, mergeDeep, pushUndoSnapshot]);
 
   const rawExperienceItems = data.experience?.items;
   const experienceItems = Array.isArray(rawExperienceItems)
@@ -1661,7 +1912,7 @@ export function CVBuilder({
                 .replace(/_/g, ' ')
                 .replace(/\b\w/g, (l) => l.toUpperCase()) ||
               id;
-            toastRef.current?.success(`${label} removed from your CV`);
+            toastRef.current?.success(`${label} removed from your resume`);
             await refreshCvState(queryClient, profileId, {
               refreshProfile: true,
               refreshSections: true,
@@ -1842,7 +2093,7 @@ export function CVBuilder({
       void (async () => {
         const pid = profileId?.trim();
         if (!pid) {
-          toast.error('Save your CV first.');
+          toast.error('Save your resume first.');
           return;
         }
         const sectionKey = issue.sectionId;
@@ -1910,6 +2161,7 @@ export function CVBuilder({
           });
 
         try {
+          pushUndoSnapshot(dataRef.current, 'Spellcheck apply');
           const result = await runApply(false);
           const appliedText = result.text;
           if (typeof appliedText === 'string') {
@@ -1970,7 +2222,7 @@ export function CVBuilder({
         }
       })();
     },
-    [profileId, sectionKeyToRowId, toast],
+    [profileId, pushUndoSnapshot, sectionKeyToRowId, toast],
   );
 
   const onDismissSpellIssue = useCallback((issue: CvSpellIssue) => {
@@ -2028,6 +2280,7 @@ export function CVBuilder({
       onUpdate: (patch: Partial<CVBuilderData>) => update(patch),
       isEditing: mode === 'dashboard',
       data,
+      dataRevision,
       activeSection,
       setActiveSection,
       focusedSection: focusedPreviewSection,
@@ -2052,10 +2305,12 @@ export function CVBuilder({
       cvAssistantClarificationQuestion:
         cvAssistantClarificationQuestion ?? null,
       recruiterScanHeatmap: recruiterScanHeatmap ?? null,
+      photoUploadEnabled: showPhotoUpload,
     }),
     [
       mode,
       data,
+      dataRevision,
       activeSection,
       update,
       focusedPreviewSection,
@@ -2076,6 +2331,7 @@ export function CVBuilder({
       cvAssistantBusyMessage,
       cvAssistantClarificationQuestion,
       recruiterScanHeatmap,
+      showPhotoUpload,
     ],
   );
 
@@ -2157,6 +2413,9 @@ export function CVBuilder({
   const handlePreviewReorderSections = useCallback(
     async (nextOrder: string[]) => {
       const dedupedOrder = dedupePreviewSectionKeys(nextOrder);
+      if (mode === 'dashboard') {
+        pushUndoSnapshot(dataRef.current, 'Section reorder');
+      }
       setPreviewSectionOrder(dedupedOrder);
       if (mode !== 'dashboard' || !profileId) return;
 
@@ -2175,7 +2434,7 @@ export function CVBuilder({
       if (allSections.length === 0) {
         setPreviewSectionOrder(lastConfirmedPreviewOrderRef.current);
         toast.error(
-          'Your CV sections are still loading. Wait a moment, then try reordering again.',
+          'Your resume sections are still loading. Wait a moment, then try reordering again.',
         );
         return;
       }
@@ -2240,7 +2499,7 @@ export function CVBuilder({
         setReorderPending(false);
       }
     },
-    [existingSections, mode, profileId, queryClient, toast],
+    [existingSections, mode, profileId, pushUndoSnapshot, queryClient, toast],
   );
 
   const toggleAccordion = (id: string) => {
@@ -2352,7 +2611,7 @@ export function CVBuilder({
                 api.cv.acceptGeneratorSummary(profileId.trim(), { text }),
               onRehydrated: () => onAiStructuredPersisted?.(),
             });
-            toast.success('Summary saved to your CV');
+            toast.success('Summary saved to your resume');
           } catch (e) {
             toast.error(
               getApiErrorMessage(e) || 'Could not save summary. Try again.',
@@ -2408,7 +2667,7 @@ export function CVBuilder({
               }),
             onRehydrated: () => onAiStructuredPersisted?.(),
           });
-          toast.success('Bullet saved to your CV');
+          toast.success('Bullet saved to your resume');
           return null;
         } catch (e) {
           toast.error(
@@ -2606,7 +2865,7 @@ export function CVBuilder({
       try {
         const res: CvSpellcheckBulkResult = await api.cv.checkSpellingBulk(
           profileId,
-          { language: 'en' },
+          { language: spellcheckLanguage || 'en' },
         );
         const byField: Record<string, CvSpellIssue[]> = {};
         let total = 0;
@@ -2667,7 +2926,7 @@ export function CVBuilder({
         setIsSpellChecking(false);
       }
     },
-    [profileId, sectionRowIdToKey, toast],
+    [profileId, sectionRowIdToKey, spellcheckLanguage, toast],
   );
 
   useEffect(() => {
@@ -2683,7 +2942,7 @@ export function CVBuilder({
     lastSpellFixAllTriggerRef.current = spellFixAllTrigger;
     const pid = profileId?.trim();
     if (!pid) {
-      toast.error('Save your CV first.');
+      toast.error('Save your resume first.');
       return;
     }
     const issuesSnapshot = Object.values(
@@ -2706,6 +2965,7 @@ export function CVBuilder({
     }
     let cancelled = false;
     void (async () => {
+      pushUndoSnapshot(dataRef.current, 'Spellcheck apply all');
       let working = dataRef.current;
       let byField = { ...spellIssuesByFieldRef.current };
       const seen = new Set<string>();
@@ -2793,7 +3053,7 @@ export function CVBuilder({
     return () => {
       cancelled = true;
     };
-  }, [spellFixAllTrigger, profileId, sectionKeyToRowId, toast]);
+  }, [spellFixAllTrigger, profileId, pushUndoSnapshot, sectionKeyToRowId, toast]);
 
   const formSectionTabs = useMemo(() => {
     const base: { id: string; label: string }[] = [
@@ -2916,7 +3176,7 @@ export function CVBuilder({
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
                 <h2 className="shrink-0 text-base font-bold text-white sm:text-[17px]">
-                  Edit your CV
+                  Edit your resume
                 </h2>
                 {saveStatus !== 'idle' ? (
                   <p className="text-[10px] text-white/40">
@@ -3551,11 +3811,11 @@ export function CVBuilder({
               {experienceItems.length === 0 && uploadedCvHint ? (
                 <div className="rounded-[10px] border border-[rgba(245,158,11,0.15)] bg-[rgba(245,158,11,0.06)] p-4">
                   <p className="mb-1 text-[13px] font-semibold text-[#F59E0B]">
-                    Experience not extracted from your CV
+                    Experience not extracted from your resume
                   </p>
                   <p className="mb-2.5 text-xs leading-relaxed text-white/50">
                     Your uploaded CV may have been too long for our parser to
-                    read completely. Try re-uploading your CV — we have improved
+                    read completely. Try re-uploading your resume — we have improved
                     our extraction.
                   </p>
                   {onRequestReparse ? (
@@ -3693,7 +3953,7 @@ export function CVBuilder({
                       </label>
                       <p className="mb-1.5 text-[10px] leading-snug text-white/35">
                         Put each achievement on its own line. You don&apos;t
-                        need • or dashes — we format those on your CV.
+                        need • or dashes — we format those on your resume.
                       </p>
                       {job.bullets.some(containsCvChangeMarker) ? (
                         <div className="space-y-2">
@@ -3794,10 +4054,10 @@ export function CVBuilder({
               {educationItems.length === 0 && uploadedCvHint ? (
                 <div className="rounded-[10px] border border-[rgba(245,158,11,0.15)] bg-[rgba(245,158,11,0.06)] p-4">
                   <p className="mb-1 text-[13px] font-semibold text-[#F59E0B]">
-                    Education not extracted from your CV
+                    Education not extracted from your resume
                   </p>
                   <p className="text-xs leading-relaxed text-white/50">
-                    Add your education manually, or re-upload your CV to try
+                    Add your education manually, or re-upload your resume to try
                     extraction again.
                   </p>
                 </div>
@@ -3928,11 +4188,11 @@ export function CVBuilder({
               ) && uploadedCvHint ? (
                 <div className="rounded-[10px] border border-[rgba(245,158,11,0.15)] bg-[rgba(245,158,11,0.06)] p-4">
                   <p className="mb-1 text-[13px] font-semibold text-[#F59E0B]">
-                    Skills not extracted from your CV
+                    Skills not extracted from your resume
                   </p>
                   <p className="text-xs leading-relaxed text-white/50">
                     Type skills below and press Enter to add them, or re-upload
-                    your CV to try extraction again.
+                    your resume to try extraction again.
                   </p>
                 </div>
               ) : null}
@@ -5357,7 +5617,7 @@ export function CVBuilder({
                   : `0 0 ${tripleColumn.rightPct}%`,
               }}
               className={cn(
-                'flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden border-l border-white/[0.07] bg-[#0C0F0F] transition-[flex,opacity] duration-300 ease-out max-lg:hidden',
+                'flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden border-l border-white/[0.07] bg-[#0C0F0F] transition-opacity duration-300 ease-out max-lg:hidden',
                 !tripleColumn.rightCollapsed &&
                   'min-w-[300px] xl:min-w-[320px]',
                 tripleColumn.rightCollapsed
@@ -5461,7 +5721,7 @@ export function CVBuilder({
   );
 
   const diffActionBarSectionId =
-    diffSection?.trim() ||
+    cvDiffPreviewBuilderSection(diffSection) ||
     (diffMultiSection && diffChangedFields?.length
       ? (diffChangedFields[0]?.fieldPath ?? '').trim()
       : '');

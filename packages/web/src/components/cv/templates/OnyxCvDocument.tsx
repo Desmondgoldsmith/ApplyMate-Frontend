@@ -74,7 +74,7 @@ const ONYX_MAIN_TITLE = 'text-[11pt] font-semibold border-b border-[#333]/30 pb-
 const ONYX_SIDEBAR_FIELD = 'text-[8.5pt] text-white';
 const ONYX_SIDEBAR_PLACEHOLDER_TONE = 'onDark' as const;
 
-const CORE_SECTION_IDS = new Set(['summary', 'experience', 'education', 'skills']);
+const CORE_SECTION_IDS = new Set(['summary', 'experience', 'education', 'projects', 'skills']);
 const CV_PREVIEW_ITEM_SEP = '::';
 
 type CVSectionVisibilityMap = Record<string, boolean>;

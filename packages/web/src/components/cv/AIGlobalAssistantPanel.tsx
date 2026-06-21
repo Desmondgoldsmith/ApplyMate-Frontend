@@ -71,7 +71,7 @@ export function AIGlobalAssistantPanel({
   const desktopLg = useDesktopLgMedia();
   const { navBottomOffset } = useMobileShell();
   const [text, setText] = useState('');
-  const [pendingScopeLabel, setPendingScopeLabel] = useState('Entire CV');
+  const [pendingScopeLabel, setPendingScopeLabel] = useState('Entire resume');
   const [pendingOperation, setPendingOperation] =
     useState<CvGlobalAssistantOperationKey | undefined>(undefined);
   const commandRef = useRef<HTMLTextAreaElement>(null);
@@ -87,7 +87,7 @@ export function AIGlobalAssistantPanel({
     if (!s) return;
     setText(s);
     setPendingOperation(undefined);
-    setPendingScopeLabel('Entire CV');
+    setPendingScopeLabel('Entire resume');
     onSeedCommandConsumed?.();
   }, [open, seedCommand, onSeedCommandConsumed]);
 
@@ -224,7 +224,7 @@ export function AIGlobalAssistantPanel({
                     Loading presets…
                   </p>
                 ) : (
-                  <div className="mb-2 max-h-40 space-y-1 overflow-y-auto">
+                  <div className="mb-2 max-h-40 space-y-1 overflow-y-auto overscroll-y-contain touch-pan-y [-webkit-overflow-scrolling:touch]" data-lenis-prevent-wheel>
                     <p className="text-[10px] font-medium uppercase tracking-wide text-white/35">
                       Quick commands
                     </p>
@@ -270,11 +270,11 @@ export function AIGlobalAssistantPanel({
                   onChange={(e) => {
                     setText(e.target.value);
                     setPendingOperation(undefined);
-                    setPendingScopeLabel('Entire CV');
+                    setPendingScopeLabel('Entire resume');
                   }}
                   rows={3}
                   disabled={busy}
-                  placeholder="e.g. Standardise all date formats across my CV"
+                  placeholder="e.g. Standardise all date formats across my resume"
                   className="w-full resize-y rounded-xl border border-white/[0.12] bg-[#111616] px-3 py-2 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-[#00C9B1]/35 disabled:opacity-60"
                 />
 

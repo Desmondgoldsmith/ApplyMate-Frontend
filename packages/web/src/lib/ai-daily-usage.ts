@@ -99,3 +99,67 @@ export function invalidateDailyAiUsageQuery(
     queryKey: queryKeys.auth.me(accessToken ?? ''),
   });
 }
+
+export type CvAiUsageMeta = {
+  used: number;
+  limit: number;
+  remaining: number;
+  resetsAt?: string;
+  timezone?: string;
+};
+
+/** Apply `meta.aiUsage` / `data.aiUsage` from a CV mutation without waiting for refetch. */
+export function applyCvAiUsageToAuthCache(
+  queryClient: QueryClient,
+  accessToken: string | null | undefined,
+  aiUsage: CvAiUsageMeta | null | undefined,
+): void {
+  if (!aiUsage || !Number.isFinite(aiUsage.used)) return;
+  queryClient.setQueryData<import('@/lib/api').AuthUser>(
+    queryKeys.auth.me(accessToken ?? ''),
+    (prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        aiUsesToday: aiUsage.used,
+        aiDailyLimit: aiUsage.limit,
+        aiUsesRemaining: aiUsage.remaining,
+        aiUsageTimezone: aiUsage.timezone ?? prev.aiUsageTimezone,
+      };
+    },
+  );
+}
+
+export function extractCvAiUsageFromResponse(raw: unknown): CvAiUsageMeta | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const o = raw as Record<string, unknown>;
+  const meta = o.meta;
+  const data = o.data;
+  const from =
+    meta && typeof meta === 'object' && !Array.isArray(meta)
+      ? (meta as Record<string, unknown>).aiUsage ??
+        (meta as Record<string, unknown>).ai_usage
+      : null;
+  const fromData =
+    data && typeof data === 'object' && !Array.isArray(data)
+      ? (data as Record<string, unknown>).aiUsage ??
+        (data as Record<string, unknown>).ai_usage
+      : null;
+  const usage = (from ?? fromData) as Record<string, unknown> | null;
+  if (!usage || typeof usage !== 'object') return null;
+  const used = Number(usage.used);
+  const limit = Number(usage.limit);
+  const remaining = Number(usage.remaining);
+  if (!Number.isFinite(used) || !Number.isFinite(limit) || !Number.isFinite(remaining)) {
+    return null;
+  }
+  const resetsAt =
+    typeof usage.resetsAt === 'string'
+      ? usage.resetsAt
+      : typeof usage.resets_at === 'string'
+        ? usage.resets_at
+        : undefined;
+  const timezone =
+    typeof usage.timezone === 'string' ? usage.timezone : undefined;
+  return { used, limit, remaining, resetsAt, timezone };
+}

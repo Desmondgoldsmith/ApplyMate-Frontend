@@ -19,6 +19,9 @@ export async function GET() {
     hasNextAuthSecret: Boolean(process.env.NEXTAUTH_SECRET?.trim()),
     nextAuthUrl: process.env.NEXTAUTH_URL ?? null,
     nextAuthBasePath: NEXTAUTH_API_BASE_PATH,
+    expectedGoogleRedirectUri: process.env.NEXTAUTH_URL
+      ? `${process.env.NEXTAUTH_URL.replace(/\/$/, '')}/callback/google`
+      : null,
     apiBaseUrl: API_BASE_URL,
     hint: isGoogleAuthConfigured()
       ? `Env looks OK. If sign-in still fails, check ${NEXTAUTH_API_BASE_PATH}/providers shows "google" and backend GOOGLE_CLIENT_ID matches.`

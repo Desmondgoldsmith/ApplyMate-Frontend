@@ -70,8 +70,16 @@ export type CvGlobalAssistantFullCvResult = {
   diff: { summary: string };
 };
 
+export type CvGlobalAssistantNoOpResult = {
+  type: 'no_op';
+  code?: string;
+  message?: string;
+  userHint?: string;
+};
+
 export type CvGlobalAssistantCommandResponse =
   | { type: 'clarify'; commandId: string; question: string }
+  | CvGlobalAssistantNoOpResult
   | CvGlobalAssistantFindingsResult
   | CvGlobalAssistantFullCvResult;
 
@@ -112,11 +120,11 @@ export type CvGlobalAssistantApplyFindingsPayload = {
 export function buildGlobalFixPromptFromFindings(findings: string[]): string {
   const lines = findings.map((f) => f.trim()).filter(Boolean);
   if (lines.length === 0) {
-    return 'Improve my CV based on the recruiter scan findings. Only use facts already in my CV.';
+    return 'Improve my resume based on the recruiter scan findings. Only use facts already in my resume.';
   }
   return [
-    'Address these recruiter scan findings with edits across my entire CV.',
-    'Only use information already in my CV; do not invent roles, dates, or skills.',
+    'Address these recruiter scan findings with edits across my entire resume.',
+    'Only use information already in my resume. Do not invent roles, dates, or skills.',
     '',
     ...lines.map((f) => `• ${f}`),
   ].join('\n');
@@ -260,7 +268,7 @@ export function normalizeCvGlobalAssistantOperation(
     description: String(o.description ?? '').trim(),
     exampleCommand: String(o.exampleCommand ?? o.example_command ?? '').trim(),
     affectedScopeLabel: String(
-      o.affectedScopeLabel ?? o.affected_scope_label ?? (scope === 'findings' ? 'Findings only' : 'Entire CV'),
+      o.affectedScopeLabel ?? o.affected_scope_label ?? (scope === 'findings' ? 'Findings only' : 'Entire resume'),
     ).trim(),
     scope,
   };
@@ -323,6 +331,19 @@ export function normalizeCvGlobalAssistantCommandResponse(
       question: sanitizeAssistantClarificationQuestion(
         String(body.question ?? 'Could you clarify your request?'),
       ),
+    };
+  }
+  if (body.type === 'no_op') {
+    return {
+      type: 'no_op',
+      code: typeof body.code === 'string' ? body.code : undefined,
+      message: typeof body.message === 'string' ? body.message : undefined,
+      userHint:
+        typeof body.userHint === 'string'
+          ? body.userHint
+          : typeof body.user_hint === 'string'
+            ? body.user_hint
+            : undefined,
     };
   }
 
@@ -401,7 +422,7 @@ export function normalizeCvGlobalAssistantCommandResponse(
   return {
     type: 'result',
     scope: 'full_cv',
-    affectedScopeLabel: affectedScopeLabel || 'Entire CV',
+    affectedScopeLabel: affectedScopeLabel || 'Entire resume',
     operation,
     ...(operationLabel ? { operationLabel } : {}),
     commandId,

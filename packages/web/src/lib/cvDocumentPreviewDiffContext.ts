@@ -29,6 +29,60 @@ function sectionKey(value: string): string {
   return value.trim().toLowerCase();
 }
 
+function diffSectionMatchesPreviewSection(
+  previewSectionId: string,
+  diffSection: string | null | undefined,
+): boolean {
+  const id = sectionKey(previewSectionId);
+  const diff = sectionKey(diffSection ?? '');
+  if (!diff) return false;
+  if (diff === id) return true;
+  // Headline/contact improvements render in the `personal` header block.
+  if (
+    id === 'personal' &&
+    (diff === 'contact' || diff === 'headline' || diff === 'personal')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function fieldPathTargetsPreviewSection(
+  previewSectionId: string,
+  fieldPath: string,
+): boolean {
+  const id = sectionKey(previewSectionId);
+  const path = fieldPath.trim().toLowerCase();
+  if (!path) return false;
+  const root = /^([a-z0-9_-]+)/.exec(path)?.[1] ?? '';
+  if (!root) return false;
+  if (root === id) return true;
+  if (id === 'personal' && (root === 'contact' || root === 'headline')) {
+    return true;
+  }
+  return false;
+}
+
+/** API improvement sections that must map to a preview diff renderer. */
+export const CV_IMPROVEMENT_DIFF_API_SECTIONS = new Set([
+  'experience',
+  'summary',
+  'contact',
+  'personal',
+  'headline',
+  'skills',
+  'education',
+  'projects',
+  'certifications',
+]);
+
+export function logMissingCvDiffRenderer(apiSection: string): void {
+  console.error(
+    `[CVDocumentPreview] No diff renderer registered for section "${apiSection}" — ` +
+      'the Apply with AI result will not be visible to the user. Add a renderer.',
+  );
+}
+
 export function resolveCvPreviewSectionDiff(
   sectionId: string,
   diffSection: string | null | undefined,
@@ -49,10 +103,32 @@ export function resolveCvPreviewSectionDiff(
       sectionDiffIndex: fields[0]?.sectionDiffIndex,
     };
   }
-  const isDiff = sectionKey(diffSection ?? '') === id;
+  const isDiff = diffSectionMatchesPreviewSection(sectionId, diffSection);
+  if (isDiff) {
+    return {
+      isDiff: true,
+      fields: changedFields ?? null,
+      sectionDiffIndex: changedFields?.[0]?.sectionDiffIndex,
+    };
+  }
+
+  const matchedFields = (changedFields ?? []).filter((cf) =>
+    fieldPathTargetsPreviewSection(
+      sectionId,
+      (cf.fieldPath ?? cf.field ?? '').trim(),
+    ),
+  );
+  if (matchedFields.length > 0) {
+    return {
+      isDiff: true,
+      fields: matchedFields,
+      sectionDiffIndex: matchedFields[0]?.sectionDiffIndex,
+    };
+  }
+
   return {
-    isDiff,
-    fields: isDiff ? changedFields ?? null : null,
-    sectionDiffIndex: isDiff ? changedFields?.[0]?.sectionDiffIndex : undefined,
+    isDiff: false,
+    fields: null,
+    sectionDiffIndex: undefined,
   };
 }

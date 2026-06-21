@@ -27,6 +27,8 @@ export type CvSectionOrderSuggestResult = {
   currentOrder: string[];
   suggestedOrder: string[];
   isOptimal: boolean;
+  /** Alias for `isOptimal` from newer suggest-order responses. */
+  alreadyOrdered?: boolean;
   showProactiveSuggestion: boolean;
   overview: string;
   changes: CvSectionOrderChange[];
@@ -178,7 +180,11 @@ export function normalizeCvSectionOrderSuggestResult(raw: unknown): CvSectionOrd
           : 'General',
     currentOrder: parseStringArray(nested.currentOrder ?? o.currentOrder),
     suggestedOrder: parseStringArray(nested.suggestedOrder ?? o.suggestedOrder),
-    isOptimal: nested.isOptimal === true || o.isOptimal === true,
+    isOptimal:
+      nested.isOptimal === true ||
+      o.isOptimal === true ||
+      nested.alreadyOrdered === true ||
+      o.alreadyOrdered === true,
     showProactiveSuggestion:
       nested.showProactiveSuggestion === true || o.showProactiveSuggestion === true,
     overview:

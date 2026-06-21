@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { useCvOverlayZIndex } from '@/components/cv/CvOverlayLayerContext';
-import { DateRangePicker } from '@/components/cv/DateRangePicker';
+import { CvEntryDateRangePopover } from '@/components/cv/CvEntryDateRangePopover';
 const TOOLBAR_INTERACTING_FLAG = '__cvToolbarInteracting';
 
 function setToolbarInteracting(value: boolean) {
@@ -556,13 +556,13 @@ export function EntryToolbar({
       ) : null}
       {showDate && onDatePick && mounted ? createPortal(
         <div className={panelPositionClass} style={panelStyle(320)} onClick={(e) => e.stopPropagation()}>
-          <DateRangePicker
+          <CvEntryDateRangePopover
             start={dateStart}
             end={dateEnd}
             mode={dateMode}
-            defaultGranularity={sectionType === 'education' ? 'year' : undefined}
-            onApply={(start, end) => {
-              onDatePick(start, end);
+            preferYear={sectionType === 'education'}
+            onApply={(s, e) => {
+              onDatePick(s, e);
               setShowDate(false);
             }}
             onClose={() => setShowDate(false)}

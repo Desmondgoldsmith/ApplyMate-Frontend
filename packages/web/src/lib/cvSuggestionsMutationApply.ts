@@ -17,6 +17,70 @@ function mergeRevisionFromCommit(
   };
 }
 
+/** Merge field-level improvement accept into the pending suggestions cache (id-only removal). */
+export function applyImprovementFieldAcceptToImprovementsCache(
+  prev: CvImprovementsPayload | undefined,
+  result: {
+    partial: boolean;
+    improvementId: string | null;
+    pendingSuggestionsCount?: number;
+    cvRevisionId?: string | null;
+    structuredRevisionHash?: string | null;
+  },
+): CvImprovementsPayload | undefined {
+  if (!prev?.improvements) return prev;
+  if (result.partial) return prev;
+  const removeId = (result.improvementId ?? '').trim();
+  if (!removeId) return prev;
+  const nextList = prev.improvements.filter(
+    (item) => (item?.id ?? '').trim() !== removeId,
+  );
+  return {
+    ...prev,
+    improvements: nextList,
+    pendingSuggestionsCount:
+      result.pendingSuggestionsCount ?? Math.max(0, nextList.length),
+    ...mergeRevisionFromCommit(prev, {
+      cvRevisionId: result.cvRevisionId ?? undefined,
+      structuredRevisionHash: result.structuredRevisionHash,
+    }),
+  };
+}
+
+/** Merge apply-preview metadata onto a pending suggestion row (hide Fix with AI while reviewing). */
+export function applySuggestionPreviewToImprovementsCache(
+  prev: CvImprovementsPayload | undefined,
+  suggestionId: string,
+  patch: {
+    pendingFieldPaths?: string[];
+    lastPreviewDraftHash?: string | null;
+    lastPreviewForSuggestionId?: string | null;
+    lastPreviewCvRevisionHash?: string | null;
+  },
+): CvImprovementsPayload | undefined {
+  if (!prev?.improvements) return prev;
+  const sid = suggestionId.trim();
+  if (!sid) return prev;
+  const paths = (patch.pendingFieldPaths ?? []).map((p) => p.trim()).filter(Boolean);
+  const draftHash = patch.lastPreviewDraftHash?.trim();
+  const previewFor = patch.lastPreviewForSuggestionId?.trim();
+  const revisionHash = patch.lastPreviewCvRevisionHash?.trim();
+  if (!paths.length && !draftHash && !previewFor && !revisionHash) return prev;
+  return {
+    ...prev,
+    improvements: prev.improvements.map((it) => {
+      if ((it?.id ?? '').trim() !== sid) return it;
+      return {
+        ...it,
+        ...(paths.length ? { pendingFieldPaths: paths } : {}),
+        ...(draftHash ? { lastPreviewDraftHash: draftHash } : {}),
+        ...(previewFor ? { lastPreviewForSuggestionId: previewFor } : {}),
+        ...(revisionHash ? { lastPreviewCvRevisionHash: revisionHash } : {}),
+      };
+    }),
+  };
+}
+
 /** Merge single-suggestion accept response into the pending suggestions cache. */
 export function applySuggestionAcceptToImprovementsCache(
   prev: CvImprovementsPayload | undefined,
@@ -26,11 +90,15 @@ export function applySuggestionAcceptToImprovementsCache(
   if (!prev?.improvements) return prev;
   const rid = acceptedId.trim();
   const serverIds = normalizeIdSet(product.acceptedSuggestionIds);
+  const autoResolved = normalizeIdSet(product.autoResolvedIds);
   /**
    * Prefer the explicit accepted pointer/id so unrelated rows stay when the server echoes a broad
    * `acceptedSuggestionIds` set. If the pointer is empty, fall back to the server id list only.
    */
-  const remove = rid.length > 0 ? new Set([rid]) : serverIds ?? new Set<string>();
+  const remove = new Set<string>();
+  if (rid.length > 0) remove.add(rid);
+  else if (serverIds) serverIds.forEach((id) => remove.add(id));
+  autoResolved?.forEach((id) => remove.add(id));
   const nextList =
     remove.size > 0
       ? prev.improvements.filter((it) => !remove.has((it?.id ?? '').trim()))

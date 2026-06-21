@@ -1,5 +1,9 @@
 import type { TourId } from '@/components/onboarding/featureTourDefinitions';
-import { tourStorageKey } from '@/components/onboarding/featureTourDefinitions';
+import {
+  tourIdToPageApiKey,
+  tourStorageKey,
+} from '@/components/onboarding/featureTourDefinitions';
+import type { TourPagesCompletedPrefs, UserUiPrefs } from '@/lib/api';
 
 /** Global product tour — one completion flag for the entire app (v1). */
 
@@ -44,12 +48,23 @@ function legacyTourFinished(userId: string | undefined): boolean {
   return keys.some((k) => readLocal(k));
 }
 
+function isTourPageCompletedOnServer(
+  tourId: TourId,
+  uiPrefs?: UserUiPrefs | null,
+): boolean {
+  if (uiPrefs?.tourCompleted === true) return true;
+  const pages = uiPrefs?.tourPagesCompleted;
+  if (!pages) return false;
+  const key = tourIdToPageApiKey(tourId);
+  return pages[key] === true;
+}
+
 export function isGlobalTourFinished(
   user:
     | {
         id?: string;
         onboardingCompleted?: boolean;
-        uiPrefs?: { tourCompleted?: boolean } | null;
+        uiPrefs?: UserUiPrefs | null;
       }
     | null
     | undefined,
@@ -57,6 +72,7 @@ export function isGlobalTourFinished(
   if (readLocal(TOUR_COMPLETED_KEY)) return true;
   if (readLocal(TOUR_SKIPPED_KEY)) return true;
   if (user?.uiPrefs?.tourCompleted === true) return true;
+  if (isTourPageCompletedOnServer('dashboard', user?.uiPrefs)) return true;
   if (legacyTourFinished(user?.id)) return true;
   return false;
 }
@@ -66,7 +82,7 @@ export function shouldShowDashboardTour(
     | {
         id?: string;
         onboardingCompleted?: boolean;
-        uiPrefs?: { tourCompleted?: boolean } | null;
+        uiPrefs?: UserUiPrefs | null;
       }
     | null
     | undefined,
@@ -76,23 +92,31 @@ export function shouldShowDashboardTour(
   const onboardingDone =
     user.onboardingCompleted === true || opts?.onboardingCompletedOverride === true;
   if (!onboardingDone) return false;
-  return !isGlobalTourFinished(user);
+  if (user.uiPrefs?.tourCompleted === true) return false;
+  if (isTourPageCompletedOnServer('dashboard', user.uiPrefs)) return false;
+  if (readLocal(TOUR_COMPLETED_KEY) || readLocal(TOUR_SKIPPED_KEY)) return false;
+  if (legacyTourFinished(user.id)) return false;
+  return true;
 }
 
 export function isPageTourFinished(
   tourId: TourId,
   userId: string | undefined,
+  uiPrefs?: UserUiPrefs | null,
 ): boolean {
+  if (isTourPageCompletedOnServer(tourId, uiPrefs)) return true;
   return readLocal(tourStorageKey(tourId, userId));
 }
 
 export function shouldShowPageTour(
   tourId: TourId,
   userId: string | undefined,
+  uiPrefs?: UserUiPrefs | null,
 ): boolean {
   if (!userId) return false;
   if (tourId === 'dashboard') return false;
-  return !isPageTourFinished(tourId, userId);
+  if (uiPrefs?.tourCompleted === true) return false;
+  return !isPageTourFinished(tourId, userId, uiPrefs);
 }
 
 export function markPageTourCompleted(

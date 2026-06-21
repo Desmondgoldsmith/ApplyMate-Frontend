@@ -179,7 +179,11 @@ export function CvSectionOrderSuggestModal({
 
   const busy = fetchSuggest.isPending || applyOrder.isPending;
   const frontendSuboptimal = sectionsOrderIsSuboptimal(existingSections);
-  const isOptimal = suggest?.isOptimal === true && !frontendSuboptimal;
+  const isOptimal =
+    (suggest?.isOptimal === true ||
+      suggest?.alreadyOrdered === true ||
+      (suggest?.changes?.length ?? 0) === 0) &&
+    !frontendSuboptimal;
 
   return (
     <Modal

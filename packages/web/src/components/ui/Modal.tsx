@@ -27,11 +27,13 @@ type ModalProps = {
   showCloseButton?: boolean;
   /** Stack order when nested inside another overlay (e.g. CV tailoring shell). */
   layerZIndex?: number;
+  /** Extra classes for the scrollable body wrapper (below title/description). */
+  bodyClassName?: string;
 };
 
 /**
- * Scroll model: one `overflow-y-auto` layer on the fixed root so mouse wheel always scrolls
- * tall content (nested flex + inner overflow often fails to receive wheel events reliably).
+ * Scroll model: when `scrollBody` is true, only the body region scrolls (overlay stays fixed).
+ * Lock document scroll while open so nested modals do not show a third page scrollbar.
  */
 export function Modal({
   open,
@@ -45,6 +47,7 @@ export function Modal({
   closeOnOverlayClick = true,
   showCloseButton = true,
   layerZIndex,
+  bodyClassName,
 }: ModalProps) {
   const [mounted, setMounted] = useState(false);
   const onOverlayWheelCapture = (e: WheelEvent<HTMLDivElement>) => {
@@ -71,13 +74,22 @@ export function Modal({
 
   return createPortal(
     <div
-      className={cn('fixed inset-0 flex overflow-y-auto bg-black/60 p-4 backdrop-blur-sm', layerZIndex == null && 'z-[100]')}
+      className={cn(
+        'fixed inset-0 flex bg-black/60 p-4 backdrop-blur-sm',
+        scrollBody ? 'overflow-hidden' : 'overflow-y-auto',
+        layerZIndex == null && 'z-[100]',
+      )}
       style={layerZIndex != null ? { zIndex: layerZIndex } : undefined}
       data-lenis-prevent
       data-lenis-prevent-wheel
       onWheelCapture={onOverlayWheelCapture}
     >
-      <div className="relative flex min-h-full w-full items-center justify-center py-6">
+      <div
+        className={cn(
+          'relative flex w-full items-center justify-center py-6',
+          scrollBody ? 'h-full min-h-0' : 'min-h-full',
+        )}
+      >
         <button
           type="button"
           aria-label="Close dialog"
@@ -132,7 +144,9 @@ export function Modal({
             className={cn(
               'px-6 pb-6',
               title || description ? 'pt-4' : 'pt-6',
-              scrollBody && 'app-scrollbar flex-1 min-h-0 overflow-y-auto overscroll-contain',
+              scrollBody &&
+                'app-scrollbar flex-1 min-h-0 overflow-y-auto overscroll-contain',
+              bodyClassName,
             )}
             data-lenis-prevent
             data-lenis-prevent-wheel

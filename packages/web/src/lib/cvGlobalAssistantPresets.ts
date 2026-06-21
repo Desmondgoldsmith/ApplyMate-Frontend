@@ -8,7 +8,7 @@ export const CV_GLOBAL_ASSISTANT_DEFAULT_PRESETS: readonly CvGlobalAssistantOper
       label: 'Action verbs on bullets',
       description: 'Start every bullet with a strong verb',
       exampleCommand: 'Rewrite all bullets to start with action verbs.',
-      affectedScopeLabel: 'Entire CV',
+      affectedScopeLabel: 'Entire resume',
       scope: 'full_cv',
     },
     {
@@ -17,7 +17,7 @@ export const CV_GLOBAL_ASSISTANT_DEFAULT_PRESETS: readonly CvGlobalAssistantOper
       description: 'Quantify impact in experience bullets',
       exampleCommand:
         'Add quantified metrics to all experience bullets where possible.',
-      affectedScopeLabel: 'Entire CV',
+      affectedScopeLabel: 'Entire resume',
       scope: 'full_cv',
     },
     {
@@ -25,7 +25,7 @@ export const CV_GLOBAL_ASSISTANT_DEFAULT_PRESETS: readonly CvGlobalAssistantOper
       label: 'Standardise dates',
       description: 'One date style across the CV',
       exampleCommand: 'Standardise all date formats across sections.',
-      affectedScopeLabel: 'Entire CV',
+      affectedScopeLabel: 'Entire resume',
       scope: 'full_cv',
     },
     {
@@ -34,7 +34,7 @@ export const CV_GLOBAL_ASSISTANT_DEFAULT_PRESETS: readonly CvGlobalAssistantOper
       description: 'Pick senior, concise, or technical',
       exampleCommand:
         'Change overall tone to [more senior / more concise / more technical].',
-      affectedScopeLabel: 'Entire CV',
+      affectedScopeLabel: 'Entire resume',
       scope: 'full_cv',
     },
     {
@@ -43,7 +43,7 @@ export const CV_GLOBAL_ASSISTANT_DEFAULT_PRESETS: readonly CvGlobalAssistantOper
       description: 'Strip a technology or company name',
       exampleCommand:
         'Remove all mentions of [specific technology or company].',
-      affectedScopeLabel: 'Entire CV',
+      affectedScopeLabel: 'Entire resume',
       scope: 'full_cv',
     },
     {
@@ -51,7 +51,7 @@ export const CV_GLOBAL_ASSISTANT_DEFAULT_PRESETS: readonly CvGlobalAssistantOper
       label: 'Generate skills',
       description: 'Build skills from your experience',
       exampleCommand: 'Generate a skills section from all experience content.',
-      affectedScopeLabel: 'Entire CV',
+      affectedScopeLabel: 'Entire resume',
       scope: 'full_cv',
     },
     {

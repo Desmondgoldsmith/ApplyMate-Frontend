@@ -7,8 +7,10 @@ import {
   ListPlus,
   Loader2,
   MoreHorizontal,
+  Redo2,
   Rows3,
   Sparkles,
+  Undo2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -35,6 +37,10 @@ type CvTopChromeMoreMenuProps = {
   onOpenSectionOrder?: () => void;
   onOpenAiChat: () => void;
   onTriggerSpellCheck: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
   /** When false, hides “Build with AI” from the overflow menu (e.g. onboarding). */
   showBuildWithAi?: boolean;
   /** Expand menu inline (for mobile bottom sheets) instead of a fixed portal dropdown. */
@@ -49,6 +55,10 @@ export function CvTopChromeMoreMenu({
   onOpenSectionOrder,
   onOpenAiChat,
   onTriggerSpellCheck,
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
   showBuildWithAi = true,
   inlineMenu = false,
 }: CvTopChromeMoreMenuProps) {
@@ -154,6 +164,32 @@ export function CvTopChromeMoreMenu({
           {label}
         </button>
       ))}
+      {onUndo ? (
+        <button
+          type="button"
+          role="menuitem"
+          className={`${MENU_ITEM_CLASS} disabled:opacity-40`}
+          disabled={!canUndo}
+          title="Undo (Ctrl+Z)"
+          onClick={() => closeAnd(onUndo)}
+        >
+          <Undo2 className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+          Undo
+        </button>
+      ) : null}
+      {onRedo ? (
+        <button
+          type="button"
+          role="menuitem"
+          className={`${MENU_ITEM_CLASS} disabled:opacity-40`}
+          disabled={!canRedo}
+          title="Redo (Ctrl+Y)"
+          onClick={() => closeAnd(onRedo)}
+        >
+          <Redo2 className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+          Redo
+        </button>
+      ) : null}
       <button
         type="button"
         role="menuitem"

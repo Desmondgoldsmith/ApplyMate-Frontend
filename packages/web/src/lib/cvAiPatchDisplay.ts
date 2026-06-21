@@ -11,6 +11,19 @@ import {
 } from '@/lib/cvAssistantDiffDisplay';
 import type { CvDiffPreviewOpenParams } from '@/lib/api';
 import { cvStructuralDiffPayloadPresent } from '@/lib/cvDiffPreviewMap';
+import { stripCvChangeMarkers } from '@/lib/cvRichTextCore';
+
+function sanitizeDiffDisplayText(text: string): string {
+  let s = stripCvChangeMarkers(text);
+  if (/<[^>]+>/.test(s)) {
+    s = s.replace(/<[^>]*>/g, ' ');
+  }
+  // Preserve line breaks (experience bullet lists); collapse only horizontal runs.
+  return s
+    .replace(/[^\S\n]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
 
 const PATCH_ACTIONS = new Set([
   'replace',
@@ -138,7 +151,7 @@ export function coerceAiPatchToDisplayString(
       const nested = coerceAiPatchToDisplayString(parsed, sectionHint, fieldHint);
       if (nested) return nested;
     }
-    return value.trim();
+    return sanitizeDiffDisplayText(value.trim());
   }
   if (typeof value === 'number' || typeof value === 'boolean') {
     return String(value);
@@ -147,7 +160,7 @@ export function coerceAiPatchToDisplayString(
     const parts = value
       .map((item) => coerceAiPatchToDisplayString(item, sectionHint, fieldHint))
       .filter(Boolean);
-    return parts.join('\n\n').trim();
+    return sanitizeDiffDisplayText(parts.join('\n\n'));
   }
   if (typeof value !== 'object') return String(value);
 
@@ -205,6 +218,49 @@ export function coerceAiPatchToDisplayString(
   }
 
   return '';
+}
+
+/** Display text for diff fields — skip re-coercion when already a formatted string. */
+export function cvDiffFieldDisplayText(
+  value: unknown,
+  sectionHint: string,
+  fieldPath: string,
+): string {
+  if (typeof value === 'string') return value.trim();
+  return coerceAiPatchToDisplayString(value, sectionHint, fieldPath);
+}
+
+/** Bracketed metric placeholders from AI template suggestions, e.g. `[ADD %]`. */
+const CV_METRIC_PLACEHOLDER_RE = /(\[ADD[^\]]*\])/gi;
+
+export type CvMetricPlaceholderSegment = {
+  text: string;
+  isPlaceholder: boolean;
+};
+
+export function splitCvMetricPlaceholders(text: string): CvMetricPlaceholderSegment[] {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+  const parts: CvMetricPlaceholderSegment[] = [];
+  let lastIndex = 0;
+  const re = new RegExp(CV_METRIC_PLACEHOLDER_RE.source, 'gi');
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(trimmed)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ text: trimmed.slice(lastIndex, match.index), isPlaceholder: false });
+    }
+    parts.push({ text: match[0]!, isPlaceholder: true });
+    lastIndex = match.index + match[0]!.length;
+  }
+  if (lastIndex < trimmed.length) {
+    parts.push({ text: trimmed.slice(lastIndex), isPlaceholder: false });
+  }
+  return parts.length > 0 ? parts : [{ text: trimmed, isPlaceholder: false }];
+}
+
+export function cvDiffAfterTextHasMetricPlaceholders(text: string): boolean {
+  CV_METRIC_PLACEHOLDER_RE.lastIndex = 0;
+  return CV_METRIC_PLACEHOLDER_RE.test(text);
 }
 
 export function normalizeCvDiffChangedField(

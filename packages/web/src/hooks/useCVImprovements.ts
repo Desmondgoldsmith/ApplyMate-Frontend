@@ -19,6 +19,7 @@ function coerceImprovementsPayload(
     lastScoredAt: data.lastScoredAt,
     cvRevisionId: data.cvRevisionId,
     acceptAllQuota: data.acceptAllQuota ?? null,
+    lastPublishedSectionScores: data.lastPublishedSectionScores ?? null,
   };
 }
 

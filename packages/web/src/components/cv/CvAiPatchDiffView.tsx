@@ -1,5 +1,9 @@
 'use client';
 
+import {
+  cvDiffAfterTextHasMetricPlaceholders,
+  splitCvMetricPlaceholders,
+} from '@/lib/cvAiPatchDisplay';
 import { cn } from '@/lib/utils';
 
 export type CvAiPatchDiffViewProps = {
@@ -10,6 +14,34 @@ export type CvAiPatchDiffViewProps = {
   className?: string;
   compact?: boolean;
 };
+
+function AfterTextWithPlaceholders({ text }: { text: string }) {
+  const segments = splitCvMetricPlaceholders(text);
+  const hasPlaceholders = cvDiffAfterTextHasMetricPlaceholders(text);
+  return (
+    <>
+      <p className="max-h-[min(40vh,320px)] overflow-y-auto whitespace-pre-wrap break-words">
+        {segments.map((seg, i) =>
+          seg.isPlaceholder ? (
+            <mark
+              key={`${i}-${seg.text}`}
+              className="rounded bg-amber-200/90 px-0.5 font-semibold text-amber-950 not-italic"
+            >
+              {seg.text}
+            </mark>
+          ) : (
+            <span key={`${i}-t`}>{seg.text}</span>
+          ),
+        )}
+      </p>
+      {hasPlaceholders ? (
+        <p className="mt-1.5 text-[9px] leading-snug text-amber-700/90">
+          Replace bracketed placeholders with your real numbers before submitting your CV.
+        </p>
+      ) : null}
+    </>
+  );
+}
 
 /**
  * Human-readable before/after for AI patches: muted red strikethrough (old),
@@ -72,9 +104,7 @@ export function CvAiPatchDiffView({
           <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-emerald-600">
             AI suggestion
           </p>
-          <p className="max-h-[min(40vh,320px)] overflow-y-auto whitespace-pre-wrap break-words">
-            {afterText}
-          </p>
+          <AfterTextWithPlaceholders text={afterText} />
         </div>
       ) : null}
     </div>

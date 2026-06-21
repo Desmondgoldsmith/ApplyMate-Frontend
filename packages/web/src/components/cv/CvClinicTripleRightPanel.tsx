@@ -58,6 +58,12 @@ export type CvClinicTripleRightPanelProps = {
   onApplySpellIssue: (issue: CvSpellIssue) => void;
   onDismissSpellIssue: (issue: CvSpellIssue) => void;
   onDiffPreview: (params: CvDiffPreviewOpenParams | null) => void;
+  onJumpToImprovementTarget?: (
+    targetFieldPath: string,
+    sectionFallback?: string,
+  ) => void;
+  /** Suggestion id when diff overlay is open — suppress duplicate Fix with AI. */
+  activePreviewSuggestionId?: string | null;
   /** Optional sticky footer (e.g. onboarding Continue). */
   footerSlot?: ReactNode;
   highlightImprovementsAttention?: boolean;
@@ -103,6 +109,8 @@ function CvClinicTripleRightPanelInner({
   onApplySpellIssue,
   onDismissSpellIssue,
   onDiffPreview,
+  onJumpToImprovementTarget,
+  activePreviewSuggestionId = null,
   footerSlot,
   analyzeScanPending,
   onAnalyzeScan,
@@ -214,7 +222,14 @@ function CvClinicTripleRightPanelInner({
                   {scoreRefreshing ? (
                     <p className="text-[10px] font-medium text-white/40">Updating score…</p>
                   ) : null}
-                  <CVScoreCard
+                  <div
+                    className={
+                      scoreRefreshing
+                        ? 'opacity-50 transition-opacity duration-200'
+                        : undefined
+                    }
+                  >
+                    <CVScoreCard
                   mode={scoreCardMode}
                   score={scoreValue}
                   breakdown={scoreBreakdown as never}
@@ -223,9 +238,11 @@ function CvClinicTripleRightPanelInner({
                   pendingImprovements={improvementList}
                   onDiffPreview={onDiffPreview}
                   onScoreRefresh={onScoreRefresh}
+                  activePreviewSuggestionId={activePreviewSuggestionId}
                   hideJobMatch
                   onAtsKeywordAssist={onAtsKeywordAssist}
                 />
+                  </div>
                 </div>
               ) : (
                 <Button
@@ -530,6 +547,8 @@ function CvClinicTripleRightPanelInner({
               profileId={profileId}
               acceptAllQuota={acceptAllQuota}
               onDiffPreview={onDiffPreview}
+              onJumpToTarget={onJumpToImprovementTarget}
+              activePreviewSuggestionId={activePreviewSuggestionId}
             />
           </>
         )}

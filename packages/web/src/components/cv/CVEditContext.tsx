@@ -58,6 +58,8 @@ export type CVEditContextValue = {
   onUpdate: (patch: Partial<CVBuilderData>) => void;
   isEditing: boolean;
   data: CVBuilderData;
+  /** Bumps after undo/redo so inline editors resync from parent `data`. */
+  dataRevision?: number;
   activeSection: string | null;
   setActiveSection: (id: string | null) => void;
   focusedSection: string | null;
@@ -93,6 +95,8 @@ export type CVEditContextValue = {
   cvAssistantBusyMessage?: string | null;
   /** Recruiter Scan heatmap overlay keyed by preview section id. */
   recruiterScanHeatmap?: Record<string, CvRecruiterScanReadingPathEntry> | null;
+  /** Only the Onyx template supports profile photo upload in the header. */
+  photoUploadEnabled?: boolean;
   /** @deprecated Clarification uses {@link CvAssistantClarificationModal} in clinic. */
   cvAssistantClarificationQuestion?: string | null;
 };

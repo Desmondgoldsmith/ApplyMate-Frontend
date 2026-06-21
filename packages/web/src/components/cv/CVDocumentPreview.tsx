@@ -53,7 +53,7 @@ import { EntryToolbar } from '@/components/cv/EntryToolbar';
 import { useToast } from '@/components/ui/Toast';
 import { CvAiPatchDiffView } from '@/components/cv/CvAiPatchDiffView';
 import { CvDiffActionsBusyContext, CvDiffActionPair } from '@/components/cv/cvDiffImprovementActions';
-import { coerceAiPatchToDisplayString } from '@/lib/cvAiPatchDisplay';
+import { cvDiffFieldDisplayText } from '@/lib/cvAiPatchDisplay';
 import { CV_DIFF_EMPTY_PREVIEW_MESSAGE, CV_DIFF_STRUCTURAL_SECTION_MESSAGE } from '@/lib/cvDiffCopy';
 import {
   gCvDocPreviewDiffMultiSection,
@@ -122,7 +122,7 @@ export function isCvSectionVisible(sectionKey: string, map?: CVSectionVisibility
  * ids. Optional sections (projects, certifications, languages, references, custom_*) keep
  * their existing add/delete behavior.
  */
-const CORE_SECTION_IDS = new Set(['summary', 'experience', 'education', 'skills']);
+const CORE_SECTION_IDS = new Set(['summary', 'experience', 'education', 'projects', 'skills']);
 function isCoreSectionId(sectionId: string): boolean {
   return CORE_SECTION_IDS.has(sectionId);
 }
@@ -479,12 +479,12 @@ function sectionBox(
           </p>
           {sectionChangedFields!.map((cf, i) => {
             const sectionHint = id;
-            const beforeDisplay = coerceAiPatchToDisplayString(
+            const beforeDisplay = cvDiffFieldDisplayText(
               cf.before,
               sectionHint,
               cf.fieldPath ?? cf.field ?? '',
             );
-            const afterDisplay = coerceAiPatchToDisplayString(
+            const afterDisplay = cvDiffFieldDisplayText(
               cf.after,
               sectionHint,
               cf.fieldPath ?? cf.field ?? '',
@@ -511,6 +511,7 @@ function sectionBox(
             </div>
             );
           })}
+          {sectionChangedFields!.length > 1 ? (
           <CvDiffActionPair
             className="mt-3 flex items-center justify-end gap-1.5"
             rejectLabel={
@@ -522,6 +523,7 @@ function sectionBox(
             onReject={() => onReject?.(sectionDiffCallbackIndex)}
             onAccept={() => onAccept?.(sectionDiffCallbackIndex)}
           />
+          ) : null}
         </div>
       )}
     </div>
@@ -1872,7 +1874,7 @@ function ClassicDoc({
                 const techList = projectPayloadTech(pAny);
                 return (
                   <div
-                    key={proj.id}
+                    key={proj.id || `project-${projIdx}`}
                     data-entry-id={proj.id}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -2896,17 +2898,6 @@ function ClassicDoc({
 
   const personalBlock = vis('personal') ? (
     <div className="mb-3 text-center leading-[1.15]">
-      {hp.showPhoto && p.photoUrl?.trim() ? (
-        <EditableHeaderPhoto
-          photoUrl={p.photoUrl}
-          imgClassName={cn(
-            'h-16 w-16 border border-black/10 object-cover',
-            hp.photoStyle === 'circle' && 'rounded-full',
-            hp.photoStyle === 'square' && 'rounded-md',
-            hp.photoStyle === 'avatar' && 'rounded-full ring-2 ring-black/10',
-          )}
-        />
-      ) : null}
       {hp.showTitle ? (
         <h1
           className={cn(
@@ -3437,19 +3428,6 @@ function ModernDoc({
             <p className="mt-1 text-left text-[13px] font-normal leading-snug text-[#555555]">{p.headline.trim()}</p>
           ) : null}
         </div>
-        {hp.showPhoto && p.photoUrl?.trim() ? (
-          <div className="flex shrink-0 justify-end self-center sm:self-start">
-            <EditableHeaderPhoto
-              photoUrl={p.photoUrl}
-              imgClassName={cn(
-                'h-[76px] w-[76px] border border-black/10 object-cover shadow-sm',
-                hp.photoStyle === 'circle' && 'rounded-full',
-                hp.photoStyle === 'square' && 'rounded-md',
-                hp.photoStyle === 'avatar' && 'rounded-full ring-2 ring-black/10',
-              )}
-            />
-          </div>
-        ) : null}
       </div>
     </div>
   ) : null;
@@ -6402,18 +6380,6 @@ function CreativeDoc({
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2 sm:max-w-[40%]">
           <HeaderFloatingControls toolbarAlign="end" />
-          {hp.showPhoto && p.photoUrl?.trim() ? (
-            <EditableHeaderPhoto
-              align="end"
-              photoUrl={p.photoUrl}
-              imgClassName={cn(
-                'h-[76px] w-[76px] border-2 border-white/35 object-cover shadow-md',
-                hp.photoStyle === 'circle' && 'rounded-full',
-                hp.photoStyle === 'square' && 'rounded-md',
-                hp.photoStyle === 'avatar' && 'rounded-full ring-2 ring-white/45',
-              )}
-            />
-          ) : null}
         </div>
       </div>
     </div>
@@ -7314,7 +7280,7 @@ function CreativeDoc({
                     const techList = projectPayloadTech(pAny);
                     return (
                       <div
-                        key={proj.id}
+                        key={proj.id || `project-${projIdx}`}
                         data-entry-id={proj.id}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -11095,17 +11061,6 @@ function ProfessionalDoc({
 
   const personalInner = (
     <div className="text-center text-black" style={{ fontFamily: professionalFont }}>
-      {hp.showPhoto && p.photoUrl?.trim() ? (
-        <EditableHeaderPhoto
-          photoUrl={p.photoUrl}
-          imgClassName={cn(
-            'mx-auto mb-2 h-[72px] w-[72px] border border-black/15 object-cover',
-            hp.photoStyle === 'circle' && 'rounded-full',
-            hp.photoStyle === 'square' && 'rounded-md',
-            hp.photoStyle === 'avatar' && 'rounded-full ring-2 ring-black/10',
-          )}
-        />
-      ) : null}
       {hp.showTitle ? (
         <h1 className="text-[14pt] font-extrabold uppercase leading-[1] tracking-[0.03em] text-black">
           {inline && ctx ? (
@@ -11170,6 +11125,22 @@ function ProfessionalDoc({
           <span className="text-black">your.email@example.com</span>
         )}
       </p>
+      {hp.showLocation ? (
+        <p className="mt-0.5 text-[8.5pt] font-normal leading-[1.15] text-black">
+          {inline && ctx ? (
+            <InlineField
+              value={p.location ?? ''}
+              placeholder="City, Country"
+              onChange={(v) => ctx.onUpdate({ personal: { ...data.personal, location: v } })}
+              className="text-[8.5pt] text-black"
+            />
+          ) : p.location?.trim() ? (
+            p.location.trim()
+          ) : (
+            <span className="text-black/45">City, Country</span>
+          )}
+        </p>
+      ) : null}
       {inline && ctx ? (
         <p className="mt-1 flex flex-wrap items-center justify-center gap-x-1 text-[8.5pt] font-normal leading-[1.15]">
           {hp.showLinkedIn ? (

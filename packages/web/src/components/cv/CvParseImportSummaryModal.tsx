@@ -8,9 +8,7 @@ type CvParseImportSummaryModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   importSummary: CvParseImportSummary | null;
-  profileId: string | null;
-  onReviewInBuilder: () => void;
-  onContinue?: () => void;
+  onContinue: () => void;
   continueLabel?: string;
   title?: string;
 };
@@ -19,11 +17,9 @@ export function CvParseImportSummaryModal({
   open,
   onOpenChange,
   importSummary,
-  profileId,
-  onReviewInBuilder,
   onContinue,
-  continueLabel = 'Close',
-  title = 'CV imported',
+  continueLabel = 'Open resume editor',
+  title = 'Resume imported',
 }: CvParseImportSummaryModalProps) {
   if (!importSummary) return null;
 
@@ -32,19 +28,14 @@ export function CvParseImportSummaryModal({
       open={open}
       onOpenChange={onOpenChange}
       title={title}
-      className="max-w-lg"
+      description="Review what we extracted, then open the editor."
+      className="max-w-lg border border-[#00C9B1]/15 shadow-[0_0_40px_rgba(0,201,177,0.1)]"
       scrollBody
     >
       <CvParseImportSummaryPanel
+        embedded
         importSummary={importSummary}
-        profileId={profileId}
-        onReviewInBuilder={onReviewInBuilder}
-        onContinue={
-          onContinue ??
-          (() => {
-            onOpenChange(false);
-          })
-        }
+        onContinue={onContinue}
         continueLabel={continueLabel}
       />
     </Modal>

@@ -19,7 +19,7 @@ import {
 } from '@/lib/analytics';
 import { cvParseMutationShouldRetry, getApiErrorMessage, isTransientAiStructuredOutputError } from '@/lib/axios';
 import { useToast } from '@/components/ui/Toast';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { CvUploadProgressSteps } from '@/components/cv/CvUploadProgressSteps';
 import { Button } from '@/components/ui/Button';
 
 export type CvParseSuccessPayload = {
@@ -34,21 +34,25 @@ type CVUploadZoneProps = {
   /** When set, POST /cv/profiles/:id/parse; otherwise POST /cv/parse. */
   cvProfileId?: string | null;
   /**
-   * When true and `cvProfileId` is not set: create a new CV profile row first, then parse into it.
-   * Use for “Add a CV → Upload” so the file does not overwrite the default profile (POST /cv/parse behavior).
+   * When true and `cvProfileId` is not set: create a new resume profile row first, then parse into it.
    */
   ensureNewProfileBeforeParse?: boolean;
+  /** Used with `ensureNewProfileBeforeParse` — saved on profile before parse (template preservation). */
+  profileName?: string;
+  profileTemplate?: string;
 };
 
 function profileNameFromUploadFile(file: File): string {
   const base = file.name.replace(/\.(pdf|doc|docx|txt)$/i, '').trim();
-  return (base.length > 0 ? base : 'Uploaded CV').slice(0, 100);
+  return (base.length > 0 ? base : 'Uploaded resume').slice(0, 100);
 }
 
 export function CVUploadZone({
   onSuccess,
   cvProfileId = null,
   ensureNewProfileBeforeParse = false,
+  profileName,
+  profileTemplate,
 }: CVUploadZoneProps) {
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -61,7 +65,10 @@ export function CVUploadZone({
 
   const createProfileThenParse = useMutation({
     mutationFn: async (file: File) => {
-      const row = await api.cv.createProfile({ name: profileNameFromUploadFile(file) });
+      const row = await api.cv.createProfile({
+        name: profileName?.trim() || profileNameFromUploadFile(file),
+        ...(profileTemplate?.trim() ? { template: profileTemplate.trim() } : {}),
+      });
       const profileId = row.id.trim();
       if (!profileId) throw new Error('Could not create CV profile');
       trackConversionFunnelEvent('cv_created', {
@@ -107,7 +114,7 @@ export function CVUploadZone({
     setSkillsFound(skillCount);
     setLastPartial(Boolean(data.isPartialExtraction));
     setPartialDismissed(false);
-    toast.success('CV parsed successfully');
+    toast.success('Resume parsed successfully');
     onSuccess?.(data);
   };
 
@@ -132,7 +139,7 @@ export function CVUploadZone({
         onError: (err) => {
           toast.error(
             getApiErrorMessage(err) ||
-              'We could not parse your CV—our free AI module may be busy. Please try again in a moment.',
+              'We could not parse your resume. Our free AI module may be busy. Please try again in a moment.',
           );
         },
       });
@@ -150,7 +157,7 @@ export function CVUploadZone({
       onError: (err) => {
         toast.error(
           getApiErrorMessage(err) ||
-            'We could not parse your CV—our free AI module may be busy. Please try again in a moment.',
+            'We could not parse your resume. Our free AI module may be busy. Please try again in a moment.',
         );
       },
     });
@@ -172,26 +179,20 @@ export function CVUploadZone({
       } ${isPending ? 'pointer-events-none opacity-90' : ''}`}
     >
       {isPending ? (
-        <div className="w-full space-y-3">
-          <Skeleton height={20} width="55%" className="mx-auto" />
-          <Skeleton height={14} width="40%" className="mx-auto" />
-          <p className="text-sm text-white/60">
-            {useNewProfileFlow ? 'Creating profile and parsing your CV...' : 'Parsing your CV...'}
-          </p>
-        </div>
+        <CvUploadProgressSteps active className="py-2" />
       ) : skillsFound !== null ? (
         <div className="space-y-3">
           <div className="space-y-2">
             <div className="mx-auto h-10 w-10 rounded-full bg-[#00C9B1]/20 text-[#00C9B1]">✓</div>
-            <p className="font-semibold text-white">CV parsed successfully</p>
+            <p className="font-semibold text-white">Resume parsed successfully</p>
             <p className="text-sm text-[#9be8e8]">{skillsFound} skills found</p>
           </div>
           {lastPartial && !partialDismissed ? (
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-left">
               <div className="flex items-start justify-between gap-2">
                 <p className="text-xs leading-relaxed text-amber-100/90">
-                  Your CV was not fully extracted — experience or education may be missing. Try another file or
-                  re-upload.
+                  Your resume was not fully extracted. Experience or education may be missing. Try
+                  another file or re-upload.
                 </p>
                 <button
                   type="button"
@@ -220,8 +221,8 @@ export function CVUploadZone({
       ) : (
         <>
           <UploadCloud className="mb-2 h-8 w-8 text-[#00C9B1]" />
-          <p className="font-medium text-white">Drop your CV here</p>
-          <p className="mb-3 text-sm text-white/50">PDF, DOCX, or TXT — max 5MB</p>
+          <p className="font-medium text-white">Drop your resume here</p>
+          <p className="mb-3 text-sm text-white/50">PDF, DOCX, or TXT. Max 5MB.</p>
           {!aiUsage.isPaidTier && !aiUsage.isLoading && (aiUsage.remaining ?? 0) === 0 ? (
             <p className="mb-2 text-xs text-amber-200/90">{DAILY_AI_LIMIT_REACHED_MESSAGE}</p>
           ) : null}

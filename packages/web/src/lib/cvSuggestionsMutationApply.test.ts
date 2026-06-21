@@ -64,6 +64,27 @@ describe('applySuggestionAcceptToImprovementsCache', () => {
     const next = applySuggestionAcceptToImprovementsCache(prev, 'a', product);
     expect(next?.structuredRevisionHash).toBe('new-hash');
   });
+
+  it('removes autoResolvedIds siblings without marking unrelated rows', () => {
+    const prev: CvImprovementsPayload = {
+      improvements: [
+        { id: 'a', issue: 'x', resolved: false },
+        { id: 'b', issue: 'y', resolved: false },
+        { id: 'c', issue: 'z', resolved: false },
+      ],
+      pendingSuggestionsCount: 3,
+      needsScoring: false,
+    };
+    const product: CvSuggestionMutationResult = {
+      pendingSuggestionsCount: 1,
+      cvRevisionId: 'rev-1',
+      acceptedSuggestionIds: ['a'],
+      autoResolvedIds: ['b'],
+    };
+    const next = applySuggestionAcceptToImprovementsCache(prev, 'a', product);
+    expect(next?.improvements.map((i) => i.id)).toEqual(['c']);
+    expect(next?.pendingSuggestionsCount).toBe(1);
+  });
 });
 
 describe('applyBulkAcceptToImprovementsCache', () => {

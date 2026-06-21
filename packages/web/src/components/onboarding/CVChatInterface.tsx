@@ -12,39 +12,51 @@ import { cvChatInputLimitErrorMessage, isCvChatInputOverLimit } from '@/lib/cvCh
 import { cn } from '@/lib/utils';
 
 const OPENING =
-  "Hi! I'm going to help you build a great resume. Share your background in your own words, or paste an existing CV — I'll only ask about what's still missing.";
+  "Hi! I'm going to help you build a great resume. Share your background in your own words, or paste an existing resume. I'll only ask about what's still missing.";
 
-/**
- * Splits assistant copy on an em/en dash so the trailing “main question” can be emphasized in teal.
- * Example: "Intro — What is your name?" → intro + " — " + question (styled).
- */
-function splitAssistantLeadAndQuestion(content: string): { lead: string; question: string | null } {
-  const parts = content.split(/\s[—–]\s/);
-  if (parts.length < 2) {
-    return { lead: content, question: null };
+const CHAT_HISTORY_STORAGE_KEY = 'applymate:onboarding:chat-history';
+
+type ChatMessage = ChatConversationHistoryItem & {
+  followUpQuestion?: string | null;
+};
+
+function loadStoredChatMessages(): ChatMessage[] {
+  if (typeof sessionStorage === 'undefined') return [];
+  try {
+    const raw = sessionStorage.getItem(CHAT_HISTORY_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (m): m is ChatMessage =>
+        m != null &&
+        typeof m === 'object' &&
+        (m as ChatMessage).role != null &&
+        typeof (m as ChatMessage).content === 'string',
+    );
+  } catch {
+    return [];
   }
-  const question = parts[parts.length - 1]?.trim() ?? '';
-  const lead = parts.slice(0, -1).join(' — ');
-  return { lead, question: question || null };
 }
 
-function AssistantMessageBody({ content }: { content: string }) {
-  const { lead, question } = splitAssistantLeadAndQuestion(content);
+function AssistantMessageBody({
+  content,
+  followUpQuestion,
+}: {
+  content: string;
+  followUpQuestion?: string | null;
+}) {
+  const question = followUpQuestion?.trim();
   if (!question) {
     return <>{content}</>;
   }
   return (
     <>
-      {lead}
-      <span className="font-medium text-[#00C9B1]">
-        {' — '}
-        {question}
-      </span>
+      {content ? <p className="leading-relaxed">{content}</p> : null}
+      <p className={cn('font-medium text-[#00C9B1]', content ? 'mt-2' : '')}>{question}</p>
     </>
   );
 }
-
-type ChatMessage = ChatConversationHistoryItem;
 
 function summarizeExtracted(d: ChatCreateCVPayload): { label: string }[] {
   const exp = Array.isArray(d.experience)
@@ -53,6 +65,7 @@ function summarizeExtracted(d: ChatCreateCVPayload): { label: string }[] {
       ? ((d as { experiences: unknown[] }).experiences?.length ?? 0)
       : 0;
   const edu = Array.isArray(d.education) ? d.education.length : 0;
+  const projects = Array.isArray(d.projects) ? d.projects.length : 0;
   const skills =
     (Array.isArray(d.skills) ? d.skills.length : 0) +
     (Array.isArray((d as { primarySkills?: unknown }).primarySkills)
@@ -61,6 +74,7 @@ function summarizeExtracted(d: ChatCreateCVPayload): { label: string }[] {
   const lines: { label: string }[] = [];
   if (exp > 0) lines.push({ label: `Found ${exp} experience ${exp === 1 ? 'entry' : 'entries'}` });
   if (edu > 0) lines.push({ label: 'Education detected' });
+  if (projects > 0) lines.push({ label: `${projects} project${projects === 1 ? '' : 's'} captured` });
   if (skills > 0) lines.push({ label: `${skills} skills identified` });
   if (lines.length === 0) lines.push({ label: 'Resume data captured' });
   return lines;
@@ -92,12 +106,25 @@ export type CVChatInterfaceProps = {
 };
 
 export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataExtracted }: CVChatInterfaceProps) {
-  const [openingDone, setOpeningDone] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const stored = loadStoredChatMessages();
+  const [openingDone, setOpeningDone] = useState(stored.length > 0);
+  const [messages, setMessages] = useState<ChatMessage[]>(stored);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [extractedData, setExtractedData] = useState<ChatCreateCVPayload | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof sessionStorage === 'undefined') return;
+    if (messages.length === 0) {
+      sessionStorage.removeItem(CHAT_HISTORY_STORAGE_KEY);
+      return;
+    }
+    sessionStorage.setItem(
+      CHAT_HISTORY_STORAGE_KEY,
+      JSON.stringify(messages.map(({ role, content }) => ({ role, content }))),
+    );
+  }, [messages]);
 
   useEffect(() => {
     if (openingDone && messages.length === 0) {
@@ -124,7 +151,8 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
     }
     const prior = messages;
     const userMessage: ChatMessage = { role: 'user', content: trimmed };
-    setMessages((m) => [...m, userMessage]);
+    const nextMessages = [...prior, userMessage];
+    setMessages(nextMessages);
     setInput('');
     setIsTyping(true);
     try {
@@ -137,9 +165,32 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
       if (response.type === 'complete') {
         setExtractedData(response.extractedData);
         onDataExtracted?.(response.extractedData);
-        setMessages((prev) => [...prev, { role: 'assistant', content: response.message }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: response.message,
+            followUpQuestion: response.followUpQuestion,
+          },
+        ]);
+      } else if (response.type === 'validation_error') {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: response.message,
+            followUpQuestion: response.followUpQuestion,
+          },
+        ]);
       } else {
-        setMessages((prev) => [...prev, { role: 'assistant', content: response.message }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: response.message,
+            followUpQuestion: response.followUpQuestion,
+          },
+        ]);
       }
     } catch (e) {
       setIsTyping(false);
@@ -151,7 +202,7 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
         },
       ]);
     }
-  }, [input, isTyping, messages, openingDone]);
+  }, [input, isTyping, messages, onDataExtracted, openingDone]);
 
   const onOpeningComplete = useCallback(() => setOpeningDone(true), []);
 
@@ -159,7 +210,7 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
     <GlowCard className="min-h-0 border border-[rgba(0,201,177,0.15)]" contentClassName="flex min-h-0 min-w-0 flex-col p-0">
       <div className="border-b border-[rgba(0,201,177,0.12)] px-4 py-3">
         <p className="text-center text-[11px] leading-snug text-white/45">
-          Answer naturally or paste a full CV — follow-ups focus on gaps only
+          Answer naturally or paste your full resume. Follow-ups focus on gaps only.
         </p>
       </div>
 
@@ -187,7 +238,11 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
                       : 'rounded-[12px] rounded-bl-[4px] border border-[rgba(0,201,177,0.15)] bg-[#111616]',
                   )}
                 >
-                  {m.role === 'assistant' ? <AssistantMessageBody content={m.content} /> : m.content}
+                  {m.role === 'assistant' ? (
+                    <AssistantMessageBody content={m.content} followUpQuestion={m.followUpQuestion} />
+                  ) : (
+                    m.content
+                  )}
                 </div>
               </div>
             ))
@@ -234,7 +289,7 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
                 setExtractedData(null);
                 setMessages((m) => [
                   ...m,
-                  { role: 'assistant', content: 'Sure — tell me anything else you want on your resume.' },
+                  { role: 'assistant', content: 'Sure. Tell me anything else you want on your resume.' },
                 ]);
               }}
             >

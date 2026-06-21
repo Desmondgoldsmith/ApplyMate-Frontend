@@ -4,7 +4,6 @@ import type { ComponentType } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
-  ArrowLeft,
   ArrowRight,
   Check,
   GraduationCap,
@@ -17,6 +16,11 @@ import {
 } from 'lucide-react';
 
 import type { JobSearchUrgency } from '@/lib/onboardingWizardStorage';
+import { OnboardingBackLink } from '@/components/onboarding/OnboardingBackLink';
+import {
+  ONBOARDING_SUBTITLE_CLASS,
+  ONBOARDING_TITLE_CLASS,
+} from '@/components/onboarding/onboardingLayout';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { cn } from '@/lib/utils';
 
@@ -89,19 +93,6 @@ function sectionLabel(text: string) {
     >
       {text}
     </p>
-  );
-}
-
-function OnboardingBackLink({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group mb-8 flex min-h-[44px] cursor-pointer items-center gap-1.5 self-start text-[13px] text-[rgba(255,255,255,0.45)] transition-colors duration-200 hover:text-[rgba(255,255,255,0.8)]"
-    >
-      <ArrowLeft className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:-translate-x-0.5" />
-      Back
-    </button>
   );
 }
 
@@ -263,9 +254,7 @@ export function OnboardingDiscovery({
     onReferralSourceChange(value);
     if (value !== 'Other') {
       onReferralOtherChange('');
-      referralTimerRef.current = window.setTimeout(() => {
-        void onNext({ referralSource: value });
-      }, 350);
+      void onNext({ referralSource: value });
     }
   };
 
@@ -347,17 +336,17 @@ export function OnboardingDiscovery({
             <>
               {sectionLabel('Welcome')}
               <motion.div
-                className="mb-3 flex h-8 w-8 items-center justify-center text-[#00C9B1]"
+                className="mx-auto mb-3 flex h-8 w-8 items-center justify-center text-[#00C9B1]"
                 animate={reducedMotion ? undefined : { y: [0, -4, 0] }}
                 transition={reducedMotion ? undefined : { duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                 aria-hidden
               >
                 <Sparkles className="h-8 w-8" strokeWidth={1.5} />
               </motion.div>
-              <h1 className="max-w-[480px] text-[26px] font-bold leading-[1.2] text-white sm:text-[32px]">
+              <h1 className={ONBOARDING_TITLE_CLASS}>
                 {greeting}
               </h1>
-              <p className="mt-4 max-w-[440px] text-[14px] leading-[1.6] text-[rgba(255,255,255,0.55)] sm:mt-4 sm:text-[15px]">
+              <p className={ONBOARDING_SUBTITLE_CLASS}>
                 We tailor ApplyMate to your goals in about two minutes.
               </p>
             </>
@@ -367,24 +356,24 @@ export function OnboardingDiscovery({
             <>
               <OnboardingBackLink onClick={onBack} />
               {sectionLabel('Your focus')}
-              <h1 className="mt-3 max-w-[480px] text-[26px] font-bold leading-[1.2] text-white sm:text-[32px]">
+              <h1 className={cn(ONBOARDING_TITLE_CLASS, 'mt-3')}>
                 What would you like the most help with right now?
               </h1>
-              <p className="mt-4 max-w-[440px] text-[14px] leading-[1.6] text-[rgba(255,255,255,0.55)] sm:text-[15px]">
-                Select one or both — we&apos;ll tailor your workspace around it.
+              <p className={ONBOARDING_SUBTITLE_CLASS}>
+                Select one or both. We&apos;ll tailor your workspace around it.
               </p>
               <div className="mt-8 flex w-full flex-col gap-3 sm:mt-8">
                 <OutcomeCard
                   icon={Rocket}
                   title="Get hired faster"
-                  description="Resume that stands out, smarter job tracking, and interview prep — all working together."
+                  description="Resume that stands out, job tailoring, smarter job tracking, and interview prep. All working together."
                   selected={focusHired}
                   onClick={onToggleHired}
                 />
                 <OutcomeCard
                   icon={GraduationCap}
                   title="Student career launchpad"
-                  description="Guided support if you're studying or just starting out — launching soon."
+                  description="Guided support if you're studying or just starting out. Launching soon."
                   selected={false}
                   comingSoon
                   disabled
@@ -398,15 +387,15 @@ export function OnboardingDiscovery({
             <>
               <OnboardingBackLink onClick={onBack} />
               {sectionLabel('Timing')}
-              <h1 className="mt-3 max-w-[480px] text-[26px] font-bold leading-[1.2] text-white sm:text-[32px]">
+              <h1 className={cn(ONBOARDING_TITLE_CLASS, 'mt-3')}>
                 When would you like to start your next opportunity?
               </h1>
-              <p className="mt-4 max-w-[440px] text-[14px] leading-[1.6] text-[rgba(255,255,255,0.55)] sm:text-[15px]">
-                No wrong answers — this helps us prioritise what matters to you.
-                <span className="ml-1 inline-flex align-middle">
-                  <InfoHint text="Your timing choice tunes recommendations and reminders. You can change it later in Settings." />
-                </span>
+              <p className={ONBOARDING_SUBTITLE_CLASS}>
+                No wrong answers. This helps us prioritise what matters to you.
               </p>
+              <div className="mt-2 flex justify-center">
+                <InfoHint text="Your timing choice tunes recommendations and reminders. You can change it later in Settings." />
+              </div>
               <div className="mt-8 grid w-full grid-cols-1 gap-3 sm:mt-8 sm:grid-cols-2 sm:gap-3">
                 <UrgencyCard
                   label="As soon as possible"
@@ -439,15 +428,15 @@ export function OnboardingDiscovery({
             <>
               <OnboardingBackLink onClick={onBack} />
               {sectionLabel('Your target')}
-              <h1 className="mt-3 max-w-[480px] text-[26px] font-bold leading-[1.2] text-white sm:text-[32px]">
+              <h1 className={cn(ONBOARDING_TITLE_CLASS, 'mt-3')}>
                 What role or position are you targeting?
               </h1>
-              <p className="mt-4 max-w-[440px] text-[14px] leading-[1.6] text-[rgba(255,255,255,0.55)] sm:text-[15px]">
+              <p className={ONBOARDING_SUBTITLE_CLASS}>
                 Add one or more job titles. We use this to personalise matches and suggestions later.
-                <span className="ml-1 inline-flex align-middle">
-                  <InfoHint text="Target roles guide job matching, priority suggestions, and CV wording hints." />
-                </span>
               </p>
+              <div className="mb-2 flex justify-center">
+                <InfoHint text="Target roles guide job matching, priority suggestions, and resume wording hints." />
+              </div>
               <div className="mt-8 w-full sm:mt-8">
                 <div className="flex gap-2">
                   <input
@@ -494,7 +483,7 @@ export function OnboardingDiscovery({
                     ))}
                   </div>
                 ) : null}
-                <p className="mt-4 text-[12px] text-[rgba(255,255,255,0.35)]">Popular roles — tap to add</p>
+                <p className="mt-4 text-[12px] text-[rgba(255,255,255,0.35)]">Popular roles. Tap to add.</p>
                 <div className="mt-2 flex flex-wrap justify-center gap-2">
                   {SUGGESTED_ROLES.map((r) => (
                     <button
@@ -515,11 +504,11 @@ export function OnboardingDiscovery({
             <>
               <OnboardingBackLink onClick={onBack} />
               {sectionLabel('Almost there')}
-              <h1 className="mt-3 max-w-[480px] text-[26px] font-bold leading-[1.2] text-white sm:text-[32px]">
+              <h1 className={cn(ONBOARDING_TITLE_CLASS, 'mt-3')}>
                 How did you hear about us?
               </h1>
-              <p className="mt-4 max-w-[440px] text-[14px] leading-[1.6] text-[rgba(255,255,255,0.55)] sm:text-[15px]">
-                Helpful for us — pick the closest match.
+              <p className={ONBOARDING_SUBTITLE_CLASS}>
+                Helpful for us. Pick the closest match.
               </p>
               <div className="mt-8 grid w-full grid-cols-2 gap-3 sm:mt-8">
                 {REFERRAL_OPTIONS.map(({ value, label, Icon }) => {
@@ -557,13 +546,6 @@ export function OnboardingDiscovery({
                   />
                 </div>
               ) : null}
-              <button
-                type="button"
-                className="mt-6 cursor-pointer text-[12px] text-[rgba(255,255,255,0.35)] transition-colors hover:text-[rgba(255,255,255,0.55)]"
-                onClick={() => void onNext({ referralSkipped: true })}
-              >
-                Skip this step →
-              </button>
             </>
           ) : null}
         </motion.div>

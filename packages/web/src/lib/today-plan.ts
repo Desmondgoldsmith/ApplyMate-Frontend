@@ -847,11 +847,13 @@ export type DashboardInterviewOutlookVitalPayload = {
 
 /** Phase 15 — best role fit tile (`dashboardVitals.bestMatch`). */
 export type DashboardBestMatchVitalPayload = {
-  /** 0–100 */
-  score: number;
+  /** 0–100 when the user has analyzed jobs; null when no real job match yet. */
+  score: number | null;
   label: string;
   company?: string | null;
   explanation?: string | null;
+  hasAnalyzedJobs?: boolean;
+  emptyStateMessage?: string | null;
 };
 
 /** Phase 15 — active applications tile (`dashboardVitals.activeApplications`). */
@@ -2062,7 +2064,27 @@ function pickInterviewOutlookVital(raw: unknown): DashboardInterviewOutlookVital
 function pickBestMatchVital(raw: unknown): DashboardBestMatchVitalPayload | null {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
-  const score = inferScore0to100(o);
+  const hasAnalyzedJobs =
+    o.hasAnalyzedJobs === true || o.has_analyzed_jobs === true;
+  const scoreRaw = o.score;
+  const score =
+    scoreRaw === null
+      ? null
+      : inferScore0to100(o);
+  if (score === null && !hasAnalyzedJobs) {
+    const label = String(pickStr(o, 'label') ?? '').trim();
+    const emptyStateMessage =
+      pickStr(o, 'emptyStateMessage', 'empty_state_message') ?? null;
+    const explanation = pickStrOrNull(o, 'explanation');
+    if (!label && !emptyStateMessage && !explanation) return null;
+    return {
+      score: null,
+      label,
+      hasAnalyzedJobs: false,
+      emptyStateMessage,
+      ...(explanation?.trim() ? { explanation: explanation.trim() } : {}),
+    };
+  }
   if (score === null) return null;
   const label = String(pickStr(o, 'label') ?? '').trim();
   const company = pickStr(o, 'company', 'companyName', 'company_name') ?? null;
@@ -2071,6 +2093,7 @@ function pickBestMatchVital(raw: unknown): DashboardBestMatchVitalPayload | null
     score,
     label,
     company,
+    hasAnalyzedJobs: hasAnalyzedJobs || score > 0,
     ...(explanation?.trim() ? { explanation: explanation.trim() } : {}),
   };
 }

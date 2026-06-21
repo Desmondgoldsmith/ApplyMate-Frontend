@@ -5,7 +5,6 @@ import type {
   ExtensionJobSession,
   ExtensionJobState,
   ExtractedJob,
-  SkillCoverageItem,
 } from '@/shared/types';
 import { factorByKey } from '@/shared/factors-breakdown';
 import { canonicalJobViewUrl, normalizeJobPageUrl } from '@/shared/job-page-url';
@@ -195,35 +194,6 @@ export function strengthLabelsFromScore(score: CvScoreResult, limit = 6): string
   return strengthsFromScore(score, limit);
 }
 
-function satisfiedOrGroupIds(items: SkillCoverageItem[]): Set<string> {
-  const groups = new Map<string, SkillCoverageItem[]>();
-  for (const item of items) {
-    const gid = item.orGroupId?.trim();
-    if (!gid) continue;
-    const list = groups.get(gid) ?? [];
-    list.push(item);
-    groups.set(gid, list);
-  }
-  const satisfied = new Set<string>();
-  for (const [gid, members] of groups) {
-    if (members.some((member) => member.status === 'found')) {
-      satisfied.add(gid);
-    }
-  }
-  return satisfied;
-}
-
-function isPrimaryGapCoverageItem(
-  item: SkillCoverageItem,
-  satisfiedOrGroups: Set<string>,
-): boolean {
-  if (item.status !== 'missing' || item.keywordOnly) return false;
-  if (item.tier === 'mentioned' || item.importance === 'LOW') return false;
-  const gid = item.orGroupId?.trim();
-  if (gid && satisfiedOrGroups.has(gid)) return false;
-  return true;
-}
-
 export function gapLabelsFromScore(score: CvScoreResult, limit = MAX_GAP_LABELS): string[] {
   const skillsFactor = factorByKey(score.factorsBreakdown, 'skillsMatch');
   const keywordFactor = factorByKey(score.factorsBreakdown, 'keywordCoverage');
@@ -248,33 +218,21 @@ export function gapLabelsFromScore(score: CvScoreResult, limit = MAX_GAP_LABELS)
 
   const seen = new Set<string>();
   const labels: string[] = [];
-  const keywordOnly = new Set(
-    (score.skillCoverage ?? [])
-      .filter((item) => item.keywordOnly)
-      .map((item) => item.skill.trim().toLowerCase())
-      .filter(Boolean),
-  );
-  const satisfiedOrGroups = satisfiedOrGroupIds(score.skillCoverage ?? []);
   const push = (raw: string | null | undefined) => {
     const label = raw?.trim();
     if (!label) return;
     const key = label.toLowerCase();
-    if (keywordOnly.has(key) || seen.has(key)) return;
+    if (seen.has(key)) return;
     seen.add(key);
     labels.push(label);
   };
 
-  for (const item of score.topGaps ?? []) {
-    push(item);
-    if (labels.length >= limit) return labels.slice(0, limit);
-  }
   for (const item of score.missingSkills ?? []) {
     push(item.skill);
     if (labels.length >= limit) return labels.slice(0, limit);
   }
-  for (const item of score.skillCoverage ?? []) {
-    if (!isPrimaryGapCoverageItem(item, satisfiedOrGroups)) continue;
-    push(item.skill);
+  for (const item of score.topGaps ?? []) {
+    push(item);
     if (labels.length >= limit) return labels.slice(0, limit);
   }
 

@@ -66,6 +66,7 @@ export type CommitAssistantAcceptedPatchOptions = {
   profileId: string;
   patch: Record<string, unknown>;
   commandId?: string;
+  operation?: string;
   onRehydrated?: () => void;
 };
 
@@ -75,13 +76,14 @@ export type CommitAssistantAcceptedPatchOptions = {
 export async function commitAssistantAcceptedPatch(
   options: CommitAssistantAcceptedPatchOptions,
 ): Promise<CvAssistantCommitResult> {
-  const { queryClient, profileId, patch, commandId, onRehydrated } = options;
+  const { queryClient, profileId, patch, commandId, operation, onRehydrated } = options;
   const id = profileId.trim();
   if (!id) throw new Error('commitAssistantAcceptedPatch: missing profileId');
 
   const result = await api.cv.assistantCommit(id, {
     patch,
     ...(commandId?.trim() ? { commandId: commandId.trim() } : {}),
+    ...(operation?.trim() ? { operation: operation.trim() } : {}),
   });
 
   const detail: CvProfileDetail = {

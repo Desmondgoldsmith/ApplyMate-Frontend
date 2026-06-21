@@ -427,6 +427,43 @@ export function isInterviewVoicePaidOnlyApiError(error: unknown): boolean {
 export const ACCEPT_ALL_DAILY_QUOTA_EXHAUSTED_CODE =
   'ACCEPT_ALL_DAILY_QUOTA_EXHAUSTED' as const;
 
+export const ACCEPT_ALL_IN_PROGRESS_CODE = 'ACCEPT_ALL_IN_PROGRESS' as const;
+
+export const ACCEPT_ALL_ABORTED_TIMEOUT_CODE =
+  'ACCEPT_ALL_ABORTED_TIMEOUT' as const;
+
+/** True when another accept-all is already running for this profile (409). */
+export function isAcceptAllInProgressError(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false;
+  const nested = readNestedApiError(
+    (error as AxiosError<ErrorBody>).response?.data,
+  );
+  return nested.code === ACCEPT_ALL_IN_PROGRESS_CODE;
+}
+
+/** True when accept-all was aborted after HTTP timeout — CV unchanged (409). */
+export function isAcceptAllAbortedTimeoutError(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false;
+  const nested = readNestedApiError(
+    (error as AxiosError<ErrorBody>).response?.data,
+  );
+  return nested.code === ACCEPT_ALL_ABORTED_TIMEOUT_CODE;
+}
+
+/** 504/408 or client timeout on accept-all — do not assume success; re-fetch CV state. */
+export function isAcceptAllHttpTimeoutError(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false;
+  const ax = error as AxiosError<ErrorBody>;
+  const url = `${ax.config?.url ?? ''}`;
+  if (!/\/cv\/suggestions\/accept-all/i.test(url)) return false;
+  const status = ax.response?.status;
+  if (status === 504 || status === 408) return true;
+  return (
+    ax.code === 'ECONNABORTED' ||
+    (typeof ax.message === 'string' && /\btimeout\b/i.test(ax.message))
+  );
+}
+
 /** True when apply-all hit the daily AI cap (429 + structured quota payload). */
 export function isAcceptAllDailyQuotaExhaustedError(error: unknown): boolean {
   if (!axios.isAxiosError(error)) return false;
@@ -638,9 +675,14 @@ function getApiErrorMessageBase(error: unknown): string {
       return CV_AI_TIMEOUT_USER_MESSAGE;
     }
 
+    if (nested.code === 'IMPROVEMENT_DRAFT_FIELD_MISMATCH') {
+      return 'The selected fields do not match the stored preview. Close the preview and run Fix with AI again.';
+    }
+
     const staleCodes = new Set([
       'IMPROVEMENT_STALE_DRAFT',
       'IMPROVEMENT_STALE_INDEX',
+      'IMPROVEMENT_DRAFT_FIELD_MISMATCH',
       'STALE_DRAFT',
     ]);
     const msgLower = nested.message?.toLowerCase() ?? '';
@@ -671,6 +713,13 @@ function getApiErrorMessageBase(error: unknown): string {
     }
 
     if (responseStatus === 422 || effectiveStatus === 422) {
+      if (nested.code === 'IMPROVEMENT_MATERIALIZE_FAILED') {
+        const detail = nested.message?.trim();
+        if (detail) {
+          return scrubVendorNamesFromUserMessage(detail);
+        }
+        return 'Could not generate a suggestion for this improvement. Please try again.';
+      }
       if (nested.code === CV_ASSISTANT_COMMIT_REJECTED_FACTUALITY_CODE) {
         const hints = extractTruthfulnessWarningsFromApiData(data);
         const first = hints[0];

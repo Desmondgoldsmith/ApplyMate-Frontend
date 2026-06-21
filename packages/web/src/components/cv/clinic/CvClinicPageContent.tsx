@@ -1,5 +1,7 @@
 'use client';
 
+import type { QueryClient } from '@tanstack/react-query';
+
 import { queryKeys } from '@/lib/queryKeys';
 import {
   BarChart3,
@@ -35,8 +37,6 @@ import { AIGlobalAssistantPanel } from '@/components/cv/AIGlobalAssistantPanel';
 import { CvGlobalAssistantFindingsPanel } from '@/components/cv/CvGlobalAssistantFindingsPanel';
 import { CvAssistantClarificationModal } from '@/components/cv/CvAssistantClarificationModal';
 import { RecruiterScanReportPanel } from '@/components/cv/RecruiterScanReportPanel';
-import { CvGlobalAssistantReviewPanel } from '@/components/cv/CvGlobalAssistantReviewPanel';
-import { CvDiffActionsBusyContext } from '@/components/cv/cvDiffImprovementActions';
 import {
   CVBuilder,
   type CVBuilderQualitySignals,
@@ -77,6 +77,8 @@ import {
   api,
   isPartialCvExtractionFromStructured,
   pickCvSectionRowsForEditor,
+  type CvAcceptUpdatedSection,
+  type CVSectionRecord,
   type CvAssistantCommandResponse,
   type CvAssistantSectionDiff,
   type CvCompletenessResult,
@@ -95,6 +97,7 @@ import { parseCvMode } from '@/lib/cv-mode.types';
 import { inferCvProfileNameFromProfile } from '@/lib/infer-cv-profile-name';
 import { buildCvNamingForExport } from '@/lib/cv-profile-naming';
 import { normalizeCvDiffPreviewParams } from '@/lib/cvAiPatchDisplay';
+import { cvDiffPreviewBuilderSection } from '@/lib/cvDiffPreviewSection';
 import {
   assistantChangedFieldLabel,
   assistantDiffDisplayStrings,
@@ -107,7 +110,8 @@ import {
   type CvTemplateId,
   type SaveCVBuilderDataResult,
 } from '@/lib/cvBuilder';
-import { isCvScoreInitialLoading, resolveCvDisplayScore } from '@/lib/cvScoreDisplay';
+import { isCvScoreInitialLoading, mergeBreakdownWithPublishedSections, resolveCvDisplayScore } from '@/lib/cvScoreDisplay';
+import { resolveCvSpellcheckLanguage } from '@/lib/cvSpellcheckLanguage';
 import { filterPendingSuggestionsForDisplay } from '@/lib/cv-improvement-merge';
 import {
   buildCvSectionInventory,
@@ -116,6 +120,7 @@ import {
   logUnrealisticCvRecommendationDropDev,
 } from '@/lib/cvAssistantUserFacing';
 import {
+  applyImprovementFieldAcceptToImprovementsCache,
   applySuggestionAcceptToImprovementsCache,
   applySuggestionRejectToImprovementsCache,
 } from '@/lib/cvSuggestionsMutationApply';
@@ -156,12 +161,20 @@ import {
   type CvGlobalAssistantFullCvResult,
   type CvGlobalAssistantOperationKey,
 } from '@/lib/cvGlobalAssistant';
-import { commitAcceptedStructuredDraft } from '@/lib/cvStructuredDraftCommit';
+import { buildAutoResolvedSuggestionsMessage } from '@/lib/cvAcceptAllSummaryToast';
+import { scheduleCvScoreAndSuggestionsInvalidate } from '@/lib/cvHistoryQueryInvalidate';
 import {
   CV_READY_TOAST,
   cvEditorPath,
   prefetchCvProfileForEditor,
 } from '@/lib/cvProfileNavigation';
+import { resolveImprovementJumpTarget } from '@/lib/cvImprovementFieldPath';
+import {
+  cvImprovementAcceptPreviewSyncUserMessage,
+  recoverCvImprovementAcceptPreviewSync,
+  shouldRecoverCvImprovementAcceptPreviewSync,
+  shouldRecoverCvImprovementRejectPreviewSync,
+} from '@/lib/cvImprovementAcceptRecovery';
 import { cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
 import { coreCvContentPresentInSections } from '@/lib/cv-sections-content';
 import {
@@ -181,6 +194,7 @@ import {
   type CvRecruiterScanSession,
 } from '@/lib/cvRecruiterScan';
 import { cn } from '@/lib/utils';
+import { applyCvAiUsageToAuthCache } from '@/lib/ai-daily-usage';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCvBuilderHydration } from '@/hooks/useCvBuilderHydration';
 import { useCvSuggestionMutations } from '@/hooks/useCvSuggestionMutations';
@@ -271,6 +285,31 @@ function formatLayoutLabel(detectedLayout: string): string {
   return labels[detectedLayout] ?? detectedLayout;
 }
 
+function patchCvSectionsCacheFromAccept(
+  queryClient: QueryClient,
+  profileId: string,
+  updatedSections: CvAcceptUpdatedSection[],
+): void {
+  if (!updatedSections.length) return;
+  queryClient.setQueryData<CVSectionRecord[]>(
+    queryKeys.cv.sections(profileId),
+    (prev) => {
+      if (!prev?.length) return prev;
+      const byType = new Map(updatedSections.map((s) => [s.type, s]));
+      return prev.map((sec) => {
+        const upd = byType.get(sec.type);
+        if (!upd) return sec;
+        return {
+          ...sec,
+          order: upd.order,
+          hidden: !upd.visible,
+          data: upd.data,
+        };
+      });
+    },
+  );
+}
+
 export function CvClinicPageContent() {
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -306,6 +345,14 @@ export function CvClinicPageContent() {
   );
 
   const user = useAuthStore((s) => s.user);
+  const accessToken = useAuthStore((s) => s.accessToken);
+
+  const applyMutationAiUsage = useCallback(
+    (usage: Parameters<typeof applyCvAiUsageToAuthCache>[2]) => {
+      if (usage) applyCvAiUsageToAuthCache(queryClient, accessToken, usage);
+    },
+    [queryClient, accessToken],
+  );
 
   const profilesQuery = useCVProfiles();
   const profiles = profilesQuery.data?.rows ?? [];
@@ -404,6 +451,38 @@ export function CvClinicPageContent() {
   const [reorderPending, setReorderPending] = useState(false);
   const [spellCheckTrigger, setSpellCheckTrigger] = useState(0);
   const [spellFixAllTrigger, setSpellFixAllTrigger] = useState(0);
+  const [undoRedoControls, setUndoRedoControls] = useState<{
+    canUndo: boolean;
+    canRedo: boolean;
+    undo: () => void;
+    redo: () => void;
+  } | null>(null);
+  const undoRedoControlsRef = useRef<{
+    canUndo: boolean;
+    canRedo: boolean;
+    undo: () => void;
+    redo: () => void;
+  } | null>(null);
+  const handleUndoRedoReady = useCallback(
+    (controls: {
+      canUndo: boolean;
+      canRedo: boolean;
+      undo: () => void;
+      redo: () => void;
+    }) => {
+      undoRedoControlsRef.current = controls;
+      setUndoRedoControls(controls);
+    },
+    [],
+  );
+  /** Undo/redo restores content — debounced refetch keeps score breakdown aligned with editor state. */
+  const handleHistoryApplied = useCallback(
+    (_restored: CVBuilderData, _kind: 'undo' | 'redo') => {
+      scheduleCvScoreAndSuggestionsInvalidate(queryClient, targetId);
+    },
+    [queryClient, targetId],
+  );
+  const stableToolbarScoreRef = useRef<number | null>(null);
   const [qualitySignals, setQualitySignals] = useState<CVBuilderQualitySignals>(
     {
       incompleteSectionIds: [],
@@ -433,6 +512,23 @@ export function CvClinicPageContent() {
     return diffPreviews[activeDiffPreviewKey] ?? null;
   }, [activeDiffPreviewKey, diffPreviews]);
 
+  const isDiffOverlayOpen =
+    activeDiffPreviewKey != null && activeDiffPreviewKey !== '';
+
+  const activePreviewSuggestionId = useMemo(() => {
+    if (!isDiffOverlayOpen || !diffPreview) return null;
+    if (diffPreview.pointer === CV_ASSISTANT_DIFF_PREVIEW_KEY) return null;
+    return (
+      (diffPreview as { suggestionId?: string }).suggestionId?.trim() ||
+      (activeDiffPreviewKey &&
+      activeDiffPreviewKey !== CV_ASSISTANT_DIFF_PREVIEW_KEY
+        ? activeDiffPreviewKey.trim()
+        : '') ||
+      diffPreview.pointer?.trim() ||
+      null
+    );
+  }, [isDiffOverlayOpen, diffPreview, activeDiffPreviewKey]);
+
   const closeDiffPreviewForKey = useCallback(
     (key: string | null | undefined) => {
       if (!key) return;
@@ -455,7 +551,6 @@ export function CvClinicPageContent() {
     setAssistantSectionDiffs([]);
     setGlobalAssistantFindings(null);
     setGlobalAssistantFullResult(null);
-    setGlobalAssistantReviewOpen(false);
     assistantCommandIdRef.current = '';
   }, [closeDiffPreviewForKey]);
 
@@ -467,7 +562,6 @@ export function CvClinicPageContent() {
       setAssistantSectionDiffs([]);
       setGlobalAssistantFindings(null);
       setGlobalAssistantFullResult(null);
-      setGlobalAssistantReviewOpen(false);
       if (!params) {
         setActiveDiffPreviewKey(null);
         return;
@@ -514,8 +608,6 @@ export function CvClinicPageContent() {
   } | null>(null);
   const [globalAssistantFullResult, setGlobalAssistantFullResult] =
     useState<CvGlobalAssistantFullCvResult | null>(null);
-  const [globalAssistantReviewOpen, setGlobalAssistantReviewOpen] =
-    useState(false);
   const [assistantPendingPatch, setAssistantPendingPatch] = useState<Record<
     string,
     unknown
@@ -531,9 +623,17 @@ export function CvClinicPageContent() {
   const [instantPreviewPatchNonce, setInstantPreviewPatchNonce] = useState(0);
   /** Incremented after server mutations so CVBuilder replaces local state from refetched `initialData`. */
   const [cvServerHydrateNonce, setCvServerHydrateNonce] = useState(0);
-  const bumpCvServerHydrateNonce = useCallback(() => {
-    setCvServerHydrateNonce((n) => n + 1);
-  }, []);
+  const immediateSectionPatchRef = useRef<
+    ((sections: CvAcceptUpdatedSection[]) => void) | null
+  >(null);
+  const serverHydratePreserveHistoryRef = useRef(false);
+  const bumpCvServerHydrateNonce = useCallback(
+    (opts?: { preserveHistory?: boolean }) => {
+      serverHydratePreserveHistoryRef.current = opts?.preserveHistory ?? false;
+      setCvServerHydrateNonce((n) => n + 1);
+    },
+    [],
+  );
   const clearInstantPreviewBeforeHydrate = useCallback(() => {
     setInstantPreviewPatch(null);
   }, []);
@@ -612,6 +712,48 @@ export function CvClinicPageContent() {
       clearInstantPreview: clearInstantPreviewBeforeHydrate,
     });
   const { reconcileAfterMutation } = useCvSuggestionMutations();
+  const finishAcceptEditorSync = useCallback(
+    async (
+      updatedSections: CvAcceptUpdatedSection[] | undefined,
+      sectionsSynced: boolean | undefined,
+    ) => {
+      const hasPatch =
+        Boolean(updatedSections?.length) &&
+        immediateSectionPatchRef.current != null;
+      if (hasPatch && updatedSections) {
+        immediateSectionPatchRef.current?.(updatedSections);
+        const id = targetId?.trim();
+        if (id) patchCvSectionsCacheFromAccept(queryClient, id, updatedSections);
+        // Refresh React Query caches only — avoid hydrate nonce (would race local patch / undo stack).
+        void refreshCvState(id, {
+          refreshProfile: true,
+          refreshSections: true,
+        }).catch((err) => {
+          console.warn(
+            '[commitAcceptDiff] background cache refresh failed — local patch already applied',
+            err,
+          );
+        });
+        return;
+      }
+      if (sectionsSynced === false) {
+        void syncCvBuilderFromServer({ preserveHistory: true }).catch((err) => {
+          console.warn(
+            '[commitAcceptDiff] background sync failed after accept (sections not synced)',
+            err,
+          );
+        });
+        return;
+      }
+      void syncCvBuilderFromServer({ preserveHistory: true }).catch((err) => {
+        console.warn(
+          '[commitAcceptDiff] background sync failed after accept (no updatedSections)',
+          err,
+        );
+      });
+    },
+    [queryClient, refreshCvState, syncCvBuilderFromServer, targetId],
+  );
   const [cvDataSnapshot, setCvDataSnapshot] = useState<CVBuilderData | null>(
     null,
   );
@@ -660,11 +802,15 @@ export function CvClinicPageContent() {
       try {
         const payload = await api.cv.getSuggestions(targetId, false);
         const match = (payload.improvements ?? []).find(
-          (item) =>
-            typeof item.id === 'string' &&
-            item.id.trim().length > 0 &&
-            Array.isArray(item.pendingFieldPaths) &&
-            item.pendingFieldPaths.some((p) => p.trim() === fieldPath.trim()),
+          (item) => {
+            if (typeof item.id !== 'string' || !item.id.trim()) return false;
+            const target = item.targetFieldPath?.trim();
+            if (target && target === fieldPath.trim()) return true;
+            return (
+              Array.isArray(item.pendingFieldPaths) &&
+              item.pendingFieldPaths.some((p) => p.trim() === fieldPath.trim())
+            );
+          },
         );
         return match?.id?.trim() || null;
       } catch {
@@ -747,11 +893,7 @@ export function CvClinicPageContent() {
   }, [builderSaveStatus, completeness?.score, targetId]);
 
   useEffect(() => {
-    setTemplateReady(false);
-    if (!targetId?.trim()) {
-      setTemplateReady(true);
-      return;
-    }
+    if (!targetId?.trim()) return;
     templateHydratedForTargetRef.current = null;
   }, [targetId]);
 
@@ -772,7 +914,12 @@ export function CvClinicPageContent() {
         /* non-blocking */
       }
     })();
-  }, [targetId, sections.length, builderSaveStatus]);
+  }, [targetId, sections.length]);
+
+  const spellcheckLanguage = useMemo(
+    () => resolveCvSpellcheckLanguage(profile),
+    [profile],
+  );
 
   useEffect(() => {
     if (!hasCv || !targetId?.trim() || !improvements.data?.needsScoring) return;
@@ -832,7 +979,9 @@ export function CvClinicPageContent() {
   useEffect(() => {
     if (diffPreview?.section && jumpToSectionRef.current) {
       setTimeout(() => {
-        jumpToSectionRef.current?.(diffPreview.section);
+        jumpToSectionRef.current?.(
+          cvDiffPreviewBuilderSection(diffPreview.section) ?? diffPreview.section,
+        );
       }, 350);
     }
   }, [diffPreview]);
@@ -880,17 +1029,37 @@ export function CvClinicPageContent() {
   );
 
   const displayScoreValue = useMemo(
-    () => resolveCvDisplayScore(score.data),
-    [score.data],
+    () =>
+      resolveCvDisplayScore(
+        score.data,
+        improvements.data?.needsScoring ? improvements.data.score : null,
+      ),
+    [score.data, improvements.data?.needsScoring, improvements.data?.score],
   );
+  if (displayScoreValue != null) {
+    stableToolbarScoreRef.current = displayScoreValue;
+  }
+  const toolbarScoreValue =
+    displayScoreValue ?? stableToolbarScoreRef.current;
 
   const scoreInitialLoading = isCvScoreInitialLoading(score.isPending, score.data);
-  const scoreRefreshing = score.isFetching && !scoreInitialLoading && displayScoreValue != null;
+  const scoreRefreshing =
+    score.isFetching && !scoreInitialLoading && displayScoreValue != null;
 
-  const displayScoreBreakdown = useMemo(
-    () => score.data?.breakdown,
-    [score.data?.breakdown],
-  );
+  const displayScoreBreakdown = useMemo(() => {
+    const base = score.data?.breakdown as Record<string, unknown> | undefined;
+    if (improvements.data?.needsScoring && improvements.data.lastPublishedSectionScores) {
+      return mergeBreakdownWithPublishedSections(
+        base,
+        improvements.data.lastPublishedSectionScores,
+      );
+    }
+    return base;
+  }, [
+    score.data?.breakdown,
+    improvements.data?.needsScoring,
+    improvements.data?.lastPublishedSectionScores,
+  ]);
 
   const displayScorePayload = useMemo(() => score.data, [score.data]);
 
@@ -1075,6 +1244,20 @@ export function CvClinicPageContent() {
     [sections],
   );
 
+  const jumpToImprovementTarget = useCallback(
+    (targetFieldPath: string, sectionFallback?: string) => {
+      const target = resolveImprovementJumpTarget(
+        cvDataSnapshot ?? initialData,
+        targetFieldPath,
+        sectionFallback,
+      );
+      if (!target) return;
+      const sid = resolveJumpSectionKey(target.sectionKey);
+      jumpToSectionRef.current?.(sid, target.entryId, { scrollForm: true });
+    },
+    [cvDataSnapshot, initialData, resolveJumpSectionKey],
+  );
+
   const onApplySpellIssue = useCallback((issue: CvSpellIssue) => {
     if (typeof window === 'undefined') return;
     window.dispatchEvent(
@@ -1256,7 +1439,7 @@ export function CvClinicPageContent() {
     async (format: 'pdf' | 'docx') => {
       if (isPartialExtractionBanner) {
         const ok = window.confirm(
-          'Your CV appears to be missing experience and skills data. ' +
+          'Your resume appears to be missing experience and skills data. ' +
             'The exported file may be incomplete.\n\n' +
             'Download anyway?',
         );
@@ -1315,7 +1498,7 @@ export function CvClinicPageContent() {
               )
             : undefined,
         });
-        toast.success(`CV downloaded as ${format.toUpperCase()}`);
+        toast.success(`Resume downloaded as ${format.toUpperCase()}`);
       } catch (e) {
         toast.error(getApiErrorMessage(e));
       }
@@ -1345,7 +1528,7 @@ export function CvClinicPageContent() {
           setTemplate(t);
           if (targetId?.trim()) writeCvDashboardTemplate(targetId, t);
         }
-        toast.success('Restored to your original CV format');
+        toast.success('Restored to your original resume format');
       }
     } catch (e) {
       toast.error(getApiErrorMessage(e) || 'Failed to restore original format');
@@ -1419,11 +1602,13 @@ export function CvClinicPageContent() {
             profileId: id,
             patch: patchToCommit,
             commandId: assistantCommandIdRef.current.trim() || undefined,
+            operation: globalAssistantFullResult?.operation,
             onRehydrated: () => {
               setCvServerHydrateNonce((n) => n + 1);
               setAssistantPatchNonce((n) => n + 1);
             },
           });
+          applyMutationAiUsage(commitResult.aiUsage);
 
           if (
             assistantScope === 'full_cv' &&
@@ -1438,7 +1623,7 @@ export function CvClinicPageContent() {
               setInstantPreviewPatch(null);
               clearAssistantPreview();
               toast.success(
-                commitResult.message || 'Changes saved to your CV.',
+                commitResult.message || 'Changes saved to your resume.',
               );
             } else {
               const remainingPatch = mergeGlobalAssistantPatches(
@@ -1465,7 +1650,7 @@ export function CvClinicPageContent() {
             setInstantPreviewPatch(null);
             clearAssistantPreview();
             toast.success(
-              commitResult.message || 'Changes saved to your CV.',
+              commitResult.message || 'Changes saved to your resume.',
             );
           }
 
@@ -1558,15 +1743,24 @@ export function CvClinicPageContent() {
           } else {
             toast.success('Suggestion applied successfully.');
           }
+          const autoResolvedMsg = buildAutoResolvedSuggestionsMessage(
+            product.autoResolvedIds,
+          );
+          if (autoResolvedMsg) toast.info(autoResolvedMsg);
           if (shouldShowTruthfulnessAdjustNotice(product)) {
             toast.info(
               product.truthfulnessWarnings?.find((w) => w.trim())?.trim() ??
-                'Some edits were checked against your CV and adjusted before applying.',
+                'Some edits were checked against your resume and adjusted before applying.',
             );
           }
-          await syncCvBuilderFromServer();
+          void finishAcceptEditorSync(
+            product.updatedSections,
+            product.sectionsSynced,
+          );
           scheduleSectionResyncIfBackgroundTasks(product);
-          const inv = reconcileAfterMutation(targetId, 'structuralAccept');
+          const inv = reconcileAfterMutation(targetId, 'structuralAccept', {
+            scoringTriggered: product.scoringTriggered,
+          });
           logCvSuggestionMutationClientPerf(
             'commitAcceptDiff.acceptSuggestion',
             t0,
@@ -1579,17 +1773,33 @@ export function CvClinicPageContent() {
         }
 
         /** Field-level accept after Apply-with-AI preview — POST /cv/improvements/:id/accept + draftHash (backend partial queue). */
+        const acceptFields = selectedField?.trim()
+          ? [selectedField.trim()]
+          : diffPreview.selectableFieldPaths?.length
+            ? diffPreview.selectableFieldPaths
+            : undefined;
         const result = await api.cv.acceptImprovement(
           requestPointer,
           targetId ?? undefined,
           {
-            ...(selectedField ? { acceptedFields: [selectedField] } : {}),
+            ...(acceptFields?.length ? { acceptedFields: acceptFields } : {}),
             ...(diffPreview.draftHash
               ? { draftHash: diffPreview.draftHash }
               : {}),
           },
         );
         if (result.partial) {
+          if (result.updatedSections?.length) {
+            immediateSectionPatchRef.current?.(result.updatedSections);
+            const pid = targetId?.trim();
+            if (pid) {
+              patchCvSectionsCacheFromAccept(
+                queryClient,
+                pid,
+                result.updatedSections,
+              );
+            }
+          }
           const nextPointer = result.improvementId ?? diffPreview.pointer;
           const freshNext = await api.cv.applyImprovement(
             nextPointer,
@@ -1618,62 +1828,40 @@ export function CvClinicPageContent() {
               },
             };
           });
-          void queryClient.invalidateQueries({
-            queryKey: cvSuggestionsQueryKey(targetId),
+          reconcileAfterMutation(targetId, 'structuralAccept', {
+            scoringTriggered: result.scoringTriggered,
           });
           toast.success('Change accepted.');
           return;
         }
         queryClient.setQueryData<CvImprovementsPayload>(
           cvSuggestionsQueryKey(targetId),
-          (prev) => {
-            if (!prev || !Array.isArray(prev.improvements)) return prev;
-            const acceptedKey = selectedField.trim();
-            const nextImprovements = prev.improvements.filter((item) => {
-              if (result.improvementId && item?.id === result.improvementId)
-                return false;
-              if (
-                acceptedKey.length > 0 &&
-                Array.isArray(item?.pendingFieldPaths) &&
-                item.pendingFieldPaths.some((p) => p.trim() === acceptedKey)
-              ) {
-                return false;
-              }
-              return true;
-            });
-            return {
-              ...prev,
-              improvements: nextImprovements,
-              pendingSuggestionsCount:
-                result.pendingSuggestionsCount ??
-                Math.max(0, nextImprovements.length),
-              cvRevisionId:
-                result.cvRevisionId !== undefined
-                  ? result.cvRevisionId
-                  : (prev.cvRevisionId ?? null),
-              structuredRevisionHash:
-                result.structuredRevisionHash !== undefined
-                  ? result.structuredRevisionHash
-                  : prev.structuredRevisionHash,
-            };
-          },
+          (prev) =>
+            applyImprovementFieldAcceptToImprovementsCache(prev, result) ?? prev,
         );
         closeDiffPreviewForKey(opKey);
         toast.success('Suggestion applied successfully.');
+        const autoResolvedMsg = buildAutoResolvedSuggestionsMessage(
+          result.autoResolvedIds,
+        );
+        if (autoResolvedMsg) toast.info(autoResolvedMsg);
         if (shouldShowTruthfulnessAdjustNotice(result)) {
           toast.info(
             result.truthfulnessWarnings?.find((w) => w.trim())?.trim() ??
-              'Some edits were checked against your CV and adjusted before applying.',
+              'Some edits were checked against your resume and adjusted before applying.',
           );
         }
         logCvMutationCommitDev(
           'cvPage.commitAcceptDiff.acceptImprovement',
           result,
         );
+        applyMutationAiUsage(result.aiUsage);
         const t0 = Date.now();
-        await syncCvBuilderFromServer();
+        void finishAcceptEditorSync(result.updatedSections, result.sectionsSynced);
         scheduleSectionResyncIfBackgroundTasks(result);
-        const inv = reconcileAfterMutation(targetId, 'structuralAccept');
+        const inv = reconcileAfterMutation(targetId, 'structuralAccept', {
+          scoringTriggered: result.scoringTriggered,
+        });
         logCvSuggestionMutationClientPerf(
           'commitAcceptDiff.acceptImprovement',
           t0,
@@ -1687,312 +1875,20 @@ export function CvClinicPageContent() {
           queryClient.setQueryData(improvementsKey, prevImprovementsPayload);
         }
         const code = getApiErrorCode(e);
-        if (
-          code === 'IMPROVEMENT_INVALID_FIELD_SELECTION' ||
-          code === 'IMPROVEMENT_STALE_INDEX'
-        ) {
-          try {
-            let pointerForRefresh = diffPreview.pointer;
-            if (code === 'IMPROVEMENT_STALE_INDEX' && selectedField) {
-              const resolvedId =
-                await resolveImprovementPointerByField(selectedField);
-              if (resolvedId) pointerForRefresh = resolvedId;
-            }
-            const fresh = await api.cv.applyImprovement(
-              pointerForRefresh,
-              targetId ?? undefined,
-            );
-            logCvMaterializePerformanceDev(
-              'cvPage.commitAcceptDiff.staleRefresh',
-              fresh,
-            );
-            const freshPreview = {
-              ...diffPreview,
-              pointer: pointerForRefresh,
-              draftHash: fresh.draftHash,
-              changedFields: fresh.changedFields,
-              ...truthfulnessFieldsFromResponse(fresh),
-              performance: compactDiffPreviewPerformance(fresh),
-            };
-            const selectedStillExists =
-              selectedField.length > 0 &&
-              freshPreview.changedFields.some(
-                (cf) => (cf.fieldPath ?? '').trim() === selectedField,
-              );
-            if (selectedField && selectedStillExists) {
-              const retry = await api.cv.acceptImprovement(
-                pointerForRefresh,
-                targetId ?? undefined,
-                {
-                  acceptedFields: [selectedField],
-                  ...(fresh.draftHash ? { draftHash: fresh.draftHash } : {}),
-                },
-              );
-              if (retry.partial) {
-                const nextPointer = retry.improvementId ?? pointerForRefresh;
-                const freshNext = await api.cv.applyImprovement(
-                  nextPointer,
-                  targetId ?? undefined,
-                );
-                logCvMaterializePerformanceDev(
-                  'cvPage.commitAcceptDiff.staleRetryPartial',
-                  freshNext,
-                );
-                setDiffPreviews((prev) => {
-                  if (!opKey) return prev;
-                  const cur = prev[opKey];
-                  if (!cur) return prev;
-                  return {
-                    ...prev,
-                    [opKey]: {
-                      ...freshPreview,
-                      pointer: nextPointer,
-                      draftHash: retry.draftHash ?? freshNext.draftHash,
-                      before: freshNext.before ?? freshPreview.before,
-                      after: freshNext.after ?? freshPreview.after,
-                      changedFields:
-                        freshNext.changedFields ?? freshPreview.changedFields,
-                      ...truthfulnessFieldsFromResponse(freshNext),
-                      ...truthfulnessFieldsFromResponse(retry),
-                      performance: compactDiffPreviewPerformance(freshNext),
-                    },
-                  };
-                });
-                toast.success('Change accepted.');
-                return;
-              }
-              closeDiffPreviewForKey(opKey);
-              if (retry.alreadyApplied) {
-                toast.success('This suggestion was already applied.');
-              } else if (retry.idempotent) {
-                toast.success('Already up to date.');
-              } else {
-                toast.success('Suggestion applied successfully.');
-              }
-              if (shouldShowTruthfulnessAdjustNotice(retry)) {
-                toast.info(
-                  retry.truthfulnessWarnings?.find((w) => w.trim())?.trim() ??
-                    'Some edits were checked against your CV and adjusted before applying.',
-                );
-              }
-              logCvMutationCommitDev(
-                'cvPage.commitAcceptDiff.staleRetryAcceptImprovement',
-                retry,
-              );
-              const t0Retry = Date.now();
-              await syncCvBuilderFromServer();
-              scheduleSectionResyncIfBackgroundTasks(retry);
-              const inv = reconcileAfterMutation(targetId, 'structuralAccept');
-              logCvSuggestionMutationClientPerf(
-                'commitAcceptDiff.staleRetryAcceptImprovement',
-                t0Retry,
-                {
-                  invalidations: inv,
-                  cacheWrites: 1,
-                },
-              );
-              return;
-            }
-            if (selectedField.length === 0) {
-              const t0 = Date.now();
-              const product = await api.cv.acceptSuggestion(
-                String(pointerForRefresh),
-                targetId ?? undefined,
-              );
-              logCvMutationCommitDev(
-                'cvPage.commitAcceptDiff.staleRefreshAcceptSuggestion',
-                product,
-              );
-              queryClient.setQueryData<CvImprovementsPayload>(
-                improvementsKey,
-                (prev) =>
-                  applySuggestionAcceptToImprovementsCache(
-                    prev,
-                    String(pointerForRefresh).trim(),
-                    product,
-                  ) ?? prev,
-              );
-              closeDiffPreviewForKey(opKey);
-              if (product.alreadyApplied) {
-                toast.success('This suggestion was already applied.');
-              } else if (product.idempotent) {
-                toast.success('Already up to date.');
-              } else {
-                toast.success('Suggestion applied successfully.');
-              }
-              if (shouldShowTruthfulnessAdjustNotice(product)) {
-                toast.info(
-                  product.truthfulnessWarnings?.find((w) => w.trim())?.trim() ??
-                    'Some edits were checked against your CV and adjusted before applying.',
-                );
-              }
-              await syncCvBuilderFromServer();
-              scheduleSectionResyncIfBackgroundTasks(product);
-              const inv = reconcileAfterMutation(targetId, 'structuralAccept');
-              logCvSuggestionMutationClientPerf(
-                'commitAcceptDiff.staleRefreshAcceptSuggestion',
-                t0,
-                {
-                  invalidations: inv,
-                  cacheWrites: 2,
-                },
-              );
-              return;
-            }
-            setDiffPreviews((prev) => {
-              if (!opKey) return prev;
-              return { ...prev, [opKey]: freshPreview };
-            });
-            toast.info(
-              'Suggestion changed. Review updated fields and try again.',
-            );
-            return;
-          } catch (refreshErr) {
-            logCvMutationErrorDev('commitAcceptDiff.refresh', refreshErr);
-            toast.error(
-              getApiErrorMessage(refreshErr) ||
-                'Could not refresh this suggestion. Please try again.',
-            );
-            return;
-          }
+        if (shouldRecoverCvImprovementAcceptPreviewSync(e, code)) {
+          await recoverCvImprovementAcceptPreviewSync({
+            queryClient,
+            profileId: targetId,
+            onClosePreview: () => closeDiffPreviewForKey(opKey),
+          });
+          toast.error(cvImprovementAcceptPreviewSyncUserMessage(code, e));
+          return;
         }
-        const msg = (getApiErrorMessage(e) || '').toLowerCase();
-        const missingDraft =
-          msg.includes('no draft found') || msg.includes('run apply first');
-        if (missingDraft) {
-          try {
-            const prep = await api.cv.applyImprovement(
-              diffPreview.pointer,
-              targetId ?? undefined,
-            );
-            logCvMaterializePerformanceDev(
-              'cvPage.commitAcceptDiff.missingDraftPrep',
-              prep,
-            );
-            if (isCvApplyImprovementTerminalNoDiff(prep)) {
-              const rid = String(
-                prep.suggestionId ||
-                  prep.improvementId ||
-                  prep.pointer ||
-                  diffPreview.pointer,
-              ).trim();
-              queryClient.setQueryData<CvImprovementsPayload>(
-                improvementsKey,
-                (prev) =>
-                  applySuggestionAcceptToImprovementsCache(prev, rid, {
-                    pendingSuggestionsCount:
-                      prep.pendingSuggestionsCount ??
-                      Math.max(
-                        0,
-                        (prev?.improvements ?? []).filter(
-                          (it) => (it?.id ?? '').trim() !== rid,
-                        ).length,
-                      ),
-                    cvRevisionId: prep.cvRevisionId ?? null,
-                    alreadyApplied: true,
-                    acceptedSuggestionIds: [rid],
-                  }) ?? prev,
-              );
-              closeDiffPreviewForKey(opKey);
-              toast.success(toastCopyForTerminalNoDiffApply(prep));
-              const t0Term = Date.now();
-              await syncCvBuilderFromServer();
-              const inv = reconcileAfterMutation(targetId, 'queueOnly');
-              logCvSuggestionMutationClientPerf(
-                'cvPage.commitAcceptDiff.missingDraft.terminalNoDiff',
-                t0Term,
-                {
-                  invalidations: inv,
-                  cacheWrites: 1,
-                },
-              );
-              return;
-            }
-            const sf =
-              changeIndex != null && changeIndex >= 0
-                ? (
-                    diffPreview.changedFields[changeIndex]?.fieldPath ?? ''
-                  ).trim()
-                : '';
-            if (sf) {
-              const acceptRes = await api.cv.acceptImprovement(
-                diffPreview.pointer,
-                targetId ?? undefined,
-                {
-                  acceptedFields: [sf],
-                  ...(prep.draftHash ? { draftHash: prep.draftHash } : {}),
-                },
-              );
-              logCvMutationCommitDev(
-                'cvPage.commitAcceptDiff.missingDraftAcceptImprovement',
-                acceptRes,
-              );
-              closeDiffPreviewForKey(opKey);
-              toast.success('Suggestion applied successfully.');
-              const t0Md = Date.now();
-              await syncCvBuilderFromServer();
-              scheduleSectionResyncIfBackgroundTasks(acceptRes);
-              const inv = reconcileAfterMutation(targetId, 'structuralAccept');
-              logCvSuggestionMutationClientPerf(
-                'commitAcceptDiff.missingDraftAcceptImprovement',
-                t0Md,
-                {
-                  invalidations: inv,
-                  cacheWrites: 1,
-                },
-              );
-            } else {
-              const t0Md = Date.now();
-              const prodMissing = await api.cv.acceptSuggestion(
-                String(diffPreview.pointer),
-                targetId ?? undefined,
-              );
-              logCvMutationCommitDev(
-                'cvPage.commitAcceptDiff.missingDraftAcceptSuggestion',
-                prodMissing,
-              );
-              queryClient.setQueryData<CvImprovementsPayload>(
-                improvementsKey,
-                (prev) =>
-                  applySuggestionAcceptToImprovementsCache(
-                    prev,
-                    String(diffPreview.pointer).trim(),
-                    prodMissing,
-                  ) ?? prev,
-              );
-              closeDiffPreviewForKey(opKey);
-              toast.success('Suggestion applied successfully.');
-              await syncCvBuilderFromServer();
-              scheduleSectionResyncIfBackgroundTasks(prodMissing);
-              const inv = reconcileAfterMutation(targetId, 'structuralAccept');
-              logCvSuggestionMutationClientPerf(
-                'commitAcceptDiff.missingDraftAcceptSuggestion',
-                t0Md,
-                {
-                  invalidations: inv,
-                  cacheWrites: 2,
-                },
-              );
-            }
-            return;
-          } catch (retryErr) {
-            logCvMutationErrorDev(
-              'commitAcceptDiff.missingDraftRetry',
-              retryErr,
-            );
-            toast.error(
-              getApiErrorMessage(retryErr) ||
-                'Could not apply this improvement. Please try again.',
-            );
-          }
-        } else {
-          logCvMutationErrorDev('commitAcceptDiff', e);
-          toast.error(
-            getApiErrorMessage(e) ||
-              'Could not apply this improvement. Please try again.',
-          );
-        }
-        /* keep diffPreview so user can retry */
+        logCvMutationErrorDev('commitAcceptDiff', e);
+        toast.error(
+          getApiErrorMessage(e) ||
+            'Could not apply this improvement. Please try again.',
+        );
       } finally {
         cvImprovementDiffInFlightRef.current = false;
         setCvImprovementDiffActionsPending(false);
@@ -2004,6 +1900,7 @@ export function CvClinicPageContent() {
       assistantScope,
       assistantSectionDiffs,
       globalAssistantFullResult?.sectionDiffs,
+      globalAssistantFullResult?.operation,
       activeDiffPreviewKey,
       diffPreviews,
       targetId,
@@ -2011,9 +1908,13 @@ export function CvClinicPageContent() {
       toast,
       resolveImprovementPointerByField,
       syncCvBuilderFromServer,
+      finishAcceptEditorSync,
+      bumpCvServerHydrateNonce,
+      applyMutationAiUsage,
       scheduleSectionResyncIfBackgroundTasks,
       clearAssistantPreview,
       reconcileAfterMutation,
+      closeDiffPreviewForKey,
     ],
   );
 
@@ -2189,58 +2090,22 @@ export function CvClinicPageContent() {
           queryClient.setQueryData(improvementsKey, prevImprovementsPayload);
         }
         const code = getApiErrorCode(e);
-        if (
-          code === 'IMPROVEMENT_INVALID_FIELD_SELECTION' ||
-          code === 'IMPROVEMENT_STALE_INDEX'
-        ) {
-          try {
-            let pointerForRefresh = diffPreview.pointer;
-            if (code === 'IMPROVEMENT_STALE_INDEX' && selectedField) {
-              const resolvedId =
-                await resolveImprovementPointerByField(selectedField);
-              if (resolvedId) pointerForRefresh = resolvedId;
-            }
-            const fresh = await api.cv.applyImprovement(
-              pointerForRefresh,
-              targetId ?? undefined,
-            );
-            logCvMaterializePerformanceDev(
-              'cvPage.commitRejectDiff.staleRefresh',
-              fresh,
-            );
-            setDiffPreviews((prev) => {
-              if (!opKey) return prev;
-              return {
-                ...prev,
-                [opKey]: {
-                  ...diffPreview,
-                  pointer: pointerForRefresh,
-                  draftHash: fresh.draftHash,
-                  changedFields: fresh.changedFields,
-                  ...truthfulnessFieldsFromResponse(fresh),
-                  performance: compactDiffPreviewPerformance(fresh),
-                },
-              };
-            });
-            toast.info(
-              'Suggestion changed. Review updated fields and try again.',
-            );
-            shouldClosePreview = false;
-            return;
-          } catch (refreshErr) {
-            logCvMutationErrorDev('commitRejectDiff.refresh', refreshErr);
-            toast.error(
-              getApiErrorMessage(refreshErr) ||
-                'Could not refresh this suggestion. Please try again.',
-            );
-            return;
-          }
+        if (shouldRecoverCvImprovementRejectPreviewSync(code)) {
+          await recoverCvImprovementAcceptPreviewSync({
+            queryClient,
+            profileId: targetId,
+            onClosePreview: () => closeDiffPreviewForKey(opKey),
+          });
+          toast.error(cvImprovementAcceptPreviewSyncUserMessage(code, e));
+          shouldClosePreview = false;
+          return;
         }
         logCvMutationErrorDev('commitRejectDiff', e);
         toast.error(
           getApiErrorMessage(e) ||
             'Could not reject this improvement. Please try again.',
         );
+        
       } finally {
         cvImprovementDiffInFlightRef.current = false;
         setCvImprovementDiffActionsPending(false);
@@ -2310,7 +2175,6 @@ export function CvClinicPageContent() {
         setClarificationModalOpen(false);
         setGlobalAssistantFindings(null);
         setGlobalAssistantFullResult(null);
-        setGlobalAssistantReviewOpen(false);
         setAssistantScope('section');
         setAssistantSectionDiffs([]);
         setAssistantBusyStage('validating');
@@ -2407,6 +2271,17 @@ export function CvClinicPageContent() {
           setClarificationModalOpen(true);
           return 'clarify';
         }
+        if (res.type === 'no_op') {
+          setGlobalAssistantClarification(null);
+          setAssistantClarification(null);
+          setClarificationModalOpen(false);
+          toast.info(
+            res.userHint?.trim() ||
+              res.message ||
+              'Our AI did not recommend any changes for this particular operation.',
+          );
+          return 'ok';
+        }
         setGlobalAssistantClarification(null);
         setAssistantClarification(null);
         setClarificationModalOpen(false);
@@ -2430,7 +2305,6 @@ export function CvClinicPageContent() {
           if (comprehensiveSession && res.operation === 'recruiter_scan') {
             openRecruiterScanSession(comprehensiveSession);
             setGlobalAssistantFullResult(null);
-            setGlobalAssistantReviewOpen(false);
             setAssistantPreviewMode(false);
             setAssistantPendingPatch(null);
             setAssistantSectionDiffs([]);
@@ -2443,7 +2317,6 @@ export function CvClinicPageContent() {
           }
           setGlobalAssistantFindings(filteredFindings);
           setGlobalAssistantFullResult(null);
-          setGlobalAssistantReviewOpen(false);
           setAssistantPreviewMode(false);
           setAssistantPendingPatch(null);
           setAssistantSectionDiffs([]);
@@ -2458,7 +2331,6 @@ export function CvClinicPageContent() {
         setAssistantScope('full_cv');
         setGlobalAssistantFindings(null);
         setGlobalAssistantFullResult(res);
-        setGlobalAssistantReviewOpen(true);
         setAssistantPreviewMode(true);
         setAssistantPendingPatch(res.patch);
         setAssistantSectionDiffs(res.sectionDiffs);
@@ -2558,11 +2430,6 @@ export function CvClinicPageContent() {
     setRecruiterScanClarification(null);
   }, []);
 
-  const globalAssistantChangedFieldsMemo = useMemo(
-    () => globalAssistantChangedFields(assistantSectionDiffs),
-    [assistantSectionDiffs],
-  );
-
   const handleApplyRecruiterFindings = useCallback(
     async (payload: CvGlobalAssistantApplyFindingsPayload) => {
       const result = await runGlobalAssistantCommand(payload.command, {
@@ -2604,11 +2471,7 @@ export function CvClinicPageContent() {
     ? instantPreviewPatchNonce
     : assistantPatchNonce;
 
-  const improvementDiffTruthPanel = Boolean(
-    diffPreview &&
-    diffPreview.pointer !== '__assistant__' &&
-    Boolean(diffPreview.section?.trim()),
-  );
+  const improvementDiffTruthPanel = false;
   const improvementDiffTruthfulness = useMemo(() => {
     if (!diffPreview || diffPreview.pointer === '__assistant__') return null;
     return truthfulnessFieldsFromResponse(diffPreview);
@@ -2767,7 +2630,7 @@ export function CvClinicPageContent() {
             <Link
               href="/dashboard/cv"
               className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-white/10 px-2 text-[11px] font-medium text-white/70 transition hover:border-[#00C9B1]/40 hover:text-white"
-              title="CV library"
+              title="Resume library"
             >
               <ChevronLeft className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
               <span className="hidden sm:inline">Library</span>
@@ -2780,7 +2643,7 @@ export function CvClinicPageContent() {
             ) : profileOptions.length >= 1 ? (
               <>
                 <span className="hidden shrink-0 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/40 sm:inline">
-                  CV
+                  Resume
                 </span>
                 <select
                   className={cn(
@@ -2839,14 +2702,13 @@ export function CvClinicPageContent() {
               </span>
               {scoreInitialLoading ? (
                 <Skeleton height={22} width={44} borderRadius={6} />
-              ) : displayScoreValue === null ||
-                displayScoreValue === undefined ? (
-                <span className="animate-pulse text-sm font-semibold text-white/45 sm:text-base">
+              ) : toolbarScoreValue == null ? (
+                <span className="text-sm font-semibold text-white/45 sm:text-base">
                   Calculating…
                 </span>
               ) : (
                 <span className="text-sm font-extrabold tabular-nums text-[#00C9B1] sm:text-base">
-                  {displayScoreValue}
+                  {toolbarScoreValue}
                   <span className="text-xs font-medium text-white/45">
                     /100
                   </span>
@@ -2935,6 +2797,10 @@ export function CvClinicPageContent() {
                 }
                 onOpenAiChat={() => setAiChatOpen(true)}
                 onTriggerSpellCheck={() => setSpellCheckTrigger((n) => n + 1)}
+                canUndo={undoRedoControls?.canUndo}
+                canRedo={undoRedoControls?.canRedo}
+                onUndo={() => undoRedoControlsRef.current?.undo()}
+                onRedo={() => undoRedoControlsRef.current?.redo()}
                 inlineMenu
               />
             ) : null}
@@ -2950,6 +2816,7 @@ export function CvClinicPageContent() {
       scoreRefreshing,
       score.data,
       displayScoreValue,
+      toolbarScoreValue,
       template,
       runScan.isPending,
       runScan.mutateAsync,
@@ -2960,10 +2827,22 @@ export function CvClinicPageContent() {
       queryClient,
       toast,
       qualitySignals.isSpellChecking,
+      undoRedoControls,
+      sectionOrderFlow.openSuggestModal,
+      sectionOrderFlow.suggestData,
     ],
   );
 
-  const scoreCardMode = tripleRightPct < 24 ? 'compact' : 'full';
+  const scoreCardModeRef = useRef<'compact' | 'full'>('full');
+  const scoreCardMode = useMemo(() => {
+    const prev = scoreCardModeRef.current;
+    if (prev === 'compact' && tripleRightPct >= 26) {
+      scoreCardModeRef.current = 'full';
+    } else if (prev === 'full' && tripleRightPct < 22) {
+      scoreCardModeRef.current = 'compact';
+    }
+    return scoreCardModeRef.current;
+  }, [tripleRightPct]);
 
   const runToolbarAtsCheck = useCallback(async () => {
     if (!targetId) return;
@@ -2988,8 +2867,16 @@ export function CvClinicPageContent() {
         queryKey: cvSuggestionsQueryKey(targetId),
         queryFn: () => api.cv.getSuggestions(targetId ?? undefined, false),
       });
-      const n = impr.pendingSuggestionsCount ?? impr.improvements.length;
-      toast.success(`Scan complete: ${n} formatting suggestions found`);
+      const n =
+        impr.pendingSuggestionsCount ??
+        filterPendingSuggestionsForDisplay(impr.improvements).length;
+      if (n === 0) {
+        toast.success('Scan complete — no open suggestions. Your CV looks great!');
+      } else {
+        toast.success(
+          `Scan complete — ${n} suggestion${n === 1 ? '' : 's'} remaining`,
+        );
+      }
     } catch (e) {
       toast.error(getApiErrorMessage(e));
     }
@@ -3019,6 +2906,10 @@ export function CvClinicPageContent() {
         rightPanelCollapsed={rightPanelCollapsed}
         onToggleInsights={() => setRightPanelCollapsed((c) => !c)}
         builderSaveStatus={builderSaveStatus}
+        canUndo={undoRedoControls?.canUndo}
+        canRedo={undoRedoControls?.canRedo}
+        onUndo={() => undoRedoControlsRef.current?.undo()}
+        onRedo={() => undoRedoControlsRef.current?.redo()}
       />
     ),
     [
@@ -3036,7 +2927,8 @@ export function CvClinicPageContent() {
       handleExport,
       rightPanelCollapsed,
       builderSaveStatus,
-      qualitySignals.isSpellChecking,
+      undoRedoControls?.canUndo,
+      undoRedoControls?.canRedo,
       sectionOrderFlow.openSuggestModal,
       sectionOrderFlow.suggestData,
       sectionOrderFlow.suggestQuery.isFetching,
@@ -3137,6 +3029,8 @@ export function CvClinicPageContent() {
         analyzeScanPending={runScan.isPending}
         onAnalyzeScan={runRightPanelAnalyzeScan}
         onDiffPreview={mergeDiffPreviewOpen}
+        onJumpToImprovementTarget={jumpToImprovementTarget}
+        activePreviewSuggestionId={activePreviewSuggestionId}
         highlightImprovementsAttention={improvementsAttentionPulse}
         onAtsKeywordAssist={handleAtsKeywordAssist}
         onRecruiterScan={() => void runRecruiterScan()}
@@ -3153,6 +3047,8 @@ export function CvClinicPageContent() {
     tripleRightTab,
     scoreCardMode,
     score.isLoading,
+    scoreInitialLoading,
+    scoreRefreshing,
     displayScoreValue,
     displayScoreBreakdown,
     displayScorePayload,
@@ -3173,6 +3069,8 @@ export function CvClinicPageContent() {
     onDismissSpellIssue,
     improvementsAttentionPulse,
     mergeDiffPreviewOpen,
+    activePreviewSuggestionId,
+    jumpToImprovementTarget,
     handleAtsKeywordAssist,
     runRecruiterScan,
     assistantBusy,
@@ -3198,13 +3096,13 @@ export function CvClinicPageContent() {
       >
         <FileText className="h-12 w-12 text-[#00C9B1]" />
         <h2 className="mt-4 text-2xl font-extrabold text-white">
-          You don&apos;t have a CV yet
+          You don&apos;t have a resume yet
         </h2>
         <p className="mt-2 max-w-md text-sm text-white/50">
-          Upload an existing CV or build one from scratch.
+          Upload an existing resume or build one from scratch.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Button onClick={() => setShowUpload(true)}>Upload my CV</Button>
+          <Button onClick={() => setShowUpload(true)}>Upload my resume</Button>
           <Button
             variant="ghost"
             className="border border-[rgba(0,201,177,0.35)]"
@@ -3313,9 +3211,7 @@ export function CvClinicPageContent() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
+    <div
       className="flex min-h-0 w-full min-w-0 max-w-full flex-col gap-1.5 pb-0 pt-0 max-lg:h-full max-lg:min-h-0 max-lg:flex-1 max-lg:gap-0 max-lg:overflow-hidden max-lg:px-0 md:-mt-2 lg:-mx-0 lg:h-full lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:pt-0"
     >
       <CreateCVProfileModal
@@ -3355,7 +3251,7 @@ export function CvClinicPageContent() {
               recruiterScanClarification
                 ? 'Recruiter Scan · role context'
                 : globalAssistantClarification
-                  ? 'Global assistant · entire CV or findings flow'
+                  ? 'Global assistant · entire resume or findings flow'
                   : assistantClarification
                     ? `Section assistant · ${assistantChangedFieldLabel(assistantClarification.targetSection)}`
                     : null
@@ -3430,8 +3326,8 @@ export function CvClinicPageContent() {
       <Modal
         open={renameOpen}
         onOpenChange={setRenameOpen}
-        title="Rename this CV"
-        description="Shown in your CV list and in the selector above (1–100 characters)."
+        title="Rename this resume"
+        description="Shown in your resume list and in the selector above (1–100 characters)."
         className="max-w-md"
       >
         <div className="space-y-3">
@@ -3441,7 +3337,7 @@ export function CvClinicPageContent() {
             onChange={(e) => setRenameValue(e.target.value)}
             maxLength={100}
             className="w-full rounded-xl border border-white/10 bg-[#111616] px-3 py-2.5 text-sm text-white outline-none focus:border-[#00C9B1]"
-            placeholder="e.g. Frontend engineer CV"
+            placeholder="e.g. Frontend engineer resume"
           />
           <div className="flex flex-wrap justify-end gap-2">
             <Button
@@ -3465,7 +3361,7 @@ export function CvClinicPageContent() {
                   { id: targetId, name },
                   {
                     onSuccess: () => {
-                      toast.success('CV renamed');
+                      toast.success('Resume renamed');
                       setRenameOpen(false);
                       void queryClient.invalidateQueries({
                         queryKey: queryKeys.cv.profiles(),
@@ -3506,19 +3402,6 @@ export function CvClinicPageContent() {
           }
         }}
         importSummary={parseImportSummaryModal.summary}
-        profileId={parseImportSummaryModal.profileId}
-        onReviewInBuilder={() => {
-          const id = parseImportSummaryModal.profileId?.trim();
-          setParseImportSummaryModal({
-            open: false,
-            summary: null,
-            profileId: null,
-            navigateOnClose: false,
-          });
-          if (id) {
-            router.replace(`/dashboard/cv?profileId=${encodeURIComponent(id)}`);
-          }
-        }}
         onContinue={() => {
           const { profileId, navigateOnClose } = parseImportSummaryModal;
           setParseImportSummaryModal({
@@ -3535,15 +3418,13 @@ export function CvClinicPageContent() {
             setCvServerHydrateNonce((n) => n + 1);
           }
         }}
-        continueLabel={
-          parseImportSummaryModal.navigateOnClose ? 'Open CV editor' : 'Done'
-        }
+        continueLabel="Open resume editor"
       />
 
       <Modal
         open={showReuploadModal}
         onOpenChange={setShowReuploadModal}
-        title="Re-upload your CV"
+        title="Re-upload your resume"
         description="Upload your resume again to re-extract experience, education, and skills."
         className="max-w-lg"
       >
@@ -3561,7 +3442,7 @@ export function CvClinicPageContent() {
             open={mobileCvToolsOpen}
             onOpenChange={setMobileCvToolsOpen}
             icon={SlidersHorizontal}
-            label="CV tools"
+            label="Resume tools"
             fabId="cv-tools"
             stackIndex={0}
           >
@@ -3622,17 +3503,31 @@ export function CvClinicPageContent() {
               </div>
               {tripleRightTab === 'analysis' ? (
                 !scoreInitialLoading && displayScoreValue != null ? (
-                  <CVScoreCard
-                    mode="compact"
-                    score={displayScoreValue}
-                    breakdown={displayScoreBreakdown}
-                    scorePayload={displayScorePayload}
-                    cvProfileId={targetId}
-                    pendingImprovements={improvementList}
-                    onDiffPreview={mergeDiffPreviewOpen}
-                    onScoreRefresh={refreshScoreAfterSuggestion}
-                    hideJobMatch
-                  />
+                  <div
+                    className={
+                      scoreRefreshing
+                        ? 'opacity-50 transition-opacity duration-200'
+                        : undefined
+                    }
+                  >
+                    {scoreRefreshing ? (
+                      <p className="mb-2 text-[10px] font-medium text-white/40">
+                        Updating score…
+                      </p>
+                    ) : null}
+                    <CVScoreCard
+                      mode="compact"
+                      score={displayScoreValue}
+                      breakdown={displayScoreBreakdown}
+                      scorePayload={displayScorePayload}
+                      cvProfileId={targetId}
+                      pendingImprovements={improvementList}
+                      onDiffPreview={mergeDiffPreviewOpen}
+                      onScoreRefresh={refreshScoreAfterSuggestion}
+                      activePreviewSuggestionId={activePreviewSuggestionId}
+                      hideJobMatch
+                    />
+                  </div>
                 ) : (
                   <p className="text-sm text-white/45">Calculating score…</p>
                 )
@@ -3642,6 +3537,8 @@ export function CvClinicPageContent() {
                   profileId={targetId}
                   acceptAllQuota={acceptAllQuota}
                   onDiffPreview={mergeDiffPreviewOpen}
+                  onJumpToTarget={jumpToImprovementTarget}
+                  activePreviewSuggestionId={activePreviewSuggestionId}
                 />
               )}
             </div>
@@ -3657,11 +3554,11 @@ export function CvClinicPageContent() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-[#F59E0B]">
-                Your CV was not fully extracted
+                Your resume was not fully extracted
               </p>
               <p className="mt-1 text-xs leading-relaxed text-white/55">
                 Experience, education, and other sections may be missing.
-                Re-upload your CV to extract all content correctly.
+                Re-upload your resume to extract all content correctly.
               </p>
             </div>
             <button
@@ -3669,7 +3566,7 @@ export function CvClinicPageContent() {
               onClick={() => setShowReuploadModal(true)}
               className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#00C9B1] px-4 py-2 text-[13px] font-semibold text-black transition hover:bg-[#00C4C5]"
             >
-              Re-upload CV
+              Re-upload resume
             </button>
           </div>
         </GlowCard>
@@ -3778,17 +3675,31 @@ export function CvClinicPageContent() {
                         {!scoreInitialLoading ? (
                           displayScoreValue !== null &&
                           displayScoreValue !== undefined ? (
-                            <CVScoreCard
-                              mode="compact"
-                              score={displayScoreValue}
-                              breakdown={displayScoreBreakdown}
-                              scorePayload={displayScorePayload}
-                              cvProfileId={targetId}
-                              pendingImprovements={improvementList}
-                              onDiffPreview={mergeDiffPreviewOpen}
-                              onScoreRefresh={refreshScoreAfterSuggestion}
-                              hideJobMatch
-                            />
+                            <div
+                              className={
+                                scoreRefreshing
+                                  ? 'opacity-50 transition-opacity duration-200'
+                                  : undefined
+                              }
+                            >
+                              {scoreRefreshing ? (
+                                <p className="mb-2 text-[10px] font-medium text-white/40">
+                                  Updating score…
+                                </p>
+                              ) : null}
+                              <CVScoreCard
+                                mode="compact"
+                                score={displayScoreValue}
+                                breakdown={displayScoreBreakdown}
+                                scorePayload={displayScorePayload}
+                                cvProfileId={targetId}
+                                pendingImprovements={improvementList}
+                                onDiffPreview={mergeDiffPreviewOpen}
+                                onScoreRefresh={refreshScoreAfterSuggestion}
+                                activePreviewSuggestionId={activePreviewSuggestionId}
+                                hideJobMatch
+                              />
+                            </div>
                           ) : (
                             <Button
                               type="button"
@@ -3824,7 +3735,7 @@ export function CvClinicPageContent() {
                               ) : (
                                 <>
                                   <Sparkles className="h-4 w-4" /> Analyze this
-                                  CV
+                                  Resume
                                 </>
                               )}
                             </Button>
@@ -3959,7 +3870,7 @@ export function CvClinicPageContent() {
                             </div>
                             {qualitySignals.isSpellChecking ? (
                               <p className="mt-2 text-[10px] text-white/40">
-                                Looking through your CV…
+                                Looking through your resume…
                               </p>
                             ) : (
                               <div className="mt-2 space-y-3">
@@ -4081,7 +3992,7 @@ export function CvClinicPageContent() {
                                   Spelling & grammar
                                 </p>
                                 <p className="mt-1 text-[11px] text-white/45">
-                                  Run Re-check to scan this CV for spelling and
+                                  Run Re-check to scan this resume for spelling and
                                   grammar. No issues right now.
                                 </p>
                               </div>
@@ -4103,6 +4014,8 @@ export function CvClinicPageContent() {
                           profileId={targetId}
                           acceptAllQuota={acceptAllQuota}
                           onDiffPreview={mergeDiffPreviewOpen}
+                          onJumpToTarget={jumpToImprovementTarget}
+                          activePreviewSuggestionId={activePreviewSuggestionId}
                         />
                       </>
                     )}
@@ -4114,11 +4027,11 @@ export function CvClinicPageContent() {
         </GlowCard>
       ) : null}
 
-      <motion.div className="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col max-lg:h-full max-lg:min-h-0 max-lg:overflow-hidden lg:max-h-[calc(100vh-52px)] lg:min-h-0 lg:overflow-hidden">
+      <div className="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col max-lg:h-full max-lg:min-h-0 max-lg:overflow-hidden lg:max-h-[calc(100vh-52px)] lg:min-h-0 lg:overflow-hidden">
         {targetId ? (
           <div className="hidden shrink-0 lg:block">{cvClinicToolbar}</div>
         ) : null}
-        <motion.div className="relative z-0 min-h-0 w-full min-w-0 flex-1 max-lg:flex max-lg:h-full max-lg:min-h-0 max-lg:flex-col max-lg:overflow-hidden lg:flex lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:flex-col">
+        <div className="relative z-0 min-h-0 w-full min-w-0 flex-1 max-lg:flex max-lg:h-full max-lg:min-h-0 max-lg:flex-col max-lg:overflow-hidden lg:flex lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:flex-col">
           {targetId && sectionOrderFlow.showProactiveBanner ? (
             <div className="mb-2 hidden shrink-0 px-1 lg:block">
               <CvSectionOrderProactiveBanner
@@ -4128,27 +4041,6 @@ export function CvClinicPageContent() {
                 onDismiss={sectionOrderFlow.dismissBanner}
               />
             </div>
-          ) : null}
-          {targetId ? (
-            <CvDiffActionsBusyContext.Provider
-              value={cvImprovementDiffActionsPending}
-            >
-              <CvGlobalAssistantReviewPanel
-                open={globalAssistantReviewOpen}
-                busy={cvImprovementDiffActionsPending}
-                busyLabel={assistantBusyMessage}
-                result={globalAssistantFullResult}
-                changedFields={globalAssistantChangedFieldsMemo}
-                onAcceptAll={() => void handleAcceptDiff()}
-                onRejectAll={() => void handleRejectDiff()}
-                onAcceptSection={(i) => void handleAcceptDiff(i)}
-                onRejectSection={(i) => void handleRejectDiff(i)}
-                onClose={() => {
-                  if (cvImprovementDiffActionsPending) return;
-                  clearAssistantPreview();
-                }}
-              />
-            </CvDiffActionsBusyContext.Provider>
           ) : null}
           {templateReady ? (
             <CVBuilder
@@ -4171,7 +4063,7 @@ export function CvClinicPageContent() {
               diffSection={
                 assistantScope === 'full_cv'
                   ? null
-                  : (diffPreview?.section ?? null)
+                  : cvDiffPreviewBuilderSection(diffPreview?.section ?? null)
               }
               diffMultiSection={
                 assistantScope === 'full_cv' &&
@@ -4187,6 +4079,7 @@ export function CvClinicPageContent() {
               onAcceptDiff={(changeIndex) => void handleAcceptDiff(changeIndex)}
               onRejectDiff={(changeIndex) => void handleRejectDiff(changeIndex)}
               diffActionsDisabled={cvImprovementDiffActionsPending}
+              isDiffOverlayOpen={isDiffOverlayOpen}
               tripleColumn={cvClinicTripleLayout}
               tripleColumnRightSlot={cvClinicTripleInsightsSlot}
               onSaveStatusChange={setBuilderSaveStatus}
@@ -4197,6 +4090,10 @@ export function CvClinicPageContent() {
               externalPatch={effectiveExternalPatch}
               externalPatchNonce={effectiveExternalPatchNonce}
               serverHydrateNonce={cvServerHydrateNonce}
+              serverHydratePreserveHistoryRef={serverHydratePreserveHistoryRef}
+              onImmediateSectionPatchReady={(patch) => {
+                immediateSectionPatchRef.current = patch;
+              }}
               onAiStructuredPersisted={() =>
                 setCvServerHydrateNonce((n) => n + 1)
               }
@@ -4212,15 +4109,18 @@ export function CvClinicPageContent() {
                 assistantAcceptHighlight?.nonce ?? 0
               }
               recruiterScanHeatmap={recruiterScanPanelOpen ? recruiterScanHeatmap : null}
+              spellcheckLanguage={spellcheckLanguage}
+              onUndoRedoReady={handleUndoRedoReady}
+              onHistoryApplied={handleHistoryApplied}
             />
           ) : (
             <div className="flex h-full min-h-0 items-center justify-center text-sm text-white/45">
               Loading template…
             </div>
           )}
-        </motion.div>
-      </motion.div>
-    </motion.div>
+        </div>
+      </div>
+    </div>
   );
 }
 
