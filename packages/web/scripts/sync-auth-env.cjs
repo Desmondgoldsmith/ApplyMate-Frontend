@@ -13,16 +13,16 @@ const AUTH_KEYS = [
   'NEXT_PUBLIC_API_URL',
 ];
 
-const NEXTAUTH_API_BASE_PATH = '/api/nextauth';
+const NEXTAUTH_API_BASE_PATH = '/api/auth';
 
-/** Match `normalizeNextAuthUrl` in ensure-env.ts — NextAuth defaults bare origins to /api/auth. */
+/** Match `normalizeNextAuthUrl` in ensure-env.ts — rewrite legacy `/api/nextauth` paths. */
 function normalizeNextAuthUrl(raw) {
   const value = raw?.trim();
   if (!value) return value;
   try {
     const url = new URL(value.startsWith('http') ? value : `https://${value}`);
     const path = url.pathname.replace(/\/$/, '') || '';
-    if (path === '' || path === '/' || path === '/api/auth') {
+    if (path === '' || path === '/' || path === '/api/nextauth') {
       return `${url.origin}${NEXTAUTH_API_BASE_PATH}`;
     }
     return value;

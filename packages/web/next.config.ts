@@ -23,8 +23,16 @@ const nextConfig: NextConfig = {
    * (timeout + clean 502 JSON). Do not rewrite here — Next rewrites log noisy ECONNRESET
    * when Nest hangs or restarts mid-request.
    */
+  /**
+   * Legacy `/api/nextauth/*` URLs (old deploys, bookmarks) → canonical NextAuth routes.
+   */
   async rewrites() {
-    return [];
+    return [
+      {
+        source: '/api/nextauth/:path*',
+        destination: '/api/auth/:path*',
+      },
+    ];
   },
 };
 
