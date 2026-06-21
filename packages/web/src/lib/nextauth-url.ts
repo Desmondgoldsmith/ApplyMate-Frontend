@@ -1,24 +1,46 @@
 import { NEXTAUTH_API_BASE_PATH } from '@/lib/nextauth-api';
 import { normalizeNextAuthUrl } from '@/lib/server/ensure-env';
 
+function resolveNextAuthBaseFromEnv(): string | null {
+  const raw = process.env.NEXTAUTH_URL?.trim();
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    const path = url.pathname.replace(/\/$/, '') || '';
+    if (path === NEXTAUTH_API_BASE_PATH) {
+      return `${url.origin}${NEXTAUTH_API_BASE_PATH}`;
+    }
+    if (path === '' || path === '/') {
+      return `${url.origin}${NEXTAUTH_API_BASE_PATH}`;
+    }
+    return raw.replace(/\/$/, '');
+  } catch {
+    return null;
+  }
+}
+
 /** Canonical NextAuth base URL, e.g. `https://app.example.com/api/auth`. */
 export function getNextAuthBaseUrl(): string {
   normalizeNextAuthUrl();
-  const raw = process.env.NEXTAUTH_URL?.trim();
-  if (raw) {
+  const fromEnv = resolveNextAuthBaseFromEnv();
+  if (fromEnv) {
     try {
-      const url = new URL(raw);
-      const path = url.pathname.replace(/\/$/, '') || '';
-      if (path === NEXTAUTH_API_BASE_PATH) {
-        return `${url.origin}${NEXTAUTH_API_BASE_PATH}`;
+      const configured = new URL(fromEnv);
+      const vercelHost = process.env.VERCEL_URL?.trim();
+      const isLocalhost =
+        configured.hostname === 'localhost' ||
+        configured.hostname === '127.0.0.1';
+      if (process.env.VERCEL && vercelHost && isLocalhost) {
+        return `https://${vercelHost}${NEXTAUTH_API_BASE_PATH}`;
       }
-      if (path === '' || path === '/') {
-        return `${url.origin}${NEXTAUTH_API_BASE_PATH}`;
-      }
-      return raw.replace(/\/$/, '');
+      return fromEnv;
     } catch {
-      /* fall through */
+      return fromEnv;
     }
+  }
+  const vercelHost = process.env.VERCEL_URL?.trim();
+  if (process.env.VERCEL && vercelHost) {
+    return `https://${vercelHost}${NEXTAUTH_API_BASE_PATH}`;
   }
   return `http://localhost:3001${NEXTAUTH_API_BASE_PATH}`;
 }

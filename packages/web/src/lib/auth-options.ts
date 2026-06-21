@@ -5,11 +5,15 @@ import GoogleProvider from 'next-auth/providers/google';
 
 import { getNextAuthBaseUrl } from '@/lib/nextauth-url';
 
+function trimmedEnv(key: string): string {
+  return process.env[key]?.trim() ?? '';
+}
+
 export function isGoogleAuthConfigured(): boolean {
   return Boolean(
-    process.env.GOOGLE_CLIENT_ID?.trim() &&
-    process.env.GOOGLE_CLIENT_SECRET?.trim() &&
-    process.env.NEXTAUTH_SECRET?.trim(),
+    trimmedEnv('GOOGLE_CLIENT_ID') &&
+    trimmedEnv('GOOGLE_CLIENT_SECRET') &&
+    trimmedEnv('NEXTAUTH_SECRET'),
   );
 }
 
@@ -26,13 +30,13 @@ export function getAuthOptions(): NextAuthOptions {
   })();
 
   return {
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: trimmedEnv('NEXTAUTH_SECRET'),
     debug: process.env.NODE_ENV === 'development',
     providers: isGoogleAuthConfigured()
       ? [
           GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID ?? '',
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+            clientId: trimmedEnv('GOOGLE_CLIENT_ID'),
+            clientSecret: trimmedEnv('GOOGLE_CLIENT_SECRET'),
             /**
              * PKCE cookies often fail on Vercel/serverless (OAuthCallback after account pick).
              * Confidential web client + client secret — state check alone is sufficient.

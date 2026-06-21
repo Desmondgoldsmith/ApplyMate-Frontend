@@ -1,14 +1,14 @@
 import { createRequire } from 'node:module';
 import path from 'node:path';
 
+import { NEXTAUTH_API_BASE_PATH } from '@/lib/nextauth-api';
 import { getNextAuthBaseUrl } from '@/lib/nextauth-url';
 
 let patched = false;
 
 /**
- * On Vercel, NextAuth `detectOrigin()` returns the host only. When `NEXTAUTH_URL`
- * includes `/api/auth`, prefer that full value so authorize + token exchange use
- * the same redirect_uri as Google Cloud Console.
+ * On Vercel, NextAuth `detectOrigin()` returns the host only (ignores `NEXTAUTH_URL`).
+ * Always prefer our canonical base so authorize + token exchange share the same redirect_uri.
  */
 export function patchNextAuthDetectOrigin(): void {
   if (patched) return;
@@ -25,19 +25,17 @@ export function patchNextAuthDetectOrigin(): void {
     mod.detectOrigin = (forwardedHost?: string, protocol?: string) => {
       const configured = getNextAuthBaseUrl();
       try {
-        const parsed = new URL(configured);
-        if (parsed.pathname.replace(/\/$/, '') === '/api/auth') {
-          return configured;
-        }
+        new URL(configured);
+        return configured;
       } catch {
         /* fall through */
       }
       const proto = protocol === 'http' ? 'http' : 'https';
       const host = forwardedHost?.split(',')[0]?.trim();
-      if (host) return `${proto}://${host}/api/auth`;
+      if (host) return `${proto}://${host}${NEXTAUTH_API_BASE_PATH}`;
       return native(forwardedHost, protocol);
     };
   } catch {
-    /* Non-fatal — default detectOrigin still works when NEXTAUTH_URL path is /api/auth */
+    /* Non-fatal — parseUrl() still defaults pathname `/` to /api/auth */
   }
 }

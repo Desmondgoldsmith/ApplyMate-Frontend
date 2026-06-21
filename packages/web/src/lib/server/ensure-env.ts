@@ -14,7 +14,28 @@ declare global {
  * Handlers live at `/api/auth` (NextAuth default). On Vercel, `detectOrigin()` uses the
  * host only — a custom `/api/nextauth` base caused redirect_uri_mismatch in production.
  */
+/** Strip accidental whitespace/quotes from auth secrets (common Vercel copy-paste issue). */
+export function normalizeAuthSecrets(): void {
+  for (const key of [
+    'NEXTAUTH_SECRET',
+    'GOOGLE_CLIENT_ID',
+    'GOOGLE_CLIENT_SECRET',
+  ] as const) {
+    const raw = process.env[key];
+    if (typeof raw !== 'string') continue;
+    let value = raw.trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1).trim();
+    }
+    if (value) process.env[key] = value;
+  }
+}
+
 export function normalizeNextAuthUrl(): void {
+  normalizeAuthSecrets();
   const raw = process.env.NEXTAUTH_URL?.trim();
   if (!raw) return;
   try {
