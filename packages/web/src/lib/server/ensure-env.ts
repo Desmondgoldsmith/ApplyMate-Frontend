@@ -12,7 +12,8 @@ declare global {
 /**
  * NextAuth v4 `parseUrl()` treats a bare origin (`http://localhost:3001`) as `/api/auth`.
  * Our handlers live at `/api/nextauth`, so NEXTAUTH_URL must include that path or Google
- * gets `redirect_uri_mismatch`.
+ * gets `redirect_uri_mismatch`. On Vercel, `detectOrigin()` also ignores the path unless
+ * patched via `patchNextAuthDetectOrigin()`.
  */
 export function normalizeNextAuthUrl(): void {
   const raw = process.env.NEXTAUTH_URL?.trim();
