@@ -21,6 +21,9 @@ export function middleware(request: NextRequest) {
   }
 
   if (hasAuth && (pathname === '/login' || pathname === '/register')) {
+    if (request.nextUrl.searchParams.has('error')) {
+      return NextResponse.next();
+    }
     const dashboardUrl = new URL('/dashboard', request.url);
     return NextResponse.redirect(dashboardUrl);
   }

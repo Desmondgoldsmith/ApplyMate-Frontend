@@ -60,12 +60,10 @@ export const DEV_BROWSER_API_PREFIX = '/backend-api/';
 
 function resolveApiBaseUrl(): string {
   const absolute = resolveAbsoluteApiBaseUrl();
-  // Dev browser: same-origin proxy avoids CORS to :3000. Must not use `/api/` — NextAuth lives there.
+  // Dev browser: same-origin proxy avoids CORS to :3000. Works for localhost and ngrok
+  // tunnels pointing at this Next dev server — do not call localhost:3000 from a remote origin.
   if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-    const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') {
-      return DEV_BROWSER_API_PREFIX;
-    }
+    return DEV_BROWSER_API_PREFIX;
   }
   return absolute;
 }

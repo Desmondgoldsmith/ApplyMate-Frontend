@@ -111,6 +111,19 @@ export async function tryRestoreSessionFromApiCookie(): Promise<boolean> {
     const exp = decodeJwtExp(token);
     if (exp == null || exp * 1000 > Date.now() + 30_000) {
       useAuthStore.getState().hydrateFromStorage();
+      const state = useAuthStore.getState();
+      if (state.isAuthenticated && !state.user?.id) {
+        try {
+          const { api } = await import('@/lib/api');
+          const user = await api.users.me();
+          useAuthStore
+            .getState()
+            .setAuth(user, token, state.refreshToken ?? readApplymateRefreshTokenFromCookie());
+        } catch {
+          useAuthStore.getState().clearAuth({ skipBroadcast: true });
+          return false;
+        }
+      }
       return useAuthStore.getState().isAuthenticated;
     }
   }

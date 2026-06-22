@@ -14,6 +14,7 @@ import { Sidebar } from '@/components/dashboard/Sidebar';
 import { AppShellBackdrop } from '@/components/layout/AppShellBackdrop';
 import { LocationBootstrap } from '@/components/location/LocationBootstrap';
 import { FeatureTour } from '@/components/onboarding/FeatureTour';
+import { DashboardOnboardingGate } from '@/components/dashboard/DashboardOnboardingGate';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export function DashboardShell({ children }: { children: ReactNode }) {
@@ -21,6 +22,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   return (
     <div className="relative flex h-screen min-h-0 overflow-hidden bg-transparent">
       <FunnelPageAnalytics surface="dashboard" />
+      <DashboardOnboardingGate />
       <AppShellBackdrop />
       <Sidebar />
       <BreadcrumbProvider>
