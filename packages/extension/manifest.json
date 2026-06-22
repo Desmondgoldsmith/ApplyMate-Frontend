@@ -22,7 +22,11 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["src/content/detector.ts", "src/content/job-bridge.ts"],
+      "js": [
+        "src/content/web-auth-bridge.ts",
+        "src/content/detector.ts",
+        "src/content/job-bridge.ts"
+      ],
       "run_at": "document_start"
     }
   ],

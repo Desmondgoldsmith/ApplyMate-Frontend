@@ -1,3 +1,7 @@
+import { getApiBaseUrl } from '@/lib/axios';
+import { ngrokSkipHeaders } from '@/lib/ngrokTunnel';
+import { readNormalizedPublicApiUrl } from '@/lib/publicApiUrl';
+
 type ChromeRuntime = {
   sendMessage: (
     extensionId: string,
@@ -13,17 +17,29 @@ type ApiEnvelope<T> = {
   error?: { message?: string } | null;
 };
 
-const EXTENSION_ID_SESSION_KEY = 'applymate:extension-id';
+export const EXTENSION_ID_SESSION_KEY = 'applymate:extension-id';
+
+/** Content script → page: extension is installed on this browser. */
+export const APPLYMATE_EXTENSION_PRESENT_EVENT = 'applymate-extension-present';
 
 function resolveExtensionId(): string | null {
   const fromEnv = process.env.NEXT_PUBLIC_EXTENSION_ID?.trim();
   if (fromEnv) return fromEnv;
   if (typeof window === 'undefined') return null;
   try {
-    return window.sessionStorage.getItem(EXTENSION_ID_SESSION_KEY)?.trim() || null;
+    const fromSession = window.sessionStorage.getItem(EXTENSION_ID_SESSION_KEY)?.trim();
+    if (fromSession) return fromSession;
+    const fromUrl = new URLSearchParams(window.location.search)
+      .get('extensionId')
+      ?.trim();
+    if (fromUrl) {
+      rememberExtensionId(fromUrl);
+      return fromUrl;
+    }
   } catch {
-    return null;
+    /* ignore */
   }
+  return null;
 }
 
 export function rememberExtensionId(extensionId: string): void {
@@ -44,11 +60,37 @@ export function forgetExtensionId(): void {
   }
 }
 
+/** Read `?extensionId=` from the current URL (extension login handoff). */
+export function captureExtensionIdFromUrl(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const fromUrl = new URLSearchParams(window.location.search)
+      .get('extensionId')
+      ?.trim();
+    if (fromUrl) {
+      rememberExtensionId(fromUrl);
+      return fromUrl;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
 function readChromeRuntime(): ChromeRuntime | null {
   if (typeof window === 'undefined') return null;
   const runtime = (window as Window & { chrome?: { runtime?: ChromeRuntime } }).chrome
     ?.runtime;
   return runtime ?? null;
+}
+
+function resolveExtensionHandoffApiUrl(path: string): string {
+  const base = getApiBaseUrl().replace(/\/$/, '');
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  if (base.startsWith('http://') || base.startsWith('https://')) {
+    return `${base}${normalizedPath}`;
+  }
+  return `${base}${normalizedPath}`;
 }
 
 /** After web login, mint and pass extension JWT when ?source=extension. */
@@ -60,6 +102,7 @@ export async function handoffExtensionTokenIfRequested(
   const params = new URLSearchParams(window.location.search);
   if (params.get('source') !== 'extension') return;
 
+  captureExtensionIdFromUrl();
   await handoffExtensionTokenIfInstalled(accessToken);
 }
 
@@ -98,16 +141,16 @@ export async function handoffExtensionTokenIfInstalled(
   if (!runtime) return false;
 
   try {
-    const apiBase = (
-      process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api/'
-    ).replace(/\/$/, '');
-
-    const res = await fetch(`${apiBase}/auth/extension-token`, {
+    const res = await fetch(resolveExtensionHandoffApiUrl('/auth/extension-token'), {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
+      credentials: 'include',
+      headers: ngrokSkipHeaders(
+        {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        readNormalizedPublicApiUrl(),
+      ),
     });
 
     const body = (await res.json()) as ApiEnvelope<{

@@ -71,6 +71,8 @@ VITE_WEB_LOGIN_URL=http://localhost:3001/login?source=extension
 
 After `npm run build`, reload the extension at `chrome://extensions` (load **`dist/`**).
 
+**Production / Vercel web:** set the three `VITE_*` vars to your Vercel URL and API URL, rebuild, and reload the extension. The content script announces the extension id to open dashboard tabs so login sync works without a shared `NEXT_PUBLIC_EXTENSION_ID`. You still need `https://your-vercel-app/*` in `manifest.json` → `externally_connectable`.
+
 ## Env
 
 | Variable | Default |

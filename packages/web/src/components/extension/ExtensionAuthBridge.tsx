@@ -4,8 +4,11 @@ import { useEffect, useRef } from 'react';
 
 import { isPublicAuthPath } from '@/lib/authSync';
 import {
+  APPLYMATE_EXTENSION_PRESENT_EVENT,
+  captureExtensionIdFromUrl,
   clearExtensionTokenIfInstalled,
   handoffExtensionTokenIfInstalled,
+  rememberExtensionId,
 } from '@/lib/extensionAuthHandoff';
 import { tryRestoreSessionFromApiCookie } from '@/lib/authRefresh';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -20,6 +23,30 @@ export function ExtensionAuthBridge() {
   const lastHandoff = useRef<string | null>(null);
   const restoreAttempted = useRef(false);
   const wasAuthenticated = useRef(false);
+
+  useEffect(() => {
+    captureExtensionIdFromUrl();
+  }, []);
+
+  useEffect(() => {
+    const onExtensionPresent = (event: Event) => {
+      const extensionId = (event as CustomEvent<{ extensionId?: string }>).detail
+        ?.extensionId?.trim();
+      if (!extensionId) return;
+      rememberExtensionId(extensionId);
+
+      const token = useAuthStore.getState().accessToken?.trim();
+      if (!useAuthStore.getState().isAuthenticated || !token) return;
+      if (lastHandoff.current === token) return;
+      lastHandoff.current = token;
+      void handoffExtensionTokenIfInstalled(token);
+    };
+
+    window.addEventListener(APPLYMATE_EXTENSION_PRESENT_EVENT, onExtensionPresent);
+    return () => {
+      window.removeEventListener(APPLYMATE_EXTENSION_PRESENT_EVENT, onExtensionPresent);
+    };
+  }, []);
 
   useEffect(() => {
     if (restoreAttempted.current || isAuthenticated || isPublicAuthPath()) return;

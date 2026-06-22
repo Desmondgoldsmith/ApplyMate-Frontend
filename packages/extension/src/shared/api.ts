@@ -83,6 +83,28 @@ function resolveApiBase(raw: string | undefined): string {
 
 const API_BASE = resolveApiBase(import.meta.env.VITE_API_URL);
 
+const NGROK_SKIP_BROWSER_WARNING_HEADER = 'ngrok-skip-browser-warning';
+
+function isNgrokFreeTunnel(baseUrl: string): boolean {
+  try {
+    const host = new URL(baseUrl, 'http://localhost').hostname.toLowerCase();
+    return host.endsWith('.ngrok-free.app') || host.endsWith('.ngrok-free.dev');
+  } catch {
+    return false;
+  }
+}
+
+function extensionApiHeaders(extra?: HeadersInit): Headers {
+  const headers = new Headers(extra);
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+  if (isNgrokFreeTunnel(API_BASE)) {
+    headers.set(NGROK_SKIP_BROWSER_WARNING_HEADER, 'true');
+  }
+  return headers;
+}
+
 function resolveRequestUrl(path: string): string {
   const url = `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
   try {
@@ -138,11 +160,10 @@ export async function apiFetch<T>(path: string, options?: ApiFetchOptions): Prom
   const token = await getToken();
   const res = await fetch(resolveRequestUrl(path), {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
+    headers: extensionApiHeaders({
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options?.headers,
-    },
+    }),
   });
 
   if (res.status === 401) {
@@ -765,10 +786,9 @@ export const authApi = {
     const res = await fetch(resolveRequestUrl('/auth/extension-token'), {
       method: 'POST',
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
+      headers: extensionApiHeaders({
         Authorization: `Bearer ${accessToken}`,
-      },
+      }),
     });
     return parseApiEnvelope<ExtensionAuthPayload>(res);
   },
@@ -778,7 +798,7 @@ export const authApi = {
     const res = await fetch(resolveRequestUrl('/auth/extension/sync'), {
       method: 'GET',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers: extensionApiHeaders(),
     });
     return parseApiEnvelope<ExtensionAuthPayload>(res);
   },

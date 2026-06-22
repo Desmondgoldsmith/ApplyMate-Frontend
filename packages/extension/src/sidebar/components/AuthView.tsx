@@ -1,5 +1,21 @@
-const LOGIN_URL =
+const LOGIN_URL_BASE =
   import.meta.env.VITE_WEB_LOGIN_URL ?? 'http://localhost:3001/login?source=extension';
+
+function buildLoginUrl(): string {
+  try {
+    const url = new URL(LOGIN_URL_BASE);
+    if (!url.searchParams.has('source')) {
+      url.searchParams.set('source', 'extension');
+    }
+    const extensionId = chrome.runtime?.id?.trim();
+    if (extensionId) {
+      url.searchParams.set('extensionId', extensionId);
+    }
+    return url.toString();
+  } catch {
+    return LOGIN_URL_BASE;
+  }
+}
 
 type AuthViewProps = {
   onRefresh: () => Promise<void>;
@@ -23,7 +39,7 @@ export function AuthView({ onRefresh }: AuthViewProps) {
             type="button"
             className="mt-4 w-full rounded-control bg-am-primary px-5 py-3 text-[14px] font-semibold text-am-bg transition hover:bg-am-primary-hover"
             onClick={() => {
-              void chrome.tabs.create({ url: LOGIN_URL });
+              void chrome.tabs.create({ url: buildLoginUrl() });
             }}
           >
             Log in to ApplyMate
