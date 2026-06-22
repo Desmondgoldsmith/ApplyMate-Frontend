@@ -1,10 +1,10 @@
 import { isNgrokFreeTunnel } from '@/lib/ngrokTunnel';
+import { readNormalizedPublicApiUrl } from '@/lib/publicApiUrl';
 
-/** Nest API origin for local dev proxy (`/backend-api/*` → upstream `/api/*`). */
+/** Nest API origin for dev / Vercel proxy (`/backend-api/*` → upstream `/api/*`). */
 export function resolveNestApiOrigin(): string {
-  const raw = process.env.NEXT_PUBLIC_API_URL?.trim() || 'http://localhost:3000/api/';
   try {
-    return new URL(raw).origin;
+    return new URL(readNormalizedPublicApiUrl()).origin;
   } catch {
     return 'http://localhost:3000';
   }
@@ -12,14 +12,17 @@ export function resolveNestApiOrigin(): string {
 
 /** True when `NEXT_PUBLIC_API_URL` points at a free ngrok tunnel (needs skip header on server proxy). */
 export function isDevBackendNgrokTunnel(): boolean {
-  const raw = process.env.NEXT_PUBLIC_API_URL?.trim();
-  return Boolean(raw && isNgrokFreeTunnel(raw));
+  return isNgrokFreeTunnel(readNormalizedPublicApiUrl());
 }
 
 export function devBackendProxyUnreachableMessage(): string {
-  const raw = process.env.NEXT_PUBLIC_API_URL?.trim() || 'http://localhost:3000/api/';
-  if (isNgrokFreeTunnel(raw)) {
-    return `Cannot reach the API via ngrok (${raw}). Confirm \`ngrok http 3000\` is running, Nest is on port 3000, and NEXT_PUBLIC_API_URL has no spaces (e.g. https://YOUR.ngrok-free.dev/api/).`;
+  const raw = process.env.NEXT_PUBLIC_API_URL ?? '';
+  const normalized = readNormalizedPublicApiUrl();
+  if (raw.replace(/\s+/g, '') !== normalized.replace(/\s+/g, '')) {
+    return `NEXT_PUBLIC_API_URL looks malformed (remove spaces). Use exactly: ${normalized}`;
+  }
+  if (isNgrokFreeTunnel(normalized)) {
+    return `Cannot reach the API via ngrok (${normalized}). Confirm ngrok http 3000 is running, Nest is on port 3000, and CORS_ORIGIN=https://apply-mate-frontend.vercel.app on Nest.`;
   }
   return 'Cannot reach the API server. Confirm Nest is running on port 3000 (or your NEXT_PUBLIC_API_URL) and try again.';
 }

@@ -3,7 +3,9 @@ import { ensureServerEnv } from '@/lib/server/ensure-env';
 import { NextResponse } from 'next/server';
 
 import { isGoogleAuthConfigured } from '@/lib/auth-options';
-import { API_BASE_URL } from '@/lib/axios';
+import { getApiBaseUrl } from '@/lib/axios';
+import { readNormalizedPublicApiUrl } from '@/lib/publicApiUrl';
+import { isNgrokFreeTunnel, ngrokSkipHeaders } from '@/lib/ngrokTunnel';
 import { NEXTAUTH_API_BASE_PATH } from '@/lib/nextauth-api';
 import {
   getGoogleOAuthRedirectUri,
@@ -23,6 +25,25 @@ export async function GET() {
   const hasSecret = Boolean(process.env.GOOGLE_CLIENT_SECRET?.trim());
   const secretLooksValid =
     hasSecret && (process.env.GOOGLE_CLIENT_SECRET?.trim().length ?? 0) >= 20;
+  const normalizedApiUrl = readNormalizedPublicApiUrl();
+  const rawApiUrl = process.env.NEXT_PUBLIC_API_URL ?? null;
+  const apiUrlHadWhitespace =
+    typeof rawApiUrl === 'string' && rawApiUrl.replace(/\s+/g, '') !== rawApiUrl.trim().replace(/\s+/g, '');
+
+  let apiReachable: boolean | null = null;
+  let apiReachableNote: string | null = null;
+  try {
+    const probe = await fetch(`${normalizedApiUrl}auth/login`, {
+      method: 'OPTIONS',
+      headers: ngrokSkipHeaders({ Accept: 'application/json' }, normalizedApiUrl),
+      signal: AbortSignal.timeout(8000),
+    });
+    apiReachable = probe.status < 500;
+    apiReachableNote = `OPTIONS auth/login → HTTP ${probe.status}`;
+  } catch {
+    apiReachable = false;
+    apiReachableNote = 'Could not reach Nest via NEXT_PUBLIC_API_URL (ngrok down, wrong URL, or Nest not running).';
+  }
 
   return NextResponse.json({
     googleAuthConfigured: isGoogleAuthConfigured(),
@@ -51,7 +72,14 @@ export async function GET() {
         'https://apply-mate-frontend.vercel.app/api/auth/callback/google',
       ],
     },
-    apiBaseUrl: API_BASE_URL,
+    apiBaseUrl: getApiBaseUrl(),
+    normalizedApiUrl,
+    apiUrlHadWhitespace,
+    vercelNgrokBrowserProxy:
+      process.env.NEXT_PUBLIC_USE_NGROK_TUNNEL?.trim().toLowerCase() === 'true' &&
+      isNgrokFreeTunnel(normalizedApiUrl),
+    apiReachable,
+    apiReachableNote,
     hint: isGoogleAuthConfigured()
       ? `Register expectedGoogleRedirectUri on the SAME OAuth client as googleClientIdFingerprint. On Nest, set GOOGLE_CLIENT_ID to the same Web client ID as the frontend (see backendMustUseSameGoogleClientId). Production "token verification failed" = backend GOOGLE_CLIENT_ID mismatch.`
       : 'Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_SECRET in repo root .env, run npm run dev (syncs to packages/web/.env.local), then restart.',

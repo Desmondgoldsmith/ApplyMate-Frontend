@@ -4,6 +4,7 @@ import path from 'node:path';
 import { loadEnvConfig } from '@next/env';
 
 import { NEXTAUTH_API_BASE_PATH } from '@/lib/nextauth-api';
+import { normalizePublicApiUrl } from '@/lib/publicApiUrl';
 
 declare global {
   var __applymateServerEnvLoaded: boolean | undefined;
@@ -32,18 +33,8 @@ export function normalizeAuthSecrets(): void {
       value = value.slice(1, -1).trim();
     }
     if (key === 'NEXT_PUBLIC_API_URL' && value) {
-      try {
-        const url = new URL(value);
-        const path = url.pathname.replace(/\/$/, '') || '';
-        value =
-          path === '' || path === '/'
-            ? `${url.origin}/api/`
-            : value.endsWith('/')
-              ? value
-              : `${value}/`;
-      } catch {
-        /* keep trimmed value */
-      }
+      process.env[key] = normalizePublicApiUrl(value);
+      continue;
     }
     if (value) process.env[key] = value;
   }

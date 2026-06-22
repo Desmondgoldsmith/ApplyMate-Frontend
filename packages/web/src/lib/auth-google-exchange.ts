@@ -3,8 +3,9 @@ import {
   normalizeAuthResponse,
 } from '@/lib/auth-response';
 import type { AuthUser } from '@/lib/api';
-import { API_BASE_URL } from '@/lib/axios';
+import { getApiBaseUrl } from '@/lib/axios';
 import { GoogleAuthExchangeError } from '@/lib/google-auth-exchange-error';
+import { readNormalizedPublicApiUrl } from '@/lib/publicApiUrl';
 import { ngrokSkipHeaders } from '@/lib/ngrokTunnel';
 
 export { GoogleAuthExchangeError };
@@ -79,15 +80,16 @@ export async function exchangeGoogleIdTokenWithBackend(
   payload: GoogleAuthPayload,
 ): Promise<{ accessToken: string; refreshToken?: string; user: AuthUser }> {
   let res: Response;
+  const apiBase = getApiBaseUrl();
   try {
-    res = await fetch(`${API_BASE_URL}auth/google`, {
+    res = await fetch(`${apiBase}auth/google`, {
       method: 'POST',
       headers: ngrokSkipHeaders(
         {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
-        API_BASE_URL,
+        readNormalizedPublicApiUrl(),
       ),
       body: JSON.stringify({
         idToken: payload.idToken,
@@ -99,7 +101,7 @@ export async function exchangeGoogleIdTokenWithBackend(
     });
   } catch {
     throw new GoogleAuthExchangeError(
-      `Cannot reach API at ${API_BASE_URL}auth/google — is the backend running?`,
+      `Cannot reach API at ${getApiBaseUrl()}auth/google — is the backend running?`,
       503,
     );
   }

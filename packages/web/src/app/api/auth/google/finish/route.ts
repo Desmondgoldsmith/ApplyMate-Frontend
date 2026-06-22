@@ -17,7 +17,8 @@ import {
   parseGoogleOAuthIntent,
   type GoogleOAuthIntent,
 } from '@/lib/google-oauth-intent';
-import { API_BASE_URL } from '@/lib/axios';
+import { getApiBaseUrl } from '@/lib/axios';
+import { decodeGoogleIdTokenClaims } from '@/lib/google-id-token-claims';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -115,11 +116,18 @@ export async function GET(request: NextRequest) {
     if (err instanceof GoogleAuthExchangeError) {
       reason = err.message;
       if (err.statusCode === 401) {
-        const fp = process.env.GOOGLE_CLIENT_ID?.trim();
-        const idHint = fp
-          ? `Nest GOOGLE_CLIENT_ID must be exactly: ${fp}`
-          : 'Nest GOOGLE_CLIENT_ID must match the frontend OAuth Web client ID.';
-        reason = `${err.message} — ${idHint}`;
+        const vercelClientId = process.env.GOOGLE_CLIENT_ID?.trim();
+        const claims = decodeGoogleIdTokenClaims(idToken);
+        const aud = claims?.aud?.trim();
+        if (aud && vercelClientId && aud !== vercelClientId) {
+          reason = `${err.message} — Token audience (${aud.slice(0, 14)}…) does not match Vercel GOOGLE_CLIENT_ID (${vercelClientId.slice(0, 14)}…). Fix Vercel env to use your Web OAuth client.`;
+        } else if (aud && vercelClientId && aud === vercelClientId) {
+          reason = `${err.message} — Token audience matches Vercel GOOGLE_CLIENT_ID. Restart Nest after env changes, confirm Nest can reach Google, and check API logs (not a frontend client-id mismatch).`;
+        } else if (vercelClientId) {
+          reason = `${err.message} — Nest GOOGLE_CLIENT_ID must be exactly: ${vercelClientId}`;
+        } else {
+          reason = `${err.message} — Nest GOOGLE_CLIENT_ID must match the frontend OAuth Web client ID.`;
+        }
       }
       if (err.statusCode === 404 && intent === 'login') {
         reason =
@@ -129,7 +137,7 @@ export async function GET(request: NextRequest) {
       reason = err.message;
     }
     if (!reason?.trim()) {
-      reason = `Cannot reach API at ${API_BASE_URL}auth/google`;
+      reason = `Cannot reach API at ${getApiBaseUrl()}auth/google`;
     }
     return authPageRedirect(request, intent, code, reason);
   }

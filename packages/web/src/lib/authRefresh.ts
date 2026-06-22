@@ -18,7 +18,7 @@ import {
   subscribeAuthTokensUpdated,
 } from '@/lib/authSync';
 import type { ErrorBody } from '@/lib/axios';
-import { API_BASE_URL, axiosClient, throwIfApiFailureResponse } from '@/lib/axios';
+import { API_BASE_URL, axiosClient, getApiBaseUrl, throwIfApiFailureResponse } from '@/lib/axios';
 import { useAuthStore } from '@/store/useAuthStore';
 
 /** Refresh ~2 minutes before JWT `exp`. */
@@ -142,7 +142,7 @@ async function postRefresh(refreshToken: string) {
     { refreshToken },
     {
       skipAuthRefresh: true,
-      baseURL: API_BASE_URL,
+      baseURL: getApiBaseUrl(),
     },
   );
   throwIfApiFailureResponse(res.data, res.status);

@@ -1,3 +1,5 @@
+import { readNormalizedPublicApiUrl } from '@/lib/publicApiUrl';
+
 /** ngrok free tier serves an HTML interstitial unless this header is sent (ERR_NGROK_6024). */
 export const NGROK_SKIP_BROWSER_WARNING_HEADER = 'ngrok-skip-browser-warning';
 
@@ -15,7 +17,7 @@ export function isNgrokFreeTunnel(baseUrl: string): boolean {
  * Production + real API host → never. Vercel + ngrok → set `NEXT_PUBLIC_USE_NGROK_TUNNEL=true`.
  */
 export function shouldSendNgrokSkipHeader(apiBaseUrl?: string): boolean {
-  const base = (apiBaseUrl ?? process.env.NEXT_PUBLIC_API_URL ?? '').trim();
+  const base = apiBaseUrl ?? readNormalizedPublicApiUrl();
   if (!base || !isNgrokFreeTunnel(base)) return false;
 
   const flag = process.env.NEXT_PUBLIC_USE_NGROK_TUNNEL?.trim().toLowerCase();
@@ -47,7 +49,7 @@ export function applyNgrokSkipHeaders(
   config: { headers?: AxiosLikeHeaders; baseURL?: string },
   apiBaseUrl?: string,
 ): void {
-  const configuredApi = process.env.NEXT_PUBLIC_API_URL?.trim() ?? '';
+  const configuredApi = readNormalizedPublicApiUrl();
   const base = config.baseURL ?? apiBaseUrl ?? configuredApi;
   // Dev browser uses `/backend-api/` — check the real upstream URL for ngrok.
   const ngrokCheckTarget =

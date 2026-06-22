@@ -21,6 +21,11 @@ import {
 } from '@/lib/devBackendProxy';
 import { applyNgrokSkipHeaders } from '@/lib/ngrokTunnel';
 import {
+  normalizePublicApiUrl,
+  readNormalizedPublicApiUrl,
+  shouldUseProductionNgrokBrowserProxy,
+} from '@/lib/publicApiUrl';
+import {
   readRequestIdFromHeaders,
   setLastRequestId,
 } from '@/lib/observability/requestId';
@@ -43,11 +48,7 @@ function readAccessTokenFromMemory(): string | undefined {
  * If the frontend is on :3001 and the API on :3000, the API must allow CORS for :3001.
  */
 function resolveAbsoluteApiBaseUrl(): string {
-  const fromEnv = process.env.NEXT_PUBLIC_API_URL?.trim();
-  if (fromEnv) {
-    return fromEnv.endsWith('/') ? fromEnv : `${fromEnv}/`;
-  }
-  return 'http://localhost:3000/api/';
+  return readNormalizedPublicApiUrl();
 }
 
 export {
@@ -55,19 +56,27 @@ export {
   BACKEND_UNREACHABLE_ERROR_CODE,
 } from '@/lib/devBackendProxy';
 
-/** Dev-only browser proxy prefix (see `app/backend-api/[...path]/route.ts`). */
+/** Dev / Vercel+ngrok browser proxy prefix (see `app/backend-api/[...path]/route.ts`). */
 export const DEV_BROWSER_API_PREFIX = '/backend-api/';
 
 function resolveApiBaseUrl(): string {
-  const absolute = resolveAbsoluteApiBaseUrl();
-  // Dev browser: same-origin proxy avoids CORS to :3000. Works for localhost and ngrok
-  // tunnels pointing at this Next dev server — do not call localhost:3000 from a remote origin.
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-    return DEV_BROWSER_API_PREFIX;
+  if (typeof window !== 'undefined') {
+    if (process.env.NODE_ENV === 'development') {
+      return DEV_BROWSER_API_PREFIX;
+    }
+    if (shouldUseProductionNgrokBrowserProxy()) {
+      return DEV_BROWSER_API_PREFIX;
+    }
   }
-  return absolute;
+  return resolveAbsoluteApiBaseUrl();
 }
 
+/** Resolve at call time so serverless handlers always see current env. */
+export function getApiBaseUrl(): string {
+  return resolveApiBaseUrl();
+}
+
+/** @deprecated Prefer `getApiBaseUrl()` — kept for older imports. */
 export const API_BASE_URL = resolveApiBaseUrl();
 
 export const axiosClient = axios.create({
@@ -86,7 +95,9 @@ axiosClient.interceptors.response.use((response) => {
 });
 
 axiosClient.interceptors.request.use((config) => {
-  applyNgrokSkipHeaders(config, API_BASE_URL);
+  const base = getApiBaseUrl();
+  config.baseURL = base;
+  applyNgrokSkipHeaders(config, readNormalizedPublicApiUrl());
   if (typeof window !== 'undefined') {
     const fromMemory = readAccessTokenFromMemory();
     const fromCookie = readApplymateTokenFromCookie()?.trim();
