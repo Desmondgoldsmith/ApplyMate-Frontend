@@ -20,6 +20,7 @@ export function normalizeAuthSecrets(): void {
     'NEXTAUTH_SECRET',
     'GOOGLE_CLIENT_ID',
     'GOOGLE_CLIENT_SECRET',
+    'NEXT_PUBLIC_API_URL',
   ] as const) {
     const raw = process.env[key];
     if (typeof raw !== 'string') continue;
@@ -29,6 +30,20 @@ export function normalizeAuthSecrets(): void {
       (value.startsWith("'") && value.endsWith("'"))
     ) {
       value = value.slice(1, -1).trim();
+    }
+    if (key === 'NEXT_PUBLIC_API_URL' && value) {
+      try {
+        const url = new URL(value);
+        const path = url.pathname.replace(/\/$/, '') || '';
+        value =
+          path === '' || path === '/'
+            ? `${url.origin}/api/`
+            : value.endsWith('/')
+              ? value
+              : `${value}/`;
+      } catch {
+        /* keep trimmed value */
+      }
     }
     if (value) process.env[key] = value;
   }

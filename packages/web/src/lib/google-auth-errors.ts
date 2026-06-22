@@ -99,7 +99,7 @@ export function googleOAuthErrorToastMessage(
       );
     case 'OAuthSignin':
     case 'Configuration':
-      return 'Google sign-in is misconfigured. Check GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_SECRET, and NEXTAUTH_URL (must be this app, not the API), then restart the dev server.';
+      return `Google sign-in is misconfigured. Edit repo-root .env (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_SECRET, NEXTAUTH_URL=http://localhost:3001), run npm run dev, then open ${NEXTAUTH_API_BASE_PATH}/google/status — googleAuthConfigured must be true. NEXTAUTH_URL is the Next.js app, not the API/ngrok backend URL.`;
     case 'AccessDenied':
       return 'Google sign-in was denied or could not complete. Try again or use email and password.';
     case 'OAuthCallback':

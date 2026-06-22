@@ -47,9 +47,12 @@ export function applyNgrokSkipHeaders(
   config: { headers?: AxiosLikeHeaders; baseURL?: string },
   apiBaseUrl?: string,
 ): void {
-  const base =
-    config.baseURL ?? apiBaseUrl ?? process.env.NEXT_PUBLIC_API_URL ?? '';
-  if (!shouldSendNgrokSkipHeader(base)) return;
+  const configuredApi = process.env.NEXT_PUBLIC_API_URL?.trim() ?? '';
+  const base = config.baseURL ?? apiBaseUrl ?? configuredApi;
+  // Dev browser uses `/backend-api/` — check the real upstream URL for ngrok.
+  const ngrokCheckTarget =
+    configuredApi && isNgrokFreeTunnel(configuredApi) ? configuredApi : base;
+  if (!shouldSendNgrokSkipHeader(ngrokCheckTarget)) return;
 
   if (!config.headers) {
     config.headers = {};

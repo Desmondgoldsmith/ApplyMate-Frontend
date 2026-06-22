@@ -115,7 +115,11 @@ export async function GET(request: NextRequest) {
     if (err instanceof GoogleAuthExchangeError) {
       reason = err.message;
       if (err.statusCode === 401) {
-        reason = `${err.message} — Backend GOOGLE_CLIENT_ID must match your OAuth Web client ID.`;
+        const fp = process.env.GOOGLE_CLIENT_ID?.trim();
+        const idHint = fp
+          ? `Nest GOOGLE_CLIENT_ID must be exactly: ${fp}`
+          : 'Nest GOOGLE_CLIENT_ID must match the frontend OAuth Web client ID.';
+        reason = `${err.message} — ${idHint}`;
       }
       if (err.statusCode === 404 && intent === 'login') {
         reason =

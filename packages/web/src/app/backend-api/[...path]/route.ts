@@ -4,8 +4,11 @@ import {
   BACKEND_TIMEOUT_ERROR_CODE,
   BACKEND_UNREACHABLE_ERROR_CODE,
   DEV_BACKEND_PROXY_TIMEOUT_MS,
+  devBackendProxyUnreachableMessage,
+  isDevBackendNgrokTunnel,
   resolveNestApiOrigin,
 } from '@/lib/devBackendProxy';
+import { NGROK_SKIP_BROWSER_WARNING_HEADER } from '@/lib/ngrokTunnel';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -47,7 +50,7 @@ function proxyFailureResponse(code: typeof BACKEND_UNREACHABLE_ERROR_CODE | type
   const message =
     code === BACKEND_TIMEOUT_ERROR_CODE
       ? 'The API server took too long to respond. Try again, or restart the Nest backend if it is stuck.'
-      : 'Cannot reach the API server. Confirm Nest is running (default :3000) and NEXT_PUBLIC_API_URL is correct.';
+      : devBackendProxyUnreachableMessage();
 
   return NextResponse.json(
     {
@@ -74,9 +77,13 @@ async function proxyToNest(req: NextRequest, pathSegments: string[]): Promise<Ne
   }
 
   try {
+    const headers = forwardRequestHeaders(req);
+    if (isDevBackendNgrokTunnel()) {
+      headers.set(NGROK_SKIP_BROWSER_WARNING_HEADER, 'true');
+    }
     const upstream = await fetch(target, {
       method,
-      headers: forwardRequestHeaders(req),
+      headers,
       body: hasBody ? body : undefined,
       redirect: 'manual',
       signal: AbortSignal.timeout(DEV_BACKEND_PROXY_TIMEOUT_MS),

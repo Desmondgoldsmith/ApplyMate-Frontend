@@ -1,33 +1,55 @@
 /**
- * Copy Google/NextAuth vars from repo-root `.env` into `packages/web/.env.local`
- * so Next.js Turbopack exposes them in route handlers.
+ * Copy web env from repo-root `.env` → `packages/web/.env.local`.
+ *
+ * Single source of truth: edit repo-root `.env` only (except NEXT_PUBLIC_EXTENSION_ID
+ * which can live in packages/web/.env.local if you prefer).
  */
 const fs = require('node:fs');
 const path = require('node:path');
 
-const AUTH_KEYS = [
+/** Synced from root on every `npm run dev`. */
+const SYNC_FROM_ROOT = [
   'GOOGLE_CLIENT_ID',
   'GOOGLE_CLIENT_SECRET',
   'NEXTAUTH_SECRET',
   'NEXTAUTH_URL',
   'NEXT_PUBLIC_API_URL',
+  'NEXT_PUBLIC_USE_NGROK_TUNNEL',
+  'NEXT_PUBLIC_EXTENSION_ID',
 ];
+
+const LOCAL_ONLY_KEYS = ['NEXT_PUBLIC_EXTENSION_ID'];
 
 const NEXTAUTH_API_BASE_PATH = '/api/auth';
 
-/** Match `normalizeNextAuthUrl` in ensure-env.ts — rewrite legacy `/api/nextauth` paths. */
 function normalizeNextAuthUrl(raw) {
   const value = raw?.trim();
   if (!value) return value;
   try {
     const url = new URL(value.startsWith('http') ? value : `https://${value}`);
-    const path = url.pathname.replace(/\/$/, '') || '';
-    if (path === '' || path === '/' || path === '/api/nextauth') {
+    const pathname = url.pathname.replace(/\/$/, '') || '';
+    if (pathname === '' || pathname === '/' || pathname === '/api/nextauth') {
       return `${url.origin}${NEXTAUTH_API_BASE_PATH}`;
     }
-    return value;
+    return value.trim();
   } catch {
-    return value;
+    return value?.trim();
+  }
+}
+
+function normalizeApiUrl(raw) {
+  const value = raw?.trim();
+  if (!value) return value;
+  try {
+    const url = new URL(value);
+    const pathname = url.pathname.replace(/\/$/, '') || '';
+    return pathname === '/api' || pathname === ''
+      ? `${url.origin}/api/`
+      : value.endsWith('/')
+        ? value.trim()
+        : `${value.trim()}/`;
+  } catch {
+    return value?.trim();
   }
 }
 
@@ -70,35 +92,40 @@ function formatEnvFile(vars, header) {
 const rootVars = parseEnvFile(rootEnvPath);
 const existingLocal = parseEnvFile(webLocalPath);
 
-const synced = { ...existingLocal };
-let changed = false;
+const synced = {};
 
-for (const key of AUTH_KEYS) {
+for (const key of SYNC_FROM_ROOT) {
   const fromRoot = rootVars[key]?.trim();
-  if (!fromRoot) continue;
-  const value = key === 'NEXTAUTH_URL' ? normalizeNextAuthUrl(fromRoot) : fromRoot;
-  if (synced[key] !== value) {
-    synced[key] = value;
-    changed = true;
+  if (fromRoot) {
+    if (key === 'NEXTAUTH_URL') synced[key] = normalizeNextAuthUrl(fromRoot);
+    else if (key === 'NEXT_PUBLIC_API_URL') synced[key] = normalizeApiUrl(fromRoot);
+    else synced[key] = fromRoot;
   }
 }
 
-if (!AUTH_KEYS.some((k) => synced[k]?.trim())) {
+for (const key of LOCAL_ONLY_KEYS) {
+  if (!synced[key]?.trim() && existingLocal[key]?.trim()) {
+    synced[key] = existingLocal[key].trim();
+  }
+}
+
+const hasAuth =
+  synced.GOOGLE_CLIENT_ID?.trim() &&
+  synced.GOOGLE_CLIENT_SECRET?.trim() &&
+  synced.NEXTAUTH_SECRET?.trim();
+
+if (!hasAuth) {
   console.warn(
-    '[sync-auth-env] No GOOGLE_* / NEXTAUTH_* in repo root .env — add them and re-run npm run dev.',
+    '[sync-auth-env] Missing GOOGLE_* or NEXTAUTH_SECRET in repo root .env — add them and re-run npm run dev.',
   );
   process.exit(0);
 }
 
 const header =
-  '# Auto-synced from repo root .env (scripts/sync-auth-env.cjs). Do not leave empty overrides here.';
+  '# Auto-synced from repo root .env (scripts/sync-auth-env.cjs). Edit root .env, not auth keys here.';
 const nextContent = formatEnvFile(synced, header);
 
 if (!fs.existsSync(webLocalPath) || fs.readFileSync(webLocalPath, 'utf8') !== nextContent) {
   fs.writeFileSync(webLocalPath, nextContent, 'utf8');
-  changed = true;
-}
-
-if (changed) {
   console.log('[sync-auth-env] Updated packages/web/.env.local from repo root .env');
 }
