@@ -174,7 +174,9 @@ export function CVUploadZone({
         if (file && !isPending && (aiUsage.isPaidTier || aiUsage.isLoading || (aiUsage.remaining ?? 0) > 0))
           upload(file);
       }}
-      className={`flex h-[200px] w-full flex-col items-center justify-center rounded-2xl border border-dashed border-[#00C9B1]/25 bg-[#111616] p-6 text-center ${
+      className={`flex w-full flex-col items-center justify-center rounded-2xl border border-dashed border-[#00C9B1]/25 bg-[#111616] p-6 text-center ${
+        isPending ? 'min-h-[220px] h-auto' : 'h-[200px]'
+      } ${
         !aiUsage.isPaidTier && !aiUsage.isLoading && (aiUsage.remaining ?? 0) === 0 ? 'opacity-60' : ''
       } ${isPending ? 'pointer-events-none opacity-90' : ''}`}
     >

@@ -42,14 +42,7 @@ export function CvUploadProgressSteps({
   if (!active) return null;
 
   return (
-    <div className={cn('w-full space-y-4', className)} role="status" aria-live="polite">
-      <div className="flex flex-col items-center gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-[#00C9B1]" aria-hidden />
-        <p className="text-sm font-semibold text-white/85 transition-opacity duration-300">
-          {steps[index]}
-        </p>
-        <p className="text-xs text-white/40">Large files can take up to a minute.</p>
-      </div>
+    <div className={cn('w-full', className)} role="status" aria-live="polite">
       <ol className="mx-auto max-w-xs space-y-2">
         {steps.map((label, i) => {
           const done = i < index;

@@ -14,7 +14,6 @@ import {
   Sparkles,
   UploadCloud,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import {
@@ -63,7 +62,10 @@ import {
 } from '@/lib/api';
 import { trackConversionFunnelEvent } from '@/lib/analytics';
 import { refreshCvStateAfterCvParseSuccess } from '@/lib/cvParseCacheReconcile';
-import { cvEditorPath } from '@/lib/cvProfileNavigation';
+import {
+  cvEditorPath,
+  prefetchCvProfileForEditor,
+} from '@/lib/cvProfileNavigation';
 import { CV_CHAT_INPUT_MAX_CHARS } from '@/lib/cv-chat-input.constants';
 import {
   cvChatInputLimitErrorMessage,
@@ -601,6 +603,26 @@ export default function OnboardingPage() {
       /* best-effort */
     });
   }, [finalizeOnboarding, step]);
+
+  const openResumeEditor = useCallback(
+    async (profileId: string | null | undefined) => {
+      const id = profileId?.trim();
+      if (!id) {
+        toast.error('Resume is not ready yet. Try again in a moment.');
+        return;
+      }
+      try {
+        if (useAuthStore.getState().user?.onboardingCompleted !== true) {
+          await finalizeOnboarding();
+        }
+        await prefetchCvProfileForEditor(queryClient, id);
+        router.push(cvEditorPath(id));
+      } catch (e) {
+        toast.error(getApiErrorMessage(e));
+      }
+    },
+    [finalizeOnboarding, queryClient, router, toast],
+  );
 
   const resetCvStep = useCallback(() => {
     setCvPath(null);
@@ -1502,17 +1524,9 @@ export default function OnboardingPage() {
                             <Button
                               variant="ghost"
                               className="text-sm"
-                              onClick={async () => {
-                                await saveProgress.mutateAsync({
-                                  step: 2,
-                                  hasCV: true,
-                                });
-                                setCompletionSource('upload');
-                                setFinalScore(uploadedScore);
-                                setCompletionProfile(uploadParsedProfile);
-                                setStep(3);
-                                router.push('/dashboard/cv');
-                              }}
+                              onClick={() =>
+                                void openResumeEditor(uploadParsedProfile?.id)
+                              }
                             >
                               Edit my resume →
                             </Button>
@@ -1586,6 +1600,7 @@ export default function OnboardingPage() {
             completionSource={completionSource}
             selectedTemplate={completionProfile?.template ?? selectedTemplate}
             accessToken={accessToken}
+            onOpenResumeEditor={openResumeEditor}
           />
         ) : null}
       </AnimatePresence>
@@ -1659,6 +1674,7 @@ function CompletionPanel({
   completionSource,
   selectedTemplate,
   accessToken,
+  onOpenResumeEditor,
 }: {
   primaryGoal: string;
   finalScore: CVScorePayload | null;
@@ -1666,6 +1682,7 @@ function CompletionPanel({
   completionSource: 'skip' | 'upload' | 'chat' | 'paste' | 'manual';
   selectedTemplate: string;
   accessToken: string | null;
+  onOpenResumeEditor: (profileId: string | null | undefined) => void | Promise<void>;
 }) {
   const router = useRouter();
   const sub =
@@ -1785,13 +1802,14 @@ function CompletionPanel({
         >
           {cta.label}
         </Button>
-        {completionSource !== 'skip' && finalScore ? (
-          <Link
-            href="/dashboard/cv"
-            className="block text-center text-[13px] text-white/45 hover:text-white/75"
+        {completionSource !== 'skip' && finalScore && completionProfile?.id ? (
+          <button
+            type="button"
+            className="block w-full text-center text-[13px] text-white/45 hover:text-white/75"
+            onClick={() => void onOpenResumeEditor(completionProfile.id)}
           >
             Open resume editor →
-          </Link>
+          </button>
         ) : null}
       </div>
     </motion.div>
