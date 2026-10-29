@@ -1,0 +1,3 @@
+# Formatting-only commits (git blame --ignore-revs-file .git-blame-ignore-revs)
+# style: format the whole repo with its Prettier config
+f7bea6af5ae2fde84bee63de8e589b3da653a29c
