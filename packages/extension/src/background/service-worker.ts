@@ -7,10 +7,6 @@ import {
   buildCvScorePayload,
   formatCvScoreValidationError,
 } from '@/shared/cv-score-payload';
-import {
-  buildSaveJobPayloadFromExtracted,
-  shouldSyncLogoAfterAnalyze,
-} from '@/shared/save-job-payload';
 import { markWebLogout, syncExtensionAuth } from '@/shared/auth-sync';
 import {
   applyCheckToSession,
@@ -59,7 +55,6 @@ import type {
   AiUsageSnapshot,
   CheckResponse,
   CoverLetterResult,
-  CvScoreResult,
   ExtractedJob,
   ExtensionJobSession,
   GetAuthStateResponse,
@@ -322,91 +317,6 @@ async function resolvePinnedOrCachedJobUrl(): Promise<string | null> {
     return cached.sourceUrl;
   }
   return null;
-}
-
-async function mergeScoreLogoIntoSession(
-  sessionUrl: string,
-  result: CvScoreResult,
-): Promise<void> {
-  if (!result.companyLogoUrl?.trim()) return;
-
-  const existing = (await readJobSession(sessionUrl)) ?? emptyJobSession(sessionUrl);
-  const mergedCheck: CheckResponse = {
-    ...(existing.check ?? {
-      saved: true,
-      jobId: null,
-      status: null,
-    }),
-    saved: existing.check?.saved ?? true,
-    jobId: result.jobAnalysisId ?? existing.check?.jobId ?? existing.jobAnalysisId,
-    companyLogoUrl: result.companyLogoUrl,
-  };
-  await mergeJobSession(sessionUrl, {
-    check: mergedCheck,
-    jobAnalysisId: result.jobAnalysisId ?? existing.jobAnalysisId,
-  });
-}
-
-async function syncJobLogoAfterAnalyze(
-  sessionUrl: string,
-  job: ExtractedJob,
-  check: CheckResponse | null | undefined,
-): Promise<void> {
-  if (!shouldSyncLogoAfterAnalyze(job, check)) return;
-
-  try {
-    const saveResult = await jobsApi.save(buildSaveJobPayloadFromExtracted(job));
-    const existing = (await readJobSession(sessionUrl)) ?? emptyJobSession(sessionUrl);
-    const mergedCheck: CheckResponse = {
-      ...(existing.check ?? {
-        saved: true,
-        jobId: null,
-        status: null,
-      }),
-      saved: existing.check?.saved ?? true,
-      jobId: saveResult.id ?? existing.check?.jobId ?? existing.jobAnalysisId,
-      status: saveResult.status ?? existing.check?.status ?? null,
-      companyLogoUrl: saveResult.companyLogoUrl ?? null,
-    };
-    const updated = await mergeJobSession(sessionUrl, {
-      jobAnalysisId: saveResult.id ?? existing.jobAnalysisId,
-      check: mergedCheck,
-    });
-    notifyJobSessionUpdated(updated);
-  } catch {
-    /* Logo sync is best-effort; score result is already persisted. */
-  }
-}
-
-async function persistScoreSession(
-  url: string,
-  result: CvScoreResult,
-  patch: {
-    jobAnalysisId?: string | null;
-    selectedCvId?: string;
-    extractedJob?: ExtractedJob | null;
-  },
-): Promise<ExtensionJobSession> {
-  const existing = url ? await readJobSession(url) : null;
-  const job =
-    patch.extractedJob ??
-    existing?.extractedJob ??
-    (await readCurrentJob());
-  const updated = await mergeJobSession(url, {
-    score: result,
-    jobAnalysisId: result.jobAnalysisId ?? patch.jobAnalysisId ?? null,
-    selectedCvId:
-      result.selectedCvProfileId?.trim() ??
-      patch.selectedCvId ??
-      existing?.selectedCvId ??
-      null,
-    ...(job ? { extractedJob: job } : {}),
-  });
-  if (job?.sourceUrl) {
-    await pinJobUrl(job.sourceUrl);
-    await storeCurrentJob(job);
-  }
-  return updated;
 }
 
 async function isJobOnActiveTab(job: ExtractedJob): Promise<boolean> {
@@ -1099,7 +1009,7 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
           const inFlight = await readInFlight();
           const inFlightForSession =
             inFlight && urlsMatch(inFlight.sourceUrl, url) ? inFlight.operation : null;
-          let cachedJob = await readCurrentJob();
+          const cachedJob = await readCurrentJob();
           if (!session?.extractedJob && cachedJob) {
             session = await mergeJobSession(url, { extractedJob: cachedJob });
           }

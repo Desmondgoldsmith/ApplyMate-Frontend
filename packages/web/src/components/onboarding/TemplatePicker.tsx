@@ -221,7 +221,20 @@ export function TemplatePicker({
   if (layout === 'clinicGrid') {
     return <TemplatePickerClinicGrid selectedTemplate={selectedTemplate} onSelect={onSelect} showHeader={showHeader} />;
   }
+  return (
+    <TemplatePickerCarousel
+      selectedTemplate={selectedTemplate}
+      onSelect={onSelect}
+      showHeader={showHeader}
+    />
+  );
+}
 
+function TemplatePickerCarousel({
+  selectedTemplate,
+  onSelect,
+  showHeader,
+}: Pick<TemplatePickerProps, 'selectedTemplate' | 'onSelect' | 'showHeader'>) {
   const [startIndex, setStartIndex] = useState(0);
   const [visibleCount, setVisibleCount] = useState(3);
 

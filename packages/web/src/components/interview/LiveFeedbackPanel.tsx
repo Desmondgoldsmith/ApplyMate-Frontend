@@ -57,14 +57,14 @@ export const LiveFeedbackPanel = memo(function LiveFeedbackPanel({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
-  if (!persona.showMidSessionFeedback) return null;
-
   const starCompleteness = useMemo(() => {
     if (!starFeedback?.missingParts?.length) return 100;
     const missing = new Set(starFeedback.missingParts);
     const have = STAR_PARTS.filter((p) => !missing.has(p)).length;
     return Math.round((have / STAR_PARTS.length) * 100);
   }, [starFeedback]);
+
+  if (!persona.showMidSessionFeedback) return null;
 
   const liveMessage = personaFeedbackMessage(persona, scores ?? undefined);
   const structureScore = scores?.structureScore ?? starCompleteness;

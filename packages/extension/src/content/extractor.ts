@@ -792,7 +792,7 @@ function companyFromHostname(): string {
 
 function companyFromPostedAgoLine(text: string): string {
   const match = text.match(
-    /(?:•\s*)?(?:\d+\+\s*)?(?:\d+\s*)?days?\s+ago\s+([^—–\-\n|%]+?)(?:\s*[—–\-]|$)/i,
+    /(?:•\s*)?(?:\d+\+\s*)?(?:\d+\s*)?days?\s+ago\s+([^—–\-\n|%]+?)(?:\s*[—–-]|$)/i,
   );
   return match?.[1] ? cleanText(match[1]) : '';
 }

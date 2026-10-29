@@ -33,11 +33,20 @@ export function TypingText({
   className?: string;
 }) {
   const tokens = useMemo(() => text.split(/(\s+)/), [text]);
+  /** Word number of each token (-1 for whitespace). */
+  const tokenWordIndex = useMemo(() => {
+    const out: number[] = [];
+    let n = -1;
+    for (const t of tokens) {
+      if (t.trim()) n += 1;
+      out.push(t.trim() ? n : -1);
+    }
+    return out;
+  }, [tokens]);
   const wordIdx = useMemo(() => activeWordIndex(text, charIndex), [charIndex, text]);
 
   if (!text.trim()) return null;
 
-  let seenWord = -1;
   return (
     <motion.p
       key={text}
@@ -48,7 +57,7 @@ export function TypingText({
     >
       {tokens.map((token, idx) => {
         if (!token.trim()) return <span key={`s-${idx}`}>{token}</span>;
-        seenWord += 1;
+        const seenWord = tokenWordIndex[idx] ?? -1;
         if (!isActive || wordIdx < 0) return <span key={`w-${idx}`}>{token}</span>;
         const active = seenWord === wordIdx;
         const spoken = seenWord < wordIdx;

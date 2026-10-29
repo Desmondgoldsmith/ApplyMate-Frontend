@@ -73,7 +73,7 @@ export function InfoHint({
 
   const layoutRetries = useRef(0);
 
-  const measureAndPosition = useCallback(() => {
+  const measureAndPosition = useCallback(function measure() {
     const trigger = triggerRef.current;
     const panel = panelRef.current;
     if (!trigger || !panel) return;
@@ -83,7 +83,7 @@ export function InfoHint({
     let ph = panel.offsetHeight;
     if (pw < 8 && layoutRetries.current < 5) {
       layoutRetries.current += 1;
-      requestAnimationFrame(() => measureAndPosition());
+      requestAnimationFrame(() => measure());
       return;
     }
     layoutRetries.current = 0;

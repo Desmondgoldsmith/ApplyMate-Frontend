@@ -3,6 +3,7 @@
 import { queryKeys } from '@/lib/queryKeys';
 import '@/styles/interview-prep.css';
 
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -814,12 +815,12 @@ export function InterviewSetupStepper() {
                 )}
               </p>
             ) : null}
-            <a
+            <Link
               href="/#pricing"
               className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[#00C9B1] px-4 py-2.5 text-sm font-semibold text-[#080A0A] transition hover:bg-[#33d4c2]"
             >
               Compare Pro plans
-            </a>
+            </Link>
           </div>
         ) : startError ? (
           <p className="border-t border-[var(--border-subtle)] bg-rose-500/10 px-5 py-3 text-sm text-rose-200">

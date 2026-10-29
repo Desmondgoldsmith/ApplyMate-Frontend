@@ -59,25 +59,19 @@ function toneShell(tone: StrategicWeeklyCoachingTone | null): { ring: string; gl
   }
 }
 
-function reasonIcon(reason: StrategicWeeklyCoachingReason | null): LucideIcon | null {
-  switch (reason) {
-    case 'analysis_paralysis':
-      return Brain;
-    case 'low_application_volume':
-      return Briefcase;
-    case 'interview_focus':
-      return Mic2;
-    case 'low_fit_targeting':
-      return Target;
-    case 'stalled_pipeline':
-      return PauseCircle;
-    case 'strong_momentum':
-      return TrendingUp;
-    case 'recovery_mode':
-      return RotateCcw;
-    default:
-      return null;
-  }
+const REASON_ICONS: Partial<Record<StrategicWeeklyCoachingReason, LucideIcon>> = {
+  analysis_paralysis: Brain,
+  low_application_volume: Briefcase,
+  interview_focus: Mic2,
+  low_fit_targeting: Target,
+  stalled_pipeline: PauseCircle,
+  strong_momentum: TrendingUp,
+  recovery_mode: RotateCcw,
+};
+
+function ReasonIcon({ reason }: { reason: StrategicWeeklyCoachingReason | null }) {
+  const Icon = reason ? REASON_ICONS[reason] : undefined;
+  return Icon ? <Icon className="h-5 w-5" aria-hidden /> : null;
 }
 
 export function DashboardStrategicWeeklyCoachingCard({ data }: Props) {
@@ -90,7 +84,7 @@ export function DashboardStrategicWeeklyCoachingCard({ data }: Props) {
       ? Math.min(100, Math.max(0, Math.round(data.confidence)))
       : null;
 
-  const Icon = reasonIcon(data.reason);
+  const hasIcon = Boolean(data.reason && REASON_ICONS[data.reason]);
   const shell = toneShell(data.tone);
 
   const hasCopy = headline || supporting || recommendedAction;
@@ -130,18 +124,18 @@ export function DashboardStrategicWeeklyCoachingCard({ data }: Props) {
 
         {headline ? (
           <div className="flex flex-wrap items-start gap-3">
-            {Icon ? (
+            {hasIcon ? (
               <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#00C9B1]/22 bg-[#00C9B1]/[0.07] text-[#9CF5EA]">
-                <Icon className="h-5 w-5" aria-hidden />
+                <ReasonIcon reason={data.reason} />
               </span>
             ) : null}
             <h2 className="min-w-0 flex-1 text-[clamp(1.125rem,2.8vw,1.45rem)] font-semibold leading-snug tracking-tight text-white/92">
               {headline}
             </h2>
           </div>
-        ) : Icon ? (
+        ) : hasIcon ? (
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#00C9B1]/22 bg-[#00C9B1]/[0.07] text-[#9CF5EA]">
-            <Icon className="h-5 w-5" aria-hidden />
+            <ReasonIcon reason={data.reason} />
           </span>
         ) : null}
 

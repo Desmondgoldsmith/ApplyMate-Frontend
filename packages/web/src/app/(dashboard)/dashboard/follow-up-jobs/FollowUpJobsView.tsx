@@ -26,7 +26,7 @@ function visiblePageNumbers(current: number, totalPages: number): number[] {
   }
   const half = Math.floor(MAX_PAGE_BUTTONS / 2);
   let start = Math.max(1, current - half);
-  let end = Math.min(totalPages, start + MAX_PAGE_BUTTONS - 1);
+  const end = Math.min(totalPages, start + MAX_PAGE_BUTTONS - 1);
   start = Math.max(1, end - MAX_PAGE_BUTTONS + 1);
   return Array.from({ length: end - start + 1 }, (_, i) => start + i);
 }

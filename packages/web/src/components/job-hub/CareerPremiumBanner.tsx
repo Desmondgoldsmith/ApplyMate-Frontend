@@ -14,15 +14,18 @@ export function CareerPremiumBanner() {
   const [until, setUntil] = useState<string | null>(null);
 
   useEffect(() => {
-    setUntil(readPremiumActiveUntil());
-    const onStorage = () => setUntil(readPremiumActiveUntil());
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    /** Only a still-active premium window is kept (the clock is read here, not during render). */
+    const read = () => {
+      const iso = readPremiumActiveUntil();
+      const expires = iso ? new Date(iso).getTime() : Number.NaN;
+      setUntil(Number.isFinite(expires) && expires >= Date.now() ? iso : null);
+    };
+    read();
+    window.addEventListener('storage', read);
+    return () => window.removeEventListener('storage', read);
   }, []);
 
   if (!until) return null;
-  const expires = new Date(until).getTime();
-  if (!Number.isFinite(expires) || expires < Date.now()) return null;
 
   return (
     <div className="rounded-xl border border-[#00C9B1]/25 bg-[#00C9B1]/10 px-4 py-2.5 text-[13px] text-[#8af3e7]">
