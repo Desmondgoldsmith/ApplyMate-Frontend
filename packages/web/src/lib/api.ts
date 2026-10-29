@@ -428,6 +428,10 @@ function readCvContentVersion(v: unknown): number | undefined {
  */
 const AI_LONG_REQUEST_TIMEOUT_MS = 125_000;
 
+/** Job Hub bookmarks are fetched in pages; the hub shows at most this many. */
+const BOOKMARK_PAGE_SIZE = 100;
+const BOOKMARK_MAX_PAGES = 10;
+
 /** Header carrying the `contentVersion` an editor save is based on. */
 const CV_BASE_VERSION_HEADER = 'X-CV-Base-Version';
 
@@ -8971,10 +8975,24 @@ const jobDiscovery = {
   },
   /** GET /job-discovery/bookmarks — hub bookmark rows (alias: GET /users/me/hub-bookmarks on some stacks). */
   listBookmarks: async (): Promise<HubBookmarkItem[]> => {
-    const res = await axiosClient.get<unknown>('/job-discovery/bookmarks');
-    throwIfApiFailureResponse(res.data, res.status);
-    const arr = extractHubNotesArrayFromResponse(res.data);
-    return arr
+    const rows: unknown[] = [];
+    let cursor: string | undefined;
+    for (let page = 0; page < BOOKMARK_MAX_PAGES; page++) {
+      const res = await axiosClient.get<unknown>('/job-discovery/bookmarks', {
+        params: { paged: true, limit: BOOKMARK_PAGE_SIZE, ...(cursor ? { cursor } : {}) },
+      });
+      throwIfApiFailureResponse(res.data, res.status);
+      const body = unwrapApiDataEnvelope(res.data);
+      if (!Array.isArray(body.items)) {
+        // Older API without paging: it returned the whole list.
+        rows.push(...extractHubNotesArrayFromResponse(res.data));
+        break;
+      }
+      rows.push(...body.items);
+      cursor = typeof body.nextCursor === 'string' ? body.nextCursor : undefined;
+      if (!cursor) break;
+    }
+    return rows
       .filter(
         (x): x is Record<string, unknown> =>
           x !== null && typeof x === 'object' && !Array.isArray(x),
