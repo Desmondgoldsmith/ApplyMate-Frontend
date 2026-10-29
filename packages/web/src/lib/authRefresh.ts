@@ -71,32 +71,41 @@ export function decodeJwtExp(token: string): number | null {
   }
 }
 
+/**
+ * Cookie first: it is shared by every tab, so it holds the latest rotation. A tab's in-memory copy can be
+ * an already-rotated token, which the API treats as reuse and answers by ending the session.
+ */
 function getRefreshTokenForRequest(): string | null {
-  const fromMemory = useAuthStore.getState().refreshToken?.trim();
-  if (fromMemory) return fromMemory;
-  return readApplymateRefreshTokenFromCookie()?.trim() ?? null;
+  const fromCookie = readApplymateRefreshTokenFromCookie()?.trim();
+  if (fromCookie) return fromCookie;
+  return useAuthStore.getState().refreshToken?.trim() || null;
 }
 
 let refreshInFlight: Promise<boolean> | null = null;
 
+/** Empty body: the API rotates the session from its HttpOnly refresh cookie. */
 async function postRefreshWithApiCookie(): Promise<boolean> {
-  try {
-    const res = await axiosClient.post<unknown>(
-      '/auth/refresh',
-      {},
-      { skipAuthRefresh: true },
-    );
-    throwIfApiFailureResponse(res.data, res.status);
-    const normalized = normalizeRefreshResponse(res.data);
-    const user = mapNormalizedUserToAuthUser(normalized.user);
-    useAuthStore
-      .getState()
-      .setAuth(user, normalized.accessToken, normalized.refreshToken);
-    broadcastAuthTokensUpdated();
-    return true;
-  } catch {
-    return false;
-  }
+  const known = readKnownAuthTokens();
+  return withAuthRefreshLock(async () => {
+    if (adoptTokensRefreshedByAnotherTab(known)) return true;
+    try {
+      const res = await axiosClient.post<unknown>(
+        '/auth/refresh',
+        {},
+        { skipAuthRefresh: true },
+      );
+      throwIfApiFailureResponse(res.data, res.status);
+      const normalized = normalizeRefreshResponse(res.data);
+      const user = mapNormalizedUserToAuthUser(normalized.user);
+      useAuthStore
+        .getState()
+        .setAuth(user, normalized.accessToken, normalized.refreshToken);
+      broadcastAuthTokensUpdated();
+      return true;
+    } catch {
+      return false;
+    }
+  });
 }
 
 /**
@@ -149,13 +158,65 @@ async function postRefresh(refreshToken: string) {
   return normalizeAuthResponse(res.data);
 }
 
+/** Web Locks name shared by every tab on this origin. */
+export const AUTH_REFRESH_LOCK_NAME = 'applymate-auth-refresh';
+
 /**
- * Rotate access + refresh tokens (single-flight). Returns true when new tokens are stored.
+ * Tabs share token cookies and schedule refresh for the same moment; refresh tokens are one-time-use,
+ * so only one tab may call `/auth/refresh` at a time. Runs `fn` directly where Web Locks are missing.
+ */
+function withAuthRefreshLock<T>(fn: () => Promise<T>): Promise<T> {
+  const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined;
+  if (!locks?.request) return fn();
+  /** The lock is held until the callback's promise settles. */
+  return new Promise<T>((resolve, reject) => {
+    locks.request(AUTH_REFRESH_LOCK_NAME, () => fn().then(resolve, reject)).catch(reject);
+  });
+}
+
+type KnownAuthTokens = { accessToken: string | null; refreshToken: string | null };
+
+/** This tab's view, not the shared cookies — another tab may have rotated them already. */
+function readKnownAuthTokens(): KnownAuthTokens {
+  const state = useAuthStore.getState();
+  return {
+    accessToken: state.accessToken?.trim() || readApplymateTokenFromCookie()?.trim() || null,
+    refreshToken:
+      state.refreshToken?.trim() || readApplymateRefreshTokenFromCookie()?.trim() || null,
+  };
+}
+
+function isAccessTokenFresh(token: string): boolean {
+  const exp = decodeJwtExp(token);
+  return exp == null || exp * 1000 > Date.now() + REFRESH_BEFORE_EXPIRY_MS;
+}
+
+/**
+ * Another tab may have rotated tokens while this one waited for the lock. Adopts the shared cookies when
+ * either token changed; returns true (skip `/auth/refresh`) only when a new, fresh access token arrived.
+ */
+function adoptTokensRefreshedByAnotherTab(known: KnownAuthTokens): boolean {
+  const cookieAccess = readApplymateTokenFromCookie()?.trim() || null;
+  const cookieRefresh = readApplymateRefreshTokenFromCookie()?.trim() || null;
+  const accessRotated = cookieAccess !== null && cookieAccess !== known.accessToken;
+  const refreshRotated = cookieRefresh !== null && cookieRefresh !== known.refreshToken;
+  if (!accessRotated && !refreshRotated) return false;
+  useAuthStore.getState().hydrateFromStorage();
+  return accessRotated && isAccessTokenFresh(cookieAccess);
+}
+
+/**
+ * Rotate access + refresh tokens (single-flight per tab, one tab at a time). Returns true when new
+ * tokens are stored.
  */
 export async function refreshAccessToken(): Promise<boolean> {
   if (refreshInFlight) return refreshInFlight;
 
-  refreshInFlight = (async () => {
+  const known = readKnownAuthTokens();
+
+  refreshInFlight = withAuthRefreshLock(async () => {
+    if (adoptTokensRefreshedByAnotherTab(known)) return true;
+
     const refreshToken = getRefreshTokenForRequest();
     if (!refreshToken) return false;
 
@@ -174,10 +235,10 @@ export async function refreshAccessToken(): Promise<boolean> {
         forceAuthSignOut('expired');
       }
       return false;
-    } finally {
-      refreshInFlight = null;
     }
-  })();
+  }).finally(() => {
+    refreshInFlight = null;
+  });
 
   return refreshInFlight;
 }

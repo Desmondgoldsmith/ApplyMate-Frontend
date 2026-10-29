@@ -21,6 +21,7 @@ import { buildCvNamingForExport } from '@/lib/cv-profile-naming';
 import { api, type CvTailorDraft, type CvTailorDraftEntry, type TailorMutationResponse } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
 import { isCvTemplateId } from '@/lib/cvBuilder';
+import { getCvExportErrorMessage } from '@/lib/cvExportErrors';
 import { rehydrateCvBuilderAfterStructuredPersist } from '@/lib/cvStructuredDraftCommit';
 import { tailorSectionTypeToBuilderId } from '@/lib/tailorSectionMap';
 import { cn } from '@/lib/utils';
@@ -490,7 +491,7 @@ export function CvTailoringSidebar({
         });
         toast.success(`CV downloaded as ${format.toUpperCase()}`);
       } catch (e) {
-        toast.error(getApiErrorMessage(e) || 'Could not download CV');
+        toast.error(getCvExportErrorMessage(e));
       } finally {
         setExportingFormat(null);
       }

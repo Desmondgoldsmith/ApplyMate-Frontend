@@ -15,7 +15,7 @@ describe('parseJobMatchFactorsBreakdown', () => {
         },
         {
           key: 'skillsMatch',
-          label: 'Skills match',
+          label: 'How well your experience matches what this role needs',
           score: 56,
           explanation: '5 of 9 requirements demonstrated.',
           found: ['React'],
@@ -23,7 +23,7 @@ describe('parseJobMatchFactorsBreakdown', () => {
         },
         {
           key: 'keywordCoverage',
-          label: 'Keyword coverage',
+          label: 'How ATS-friendly your CV is for this role',
           score: 56,
           explanation: '5 of 9 exact phrases appear in your CV.',
           missingExplanation: 'Semantic fit without verbatim JD phrases.',
@@ -43,11 +43,32 @@ describe('parseJobMatchFactorsBreakdown', () => {
     expect(parsed?.factors[2]?.hint).toContain('Quantified');
   });
 
+  it('falls back to the backend wording when a factor has no label', () => {
+    const parsed = parseJobMatchFactorsBreakdown({
+      factors: [
+        { key: 'skillsMatch', score: 70 },
+        { key: 'experienceMatch', score: 60 },
+        { key: 'keywordCoverage', score: 50 },
+        { key: 'seniorityAlignment', score: 40 },
+        { key: 'industryRelevance', score: 30 },
+        { key: 'evidenceStrength', score: 20 },
+      ],
+    });
+    expect(parsed?.factors.map((f) => f.label)).toEqual([
+      'How well your experience matches what this role needs',
+      'Years of experience',
+      'How ATS-friendly your CV is for this role',
+      'CV level',
+      'Industry fit',
+      'Evidence strength',
+    ]);
+  });
+
   it('resolveFactorSkillLists uses API arrays only, not explanation prose', async () => {
     const { resolveFactorSkillLists } = await import('@/lib/jobMatchFactorsBreakdown');
     const lists = resolveFactorSkillLists({
       key: 'skillsMatch',
-      label: 'Skills match',
+      label: 'How well your experience matches what this role needs',
       score: 40,
       explanation:
         'Typescript. Missing from CV: Rust, Playwright. Requirements found: React',
@@ -68,7 +89,7 @@ describe('parseJobMatchFactorsBreakdown', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     warnFactorScoreInconsistency({
       key: 'skillsMatch',
-      label: 'Skills',
+      label: 'How well your experience matches what this role needs',
       score: 0,
       explanation: '1 of 1 tools appear in your CV.',
       found: ['Python'],

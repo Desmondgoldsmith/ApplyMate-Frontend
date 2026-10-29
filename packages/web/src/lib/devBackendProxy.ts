@@ -30,5 +30,17 @@ export function devBackendProxyUnreachableMessage(): string {
 /** Max wait for upstream Nest before returning 502 (avoids hung proxy sockets). */
 export const DEV_BACKEND_PROXY_TIMEOUT_MS = 90_000;
 
+/** CV export routes may take up to 120s on the API (headless Chromium cold start). */
+export const DEV_BACKEND_PROXY_EXPORT_TIMEOUT_MS = 130_000;
+
+const CV_EXPORT_API_PATH = /^cv\/(profiles\/[^/]+\/)?export\/(pdf|docx)$/;
+
+/** Upstream timeout for a proxied path such as `cv/profiles/:id/export/pdf` (no `/api` prefix). */
+export function devBackendProxyTimeoutMs(apiPath: string): number {
+  return CV_EXPORT_API_PATH.test(apiPath)
+    ? DEV_BACKEND_PROXY_EXPORT_TIMEOUT_MS
+    : DEV_BACKEND_PROXY_TIMEOUT_MS;
+}
+
 export const BACKEND_UNREACHABLE_ERROR_CODE = 'BACKEND_UNREACHABLE' as const;
 export const BACKEND_TIMEOUT_ERROR_CODE = 'BACKEND_TIMEOUT' as const;

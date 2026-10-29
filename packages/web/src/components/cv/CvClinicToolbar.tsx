@@ -6,6 +6,7 @@ import {
   FileDown,
   FileSearch,
   FileText,
+  History,
   LayoutTemplate,
   ListPlus,
   Loader2,
@@ -76,6 +77,8 @@ export type CvClinicToolbarProps = {
   canRedo?: boolean;
   onUndo?: () => void;
   onRedo?: () => void;
+  /** Opens saved CV versions (automatic snapshots before uploads, accept-all, etc.). */
+  onOpenVersionHistory?: () => void;
   leftTitle?: string;
   leftSlot?: ReactNode;
   rightAddon?: ReactNode;
@@ -145,6 +148,7 @@ export function CvClinicToolbar({
   canRedo = false,
   onUndo,
   onRedo,
+  onOpenVersionHistory,
   leftTitle,
   leftSlot,
   rightAddon,
@@ -348,6 +352,20 @@ export function CvClinicToolbar({
                       <Redo2 className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
                       Redo <span className="ml-auto text-[10px] text-white/35">Ctrl+Y</span>
                     </button>
+                    {onOpenVersionHistory ? (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-white/85 hover:bg-white/[0.04]"
+                        onClick={() => {
+                          setMoreOpen(false);
+                          onOpenVersionHistory();
+                        }}
+                      >
+                        <History className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+                        Version history
+                      </button>
+                    ) : null}
                   </div>,
                   document.body,
                 )

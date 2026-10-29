@@ -5,7 +5,7 @@ import { useCallback, useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { useExportCV } from '@/hooks/useExportCV';
-import { getApiErrorMessage } from '@/lib/axios';
+import { getCvExportErrorMessage } from '@/lib/cvExportErrors';
 import { useToast } from '@/components/ui/Toast';
 
 export type CvProfileDownloadActionsProps = {
@@ -43,7 +43,7 @@ export function CvProfileDownloadActions({
         });
         toast.success(`CV downloaded as ${format.toUpperCase()}`);
       } catch (error) {
-        toast.error(getApiErrorMessage(error) || 'Could not download CV');
+        toast.error(getCvExportErrorMessage(error));
       } finally {
         setExportingFormat(null);
       }

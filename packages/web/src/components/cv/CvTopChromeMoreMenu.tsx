@@ -3,6 +3,7 @@
 import {
   FileSearch,
   FileText,
+  History,
   LayoutTemplate,
   ListPlus,
   Loader2,
@@ -37,6 +38,8 @@ type CvTopChromeMoreMenuProps = {
   onOpenSectionOrder?: () => void;
   onOpenAiChat: () => void;
   onTriggerSpellCheck: () => void;
+  /** Opens saved CV versions (automatic snapshots before uploads, accept-all, etc.). */
+  onOpenVersionHistory?: () => void;
   canUndo?: boolean;
   canRedo?: boolean;
   onUndo?: () => void;
@@ -55,6 +58,7 @@ export function CvTopChromeMoreMenu({
   onOpenSectionOrder,
   onOpenAiChat,
   onTriggerSpellCheck,
+  onOpenVersionHistory,
   canUndo = false,
   canRedo = false,
   onUndo,
@@ -101,6 +105,16 @@ export function CvTopChromeMoreMenu({
             label: 'Reorder professionally',
             Icon: Rows3,
             onSelect: onOpenSectionOrder,
+          },
+        ]
+      : []),
+    ...(onOpenVersionHistory
+      ? [
+          {
+            id: 'version-history',
+            label: 'Version history',
+            Icon: History,
+            onSelect: onOpenVersionHistory,
           },
         ]
       : []),

@@ -37,11 +37,11 @@ const FACTOR_ORDER: JobMatchFactorKey[] = [
 ];
 
 const DEFAULT_LABELS: Record<JobMatchFactorKey, string> = {
-  skillsMatch: 'Skills match',
-  experienceMatch: 'Experience match',
-  keywordCoverage: 'Keyword coverage',
-  seniorityAlignment: 'Seniority alignment',
-  industryRelevance: 'Industry relevance',
+  skillsMatch: 'How well your experience matches what this role needs',
+  experienceMatch: 'Years of experience',
+  keywordCoverage: 'How ATS-friendly your CV is for this role',
+  seniorityAlignment: 'CV level',
+  industryRelevance: 'Industry fit',
   evidenceStrength: 'Evidence strength',
 };
 

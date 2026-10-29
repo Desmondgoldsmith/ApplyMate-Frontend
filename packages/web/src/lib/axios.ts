@@ -186,6 +186,26 @@ export function throwIfApiFailureResponse(
   );
 }
 
+const MAX_JSON_BLOB_ERROR_BYTES = 64 * 1024;
+
+/**
+ * With `responseType: 'blob'`, error bodies arrive as a Blob. Replaces a JSON Blob with its parsed
+ * value so {@link getApiErrorCode} and {@link getApiErrorMessage} can read the API error envelope.
+ */
+export async function parseJsonBlobErrorResponse(error: unknown): Promise<void> {
+  if (!axios.isAxiosError(error) || !error.response) return;
+  const data: unknown = error.response.data;
+  if (typeof Blob === 'undefined' || !(data instanceof Blob)) return;
+  const headerType = String(error.response.headers?.['content-type'] ?? '');
+  if (!/json/i.test(data.type) && !/json/i.test(headerType)) return;
+  if (data.size > MAX_JSON_BLOB_ERROR_BYTES) return;
+  try {
+    error.response.data = JSON.parse(await data.text()) as unknown;
+  } catch {
+    /* not valid JSON — keep the Blob */
+  }
+}
+
 function pickMessage(value: unknown): string | undefined {
   if (typeof value === 'string') return value;
   if (

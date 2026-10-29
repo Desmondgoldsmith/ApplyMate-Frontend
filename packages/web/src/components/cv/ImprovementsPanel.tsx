@@ -21,6 +21,10 @@ import {
 } from '@/lib/ai-daily-usage';
 import { buildAcceptAllSuccessToastMessage } from '@/lib/cvAcceptAllSummaryToast';
 import {
+  CV_VERSION_SAVED_BEFORE_ACCEPT_ALL_MESSAGE,
+  CV_VIEW_VERSIONS_LABEL,
+} from '@/lib/cvRevisions';
+import {
   extractAcceptAllQuotaFromApiBody,
   isAcceptAllBlockedByDailyQuota,
   type CvAcceptAllQuota,
@@ -83,6 +87,8 @@ type ImprovementsPanelProps = {
   onDiffPreview?: (params: CvDiffPreviewOpenParams | null) => void;
   /** Suggestion id when a diff overlay is open — suppresses duplicate Fix with AI. */
   activePreviewSuggestionId?: string | null;
+  /** Opens CV version history; enables the post–accept-all "View versions" toast. */
+  onViewVersions?: () => void;
 };
 
 function PriorityBadge({ priority, severity }: { priority?: number; severity?: string }) {
@@ -113,6 +119,7 @@ function ImprovementsPanelInner({
   onJumpToTarget,
   onDiffPreview,
   activePreviewSuggestionId = null,
+  onViewVersions,
 }: ImprovementsPanelProps) {
   const queryClient = useQueryClient();
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -213,6 +220,13 @@ function ImprovementsPanelInner({
         applyBulkAcceptToImprovementsCache(p, res) ?? p,
       );
       toast.success(buildAcceptAllSuccessToastMessage(res));
+      const appliedCount = res.acceptAllSummary?.applied ?? res.acceptedCount ?? 0;
+      if (onViewVersions && appliedCount > 0) {
+        toast.success(CV_VERSION_SAVED_BEFORE_ACCEPT_ALL_MESSAGE, {
+          label: CV_VIEW_VERSIONS_LABEL,
+          onClick: onViewVersions,
+        });
+      }
       invalidateDailyAiUsageQuery(queryClient, accessToken);
       const inv = reconcileAfterMutation(profileId, 'structuralAccept');
       await refreshCvState(queryClient, profileId, {

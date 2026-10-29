@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
@@ -12,14 +12,22 @@ import { CompanyLogo } from '@/components/ui/CompanyLogo';
 import { useToast } from '@/components/ui/Toast';
 import { useApplications } from '@/hooks/useApplications';
 import { useUpdateApplicationStatus } from '@/hooks/useApplicationMutations';
+import { useDailyAiUsage } from '@/hooks/useDailyAiUsage';
+import {
+  AI_QUOTA_UPGRADE_HINT,
+  canUseAiFromDailyAiUsage,
+  DAILY_AI_LIMIT_REACHED_MESSAGE,
+  invalidateDailyAiUsageQuery,
+} from '@/lib/ai-daily-usage';
 import {
   api,
   type ApplicationItem,
   type ApplicationTrackerStatus,
   type FollowUpEmailDraft,
 } from '@/lib/api';
-import { getApiErrorMessage } from '@/lib/axios';
+import { getApiErrorMessage, isDailyAiLimitApiError } from '@/lib/axios';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const STATUS_OPTIONS: { value: ApplicationTrackerStatus; label: string }[] = [
   { value: 'draft', label: 'Draft' },
@@ -87,6 +95,10 @@ export function ApplicationsTrackerTab() {
   const apps = useApplications();
   const toast = useToast();
   const updateStatus = useUpdateApplicationStatus();
+  const queryClient = useQueryClient();
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const aiUsage = useDailyAiUsage();
+  const followUpAiBlocked = !canUseAiFromDailyAiUsage(aiUsage);
 
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
@@ -102,8 +114,14 @@ export function ApplicationsTrackerTab() {
     onSuccess: (draft) => {
       setFollowUpDraft(draft);
       setFollowUpError(null);
+      invalidateDailyAiUsageQuery(queryClient, accessToken);
     },
     onError: (err) => {
+      if (isDailyAiLimitApiError(err)) {
+        setFollowUpError(`${DAILY_AI_LIMIT_REACHED_MESSAGE} ${AI_QUOTA_UPGRADE_HINT}`);
+        invalidateDailyAiUsageQuery(queryClient, accessToken);
+        return;
+      }
       setFollowUpError(getApiErrorMessage(err));
     },
   });
@@ -216,7 +234,9 @@ export function ApplicationsTrackerTab() {
             onToggleMenu={() => setOpenMenuId((prev) => (prev === item.id ? null : item.id))}
             onSelectStatus={(s) => handleStatusSelect(item.id, s)}
             statusPending={updateStatus.isPending && updateStatus.variables?.id === item.id}
+            followUpAiBlocked={followUpAiBlocked}
             onFollowUp={() => {
+              if (followUpAiBlocked) return;
               setFollowUpAppId(item.id);
               setFollowUpDraft(null);
               setFollowUpError(null);
@@ -301,6 +321,7 @@ function ApplicationCard({
   onToggleMenu,
   onSelectStatus,
   statusPending,
+  followUpAiBlocked,
   onFollowUp,
 }: {
   item: ApplicationItem;
@@ -310,6 +331,8 @@ function ApplicationCard({
   onToggleMenu: () => void;
   onSelectStatus: (s: ApplicationTrackerStatus) => void;
   statusPending?: boolean;
+  /** Free tier with no daily AI uses left — drafting a follow-up costs one. */
+  followUpAiBlocked?: boolean;
   onFollowUp: () => void;
 }) {
   const router = useRouter();
@@ -427,10 +450,20 @@ function ApplicationCard({
           </p>
         ) : null}
         {showFollowUp ? (
-          <div>
-            <Button type="button" variant="ghost" className="border border-white/10 text-xs" onClick={onFollowUp}>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              className="border border-white/10 text-xs"
+              disabled={followUpAiBlocked}
+              title={followUpAiBlocked ? 'Daily AI limit reached' : undefined}
+              onClick={onFollowUp}
+            >
               Get follow-up email
             </Button>
+            {followUpAiBlocked ? (
+              <span className="text-xs text-amber-200/90">Daily free AI limit reached.</span>
+            ) : null}
           </div>
         ) : null}
         {item.jobAnalysisId ? (

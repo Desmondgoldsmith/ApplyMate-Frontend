@@ -64,6 +64,8 @@ export type CvClinicTripleRightPanelProps = {
   ) => void;
   /** Suggestion id when diff overlay is open — suppress duplicate Fix with AI. */
   activePreviewSuggestionId?: string | null;
+  /** Opens CV version history (post–accept-all "View versions" toast). */
+  onViewVersions?: () => void;
   /** Optional sticky footer (e.g. onboarding Continue). */
   footerSlot?: ReactNode;
   highlightImprovementsAttention?: boolean;
@@ -111,6 +113,7 @@ function CvClinicTripleRightPanelInner({
   onDiffPreview,
   onJumpToImprovementTarget,
   activePreviewSuggestionId = null,
+  onViewVersions,
   footerSlot,
   analyzeScanPending,
   onAnalyzeScan,
@@ -549,6 +552,7 @@ function CvClinicTripleRightPanelInner({
               onDiffPreview={onDiffPreview}
               onJumpToTarget={onJumpToImprovementTarget}
               activePreviewSuggestionId={activePreviewSuggestionId}
+              onViewVersions={onViewVersions}
             />
           </>
         )}

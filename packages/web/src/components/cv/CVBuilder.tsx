@@ -581,6 +581,15 @@ function useDesktopLgMedia(): boolean {
   );
 }
 
+export type CvBuilderUndoRedoControls = {
+  canUndo: boolean;
+  canRedo: boolean;
+  undo: () => void;
+  redo: () => void;
+  /** Empty the undo/redo stack (e.g. after a server restore replaced the content it refers to). */
+  clearHistory: () => void;
+};
+
 export type CVBuilderProps = {
   /**
    * Preferred entry point — same editor everywhere; adjusts layout chrome only.
@@ -687,12 +696,7 @@ export type CVBuilderProps = {
   /** LanguageTool / spellcheck locale (e.g. en, de, fr). Defaults to en. */
   spellcheckLanguage?: string;
   /** Exposes undo/redo controls for toolbar wiring. */
-  onUndoRedoReady?: (controls: {
-    canUndo: boolean;
-    canRedo: boolean;
-    undo: () => void;
-    redo: () => void;
-  }) => void;
+  onUndoRedoReady?: (controls: CvBuilderUndoRedoControls) => void;
   /**
    * After undo/redo restores {@link CVBuilderData}, parent may persist + refetch derived
    * state (suggestions). Must NOT manually re-insert suggestion rows — only invalidate.
@@ -1053,8 +1057,9 @@ export function CVBuilder({
       redo: () => {
         applyHistoryRestore(redoEdit(dataRef.current), 'redo');
       },
+      clearHistory: resetUndoStack,
     });
-  }, [canUndo, canRedo, undoEdit, redoEdit, applyHistoryRestore]);
+  }, [canUndo, canRedo, undoEdit, redoEdit, applyHistoryRestore, resetUndoStack]);
 
   useEffect(
     () => () => {

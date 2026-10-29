@@ -15,7 +15,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useCVProfileById } from '@/hooks/useCVProfileById';
 import { useCvProfileRowsDisplay } from '@/hooks/useCvProfileRowsDisplay';
 import { openCvPdfInNewTab } from '@/lib/cv-open-pdf-tab';
-import { getApiErrorMessage } from '@/lib/axios';
+import { getCvExportErrorMessage } from '@/lib/cvExportErrors';
 import { formatRelativeEdited } from '@/lib/format-relative-edited';
 function CvProfilesPageInner() {
   const toast = useToast();
@@ -191,7 +191,7 @@ function CvProfilesPageInner() {
                       selectedId,
                       summaryRow.template ?? undefined,
                     )
-                      .catch((e: unknown) => toast.error(getApiErrorMessage(e)))
+                      .catch((e: unknown) => toast.error(getCvExportErrorMessage(e)))
                       .finally(() => setPdfPending(false));
                   }}
                 >

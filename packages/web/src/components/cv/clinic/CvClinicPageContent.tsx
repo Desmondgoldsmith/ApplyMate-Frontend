@@ -39,9 +39,11 @@ import { CvAssistantClarificationModal } from '@/components/cv/CvAssistantClarif
 import { RecruiterScanReportPanel } from '@/components/cv/RecruiterScanReportPanel';
 import {
   CVBuilder,
+  type CvBuilderUndoRedoControls,
   type CVBuilderQualitySignals,
   type CVBuilderTripleColumnConfig,
 } from '@/components/cv/CVBuilder';
+import { CvVersionHistoryModal } from '@/components/cv/CvVersionHistoryModal';
 import { TailorChangePanel } from '@/components/cv/TailorChangePanel';
 import { CvClinicToolbar } from '@/components/cv/CvClinicToolbar';
 import { CvClinicTripleRightPanel } from '@/components/cv/CvClinicTripleRightPanel';
@@ -87,6 +89,7 @@ import {
   type CvMutationCommitMeta,
   type CvPerformanceMeta,
   type CvParseImportSummary,
+  type CvProfileDetail,
   type CvProfileSummary,
   type CvSpellIssue,
   type CvTailorDraft,
@@ -182,6 +185,11 @@ import {
   getApiErrorCode,
   getApiErrorMessage,
 } from '@/lib/axios';
+import { getCvExportErrorMessage } from '@/lib/cvExportErrors';
+import {
+  CV_VERSION_SAVED_AFTER_UPLOAD_MESSAGE,
+  CV_VIEW_VERSIONS_LABEL,
+} from '@/lib/cvRevisions';
 import { logCvMutationErrorDev } from '@/lib/cvMutationDevLog';
 import {
   canonicalWorkflowEntityId,
@@ -406,6 +414,9 @@ export function CvClinicPageContent() {
   const improvements = useCVImprovements(hasCv && Boolean(targetId), targetId);
   const runScan = useRunCvDetailedScore();
   const exportCv = useExportCV();
+  /** Covers the reorder / refetch / template steps that run before the export mutation starts. */
+  const [exportInFlight, setExportInFlight] = useState(false);
+  const isExportPending = exportInFlight || exportCv.isPending;
   const renameProfile = useRenameCVProfile();
   const restoreMutation = useRestoreOriginalTemplate(targetId);
 
@@ -451,30 +462,18 @@ export function CvClinicPageContent() {
   const [reorderPending, setReorderPending] = useState(false);
   const [spellCheckTrigger, setSpellCheckTrigger] = useState(0);
   const [spellFixAllTrigger, setSpellFixAllTrigger] = useState(0);
-  const [undoRedoControls, setUndoRedoControls] = useState<{
-    canUndo: boolean;
-    canRedo: boolean;
-    undo: () => void;
-    redo: () => void;
-  } | null>(null);
-  const undoRedoControlsRef = useRef<{
-    canUndo: boolean;
-    canRedo: boolean;
-    undo: () => void;
-    redo: () => void;
-  } | null>(null);
-  const handleUndoRedoReady = useCallback(
-    (controls: {
-      canUndo: boolean;
-      canRedo: boolean;
-      undo: () => void;
-      redo: () => void;
-    }) => {
-      undoRedoControlsRef.current = controls;
-      setUndoRedoControls(controls);
-    },
-    [],
-  );
+  const [undoRedoControls, setUndoRedoControls] =
+    useState<CvBuilderUndoRedoControls | null>(null);
+  const undoRedoControlsRef = useRef<CvBuilderUndoRedoControls | null>(null);
+  const handleUndoRedoReady = useCallback((controls: CvBuilderUndoRedoControls) => {
+    undoRedoControlsRef.current = controls;
+    setUndoRedoControls(controls);
+  }, []);
+  const clearUndoHistory = useCallback(() => {
+    undoRedoControlsRef.current?.clearHistory();
+  }, []);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
+  const openVersionHistory = useCallback(() => setVersionHistoryOpen(true), []);
   /** Undo/redo restores content — debounced refetch keeps score breakdown aligned with editor state. */
   const handleHistoryApplied = useCallback(
     (_restored: CVBuilderData, _kind: 'undo' | 'redo') => {
@@ -1329,7 +1328,12 @@ export function CvClinicPageContent() {
   const handleCvParseUploadSuccess = useCallback(
     async (
       payload: CvParseSuccessPayload,
-      opts?: { closeUploadModal?: boolean; navigateToProfile?: boolean },
+      opts?: {
+        closeUploadModal?: boolean;
+        navigateToProfile?: boolean;
+        /** Upload replaced an existing CV — the API snapshotted the previous version first. */
+        savedPreviousVersion?: boolean;
+      },
     ) => {
       const { profile, importSummary } = payload;
       void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
@@ -1344,6 +1348,13 @@ export function CvClinicPageContent() {
           refreshSuggestions: true,
           invalidateScore: true,
         });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.cv.revisions(id), exact: true });
+        if (opts?.savedPreviousVersion) {
+          toast.success(CV_VERSION_SAVED_AFTER_UPLOAD_MESSAGE, {
+            label: CV_VIEW_VERSIONS_LABEL,
+            onClick: openVersionHistory,
+          });
+        }
       }
       if (opts?.closeUploadModal) setShowUpload(false);
       if (importSummary && id) {
@@ -1364,8 +1375,25 @@ export function CvClinicPageContent() {
         setCvServerHydrateNonce((n) => n + 1);
       }
     },
-    [queryClient, refreshCvState, router, targetId],
+    [queryClient, refreshCvState, router, targetId, toast, openVersionHistory],
   );
+
+  const handleCvVersionRestored = useCallback(() => {
+    const id = targetId?.trim();
+    if (!id) return;
+    const detail = queryClient.getQueryData<CvProfileDetail>(queryKeys.cv.profile(id));
+    const restoredTemplate = detail?.profile?.template;
+    if (isCvTemplateId(restoredTemplate)) {
+      setTemplate(restoredTemplate);
+      writeCvDashboardTemplate(id, restoredTemplate);
+    }
+    bumpCvServerHydrateNonce();
+  }, [queryClient, targetId, bumpCvServerHydrateNonce]);
+
+  const versionRestoreBlockedReason =
+    builderSaveStatus === 'dirty' || builderSaveStatus === 'saving'
+      ? 'Saving your latest edits — Restore will be available in a moment.'
+      : null;
 
   const onDashboardSaved = useCallback(
     async (result?: SaveCVBuilderDataResult) => {
@@ -1445,6 +1473,7 @@ export function CvClinicPageContent() {
         );
         if (!ok) return;
       }
+      setExportInFlight(true);
       try {
         await waitForReorderToSettle();
         if (targetId?.trim()) {
@@ -1500,7 +1529,9 @@ export function CvClinicPageContent() {
         });
         toast.success(`Resume downloaded as ${format.toUpperCase()}`);
       } catch (e) {
-        toast.error(getApiErrorMessage(e));
+        toast.error(getCvExportErrorMessage(e));
+      } finally {
+        setExportInFlight(false);
       }
     },
     [
@@ -2767,10 +2798,10 @@ export function CvClinicPageContent() {
               <Button
                 type="button"
                 className="h-8 px-2.5 text-xs sm:px-3"
-                disabled={exportCv.isPending}
+                disabled={isExportPending}
                 onClick={() => void handleExport('pdf')}
               >
-                {exportCv.isPending ? (
+                {isExportPending ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
                   'PDF'
@@ -2780,7 +2811,7 @@ export function CvClinicPageContent() {
                 type="button"
                 variant="ghost"
                 className="h-8 border border-white/10 px-2.5 text-xs sm:px-3"
-                disabled={exportCv.isPending}
+                disabled={isExportPending}
                 onClick={() => void handleExport('docx')}
               >
                 DOCX
@@ -2797,6 +2828,7 @@ export function CvClinicPageContent() {
                 }
                 onOpenAiChat={() => setAiChatOpen(true)}
                 onTriggerSpellCheck={() => setSpellCheckTrigger((n) => n + 1)}
+                onOpenVersionHistory={openVersionHistory}
                 canUndo={undoRedoControls?.canUndo}
                 canRedo={undoRedoControls?.canRedo}
                 onUndo={() => undoRedoControlsRef.current?.undo()}
@@ -2822,12 +2854,13 @@ export function CvClinicPageContent() {
       runScan.mutateAsync,
       improvements.data?.needsScoring,
       improvementList.length,
-      exportCv.isPending,
+      isExportPending,
       handleExport,
       queryClient,
       toast,
       qualitySignals.isSpellChecking,
       undoRedoControls,
+      openVersionHistory,
       sectionOrderFlow.openSuggestModal,
       sectionOrderFlow.suggestData,
     ],
@@ -2900,7 +2933,7 @@ export function CvClinicPageContent() {
         onSpellCheck={() => setSpellCheckTrigger((n) => n + 1)}
         isAtsScanPending={runScan.isPending}
         onAtsCheck={runToolbarAtsCheck}
-        isExportPending={exportCv.isPending}
+        isExportPending={isExportPending}
         onExportPdf={() => void handleExport('pdf')}
         onExportDocx={() => void handleExport('docx')}
         rightPanelCollapsed={rightPanelCollapsed}
@@ -2910,10 +2943,12 @@ export function CvClinicPageContent() {
         canRedo={undoRedoControls?.canRedo}
         onUndo={() => undoRedoControlsRef.current?.undo()}
         onRedo={() => undoRedoControlsRef.current?.redo()}
+        onOpenVersionHistory={targetId ? openVersionHistory : undefined}
       />
     ),
     [
       targetId,
+      openVersionHistory,
       profileOptions,
       router,
       setCreateCvOpen,
@@ -2923,7 +2958,7 @@ export function CvClinicPageContent() {
       runToolbarAtsCheck,
       queryClient,
       toast,
-      exportCv.isPending,
+      isExportPending,
       handleExport,
       rightPanelCollapsed,
       builderSaveStatus,
@@ -3031,6 +3066,7 @@ export function CvClinicPageContent() {
         onDiffPreview={mergeDiffPreviewOpen}
         onJumpToImprovementTarget={jumpToImprovementTarget}
         activePreviewSuggestionId={activePreviewSuggestionId}
+        onViewVersions={openVersionHistory}
         highlightImprovementsAttention={improvementsAttentionPulse}
         onAtsKeywordAssist={handleAtsKeywordAssist}
         onRecruiterScan={() => void runRecruiterScan()}
@@ -3070,6 +3106,7 @@ export function CvClinicPageContent() {
     improvementsAttentionPulse,
     mergeDiffPreviewOpen,
     activePreviewSuggestionId,
+    openVersionHistory,
     jumpToImprovementTarget,
     handleAtsKeywordAssist,
     runRecruiterScan,
@@ -3430,9 +3467,20 @@ export function CvClinicPageContent() {
       >
         <CVUploadZone
           cvProfileId={targetId}
-          onSuccess={(data) => void handleCvParseUploadSuccess(data)}
+          onSuccess={(data) =>
+            void handleCvParseUploadSuccess(data, { savedPreviousVersion: true })
+          }
         />
       </Modal>
+
+      <CvVersionHistoryModal
+        open={versionHistoryOpen}
+        onOpenChange={setVersionHistoryOpen}
+        profileId={targetId}
+        clearUndoHistory={clearUndoHistory}
+        onRestored={handleCvVersionRestored}
+        restoreBlockedReason={versionRestoreBlockedReason}
+      />
 
       <div className="hidden">{cvTopChrome}</div>
 
@@ -3539,6 +3587,7 @@ export function CvClinicPageContent() {
                   onDiffPreview={mergeDiffPreviewOpen}
                   onJumpToTarget={jumpToImprovementTarget}
                   activePreviewSuggestionId={activePreviewSuggestionId}
+                  onViewVersions={openVersionHistory}
                 />
               )}
             </div>
@@ -4016,6 +4065,7 @@ export function CvClinicPageContent() {
                           onDiffPreview={mergeDiffPreviewOpen}
                           onJumpToTarget={jumpToImprovementTarget}
                           activePreviewSuggestionId={activePreviewSuggestionId}
+                          onViewVersions={openVersionHistory}
                         />
                       </>
                     )}

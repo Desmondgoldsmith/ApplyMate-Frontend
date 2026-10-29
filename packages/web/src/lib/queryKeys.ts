@@ -35,6 +35,7 @@ export const queryKeys = {
       ['cv', 'section-order-suggest', profileId] as const,
     recruiterScan: (profileId: string) =>
       ['cv', 'recruiter-scan', profileId] as const,
+    revisions: (profileId: string) => ['cv', 'revisions', profileId] as const,
     assistantGlobalOperations: () =>
       ['cv', 'assistant', 'global-operations'] as const,
   },

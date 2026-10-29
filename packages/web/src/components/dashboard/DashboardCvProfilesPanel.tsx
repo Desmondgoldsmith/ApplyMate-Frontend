@@ -23,6 +23,7 @@ import { useRenameCVProfile } from '@/hooks/useRenameCVProfile';
 import { useSetDefaultCVProfile } from '@/hooks/useSetDefaultCVProfile';
 import { openCvPdfInNewTab } from '@/lib/cv-open-pdf-tab';
 import { getApiErrorMessage } from '@/lib/axios';
+import { getCvExportErrorMessage } from '@/lib/cvExportErrors';
 import type { CvProfileSummary } from '@/lib/api';
 import { formatRelativeEdited } from '@/lib/format-relative-edited';
 import { cn } from '@/lib/utils';
@@ -245,7 +246,7 @@ export function DashboardCvProfilesPanel({ profiles, isLoading, onNewCv }: Dashb
                     onClick={() => {
                       setPdfOpeningId(p.id);
                       void openCvPdfInNewTab(p.id, p.template ?? undefined)
-                        .catch((e: unknown) => toast.error(getApiErrorMessage(e)))
+                        .catch((e: unknown) => toast.error(getCvExportErrorMessage(e)))
                         .finally(() => setPdfOpeningId(null));
                     }}
                   >

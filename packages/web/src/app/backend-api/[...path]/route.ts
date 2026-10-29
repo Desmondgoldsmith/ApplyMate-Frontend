@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   BACKEND_TIMEOUT_ERROR_CODE,
   BACKEND_UNREACHABLE_ERROR_CODE,
-  DEV_BACKEND_PROXY_TIMEOUT_MS,
+  devBackendProxyTimeoutMs,
   devBackendProxyUnreachableMessage,
   isDevBackendNgrokTunnel,
   resolveNestApiOrigin,
@@ -86,7 +86,7 @@ async function proxyToNest(req: NextRequest, pathSegments: string[]): Promise<Ne
       headers,
       body: hasBody ? body : undefined,
       redirect: 'manual',
-      signal: AbortSignal.timeout(DEV_BACKEND_PROXY_TIMEOUT_MS),
+      signal: AbortSignal.timeout(devBackendProxyTimeoutMs(path)),
     });
 
     return new NextResponse(upstream.body, {

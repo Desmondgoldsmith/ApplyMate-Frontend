@@ -6,7 +6,11 @@ import {
   normalizeAuthResponse,
   normalizeRefreshResponse,
 } from './auth-response';
-import { axiosClient, throwIfApiFailureResponse } from './axios';
+import {
+  axiosClient,
+  parseJsonBlobErrorResponse,
+  throwIfApiFailureResponse,
+} from './axios';
 import {
   aiWaitForResultBody,
   resolveMaybeQueuedAiResponse,
@@ -3237,6 +3241,30 @@ export type CvProfileDetail = {
   sections: CVSectionRecord[];
 };
 
+/** Why the API snapshotted the CV; unknown future values are kept as plain strings. */
+export type CvRevisionReason =
+  | 'cv_upload'
+  | 'cv_text_import'
+  | 'accept_all'
+  | 'tailor_accept'
+  | 'before_restore'
+  | (string & {});
+
+/** GET /cv/profiles/:id/revisions — newest first, max 20. */
+export type CvRevisionSummary = {
+  id: string;
+  reason: CvRevisionReason;
+  createdAt: string;
+  sectionCount: number;
+};
+
+/** POST /cv/profiles/:id/revisions/:revisionId/restore */
+export type CvRevisionRestoreResult = {
+  restored: boolean;
+  revisionId: string;
+  sections: CVSectionRecord[];
+};
+
 /** POST /cv/profiles/:id/assistant/commit — success (`source: ai_assistant`). */
 export type CvAssistantCommitResult = {
   success: boolean;
@@ -4471,6 +4499,41 @@ function normalizeCVSection(raw: unknown): CVSectionRecord {
       !Array.isArray(body.data)
         ? (body.data as Record<string, unknown>)
         : undefined,
+  };
+}
+
+function normalizeCvRevisionSummary(raw: unknown): CvRevisionSummary | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const o = raw as Record<string, unknown>;
+  const id = typeof o.id === 'string' ? o.id.trim() : '';
+  if (!id) return null;
+  const sectionCount = Number(o.sectionCount);
+  return {
+    id,
+    reason: typeof o.reason === 'string' ? o.reason : '',
+    createdAt: typeof o.createdAt === 'string' ? o.createdAt : '',
+    sectionCount: Number.isFinite(sectionCount) ? sectionCount : 0,
+  };
+}
+
+function normalizeCvRevisionList(raw: unknown): CvRevisionSummary[] {
+  const body: unknown = unwrapApiDataEnvelope(raw);
+  const rows = Array.isArray(body)
+    ? body
+    : Array.isArray((body as { revisions?: unknown }).revisions)
+      ? (body as { revisions: unknown[] }).revisions
+      : [];
+  return rows
+    .map(normalizeCvRevisionSummary)
+    .filter((r): r is CvRevisionSummary => r !== null);
+}
+
+function normalizeCvRevisionRestoreResult(raw: unknown): CvRevisionRestoreResult {
+  const body = unwrapApiDataEnvelope(raw);
+  return {
+    restored: body.restored === true,
+    revisionId: typeof body.revisionId === 'string' ? body.revisionId : '',
+    sections: Array.isArray(body.sections) ? body.sections.map(normalizeCVSection) : [],
   };
 }
 
@@ -6563,6 +6626,30 @@ const cv = {
     }
   },
 
+  /** GET /cv/profiles/:id/revisions — automatic snapshots taken before content-replacing changes. */
+  listRevisions: async (profileId: string): Promise<CvRevisionSummary[]> => {
+    const res = await axiosClient.get<unknown>(
+      `/cv/profiles/${encodeURIComponent(profileId)}/revisions`,
+    );
+    throwIfApiFailureResponse(res.data, res.status);
+    return normalizeCvRevisionList(res.data);
+  },
+
+  /**
+   * POST /cv/profiles/:id/revisions/:revisionId/restore — the current state is saved as a
+   * `before_restore` revision first; score and suggestion previews are cleared server-side.
+   */
+  restoreRevision: async (
+    profileId: string,
+    revisionId: string,
+  ): Promise<CvRevisionRestoreResult> => {
+    const res = await axiosClient.post<unknown>(
+      `/cv/profiles/${encodeURIComponent(profileId)}/revisions/${encodeURIComponent(revisionId)}/restore`,
+    );
+    throwIfApiFailureResponse(res.data, res.status);
+    return normalizeCvRevisionRestoreResult(res.data);
+  },
+
   /** PATCH /cv/profiles/:id/restore-template — resets `template` to `originalTemplate`. */
   restoreOriginalTemplate: async (profileId: string) => {
     const res = await axiosClient.patch<unknown>(
@@ -7498,75 +7585,76 @@ function cvExportQueryParams(
   return params;
 }
 
+/**
+ * The API allows CV export routes up to 120s (headless Chromium cold start); stay just above that.
+ * Other requests keep the shared client's 90s timeout.
+ */
+export const CV_EXPORT_TIMEOUT_MS = 130_000;
+
 async function cvExportDownload(
   path: string,
   params: Record<string, string> | undefined,
   fallbackFilename: string,
 ): Promise<CvExportDownload> {
-  const res = await axiosClient.get<Blob>(path, {
-    params: Object.keys(params ?? {}).length ? params : undefined,
-    headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
-    responseType: 'blob',
-  });
-  return {
-    blob: res.data,
-    filename: resolveExportFilename(res.headers, fallbackFilename),
-  };
+  try {
+    const res = await axiosClient.get<Blob>(path, {
+      params: Object.keys(params ?? {}).length ? params : undefined,
+      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+      responseType: 'blob',
+      timeout: CV_EXPORT_TIMEOUT_MS,
+    });
+    return {
+      blob: res.data,
+      filename: resolveExportFilename(res.headers, fallbackFilename),
+    };
+  } catch (e) {
+    await parseJsonBlobErrorResponse(e);
+    throw e;
+  }
+}
+
+/** 404/405 from the profile-scoped route means the server predates it. */
+function isMissingCvExportRoute(e: unknown): boolean {
+  if (!axios.isAxiosError(e)) return false;
+  const status = e.response?.status;
+  return status === 404 || status === 405;
+}
+
+/**
+ * GET /cv/profiles/:id/export/:format?jobAnalysisId=
+ * Retries GET /cv/export/:format?cvProfileId=… only when the scoped route is missing — any other
+ * failure is rethrown so a slow render is never started twice.
+ */
+async function downloadCvExport(
+  format: 'pdf' | 'docx',
+  opts: CvExportRequestOpts,
+): Promise<CvExportDownload> {
+  const id = opts.cvProfileId?.trim();
+  const params = cvExportQueryParams(opts);
+  const fallback = format === 'pdf' ? 'CV.pdf' : 'CV.docx';
+  if (id) {
+    try {
+      return await cvExportDownload(
+        `/cv/profiles/${encodeURIComponent(id)}/export/${format}`,
+        params,
+        fallback,
+      );
+    } catch (e) {
+      if (!isMissingCvExportRoute(e)) throw e;
+    }
+  }
+  return cvExportDownload(
+    `/cv/export/${format}`,
+    { ...params, ...(id ? { cvProfileId: id } : {}) },
+    fallback,
+  );
 }
 
 const cvExport = {
-  /**
-   * GET /cv/profiles/:id/export/pdf?jobAnalysisId=
-   * Falls back to GET /cv/export/pdf?cvProfileId=… for older servers.
-   */
-  downloadPdf: async (opts: CvExportRequestOpts): Promise<CvExportDownload> => {
-    const { cvProfileId } = opts;
-    const id = cvProfileId?.trim();
-    const params = cvExportQueryParams(opts);
-    const fallback = 'CV.pdf';
-    if (id) {
-      try {
-        const scoped = await cvExportDownload(
-          `/cv/profiles/${encodeURIComponent(id)}/export/pdf`,
-          params,
-          fallback,
-        );
-        if (scoped.blob instanceof Blob) return scoped;
-      } catch {
-        /* 404 or pre-path API — use legacy */
-      }
-    }
-    return cvExportDownload(
-      '/cv/export/pdf',
-      { ...params, ...(id ? { cvProfileId: id } : {}) },
-      fallback,
-    );
-  },
-  downloadDocx: async (
-    opts: CvExportRequestOpts,
-  ): Promise<CvExportDownload> => {
-    const { cvProfileId } = opts;
-    const id = cvProfileId?.trim();
-    const params = cvExportQueryParams(opts);
-    const fallback = 'CV.docx';
-    if (id) {
-      try {
-        const scoped = await cvExportDownload(
-          `/cv/profiles/${encodeURIComponent(id)}/export/docx`,
-          params,
-          fallback,
-        );
-        if (scoped.blob instanceof Blob) return scoped;
-      } catch {
-        /* fall through */
-      }
-    }
-    return cvExportDownload(
-      '/cv/export/docx',
-      { ...params, ...(id ? { cvProfileId: id } : {}) },
-      fallback,
-    );
-  },
+  downloadPdf: (opts: CvExportRequestOpts): Promise<CvExportDownload> =>
+    downloadCvExport('pdf', opts),
+  downloadDocx: (opts: CvExportRequestOpts): Promise<CvExportDownload> =>
+    downloadCvExport('docx', opts),
 };
 
 export type SaveOnboardingProgressBody = {
