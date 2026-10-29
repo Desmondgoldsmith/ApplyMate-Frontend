@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, LayoutGrid, List, Search } from 'lucide-reac
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useBreadcrumbTrail } from '@/components/dashboard/BreadcrumbContext';
 import { CareerPremiumBanner } from '@/components/job-hub/CareerPremiumBanner';
@@ -32,7 +32,7 @@ import { useUpdateApplicationStatus } from '@/hooks/useApplicationMutations';
 import { useHubBookmarks } from '@/hooks/useHubBookmarks';
 import { useJobHistory } from '@/hooks/useJobHistory';
 import { api, type ApplicationTrackerStatus } from '@/lib/api';
-import { getApiErrorMessage } from '@/lib/axios';
+import { getApiErrorCode, getApiErrorMessage } from '@/lib/axios';
 import { invalidateGrowthQueries } from '@/hooks/useGrowth';
 import {
   invalidateNotificationList,
@@ -80,6 +80,13 @@ export function JobHub() {
   const history = useJobHistory({ includeAccepted: true });
   const hubBookmarks = useHubBookmarks();
   const updateStatus = useUpdateApplicationStatus();
+  /**
+   * Status this tab last asked for per application, keyed to the loaded status it was based on.
+   * Used as `expectedStatus` only until the board refetches, so quick successive moves don't conflict.
+   */
+  const lastRequestedStatusRef = useRef<
+    Record<string, { base: string | null; requested: string }>
+  >({});
   const patchBookmarkPipeline = useMutation({
     mutationFn: (args: { bookmarkId: string; hubPipelineStage: ReturnType<typeof hubStageToHubPipelineStage> }) =>
       api.jobDiscovery.patchBookmark(args.bookmarkId, { hubPipelineStage: args.hubPipelineStage }),
@@ -441,10 +448,54 @@ export function JobHub() {
       if (job.applicationId) {
         const apiStatus = hubStageToApplicationStatus(stage);
         if (apiStatus) {
-          updateStatus.mutate({
-            id: job.applicationId,
-            status: apiStatus as ApplicationTrackerStatus,
-          });
+          // One request: the server moves the linked analysis and bookmark in the same
+          // transaction, and `expectedStatus` stops a stale board from rolling back a newer status.
+          const applicationId = job.applicationId;
+          const loaded = job.applicationStatus ?? null;
+          const pending = lastRequestedStatusRef.current[applicationId];
+          const expectedStatus = pending && pending.base === loaded ? pending.requested : loaded;
+          lastRequestedStatusRef.current[applicationId] = { base: loaded, requested: apiStatus };
+          const settle = () => {
+            clearStageOverride(job.key);
+            setOverrides((prev) => {
+              const next = { ...prev };
+              delete next[job.key];
+              return next;
+            });
+            void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
+            void queryClient.invalidateQueries({ queryKey: queryKeys.hub.remindersRoot() });
+            void queryClient.invalidateQueries({ queryKey: queryKeys.career.dashboard() });
+            if (job.jobAnalysisId) {
+              void queryClient.invalidateQueries({
+                queryKey: queryKeys.jobs.analysis(job.jobAnalysisId),
+              });
+            }
+          };
+          updateStatus.mutate(
+            {
+              id: applicationId,
+              status: apiStatus as ApplicationTrackerStatus,
+              expectedStatus,
+            },
+            {
+              onSuccess: settle,
+              onError: (err) => {
+                delete lastRequestedStatusRef.current[applicationId];
+                setDetailJobPin((prev) => (prev?.key === job.key ? job : prev));
+                settle();
+                void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
+                void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
+                if (getApiErrorCode(err) === 'APPLICATION_STATUS_CHANGED') {
+                  toast.error(
+                    'This job was updated somewhere else, so we loaded its latest stage. Move it again if needed.',
+                  );
+                } else {
+                  toast.error(getApiErrorMessage(err) || 'Could not update the stage');
+                }
+              },
+            },
+          );
+          return;
         }
         if (job.jobAnalysisId) {
           patchJobPipeline.mutate({

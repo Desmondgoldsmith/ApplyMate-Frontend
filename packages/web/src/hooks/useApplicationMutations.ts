@@ -15,8 +15,15 @@ import { invalidateTodayPlanQueries } from '@/lib/today-plan';
 export function useUpdateApplicationStatus() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: ApplicationTrackerStatus | string }) =>
-      api.applications.updateStatus(id, status),
+    mutationFn: ({
+      id,
+      status,
+      expectedStatus,
+    }: {
+      id: string;
+      status: ApplicationTrackerStatus | string;
+      expectedStatus?: string | null;
+    }) => api.applications.updateStatus(id, status, { expectedStatus }),
     onSuccess: (app, { id }) => {
       queryClient.setQueryData(queryKeys.applications.detail(id), app);
       void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });

@@ -57,6 +57,8 @@ export type TrackedJob = {
   key: string;
   jobAnalysisId: string | null;
   applicationId: string | null;
+  /** Server `Application.status` as loaded (sent back as `expectedStatus` on stage changes). */
+  applicationStatus?: string | null;
   title: string;
   company: string;
   companyLogoUrl?: string | null;
@@ -190,7 +192,7 @@ function statusToStage(app: ApplicationItem): HubStage | null {
     case 'interviewed':
       return 'interviewing';
     case 'offer_received':
-      return 'negotiating';
+      return 'offered';
     case 'negotiating':
       return 'negotiating';
     case 'accepted':
@@ -200,7 +202,7 @@ function statusToStage(app: ApplicationItem): HubStage | null {
     case 'rejected':
     case 'withdrawn':
     case 'ghosted':
-      return 'bookmarked';
+      return 'rejected';
     default:
       return null;
   }
@@ -374,6 +376,7 @@ export function mergeTrackedJobs(
       key: overrideKey,
       jobAnalysisId,
       applicationId: app?.id ?? null,
+      applicationStatus: app?.status ?? null,
       title,
       company,
       companyLogoUrl,
@@ -468,10 +471,14 @@ export function hubStageToApplicationStatus(stage: HubStage): string | null {
       return 'applied';
     case 'interviewing':
       return 'interview_scheduled';
+    case 'offered':
+      return 'offer_received';
     case 'negotiating':
       return 'negotiating';
     case 'accepted':
       return 'accepted';
+    case 'rejected':
+      return 'rejected';
     case 'bookmarked':
       return 'withdrawn';
     case 'analyzed':

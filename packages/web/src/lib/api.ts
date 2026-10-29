@@ -9167,12 +9167,18 @@ const applications = {
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeApplicationItem(res.data);
   },
+  /**
+   * With `expectedStatus` the server answers 409 `APPLICATION_STATUS_CHANGED` instead of
+   * overwriting a newer status set elsewhere.
+   */
   updateStatus: async (
     id: string,
     status: ApplicationTrackerStatus | ApplicationStatus | string,
+    opts?: { expectedStatus?: string | null },
   ) => {
     const res = await axiosClient.patch<unknown>(`/applications/${id}/status`, {
       status,
+      ...(opts?.expectedStatus ? { expectedStatus: opts.expectedStatus } : {}),
     });
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeApplicationItem(res.data);
