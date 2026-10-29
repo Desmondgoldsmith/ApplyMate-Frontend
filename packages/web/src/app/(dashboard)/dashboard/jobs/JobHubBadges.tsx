@@ -2,7 +2,11 @@
 
 import { cn } from '@/lib/utils';
 
-import { HUB_STAGE_SHORT_LABELS, type HubStage, type TrackedJob } from './jobHubMerge';
+import {
+  HUB_STAGE_SHORT_LABELS,
+  type HubStage,
+  type TrackedJob,
+} from './jobHubMerge';
 
 const ADVANCED_PIPELINE_STAGES: HubStage[] = [
   'applied',
@@ -41,7 +45,13 @@ function stateLabel(state: TrackedJob['state']): string {
   }
 }
 
-export function JobHubBadges({ job, className }: { job: TrackedJob; className?: string }) {
+export function JobHubBadges({
+  job,
+  className,
+}: {
+  job: TrackedJob;
+  className?: string;
+}) {
   const origin = originLabel(job.origin);
   const stageLabel = HUB_STAGE_SHORT_LABELS[job.stage];
   const legacyState = stateLabel(job.state);

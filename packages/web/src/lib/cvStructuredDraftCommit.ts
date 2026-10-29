@@ -18,7 +18,9 @@ export type CommitAcceptedStructuredDraftOptions = {
  * Canonical post-commit pipeline: optional mutation, awaited scoped refetches, optional local
  * rehydrate hook, then a single scoped score invalidation (no delayed second-wave refetches).
  */
-export async function commitAcceptedStructuredDraft(options: CommitAcceptedStructuredDraftOptions): Promise<void> {
+export async function commitAcceptedStructuredDraft(
+  options: CommitAcceptedStructuredDraftOptions,
+): Promise<void> {
   const { queryClient, profileId, mutation, onRehydrated } = options;
   const id = profileId.trim();
   if (!id) throw new Error('commitAcceptedStructuredDraft: missing profileId');
@@ -44,5 +46,9 @@ export function rehydrateCvBuilderAfterStructuredPersist(
   profileId: string,
   onRehydrated?: () => void,
 ): Promise<void> {
-  return commitAcceptedStructuredDraft({ queryClient, profileId, onRehydrated });
+  return commitAcceptedStructuredDraft({
+    queryClient,
+    profileId,
+    onRehydrated,
+  });
 }

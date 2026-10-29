@@ -63,7 +63,8 @@ export function formatSalaryAmount(n: number, currency: string): string {
 
 function formatSalaryBasisLabel(basis: string | undefined): string {
   const basisRaw = basis?.toLowerCase() ?? 'annual';
-  if (basisRaw === 'annual' || basisRaw === 'year' || basisRaw === 'yearly') return 'year';
+  if (basisRaw === 'annual' || basisRaw === 'year' || basisRaw === 'yearly')
+    return 'year';
   if (basisRaw === 'hourly' || basisRaw === 'hour') return 'hour';
   if (basisRaw === 'monthly' || basisRaw === 'month') return 'month';
   return String(basis ?? 'annual').replace(/_/g, ' ');
@@ -92,11 +93,16 @@ function truncateSalaryPostingExcerpt(text: string): string {
       cut = match.index;
     }
   }
-  return text.slice(0, cut).trim().replace(/[.,;:]+$/, '');
+  return text
+    .slice(0, cut)
+    .trim()
+    .replace(/[.,;:]+$/, '');
 }
 
 /** Verbatim compensation phrase from the posting (body copy, not the headline). */
-export function formatSalaryPostingExcerpt(est: JobSalaryEstimate): string | null {
+export function formatSalaryPostingExcerpt(
+  est: JobSalaryEstimate,
+): string | null {
   const raw = est.postingText?.trim();
   if (!raw) return null;
   const excerpt = truncateSalaryPostingExcerpt(raw);

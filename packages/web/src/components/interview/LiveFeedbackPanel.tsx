@@ -3,7 +3,10 @@
 import { ChevronDown } from 'lucide-react';
 import { memo, useMemo } from 'react';
 
-import type { StarFeedback, TurnAnswerScores } from '@/lib/interview-prep-types';
+import type {
+  StarFeedback,
+  TurnAnswerScores,
+} from '@/lib/interview-prep-types';
 import { formatCategoryLabel } from '@/lib/interview-prep-types';
 import type { ResolvedInterviewPersona } from '@/lib/interviewPersonas';
 import { personaFeedbackMessage } from '@/lib/interviewPersonas';
@@ -21,7 +24,9 @@ function ScoreRow({ label, value }: { label: string; value: number }) {
   const display = formatScore(value);
   return (
     <div className="flex items-center gap-2.5">
-      <span className="w-[90px] shrink-0 text-xs text-[var(--text-secondary)]">{label}</span>
+      <span className="w-[90px] shrink-0 text-xs text-[var(--text-secondary)]">
+        {label}
+      </span>
       <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-[var(--border-subtle)]">
         <div
           className="ip-score-bar-fill h-full rounded-full bg-[var(--teal)]"
@@ -71,7 +76,10 @@ export const LiveFeedbackPanel = memo(function LiveFeedbackPanel({
 
   return (
     <section
-      className={cn('border-b border-[var(--border-subtle)] px-5 py-4', className)}
+      className={cn(
+        'border-b border-[var(--border-subtle)] px-5 py-4',
+        className,
+      )}
       aria-label="Live coaching meters"
     >
       <button
@@ -92,12 +100,16 @@ export const LiveFeedbackPanel = memo(function LiveFeedbackPanel({
       {open ? (
         <>
           {liveMessage ? (
-            <p className="mt-1 text-[13px] text-[var(--text-secondary)]">{liveMessage}</p>
+            <p className="mt-1 text-[13px] text-[var(--text-secondary)]">
+              {liveMessage}
+            </p>
           ) : null}
           {category ? (
             <p className="mt-2 text-xs text-[var(--text-muted)]">
               Testing:{' '}
-              <span className="font-medium text-[var(--text-teal)]">{formatCategoryLabel(category)}</span>
+              <span className="font-medium text-[var(--text-teal)]">
+                {formatCategoryLabel(category)}
+              </span>
             </p>
           ) : null}
           <div className="mt-3 space-y-2">
@@ -110,7 +122,9 @@ export const LiveFeedbackPanel = memo(function LiveFeedbackPanel({
               {starFeedback.suggestionText}
             </p>
           ) : (
-            <p className="mt-2 text-xs italic text-[var(--text-muted)]">Answer to see live scores.</p>
+            <p className="mt-2 text-xs italic text-[var(--text-muted)]">
+              Answer to see live scores.
+            </p>
           )}
         </>
       ) : null}

@@ -7,8 +7,8 @@ describe('resolveCvProfileId', () => {
     expect(resolveCvProfileId({ cvProfileId: 'a' })).toBe('a');
     expect(resolveCvProfileId({ profileId: 'b' })).toBe('b');
     expect(resolveCvProfileId({ id: 'c' })).toBe('c');
-    expect(
-      resolveCvProfileId({ profileId: 'chat' }, { id: 'fallback' }),
-    ).toBe('chat');
+    expect(resolveCvProfileId({ profileId: 'chat' }, { id: 'fallback' })).toBe(
+      'chat',
+    );
   });
 });

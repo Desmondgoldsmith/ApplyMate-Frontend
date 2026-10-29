@@ -3,7 +3,10 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
-import { humanizeReasoningSignal, stripTechnicalTokens } from '@/components/dashboard/assistant-voice';
+import {
+  humanizeReasoningSignal,
+  stripTechnicalTokens,
+} from '@/components/dashboard/assistant-voice';
 import { assistantToneStripClass } from '@/components/dashboard/assistant-voice/assistantToneStyles';
 import type {
   AdaptiveReasoningPayload,
@@ -18,11 +21,18 @@ import { cn } from '@/lib/utils';
 function hasAssistantReasoning(ar: AssistantReasoningPayload | null): boolean {
   if (!ar) return false;
   return Boolean(
-    ar.primaryFocusReason?.trim() || ar.continuityReason?.trim() || ar.pacingReason?.trim(),
+    ar.primaryFocusReason?.trim() ||
+    ar.continuityReason?.trim() ||
+    ar.pacingReason?.trim(),
   );
 }
 
-const LEVERAGE_ORDER = ['cv_improvement', 'job_matching', 'applications', 'interview_preparation'] as const;
+const LEVERAGE_ORDER = [
+  'cv_improvement',
+  'job_matching',
+  'applications',
+  'interview_preparation',
+] as const;
 
 const LEVERAGE_LABELS: Record<(typeof LEVERAGE_ORDER)[number], string> = {
   cv_improvement: 'CV improvement',
@@ -31,9 +41,12 @@ const LEVERAGE_LABELS: Record<(typeof LEVERAGE_ORDER)[number], string> = {
   interview_preparation: 'Interview prep',
 };
 
-function normalizeStrongestLeverage(raw: string): (typeof LEVERAGE_ORDER)[number] | null {
+function normalizeStrongestLeverage(
+  raw: string,
+): (typeof LEVERAGE_ORDER)[number] | null {
   const x = raw.trim().toLowerCase().replace(/-/g, '_');
-  if ((LEVERAGE_ORDER as readonly string[]).includes(x)) return x as (typeof LEVERAGE_ORDER)[number];
+  if ((LEVERAGE_ORDER as readonly string[]).includes(x))
+    return x as (typeof LEVERAGE_ORDER)[number];
   if (x.includes('cv')) return 'cv_improvement';
   if (x.includes('job') && x.includes('match')) return 'job_matching';
   if (x.includes('application')) return 'applications';
@@ -85,9 +98,14 @@ export function AssistantHeaderRenderer({
     null;
 
   const focusFallback =
-    humanizedLabels?.narrativeArc?.trim() || humanizedLabels?.momentum?.trim() || null;
+    humanizedLabels?.narrativeArc?.trim() ||
+    humanizedLabels?.momentum?.trim() ||
+    null;
 
-  const fallbackLine = !phase3Primary && !progressionLine ? stripTechnicalTokens(focusFallback ?? '') || null : null;
+  const fallbackLine =
+    !phase3Primary && !progressionLine
+      ? stripTechnicalTokens(focusFallback ?? '') || null
+      : null;
 
   const primaryLine = phase3Primary || fallbackLine || null;
 
@@ -115,7 +133,13 @@ export function AssistantHeaderRenderer({
               onClick={() => setOpenCompact((v) => !v)}
             >
               Why this?
-              <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', openCompact && 'rotate-180')} aria-hidden />
+              <ChevronDown
+                className={cn(
+                  'h-3.5 w-3.5 transition-transform',
+                  openCompact && 'rotate-180',
+                )}
+                aria-hidden
+              />
             </button>
             {openCompact ? (
               <AssistantReasoningBody reasoning={reasoning!} />
@@ -139,16 +163,27 @@ export function AssistantHeaderRenderer({
               onClick={() => setOpenAdaptive((v) => !v)}
             >
               Context
-              <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', openAdaptive && 'rotate-180')} aria-hidden />
+              <ChevronDown
+                className={cn(
+                  'h-3.5 w-3.5 transition-transform',
+                  openAdaptive && 'rotate-180',
+                )}
+                aria-hidden
+              />
             </button>
-            {openAdaptive ? <AdaptiveReasoningBody rows={adaptiveReasoning} /> : null}
+            {openAdaptive ? (
+              <AdaptiveReasoningBody rows={adaptiveReasoning} />
+            ) : null}
           </div>
         </>
       );
     }
     if (showLeverageStrip) {
       return (
-        <HighestImpactAreaStrip strongestLeverage={personalizationContext?.strongestLeverage} className="mt-4" />
+        <HighestImpactAreaStrip
+          strongestLeverage={personalizationContext?.strongestLeverage}
+          className="mt-4"
+        />
       );
     }
     return null;
@@ -171,13 +206,24 @@ export function AssistantHeaderRenderer({
     >
       <HighestImpactAreaStrip
         strongestLeverage={personalizationContext?.strongestLeverage}
-        className={showLeverageStrip && (primaryLine || progressionLine) ? 'mb-4' : undefined}
+        className={
+          showLeverageStrip && (primaryLine || progressionLine)
+            ? 'mb-4'
+            : undefined
+        }
       />
       {primaryLine ? (
-        <p className="text-[14px] font-medium leading-relaxed text-white/84">{primaryLine}</p>
+        <p className="text-[14px] font-medium leading-relaxed text-white/84">
+          {primaryLine}
+        </p>
       ) : null}
       {progressionLine ? (
-        <p className={cn('text-[13px] leading-relaxed text-white/52', primaryLine ? 'mt-2' : '')}>
+        <p
+          className={cn(
+            'text-[13px] leading-relaxed text-white/52',
+            primaryLine ? 'mt-2' : '',
+          )}
+        >
           {progressionLine}
         </p>
       ) : null}
@@ -190,9 +236,17 @@ export function AssistantHeaderRenderer({
             onClick={() => setOpenReasoning((v) => !v)}
           >
             Why this?
-            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', openReasoning && 'rotate-180')} aria-hidden />
+            <ChevronDown
+              className={cn(
+                'h-3.5 w-3.5 transition-transform',
+                openReasoning && 'rotate-180',
+              )}
+              aria-hidden
+            />
           </button>
-          {openReasoning && reasoning ? <AssistantReasoningBody reasoning={reasoning} /> : null}
+          {openReasoning && reasoning ? (
+            <AssistantReasoningBody reasoning={reasoning} />
+          ) : null}
         </div>
       ) : null}
 
@@ -205,9 +259,17 @@ export function AssistantHeaderRenderer({
             onClick={() => setOpenAdaptive((v) => !v)}
           >
             Context
-            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', openAdaptive && 'rotate-180')} aria-hidden />
+            <ChevronDown
+              className={cn(
+                'h-3.5 w-3.5 transition-transform',
+                openAdaptive && 'rotate-180',
+              )}
+              aria-hidden
+            />
           </button>
-          {openAdaptive ? <AdaptiveReasoningBody rows={adaptiveReasoning} /> : null}
+          {openAdaptive ? (
+            <AdaptiveReasoningBody rows={adaptiveReasoning} />
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -226,7 +288,9 @@ function HighestImpactAreaStrip({
   const activeLeverage = normalizeStrongestLeverage(raw);
   return (
     <div className={cn('max-w-[640px]', className)}>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/38">Highest impact area</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/38">
+        Highest impact area
+      </p>
       <div className="mt-2 flex flex-wrap gap-2">
         {LEVERAGE_ORDER.map((key) => (
           <span
@@ -246,7 +310,11 @@ function HighestImpactAreaStrip({
   );
 }
 
-function AssistantReasoningBody({ reasoning }: { reasoning: AssistantReasoningPayload }) {
+function AssistantReasoningBody({
+  reasoning,
+}: {
+  reasoning: AssistantReasoningPayload;
+}) {
   const rows: Array<{ label: string; text: string | null }> = [
     { label: 'Focus', text: reasoning.primaryFocusReason?.trim() || null },
     { label: 'Connection', text: reasoning.continuityReason?.trim() || null },

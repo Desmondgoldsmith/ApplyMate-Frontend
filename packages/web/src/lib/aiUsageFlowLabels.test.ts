@@ -9,7 +9,9 @@ describe('aiUsageFlowLabels', () => {
   });
 
   it('maps CV_CHAT_STRUCTURED_EXTRACT', () => {
-    expect(labelForAiUsageFlow('CV_CHAT_STRUCTURED_EXTRACT')).toBe('Chat — structured CV from pasted text');
+    expect(labelForAiUsageFlow('CV_CHAT_STRUCTURED_EXTRACT')).toBe(
+      'Chat — structured CV from pasted text',
+    );
   });
 
   it('falls back for unknown flows', () => {

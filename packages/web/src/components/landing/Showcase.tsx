@@ -6,7 +6,14 @@ import { Check } from 'lucide-react';
 import { ConicGlowBorder } from './ConicGlowBorder';
 import { MatchScoreBar } from './MatchScoreBar';
 
-const pills = ['LinkedIn', 'Greenhouse', 'Workday', 'Lever', 'Indeed', 'Glassdoor'];
+const pills = [
+  'LinkedIn',
+  'Greenhouse',
+  'Workday',
+  'Lever',
+  'Indeed',
+  'Glassdoor',
+];
 
 export function Showcase() {
   return (
@@ -49,7 +56,9 @@ export function Showcase() {
                   className="h-2 w-2 rounded-full bg-[#00C9B1]"
                   style={{ boxShadow: '0 0 10px #00C9B1' }}
                 />
-                <span className="text-[14px] font-bold text-white">ApplyMate</span>
+                <span className="text-[14px] font-bold text-white">
+                  ApplyMate
+                </span>
               </div>
               <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
                 <div className="w-full max-w-[260px] shrink-0 sm:w-[260px]">
@@ -69,14 +78,16 @@ export function Showcase() {
                     Generate Cover Letter
                   </button>
                   <ul className="space-y-2 pt-2 text-[13px] text-[rgba(255,255,255,0.65)]">
-                    {['Product strategy', 'Design systems', 'Cross-functional leadership'].map(
-                      (s) => (
-                        <li key={s} className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-[#00C9B1]" />
-                          {s}
-                        </li>
-                      ),
-                    )}
+                    {[
+                      'Product strategy',
+                      'Design systems',
+                      'Cross-functional leadership',
+                    ].map((s) => (
+                      <li key={s} className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-[#00C9B1]" />
+                        {s}
+                      </li>
+                    ))}
                   </ul>
                 </div>
               </div>

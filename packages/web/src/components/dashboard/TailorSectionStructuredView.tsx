@@ -28,7 +28,13 @@ function labelizeKey(key: string): string {
     .replace(/^\w/, (c) => c.toUpperCase());
 }
 
-function SkillPills({ skills, variant }: { skills: string[]; variant: 'before' | 'after' }) {
+function SkillPills({
+  skills,
+  variant,
+}: {
+  skills: string[];
+  variant: 'before' | 'after';
+}) {
   if (skills.length === 0) {
     return <span className="text-xs text-white/35">No skills listed</span>;
   }
@@ -51,7 +57,10 @@ function renderEmptyPlaceholder(): ReactNode {
   return <span className="text-xs italic text-white/35">—</span>;
 }
 
-function renderSkillsPayload(data: unknown, variant: 'before' | 'after'): ReactNode {
+function renderSkillsPayload(
+  data: unknown,
+  variant: 'before' | 'after',
+): ReactNode {
   if (data === null || data === undefined) {
     return renderEmptyPlaceholder();
   }
@@ -66,11 +75,16 @@ function renderSkillsPayload(data: unknown, variant: 'before' | 'after'): ReactN
             const c = cat as Record<string, unknown>;
             const name = typeof c.name === 'string' ? c.name : `Group ${i + 1}`;
             const skills = Array.isArray(c.skills)
-              ? c.skills.filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+              ? c.skills.filter(
+                  (x): x is string =>
+                    typeof x === 'string' && x.trim().length > 0,
+                )
               : [];
             return (
               <div key={`${name}-${i}`}>
-                <p className="mb-1.5 text-[11px] font-semibold tracking-wide text-white/55">{name}</p>
+                <p className="mb-1.5 text-[11px] font-semibold tracking-wide text-white/55">
+                  {name}
+                </p>
                 <SkillPills skills={skills} variant={variant} />
               </div>
             );
@@ -80,11 +94,16 @@ function renderSkillsPayload(data: unknown, variant: 'before' | 'after'): ReactN
     }
 
     if (Array.isArray(o.skills)) {
-      const name = typeof o.name === 'string' && o.name.trim() ? o.name : 'Skills';
-      const skills = o.skills.filter((x): x is string => typeof x === 'string' && x.trim().length > 0);
+      const name =
+        typeof o.name === 'string' && o.name.trim() ? o.name : 'Skills';
+      const skills = o.skills.filter(
+        (x): x is string => typeof x === 'string' && x.trim().length > 0,
+      );
       return (
         <div>
-          <p className="mb-1.5 text-[11px] font-semibold tracking-wide text-white/55">{name}</p>
+          <p className="mb-1.5 text-[11px] font-semibold tracking-wide text-white/55">
+            {name}
+          </p>
           <SkillPills skills={skills} variant={variant} />
         </div>
       );
@@ -109,13 +128,22 @@ function renderExperiencePayload(data: unknown): ReactNode {
   return (
     <ul className="space-y-3 text-[13px] leading-relaxed">
       {parsedItems.map((item, i) => (
-        <li key={`${formatExperienceRoleLabel(item)}-${i}`} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
-          <p className="font-semibold text-white">{formatExperienceRoleLabel(item)}</p>
+        <li
+          key={`${formatExperienceRoleLabel(item)}-${i}`}
+          className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3"
+        >
+          <p className="font-semibold text-white">
+            {formatExperienceRoleLabel(item)}
+          </p>
           {item.bullets.length > 0 ? (
             <ul className="mt-2 list-outside list-disc space-y-1.5 pl-4 text-white/80">
               {item.bullets.map((b, j) => (
                 <li key={j} className="pl-0.5">
-                  <CvRichTextHtml text={b} as="span" className="[&_strong]:font-semibold [&_strong]:text-white" />
+                  <CvRichTextHtml
+                    text={b}
+                    as="span"
+                    className="[&_strong]:font-semibold [&_strong]:text-white"
+                  />
                 </li>
               ))}
             </ul>
@@ -142,7 +170,9 @@ function renderSummaryPayload(data: unknown): ReactNode {
     return renderRichTextBlock(data);
   }
   if (typeof data === 'object' && !Array.isArray(data)) {
-    const t = (data as { text?: unknown; summary?: unknown }).text ?? (data as { summary?: unknown }).summary;
+    const t =
+      (data as { text?: unknown; summary?: unknown }).text ??
+      (data as { summary?: unknown }).summary;
     if (typeof t === 'string' && t.trim()) {
       return renderRichTextBlock(t);
     }
@@ -177,19 +207,29 @@ export function TailorSectionStructuredView({
   }
 
   if (!body) {
-    body = raw.trim() ? renderRichTextBlock(raw.trim()) : renderEmptyPlaceholder();
+    body = raw.trim()
+      ? renderRichTextBlock(raw.trim())
+      : renderEmptyPlaceholder();
   }
   return (
     <div className={cn(variant === 'before' ? 'opacity-90' : '')}>
       {label ? (
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-white/40">{label}</p>
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-white/40">
+          {label}
+        </p>
       ) : null}
       {body}
     </div>
   );
 }
 
-export function TailorSkillsDelta({ beforeRaw, afterRaw }: { beforeRaw: string; afterRaw: string }) {
+export function TailorSkillsDelta({
+  beforeRaw,
+  afterRaw,
+}: {
+  beforeRaw: string;
+  afterRaw: string;
+}) {
   const beforeParsed = tryParseSectionJson(beforeRaw);
   const afterParsed = tryParseSectionJson(afterRaw);
   const bSkills = extractSkillList(beforeParsed);
@@ -201,7 +241,12 @@ export function TailorSkillsDelta({ beforeRaw, afterRaw }: { beforeRaw: string; 
 
   if (removed.length === 0 && added.length === 0) {
     return (
-      <TailorSectionStructuredView sectionType="skills" raw={afterRaw} variant="after" label="Updated skills" />
+      <TailorSectionStructuredView
+        sectionType="skills"
+        raw={afterRaw}
+        variant="after"
+        label="Updated skills"
+      />
     );
   }
 
@@ -209,13 +254,17 @@ export function TailorSkillsDelta({ beforeRaw, afterRaw }: { beforeRaw: string; 
     <div className="space-y-3">
       {removed.length > 0 ? (
         <div>
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-rose-300/70">Removed</p>
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-rose-300/70">
+            Removed
+          </p>
           <SkillPills skills={removed} variant="before" />
         </div>
       ) : null}
       {added.length > 0 ? (
         <div>
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300/80">Added</p>
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300/80">
+            Added
+          </p>
           <SkillPills skills={added} variant="after" />
         </div>
       ) : null}

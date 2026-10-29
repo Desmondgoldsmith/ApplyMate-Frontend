@@ -34,8 +34,9 @@ import {
 function readAccessTokenFromMemory(): string | undefined {
   if (typeof window === 'undefined') return undefined;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { useAuthStore } = require('@/store/useAuthStore') as typeof import('@/store/useAuthStore');
+    const { useAuthStore } =
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/store/useAuthStore') as typeof import('@/store/useAuthStore');
     return useAuthStore.getState().accessToken?.trim() || undefined;
   } catch {
     return undefined;
@@ -192,7 +193,9 @@ const MAX_JSON_BLOB_ERROR_BYTES = 64 * 1024;
  * With `responseType: 'blob'`, error bodies arrive as a Blob. Replaces a JSON Blob with its parsed
  * value so {@link getApiErrorCode} and {@link getApiErrorMessage} can read the API error envelope.
  */
-export async function parseJsonBlobErrorResponse(error: unknown): Promise<void> {
+export async function parseJsonBlobErrorResponse(
+  error: unknown,
+): Promise<void> {
   if (!axios.isAxiosError(error) || !error.response) return;
   const data: unknown = error.response.data;
   if (typeof Blob === 'undefined' || !(data instanceof Blob)) return;
@@ -421,7 +424,8 @@ export function shouldRetryFailedQuery(
   if (isBackendConnectionError(error)) return false;
   if (!axios.isAxiosError(error)) return true;
   const s = error.response?.status;
-  if (s === 429 || s === 401 || s === 403 || s === 502 || s === 503) return false;
+  if (s === 429 || s === 401 || s === 403 || s === 502 || s === 503)
+    return false;
   return true;
 }
 

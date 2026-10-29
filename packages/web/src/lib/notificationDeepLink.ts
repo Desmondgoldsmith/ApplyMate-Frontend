@@ -7,7 +7,10 @@ import {
   normalizeDashboardRoute,
 } from '@/lib/dashboardCanonicalRoutes';
 
-function pickMetaString(meta: Record<string, unknown> | undefined, keys: string[]): string | null {
+function pickMetaString(
+  meta: Record<string, unknown> | undefined,
+  keys: string[],
+): string | null {
   if (!meta) return null;
   for (const key of keys) {
     const v = meta[key];
@@ -36,14 +39,13 @@ export function notificationActionHref(n: NotificationItem): string {
   const ctaHref = pickMetaString(rawMeta, ['ctaHref', 'cta_href']);
   const href = pickMetaString(rawMeta, ['href']);
   const deepLink = pickMetaString(rawMeta, ['deepLink', 'deep_link']);
-  const preferred =
-    ctaHref?.startsWith('/')
-      ? ctaHref
-      : href?.startsWith('/')
-        ? href
-        : deepLink?.startsWith('/')
-          ? deepLink
-          : null;
+  const preferred = ctaHref?.startsWith('/')
+    ? ctaHref
+    : href?.startsWith('/')
+      ? href
+      : deepLink?.startsWith('/')
+        ? deepLink
+        : null;
   if (preferred) return normalizeNotificationHref(preferred);
 
   const jobAnalysisId = pickMetaString(rawMeta, [
@@ -83,11 +85,20 @@ export function notificationActionLabel(n: NotificationItem): string {
   const href = pickMetaString(rawMeta, ['href']);
   const preferred = ctaHref ?? href;
   if (preferred?.includes('applicationId=')) return 'Open application';
-  if (preferred?.includes('jobAnalysisId=') || preferred?.includes('jobId=')) return 'Open job details';
+  if (preferred?.includes('jobAnalysisId=') || preferred?.includes('jobId='))
+    return 'Open job details';
   if (preferred?.includes('bookmarkId=')) return 'Open in Job Hub';
 
-  const jobAnalysisId = pickMetaString(rawMeta, ['jobAnalysisId', 'job_analysis_id', 'jobId', 'job_id']);
-  const applicationId = pickMetaString(rawMeta, ['applicationId', 'application_id']);
+  const jobAnalysisId = pickMetaString(rawMeta, [
+    'jobAnalysisId',
+    'job_analysis_id',
+    'jobId',
+    'job_id',
+  ]);
+  const applicationId = pickMetaString(rawMeta, [
+    'applicationId',
+    'application_id',
+  ]);
   const bookmarkId = pickMetaString(rawMeta, ['bookmarkId', 'bookmark_id']);
 
   if (jobAnalysisId) return 'Open job details';

@@ -22,7 +22,9 @@ function previewSectionShowsDiff(
   previewSectionId: string,
   apiSection: string,
   builderSection: string,
-  changedFields: ReturnType<typeof normalizeCvDiffPreviewParams>['changedFields'],
+  changedFields: ReturnType<
+    typeof normalizeCvDiffPreviewParams
+  >['changedFields'],
   hasStructural: boolean,
 ): boolean {
   for (const diffSection of [builderSection, apiSection]) {
@@ -56,8 +58,7 @@ export function canDisplayCvImprovementDiffPreview(
 
   if (!hasFieldContent && !hasStructural) return false;
 
-  const builderSection =
-    cvDiffPreviewBuilderSection(apiSection) ?? apiSection;
+  const builderSection = cvDiffPreviewBuilderSection(apiSection) ?? apiSection;
 
   for (const previewId of CV_DIFF_PREVIEW_SECTION_IDS) {
     if (

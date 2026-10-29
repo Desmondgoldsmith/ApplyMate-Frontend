@@ -14,7 +14,10 @@ type Props = {
 const DASHBOARD_INTERVIEW_PREP_HOME_CAP = 2;
 
 /** Horizontal strip of server-validated interview prep CTAs (uses {@link InterviewPreparationCardPayload.ctaHref} verbatim). */
-export function DashboardInterviewPreparationSection({ cards, totalCount }: Props) {
+export function DashboardInterviewPreparationSection({
+  cards,
+  totalCount,
+}: Props) {
   if (!cards.length) return null;
 
   const visible = cards.slice(0, DASHBOARD_INTERVIEW_PREP_HOME_CAP);
@@ -28,7 +31,9 @@ export function DashboardInterviewPreparationSection({ cards, totalCount }: Prop
     <section aria-label="Interview prep cards" className="scroll-mt-4 min-w-0">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h2 className="text-[16px] font-semibold text-white/90">More interview prep</h2>
+          <h2 className="text-[16px] font-semibold text-white/90">
+            More interview prep
+          </h2>
           <p className="mt-1 text-[12px] font-medium text-white/38">
             Additional prep prompts from your pipeline.
           </p>
@@ -56,14 +61,27 @@ export function DashboardInterviewPreparationSection({ cards, totalCount }: Prop
             >
               <div className="flex min-w-0 items-start gap-3">
                 {company ? (
-                  <CompanyLogo company={company} logoUrl={card.companyLogoUrl} size="md" shape="rounded" />
+                  <CompanyLogo
+                    company={company}
+                    logoUrl={card.companyLogoUrl}
+                    size="md"
+                    shape="rounded"
+                  />
                 ) : null}
                 <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-semibold leading-snug text-white/90 max-[480px]:line-clamp-2 max-[480px]:whitespace-normal">{card.headline}</p>
-                {card.supporting?.trim() ? (
-                  <p className="mt-1 text-[12px] leading-relaxed text-white/48">{card.supporting.trim()}</p>
-                ) : null}
-                {meta ? <p className="mt-2 text-[12px] font-medium text-[rgba(240,244,242,0.60)]">{meta}</p> : null}
+                  <p className="text-[14px] font-semibold leading-snug text-white/90 max-[480px]:line-clamp-2 max-[480px]:whitespace-normal">
+                    {card.headline}
+                  </p>
+                  {card.supporting?.trim() ? (
+                    <p className="mt-1 text-[12px] leading-relaxed text-white/48">
+                      {card.supporting.trim()}
+                    </p>
+                  ) : null}
+                  {meta ? (
+                    <p className="mt-2 text-[12px] font-medium text-[rgba(240,244,242,0.60)]">
+                      {meta}
+                    </p>
+                  ) : null}
                 </div>
               </div>
               <Link

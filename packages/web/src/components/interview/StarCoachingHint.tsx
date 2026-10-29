@@ -20,7 +20,8 @@ export const StarCoachingHint = memo(function StarCoachingHint({
   feedback: StarFeedback | null | undefined;
   className?: string;
 }) {
-  if (!feedback?.suggestionText?.trim() && !(feedback?.missingParts?.length)) return null;
+  if (!feedback?.suggestionText?.trim() && !feedback?.missingParts?.length)
+    return null;
 
   return (
     <aside
@@ -31,7 +32,10 @@ export const StarCoachingHint = memo(function StarCoachingHint({
       aria-label="STAR coaching hint"
     >
       <div className="flex items-start gap-2">
-        <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-[#00C9B1]" aria-hidden />
+        <Lightbulb
+          className="mt-0.5 h-4 w-4 shrink-0 text-[#00C9B1]"
+          aria-hidden
+        />
         <div className="min-w-0 flex-1">
           {feedback.missingParts?.length ? (
             <p className="text-[11px] font-semibold text-white/55">
@@ -40,10 +44,14 @@ export const StarCoachingHint = memo(function StarCoachingHint({
             </p>
           ) : null}
           {feedback.suggestionText ? (
-            <p className="mt-0.5 text-xs leading-relaxed text-white/75">{feedback.suggestionText}</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-white/75">
+              {feedback.suggestionText}
+            </p>
           ) : null}
           {feedback.improvedHint ? (
-            <p className="mt-1.5 text-[11px] leading-relaxed text-white/50">{feedback.improvedHint}</p>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-white/50">
+              {feedback.improvedHint}
+            </p>
           ) : null}
         </div>
       </div>

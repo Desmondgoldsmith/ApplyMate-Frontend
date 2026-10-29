@@ -26,7 +26,10 @@ setup('seed storage state', async ({ page, context }) => {
     return;
   }
 
-  await page.goto(`${baseURL.replace(/\/$/, '')}/login`, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+  await page.goto(`${baseURL.replace(/\/$/, '')}/login`, {
+    waitUntil: 'domcontentloaded',
+    timeout: 60_000,
+  });
   await page.getByPlaceholder('Email').fill(email);
   await page.getByPlaceholder('Password').fill(password);
   await page.getByRole('button', { name: /^Sign In$/i }).click();

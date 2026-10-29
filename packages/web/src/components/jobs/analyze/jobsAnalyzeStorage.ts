@@ -226,7 +226,9 @@ export function jobHistoryItemToDetail(item: JobHistoryItem): JobDetailForForm {
       isTailored: item.isTailored,
       tailoredCvProfileId: item.tailoredCvProfileId,
       tailoredCvName: item.tailoredCvName,
-      ...(item.hasAnalysis !== undefined ? { hasAnalysis: item.hasAnalysis } : {}),
+      ...(item.hasAnalysis !== undefined
+        ? { hasAnalysis: item.hasAnalysis }
+        : {}),
       ...(item.analyzeSource ? { analyzeSource: item.analyzeSource } : {}),
       ...(scoreSource ? { scoreSource } : {}),
       ...(srcCv ? { cvProfileId: srcCv, sourceCvProfileId: srcCv } : {}),
@@ -340,13 +342,18 @@ export function mergeJobAnalysisForApply(
   }
 
   if (
-    (incoming.matchCvProfileId === undefined || incoming.matchCvProfileId === null) &&
+    (incoming.matchCvProfileId === undefined ||
+      incoming.matchCvProfileId === null) &&
     prev.matchCvProfileId
   ) {
     base.matchCvProfileId = prev.matchCvProfileId;
   }
 
-  if (incoming.factorsBreakdown === undefined && prev.factorsBreakdown && incoming.isTailored !== false) {
+  if (
+    incoming.factorsBreakdown === undefined &&
+    prev.factorsBreakdown &&
+    incoming.isTailored !== false
+  ) {
     base.factorsBreakdown = prev.factorsBreakdown;
   }
 

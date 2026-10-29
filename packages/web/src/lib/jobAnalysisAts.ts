@@ -10,7 +10,9 @@ export function resolveAtsRiskItems(analysis: JobAnalysis): string[] {
   const keywordFactor = analysis.factorsBreakdown?.factors.find(
     (f) => f.key === 'keywordCoverage',
   );
-  return (keywordFactor?.semanticOnlyItems ?? []).map((s) => s.trim()).filter(Boolean);
+  return (keywordFactor?.semanticOnlyItems ?? [])
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 export function stripAnalysisUserCopy(text: string): string {

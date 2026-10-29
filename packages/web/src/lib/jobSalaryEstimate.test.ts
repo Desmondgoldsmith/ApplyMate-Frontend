@@ -37,7 +37,9 @@ const aiEstimate: JobSalaryEstimate = {
 
 describe('jobSalaryEstimate', () => {
   it('resolves source from source or deprecated dataSource', () => {
-    expect(resolveSalaryEstimateSource(postingEstimate)).toBe('job_description');
+    expect(resolveSalaryEstimateSource(postingEstimate)).toBe(
+      'job_description',
+    );
     expect(
       resolveSalaryEstimateSource({
         ...aiEstimate,
@@ -78,7 +80,9 @@ describe('jobSalaryEstimate', () => {
     };
     expect(formatSalaryRange(withPosting)).toContain(' to ');
     expect(formatSalaryRange(withPosting)).not.toContain('Pay and benefits');
-    expect(formatSalaryPostingExcerpt(withPosting)).toContain('Pay and benefits');
+    expect(formatSalaryPostingExcerpt(withPosting)).toContain(
+      'Pay and benefits',
+    );
   });
 
   it('truncates salary posting excerpt before role-overview junk', () => {

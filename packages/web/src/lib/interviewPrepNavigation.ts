@@ -17,7 +17,10 @@ export function resolveNextPlannedNavigation(
   if (response.nextPlannedQuestion?.questionText?.trim()) {
     return response.nextPlannedQuestion;
   }
-  if (response.nextQuestion?.source === 'planned' && response.nextQuestion.questionText?.trim()) {
+  if (
+    response.nextQuestion?.source === 'planned' &&
+    response.nextQuestion.questionText?.trim()
+  ) {
     return response.nextQuestion;
   }
   return null;
@@ -164,15 +167,23 @@ export function resolvePrepContinueLabel(
   turnQueueLength: number,
 ): string {
   if (questionProgress && questionProgress.mainTotal > 0) {
-    return questionProgress.mainPending <= 0 ? 'Finish interview' : 'Next main question';
+    return questionProgress.mainPending <= 0
+      ? 'Finish interview'
+      : 'Next main question';
   }
-  return turnIndex + 1 >= turnQueueLength ? 'Finish interview' : 'Next question';
+  return turnIndex + 1 >= turnQueueLength
+    ? 'Finish interview'
+    : 'Next question';
 }
 
 export function mainQuestionsComplete(
   questionProgress: QuestionProgress | null | undefined,
 ): boolean {
-  return Boolean(questionProgress && questionProgress.mainTotal > 0 && questionProgress.mainPending <= 0);
+  return Boolean(
+    questionProgress &&
+    questionProgress.mainTotal > 0 &&
+    questionProgress.mainPending <= 0,
+  );
 }
 
 /** Whether the user may end the session without advancing stale optional turns. */
@@ -181,7 +192,8 @@ export function canEndInterviewSession(
   response?: TurnAnswerResponse | null,
 ): boolean {
   return (
-    response?.canCompleteInterview === true || mainQuestionsComplete(questionProgress)
+    response?.canCompleteInterview === true ||
+    mainQuestionsComplete(questionProgress)
   );
 }
 
@@ -219,7 +231,8 @@ export function formatMainProgressLabel(
       : Math.min(progress.mainAnswered + 1, total);
   const main = `Question ${current} of ${total}`;
   const optionalAnswered =
-    optionalFollowUpsAnsweredCount(progress) + Math.max(0, extraSidePracticeAnswered);
+    optionalFollowUpsAnsweredCount(progress) +
+    Math.max(0, extraSidePracticeAnswered);
   const optionalBadge =
     optionalAnswered > 0 ? `+${optionalAnswered} optional answered` : null;
   return { main, optionalBadge };

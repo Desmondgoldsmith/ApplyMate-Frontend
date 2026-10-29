@@ -54,7 +54,8 @@ export const IntroMicPrimeEffect = memo(function IntroMicPrimeEffect({
     void sleep(delayMs).then(() => {
       if (cancelled) return;
       const bridge = voiceBridgeRef.current;
-      if (!bridge || bridge.fellBackToManual || bridge.inputMode !== 'voice') return;
+      if (!bridge || bridge.fellBackToManual || bridge.inputMode !== 'voice')
+        return;
       void bridge.start();
     });
 

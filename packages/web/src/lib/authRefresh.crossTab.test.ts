@@ -1,4 +1,12 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 import {
   clearApplymateAuthCookies,
@@ -23,7 +31,10 @@ vi.mock('@/lib/authSync', async (importOriginal) => ({
 }));
 
 function b64urlJson(value: object): string {
-  return btoa(JSON.stringify(value)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return btoa(JSON.stringify(value))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
 }
 
 function jwtExpiringIn(seconds: number, id: string): string {
@@ -44,12 +55,18 @@ function installLockManager() {
     tail = run.catch(() => undefined);
     return run;
   });
-  Object.defineProperty(navigator, 'locks', { value: { request }, configurable: true });
+  Object.defineProperty(navigator, 'locks', {
+    value: { request },
+    configurable: true,
+  });
   return request;
 }
 
 function removeLockManager() {
-  Object.defineProperty(navigator, 'locks', { value: undefined, configurable: true });
+  Object.defineProperty(navigator, 'locks', {
+    value: undefined,
+    configurable: true,
+  });
 }
 
 /** Fresh module graph = a separate tab: own Zustand store and `refreshInFlight`, shared cookies. */
@@ -159,7 +176,9 @@ describe('refreshAccessToken across tabs', { timeout: 20_000 }, () => {
 
     await expect(tab.refreshAccessToken()).resolves.toBe(true);
     expect(refreshPosts()).toHaveLength(1);
-    expect(refreshPosts()[0]?.[1]).toEqual({ refreshToken: 'refresh-rotated-long-ago' });
+    expect(refreshPosts()[0]?.[1]).toEqual({
+      refreshToken: 'refresh-rotated-long-ago',
+    });
   });
 
   it('sends one cookie-only refresh when two tabs restore a session together', async () => {

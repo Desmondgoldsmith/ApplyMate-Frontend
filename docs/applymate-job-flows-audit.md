@@ -27,17 +27,17 @@ ApplyMate splits **discovery** (Job Board) from **pipeline** (Job Hub) plus **de
 
 ### 2.1 Step-by-step journey (as implemented)
 
-| Step | User action | System behavior |
-|------|-------------|-----------------|
-| 1 | Lands `/dashboard/job-board` | `JobBoardContent`: loads CV profiles (`useCVProfiles`), user `me` for default city, bootstraps location once. |
-| 2 | Sees collapsed “Search & Filters · {city} · {CV name}” | Quick context; expand for full filters. |
-| 3 | Selects CV in filter | `cvProfileId` in discovery params changes → new `GET /job-discovery` (no auto `q`; backend builds role query). |
-| 4 | Sets location / mode / date / remote-first | Immediate filters patch `appliedFilters`; discovery refetches. |
-| 5 | Types keywords / city and clicks **Search** | Applies `q` + location (explicit override path); no per-keystroke discover. |
-| 6 | Scrolls list, clicks a card | `activeJobId` set; desktop shows `JobDetailPanel` beside list; mobile opens sheet. |
-| 7 | Reads detail + match UI | `GET /job-discovery/:id`; `useJobBoardAiMatch` debounces then: reuse analyses → else `POST /jobs/analyze` if quota + JD length; over quota: GET reuse only then optional `POST /jobs/match-score`. |
-| 8 | Save / Tailor / View original / Share | Bookmark mutation; router to `/dashboard/jobs/analyze?jobId=…` or `?new=1` with prefill; external link; share helper. |
-| 9 | Pagination | Page param only; placeholder data allowed when other discovery dimensions unchanged. |
+| Step | User action                                            | System behavior                                                                                                                                                                                    |
+| ---- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | Lands `/dashboard/job-board`                           | `JobBoardContent`: loads CV profiles (`useCVProfiles`), user `me` for default city, bootstraps location once.                                                                                      |
+| 2    | Sees collapsed “Search & Filters · {city} · {CV name}” | Quick context; expand for full filters.                                                                                                                                                            |
+| 3    | Selects CV in filter                                   | `cvProfileId` in discovery params changes → new `GET /job-discovery` (no auto `q`; backend builds role query).                                                                                     |
+| 4    | Sets location / mode / date / remote-first             | Immediate filters patch `appliedFilters`; discovery refetches.                                                                                                                                     |
+| 5    | Types keywords / city and clicks **Search**            | Applies `q` + location (explicit override path); no per-keystroke discover.                                                                                                                        |
+| 6    | Scrolls list, clicks a card                            | `activeJobId` set; desktop shows `JobDetailPanel` beside list; mobile opens sheet.                                                                                                                 |
+| 7    | Reads detail + match UI                                | `GET /job-discovery/:id`; `useJobBoardAiMatch` debounces then: reuse analyses → else `POST /jobs/analyze` if quota + JD length; over quota: GET reuse only then optional `POST /jobs/match-score`. |
+| 8    | Save / Tailor / View original / Share                  | Bookmark mutation; router to `/dashboard/jobs/analyze?jobId=…` or `?new=1` with prefill; external link; share helper.                                                                              |
+| 9    | Pagination                                             | Page param only; placeholder data allowed when other discovery dimensions unchanged.                                                                                                               |
 
 ### 2.2 Friction points (brutally honest)
 
@@ -49,12 +49,12 @@ ApplyMate splits **discovery** (Job Board) from **pipeline** (Job Hub) plus **de
 
 ### 2.3 Addictiveness
 
-| Mechanism | Present? | Notes |
-|-----------|----------|--------|
-| Variable reward (good listings) | Partial | Depends on provider + CV fit; UI shows fallback banners. |
-| Progress / streak | Weak | Daily AI cap in header — **punitive** more than **gameful**; no streak, no “3 applications this week.” |
-| Instant feedback | Partial | List refetch overlay + gauge; analyze is not instant. |
-| Reason to return daily | Weak | No digest email / “new jobs since yesterday” surface in this flow (may exist elsewhere). |
+| Mechanism                       | Present? | Notes                                                                                                  |
+| ------------------------------- | -------- | ------------------------------------------------------------------------------------------------------ |
+| Variable reward (good listings) | Partial  | Depends on provider + CV fit; UI shows fallback banners.                                               |
+| Progress / streak               | Weak     | Daily AI cap in header — **punitive** more than **gameful**; no streak, no “3 applications this week.” |
+| Instant feedback                | Partial  | List refetch overlay + gauge; analyze is not instant.                                                  |
+| Reason to return daily          | Weak     | No digest email / “new jobs since yesterday” surface in this flow (may exist elsewhere).               |
 
 ### 2.4 Problem-solving power
 
@@ -74,16 +74,16 @@ ApplyMate splits **discovery** (Job Board) from **pipeline** (Job Hub) plus **de
 
 ### 3.1 Step-by-step journey
 
-| Step | User action | System behavior |
-|------|-------------|-----------------|
-| 1 | `/dashboard/jobs` | `JobHub` loads `useApplications`, `useJobHistory`, `useHubBookmarks`; merges via `mergeTrackedJobs` + `loadStageOverrides()`. |
-| 2 | Sees empty or populated hub | Empty `GlowCard` → board CTA to analyze or implied board bookmark path. |
-| 3 | Search / pipeline filter / view toggle | Client-side filter on merged list; `HubPipelineStrip` for stage counts; board vs table. |
-| 4 | Opens a job (card/row) | URL `?jobId=` / `?applicationId=` / `?jobKey=`; sidebar + `JobHubDetailPanel` (sheet mobile / stacked desktop). |
-| 5 | Changes stage | **Server-persisted** when the row can be targeted: `PATCH` **application** status if `applicationId` exists; else `PATCH` **bookmark** `hubPipelineStage` if a hub bookmark row exists; else `PATCH` **JobAnalysis** status for a saved analysis. `localStorage` / `saveStageOverride` only for edge rows with no id to PATCH. See §10. |
-| 6 | Notes / emails / tailor links | `JobHubDetailPanel` — includes generate email template (`api.jobs.generateEmailTemplate`), links to analyze route. |
-| 7 | Reminders | **Hub CRM reminders** (`GET/POST/PATCH/DELETE /api/jobs/hub-reminders`) when the row has `jobAnalysisId` or `hubBookmarkId`; **device-local** reminders remain for rows without those ids (`notifyDueLocalReminders`). See §10. |
-| 8 | Unbookmark discovery item | `removeBookmark` + cache invalidation. |
+| Step | User action                            | System behavior                                                                                                                                                                                                                                                                                                                         |
+| ---- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | `/dashboard/jobs`                      | `JobHub` loads `useApplications`, `useJobHistory`, `useHubBookmarks`; merges via `mergeTrackedJobs` + `loadStageOverrides()`.                                                                                                                                                                                                           |
+| 2    | Sees empty or populated hub            | Empty `GlowCard` → board CTA to analyze or implied board bookmark path.                                                                                                                                                                                                                                                                 |
+| 3    | Search / pipeline filter / view toggle | Client-side filter on merged list; `HubPipelineStrip` for stage counts; board vs table.                                                                                                                                                                                                                                                 |
+| 4    | Opens a job (card/row)                 | URL `?jobId=` / `?applicationId=` / `?jobKey=`; sidebar + `JobHubDetailPanel` (sheet mobile / stacked desktop).                                                                                                                                                                                                                         |
+| 5    | Changes stage                          | **Server-persisted** when the row can be targeted: `PATCH` **application** status if `applicationId` exists; else `PATCH` **bookmark** `hubPipelineStage` if a hub bookmark row exists; else `PATCH` **JobAnalysis** status for a saved analysis. `localStorage` / `saveStageOverride` only for edge rows with no id to PATCH. See §10. |
+| 6    | Notes / emails / tailor links          | `JobHubDetailPanel` — includes generate email template (`api.jobs.generateEmailTemplate`), links to analyze route.                                                                                                                                                                                                                      |
+| 7    | Reminders                              | **Hub CRM reminders** (`GET/POST/PATCH/DELETE /api/jobs/hub-reminders`) when the row has `jobAnalysisId` or `hubBookmarkId`; **device-local** reminders remain for rows without those ids (`notifyDueLocalReminders`). See §10.                                                                                                         |
+| 8    | Unbookmark discovery item              | `removeBookmark` + cache invalidation.                                                                                                                                                                                                                                                                                                  |
 
 ### 3.2 Friction points
 
@@ -123,7 +123,7 @@ ApplyMate splits **discovery** (Job Board) from **pipeline** (Job Hub) plus **de
 
 1. **Single checklist modal** post-signup: (1) Set home city (2) Pick default CV (3) Open Job Board — store completion in user flags.
 2. **Job Board:** First visit tooltip on **Search** button specifically.
-3. **Job Hub:** Short Loom-style inline help (30s) on stage strip — what each column means for *their* job search.
+3. **Job Hub:** Short Loom-style inline help (30s) on stage strip — what each column means for _their_ job search.
 
 ### Speed of action (<30s to value)
 
@@ -141,31 +141,31 @@ ApplyMate splits **discovery** (Job Board) from **pipeline** (Job Hub) plus **de
 
 ### MUST HAVE
 
-| Item | Rationale |
-|------|-----------|
-| **Ship autofill extension or remove CTA** | Competitors win on “one click apply”; placeholder erodes PMF story. |
-| **Unified “my next 3 actions” widget** on dashboard | Board + Hub + overdue reminders in one glance — daily return driver. |
-| **Server-persisted hub stages + reminders** | **Shipped (API + web wired):** bookmarks/analysis/application pipeline + hub reminders; Today’s Plan invalidated on mutation. Further polish: badges (“Synced”), stalled-job nudges, digest surfacing. |
-| **Server-side batch or cached match scores for list cards** (optional `matchScore` on discovery list from backend) | Reduces repeated client work; Teal-like immediacy on scroll. |
-| **Explicit rejection / archived stage** | Users fear losing jobs; “Closed” stage improves trust vs deleting. |
+| Item                                                                                                               | Rationale                                                                                                                                                                                              |
+| ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Ship autofill extension or remove CTA**                                                                          | Competitors win on “one click apply”; placeholder erodes PMF story.                                                                                                                                    |
+| **Unified “my next 3 actions” widget** on dashboard                                                                | Board + Hub + overdue reminders in one glance — daily return driver.                                                                                                                                   |
+| **Server-persisted hub stages + reminders**                                                                        | **Shipped (API + web wired):** bookmarks/analysis/application pipeline + hub reminders; Today’s Plan invalidated on mutation. Further polish: badges (“Synced”), stalled-job nudges, digest surfacing. |
+| **Server-side batch or cached match scores for list cards** (optional `matchScore` on discovery list from backend) | Reduces repeated client work; Teal-like immediacy on scroll.                                                                                                                                           |
+| **Explicit rejection / archived stage**                                                                            | Users fear losing jobs; “Closed” stage improves trust vs deleting.                                                                                                                                     |
 
 ### HIGH IMPACT
 
-| Item | Rationale |
-|------|-----------|
-| **Email digest: “N new jobs for {role} in {city}”** | Habit loop without opening app. |
-| **Interview prep hook** from stage `interviewing` → existing Interviews feature | Cross-sell + differentiated workflow. |
-| **CV version diff** after tailor | “Before/after” is shareable and emotionally rewarding. |
-| **Employer response tracking** (ghosted / replied) with one tap | Simple CRM beats spreadsheet. |
-| **Referral: “Compare your CV to this job posting” share link** | Viral B2C loop (see Growth). |
+| Item                                                                            | Rationale                                              |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| **Email digest: “N new jobs for {role} in {city}”**                             | Habit loop without opening app.                        |
+| **Interview prep hook** from stage `interviewing` → existing Interviews feature | Cross-sell + differentiated workflow.                  |
+| **CV version diff** after tailor                                                | “Before/after” is shareable and emotionally rewarding. |
+| **Employer response tracking** (ghosted / replied) with one tap                 | Simple CRM beats spreadsheet.                          |
+| **Referral: “Compare your CV to this job posting” share link**                  | Viral B2C loop (see Growth).                           |
 
 ### OPTIONAL
 
-| Item | Notes |
-|------|--------|
-| Salary transparency overlay | Regulatory + data heavy. |
-| Team / agency mode | Multi-seat — later. |
-| Chrome new-tab dashboard | Habit stacking for power users. |
+| Item                        | Notes                           |
+| --------------------------- | ------------------------------- |
+| Salary transparency overlay | Regulatory + data heavy.        |
+| Team / agency mode          | Multi-seat — later.             |
+| Chrome new-tab dashboard    | Habit stacking for power users. |
 
 ---
 
@@ -195,14 +195,14 @@ ApplyMate splits **discovery** (Job Board) from **pipeline** (Job Hub) plus **de
 
 ### Recommendations
 
-| Tactic | Detail |
-|--------|--------|
-| **Server batch match-score** | One POST with array of `{listingId, descriptionHash}` → amortize network + cold starts (backend ticket). |
-| **Raise cache tier for `GET /jobs/analyses?jobListingId=`** | Same listing revisited in-session should be `staleTime` ≥ session length when CV unchanged. |
-| **Conditional prefetch** | On list hover (200ms dwell), prefetch discovery detail JSON only — **not** analyze — improves perceived speed without AI cost. |
-| **Model tiering** | Short JD summaries via small model; full rubric on demand — **requires backend** contract. |
-| **Prompt compression** | Send structured bullets to analyze instead of raw HTML if backend supports extraction — token savings at same quality. |
-| **Client guardrails** | Already have quota + reuse; add **max concurrent analyze = 1** globally across tabs (BroadcastChannel) to stop double spend. |
+| Tactic                                                      | Detail                                                                                                                         |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Server batch match-score**                                | One POST with array of `{listingId, descriptionHash}` → amortize network + cold starts (backend ticket).                       |
+| **Raise cache tier for `GET /jobs/analyses?jobListingId=`** | Same listing revisited in-session should be `staleTime` ≥ session length when CV unchanged.                                    |
+| **Conditional prefetch**                                    | On list hover (200ms dwell), prefetch discovery detail JSON only — **not** analyze — improves perceived speed without AI cost. |
+| **Model tiering**                                           | Short JD summaries via small model; full rubric on demand — **requires backend** contract.                                     |
+| **Prompt compression**                                      | Send structured bullets to analyze instead of raw HTML if backend supports extraction — token savings at same quality.         |
+| **Client guardrails**                                       | Already have quota + reuse; add **max concurrent analyze = 1** globally across tabs (BroadcastChannel) to stop double spend.   |
 
 **Goal alignment:** Above cuts cost **without** lowering perceived quality if reuse and prefetch hit rates rise.
 
@@ -244,8 +244,8 @@ ApplyMate splits **discovery** (Job Board) from **pipeline** (Job Hub) plus **de
 
 ### What is missing for “market-winning”?
 
-1. **Proof of speed:** real application automation (extension or partner autofill), not a toast.  
-2. **Habit:** proactive “jobs for you” loop outside the session (email/push).  
+1. **Proof of speed:** real application automation (extension or partner autofill), not a toast.
+2. **Habit:** proactive “jobs for you” loop outside the session (email/push).
 3. **Clarity:** one narrative that connects Board → Hub → Analyze without thinking about URLs.
 
 ### The ONE thing that could make users obsessed?
@@ -261,11 +261,11 @@ Obsession comes from **closing the loop every day**, not from another static lis
 
 ### 10.1 Pipeline stages — **wired**
 
-| Case | Source of truth | Client mutation |
-|------|------------------|-----------------|
-| Row has **application** | `Application.status` | `PATCH /api/applications/:id/status` |
-| **Bookmark-only** (no application) | `hubPipelineStage` on bookmark (`saved` \| `applied` \| `interviewing` \| `offered` \| `rejected`) | `PATCH /api/job-discovery/bookmarks/:bookmarkId` with `hubPipelineStage` |
-| **Saved analysis**, no application on that merge key | `JobAnalysis.status` (same enum conceptually) | `PATCH /api/jobs/:jobId/status` with `{ status }` |
+| Case                                                 | Source of truth                                                                                    | Client mutation                                                          |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Row has **application**                              | `Application.status`                                                                               | `PATCH /api/applications/:id/status`                                     |
+| **Bookmark-only** (no application)                   | `hubPipelineStage` on bookmark (`saved` \| `applied` \| `interviewing` \| `offered` \| `rejected`) | `PATCH /api/job-discovery/bookmarks/:bookmarkId` with `hubPipelineStage` |
+| **Saved analysis**, no application on that merge key | `JobAnalysis.status` (same enum conceptually)                                                      | `PATCH /api/jobs/:jobId/status` with `{ status }`                        |
 
 - **Reads:** `GET /api/job-discovery/bookmarks` includes `hubPipelineStage`; `GET /api/jobs/history` can expose analysis pipeline via row `status` → merged as `pipelineStatus`; applications continue to drive canonical stage when linked.
 - **Client merge:** `jobHubMerge.ts` prefers **API** values when present; **`saveStageOverride` / `localStorage`** remain only as a **shim** for rows that cannot be PATCHed yet.
@@ -276,12 +276,12 @@ Obsession comes from **closing the loop every day**, not from another static lis
 
 Not the same resource as **application email reminders** (`POST …/applications/:id/reminders`).
 
-| Action | Route |
-|--------|--------|
-| List | `GET /api/jobs/hub-reminders` (optional filters: `status`, `dueBefore`, `jobBookmarkId`, `jobAnalysisId`) |
+| Action | Route                                                                                                                             |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| List   | `GET /api/jobs/hub-reminders` (optional filters: `status`, `dueBefore`, `jobBookmarkId`, `jobAnalysisId`)                         |
 | Create | `POST /api/jobs/hub-reminders` — exactly one of `jobBookmarkId` \| `jobAnalysisId`, required `remindAt`, optional `title`, `note` |
-| Update | `PATCH /api/jobs/hub-reminders/:reminderId` |
-| Delete | `DELETE /api/jobs/hub-reminders/:reminderId` |
+| Update | `PATCH /api/jobs/hub-reminders/:reminderId`                                                                                       |
+| Delete | `DELETE /api/jobs/hub-reminders/:reminderId`                                                                                      |
 
 - **`GET /api/jobs/:jobId`** includes **`hubReminders`** (pending, analysis-scoped) for the detail panel.
 - **Job Hub UI:** when `jobAnalysisId` or `hubBookmarkId` exists, `JobHubDetailPanel` uses the **hub reminders** API; otherwise **device-local** reminders + optional legacy “sync to account” path still apply.
@@ -309,4 +309,4 @@ Prioritized for **job seekers**: clarity, speed, and habit — not feature count
 
 ---
 
-*Document generated from repository review (web package). Revisit after major backend contracts change (discovery shape, analyze batching, extension launch); **hub stage + hub reminder APIs are reflected in §10**.*
+_Document generated from repository review (web package). Revisit after major backend contracts change (discovery shape, analyze batching, extension launch); **hub stage + hub reminder APIs are reflected in §10**._

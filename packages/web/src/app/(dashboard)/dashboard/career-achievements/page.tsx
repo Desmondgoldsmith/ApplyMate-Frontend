@@ -24,7 +24,10 @@ type ViewMode = 'board' | 'list';
 
 type AcceptedRow = CareerPipelineJob & { jobAnalysisId?: string | null };
 
-function mergeAcceptedJobs(careerJobs: CareerPipelineJob[], historyRows: JobHistoryItem[]): AcceptedRow[] {
+function mergeAcceptedJobs(
+  careerJobs: CareerPipelineJob[],
+  historyRows: JobHistoryItem[],
+): AcceptedRow[] {
   const map = new Map<string, AcceptedRow>();
   for (const row of careerJobs) {
     const id = (row.jobAnalysisId ?? row.jobId).trim();
@@ -46,7 +49,8 @@ function mergeAcceptedJobs(careerJobs: CareerPipelineJob[], historyRows: JobHist
     });
   }
   return [...map.values()].sort(
-    (a, b) => new Date(b.lastEventAt).getTime() - new Date(a.lastEventAt).getTime(),
+    (a, b) =>
+      new Date(b.lastEventAt).getTime() - new Date(a.lastEventAt).getTime(),
   );
 }
 
@@ -63,7 +67,11 @@ function formatAcceptedWhen(iso: string): { short: string; title: string } {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return { short: '', title: '' };
     return {
-      short: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+      short: d.toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }),
       title: d.toISOString(),
     };
   } catch {
@@ -77,7 +85,8 @@ export default function CareerAchievementsPage() {
   const [search, setSearch] = useState('');
   const [view, setView] = useState<ViewMode>('board');
   const [verifyJob, setVerifyJob] = useState<AcceptedRow | null>(null);
-  const [verificationStatus, setVerificationStatus] = useState<VerificationUiStatus>('none');
+  const [verificationStatus, setVerificationStatus] =
+    useState<VerificationUiStatus>('none');
   const [shareModal, setShareModal] = useState<{
     badge: CareerBadge | null;
     title: string;
@@ -88,7 +97,9 @@ export default function CareerAchievementsPage() {
 
   const acceptedJobs = useMemo(() => {
     const fromHistory =
-      historyQ.data?.filter((h) => (h.pipelineStatus ?? '').toLowerCase() === 'accepted') ?? [];
+      historyQ.data?.filter(
+        (h) => (h.pipelineStatus ?? '').toLowerCase() === 'accepted',
+      ) ?? [];
     return mergeAcceptedJobs(careerQ.data?.acceptedJobs ?? [], fromHistory);
   }, [careerQ.data?.acceptedJobs, historyQ.data]);
 
@@ -112,14 +123,19 @@ export default function CareerAchievementsPage() {
 
   const pagination = useClientPagination(filtered, 12);
 
-  const busy = (careerQ.isLoading && !careerQ.data) || (historyQ.isLoading && !historyQ.data);
+  const busy =
+    (careerQ.isLoading && !careerQ.data) ||
+    (historyQ.isLoading && !historyQ.data);
 
   return (
     <div className="w-full min-w-0 max-w-full space-y-4 overflow-x-hidden sm:space-y-5">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">Career Achievements</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
+          Career Achievements
+        </h1>
         <p className="mt-1 max-w-2xl text-sm text-white/45">
-          Accepted offers and wins live here. Verify each placement, share your win, or jump back to the role.
+          Accepted offers and wins live here. Verify each placement, share your
+          win, or jump back to the role.
         </p>
       </div>
 
@@ -144,7 +160,9 @@ export default function CareerAchievementsPage() {
               onClick={() => setView('list')}
               className={cn(
                 'rounded-lg p-2 transition-colors',
-                view === 'list' ? 'bg-[#00C9B1]/20 text-[#00C9B1]' : 'text-white/45 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]',
+                view === 'list'
+                  ? 'bg-[#00C9B1]/20 text-[#00C9B1]'
+                  : 'text-white/45 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]',
               )}
             >
               <List className="h-4 w-4" />
@@ -155,7 +173,9 @@ export default function CareerAchievementsPage() {
               onClick={() => setView('board')}
               className={cn(
                 'rounded-lg p-2 transition-colors',
-                view === 'board' ? 'bg-[#00C9B1]/20 text-[#00C9B1]' : 'text-white/45 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]',
+                view === 'board'
+                  ? 'bg-[#00C9B1]/20 text-[#00C9B1]'
+                  : 'text-white/45 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]',
               )}
             >
               <LayoutGrid className="h-4 w-4" />
@@ -168,19 +188,31 @@ export default function CareerAchievementsPage() {
         <ListPageShimmer cardCount={4} tableRows={6} />
       ) : careerQ.isError ? (
         <GlowCard contentClassName="p-6">
-          <p className="text-sm text-rose-200">{careerQ.error?.message ?? 'Could not load career data.'}</p>
-          <Button className="mt-4" variant="ghost" onClick={() => void careerQ.refetch()}>
+          <p className="text-sm text-rose-200">
+            {careerQ.error?.message ?? 'Could not load career data.'}
+          </p>
+          <Button
+            className="mt-4"
+            variant="ghost"
+            onClick={() => void careerQ.refetch()}
+          >
             Retry
           </Button>
         </GlowCard>
       ) : pagination.total === 0 ? (
         <GlowCard contentClassName="flex min-h-[200px] flex-col items-center justify-center p-8 text-center">
-          <p className="text-lg font-semibold text-white/90">No accepted roles yet</p>
-          <p className="mt-2 max-w-md text-sm text-white/45">
-            When you mark a job as <span className="text-[#00C9B1]">Accepted</span> in Job Hub, it appears here with links
-            back to your analysis.
+          <p className="text-lg font-semibold text-white/90">
+            No accepted roles yet
           </p>
-          <Button asChild className="mt-6 bg-[#00C9B1] text-[#080A0A] hover:bg-[#00C9B1]">
+          <p className="mt-2 max-w-md text-sm text-white/45">
+            When you mark a job as{' '}
+            <span className="text-[#00C9B1]">Accepted</span> in Job Hub, it
+            appears here with links back to your analysis.
+          </p>
+          <Button
+            asChild
+            className="mt-6 bg-[#00C9B1] text-[#080A0A] hover:bg-[#00C9B1]"
+          >
             <Link href="/dashboard/jobs">Open Job Hub</Link>
           </Button>
         </GlowCard>
@@ -191,7 +223,9 @@ export default function CareerAchievementsPage() {
               const title = job.title?.trim() || 'Role';
               const company = job.company?.trim() || 'Company';
               const href = hrefForAcceptedJob(job);
-              const { short: whenShort, title: whenTitle } = formatAcceptedWhen(job.lastEventAt);
+              const { short: whenShort, title: whenTitle } = formatAcceptedWhen(
+                job.lastEventAt,
+              );
               const key = `${job.jobId}-${i}`;
               return (
                 <GlowCard
@@ -201,8 +235,12 @@ export default function CareerAchievementsPage() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-[15px] font-semibold leading-snug text-white">{title}</p>
-                      <p className="mt-1 text-[13px] text-white/55">{company}</p>
+                      <p className="text-[15px] font-semibold leading-snug text-white">
+                        {title}
+                      </p>
+                      <p className="mt-1 text-[13px] text-white/55">
+                        {company}
+                      </p>
                     </div>
                     <span
                       className="shrink-0 rounded-md border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-200/90"
@@ -218,7 +256,10 @@ export default function CareerAchievementsPage() {
                       </span>
                     ) : null}
                     {whenShort ? (
-                      <span className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-0.5" title={whenTitle}>
+                      <span
+                        className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-0.5"
+                        title={whenTitle}
+                      >
                         Updated {whenShort}
                       </span>
                     ) : null}
@@ -243,7 +284,11 @@ export default function CareerAchievementsPage() {
                       Share your win
                     </Button>
                     {href ? (
-                      <Button asChild variant="ghost" className="border border-white/12 text-[13px] text-white/70">
+                      <Button
+                        asChild
+                        variant="ghost"
+                        className="border border-white/12 text-[13px] text-white/70"
+                      >
                         <Link href={href}>Open role</Link>
                       </Button>
                     ) : null}
@@ -280,16 +325,25 @@ export default function CareerAchievementsPage() {
                 const title = job.title?.trim() || 'Role';
                 const company = job.company?.trim() || 'Company';
                 const href = hrefForAcceptedJob(job);
-                const { short: whenShort } = formatAcceptedWhen(job.lastEventAt);
+                const { short: whenShort } = formatAcceptedWhen(
+                  job.lastEventAt,
+                );
                 const key = `${job.jobId}-t-${i}`;
                 return (
-                  <tr key={key} className="border-b border-white/[0.05] text-white/85">
-                    <td className="px-4 py-3 font-medium text-white">{title}</td>
+                  <tr
+                    key={key}
+                    className="border-b border-white/[0.05] text-white/85"
+                  >
+                    <td className="px-4 py-3 font-medium text-white">
+                      {title}
+                    </td>
                     <td className="px-4 py-3 text-white/60">{company}</td>
                     <td className="px-4 py-3 tabular-nums text-white/70">
                       {job.matchScore != null ? `${job.matchScore}%` : '—'}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-white/45">{whenShort || '—'}</td>
+                    <td className="px-4 py-3 tabular-nums text-white/45">
+                      {whenShort || '—'}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex flex-wrap justify-end gap-2">
                         <Button
@@ -311,7 +365,11 @@ export default function CareerAchievementsPage() {
                           Share
                         </Button>
                         {href ? (
-                          <Button asChild variant="ghost" className="border border-white/12 text-[12px] text-white/70">
+                          <Button
+                            asChild
+                            variant="ghost"
+                            className="border border-white/12 text-[12px] text-white/70"
+                          >
                             <Link href={href}>Open</Link>
                           </Button>
                         ) : null}
@@ -352,7 +410,9 @@ export default function CareerAchievementsPage() {
         onOpenChange={(open) => {
           if (!open) setVerifyJob(null);
         }}
-        jobId={verifyJob?.jobAnalysisId?.trim() || verifyJob?.jobId?.trim() || null}
+        jobId={
+          verifyJob?.jobAnalysisId?.trim() || verifyJob?.jobId?.trim() || null
+        }
         onSubmitted={({ pending, premiumActiveUntil }) => {
           if (premiumActiveUntil) setVerificationStatus('verified');
           else if (pending) setVerificationStatus('pending');
@@ -360,13 +420,20 @@ export default function CareerAchievementsPage() {
         }}
       />
       {verificationStatus === 'verified' ? (
-        <p className="text-center text-[12px] text-emerald-300/80">Placement verified — premium benefits active.</p>
+        <p className="text-center text-[12px] text-emerald-300/80">
+          Placement verified — premium benefits active.
+        </p>
       ) : verificationStatus === 'pending' ? (
-        <p className="text-center text-[12px] text-amber-200/80">Verification submitted — we will review shortly.</p>
+        <p className="text-center text-[12px] text-amber-200/80">
+          Verification submitted — we will review shortly.
+        </p>
       ) : (
         <p className="text-center text-[12px] text-white/35">
           Unlocked badges and XP milestones live on{' '}
-          <Link href="/dashboard/achievements" className="text-[#00C9B1] hover:underline">
+          <Link
+            href="/dashboard/achievements"
+            className="text-[#00C9B1] hover:underline"
+          >
             Achievements
           </Link>
           .

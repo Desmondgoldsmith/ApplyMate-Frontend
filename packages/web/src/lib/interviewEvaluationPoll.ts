@@ -20,7 +20,8 @@ export type InterviewEvaluationPollState =
     };
 
 function asRecord(raw: unknown): Record<string, unknown> | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   return raw as Record<string, unknown>;
 }
 
@@ -41,18 +42,27 @@ export function parseInterviewResultPoll(
     return { status: 'pending', evaluationStatus: 'processing' };
   }
 
-  const evaluationStatus = o.evaluationStatus as InterviewEvaluationStatus | undefined;
+  const evaluationStatus = o.evaluationStatus as
+    | InterviewEvaluationStatus
+    | undefined;
 
   if (httpStatus === 404 || evaluationStatus === 'failed') {
     return {
       status: 'failed',
-      message: String(o.message ?? 'Interview scoring failed. You can retry from this session.'),
+      message: String(
+        o.message ??
+          'Interview scoring failed. You can retry from this session.',
+      ),
       failureReason:
         typeof o.failureReason === 'string' ? o.failureReason : undefined,
     };
   }
 
-  if (httpStatus === 202 || evaluationStatus === 'queued' || evaluationStatus === 'processing') {
+  if (
+    httpStatus === 202 ||
+    evaluationStatus === 'queued' ||
+    evaluationStatus === 'processing'
+  ) {
     return {
       status: 'pending',
       evaluationStatus:
@@ -66,11 +76,17 @@ export function parseInterviewResultPoll(
 
   const nested = asRecord(o.result);
   if (nested && isInterviewResultShape(nested)) {
-    return { status: 'completed', result: nested as unknown as InterviewResult };
+    return {
+      status: 'completed',
+      result: nested as unknown as InterviewResult,
+    };
   }
 
   if (evaluationStatus === 'completed' && nested) {
-    return { status: 'completed', result: nested as unknown as InterviewResult };
+    return {
+      status: 'completed',
+      result: nested as unknown as InterviewResult,
+    };
   }
 
   if (isInterviewResultShape(o)) {

@@ -21,7 +21,8 @@ function formatDetectedLabel(geo: {
 
 export function LocationBootstrap({ enabled }: { enabled: boolean }) {
   const queryClient = useQueryClient();
-  const { shouldShowPrompt, detectedLocation, closePrompt } = useLocationBootstrap(enabled);
+  const { shouldShowPrompt, detectedLocation, closePrompt } =
+    useLocationBootstrap(enabled);
   const setSelectedLocation = useLocationStore((s) => s.setSelectedLocation);
   const dismissPrompt = useLocationStore((s) => s.dismissPrompt);
 

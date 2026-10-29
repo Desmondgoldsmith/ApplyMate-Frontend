@@ -32,7 +32,9 @@ export type UseInterviewSpeechControllerOptions = {
   turnId?: string | null;
 };
 
-export function useInterviewSpeechController(options: UseInterviewSpeechControllerOptions = {}) {
+export function useInterviewSpeechController(
+  options: UseInterviewSpeechControllerOptions = {},
+) {
   const { blocked = false, sessionId = null, turnId = null } = options;
 
   const useWhisperPath = Boolean(sessionId && turnId);
@@ -47,9 +49,13 @@ export function useInterviewSpeechController(options: UseInterviewSpeechControll
   const [error, setError] = useState<SpeechError | null>(null);
   const [voiceHealth, setVoiceHealth] = useState<VoiceHealth>('good');
   const [fellBackToManual, setFellBackToManual] = useState(false);
-  const [processingStatus, setProcessingStatus] = useState<VoiceProcessingStatus>('idle');
-  const [transcriptionState, setTranscriptionState] = useState<TranscriptionState>('idle');
-  const [transcriptionMessage, setTranscriptionMessage] = useState<string | null>(null);
+  const [processingStatus, setProcessingStatus] =
+    useState<VoiceProcessingStatus>('idle');
+  const [transcriptionState, setTranscriptionState] =
+    useState<TranscriptionState>('idle');
+  const [transcriptionMessage, setTranscriptionMessage] = useState<
+    string | null
+  >(null);
   const [usedDeviceCaptions, setUsedDeviceCaptions] = useState(false);
 
   const sttFinalRef = useRef('');
@@ -70,28 +76,34 @@ export function useInterviewSpeechController(options: UseInterviewSpeechControll
     ? hybrid.recorder.isSupported || hybrid.isSpeechRecognitionSupported
     : speech.isSpeechRecognitionSupported;
 
-  const applyTranscript = useCallback((text: string, source: 'whisper' | 'browser') => {
-    if (userEditedRef.current) return;
-    const trimmed = text.trim();
-    setTranscriptState(trimmed);
-    setInterimTranscript('');
-    sttFinalRef.current = trimmed;
-    sttInterimRef.current = '';
-    if (source === 'whisper') {
-      usedWhisperRef.current = true;
-      usedBrowserSttRef.current = false;
-    } else {
-      usedBrowserSttRef.current = true;
-      usedWhisperRef.current = false;
-    }
-  }, []);
+  const applyTranscript = useCallback(
+    (text: string, source: 'whisper' | 'browser') => {
+      if (userEditedRef.current) return;
+      const trimmed = text.trim();
+      setTranscriptState(trimmed);
+      setInterimTranscript('');
+      sttFinalRef.current = trimmed;
+      sttInterimRef.current = '';
+      if (source === 'whisper') {
+        usedWhisperRef.current = true;
+        usedBrowserSttRef.current = false;
+      } else {
+        usedBrowserSttRef.current = true;
+        usedWhisperRef.current = false;
+      }
+    },
+    [],
+  );
 
-  const flushTranscriptToState = useCallback((finalText: string, interim: string) => {
-    if (userEditedRef.current) return;
-    const display = `${finalText}${interim}`.trim();
-    setTranscriptState(display);
-    setInterimTranscript(interim.trim());
-  }, []);
+  const flushTranscriptToState = useCallback(
+    (finalText: string, interim: string) => {
+      if (userEditedRef.current) return;
+      const display = `${finalText}${interim}`.trim();
+      setTranscriptState(display);
+      setInterimTranscript(interim.trim());
+    },
+    [],
+  );
 
   const scheduleTranscriptUpdate = useCallback(
     (combined: string, hasFinal: boolean) => {
@@ -112,7 +124,8 @@ export function useInterviewSpeechController(options: UseInterviewSpeechControll
         finalPart = sttFinalRef.current;
       }
 
-      if (debounceTimerRef.current) window.clearTimeout(debounceTimerRef.current);
+      if (debounceTimerRef.current)
+        window.clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = window.setTimeout(() => {
         debounceTimerRef.current = null;
         flushTranscriptToState(finalPart, interimPart);
@@ -158,14 +171,22 @@ export function useInterviewSpeechController(options: UseInterviewSpeechControll
         return;
       }
       if (isNoSpeechError(code)) {
-        setError({ code, message: speechErrorMessage(code), recoverable: true });
+        setError({
+          code,
+          message: speechErrorMessage(code),
+          recoverable: true,
+        });
         return;
       }
       if (shouldRetryStt(code)) {
         consecutiveFailuresRef.current += 1;
         restartLoopsRef.current += 1;
         if (restartLoopsRef.current >= 3) setVoiceHealth('unstable');
-        setError({ code, message: speechErrorMessage(code), recoverable: true });
+        setError({
+          code,
+          message: speechErrorMessage(code),
+          recoverable: true,
+        });
         if (consecutiveFailuresRef.current >= STT_MAX_CONSECUTIVE_FAILURES) {
           switchToManualMode(
             'Voice input is having trouble. We switched you to typing so you can keep going.',
@@ -222,7 +243,8 @@ export function useInterviewSpeechController(options: UseInterviewSpeechControll
   }, [scheduleTranscriptUpdate, speech]);
 
   const start = useCallback(async () => {
-    if (blocked || !isSupported || mode === 'manual' || inputMode === 'type') return;
+    if (blocked || !isSupported || mode === 'manual' || inputMode === 'type')
+      return;
     if (speech.isSpeaking || speech.isSynthesisActive()) return;
 
     setError(null);
@@ -246,7 +268,9 @@ export function useInterviewSpeechController(options: UseInterviewSpeechControll
         setProcessingStatus('idle');
         consecutiveFailuresRef.current += 1;
         if (consecutiveFailuresRef.current >= STT_MAX_CONSECUTIVE_FAILURES) {
-          switchToManualMode('Could not start voice input. Please type your answer.');
+          switchToManualMode(
+            'Could not start voice input. Please type your answer.',
+          );
         }
       }
       return;
@@ -264,7 +288,9 @@ export function useInterviewSpeechController(options: UseInterviewSpeechControll
       setProcessingStatus('idle');
       consecutiveFailuresRef.current += 1;
       if (consecutiveFailuresRef.current >= STT_MAX_CONSECUTIVE_FAILURES) {
-        switchToManualMode('Could not start voice input. Please type your answer.');
+        switchToManualMode(
+          'Could not start voice input. Please type your answer.',
+        );
       }
     }
   }, [
@@ -494,12 +520,7 @@ export function useInterviewSpeechController(options: UseInterviewSpeechControll
     if (transcriptionState === 'success') return 'ready';
     if (isRecording) return 'recording';
     return 'idle';
-  }, [
-    hybrid.recordingState,
-    isRecording,
-    transcriptionState,
-    useWhisperPath,
-  ]);
+  }, [hybrid.recordingState, isRecording, transcriptionState, useWhisperPath]);
 
   const isTtsActive = speech.isSpeaking || speech.isSynthesisActive();
 
@@ -509,7 +530,8 @@ export function useInterviewSpeechController(options: UseInterviewSpeechControll
 
   useEffect(() => {
     return () => {
-      if (debounceTimerRef.current) window.clearTimeout(debounceTimerRef.current);
+      if (debounceTimerRef.current)
+        window.clearTimeout(debounceTimerRef.current);
     };
   }, []);
 
@@ -521,7 +543,8 @@ export function useInterviewSpeechController(options: UseInterviewSpeechControll
     ) {
       return 'speech_processing';
     }
-    if (recordingState === 'failed' || transcriptionState === 'failed') return 'speech_failed';
+    if (recordingState === 'failed' || transcriptionState === 'failed')
+      return 'speech_failed';
     if (processingStatus === 'whisper') return 'speech_processing';
     if (fellBackToManual || voiceHealth === 'fallback') return 'fallback';
     if (inputMode === 'type' || mode === 'manual') return 'manual';
@@ -565,7 +588,9 @@ export function useInterviewSpeechController(options: UseInterviewSpeechControll
     ...speech,
     isRecording,
     transcript,
-    interimTranscript: useWhisperPath ? hybrid.browserInterim : interimTranscript,
+    interimTranscript: useWhisperPath
+      ? hybrid.browserInterim
+      : interimTranscript,
     error,
     start,
     stop,

@@ -1,15 +1,20 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { Component, type ReactNode, useCallback, useEffect, useState } from 'react';
+import {
+  Component,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 
 const Spline = dynamic(() => import('@splinetool/react-spline'), {
   ssr: false,
   loading: () => null,
 });
 
-const SCENE =
-  'https://prod.spline.design/Ri5oHxFZ81Bs6GFl/scene.splinecode';
+const SCENE = 'https://prod.spline.design/Ri5oHxFZ81Bs6GFl/scene.splinecode';
 
 class SplineSceneBoundary extends Component<
   { children: ReactNode; onError: () => void },

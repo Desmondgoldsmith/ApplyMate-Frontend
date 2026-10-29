@@ -1,5 +1,7 @@
 /** Relative timing for hub reminder rows (display only). */
-export function hubReminderDueStatus(remindAt: string): 'upcoming' | 'due' | 'elapsed' {
+export function hubReminderDueStatus(
+  remindAt: string,
+): 'upcoming' | 'due' | 'elapsed' {
   const t = new Date(remindAt).getTime();
   if (!Number.isFinite(t)) return 'upcoming';
   const now = Date.now();
@@ -8,7 +10,9 @@ export function hubReminderDueStatus(remindAt: string): 'upcoming' | 'due' | 'el
   return 'elapsed';
 }
 
-export function hubReminderStatusLabel(s: ReturnType<typeof hubReminderDueStatus>): string {
+export function hubReminderStatusLabel(
+  s: ReturnType<typeof hubReminderDueStatus>,
+): string {
   if (s === 'upcoming') return 'Upcoming';
   if (s === 'due') return 'Due';
   return 'Elapsed';

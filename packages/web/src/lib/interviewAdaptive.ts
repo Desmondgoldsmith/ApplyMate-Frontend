@@ -67,7 +67,9 @@ export function weakAreaLabel(area: string): string {
   return ADAPTIVE_WEAK_AREA_LABELS[key] ?? area.replace(/_/g, ' ');
 }
 
-export function pickPrimaryWeakArea(weakAreas: string[] | undefined): string | null {
+export function pickPrimaryWeakArea(
+  weakAreas: string[] | undefined,
+): string | null {
   const first = weakAreas?.find((w) => w?.trim());
   return first ? weakAreaLabel(first) : null;
 }
@@ -99,7 +101,11 @@ export function resolveInterviewerBehaviorMode(
   if (nextQuestionType === 'stress_test' || recommendedDifficulty === 'hard') {
     return 'challenging';
   }
-  if (nextQuestionType === 'easy_reset' || recommendedDifficulty === 'easy' || weakAnswer) {
+  if (
+    nextQuestionType === 'easy_reset' ||
+    recommendedDifficulty === 'easy' ||
+    weakAnswer
+  ) {
     return 'coaching';
   }
   return 'calm';
@@ -109,7 +115,10 @@ const BEHAVIOR_COPY: Record<
   InterviewerBehaviorMode,
   { label: string; description: string }
 > = {
-  calm: { label: 'Calm mode', description: 'Steady pacing, standard follow-ups' },
+  calm: {
+    label: 'Calm mode',
+    description: 'Steady pacing, standard follow-ups',
+  },
   coaching: {
     label: 'Coaching mode',
     description: 'Extra guidance and easier follow-ups',
@@ -193,9 +202,11 @@ export function appendEvolutionPoint(
   return [...history, point].slice(-12);
 }
 
-export function buildEvolutionFromHistory(
-  history: SkillEvolutionPoint[],
-): { clarity: number[]; structure: number[]; confidence: number[] } {
+export function buildEvolutionFromHistory(history: SkillEvolutionPoint[]): {
+  clarity: number[];
+  structure: number[];
+  confidence: number[];
+} {
   return {
     clarity: history.map((p) => p.clarity),
     structure: history.map((p) => p.structure),

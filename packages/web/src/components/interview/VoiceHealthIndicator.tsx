@@ -34,10 +34,17 @@ export function VoiceHealthIndicator({
   const cfg = HEALTH_CONFIG[health];
   return (
     <span
-      className={cn('inline-flex items-center gap-2 text-[11px] font-medium', cfg.textClass, className)}
+      className={cn(
+        'inline-flex items-center gap-2 text-[11px] font-medium',
+        cfg.textClass,
+        className,
+      )}
       title={cfg.label}
     >
-      <span className={cn('h-2 w-2 shrink-0 rounded-full', cfg.dotClass)} aria-hidden />
+      <span
+        className={cn('h-2 w-2 shrink-0 rounded-full', cfg.dotClass)}
+        aria-hidden
+      />
       <span>{cfg.label}</span>
     </span>
   );

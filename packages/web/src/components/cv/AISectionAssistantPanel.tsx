@@ -164,7 +164,10 @@ export function AISectionAssistantPanel({
                     <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">
                       AI Section Assistant
                     </p>
-                    <CvAssistantScopeBadge label="This section" variant="section" />
+                    <CvAssistantScopeBadge
+                      label="This section"
+                      variant="section"
+                    />
                   </div>
                   <button
                     type="button"
@@ -192,12 +195,13 @@ export function AISectionAssistantPanel({
                 ) : null}
                 {targetSectionLabel ? (
                   <p className="mb-2 text-[11px] text-white/45">
-                    Target: <span className="text-white/70">{targetSectionLabel}</span>
+                    Target:{' '}
+                    <span className="text-white/70">{targetSectionLabel}</span>
                   </p>
                 ) : (
                   <p className="mb-2 text-[11px] text-white/45">
-                    Use the assistant pin on a section, or open this from a section
-                    context.
+                    Use the assistant pin on a section, or open this from a
+                    section context.
                   </p>
                 )}
                 <textarea

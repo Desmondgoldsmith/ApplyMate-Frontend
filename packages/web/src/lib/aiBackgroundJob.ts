@@ -25,9 +25,8 @@ export const AI_QUEUE_WAIT_FOR_RESULT =
   process.env.NEXT_PUBLIC_AI_WAIT_FOR_RESULT === 'true';
 
 /** Body fragment to force synchronous processing; empty unless the dev flag is on. */
-export const aiWaitForResultBody: { waitForResult?: true } = AI_QUEUE_WAIT_FOR_RESULT
-  ? { waitForResult: true }
-  : {};
+export const aiWaitForResultBody: { waitForResult?: true } =
+  AI_QUEUE_WAIT_FOR_RESULT ? { waitForResult: true } : {};
 
 /** Unwrap the standard `{ success, data }` envelope (mirrors api.ts helper). */
 function unwrapEnvelope(raw: unknown): Record<string, unknown> {

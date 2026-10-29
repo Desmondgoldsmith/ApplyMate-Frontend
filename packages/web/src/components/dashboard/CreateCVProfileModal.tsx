@@ -1,6 +1,12 @@
 'use client';
 
-import { FileText, Loader2, MessageSquare, Sparkles, UploadCloud } from 'lucide-react';
+import {
+  FileText,
+  Loader2,
+  MessageSquare,
+  Sparkles,
+  UploadCloud,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -15,7 +21,11 @@ import { GlowCard } from '@/components/ui/GlowCard';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { useCreateCVProfile } from '@/hooks/useCreateCVProfile';
-import { api, type ChatCreateCVPayload, type CvParseImportSummary } from '@/lib/api';
+import {
+  api,
+  type ChatCreateCVPayload,
+  type CvParseImportSummary,
+} from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
 import {
   cvEditorPath,
@@ -29,7 +39,13 @@ type CreateCVProfileModalProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-type FlowStep = 'name' | 'template' | 'method' | 'buildMethod' | 'upload' | 'aiChat';
+type FlowStep =
+  | 'name'
+  | 'template'
+  | 'method'
+  | 'buildMethod'
+  | 'upload'
+  | 'aiChat';
 
 const MAIN_STEPS: FlowStep[] = ['name', 'template', 'method'];
 
@@ -51,7 +67,10 @@ function StepDots({ current }: { current: FlowStep }) {
   );
 }
 
-export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModalProps) {
+export function CreateCVProfileModal({
+  open,
+  onOpenChange,
+}: CreateCVProfileModalProps) {
   const router = useRouter();
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -110,9 +129,13 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
           template,
           ...(name.trim() ? { name: name.trim() } : {}),
         });
-        await openProfileInBuilder(profileId, { successToast: RESUME_READY_TOAST });
+        await openProfileInBuilder(profileId, {
+          successToast: RESUME_READY_TOAST,
+        });
       } catch (e) {
-        toast.error(getApiErrorMessage(e) || 'Failed to create resume from chat data');
+        toast.error(
+          getApiErrorMessage(e) || 'Failed to create resume from chat data',
+        );
       } finally {
         setAiChatBuilding(false);
       }
@@ -126,7 +149,8 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
       {
         onSuccess: (row) => {
           void openProfileInBuilder(row.id, {
-            successToast: "Resume profile created — let's build it out manually",
+            successToast:
+              "Resume profile created — let's build it out manually",
           });
         },
         onError: (e) => toast.error(getApiErrorMessage(e)),
@@ -237,7 +261,9 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
               >
                 <UploadCloud className="h-8 w-8 text-[#00C9B1]" />
                 <div>
-                  <p className="text-sm font-semibold text-white">Upload my resume</p>
+                  <p className="text-sm font-semibold text-white">
+                    Upload my resume
+                  </p>
                   <p className="mt-1 text-xs text-white/45">
                     Parse your existing resume instantly with AI
                   </p>
@@ -251,7 +277,9 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
               >
                 <Sparkles className="h-8 w-8 text-[#00C9B1]" />
                 <div>
-                  <p className="text-sm font-semibold text-white">Start from scratch</p>
+                  <p className="text-sm font-semibold text-white">
+                    Start from scratch
+                  </p>
                   <p className="mt-1 text-xs text-white/45">
                     Build with AI chat or fill in the form manually
                   </p>
@@ -264,7 +292,9 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
             createProfile.isPending ? (
               <div className="flex flex-col items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-[#00C9B1]" />
-                <p className="mt-4 text-sm font-semibold text-white/70">Creating your resume…</p>
+                <p className="mt-4 text-sm font-semibold text-white/70">
+                  Creating your resume…
+                </p>
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
@@ -279,9 +309,12 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
                   </span>
                   <MessageSquare className="h-8 w-8 text-[#00C9B1]" />
                   <div>
-                    <p className="text-sm font-semibold text-white">Chat with AI</p>
+                    <p className="text-sm font-semibold text-white">
+                      Chat with AI
+                    </p>
                     <p className="mt-1 text-xs text-white/45">
-                      Answer a few questions and our AI will build your resume for you.
+                      Answer a few questions and our AI will build your resume
+                      for you.
                     </p>
                   </div>
                 </button>
@@ -305,7 +338,9 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
                 >
                   <FileText className="h-8 w-8 text-[#00C9B1]" />
                   <div>
-                    <p className="text-sm font-semibold text-white">Fill in manually</p>
+                    <p className="text-sm font-semibold text-white">
+                      Fill in manually
+                    </p>
                     <p className="mt-1 text-xs text-white/45">
                       Use our structured form at your own pace.
                     </p>
@@ -319,7 +354,9 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
             aiChatBuilding ? (
               <div className="flex flex-col items-center justify-center py-16">
                 <Loader2 className="h-8 w-8 animate-spin text-[#00C9B1]" />
-                <p className="mt-4 text-sm font-semibold text-white/70">Building your resume…</p>
+                <p className="mt-4 text-sm font-semibold text-white/70">
+                  Building your resume…
+                </p>
               </div>
             ) : (
               <CVChatInterface
@@ -350,7 +387,9 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
                 onSuccess={async ({ profile, importSummary }) => {
                   const id = profile.id?.trim();
                   if (!id) {
-                    toast.error('Upload succeeded but no profile id was returned.');
+                    toast.error(
+                      'Upload succeeded but no profile id was returned.',
+                    );
                     return;
                   }
                   if (importSummary) {
@@ -358,7 +397,9 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
                     setUploadImportSummary(importSummary);
                     return;
                   }
-                  await openProfileInBuilder(id, { successToast: RESUME_READY_TOAST });
+                  await openProfileInBuilder(id, {
+                    successToast: RESUME_READY_TOAST,
+                  });
                 }}
               />
             )
@@ -367,10 +408,19 @@ export function CreateCVProfileModal({ open, onOpenChange }: CreateCVProfileModa
 
         {step === 'name' ? (
           <div className="mt-6 flex shrink-0 flex-wrap justify-end gap-3 border-t border-white/[0.06] pt-4">
-            <Button type="button" variant="ghost" className="border border-white/10" onClick={close}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="border border-white/10"
+              onClick={close}
+            >
               Cancel
             </Button>
-            <Button type="button" disabled={!name.trim()} onClick={() => setStep('template')}>
+            <Button
+              type="button"
+              disabled={!name.trim()}
+              onClick={() => setStep('template')}
+            >
               Next →
             </Button>
           </div>

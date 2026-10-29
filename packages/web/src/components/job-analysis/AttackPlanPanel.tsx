@@ -65,13 +65,15 @@ function AttackPlanItem({ line }: { line: string }) {
 
   return (
     <li
-      className={cn(
-        'rounded-xl border px-3.5 py-3',
-        TONE_CLASS[parsed.tone],
-      )}
+      className={cn('rounded-xl border px-3.5 py-3', TONE_CLASS[parsed.tone])}
     >
       {parsed.headline ? (
-        <p className={cn('text-[12px] font-semibold leading-snug', HEADLINE_CLASS[parsed.tone])}>
+        <p
+          className={cn(
+            'text-[12px] font-semibold leading-snug',
+            HEADLINE_CLASS[parsed.tone],
+          )}
+        >
           {parsed.headline}
         </p>
       ) : null}
@@ -82,14 +84,22 @@ function AttackPlanItem({ line }: { line: string }) {
             .map((sentence) => sentence.trim())
             .filter(Boolean)
             .map((sentence, index) => (
-              <p key={`${sentence}-${index}`} className="text-[12px] leading-relaxed text-white/68">
+              <p
+                key={`${sentence}-${index}`}
+                className="text-[12px] leading-relaxed text-white/68"
+              >
                 {sentence}
               </p>
             ))}
         </div>
       ) : null}
       {hasChips ? (
-        <div className={cn('flex flex-wrap gap-1.5', parsed.headline ? 'mt-2' : '')}>
+        <div
+          className={cn(
+            'flex flex-wrap gap-1.5',
+            parsed.headline ? 'mt-2' : '',
+          )}
+        >
           {parsed.chips.map((chip, index) => (
             <span
               key={`${chip}-${index}`}
@@ -141,13 +151,22 @@ function CollapsibleSection({
           </span>
           {title}
         </span>
-        <ChevronDown className={cn('h-4 w-4 shrink-0 text-white/40 transition', open && 'rotate-180')} />
+        <ChevronDown
+          className={cn(
+            'h-4 w-4 shrink-0 text-white/40 transition',
+            open && 'rotate-180',
+          )}
+        />
       </button>
       {open ? (
         <ul className="space-y-2 border-t border-white/[0.06] px-4 py-3">
           {items.map((item, index) =>
             variant === 'interviewPrep' ? (
-              <InterviewPrepItem key={`${id}-${index}`} line={item} index={index} />
+              <InterviewPrepItem
+                key={`${id}-${index}`}
+                line={item}
+                index={index}
+              />
             ) : (
               <AttackPlanItem key={`${id}-${index}`} line={item} />
             ),
@@ -158,7 +177,11 @@ function CollapsibleSection({
   );
 }
 
-export function AttackPlanPanel({ attackPlan }: { attackPlan: JobAnalysisV2['attackPlan'] }) {
+export function AttackPlanPanel({
+  attackPlan,
+}: {
+  attackPlan: JobAnalysisV2['attackPlan'];
+}) {
   const salaryLine = attackPlan.salaryRange?.trim();
   const hasContent =
     attackPlan.topCVFixes.length > 0 ||
@@ -170,7 +193,10 @@ export function AttackPlanPanel({ attackPlan }: { attackPlan: JobAnalysisV2['att
 
   return (
     <section className="space-y-2" aria-labelledby="attack-plan-heading">
-      <h3 id="attack-plan-heading" className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">
+      <h3
+        id="attack-plan-heading"
+        className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35"
+      >
         Attack plan
       </h3>
       <CollapsibleSection
@@ -187,9 +213,20 @@ export function AttackPlanPanel({ attackPlan }: { attackPlan: JobAnalysisV2['att
         items={attackPlan.interviewRisks}
         variant="interviewPrep"
       />
-      <CollapsibleSection id="evidence" emoji="🧩" title="Missing evidence" items={attackPlan.missingEvidence} />
+      <CollapsibleSection
+        id="evidence"
+        emoji="🧩"
+        title="Missing evidence"
+        items={attackPlan.missingEvidence}
+      />
       {salaryLine ? (
-        <CollapsibleSection id="salary" emoji="💰" title="Salary range" items={[salaryLine]} defaultOpen />
+        <CollapsibleSection
+          id="salary"
+          emoji="💰"
+          title="Salary range"
+          items={[salaryLine]}
+          defaultOpen
+        />
       ) : null}
     </section>
   );

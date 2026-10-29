@@ -1,7 +1,9 @@
 import { api } from '@/lib/api';
 
 /** Drop undefined so JSON payloads match strict backend validators. */
-function sanitizeContext(ctx: Record<string, unknown>): Record<string, unknown> {
+function sanitizeContext(
+  ctx: Record<string, unknown>,
+): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(ctx)) {
     if (v !== undefined) out[k] = v;
@@ -64,4 +66,3 @@ export function emitDashboardBehaviorEvent(input: {
     /* Analytics-only; never surface to UI */
   });
 }
-

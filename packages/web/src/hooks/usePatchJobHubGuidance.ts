@@ -56,26 +56,36 @@ export function usePatchJobHubGuidance() {
     },
     onSuccess: (guidance, args) => {
       if (args.scope === 'application') {
-        queryClient.setQueryData(queryKeys.applications.detail(args.applicationId), (prev: unknown) => {
-          if (prev === null || typeof prev !== 'object') return prev;
-          return { ...(prev as Record<string, unknown>), guidance };
-        });
+        queryClient.setQueryData(
+          queryKeys.applications.detail(args.applicationId),
+          (prev: unknown) => {
+            if (prev === null || typeof prev !== 'object') return prev;
+            return { ...(prev as Record<string, unknown>), guidance };
+          },
+        );
         void queryClient.invalidateQueries({
           queryKey: queryKeys.applications.detail(args.applicationId),
         });
       }
       if (args.scope === 'hub') {
         if (args.jobAnalysisId) {
-          queryClient.setQueryData(queryKeys.jobs.analysis(args.jobAnalysisId), (prev: unknown) => {
-            if (prev === null || typeof prev !== 'object') return prev;
-            return { ...(prev as Record<string, unknown>), guidance };
-          });
+          queryClient.setQueryData(
+            queryKeys.jobs.analysis(args.jobAnalysisId),
+            (prev: unknown) => {
+              if (prev === null || typeof prev !== 'object') return prev;
+              return { ...(prev as Record<string, unknown>), guidance };
+            },
+          );
           void queryClient.invalidateQueries({
             queryKey: queryKeys.jobs.analysis(args.jobAnalysisId),
           });
         }
-        void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.hub.bookmarks(),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.jobs.history(),
+        });
       }
     },
     onError: (err) => {

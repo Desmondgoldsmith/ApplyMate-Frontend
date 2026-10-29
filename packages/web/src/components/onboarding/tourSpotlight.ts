@@ -114,7 +114,11 @@ export function resolveTourHighlightTarget(
   element: Element | undefined,
   selector: string,
 ): HTMLElement | null {
-  if (element && !isDriverDummyElement(element) && element instanceof HTMLElement) {
+  if (
+    element &&
+    !isDriverDummyElement(element) &&
+    element instanceof HTMLElement
+  ) {
     return element;
   }
   const found = document.querySelector(selector);

@@ -16,7 +16,9 @@ type Props = {
   data: StrategicRecommendationPayload;
 };
 
-function impactBadgeClass(impact: StrategicRecommendationImpact | null): string {
+function impactBadgeClass(
+  impact: StrategicRecommendationImpact | null,
+): string {
   switch (impact) {
     case 'very_high':
       return 'border-emerald-400/35 bg-emerald-400/10 text-emerald-200';
@@ -79,7 +81,15 @@ export function StrategicRecommendationCard({ data }: Props) {
         confidenceBucket: confidenceBucket(confidencePct),
       },
     });
-  }, [headline, supporting, ctaLabel, ctaHref, data.category, data.expectedImpact, confidencePct]);
+  }, [
+    headline,
+    supporting,
+    ctaLabel,
+    ctaHref,
+    data.category,
+    data.expectedImpact,
+    confidencePct,
+  ]);
 
   if (!headline || !supporting || !ctaLabel || !ctaHref) return null;
 
@@ -94,7 +104,9 @@ export function StrategicRecommendationCard({ data }: Props) {
       {/* Header: label + impact | primary CTA — full row, not a cramped left column */}
       <div className="flex flex-col gap-4 border-b border-white/[0.08] pb-5 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <p className="text-[11px] font-medium tracking-wide text-white/42">Best Strategic Move</p>
+          <p className="text-[11px] font-medium tracking-wide text-white/42">
+            Best Strategic Move
+          </p>
           <span
             className={cn(
               'inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
@@ -127,9 +139,14 @@ export function StrategicRecommendationCard({ data }: Props) {
             <p className="flex flex-wrap items-center justify-center gap-1.5 text-center text-[11px] text-white/38 sm:justify-end sm:text-right">
               <span className="inline-flex items-center gap-1">
                 <span>Move priority</span>
-                <InfoHint text={TOOLTIP_STRATEGIC_MOVE_PRIORITY} buttonAriaLabel="What is move priority?" />
+                <InfoHint
+                  text={TOOLTIP_STRATEGIC_MOVE_PRIORITY}
+                  buttonAriaLabel="What is move priority?"
+                />
               </span>
-              <span className="tabular-nums text-white/50">{confidencePct}%</span>
+              <span className="tabular-nums text-white/50">
+                {confidencePct}%
+              </span>
             </p>
           ) : null}
         </div>
@@ -137,10 +154,16 @@ export function StrategicRecommendationCard({ data }: Props) {
 
       {/* Narrative uses full card width */}
       <div className="mt-5 space-y-3">
-        <h2 className="text-[17px] font-semibold leading-snug text-white/95 sm:text-[18px]">{headline}</h2>
-        <p className="text-[14px] leading-relaxed text-white/65">{supporting}</p>
+        <h2 className="text-[17px] font-semibold leading-snug text-white/95 sm:text-[18px]">
+          {headline}
+        </h2>
+        <p className="text-[14px] leading-relaxed text-white/65">
+          {supporting}
+        </p>
         {reasoning ? (
-          <p className="border-l-2 border-[#00C9B1]/25 pl-4 text-[13px] leading-relaxed text-white/48">{reasoning}</p>
+          <p className="border-l-2 border-[#00C9B1]/25 pl-4 text-[13px] leading-relaxed text-white/48">
+            {reasoning}
+          </p>
         ) : null}
       </div>
 
@@ -154,31 +177,41 @@ export function StrategicRecommendationCard({ data }: Props) {
           {rat.matchScore != null ? (
             <div className="flex items-center justify-between gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
               <dt>Match score</dt>
-              <dd className="tabular-nums font-medium text-white/70">{rat.matchScore}%</dd>
+              <dd className="tabular-nums font-medium text-white/70">
+                {rat.matchScore}%
+              </dd>
             </div>
           ) : null}
           {rat.daysUntilInterview != null ? (
             <div className="flex items-center justify-between gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
               <dt>Days until interview</dt>
-              <dd className="tabular-nums font-medium text-white/70">{rat.daysUntilInterview}</dd>
+              <dd className="tabular-nums font-medium text-white/70">
+                {rat.daysUntilInterview}
+              </dd>
             </div>
           ) : null}
           {rat.daysSinceLastActivity != null ? (
             <div className="flex items-center justify-between gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
               <dt>Days since activity</dt>
-              <dd className="tabular-nums font-medium text-white/70">{rat.daysSinceLastActivity}</dd>
+              <dd className="tabular-nums font-medium text-white/70">
+                {rat.daysSinceLastActivity}
+              </dd>
             </div>
           ) : null}
           {rat.cvScore != null ? (
             <div className="flex items-center justify-between gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
               <dt>CV score</dt>
-              <dd className="tabular-nums font-medium text-white/70">{rat.cvScore}%</dd>
+              <dd className="tabular-nums font-medium text-white/70">
+                {rat.cvScore}%
+              </dd>
             </div>
           ) : null}
           {rat.applicationsInProgress != null ? (
             <div className="flex items-center justify-between gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
               <dt>Applications in progress</dt>
-              <dd className="tabular-nums font-medium text-white/70">{rat.applicationsInProgress}</dd>
+              <dd className="tabular-nums font-medium text-white/70">
+                {rat.applicationsInProgress}
+              </dd>
             </div>
           ) : null}
         </dl>

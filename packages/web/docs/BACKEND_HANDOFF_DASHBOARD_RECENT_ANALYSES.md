@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-03  
 **Backend status:** ✅ Done (2026-06-03)  
-**Frontend status:** ✅ Aligned — trusts `hasAnalysis`, `matchScore: null`, `applicationAssist.suggestedNextStep`  
+**Frontend status:** ✅ Aligned — trusts `hasAnalysis`, `matchScore: null`, `applicationAssist.suggestedNextStep`
 
 Related: `BACKEND_HANDOFF_JOB_DESCRIPTION_AND_ANALYZER_STUB.md` (description storage + analyzer stubs).
 
@@ -10,14 +10,14 @@ Related: `BACKEND_HANDOFF_JOB_DESCRIPTION_AND_ANALYZER_STUB.md` (description sto
 
 ## Frontend alignment (2026-06-03)
 
-| Area | Change |
-|------|--------|
-| `normalizeJobHistoryItem` | Preserves `matchScore: null`; trusts `hasAnalysis` boolean only |
-| `JobHistoryItem` type | `matchScore` and `recommendation` nullable |
-| `historyItemHasCompletedAnalysis` | AI-only (`hasAnalysis`, `analyzeSource: ai`) |
-| `isCompletedJobAnalysis` | Respects `hasAnalysis`; treats `gemini` as AI; ignores skillCoverage-only stubs |
-| `RecentAnalysesPanel` | — score, “Not analyzed”, “Analyze this job” for `hasAnalysis: false` |
-| `jobHubMerge` | Uses shared `historyItemHasCompletedAnalysis` helper |
+| Area                              | Change                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------- |
+| `normalizeJobHistoryItem`         | Preserves `matchScore: null`; trusts `hasAnalysis` boolean only                 |
+| `JobHistoryItem` type             | `matchScore` and `recommendation` nullable                                      |
+| `historyItemHasCompletedAnalysis` | AI-only (`hasAnalysis`, `analyzeSource: ai`)                                    |
+| `isCompletedJobAnalysis`          | Respects `hasAnalysis`; treats `gemini` as AI; ignores skillCoverage-only stubs |
+| `RecentAnalysesPanel`             | — score, “Not analyzed”, “Analyze this job” for `hasAnalysis: false`            |
+| `jobHubMerge`                     | Uses shared `historyItemHasCompletedAnalysis` helper                            |
 
 ---
 
@@ -35,16 +35,16 @@ These rows are **bookmarks**, not completed analyses. Showing 0% and cover-lette
 
 ## Expected behaviour
 
-| Field / behaviour | Bookmark-only save (`hasAnalysis: false`) | After real analyze (`hasAnalysis: true`) |
-|-------------------|-------------------------------------------|------------------------------------------|
-| `hasAnalysis` | `false` | `true` |
-| `analyzeSource` | absent, or `'heuristic'` — **not** `'ai'` | `'ai'` |
-| `matchScore` | **`null` or omit** — do not send `0` | `0–100` from AI |
-| `recommendation` | omit or empty | populated |
-| `analysisV2` | omit | populated when v2 enabled |
-| `hasCoverLetter` | `false` (OK) | per actual state |
-| `applicationAssist.suggestedNextStep` | e.g. `"analyze"` — not `"cover_letter"` | pipeline-appropriate |
-| List placement | May appear in “recent activity” but UI treats as **not analyzed** | Full analysis workflow |
+| Field / behaviour                     | Bookmark-only save (`hasAnalysis: false`)                         | After real analyze (`hasAnalysis: true`) |
+| ------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------- |
+| `hasAnalysis`                         | `false`                                                           | `true`                                   |
+| `analyzeSource`                       | absent, or `'heuristic'` — **not** `'ai'`                         | `'ai'`                                   |
+| `matchScore`                          | **`null` or omit** — do not send `0`                              | `0–100` from AI                          |
+| `recommendation`                      | omit or empty                                                     | populated                                |
+| `analysisV2`                          | omit                                                              | populated when v2 enabled                |
+| `hasCoverLetter`                      | `false` (OK)                                                      | per actual state                         |
+| `applicationAssist.suggestedNextStep` | e.g. `"analyze"` — not `"cover_letter"`                           | pipeline-appropriate                     |
+| List placement                        | May appear in “recent activity” but UI treats as **not analyzed** | Full analysis workflow                   |
 
 ---
 
@@ -53,7 +53,7 @@ These rows are **bookmarks**, not completed analyses. Showing 0% and cover-lette
 Frontend now uses:
 
 ```typescript
-historyItemHasCompletedAnalysis(item)
+historyItemHasCompletedAnalysis(item);
 ```
 
 Logic (in order):
@@ -94,11 +94,11 @@ Logic (in order):
 
 File: `packages/web/src/components/dashboard/overview/RecentAnalysesPanel.tsx`
 
-| Before | After (unanalyzed row) |
-|--------|-------------------------|
-| 0% ring | **—** (no score) |
-| “Needs cover letter” badge | **“Not analyzed”** |
-| “Generate cover letter →” | **“Analyze this job →”** (opens analyzer with prefill) |
+| Before                     | After (unanalyzed row)                                 |
+| -------------------------- | ------------------------------------------------------ |
+| 0% ring                    | **—** (no score)                                       |
+| “Needs cover letter” badge | **“Not analyzed”**                                     |
+| “Generate cover letter →”  | **“Analyze this job →”** (opens analyzer with prefill) |
 
 Prefill uses `description` / `jobDescription` from the history row when present.
 

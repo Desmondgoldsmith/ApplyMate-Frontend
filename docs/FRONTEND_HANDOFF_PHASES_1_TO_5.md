@@ -5,6 +5,7 @@
 **Design principle:** Enhance existing screens. No new mandatory flows. Everything degrades gracefully when feature flags are off.
 
 **Related docs:**
+
 - Phases 1–2 detail: [`FRONTEND_HANDOFF_PHASE1_PHASE2.md`](./FRONTEND_HANDOFF_PHASE1_PHASE2.md)
 - Backend Phase 3–4: `apply-mate-backend/docs/PHASE3_PHASE4_BACKEND_HANDOFF.md`
 - Backend Phase 5: `apply-mate-backend/docs/PHASE5_CAREER_FLOW_HANDOFF.md`
@@ -13,14 +14,15 @@
 
 ## 1. Feature flags (backend `.env`)
 
-| Flag | Effect when `true` |
-|------|---------------------|
+| Flag                 | Effect when `true`                                                       |
+| -------------------- | ------------------------------------------------------------------------ |
 | `ENABLE_ANALYSIS_V2` | `POST /jobs/analyze` adds optional `analysisV2` (recruiter intelligence) |
-| `ENABLE_CAREER_FLOW` | Journey events recorded; career APIs return real data |
+| `ENABLE_CAREER_FLOW` | Journey events recorded; career APIs return real data                    |
 
 When flags are **off**, existing APIs and UI keep working; new fields are simply absent.
 
 **Migrations required (backend):**
+
 - `20260515120000_job_listing_decision` (Phase 2 decisions)
 - `20260516120000_career_flow_phase5` (Phase 5 journey + rewards + badges)
 
@@ -48,9 +50,9 @@ Job Hub  ──applications───────► APPLIED / INTERVIEW / … jo
 
 ### APIs
 
-| Method | Path | Notes |
-|--------|------|--------|
-| GET | `/location/resolve` | Auth required; no raw IP stored |
+| Method | Path                | Notes                           |
+| ------ | ------------------- | ------------------------------- |
+| GET    | `/location/resolve` | Auth required; no raw IP stored |
 
 **Response:**
 
@@ -69,21 +71,21 @@ type ResolvedGeoLocation = {
 
 ### Client priority (must match server)
 
-1. User override — Job Board `location` filter  
-2. `me.uiPrefs.jobSearchLocation` + `useLocationStore.selectedLocation`  
-3. IP — `detectedLocation` from resolve  
-4. CV / account location  
+1. User override — Job Board `location` filter
+2. `me.uiPrefs.jobSearchLocation` + `useLocationStore.selectedLocation`
+3. IP — `detectedLocation` from resolve
+4. CV / account location
 5. Default (empty)
 
 ### Frontend status
 
-| Item | Status |
-|------|--------|
-| `useLocationStore`, `LocationBootstrap`, `LocationConfirmPrompt` | Wired |
-| Job Board filter init via `resolveEffectiveLocationClient` | Wired |
-| `api.location.resolve()` | Wired |
-| `searchContext` banner on Job Board | **TODO** |
-| Sync filter change → `updateMe` + store | **TODO** |
+| Item                                                             | Status   |
+| ---------------------------------------------------------------- | -------- |
+| `useLocationStore`, `LocationBootstrap`, `LocationConfirmPrompt` | Wired    |
+| Job Board filter init via `resolveEffectiveLocationClient`       | Wired    |
+| `api.location.resolve()`                                         | Wired    |
+| `searchContext` banner on Job Board                              | **TODO** |
+| Sync filter change → `updateMe` + store                          | **TODO** |
 
 ---
 
@@ -95,7 +97,7 @@ type ResolvedGeoLocation = {
 type JobRankingTier = 'APPLY_NOW' | 'CONSIDER' | 'LOW_MATCH';
 
 type JobListingRanking = {
-  score: number;           // 0–100
+  score: number; // 0–100
   tier: JobRankingTier;
   recommendation: string;
 };
@@ -134,27 +136,27 @@ rankingFrozen?: true;   // ranking still present; server marks frozen lifecycle
 
 ### APIs
 
-| Method | Path | Body |
-|--------|------|------|
-| POST | `/job-discovery/:jobListingId/decision` | `{ decision: "APPLY" \| "MAYBE" \| "SKIP" }` |
+| Method | Path                                    | Body                                         |
+| ------ | --------------------------------------- | -------------------------------------------- |
+| POST   | `/job-discovery/:jobListingId/decision` | `{ decision: "APPLY" \| "MAYBE" \| "SKIP" }` |
 
 Client: `api.jobDiscovery.recordDecision(id, decision)`
 
 ### Frontend status
 
-| Item | Status |
-|------|--------|
-| Types + normalizers in `api.ts` | Wired |
-| Tier badges on `JobListingCard` | Wired |
-| Detail panel explainability | **TODO** |
+| Item                                | Status   |
+| ----------------------------------- | -------- |
+| Types + normalizers in `api.ts`     | Wired    |
+| Tier badges on `JobListingCard`     | Wired    |
+| Detail panel explainability         | **TODO** |
 | Decision buttons (Apply/Maybe/Skip) | **TODO** |
-| `searchContext` banner | **TODO** |
+| `searchContext` banner              | **TODO** |
 
 ### Do not confuse
 
-| Source | Use |
-|--------|-----|
-| `job.ranking.score` | Server-ranked list (Phase 2) |
+| Source                                         | Use                                       |
+| ---------------------------------------------- | ----------------------------------------- |
+| `job.ranking.score`                            | Server-ranked list (Phase 2)              |
 | `useJobBoardAiMatch` / `GET /jobs/match-score` | On-demand heuristic; separate quota story |
 
 ---
@@ -190,27 +192,27 @@ analysisV2?: {
 
 ### Frontend status
 
-| Item | Status |
-|------|--------|
-| `parseJobAnalysisV2` (`lib/jobAnalysisV2.ts`) | Wired |
-| `JobAnalysisV2Panel`, `JobAnalysisCard` integration | Wired |
-| Ensure `JobAnalysis` type includes `analysisV2?: JobAnalysisV2` | Verify in `api.ts` |
-| Wire CTAs: `applyStrategy` → tailor / apply / skip | **Polish TODO** |
-| Hide panel when flag off / field missing | Should already no-op |
+| Item                                                            | Status               |
+| --------------------------------------------------------------- | -------------------- |
+| `parseJobAnalysisV2` (`lib/jobAnalysisV2.ts`)                   | Wired                |
+| `JobAnalysisV2Panel`, `JobAnalysisCard` integration             | Wired                |
+| Ensure `JobAnalysis` type includes `analysisV2?: JobAnalysisV2` | Verify in `api.ts`   |
+| Wire CTAs: `applyStrategy` → tailor / apply / skip              | **Polish TODO**      |
+| Hide panel when flag off / field missing                        | Should already no-op |
 
 ### UI copy guide
 
 | `recruiterVerdict` | Suggested label |
-|--------------------|-----------------|
-| STRONG | Strong fit |
-| COMPETITIVE | Competitive |
-| WEAK | Weak fit |
+| ------------------ | --------------- |
+| STRONG             | Strong fit      |
+| COMPETITIVE        | Competitive     |
+| WEAK               | Weak fit        |
 
-| `applyStrategy` | Suggested CTA |
-|-----------------|---------------|
-| APPLY_NOW | Apply now |
-| TAILOR_FIRST | Tailor CV first |
-| SKIP | Skip this role |
+| `applyStrategy` | Suggested CTA   |
+| --------------- | --------------- |
+| APPLY_NOW       | Apply now       |
+| TAILOR_FIRST    | Tailor CV first |
+| SKIP            | Skip this role  |
 
 Use `ANALYSIS_AXIS_META` in `jobAnalysisV2.ts` for axis tooltips.
 
@@ -230,20 +232,20 @@ Use `ANALYSIS_AXIS_META` in `jobAnalysisV2.ts` for axis tooltips.
 type CvTailorDraftEntry = {
   sectionId: string;
   sectionType: string;
-  before: string;       // JSON string
-  after: string;        // JSON string
+  before: string; // JSON string
+  after: string; // JSON string
   status: 'pending' | 'accepted' | 'rejected';
   changedFields: string[];
-  patchId?: string;     // Phase 4 — use for revert
+  patchId?: string; // Phase 4 — use for revert
 };
 ```
 
 ### New CV APIs
 
-| Method | Path | Notes |
-|--------|------|--------|
-| GET | `/cv/patches?profileId=` | List in-memory patches for profile |
-| POST | `/cv/patches/:patchId/revert` | Undo accepted patch |
+| Method | Path                          | Notes                              |
+| ------ | ----------------------------- | ---------------------------------- |
+| GET    | `/cv/patches?profileId=`      | List in-memory patches for profile |
+| POST   | `/cv/patches/:patchId/revert` | Undo accepted patch                |
 
 **Patch shape (server in-memory):**
 
@@ -262,12 +264,12 @@ type CvPatch = {
 
 ### Frontend status
 
-| Item | Status |
-|------|--------|
-| Existing tailor accept/reject flow | Works (server uses patches internally) |
-| `api.cv.listPatches` / `revertPatch` | **Add to `api.ts` if missing** |
-| Per-section diff UI + Undo button | **TODO** |
-| `cvMode` toggle in tailor vs clinic routes | **TODO** (conceptual) |
+| Item                                       | Status                                 |
+| ------------------------------------------ | -------------------------------------- |
+| Existing tailor accept/reject flow         | Works (server uses patches internally) |
+| `api.cv.listPatches` / `revertPatch`       | **Add to `api.ts` if missing**         |
+| Per-section diff UI + Undo button          | **TODO**                               |
+| `cvMode` toggle in tailor vs clinic routes | **TODO** (conceptual)                  |
 
 **Note:** Patches are **lost on server restart**; `patchId` remains on draft JSON for display only until re-tailor.
 
@@ -306,24 +308,24 @@ type JobJourneyStage =
 
 ### `jobId` convention
 
-| Source | `jobId` value |
-|--------|----------------|
-| Job Board listing | `jobListingId` |
-| Job analysis | `jobListingId` if linked, else `jobAnalysisId` |
-| Application without analysis | `application.id` |
+| Source                       | `jobId` value                                  |
+| ---------------------------- | ---------------------------------------------- |
+| Job Board listing            | `jobListingId`                                 |
+| Job analysis                 | `jobListingId` if linked, else `jobAnalysisId` |
+| Application without analysis | `application.id`                               |
 
 Check `metadata.entityType`, `jobAnalysisId`, `jobListingId` on events when linking UI.
 
 ### Automatic backend hooks (no extra client calls)
 
-| User action | Event stage |
-|-------------|-------------|
-| `recordDecision` APPLY/MAYBE | `VIEWED` |
-| `recordDecision` SKIP | `REJECTED` |
-| Analyze saved | `ANALYZED` |
-| Tailor section accepted | `TAILORED` |
+| User action                        | Event stage               |
+| ---------------------------------- | ------------------------- |
+| `recordDecision` APPLY/MAYBE       | `VIEWED`                  |
+| `recordDecision` SKIP              | `REJECTED`                |
+| Analyze saved                      | `ANALYZED`                |
+| Tailor section accepted            | `TAILORED`                |
 | Application create / status update | `APPLIED`, `INTERVIEW`, … |
-| `POST /jobs/:id/mark-accepted` | `ACCEPTED` |
+| `POST /jobs/:id/mark-accepted`     | `ACCEPTED`                |
 
 ### New APIs — add to `api.ts`
 
@@ -408,9 +410,9 @@ Dev/admin v1 — approves pending verification, grants **5 days premium** (`User
 
 ### Badge codes
 
-| Code | When |
-|------|------|
-| `FIRST_JOB_ACCEPTED` | First `mark-accepted` |
+| Code                       | When                  |
+| -------------------------- | --------------------- |
+| `FIRST_JOB_ACCEPTED`       | First `mark-accepted` |
 | `FIRST_VERIFIED_PLACEMENT` | Verification approved |
 
 ### Premium reward
@@ -419,14 +421,14 @@ Active `UserReward` with `rewardType: PREMIUM_ACCESS_DAYS` makes `getUserTier()`
 
 ### Frontend status (Phase 5)
 
-| Item | Status |
-|------|--------|
-| `api.career.getDashboard()` | **TODO** |
-| `api.jobs.markAccepted()` | **TODO** |
-| `api.career.submitVerification()` | **TODO** |
-| Job Hub “Active pipeline” / “Accepted” sections | **TODO** |
-| Offer accepted CTA | **TODO** |
-| LinkedIn verification form | **TODO** |
+| Item                                              | Status   |
+| ------------------------------------------------- | -------- |
+| `api.career.getDashboard()`                       | **TODO** |
+| `api.jobs.markAccepted()`                         | **TODO** |
+| `api.career.submitVerification()`                 | **TODO** |
+| Job Hub “Active pipeline” / “Accepted” sections   | **TODO** |
+| Offer accepted CTA                                | **TODO** |
+| LinkedIn verification form                        | **TODO** |
 | Share badge modal (use `shareText` / `shareLink`) | **TODO** |
 
 ---
@@ -501,7 +503,12 @@ Export `career` on `api` object.
   "recommendation": "MEDIUM_MATCH",
   "analysisV2": {
     "recruiterVerdict": "COMPETITIVE",
-    "axes": { "skillMatch": 68, "experienceFit": 70, "industryFit": 55, "evidenceStrength": 48 },
+    "axes": {
+      "skillMatch": 68,
+      "experienceFit": 70,
+      "industryFit": 55,
+      "evidenceStrength": 48
+    },
     "attackPlan": {
       "topCVFixes": ["Add quantified outcomes to your last role."],
       "interviewRisks": ["Prepare for seniority gap questions."],
@@ -527,7 +534,11 @@ Export `career` on `api` object.
     }
   ],
   "acceptedJobs": [],
-  "insights": { "strongestSkill": "react", "conversionRate": 40, "avgMatchScoreOfAppliedJobs": 68 },
+  "insights": {
+    "strongestSkill": "react",
+    "conversionRate": 40,
+    "avgMatchScoreOfAppliedJobs": 68
+  },
   "badges": []
 }
 ```
@@ -558,4 +569,4 @@ Export `career` on `api` object.
 - Migrations: listing decision + career flow
 - Phase 1–2 deep dive: [`FRONTEND_HANDOFF_PHASE1_PHASE2.md`](./FRONTEND_HANDOFF_PHASE1_PHASE2.md)
 
-*Last updated: May 2026 — Phases 1–5 backend implemented; frontend partial (V2 panel + location + tier badges wired).*
+_Last updated: May 2026 — Phases 1–5 backend implemented; frontend partial (V2 panel + location + tier badges wired)._

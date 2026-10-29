@@ -61,24 +61,31 @@ export function useHybridSpeech(options: UseHybridSpeechOptions) {
     void loadRecordingStrategy(() => interviewVoiceApi.getRecordingStrategy());
   }, []);
 
-  const scheduleBrowserUpdate = useCallback((text: string, hasFinal: boolean) => {
-    const collapsed = collapseSpeechTranscript(text);
-    if (debounceRef.current) window.clearTimeout(debounceRef.current);
-    debounceRef.current = window.setTimeout(() => {
-      debounceRef.current = null;
-      if (hasFinal && collapsed) {
-        browserFinalRef.current = collapsed;
-        browserLiveRef.current = collapsed;
-        usedBrowserRef.current = true;
-      } else if (collapsed) {
-        browserLiveRef.current = collapsed;
-      }
-      setBrowserInterim((prev) => (prev === collapsed ? prev : collapsed));
-    }, STT_TRANSCRIPT_DEBOUNCE_MS);
-  }, []);
+  const scheduleBrowserUpdate = useCallback(
+    (text: string, hasFinal: boolean) => {
+      const collapsed = collapseSpeechTranscript(text);
+      if (debounceRef.current) window.clearTimeout(debounceRef.current);
+      debounceRef.current = window.setTimeout(() => {
+        debounceRef.current = null;
+        if (hasFinal && collapsed) {
+          browserFinalRef.current = collapsed;
+          browserLiveRef.current = collapsed;
+          usedBrowserRef.current = true;
+        } else if (collapsed) {
+          browserLiveRef.current = collapsed;
+        }
+        setBrowserInterim((prev) => (prev === collapsed ? prev : collapsed));
+      }, STT_TRANSCRIPT_DEBOUNCE_MS);
+    },
+    [],
+  );
 
   const buildBrowserOnlyResult = useCallback(
-    (browserText: string, epoch: number, fallbackRequired = false): HybridStopResult => {
+    (
+      browserText: string,
+      epoch: number,
+      fallbackRequired = false,
+    ): HybridStopResult => {
       const transcript: HybridTranscript = {
         text: browserText,
         source: 'browser',
@@ -157,7 +164,11 @@ export function useHybridSpeech(options: UseHybridSpeechOptions) {
     setIsListening(ok);
     if (ok) {
       setCaptureState(
-        recorder.recordingState === 'recording' ? 'recording' : browserOk ? 'recording' : 'idle',
+        recorder.recordingState === 'recording'
+          ? 'recording'
+          : browserOk
+            ? 'recording'
+            : 'idle',
       );
     } else if (!recorderOk && !browserOk) {
       setCaptureState('failed');
@@ -207,7 +218,8 @@ export function useHybridSpeech(options: UseHybridSpeechOptions) {
     const strat = getCachedRecordingStrategy();
     const minBytes = minBlobBytesFromStrategy(strat);
     const blobTooSmall =
-      blob !== null && blob.size < Math.max(minBytes, RECORDING_MIN_VALID_BYTES);
+      blob !== null &&
+      blob.size < Math.max(minBytes, RECORDING_MIN_VALID_BYTES);
 
     const canUpload =
       whisperEnabled &&
@@ -366,7 +378,9 @@ export function useHybridSpeech(options: UseHybridSpeechOptions) {
       return;
     }
     if (!isListening && recorder.recordingState === 'idle' && !isTranscribing) {
-      setCaptureState((prev) => (prev === 'failed' || prev === 'ready' ? prev : 'idle'));
+      setCaptureState((prev) =>
+        prev === 'failed' || prev === 'ready' ? prev : 'idle',
+      );
     }
   }, [isListening, isTranscribing, recorder.recordingState]);
 

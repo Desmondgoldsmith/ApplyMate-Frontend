@@ -30,8 +30,14 @@ export const SnapshotCoachingPanel = memo(function SnapshotCoachingPanel({
 
   if (loading && !data) {
     return (
-      <div className={cn('space-y-3', className)} aria-busy="true" aria-live="polite">
-        <p className="text-xs font-medium text-[var(--text-teal)]">Analyzing your answer…</p>
+      <div
+        className={cn('space-y-3', className)}
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <p className="text-xs font-medium text-[var(--text-teal)]">
+          Analyzing your answer…
+        </p>
         {partial ? (
           <div className="space-y-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] px-3 py-3">
             <div className="flex flex-wrap gap-2">
@@ -46,7 +52,10 @@ export const SnapshotCoachingPanel = memo(function SnapshotCoachingPanel({
             </div>
             <div className="grid grid-cols-2 gap-2">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-8 rounded bg-[var(--bg-surface-1)] animate-pulse" />
+                <div
+                  key={i}
+                  className="h-8 rounded bg-[var(--bg-surface-1)] animate-pulse"
+                />
               ))}
             </div>
           </div>

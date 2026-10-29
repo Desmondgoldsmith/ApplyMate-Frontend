@@ -19,4 +19,3 @@ export function useAnalytics() {
     enabled: Boolean(accessToken),
   });
 }
-

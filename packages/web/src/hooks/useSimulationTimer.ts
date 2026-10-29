@@ -9,7 +9,8 @@ export function useSimulationTimer(
   resetKey: string | number,
 ) {
   const [elapsed, setElapsed] = useState(0);
-  const limit = questionTimeLimitSec && questionTimeLimitSec > 0 ? questionTimeLimitSec : 0;
+  const limit =
+    questionTimeLimitSec && questionTimeLimitSec > 0 ? questionTimeLimitSec : 0;
 
   useEffect(() => {
     setElapsed(0);
@@ -27,5 +28,12 @@ export function useSimulationTimer(
   const ratio = limit > 0 ? Math.min(1, elapsed / limit) : 0;
   const isLow = limit > 0 && remaining <= Math.ceil(limit * 0.2);
 
-  return { elapsed, remaining, limit, ratio, isLow, active: active && limit > 0 };
+  return {
+    elapsed,
+    remaining,
+    limit,
+    ratio,
+    isLow,
+    active: active && limit > 0,
+  };
 }

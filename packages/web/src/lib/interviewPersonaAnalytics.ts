@@ -9,7 +9,9 @@ type PersonaAnalyticsPayload = {
 };
 
 /** Maps to backend-allowed `interview_started` (personality_viewed is not ingested). */
-export function trackInterviewPersonalityViewed(payload: PersonaAnalyticsPayload) {
+export function trackInterviewPersonalityViewed(
+  payload: PersonaAnalyticsPayload,
+) {
   enqueueInterviewAnalyticsEvent({
     eventName: 'interview_started',
     sessionId: payload.sessionId,

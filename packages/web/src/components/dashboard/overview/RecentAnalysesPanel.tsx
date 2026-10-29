@@ -157,7 +157,8 @@ export function RecentAnalysesPanel({
             const title = item.jobTitle || item.title || 'Untitled role';
             const analyzed = historyItemHasCompletedAnalysis(item);
             const score = analyzed
-              ? typeof item.matchScore === 'number' && Number.isFinite(item.matchScore)
+              ? typeof item.matchScore === 'number' &&
+                Number.isFinite(item.matchScore)
                 ? item.matchScore
                 : null
               : null;
@@ -177,7 +178,11 @@ export function RecentAnalysesPanel({
                 className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-3.5 transition-[border-color,background-color,box-shadow] duration-200 motion-reduce:transition-none hover:border-white/[0.11] hover:bg-white/[0.045] hover:shadow-[0_12px_36px_-24px_rgba(0,0,0,0.45)]"
               >
                 <div className="flex items-center gap-3">
-                  <CompanyLogo company={company} logoUrl={item.companyLogoUrl} size="md" />
+                  <CompanyLogo
+                    company={company}
+                    logoUrl={item.companyLogoUrl}
+                    size="md"
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="min-w-0 truncate text-[13px] font-medium text-white">

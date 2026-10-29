@@ -84,7 +84,12 @@ import {
   prepareCvSectionTextForAi,
   prepareJobDescriptionForAi,
 } from './sanitizeAiPromptInput';
-import { parseCvHybridScoring, type CvAiAssessment, type CvScoringMethod, type CvScoringTransparency } from './cvHybridScoring';
+import {
+  parseCvHybridScoring,
+  type CvAiAssessment,
+  type CvScoringMethod,
+  type CvScoringTransparency,
+} from './cvHybridScoring';
 import type { CvSectionScoreExplainer } from './cvSectionScoreExplainer';
 import {
   normalizeCareerDashboard,
@@ -106,10 +111,7 @@ import {
   extractCvParseImportSummary,
   type CvParseImportSummary,
 } from './cvParseImportSummary';
-import {
-  parseAcceptAllQuota,
-  type CvAcceptAllQuota,
-} from './cvAcceptAllQuota';
+import { parseAcceptAllQuota, type CvAcceptAllQuota } from './cvAcceptAllQuota';
 import {
   normalizeCvMergeProfilesResponse,
   type CvMergeCreatedResult,
@@ -578,7 +580,9 @@ function normalizeNotificationPrefs(raw: unknown): NotificationPrefs | null {
   return Object.keys(out).length > 0 ? out : null;
 }
 
-function normalizeTourPagesCompleted(raw: unknown): TourPagesCompletedPrefs | undefined {
+function normalizeTourPagesCompleted(
+  raw: unknown,
+): TourPagesCompletedPrefs | undefined {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
   const o = raw as Record<string, unknown>;
   const out: TourPagesCompletedPrefs = {};
@@ -912,7 +916,8 @@ function looksLikeJobAnalysisRow(o: Record<string, unknown>): boolean {
   if (o.analysisV2 != null || o.analysis_v2 != null) return true;
   if (o.factorsBreakdown != null || o.factors_breakdown != null) return true;
   if (Array.isArray(o.skillCoverage) && o.skillCoverage.length > 0) return true;
-  if (Array.isArray(o.skill_coverage) && o.skill_coverage.length > 0) return true;
+  if (Array.isArray(o.skill_coverage) && o.skill_coverage.length > 0)
+    return true;
   return false;
 }
 
@@ -1118,7 +1123,9 @@ function parseDescriptionHighlightsFromUnknown(
         )
         .map((item) => ({
           text: typeof item.text === 'string' ? item.text.trim() : '',
-          ...(typeof item.category === 'string' ? { category: item.category } : {}),
+          ...(typeof item.category === 'string'
+            ? { category: item.category }
+            : {}),
           ...(typeof item.importance === 'string'
             ? { importance: item.importance }
             : {}),
@@ -1139,7 +1146,10 @@ function parseDescriptionHighlightsFromUnknown(
               : 'paragraph';
           const itemsRaw = item.items;
           const items = Array.isArray(itemsRaw)
-            ? itemsRaw.filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+            ? itemsRaw.filter(
+                (x): x is string =>
+                  typeof x === 'string' && x.trim().length > 0,
+              )
             : undefined;
           return {
             id: typeof item.id === 'string' ? item.id : '',
@@ -1204,9 +1214,7 @@ function parseSalaryEstimateFromUnknown(
       ? confRaw
       : ('medium' as const);
   const note = typeof se.note === 'string' ? se.note : '';
-  const sourceRaw = String(
-    se.source ?? se.dataSource ?? se.data_source ?? '',
-  )
+  const sourceRaw = String(se.source ?? se.dataSource ?? se.data_source ?? '')
     .trim()
     .toLowerCase();
   const source: JobSalaryEstimateSource | undefined =
@@ -1273,7 +1281,9 @@ function parseSalaryEstimateFromUnknown(
       ...(sourceLabel?.trim() ? { sourceLabel: sourceLabel.trim() } : {}),
       ...(disclaimer?.trim() ? { disclaimer: disclaimer.trim() } : {}),
       ...(dataSource ? { dataSource } : {}),
-      ...(marketLocation?.trim() ? { marketLocation: marketLocation.trim() } : {}),
+      ...(marketLocation?.trim()
+        ? { marketLocation: marketLocation.trim() }
+        : {}),
       ...(marketCountryCode?.trim()
         ? { marketCountryCode: marketCountryCode.trim() }
         : {}),
@@ -1295,7 +1305,9 @@ function parseSalaryEstimateFromUnknown(
       ...(sourceLabel?.trim() ? { sourceLabel: sourceLabel.trim() } : {}),
       ...(disclaimer?.trim() ? { disclaimer: disclaimer.trim() } : {}),
       ...(dataSource ? { dataSource } : {}),
-      ...(marketLocation?.trim() ? { marketLocation: marketLocation.trim() } : {}),
+      ...(marketLocation?.trim()
+        ? { marketLocation: marketLocation.trim() }
+        : {}),
       ...(marketCountryCode?.trim()
         ? { marketCountryCode: marketCountryCode.trim() }
         : {}),
@@ -1322,12 +1334,17 @@ function parseMatchScoreBenchmark(raw: unknown): MatchScoreBenchmark | null {
   const disclaimerRaw =
     (typeof o.disclaimer === 'string' && o.disclaimer.trim()) || undefined;
   const disclaimer = disclaimerRaw
-    ? disclaimerRaw.replace(/\s*[—–]\s*/g, ', ').replace(/\s{2,}/g, ' ').trim()
+    ? disclaimerRaw
+        .replace(/\s*[—–]\s*/g, ', ')
+        .replace(/\s{2,}/g, ' ')
+        .trim()
     : undefined;
   return { shortHeadline, disclaimer };
 }
 
-function parseChecklistSuggestions(raw: unknown): JobChecklistSuggestion[] | undefined {
+function parseChecklistSuggestions(
+  raw: unknown,
+): JobChecklistSuggestion[] | undefined {
   if (!Array.isArray(raw) || raw.length === 0) return undefined;
   const items: JobChecklistSuggestion[] = [];
   for (const entry of raw) {
@@ -1402,7 +1419,8 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
             >[number]['gapAdviceType'])
           : undefined;
       if (gapAdviceType === 'exclude') continue;
-      const requirementKindRaw = o.requirementKind ?? o.requirement_kind ?? o.kind;
+      const requirementKindRaw =
+        o.requirementKind ?? o.requirement_kind ?? o.kind;
       const requirementKind =
         requirementKindRaw === 'tool' || requirementKindRaw === 'phrase'
           ? requirementKindRaw
@@ -1533,14 +1551,17 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
   );
 
   const selectedCvProfileIdRaw =
-    (typeof body.selectedCvProfileId === 'string' && body.selectedCvProfileId.trim()) ||
+    (typeof body.selectedCvProfileId === 'string' &&
+      body.selectedCvProfileId.trim()) ||
     (typeof body.selected_cv_profile_id === 'string' &&
       body.selected_cv_profile_id.trim()) ||
     null;
 
   const matchCvProfileIdRaw =
-    (typeof body.matchCvProfileId === 'string' && body.matchCvProfileId.trim()) ||
-    (typeof body.match_cv_profile_id === 'string' && body.match_cv_profile_id.trim()) ||
+    (typeof body.matchCvProfileId === 'string' &&
+      body.matchCvProfileId.trim()) ||
+    (typeof body.match_cv_profile_id === 'string' &&
+      body.match_cv_profile_id.trim()) ||
     null;
   const matchCvProfileId =
     matchCvProfileIdRaw ?? sourceCvProfileId ?? cvProfileIdTrim ?? null;
@@ -1577,7 +1598,9 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
         '';
       if (!skill) continue;
       const statusRaw =
-        typeof o.status === 'string' ? o.status.trim().toLowerCase() : 'missing';
+        typeof o.status === 'string'
+          ? o.status.trim().toLowerCase()
+          : 'missing';
       const tier = parseSkillRequirementTier(o.tier);
       const foundLiterallyRaw = o.foundLiterally ?? o.found_literally;
       const keywordOnlyRaw = o.keywordOnly ?? o.keyword_only;
@@ -1630,11 +1653,14 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
     (typeof body.tailorDraft === 'object' &&
       body.tailorDraft &&
       typeof (body.tailorDraft as Record<string, unknown>).id === 'string') ||
-      (typeof body.tailor_draft === 'object' &&
-        body.tailor_draft &&
-        typeof (body.tailor_draft as Record<string, unknown>).id === 'string'),
+    (typeof body.tailor_draft === 'object' &&
+      body.tailor_draft &&
+      typeof (body.tailor_draft as Record<string, unknown>).id === 'string'),
   );
-  const tailorUi = parseTailorUiFields(body, hasEmbeddedTailorDraft || isTailored === true);
+  const tailorUi = parseTailorUiFields(
+    body,
+    hasEmbeddedTailorDraft || isTailored === true,
+  );
   const effectiveIsTailored = tailorUi.isTailorComplete === true;
 
   const factorsBreakdown = effectiveIsTailored
@@ -1647,7 +1673,11 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
         .filter((x): x is string => typeof x === 'string' && Boolean(x.trim()))
         .map((x) => x.trim())
     : undefined;
-  if (!skillsAddedToCv?.length && effectiveIsTailored && tailorDraft?.selectedSkills?.length) {
+  if (
+    !skillsAddedToCv?.length &&
+    effectiveIsTailored &&
+    tailorDraft?.selectedSkills?.length
+  ) {
     skillsAddedToCv = tailorDraft.selectedSkills;
   }
   if (!effectiveIsTailored) {
@@ -1688,7 +1718,11 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
     ...(analyzeSource ? { analyzeSource } : {}),
     tailoredCvProfileId,
     tailoredCvName,
-    ...(effectiveIsTailored ? { isTailored: true } : isTailored === false ? { isTailored: false } : {}),
+    ...(effectiveIsTailored
+      ? { isTailored: true }
+      : isTailored === false
+        ? { isTailored: false }
+        : {}),
     hasCoverLetter,
     tailorDraft,
     breakdown:
@@ -1724,10 +1758,16 @@ function normalizeJobAnalysis(raw: unknown): JobAnalysis {
     ...(tailorUi.tailorStatus && tailorUi.tailorStatus !== 'none'
       ? { tailorStatus: tailorUi.tailorStatus }
       : {}),
-    ...(tailorUi.tailorDraftId ? { tailorDraftId: tailorUi.tailorDraftId } : {}),
+    ...(tailorUi.tailorDraftId
+      ? { tailorDraftId: tailorUi.tailorDraftId }
+      : {}),
     ...(tailorUi.tailorEditorOpenable ? { tailorEditorOpenable: true } : {}),
-    ...(tailorUi.tailorCtaLabel ? { tailorCtaLabel: tailorUi.tailorCtaLabel } : {}),
-    ...(tailorUi.tailorCtaMode ? { tailorCtaMode: tailorUi.tailorCtaMode } : {}),
+    ...(tailorUi.tailorCtaLabel
+      ? { tailorCtaLabel: tailorUi.tailorCtaLabel }
+      : {}),
+    ...(tailorUi.tailorCtaMode
+      ? { tailorCtaMode: tailorUi.tailorCtaMode }
+      : {}),
     ...(tailorUi.pendingTailorSections?.length
       ? { pendingTailorSections: tailorUi.pendingTailorSections }
       : {}),
@@ -1750,7 +1790,10 @@ function parseLocationEligibility(raw: unknown): LocationEligibility | null {
   const locationsRaw = o.jobLocations ?? o.job_locations;
   const jobLocations = Array.isArray(locationsRaw)
     ? locationsRaw
-        .filter((item): item is string => typeof item === 'string' && Boolean(item.trim()))
+        .filter(
+          (item): item is string =>
+            typeof item === 'string' && Boolean(item.trim()),
+        )
         .map((item) => item.trim())
     : undefined;
   const detectedUserCountryCode =
@@ -2055,7 +2098,9 @@ function normalizeJobDetailForForm(
           : '';
   if (!desc.trim() && nestedJob) {
     desc =
-      (typeof nestedJob.description === 'string' ? nestedJob.description : '') ||
+      (typeof nestedJob.description === 'string'
+        ? nestedJob.description
+        : '') ||
       (typeof nestedJob.jobDescription === 'string'
         ? nestedJob.jobDescription
         : '') ||
@@ -3370,7 +3415,13 @@ export type CVScorePayload = {
 export type CVImprovementItem = {
   id?: string;
   /** Server lifecycle; missing legacy rows are treated as `pending`. */
-  status?: 'pending' | 'applying' | 'accepted' | 'rejected' | 'failed' | 'in_progress';
+  status?:
+    | 'pending'
+    | 'applying'
+    | 'accepted'
+    | 'rejected'
+    | 'failed'
+    | 'in_progress';
   /** ISO timestamp when accepted/rejected (when provided). */
   resolvedAt?: string;
   resolution?: 'accepted' | 'rejected' | 'already_applied';
@@ -3390,7 +3441,10 @@ export type CVImprovementItem = {
    * `ai_fixable` — show Fix with AI; `user_action_required` — manual edit only
    * (location, contact fields, portfolio links, etc.).
    */
-  resolutionType?: 'ai_fixable' | 'user_action_required' | 'ai_template_with_placeholder';
+  resolutionType?:
+    | 'ai_fixable'
+    | 'user_action_required'
+    | 'ai_template_with_placeholder';
   /** Present on rejected rows — used server-side to suppress regeneration until content changes. */
   rejectionFingerprint?: {
     targetFieldPath?: string;
@@ -3876,7 +3930,8 @@ function normalizeChatConversationResponse(
         : null;
   const message = String(body.message ?? body.content ?? body.text ?? '');
   const validationType =
-    body.type === 'validation_error' || body.code === 'CHAT_CV_PAYLOAD_INCOMPLETE';
+    body.type === 'validation_error' ||
+    body.code === 'CHAT_CV_PAYLOAD_INCOMPLETE';
   if (validationType) {
     const missing = Array.isArray(body.missing)
       ? body.missing.map((m) => String(m))
@@ -4537,7 +4592,8 @@ function normalizeCVSection(raw: unknown): CVSectionRecord {
 }
 
 function normalizeCvRevisionSummary(raw: unknown): CvRevisionSummary | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const id = typeof o.id === 'string' ? o.id.trim() : '';
   if (!id) return null;
@@ -4562,12 +4618,16 @@ function normalizeCvRevisionList(raw: unknown): CvRevisionSummary[] {
     .filter((r): r is CvRevisionSummary => r !== null);
 }
 
-function normalizeCvRevisionRestoreResult(raw: unknown): CvRevisionRestoreResult {
+function normalizeCvRevisionRestoreResult(
+  raw: unknown,
+): CvRevisionRestoreResult {
   const body = unwrapApiDataEnvelope(raw);
   return {
     restored: body.restored === true,
     revisionId: typeof body.revisionId === 'string' ? body.revisionId : '',
-    sections: Array.isArray(body.sections) ? body.sections.map(normalizeCVSection) : [],
+    sections: Array.isArray(body.sections)
+      ? body.sections.map(normalizeCVSection)
+      : [],
   };
 }
 
@@ -4608,7 +4668,9 @@ export function parseCvAssistantCommitResponse(
   return normalizeCvAssistantCommitResult(raw);
 }
 
-function normalizeCvAssistantCommitResult(raw: unknown): CvAssistantCommitResult {
+function normalizeCvAssistantCommitResult(
+  raw: unknown,
+): CvAssistantCommitResult {
   const body = unwrapApiDataEnvelope(raw) as Record<string, unknown>;
   const { profile, sections } = normalizeCvProfileDetail(raw);
   const profileId = resolveCvProfileId(body, profile);
@@ -4680,27 +4742,29 @@ function normalizeCvBatchUpsertSectionsResult(
   };
 }
 
-function pickCvScoreBreakdown(o: Record<string, unknown>): Record<string, unknown> | undefined {
-        if (
-          o.breakdown !== null &&
-          typeof o.breakdown === 'object' &&
+function pickCvScoreBreakdown(
+  o: Record<string, unknown>,
+): Record<string, unknown> | undefined {
+  if (
+    o.breakdown !== null &&
+    typeof o.breakdown === 'object' &&
     typeof (o.breakdown as Record<string, unknown>).sections === 'object' &&
-          (o.breakdown as Record<string, unknown>).sections !== null
-        ) {
-          return o.breakdown as Record<string, unknown>;
-        }
-        if (
-          o.evaluation !== null &&
-          typeof o.evaluation === 'object' &&
+    (o.breakdown as Record<string, unknown>).sections !== null
+  ) {
+    return o.breakdown as Record<string, unknown>;
+  }
+  if (
+    o.evaluation !== null &&
+    typeof o.evaluation === 'object' &&
     typeof (o.evaluation as Record<string, unknown>).sections === 'object' &&
-          (o.evaluation as Record<string, unknown>).sections !== null
-        ) {
-          return o.evaluation as Record<string, unknown>;
-        }
-        if (o.breakdown !== null && typeof o.breakdown === 'object') {
-          return o.breakdown as Record<string, unknown>;
-        }
-        return undefined;
+    (o.evaluation as Record<string, unknown>).sections !== null
+  ) {
+    return o.evaluation as Record<string, unknown>;
+  }
+  if (o.breakdown !== null && typeof o.breakdown === 'object') {
+    return o.breakdown as Record<string, unknown>;
+  }
+  return undefined;
 }
 
 function hybridFieldsForCvScore(
@@ -4938,7 +5002,11 @@ function normalizeCVImprovements(raw: unknown): CVImprovementItem[] {
           : undefined;
     const rejectionRaw = x.rejectionFingerprint ?? x.rejection_fingerprint;
     let rejectionFingerprint: CVImprovementItem['rejectionFingerprint'];
-    if (rejectionRaw && typeof rejectionRaw === 'object' && !Array.isArray(rejectionRaw)) {
+    if (
+      rejectionRaw &&
+      typeof rejectionRaw === 'object' &&
+      !Array.isArray(rejectionRaw)
+    ) {
       const rf = rejectionRaw as Record<string, unknown>;
       rejectionFingerprint = {
         targetFieldPath:
@@ -5025,9 +5093,15 @@ export function normalizeCvImprovementsGetResponse(
   let lastPublishedSectionScores: Record<string, number> | null | undefined;
   if (lastPublishedRaw === null) {
     lastPublishedSectionScores = null;
-  } else if (lastPublishedRaw && typeof lastPublishedRaw === 'object' && !Array.isArray(lastPublishedRaw)) {
+  } else if (
+    lastPublishedRaw &&
+    typeof lastPublishedRaw === 'object' &&
+    !Array.isArray(lastPublishedRaw)
+  ) {
     const map: Record<string, number> = {};
-    for (const [key, val] of Object.entries(lastPublishedRaw as Record<string, unknown>)) {
+    for (const [key, val] of Object.entries(
+      lastPublishedRaw as Record<string, unknown>,
+    )) {
       if (typeof val === 'number' && Number.isFinite(val)) {
         map[key] = Math.round(Math.max(0, Math.min(100, val)));
       }
@@ -5041,8 +5115,12 @@ export function normalizeCvImprovementsGetResponse(
     score,
     lastScoredAt,
     cvRevisionId,
-    acceptAllQuota: parseAcceptAllQuota(body.acceptAllQuota ?? body.accept_all_quota),
-    ...(lastPublishedSectionScores !== undefined ? { lastPublishedSectionScores } : {}),
+    acceptAllQuota: parseAcceptAllQuota(
+      body.acceptAllQuota ?? body.accept_all_quota,
+    ),
+    ...(lastPublishedSectionScores !== undefined
+      ? { lastPublishedSectionScores }
+      : {}),
   };
 }
 
@@ -5087,27 +5165,33 @@ function parseTruthfulnessFields(
   };
 }
 
-function parseCvAiUsageFromEnvelope(raw: unknown): CvApplyImprovementResult['aiUsage'] {
+function parseCvAiUsageFromEnvelope(
+  raw: unknown,
+): CvApplyImprovementResult['aiUsage'] {
   if (!raw || typeof raw !== 'object') return undefined;
   const o = raw as Record<string, unknown>;
   const meta = o.meta;
   const data = o.data;
   const from =
     meta && typeof meta === 'object' && !Array.isArray(meta)
-      ? (meta as Record<string, unknown>).aiUsage ??
-        (meta as Record<string, unknown>).ai_usage
+      ? ((meta as Record<string, unknown>).aiUsage ??
+        (meta as Record<string, unknown>).ai_usage)
       : null;
   const fromData =
     data && typeof data === 'object' && !Array.isArray(data)
-      ? (data as Record<string, unknown>).aiUsage ??
-        (data as Record<string, unknown>).ai_usage
+      ? ((data as Record<string, unknown>).aiUsage ??
+        (data as Record<string, unknown>).ai_usage)
       : null;
   const usage = (from ?? fromData) as Record<string, unknown> | null;
   if (!usage || typeof usage !== 'object') return undefined;
   const used = Number(usage.used);
   const limit = Number(usage.limit);
   const remaining = Number(usage.remaining);
-  if (!Number.isFinite(used) || !Number.isFinite(limit) || !Number.isFinite(remaining)) {
+  if (
+    !Number.isFinite(used) ||
+    !Number.isFinite(limit) ||
+    !Number.isFinite(remaining)
+  ) {
     return undefined;
   }
   return {
@@ -5260,7 +5344,9 @@ function parseOptionalStringIdArray(
     .filter((s) => s.length > 0);
 }
 
-function parseCvAcceptUpdatedSections(raw: unknown): CvAcceptUpdatedSection[] | undefined {
+function parseCvAcceptUpdatedSections(
+  raw: unknown,
+): CvAcceptUpdatedSection[] | undefined {
   if (!Array.isArray(raw)) return undefined;
   const out: CvAcceptUpdatedSection[] = [];
   for (const item of raw) {
@@ -5392,8 +5478,12 @@ function parseCvSuggestionMutationEnvelope(
       : undefined;
   const updatedSections =
     parseCvAcceptUpdatedSections(src.updatedSections ?? src.updated_sections) ??
-    parseCvAcceptUpdatedSections(legacyRecord?.updatedSections ?? legacyRecord?.updated_sections) ??
-    parseCvAcceptUpdatedSections(legacyData?.updatedSections ?? legacyData?.updated_sections);
+    parseCvAcceptUpdatedSections(
+      legacyRecord?.updatedSections ?? legacyRecord?.updated_sections,
+    ) ??
+    parseCvAcceptUpdatedSections(
+      legacyData?.updatedSections ?? legacyData?.updated_sections,
+    );
   const sectionsSynced =
     src.sectionsSynced === true ||
     src.sections_synced === true ||
@@ -5428,9 +5518,12 @@ function parseCvSuggestionsBulkEnvelope(
       : null;
   const src = nested ? { ...body, ...nested } : body;
   const acceptAllSummary = parseAcceptAllSummary(src);
-  const overflowRaw = src.acceptAllQueueOverflow ?? src.accept_all_queue_overflow;
+  const overflowRaw =
+    src.acceptAllQueueOverflow ?? src.accept_all_queue_overflow;
   const acceptAllQueueOverflowCount =
-    typeof overflowRaw === 'number' && Number.isFinite(overflowRaw) && overflowRaw > 0
+    typeof overflowRaw === 'number' &&
+    Number.isFinite(overflowRaw) &&
+    overflowRaw > 0
       ? Math.floor(overflowRaw)
       : acceptAllSummary?.queueOverflowCount;
   const acceptAllQueueOverflow =
@@ -5503,7 +5596,7 @@ function parseCvSuggestionsBulkEnvelope(
         : typeof src.accept_all_ai_calls === 'number' &&
             Number.isFinite(src.accept_all_ai_calls)
           ? src.accept_all_ai_calls
-        : undefined,
+          : undefined,
     cacheHit: src.cacheHit === true,
     ...parseTruthfulnessFields(src),
     ...parsePerformanceFields(src),
@@ -5612,10 +5705,14 @@ function parseTailorDisplayDiff(raw: unknown): TailorDisplayDiff | undefined {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
   const o = raw as Record<string, unknown>;
   const added = Array.isArray(o.added)
-    ? o.added.filter((x): x is string => typeof x === 'string' && Boolean(x.trim()))
+    ? o.added.filter(
+        (x): x is string => typeof x === 'string' && Boolean(x.trim()),
+      )
     : [];
   const removed = Array.isArray(o.removed)
-    ? o.removed.filter((x): x is string => typeof x === 'string' && Boolean(x.trim()))
+    ? o.removed.filter(
+        (x): x is string => typeof x === 'string' && Boolean(x.trim()),
+      )
     : [];
   if (added.length === 0 && removed.length === 0) return undefined;
   return { added, removed };
@@ -5661,8 +5758,12 @@ export function normalizeCvTailorDraft(raw: unknown): CvTailorDraft {
       const sectionType = String(d.sectionType ?? d.section_type ?? '').trim();
       const summaryRaw = d.summary;
       const summary =
-        typeof summaryRaw === 'string' && summaryRaw.trim() ? summaryRaw.trim() : null;
-      const displayDiff = parseTailorDisplayDiff(d.displayDiff ?? d.display_diff);
+        typeof summaryRaw === 'string' && summaryRaw.trim()
+          ? summaryRaw.trim()
+          : null;
+      const displayDiff = parseTailorDisplayDiff(
+        d.displayDiff ?? d.display_diff,
+      );
       const safetyNotes = Array.isArray(d.safetyNotes)
         ? d.safetyNotes
             .filter((x): x is string => typeof x === 'string')
@@ -5684,7 +5785,9 @@ export function normalizeCvTailorDraft(raw: unknown): CvTailorDraft {
     });
   const plannedRaw = row.plannedSections ?? row.planned_sections;
   const plannedSections = Array.isArray(plannedRaw)
-    ? plannedRaw.filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+    ? plannedRaw.filter(
+        (x): x is string => typeof x === 'string' && x.trim().length > 0,
+      )
     : undefined;
   const top = row.status;
   const status: CvTailorDraftStatus =
@@ -6231,10 +6334,16 @@ const cv = {
     return normalizeCvAssistantSectionCommandResponse(body);
   },
   /** GET /cv/assistant/global/operations — preset global CV assistant catalog. */
-  assistantGlobalOperations: async (): Promise<CvGlobalAssistantOperation[]> => {
-    const res = await axiosClient.get<unknown>('/cv/assistant/global/operations');
+  assistantGlobalOperations: async (): Promise<
+    CvGlobalAssistantOperation[]
+  > => {
+    const res = await axiosClient.get<unknown>(
+      '/cv/assistant/global/operations',
+    );
     throwIfApiFailureResponse(res.data, res.status);
-    return normalizeCvGlobalAssistantOperations(unwrapApiDataEnvelope(res.data));
+    return normalizeCvGlobalAssistantOperations(
+      unwrapApiDataEnvelope(res.data),
+    );
   },
   assistantGlobalCommand: async (
     cvProfileId: string,
@@ -6274,7 +6383,9 @@ const cv = {
       },
     );
     throwIfApiFailureResponse(res.data, res.status);
-    return normalizeCvGlobalAssistantCommandResponse(unwrapApiDataEnvelope(res.data));
+    return normalizeCvGlobalAssistantCommandResponse(
+      unwrapApiDataEnvelope(res.data),
+    );
   },
   /** POST /cv/profiles/:id/recruiter-scan — comprehensive first-impression simulation. */
   recruiterScan: async (
@@ -6286,7 +6397,8 @@ const cv = {
   ): Promise<import('@/lib/cvRecruiterScan').CvRecruiterScanResponse> => {
     const id = cvProfileId.trim();
     if (!id) throw new Error('CV profile id is required');
-    const { normalizeCvRecruiterScanResponse } = await import('@/lib/cvRecruiterScan');
+    const { normalizeCvRecruiterScanResponse } =
+      await import('@/lib/cvRecruiterScan');
     const payload: Record<string, unknown> = {};
     const role = body?.targetRole?.trim();
     if (role) payload.targetRole = role;
@@ -6310,7 +6422,11 @@ const cv = {
    */
   assistantCommit: async (
     cvProfileId: string,
-    body: { patch: Record<string, unknown>; commandId?: string; operation?: string },
+    body: {
+      patch: Record<string, unknown>;
+      commandId?: string;
+      operation?: string;
+    },
   ): Promise<CvAssistantCommitResult> => {
     const res = await axiosClient.post<unknown>(
       `/cv/profiles/${encodeURIComponent(cvProfileId)}/assistant/commit`,
@@ -6611,9 +6727,13 @@ const cv = {
     },
     opts?: { baseContentVersion?: number | null },
   ) => {
-    const res = await axiosClient.patch<unknown>(`/cv/profiles/${id}`, payload, {
-      headers: cvBaseVersionHeaders(opts?.baseContentVersion),
-    });
+    const res = await axiosClient.patch<unknown>(
+      `/cv/profiles/${id}`,
+      payload,
+      {
+        headers: cvBaseVersionHeaders(opts?.baseContentVersion),
+      },
+    );
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeCvProfileResponse(res.data);
   },
@@ -6638,7 +6758,9 @@ const cv = {
     structured?: Record<string, unknown>;
     template?: string;
   }): Promise<CvMergePreviewResult | CvMergeCreatedResult> => {
-    const profileIds = payload.profileIds.map((id) => id.trim()).filter(Boolean);
+    const profileIds = payload.profileIds
+      .map((id) => id.trim())
+      .filter(Boolean);
     const mode: CvMergeMode = payload.mode ?? 'preview';
     const res = await axiosClient.post<unknown>('/cv/profiles/merge', {
       profileIds,
@@ -6652,10 +6774,14 @@ const cv = {
       ...(mode === 'create' && payload.structured
         ? { structured: payload.structured }
         : {}),
-      ...(payload.template?.trim() ? { template: payload.template.trim() } : {}),
+      ...(payload.template?.trim()
+        ? { template: payload.template.trim() }
+        : {}),
     });
     throwIfApiFailureResponse(res.data, res.status);
-    const parsed = normalizeCvMergeProfilesResponse(unwrapApiDataEnvelope(res.data));
+    const parsed = normalizeCvMergeProfilesResponse(
+      unwrapApiDataEnvelope(res.data),
+    );
     if (mode === 'create' && parsed.type !== 'created') {
       throw new Error('Merge create did not return a created profile');
     }
@@ -7011,13 +7137,16 @@ const cv = {
               : typeof f.field === 'string'
                 ? f.field
                 : fieldPath;
-        const sectionHint =
-          typeof src.section === 'string' ? src.section : '';
+        const sectionHint = typeof src.section === 'string' ? src.section : '';
         return {
           field: fieldLabel,
           fieldPath,
           fieldLabel,
-          before: coerceAiPatchToDisplayString(f.before, sectionHint, fieldPath),
+          before: coerceAiPatchToDisplayString(
+            f.before,
+            sectionHint,
+            fieldPath,
+          ),
           after: coerceAiPatchToDisplayString(f.after, sectionHint, fieldPath),
           type: (f.type === 'added' ||
           f.type === 'removed' ||
@@ -7345,7 +7474,9 @@ const cv = {
   },
 
   rewriteBullet: async (payload: { bullet: string; context?: string }) => {
-    const bullet = prepareCvSectionTextForAi(payload.bullet).trim().slice(0, 500);
+    const bullet = prepareCvSectionTextForAi(payload.bullet)
+      .trim()
+      .slice(0, 500);
     const context = payload.context?.trim().slice(0, 100);
     const res = await axiosClient.post<unknown>('/cv/improve/bullet', {
       bullet,
@@ -7522,12 +7653,15 @@ const cv = {
     }
   },
   /** POST …/sections/suggest-order — deterministic section order suggestion (does not save). */
-  suggestSectionOrder: async (cvProfileId: string): Promise<import('@/lib/cvSectionOrderSuggest').CvSectionOrderSuggestResult> => {
+  suggestSectionOrder: async (
+    cvProfileId: string,
+  ): Promise<
+    import('@/lib/cvSectionOrderSuggest').CvSectionOrderSuggestResult
+  > => {
     const id = cvProfileId.trim();
     if (!id) throw new Error('CV profile id is required');
-    const { normalizeCvSectionOrderSuggestResult } = await import(
-      '@/lib/cvSectionOrderSuggest'
-    );
+    const { normalizeCvSectionOrderSuggestResult } =
+      await import('@/lib/cvSectionOrderSuggest');
     try {
       const scoped = await axiosClient.post<unknown>(
         `/cv/profiles/${encodeURIComponent(id)}/sections/suggest-order`,
@@ -7603,7 +7737,9 @@ const cv = {
   optimize: async (payload: { jobDescriptionHint: string }) =>
     (
       await axiosClient.post<{ optimizedText: string }>('/cv/optimize', {
-        jobDescriptionHint: prepareJobDescriptionForAi(payload.jobDescriptionHint),
+        jobDescriptionHint: prepareJobDescriptionForAi(
+          payload.jobDescriptionHint,
+        ),
       })
     ).data,
   tailor: async (payload: { cvProfileId: string; jobDescription: string }) =>
@@ -8504,13 +8640,18 @@ const jobs = {
    */
   patchPipeline: async (
     jobAnalysisId: string,
-    payload: { stage: HubPipelineStage; expectedStage?: HubPipelineStage | null },
+    payload: {
+      stage: HubPipelineStage;
+      expectedStage?: HubPipelineStage | null;
+    },
   ): Promise<JobHubContextEnrichment> => {
     const res = await axiosClient.patch<unknown>(
       `/jobs/${encodeURIComponent(jobAnalysisId)}/pipeline`,
       {
         stage: payload.stage,
-        ...(payload.expectedStage ? { expectedStage: payload.expectedStage } : {}),
+        ...(payload.expectedStage
+          ? { expectedStage: payload.expectedStage }
+          : {}),
       },
     );
     throwIfApiFailureResponse(res.data, res.status);
@@ -8528,7 +8669,10 @@ const jobs = {
     jobAnalysisId?: string;
     bookmarkId?: string;
   }): Promise<JobHubGuidancePayload> => {
-    const res = await axiosClient.patch<unknown>('/jobs/job-hub/guidance', payload);
+    const res = await axiosClient.patch<unknown>(
+      '/jobs/job-hub/guidance',
+      payload,
+    );
     throwIfApiFailureResponse(res.data, res.status);
     const body = unwrapApiDataEnvelope(res.data);
     const guidance = parseJobHubGuidance(body.guidance ?? body);
@@ -8985,7 +9129,11 @@ const jobDiscovery = {
     let cursor: string | undefined;
     for (let page = 0; page < BOOKMARK_MAX_PAGES; page++) {
       const res = await axiosClient.get<unknown>('/job-discovery/bookmarks', {
-        params: { paged: true, limit: BOOKMARK_PAGE_SIZE, ...(cursor ? { cursor } : {}) },
+        params: {
+          paged: true,
+          limit: BOOKMARK_PAGE_SIZE,
+          ...(cursor ? { cursor } : {}),
+        },
       });
       throwIfApiFailureResponse(res.data, res.status);
       const body = unwrapApiDataEnvelope(res.data);
@@ -8995,7 +9143,8 @@ const jobDiscovery = {
         break;
       }
       rows.push(...body.items);
-      cursor = typeof body.nextCursor === 'string' ? body.nextCursor : undefined;
+      cursor =
+        typeof body.nextCursor === 'string' ? body.nextCursor : undefined;
       if (!cursor) break;
     }
     return rows
@@ -9152,8 +9301,12 @@ const applications = {
     if (payload.url?.trim()) body.url = payload.url.trim();
     if (payload.status) body.status = payload.status;
     if (payload.notes?.trim()) body.notes = payload.notes.trim();
-    if (payload.jobAnalysisId?.trim()) body.jobAnalysisId = payload.jobAnalysisId.trim();
-    if (typeof payload.matchScore === 'number' && Number.isFinite(payload.matchScore)) {
+    if (payload.jobAnalysisId?.trim())
+      body.jobAnalysisId = payload.jobAnalysisId.trim();
+    if (
+      typeof payload.matchScore === 'number' &&
+      Number.isFinite(payload.matchScore)
+    ) {
       body.matchScore = Math.max(0, Math.round(payload.matchScore));
     }
     const res = await axiosClient.post<unknown>('/applications', body);
@@ -9623,14 +9776,17 @@ const dashboard = {
       params.focusFeedMaxItems <= 100
         ? Math.round(params.focusFeedMaxItems)
         : undefined;
-    const res = await axiosClient.get<unknown>('/dashboard/quiet-applications', {
-      params: {
-        ...(params?.cvProfileId ? { cvProfileId: params.cvProfileId } : {}),
-        ...(params?.timezone ? { timezone: params.timezone } : {}),
-        ...(params?.locale ? { locale: params.locale } : {}),
-        ...(ffm != null ? { focusFeedMaxItems: ffm } : {}),
+    const res = await axiosClient.get<unknown>(
+      '/dashboard/quiet-applications',
+      {
+        params: {
+          ...(params?.cvProfileId ? { cvProfileId: params.cvProfileId } : {}),
+          ...(params?.timezone ? { timezone: params.timezone } : {}),
+          ...(params?.locale ? { locale: params.locale } : {}),
+          ...(ffm != null ? { focusFeedMaxItems: ffm } : {}),
+        },
       },
-    });
+    );
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeDashboardQuietApplications(res.data);
   },

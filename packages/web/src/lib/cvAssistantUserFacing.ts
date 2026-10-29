@@ -73,16 +73,14 @@ function hasExperienceContent(data: CVBuilderData): boolean {
 
 function hasEducationContent(data: CVBuilderData): boolean {
   return data.education.items.some(
-    (item) =>
-      item.school.trim() ||
-      item.degree.trim() ||
-      item.field.trim(),
+    (item) => item.school.trim() || item.degree.trim() || item.field.trim(),
   );
 }
 
 function hasProjectsContent(data: CVBuilderData): boolean {
   return data.projects.some(
-    (p) => p.name.trim() || p.description.trim() || String(p.bullets ?? '').trim(),
+    (p) =>
+      p.name.trim() || p.description.trim() || String(p.bullets ?? '').trim(),
   );
 }
 
@@ -111,14 +109,10 @@ export function buildCvSectionInventory(
     if (t === 'summary' || t.includes('profile')) types.add('summary');
   }
 
-  const hasSummary =
-    types.has('summary') || Boolean(d.summary.text.trim());
-  const hasExperience =
-    types.has('experience') || hasExperienceContent(d);
-  const hasEducation =
-    types.has('education') || hasEducationContent(d);
-  const hasProjects =
-    types.has('projects') || hasProjectsContent(d);
+  const hasSummary = types.has('summary') || Boolean(d.summary.text.trim());
+  const hasExperience = types.has('experience') || hasExperienceContent(d);
+  const hasEducation = types.has('education') || hasEducationContent(d);
+  const hasProjects = types.has('projects') || hasProjectsContent(d);
   const hasSkills = types.has('skills') || hasSkillsContent(d);
 
   return {
@@ -132,7 +126,9 @@ export function buildCvSectionInventory(
 }
 
 /** Strip model-internal wording from clarification prompts shown to users. */
-export function sanitizeAssistantClarificationQuestion(question: string): string {
+export function sanitizeAssistantClarificationQuestion(
+  question: string,
+): string {
   let s = String(question ?? '').trim();
   if (!s) return 'Could you clarify what you would like changed?';
 
@@ -224,7 +220,10 @@ export function filterRecruiterScanFindingsResult(
   inventory: CvSectionInventory,
 ): { result: CvGlobalAssistantFindingsResult; dropped: string[] } {
   const base = partitionRecruiterScanFindings(result);
-  const { partition, dropped } = filterRecruiterFindingsPartition(base, inventory);
+  const { partition, dropped } = filterRecruiterFindingsPartition(
+    base,
+    inventory,
+  );
 
   const filterList = (lines: string[] | undefined) => {
     const src = lines ?? [];
@@ -247,7 +246,10 @@ export function filterRecruiterScanFindingsResult(
 export function filterUnrealisticCvSuggestions(
   items: CVImprovementItem[],
   inventory: CvSectionInventory,
-): { items: CVImprovementItem[]; dropped: Array<{ section: string; issue: string; id?: string }> } {
+): {
+  items: CVImprovementItem[];
+  dropped: Array<{ section: string; issue: string; id?: string }>;
+} {
   const kept: CVImprovementItem[] = [];
   const dropped: Array<{ section: string; issue: string; id?: string }> = [];
 

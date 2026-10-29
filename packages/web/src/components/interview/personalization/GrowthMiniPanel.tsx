@@ -29,13 +29,17 @@ function SkillBar({
     <div className="space-y-0.5">
       <div className="flex items-center justify-between gap-2">
         <span className="text-[10px] text-[var(--text-muted)]">{label}</span>
-        <span className="text-[10px] tabular-nums text-[var(--text-secondary)]">{pct}</span>
+        <span className="text-[10px] tabular-nums text-[var(--text-secondary)]">
+          {pct}
+        </span>
       </div>
       <div className="h-1 overflow-hidden rounded-full bg-[var(--bg-surface-2)]">
         <div
           className={cn(
             'h-full rounded-full transition-all duration-500',
-            pulseWeak ? 'bg-amber-400/80 ip-weakness-pulse' : 'bg-[var(--teal)]/70',
+            pulseWeak
+              ? 'bg-amber-400/80 ip-weakness-pulse'
+              : 'bg-[var(--teal)]/70',
             improvedGlow && !pulseWeak && 'ip-skill-improve-glow',
           )}
           style={{ width: `${pct}%` }}
@@ -65,7 +69,10 @@ export const GrowthMiniPanel = memo(function GrowthMiniPanel({
     () => highlightedTrend(improvementTrend, weaknessTrend),
     [improvementTrend, weaknessTrend],
   );
-  const pulseKey = useMemo(() => topWeaknessKey(topWeaknesses), [topWeaknesses]);
+  const pulseKey = useMemo(
+    () => topWeaknessKey(topWeaknesses),
+    [topWeaknesses],
+  );
 
   if (!skills) return null;
 
@@ -74,7 +81,10 @@ export const GrowthMiniPanel = memo(function GrowthMiniPanel({
 
   return (
     <section
-      className={cn('border-b border-[var(--border-subtle)] px-5 py-3', className)}
+      className={cn(
+        'border-b border-[var(--border-subtle)] px-5 py-3',
+        className,
+      )}
       aria-label="Your growth"
     >
       <button
@@ -114,7 +124,9 @@ export const GrowthMiniPanel = memo(function GrowthMiniPanel({
       <div
         className={cn(
           'grid transition-[grid-template-rows,opacity] duration-300 ease-out',
-          expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-90',
+          expanded
+            ? 'grid-rows-[1fr] opacity-100'
+            : 'grid-rows-[0fr] opacity-90',
         )}
       >
         <div className="overflow-hidden">

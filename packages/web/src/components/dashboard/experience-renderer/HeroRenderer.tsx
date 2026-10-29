@@ -104,7 +104,9 @@ export function HeroRenderer(props: HeroRendererProps) {
     const showMicrocopyBelowCta = Boolean(helper && microcopyBelowCta);
     const recoveryVisual = isRecoveryVisualMode(mode, fatigueAdjusted);
     const band = confidenceBandFromScore(heroConfidenceScore ?? null);
-    const safeHref = ctaHref ? ensureSafeDashboardHref(ctaHref, '/dashboard/job-board').href : null;
+    const safeHref = ctaHref
+      ? ensureSafeDashboardHref(ctaHref, '/dashboard/job-board').href
+      : null;
 
     return (
       <>
@@ -113,7 +115,9 @@ export function HeroRenderer(props: HeroRendererProps) {
         ) : showPrimaryCta && safeHref && ctaLabel ? (
           <div className="flex max-w-full flex-col items-stretch pr-2 sm:items-end sm:pr-3">
             {minutes ? (
-              <p className="text-[11px] font-medium leading-relaxed text-white/35">About {minutes} min</p>
+              <p className="text-[11px] font-medium leading-relaxed text-white/35">
+                About {minutes} min
+              </p>
             ) : null}
             {showMicrocopyAboveCta ? (
               <p
@@ -185,7 +189,11 @@ export function HeroRenderer(props: HeroRendererProps) {
     compressedVisual,
   } = props;
 
-  const secondary = composeHeroSecondary({ subtitle, arcLabel, continuityLine });
+  const secondary = composeHeroSecondary({
+    subtitle,
+    arcLabel,
+    continuityLine,
+  });
   const why = stripTechnicalTokens(whyMatters?.trim() ?? '') || null;
   const whisper = why || reassuranceWhisper?.trim() || null;
 
@@ -203,7 +211,7 @@ export function HeroRenderer(props: HeroRendererProps) {
 
   const headlineClass = compressedVisual
     ? 'text-[18px] font-semibold leading-snug sm:text-[19px]'
-    : primaryTitleClass ?? 'text-[23px] font-semibold sm:text-[27px]';
+    : (primaryTitleClass ?? 'text-[23px] font-semibold sm:text-[27px]');
 
   return (
     <div className="max-w-[65ch]">
@@ -214,7 +222,10 @@ export function HeroRenderer(props: HeroRendererProps) {
           headlineClass,
         )}
       >
-        <PersonalizedRichText text={titleDisplay} metricClassName={metricAccent} />
+        <PersonalizedRichText
+          text={titleDisplay}
+          metricClassName={metricAccent}
+        />
       </h2>
       {secondary ? (
         <p
@@ -224,7 +235,10 @@ export function HeroRenderer(props: HeroRendererProps) {
             recoveryVisual && 'text-white/52',
           )}
         >
-          <PersonalizedRichText text={secondary} metricClassName={metricAccent} />
+          <PersonalizedRichText
+            text={secondary}
+            metricClassName={metricAccent}
+          />
         </p>
       ) : null}
       {whisper ? (
@@ -234,7 +248,10 @@ export function HeroRenderer(props: HeroRendererProps) {
             compressedVisual ? 'mt-4' : 'mt-6',
           )}
         >
-          <PersonalizedRichText text={whisper} metricClassName={metricAccentWhisper} />
+          <PersonalizedRichText
+            text={whisper}
+            metricClassName={metricAccentWhisper}
+          />
         </p>
       ) : null}
     </div>

@@ -25,7 +25,10 @@ export function InterviewReadinessSection({
       aria-labelledby="interview-readiness-heading"
     >
       <div className="flex min-w-0 items-start gap-2.5">
-        <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#00C9B1]" aria-hidden />
+        <MessageCircle
+          className="mt-0.5 h-4 w-4 shrink-0 text-[#00C9B1]"
+          aria-hidden
+        />
         <div className="min-w-0">
           <h3
             id="interview-readiness-heading"
@@ -33,7 +36,9 @@ export function InterviewReadinessSection({
           >
             Your score &amp; next steps
           </h3>
-          <p className="mt-2 text-[13px] leading-relaxed text-white/72">{text}</p>
+          <p className="mt-2 text-[13px] leading-relaxed text-white/72">
+            {text}
+          </p>
         </div>
       </div>
     </section>

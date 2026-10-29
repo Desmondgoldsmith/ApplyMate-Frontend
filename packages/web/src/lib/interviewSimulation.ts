@@ -8,7 +8,10 @@ import type {
   SimulationSignal,
   TurnSimulationFeedback,
 } from '@/lib/interview-prep-types';
-import { resolveSimulationPersona, type SimulationPersonaUi } from '@/lib/interviewSimulationPersona';
+import {
+  resolveSimulationPersona,
+  type SimulationPersonaUi,
+} from '@/lib/interviewSimulationPersona';
 
 export type AvatarDemeanor = 'supportive' | 'neutral' | 'strict';
 
@@ -26,7 +29,9 @@ export const EMOTION_DISPLAY: Record<
 const VALID_EMOTIONS = new Set<string>(Object.keys(EMOTION_DISPLAY));
 const VALID_PRESSURE = new Set<string>(['low', 'medium', 'high']);
 
-export function normalizeEmotion(raw: string | undefined | null): InterviewEmotion {
+export function normalizeEmotion(
+  raw: string | undefined | null,
+): InterviewEmotion {
   const key = (raw ?? 'neutral').trim().toLowerCase();
   return VALID_EMOTIONS.has(key) ? (key as InterviewEmotion) : 'neutral';
 }
@@ -71,7 +76,12 @@ function resolvePressureIntensity(
   if (typeof fromLive === 'number' && Number.isFinite(fromLive)) {
     return Math.max(0, Math.min(100, Math.round(fromLive)));
   }
-  const resolvedTier = tier ?? normalizePressureTier(turn?.pressureLevel ?? live?.pressureTier, numericLevel);
+  const resolvedTier =
+    tier ??
+    normalizePressureTier(
+      turn?.pressureLevel ?? live?.pressureTier,
+      numericLevel,
+    );
   return pressureBarPercent(resolvedTier);
 }
 
@@ -95,24 +105,41 @@ export function mergeSimulationSnapshot(options: {
   );
 
   const interruptionOccurred =
-    Boolean(turn?.interruption?.occurred) || turn?.nextBehavior === 'interruption';
+    Boolean(turn?.interruption?.occurred) ||
+    turn?.nextBehavior === 'interruption';
   const interruptionMessage =
     turn?.interruption?.message?.trim() ||
-    (interruptionOccurred ? turn?.reactionText?.trim() || 'Let me jump in with a follow-up.' : null);
+    (interruptionOccurred
+      ? turn?.reactionText?.trim() || 'Let me jump in with a follow-up.'
+      : null);
 
   return {
-    emotion: normalizeEmotion(turn?.emotion ?? String(live?.emotion ?? 'neutral')),
+    emotion: normalizeEmotion(
+      turn?.emotion ?? String(live?.emotion ?? 'neutral'),
+    ),
     pressureTier,
-    pressureIntensity: resolvePressureIntensity(turn, live, pressureTier, options.pressureLevel),
+    pressureIntensity: resolvePressureIntensity(
+      turn,
+      live,
+      pressureTier,
+      options.pressureLevel,
+    ),
     pacingMultiplier: turn?.pacingMultiplier ?? live?.pacingMultiplier ?? 1,
     nextQuestionDifficulty: Math.min(
       5,
-      Math.max(1, turn?.nextQuestionDifficulty ?? live?.nextQuestionDifficulty ?? 3),
+      Math.max(
+        1,
+        turn?.nextQuestionDifficulty ?? live?.nextQuestionDifficulty ?? 3,
+      ),
     ),
     signals,
-    reactionText: turn?.reactionText?.trim() || live?.reactionText?.trim() || null,
+    reactionText:
+      turn?.reactionText?.trim() || live?.reactionText?.trim() || null,
     nudgeMessage: turn?.nudgeMessage ?? null,
-    persona: resolveSimulationPersona(turn?.persona ?? live?.persona, options.prepMode as PrepMode | undefined),
+    persona: resolveSimulationPersona(
+      turn?.persona ?? live?.persona,
+      options.prepMode as PrepMode | undefined,
+    ),
     nextBehavior: turn?.nextBehavior ?? null,
     interruption: {
       occurred: interruptionOccurred,
@@ -169,7 +196,9 @@ export function transitionPauseWithSimulation(
   return Math.max(220, ms);
 }
 
-export function resolveAvatarDemeanor(signals: SimulationSignal[]): AvatarDemeanor {
+export function resolveAvatarDemeanor(
+  signals: SimulationSignal[],
+): AvatarDemeanor {
   const strong =
     signals.includes('ANSWER_STRONG') || signals.includes('USER_CONFIDENT');
   const weak =
@@ -189,7 +218,11 @@ const SIGNAL_MICRO_COPY: Partial<Record<SimulationSignal, string>> = {
 
 export function resolveMicroReactions(
   signals: SimulationSignal[],
-  scores?: { clarityScore?: number; structureScore?: number; relevanceScore?: number },
+  scores?: {
+    clarityScore?: number;
+    structureScore?: number;
+    relevanceScore?: number;
+  },
 ): string[] {
   const lines: string[] = [];
   for (const sig of signals) {
@@ -197,7 +230,10 @@ export function resolveMicroReactions(
     if (copy && !lines.includes(copy)) lines.push(copy);
   }
   if (scores) {
-    if ((scores.structureScore ?? 0) >= 75 && !lines.includes('Good structure')) {
+    if (
+      (scores.structureScore ?? 0) >= 75 &&
+      !lines.includes('Good structure')
+    ) {
       lines.push('Good structure');
     }
     if ((scores.clarityScore ?? 0) < 60 && !lines.includes('Needs clarity')) {

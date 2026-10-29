@@ -1,6 +1,10 @@
 'use client';
 
-import { HUB_STAGE_LABELS, HUB_STAGES, type HubStage } from '@/app/(dashboard)/dashboard/jobs/jobHubMerge';
+import {
+  HUB_STAGE_LABELS,
+  HUB_STAGES,
+  type HubStage,
+} from '@/app/(dashboard)/dashboard/jobs/jobHubMerge';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -47,7 +51,9 @@ export function HubPipelineStrip({ counts, filter, onFilterChange }: Props) {
                   : 'bg-[#111616] text-white/45 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]/90',
               )}
             >
-              <span className="text-[20px] font-medium leading-none tabular-nums">{n}</span>
+              <span className="text-[20px] font-medium leading-none tabular-nums">
+                {n}
+              </span>
               <span className="mt-0.5 block text-[9px] font-medium uppercase tracking-[0.06em] text-white/50">
                 {HUB_STAGE_LABELS[stage]}
               </span>

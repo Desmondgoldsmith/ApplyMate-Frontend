@@ -18,7 +18,8 @@ export const FOLLOW_UP_PAGE = {
   tableLabel: 'Table',
   prev: 'Previous',
   next: 'Next',
-  pageStatus: (page: number, totalPages: number) => `Page ${page} of ${totalPages}`,
+  pageStatus: (page: number, totalPages: number) =>
+    `Page ${page} of ${totalPages}`,
   openAction: 'Open',
   noLink: 'No link',
   typeColumn: 'Type',

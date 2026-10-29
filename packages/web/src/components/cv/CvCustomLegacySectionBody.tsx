@@ -32,17 +32,20 @@ export function CvCustomLegacySectionBody({
   if (!ctx) return null;
   const sections = ctx.data.customSections;
 
-  const rows =
-    inline
-      ? sections
-      : sections.filter((x) => x.title.trim() || x.body.trim());
+  const rows = inline
+    ? sections
+    : sections.filter((x) => x.title.trim() || x.body.trim());
 
   if (rows.length === 0 && inline) {
     return (
       <button
         type="button"
         className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
-        onClick={() => ctx.onUpdate({ customSections: [{ id: newLocalId(), title: '', body: '' }] })}
+        onClick={() =>
+          ctx.onUpdate({
+            customSections: [{ id: newLocalId(), title: '', body: '' }],
+          })
+        }
       >
         + Click to add custom section
       </button>
@@ -57,7 +60,12 @@ export function CvCustomLegacySectionBody({
             <EntryToolbar
               sectionType="custom"
               onAddEntry={() =>
-                ctx.onUpdate({ customSections: [...sections, { id: newLocalId(), title: '', body: '' }] })
+                ctx.onUpdate({
+                  customSections: [
+                    ...sections,
+                    { id: newLocalId(), title: '', body: '' },
+                  ],
+                })
               }
               onMoveUp={() => {
                 if (xIdx === 0) return;
@@ -72,7 +80,9 @@ export function CvCustomLegacySectionBody({
                 ctx.onUpdate({ customSections: next });
               }}
               onDelete={() => {
-                ctx.onUpdate({ customSections: sections.filter((row) => row.id !== x.id) });
+                ctx.onUpdate({
+                  customSections: sections.filter((row) => row.id !== x.id),
+                });
                 ctx.setFocusedEntryId(null);
                 ctx.setFocusedEntrySection(null);
               }}
@@ -100,7 +110,9 @@ export function CvCustomLegacySectionBody({
                   entryId={x.id}
                   onChange={(v) =>
                     ctx.onUpdate({
-                      customSections: sections.map((row) => (row.id === x.id ? { ...row, title: v } : row)),
+                      customSections: sections.map((row) =>
+                        row.id === x.id ? { ...row, title: v } : row,
+                      ),
                     })
                   }
                   className={cn('mb-1 font-bold', textClassName)}
@@ -114,16 +126,28 @@ export function CvCustomLegacySectionBody({
                   entryId={x.id}
                   onChange={(v) =>
                     ctx.onUpdate({
-                      customSections: sections.map((row) => (row.id === x.id ? { ...row, body: v } : row)),
+                      customSections: sections.map((row) =>
+                        row.id === x.id ? { ...row, body: v } : row,
+                      ),
                     })
                   }
-                  className={cn('leading-relaxed', bodyClassName ?? textClassName)}
+                  className={cn(
+                    'leading-relaxed',
+                    bodyClassName ?? textClassName,
+                  )}
                 />
               </>
             ) : (
               <>
-                <p className={cn('font-bold', textClassName)}>{x.title.trim() || 'Section'}</p>
-                <p className={cn('whitespace-pre-wrap leading-relaxed', bodyClassName ?? textClassName)}>
+                <p className={cn('font-bold', textClassName)}>
+                  {x.title.trim() || 'Section'}
+                </p>
+                <p
+                  className={cn(
+                    'whitespace-pre-wrap leading-relaxed',
+                    bodyClassName ?? textClassName,
+                  )}
+                >
                   {x.body.trim() || '—'}
                 </p>
               </>

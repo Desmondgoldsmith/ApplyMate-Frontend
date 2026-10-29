@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { compactDiffPreviewPerformance, logCvMaterializePerformanceDev } from '@/lib/cvApplyPerformanceDev';
+import {
+  compactDiffPreviewPerformance,
+  logCvMaterializePerformanceDev,
+} from '@/lib/cvApplyPerformanceDev';
 
 describe('compactDiffPreviewPerformance', () => {
   it('returns undefined when no telemetry keys are set', () => {

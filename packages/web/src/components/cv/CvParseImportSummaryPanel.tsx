@@ -19,16 +19,21 @@ type CvParseImportSummaryPanelProps = {
   embedded?: boolean;
 };
 
-function kindBadgeClass(kind: CvParseImportSummary['sections'][number]['kind']): string {
+function kindBadgeClass(
+  kind: CvParseImportSummary['sections'][number]['kind'],
+): string {
   if (kind === 'custom') {
     return 'border-[#00C9B1]/40 bg-[#00C9B1]/12 text-[#7ee8d8]';
   }
-  if (kind === 'optional') return 'border-white/12 bg-white/[0.04] text-white/55';
+  if (kind === 'optional')
+    return 'border-white/12 bg-white/[0.04] text-white/55';
   if (kind === 'links') return 'border-white/12 bg-white/[0.04] text-white/45';
   return 'border-white/10 bg-white/[0.03] text-white/50';
 }
 
-function kindBadgeLabel(kind: CvParseImportSummary['sections'][number]['kind']): string {
+function kindBadgeLabel(
+  kind: CvParseImportSummary['sections'][number]['kind'],
+): string {
   if (kind === 'custom') return 'Custom';
   if (kind === 'core') return 'Core';
   return kind;
@@ -41,7 +46,9 @@ export function CvParseImportSummaryPanel({
   className,
   embedded = false,
 }: CvParseImportSummaryPanelProps) {
-  const customCount = importSummary.sections.filter((s) => s.kind === 'custom').length;
+  const customCount = importSummary.sections.filter(
+    (s) => s.kind === 'custom',
+  ).length;
   const message = displayResumeCopy(importSummary.message);
   const sectionCount = importSummary.sections.length;
 
@@ -49,22 +56,31 @@ export function CvParseImportSummaryPanel({
     <div className={cn(!embedded && 'w-full', className)}>
       {!embedded ? (
         <div className="flex items-start gap-3">
-          <Sparkles className="mt-0.5 h-6 w-6 shrink-0 text-[#00C9B1]" aria-hidden />
+          <Sparkles
+            className="mt-0.5 h-6 w-6 shrink-0 text-[#00C9B1]"
+            aria-hidden
+          />
           <div className="min-w-0 flex-1">
-            <h3 className="text-lg font-bold leading-snug text-white">{message}</h3>
+            <h3 className="text-lg font-bold leading-snug text-white">
+              {message}
+            </h3>
             {customCount > 0 ? (
               <p className="mt-2 text-sm text-white/50">
                 {customCount === 1
                   ? 'One specialised section'
                   : `${customCount} specialised sections`}{' '}
-                (e.g. Publications, Patents) were kept with their original headings.
+                (e.g. Publications, Patents) were kept with their original
+                headings.
               </p>
             ) : null}
           </div>
         </div>
       ) : (
         <div className="flex items-start gap-3 rounded-xl border border-[#00C9B1]/15 bg-[#00C9B1]/5 px-3.5 py-3">
-          <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[#00C9B1]" aria-hidden />
+          <Sparkles
+            className="mt-0.5 h-5 w-5 shrink-0 text-[#00C9B1]"
+            aria-hidden
+          />
           <p className="text-sm leading-relaxed text-white/75">{message}</p>
         </div>
       )}
@@ -87,7 +103,9 @@ export function CvParseImportSummaryPanel({
       <ul
         className={cn(
           'space-y-2',
-          embedded ? 'mt-3' : 'app-scrollbar mt-5 max-h-[min(42vh,320px)] overflow-y-auto overscroll-contain pr-1',
+          embedded
+            ? 'mt-3'
+            : 'app-scrollbar mt-5 max-h-[min(42vh,320px)] overflow-y-auto overscroll-contain pr-1',
         )}
         aria-label="Imported sections"
       >
@@ -102,7 +120,9 @@ export function CvParseImportSummaryPanel({
             )}
           >
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white/92">{row.label}</p>
+              <p className="truncate text-sm font-semibold text-white/92">
+                {row.label}
+              </p>
               <span
                 className={cn(
                   'mt-1.5 inline-block rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',

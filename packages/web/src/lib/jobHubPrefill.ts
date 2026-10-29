@@ -27,7 +27,10 @@ export function hubJobPrefillSessionKey(jobAnalysisId: string): string {
 
 export function readHubJobPrefillSession(
   jobAnalysisId: string | null | undefined,
-): Pick<FreshAnalyzePrefillPayload, 'title' | 'company' | 'description'> | null {
+): Pick<
+  FreshAnalyzePrefillPayload,
+  'title' | 'company' | 'description'
+> | null {
   if (typeof window === 'undefined') return null;
   const id = String(jobAnalysisId ?? '').trim();
   if (!id) return null;
@@ -84,12 +87,23 @@ export function prefillJobAnalyzerInStorage(
       title,
       company,
       description,
-      ...(opts?.hubBookmarkId?.trim() ? { hubBookmarkId: opts.hubBookmarkId.trim() } : {}),
-      ...(opts?.selectedCvId?.trim() ? { selectedCvId: opts.selectedCvId.trim() } : {}),
-      ...(opts?.sourceContext?.trim() ? { sourceContext: opts.sourceContext.trim() } : {}),
-      ...(opts?.resumeWorkingStep?.trim() ? { resumeWorkingStep: opts.resumeWorkingStep.trim() } : {}),
+      ...(opts?.hubBookmarkId?.trim()
+        ? { hubBookmarkId: opts.hubBookmarkId.trim() }
+        : {}),
+      ...(opts?.selectedCvId?.trim()
+        ? { selectedCvId: opts.selectedCvId.trim() }
+        : {}),
+      ...(opts?.sourceContext?.trim()
+        ? { sourceContext: opts.sourceContext.trim() }
+        : {}),
+      ...(opts?.resumeWorkingStep?.trim()
+        ? { resumeWorkingStep: opts.resumeWorkingStep.trim() }
+        : {}),
     };
-    window.sessionStorage.setItem(FRESH_ANALYZE_PREFILL_SESSION, JSON.stringify(payload));
+    window.sessionStorage.setItem(
+      FRESH_ANALYZE_PREFILL_SESSION,
+      JSON.stringify(payload),
+    );
     window.localStorage.setItem(PREFILL_JD, description);
     window.localStorage.setItem(PREFILL_TITLE, title);
     window.localStorage.setItem(PREFILL_COMPANY, company);
@@ -105,7 +119,9 @@ export function cacheNextActionPrefetchBundle(raw: unknown): void {
     const body = raw as Record<string, unknown>;
     const source = Array.isArray(body.items)
       ? body.items
-      : body.data && typeof body.data === 'object' && Array.isArray((body.data as Record<string, unknown>).items)
+      : body.data &&
+          typeof body.data === 'object' &&
+          Array.isArray((body.data as Record<string, unknown>).items)
         ? ((body.data as Record<string, unknown>).items as unknown[])
         : [];
     if (source.length === 0) return;
@@ -117,27 +133,37 @@ export function cacheNextActionPrefetchBundle(raw: unknown): void {
     for (const it of source) {
       if (it === null || typeof it !== 'object' || Array.isArray(it)) continue;
       const obj = it as Record<string, unknown>;
-      const token = typeof obj.contextToken === 'string' ? obj.contextToken.trim() : '';
+      const token =
+        typeof obj.contextToken === 'string' ? obj.contextToken.trim() : '';
       if (!token) continue;
       cache[token] = {
         contextToken: token,
         prefill:
-          obj.prefill && typeof obj.prefill === 'object' && !Array.isArray(obj.prefill)
+          obj.prefill &&
+          typeof obj.prefill === 'object' &&
+          !Array.isArray(obj.prefill)
             ? (obj.prefill as NextActionPrefetchCacheEntry['prefill'])
             : null,
         resumeState:
-          obj.resumeState && typeof obj.resumeState === 'object' && !Array.isArray(obj.resumeState)
+          obj.resumeState &&
+          typeof obj.resumeState === 'object' &&
+          !Array.isArray(obj.resumeState)
             ? (obj.resumeState as NextActionPrefetchCacheEntry['resumeState'])
             : null,
       };
     }
-    window.sessionStorage.setItem(NEXT_ACTION_PREFETCH_CACHE, JSON.stringify(cache));
+    window.sessionStorage.setItem(
+      NEXT_ACTION_PREFETCH_CACHE,
+      JSON.stringify(cache),
+    );
   } catch {
     /* ignore */
   }
 }
 
-export function consumePrefetchByContextToken(contextToken: string | null | undefined): {
+export function consumePrefetchByContextToken(
+  contextToken: string | null | undefined,
+): {
   selectedCvId?: string;
   sourceContext?: string;
   resumeWorkingStep?: string;
@@ -148,11 +174,17 @@ export function consumePrefetchByContextToken(contextToken: string | null | unde
   try {
     const cacheRaw = window.sessionStorage.getItem(NEXT_ACTION_PREFETCH_CACHE);
     if (!cacheRaw) return null;
-    const cache = JSON.parse(cacheRaw) as Record<string, NextActionPrefetchCacheEntry>;
+    const cache = JSON.parse(cacheRaw) as Record<
+      string,
+      NextActionPrefetchCacheEntry
+    >;
     const hit = cache[token];
     if (!hit) return null;
     delete cache[token];
-    window.sessionStorage.setItem(NEXT_ACTION_PREFETCH_CACHE, JSON.stringify(cache));
+    window.sessionStorage.setItem(
+      NEXT_ACTION_PREFETCH_CACHE,
+      JSON.stringify(cache),
+    );
     const selectedCvId = String(hit.prefill?.selectedCvId ?? '').trim();
     const sourceContext = String(hit.prefill?.sourceContext ?? '').trim();
     const resumeWorkingStep = String(hit.resumeState?.workingStep ?? '').trim();

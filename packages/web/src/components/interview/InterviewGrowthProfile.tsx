@@ -15,10 +15,18 @@ function trendLabel(score: number | null, velocity: number): string {
   return 'Building momentum';
 }
 
-function GrowthItem({ label, children }: { label: string; children: React.ReactNode }) {
+function GrowthItem({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
-      <dt className="text-[11px] font-semibold uppercase tracking-wider text-white/45">{label}</dt>
+      <dt className="text-[11px] font-semibold uppercase tracking-wider text-white/45">
+        {label}
+      </dt>
       <dd>{children}</dd>
     </div>
   );
@@ -51,7 +59,10 @@ export const InterviewGrowthProfile = memo(function InterviewGrowthProfile({
   if (isLoading) {
     return (
       <section
-        className={cn('h-44 animate-pulse rounded-2xl border border-white/10 bg-white/[0.03]', className)}
+        className={cn(
+          'h-44 animate-pulse rounded-2xl border border-white/10 bg-white/[0.03]',
+          className,
+        )}
         aria-hidden
       />
     );
@@ -61,18 +72,26 @@ export const InterviewGrowthProfile = memo(function InterviewGrowthProfile({
 
   const trend = trendLabel(improvementTrendScore, improvementVelocity);
   const trendUp =
-    (improvementTrendScore != null && improvementTrendScore >= 0) || improvementVelocity >= 0;
+    (improvementTrendScore != null && improvementTrendScore >= 0) ||
+    improvementVelocity >= 0;
 
   return (
     <section
-      className={cn('rounded-2xl border border-[#00C9B1]/20 bg-[#00C9B1]/5 p-4 sm:p-5', className)}
+      className={cn(
+        'rounded-2xl border border-[#00C9B1]/20 bg-[#00C9B1]/5 p-4 sm:p-5',
+        className,
+      )}
       aria-labelledby="interview-growth-profile-heading"
     >
-      <h3 id="interview-growth-profile-heading" className="text-sm font-semibold text-white">
+      <h3
+        id="interview-growth-profile-heading"
+        className="text-sm font-semibold text-white"
+      >
         Your Interview Growth Profile
       </h3>
       <p className="mt-1 text-xs text-white/50">
-        Memory from your recent practice — questions and coaching adapt over time.
+        Memory from your recent practice — questions and coaching adapt over
+        time.
       </p>
 
       <dl className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -84,16 +103,24 @@ export const InterviewGrowthProfile = memo(function InterviewGrowthProfile({
               ))}
             </ul>
           ) : (
-            <p className="mt-1 text-sm text-white/60">No recurring patterns yet — keep practicing.</p>
+            <p className="mt-1 text-sm text-white/60">
+              No recurring patterns yet — keep practicing.
+            </p>
           )}
         </GrowthItem>
 
         <GrowthItem label="Improvement trend">
           <div className="mt-1 flex items-center gap-2 text-sm text-white/85">
             {trendUp ? (
-              <TrendingUp className="h-4 w-4 shrink-0 text-emerald-300" aria-hidden />
+              <TrendingUp
+                className="h-4 w-4 shrink-0 text-emerald-300"
+                aria-hidden
+              />
             ) : (
-              <TrendingDown className="h-4 w-4 shrink-0 text-amber-300" aria-hidden />
+              <TrendingDown
+                className="h-4 w-4 shrink-0 text-amber-300"
+                aria-hidden
+              />
             )}
             <span>{trend}</span>
           </div>
@@ -101,7 +128,8 @@ export const InterviewGrowthProfile = memo(function InterviewGrowthProfile({
 
         <GrowthItem label="Strongest skill area">
           <p className="mt-1 text-sm font-medium text-emerald-200/95">
-            {strongestSkillArea ?? 'Emerging — complete more sessions to identify strengths.'}
+            {strongestSkillArea ??
+              'Emerging — complete more sessions to identify strengths.'}
           </p>
         </GrowthItem>
 

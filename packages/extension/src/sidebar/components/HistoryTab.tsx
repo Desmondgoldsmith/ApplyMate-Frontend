@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import type { MessageAction, RequestRecentJobsResponse, SavedJob } from '@/shared/types';
+import type {
+  MessageAction,
+  RequestRecentJobsResponse,
+  SavedJob,
+} from '@/shared/types';
 
 import { useJobSession } from '../context/JobSessionContext';
 import { CompanyLogoBadge } from './CompanyLogoBadge';
@@ -25,7 +29,8 @@ const TOKENS = {
 } as const;
 
 const WEB_APP_BASE =
-  import.meta.env.VITE_WEB_APP_URL?.replace(/\/$/, '') ?? 'http://localhost:3001';
+  import.meta.env.VITE_WEB_APP_URL?.replace(/\/$/, '') ??
+  'http://localhost:3001';
 
 const JOB_HUB_URL = `${WEB_APP_BASE}/dashboard/jobs`;
 
@@ -128,7 +133,14 @@ function EmptyState() {
         fontFamily: TOKENS.font,
       }}
     >
-      <div style={{ position: 'relative', width: 32, height: 44, margin: '0 auto' }}>
+      <div
+        style={{
+          position: 'relative',
+          width: 32,
+          height: 44,
+          margin: '0 auto',
+        }}
+      >
         <div
           style={{
             width: 32,
@@ -175,7 +187,9 @@ function EmptyState() {
       </p>
       <button
         type="button"
-        onClick={() => void chrome.tabs.create({ url: 'https://www.linkedin.com/jobs/' })}
+        onClick={() =>
+          void chrome.tabs.create({ url: 'https://www.linkedin.com/jobs/' })
+        }
         style={{
           marginTop: 20,
           width: '100%',
@@ -236,7 +250,13 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-function JobRow({ job, selectedCvId }: { job: SavedJob; selectedCvId: string | null }) {
+function JobRow({
+  job,
+  selectedCvId,
+}: {
+  job: SavedJob;
+  selectedCvId: string | null;
+}) {
   const pill = statusPillStyle(job.status);
 
   const openJob = () => {
@@ -280,21 +300,33 @@ function JobRow({ job, selectedCvId }: { job: SavedJob; selectedCvId: string | n
           gap: 8,
         }}
       >
-        <div style={{ display: 'flex', minWidth: 0, alignItems: 'flex-start', gap: 8, flex: 1 }}>
-          <CompanyLogoBadge company={job.company || job.title} logoUrl={job.companyLogoUrl} size={28} />
-        <span
+        <div
           style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: TOKENS.textPrimary,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            maxWidth: 160,
+            display: 'flex',
+            minWidth: 0,
+            alignItems: 'flex-start',
+            gap: 8,
+            flex: 1,
           }}
         >
-          {job.title}
-        </span>
+          <CompanyLogoBadge
+            company={job.company || job.title}
+            logoUrl={job.companyLogoUrl}
+            size={28}
+          />
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: TOKENS.textPrimary,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: 160,
+            }}
+          >
+            {job.title}
+          </span>
         </div>
         <span
           style={{
@@ -334,21 +366,36 @@ function JobRow({ job, selectedCvId }: { job: SavedJob; selectedCvId: string | n
         </span>
         {job.sourceSite ? (
           <>
-            <span style={{ fontSize: 11, color: 'rgba(240,244,242,0.20)' }}>·</span>
+            <span style={{ fontSize: 11, color: 'rgba(240,244,242,0.20)' }}>
+              ·
+            </span>
             <span style={{ fontSize: 11, color: 'rgba(240,244,242,0.30)' }}>
               {job.sourceSite}
             </span>
           </>
         ) : null}
       </div>
-      <p style={{ marginTop: 4, marginBottom: 0, fontSize: 10, color: 'rgba(240,244,242,0.25)' }}>
+      <p
+        style={{
+          marginTop: 4,
+          marginBottom: 0,
+          fontSize: 10,
+          color: 'rgba(240,244,242,0.25)',
+        }}
+      >
         {relativeTime(job.savedAt)}
       </p>
     </button>
   );
 }
 
-function JobsList({ jobs, selectedCvId }: { jobs: SavedJob[]; selectedCvId: string | null }) {
+function JobsList({
+  jobs,
+  selectedCvId,
+}: {
+  jobs: SavedJob[];
+  selectedCvId: string | null;
+}) {
   return (
     <div style={{ fontFamily: TOKENS.font }}>
       <div
@@ -359,7 +406,9 @@ function JobsList({ jobs, selectedCvId }: { jobs: SavedJob[]; selectedCvId: stri
           marginBottom: 12,
         }}
       >
-        <span style={{ fontSize: 13, fontWeight: 600, color: TOKENS.textPrimary }}>
+        <span
+          style={{ fontSize: 13, fontWeight: 600, color: TOKENS.textPrimary }}
+        >
           Saved jobs
         </span>
         <span

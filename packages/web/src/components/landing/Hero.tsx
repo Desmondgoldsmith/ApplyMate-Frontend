@@ -91,10 +91,7 @@ export function Hero() {
         style={splineColumnFeather}
         aria-hidden
       >
-        <div
-          className="h-full w-full -translate-x-[8%]"
-          style={splineMask}
-        >
+        <div className="h-full w-full -translate-x-[8%]" style={splineMask}>
           <HeroSpline />
         </div>
       </div>
@@ -156,10 +153,7 @@ export function Hero() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, delay: 0.3, ease }}
               >
-                <WordLine
-                  words={line3}
-                  accentIndices={new Set([0, 1, 2])}
-                />
+                <WordLine words={line3} accentIndices={new Set([0, 1, 2])} />
               </motion.div>
             </h1>
 

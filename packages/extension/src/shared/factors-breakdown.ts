@@ -29,7 +29,9 @@ function parseFactor(raw: unknown): JobMatchFactor | null {
   };
 }
 
-export function parseFactorsBreakdown(raw: unknown): JobMatchFactorsBreakdown | null {
+export function parseFactorsBreakdown(
+  raw: unknown,
+): JobMatchFactorsBreakdown | null {
   if (!raw || typeof raw !== 'object') return null;
   const o = raw as Record<string, unknown>;
   const factorsRaw = o.factors;

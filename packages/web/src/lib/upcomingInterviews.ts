@@ -4,17 +4,24 @@ import type { UpcomingInterviewItem } from '@/lib/today-plan';
 /** Wire value for proactive prep when `Application.status` is `applied`. */
 export const UPCOMING_INTERVIEW_STAGE_APPLIED_PREP = 'applied_prep';
 
-export function normalizeUpcomingInterviewStage(stage: string | null | undefined): string {
+export function normalizeUpcomingInterviewStage(
+  stage: string | null | undefined,
+): string {
   return String(stage ?? '')
     .trim()
     .toLowerCase();
 }
 
 export function isAppliedPrepUpcomingRow(row: UpcomingInterviewItem): boolean {
-  return normalizeUpcomingInterviewStage(row.stage) === UPCOMING_INTERVIEW_STAGE_APPLIED_PREP;
+  return (
+    normalizeUpcomingInterviewStage(row.stage) ===
+    UPCOMING_INTERVIEW_STAGE_APPLIED_PREP
+  );
 }
 
-function parseInterviewTimestamp(iso: string | null | undefined): number | null {
+function parseInterviewTimestamp(
+  iso: string | null | undefined,
+): number | null {
   const t = iso?.trim() ?? '';
   if (!t) return null;
   const ms = Date.parse(t);
@@ -23,14 +30,19 @@ function parseInterviewTimestamp(iso: string | null | undefined): number | null 
 
 /** Active interview funnel rows sort above proactive `applied_prep`. */
 function stageSortRank(stage: string | null | undefined): number {
-  return normalizeUpcomingInterviewStage(stage) === UPCOMING_INTERVIEW_STAGE_APPLIED_PREP ? 1 : 0;
+  return normalizeUpcomingInterviewStage(stage) ===
+    UPCOMING_INTERVIEW_STAGE_APPLIED_PREP
+    ? 1
+    : 0;
 }
 
 /**
  * Mirror backend ordering: future `interviewDate` first; then sooner `daysUntilInterview`;
  * funnel interviews above `applied_prep`; then higher `confidence`.
  */
-export function sortUpcomingInterviewsForDashboard(list: UpcomingInterviewItem[]): UpcomingInterviewItem[] {
+export function sortUpcomingInterviewsForDashboard(
+  list: UpcomingInterviewItem[],
+): UpcomingInterviewItem[] {
   const now = Date.now();
   return [...list].sort((a, b) => {
     const dateA = parseInterviewTimestamp(a.interviewDate);
@@ -42,11 +54,13 @@ export function sortUpcomingInterviewsForDashboard(list: UpcomingInterviewItem[]
     if (futureA && futureB && dateA !== dateB) return dateA! - dateB!;
 
     const da =
-      typeof a.daysUntilInterview === 'number' && Number.isFinite(a.daysUntilInterview)
+      typeof a.daysUntilInterview === 'number' &&
+      Number.isFinite(a.daysUntilInterview)
         ? a.daysUntilInterview
         : null;
     const db =
-      typeof b.daysUntilInterview === 'number' && Number.isFinite(b.daysUntilInterview)
+      typeof b.daysUntilInterview === 'number' &&
+      Number.isFinite(b.daysUntilInterview)
         ? b.daysUntilInterview
         : null;
     if (da != null && db != null && da !== db) return da - db;
@@ -58,9 +72,13 @@ export function sortUpcomingInterviewsForDashboard(list: UpcomingInterviewItem[]
     if (rankA !== rankB) return rankA - rankB;
 
     const ca =
-      typeof a.confidence === 'number' && Number.isFinite(a.confidence) ? a.confidence : -1;
+      typeof a.confidence === 'number' && Number.isFinite(a.confidence)
+        ? a.confidence
+        : -1;
     const cb =
-      typeof b.confidence === 'number' && Number.isFinite(b.confidence) ? b.confidence : -1;
+      typeof b.confidence === 'number' && Number.isFinite(b.confidence)
+        ? b.confidence
+        : -1;
     if (ca !== cb) return cb - ca;
 
     return 0;
@@ -78,7 +96,9 @@ export function deriveAppliedPrepFromJobHistory(
   existing: UpcomingInterviewItem[],
 ): UpcomingInterviewItem[] {
   if (!history?.length) return [];
-  const seen = new Set(existing.map((r) => r.jobAnalysisId.trim()).filter(Boolean));
+  const seen = new Set(
+    existing.map((r) => r.jobAnalysisId.trim()).filter(Boolean),
+  );
   const out: UpcomingInterviewItem[] = [];
   for (const row of history) {
     if (out.length >= DASHBOARD_UPCOMING_CAP) break;
@@ -91,7 +111,9 @@ export function deriveAppliedPrepFromJobHistory(
     seen.add(jobAnalysisId);
     const company = row.company?.trim() || null;
     const jobTitle = (row.jobTitle || row.title || '').trim() || null;
-    const headline = company ? `Get interview-ready · ${company}` : 'Get interview-ready';
+    const headline = company
+      ? `Get interview-ready · ${company}`
+      : 'Get interview-ready';
     const supporting =
       jobTitle && company
         ? `You applied for ${jobTitle} at ${company}. Practice now while you wait to hear back.`
@@ -122,13 +144,16 @@ export function mergeDashboardUpcomingInterviews(
 ): UpcomingInterviewItem[] {
   const supplement = deriveAppliedPrepFromJobHistory(history, fromTodayPlan);
   if (!supplement.length) return fromTodayPlan;
-  return sortUpcomingInterviewsForDashboard([...fromTodayPlan, ...supplement]).slice(
-    0,
-    DASHBOARD_UPCOMING_CAP,
-  );
+  return sortUpcomingInterviewsForDashboard([
+    ...fromTodayPlan,
+    ...supplement,
+  ]).slice(0, DASHBOARD_UPCOMING_CAP);
 }
 
-export function upcomingInterviewsCountBadge(total: number, rows: UpcomingInterviewItem[]): string {
+export function upcomingInterviewsCountBadge(
+  total: number,
+  rows: UpcomingInterviewItem[],
+): string {
   const applied = rows.filter(isAppliedPrepUpcomingRow).length;
   if (applied === rows.length) {
     return `${total} role${total === 1 ? '' : 's'}`;

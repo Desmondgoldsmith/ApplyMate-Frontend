@@ -6,6 +6,10 @@ export const metadata: Metadata = {
   description: 'Prioritized roles that need a follow-up—open each from here.',
 };
 
-export default function FollowUpJobsLayout({ children }: { children: ReactNode }) {
+export default function FollowUpJobsLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   return children;
 }

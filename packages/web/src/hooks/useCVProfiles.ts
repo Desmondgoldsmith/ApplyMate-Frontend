@@ -27,6 +27,8 @@ export function useCVProfiles() {
   });
 }
 
-export function cvProfileDisplayCount(data: CvProfilesQueryData | undefined): number {
+export function cvProfileDisplayCount(
+  data: CvProfilesQueryData | undefined,
+): number {
   return data?.rows.length ?? 0;
 }

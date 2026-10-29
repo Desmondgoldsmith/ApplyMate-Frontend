@@ -44,10 +44,12 @@ function StaleArchiveNudgeCard({
           {nudge.daysSinceUpdate} days
         </span>
       </div>
-      <p className="mt-1 text-[12px] text-[rgba(240,244,242,0.50)]">{nudge.company}</p>
+      <p className="mt-1 text-[12px] text-[rgba(240,244,242,0.50)]">
+        {nudge.company}
+      </p>
       <p className="mt-2 text-[12px] leading-[1.5] text-[rgba(240,244,242,0.50)]">
-        No updates in {nudge.daysSinceUpdate} days. It may be worth archiving this one and
-        focusing your energy on active roles.
+        No updates in {nudge.daysSinceUpdate} days. It may be worth archiving
+        this one and focusing your energy on active roles.
       </p>
       <div className="mt-2.5 flex flex-wrap gap-2">
         <button
@@ -75,24 +77,32 @@ export function DashboardStaleArchiveNudgeCards({ enabled }: Props) {
   const toast = useToast();
   const queryClient = useQueryClient();
   const applications = useApplications();
-  const [hiddenIds, setHiddenIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [hiddenIds, setHiddenIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const [dismissedSnapshot] = useState(() => readArchiveNudgeDismissals());
 
   const nudges = useMemo(() => {
     if (!enabled) return [];
-    return selectStaleApplicationNudges(applications.data, dismissedSnapshot).filter(
-      (n) => !hiddenIds.has(n.applicationId),
-    );
+    return selectStaleApplicationNudges(
+      applications.data,
+      dismissedSnapshot,
+    ).filter((n) => !hiddenIds.has(n.applicationId));
   }, [applications.data, dismissedSnapshot, enabled, hiddenIds]);
 
   const archiveMutation = useMutation({
-    mutationFn: (applicationId: string) =>
-      api.jobs.archive({ applicationId }),
+    mutationFn: (applicationId: string) => api.jobs.archive({ applicationId }),
     onSuccess: (_data, applicationId) => {
       setHiddenIds((prev) => new Set(prev).add(applicationId));
-      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.archive() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.applications.root(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.history(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.archive(),
+      });
       invalidateTodayPlanQueries(queryClient);
     },
     onError: (err, applicationId) => {

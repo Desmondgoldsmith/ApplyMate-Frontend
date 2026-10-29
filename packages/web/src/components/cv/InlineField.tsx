@@ -1,6 +1,13 @@
 'use client';
 
-import { memo, useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from 'react';
 import type { FocusEvent } from 'react';
 
 import { useCVEdit } from '@/components/cv/CVEditContext';
@@ -14,7 +21,9 @@ const TEAL_UNDER = 'rgba(0, 174, 175, 0.5)';
 const TOOLBAR_INTERACTING_FLAG = '__cvToolbarInteracting';
 
 function isToolbarInteractionActive(): boolean {
-  return Boolean((window as unknown as Record<string, unknown>)[TOOLBAR_INTERACTING_FLAG]);
+  return Boolean(
+    (window as unknown as Record<string, unknown>)[TOOLBAR_INTERACTING_FLAG],
+  );
 }
 
 function placeCaretAtEnd(el: HTMLElement) {
@@ -27,9 +36,16 @@ function placeCaretAtEnd(el: HTMLElement) {
   sel.addRange(range);
 }
 
-function spellIssueMatchesFieldText(issue: CvSpellIssue, fieldValue: string): boolean {
+function spellIssueMatchesFieldText(
+  issue: CvSpellIssue,
+  fieldValue: string,
+): boolean {
   const expected = issue.originalText ?? issue.original;
-  if (typeof issue.start === 'number' && typeof issue.end === 'number' && issue.end <= fieldValue.length) {
+  if (
+    typeof issue.start === 'number' &&
+    typeof issue.end === 'number' &&
+    issue.end <= fieldValue.length
+  ) {
     const slice = fieldValue.slice(issue.start, issue.end);
     if (expected !== undefined && expected !== '') return slice === expected;
     return slice.length > 0;
@@ -84,7 +100,9 @@ function InlineFieldInner({
   const ctx = useCVEdit();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
-  const inputRef = useRef<HTMLInputElement | HTMLSpanElement | HTMLDivElement | null>(null);
+  const inputRef = useRef<
+    HTMLInputElement | HTMLSpanElement | HTMLDivElement | null
+  >(null);
   const autoStartedRef = useRef(false);
   const didInitEditRef = useRef(false);
   const liveHtmlRef = useRef('');
@@ -111,7 +129,9 @@ function InlineFieldInner({
     setEditing(false);
     setDraft(value);
     editSessionDirtyRef.current = false;
-    editSessionStartRef.current = normalizeEditableHtml(toFormattedHtml(value || ''));
+    editSessionStartRef.current = normalizeEditableHtml(
+      toFormattedHtml(value || ''),
+    );
   }, [ctx?.dataRevision, value]);
 
   useEffect(() => {
@@ -131,7 +151,8 @@ function InlineFieldInner({
       return;
     }
     const el = inputRef.current;
-    if (!(el instanceof HTMLSpanElement || el instanceof HTMLDivElement)) return;
+    if (!(el instanceof HTMLSpanElement || el instanceof HTMLDivElement))
+      return;
     if (didInitEditRef.current) return;
     const initial = toFormattedHtml(value || '');
     el.innerHTML = initial;
@@ -165,7 +186,7 @@ function InlineFieldInner({
     const el = inputRef.current;
     const source =
       el instanceof HTMLSpanElement || el instanceof HTMLDivElement
-        ? (liveHtmlRef.current || el.innerHTML)
+        ? liveHtmlRef.current || el.innerHTML
         : draft;
     const normalizedNext = normalizeEditableHtml(source);
     if (normalizedNext !== editSessionStartRef.current) {
@@ -177,35 +198,58 @@ function InlineFieldInner({
   const displayText = value;
   const empty = !displayText.trim();
   const showPlaceholder = empty && !editing;
-  const sectionSpellIssues = sectionId ? (ctx?.spellIssueEntriesBySection?.[sectionId] ?? []) : [];
-  const fieldIssues = sectionId ? (ctx?.spellIssuesByField?.[`${sectionId}::${fieldPath}`] ?? []) : [];
+  const sectionSpellIssues = sectionId
+    ? (ctx?.spellIssueEntriesBySection?.[sectionId] ?? [])
+    : [];
+  const fieldIssues = sectionId
+    ? (ctx?.spellIssuesByField?.[`${sectionId}::${fieldPath}`] ?? [])
+    : [];
   const matchedIssue =
     fieldIssues.find((x) => spellIssueMatchesFieldText(x, displayText)) ??
     sectionSpellIssues.find(
-      (x) => (x.fieldPath ?? 'text') === fieldPath && spellIssueMatchesFieldText(x, displayText),
+      (x) =>
+        (x.fieldPath ?? 'text') === fieldPath &&
+        spellIssueMatchesFieldText(x, displayText),
     );
   const showSpellUnderline =
     fieldIssues.some((x) => spellIssueMatchesFieldText(x, displayText)) ||
     sectionSpellIssues.some(
-      (x) => (x.fieldPath ?? 'text') === fieldPath && spellIssueMatchesFieldText(x, displayText),
+      (x) =>
+        (x.fieldPath ?? 'text') === fieldPath &&
+        spellIssueMatchesFieldText(x, displayText),
     );
 
   const placeholderDisplayClass =
-    placeholderTone === 'onDark' ? 'text-white/45 italic' : 'text-black/40 italic';
+    placeholderTone === 'onDark'
+      ? 'text-white/45 italic'
+      : 'text-black/40 italic';
   const placeholderBeforeClass =
-    placeholderTone === 'onDark' ? 'empty:before:text-white/45' : 'empty:before:text-gray-400';
+    placeholderTone === 'onDark'
+      ? 'empty:before:text-white/45'
+      : 'empty:before:text-gray-400';
 
   if (!editable) {
     return (
       <span className={cn(className, '[&_a]:text-[#1D4ED8] [&_a]:underline')}>
-        {empty ? <span className={placeholderDisplayClass}>{placeholder}</span> : <span dangerouslySetInnerHTML={{ __html: toFormattedHtml(displayText) }} />}
+        {empty ? (
+          <span className={placeholderDisplayClass}>{placeholder}</span>
+        ) : (
+          <span
+            dangerouslySetInnerHTML={{ __html: toFormattedHtml(displayText) }}
+          />
+        )}
       </span>
     );
   }
 
   if (!editing) {
     return (
-      <span className={cn(layout === 'block' ? 'block' : 'inline-flex', 'items-center gap-1')}>
+      <span
+        className={cn(
+          layout === 'block' ? 'block' : 'inline-flex',
+          'items-center gap-1',
+        )}
+      >
         <span
           role="button"
           tabIndex={0}
@@ -241,7 +285,13 @@ function InlineFieldInner({
             }
           }}
         >
-          {showPlaceholder ? <span className={placeholderDisplayClass}>{placeholder}</span> : <span dangerouslySetInnerHTML={{ __html: toFormattedHtml(displayText) }} />}
+          {showPlaceholder ? (
+            <span className={placeholderDisplayClass}>{placeholder}</span>
+          ) : (
+            <span
+              dangerouslySetInnerHTML={{ __html: toFormattedHtml(displayText) }}
+            />
+          )}
         </span>
         {matchedIssue && ctx?.isEditing ? (
           <span className="inline-flex items-center gap-1">
@@ -278,8 +328,18 @@ function InlineFieldInner({
     'm-0 border-0 border-b px-0 py-0 font-[inherit] text-inherit shadow-none outline-none ring-0 bg-transparent box-border placeholder:text-gray-400 placeholder:italic';
   const onFieldFocus = (e: FocusEvent<HTMLElement>) => {
     if (!ctx?.isEditing) return;
-    const inferredSection = sectionId ?? e.currentTarget.closest('[data-cv-section]')?.getAttribute('data-cv-section') ?? null;
-    const inferredEntry = entryId ?? e.currentTarget.closest('[data-entry-id]')?.getAttribute('data-entry-id') ?? null;
+    const inferredSection =
+      sectionId ??
+      e.currentTarget
+        .closest('[data-cv-section]')
+        ?.getAttribute('data-cv-section') ??
+      null;
+    const inferredEntry =
+      entryId ??
+      e.currentTarget
+        .closest('[data-entry-id]')
+        ?.getAttribute('data-entry-id') ??
+      null;
     if (inferredSection) ctx.setFocusedSection(inferredSection);
     if (inferredEntry) {
       ctx.setFocusedEntryId(inferredEntry);
@@ -289,7 +349,13 @@ function InlineFieldInner({
 
   if (multiline || layout === 'block') {
     return (
-      <span className={cn('block min-w-0 max-w-full', layout === 'block' && 'w-full', className)}>
+      <span
+        className={cn(
+          'block min-w-0 max-w-full',
+          layout === 'block' && 'w-full',
+          className,
+        )}
+      >
         {/* Use block-level span (not div) so parents may legally wrap this in <p> without hydration errors. */}
         <span
           key={`edit-block-${entryId ?? fieldPath}`}
@@ -345,10 +411,10 @@ function InlineFieldInner({
         data-entry-id={entryId}
         contentEditable
         suppressContentEditableWarning
-          className={cn(
+        className={cn(
           editSurface,
-            'inline-block min-w-[2ch] max-w-full border-b text-inherit empty:before:content-[attr(data-placeholder)] empty:before:italic empty:before:pointer-events-none [&_a]:text-[#1D4ED8] [&_a]:underline',
-            placeholderBeforeClass,
+          'inline-block min-w-[2ch] max-w-full border-b text-inherit empty:before:content-[attr(data-placeholder)] empty:before:italic empty:before:pointer-events-none [&_a]:text-[#1D4ED8] [&_a]:underline',
+          placeholderBeforeClass,
         )}
         style={{ borderBottomColor: TEAL_UNDER, caretColor: '#111111' }}
         data-placeholder={placeholder}
@@ -383,7 +449,10 @@ function InlineFieldInner({
   );
 }
 
-function inlineFieldPropsEqual(prev: Readonly<InlineFieldProps>, next: Readonly<InlineFieldProps>): boolean {
+function inlineFieldPropsEqual(
+  prev: Readonly<InlineFieldProps>,
+  next: Readonly<InlineFieldProps>,
+): boolean {
   return (
     prev.value === next.value &&
     prev.placeholder === next.placeholder &&

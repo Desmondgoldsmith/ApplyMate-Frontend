@@ -40,12 +40,11 @@ import { usePatchJobHubGuidance } from '@/hooks/usePatchJobHubGuidance';
 import { useDailyAiUsage } from '@/hooks/useDailyAiUsage';
 import { useJobApplyUrl } from '@/hooks/useJobApplyUrl';
 import { useGenerateContent } from '@/hooks/useGenerateContent';
-import { canUseAiFromDailyAiUsage, DAILY_AI_LIMIT_REACHED_MESSAGE } from '@/lib/ai-daily-usage';
 import {
-  api,
-  type FollowUpEmailDraft,
-  type JobAnalysis,
-} from '@/lib/api';
+  canUseAiFromDailyAiUsage,
+  DAILY_AI_LIMIT_REACHED_MESSAGE,
+} from '@/lib/ai-daily-usage';
+import { api, type FollowUpEmailDraft, type JobAnalysis } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
 import { patchJobHistoryDisplayScore } from '@/lib/jobHistoryCache';
 import { openExternalJobApplyUrl } from '@/lib/jobApplyUrl';
@@ -122,7 +121,13 @@ function formatRelativeSaved(iso: string | null) {
   return `Saved ${days} days ago`;
 }
 
-type TabId = 'analysis' | 'description' | 'cover' | 'notes' | 'email' | 'resume';
+type TabId =
+  | 'analysis'
+  | 'description'
+  | 'cover'
+  | 'notes'
+  | 'email'
+  | 'resume';
 
 const TABS: { id: TabId; label: string; icon: typeof FileText }[] = [
   { id: 'analysis', label: 'Match & gaps', icon: FileText },
@@ -187,7 +192,9 @@ export function JobHubDetailPanel({
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<TabId>(initialTab);
   const [notesDraft, setNotesDraft] = useState('');
-  const [notesStatus, setNotesStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [notesStatus, setNotesStatus] = useState<
+    'idle' | 'saving' | 'saved' | 'error'
+  >('idle');
   const notesSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const notesBaselineRef = useRef('');
   const notesHydratedScopeRef = useRef('');
@@ -196,7 +203,9 @@ export function JobHubDetailPanel({
   const [reminderMessage, setReminderMessage] = useState('');
   const [analyzeNavigateBusy, setAnalyzeNavigateBusy] = useState(false);
   const [browserAlertsOn, setBrowserAlertsOn] = useState(false);
-  const [expandedNoteIds, setExpandedNoteIds] = useState<Record<string, boolean>>({});
+  const [expandedNoteIds, setExpandedNoteIds] = useState<
+    Record<string, boolean>
+  >({});
   const [noteRowEditId, setNoteRowEditId] = useState<string | null>(null);
   const [noteRowEditText, setNoteRowEditText] = useState('');
 
@@ -209,7 +218,8 @@ export function JobHubDetailPanel({
   const applicationDetail = useApplication(job.applicationId);
   const hubBookmarks = useHubBookmarks();
   const patchGuidance = usePatchJobHubGuidance();
-  const staleApplicationNotice = applicationDetail.data?.staleApplicationNotice ?? null;
+  const staleApplicationNotice =
+    applicationDetail.data?.staleApplicationNotice ?? null;
 
   const bookmarkRow = useMemo(() => {
     const id = job.hubBookmarkId?.trim();
@@ -240,7 +250,10 @@ export function JobHubDetailPanel({
     const id = job.jobAnalysisId?.trim();
     if (!detail || !id) return;
     const authoritativeScore = detail.analysis?.matchScore;
-    if (typeof authoritativeScore === 'number' && Number.isFinite(authoritativeScore)) {
+    if (
+      typeof authoritativeScore === 'number' &&
+      Number.isFinite(authoritativeScore)
+    ) {
       patchJobHistoryDisplayScore(queryClient, id, authoritativeScore);
     }
   }, [jobDetail.data, job.jobAnalysisId, queryClient]);
@@ -277,8 +290,10 @@ export function JobHubDetailPanel({
     jobDetail.data,
   ]);
 
-  const [localGuidance, setLocalGuidance] = useState<JobHubGuidancePayload | null>(null);
-  const [localStepper, setLocalStepper] = useState<JobHubPipelineStepperPayload | null>(null);
+  const [localGuidance, setLocalGuidance] =
+    useState<JobHubGuidancePayload | null>(null);
+  const [localStepper, setLocalStepper] =
+    useState<JobHubPipelineStepperPayload | null>(null);
   const guidance = localGuidance ?? hubContext.guidance;
   const pipelineStepper = localStepper ?? hubContext.pipelineStepper;
   const displayGuidance = useMemo(
@@ -431,24 +446,34 @@ export function JobHubDetailPanel({
       if (draft.guidance) setLocalGuidance(draft.guidance);
       if (draft.pipelineStepper) setLocalStepper(draft.pipelineStepper);
       if (job.applicationId) {
-        queryClient.setQueryData(queryKeys.applications.detail(job.applicationId), (prev: unknown) => {
-          if (prev === null || typeof prev !== 'object') return prev;
-          return {
-            ...(prev as Record<string, unknown>),
-            ...(draft.guidance ? { guidance: draft.guidance } : {}),
-            ...(draft.pipelineStepper ? { pipelineStepper: draft.pipelineStepper } : {}),
-          };
-        });
+        queryClient.setQueryData(
+          queryKeys.applications.detail(job.applicationId),
+          (prev: unknown) => {
+            if (prev === null || typeof prev !== 'object') return prev;
+            return {
+              ...(prev as Record<string, unknown>),
+              ...(draft.guidance ? { guidance: draft.guidance } : {}),
+              ...(draft.pipelineStepper
+                ? { pipelineStepper: draft.pipelineStepper }
+                : {}),
+            };
+          },
+        );
       }
       if (job.jobAnalysisId) {
-        queryClient.setQueryData(queryKeys.jobs.analysis(job.jobAnalysisId), (prev: unknown) => {
-          if (prev === null || typeof prev !== 'object') return prev;
-          return {
-            ...(prev as Record<string, unknown>),
-            ...(draft.guidance ? { guidance: draft.guidance } : {}),
-            ...(draft.pipelineStepper ? { pipelineStepper: draft.pipelineStepper } : {}),
-          };
-        });
+        queryClient.setQueryData(
+          queryKeys.jobs.analysis(job.jobAnalysisId),
+          (prev: unknown) => {
+            if (prev === null || typeof prev !== 'object') return prev;
+            return {
+              ...(prev as Record<string, unknown>),
+              ...(draft.guidance ? { guidance: draft.guidance } : {}),
+              ...(draft.pipelineStepper
+                ? { pipelineStepper: draft.pipelineStepper }
+                : {}),
+            };
+          },
+        );
       }
       toast.success('Draft generated');
     },
@@ -467,7 +492,9 @@ export function JobHubDetailPanel({
 
   const scheduleReminder = useCallback(() => {
     if (!canUseHubReminders) {
-      toast.error('Analyze or bookmark this role to schedule synced follow-ups.');
+      toast.error(
+        'Analyze or bookmark this role to schedule synced follow-ups.',
+      );
       return;
     }
     if (!hubReminderTimeOk) return;
@@ -502,7 +529,8 @@ export function JobHubDetailPanel({
           title: detail.analysis.title ?? detail.title,
           company: detail.analysis.company ?? detail.company,
           matchScore:
-            typeof detail.analysis.matchScore === 'number' && Number.isFinite(detail.analysis.matchScore)
+            typeof detail.analysis.matchScore === 'number' &&
+            Number.isFinite(detail.analysis.matchScore)
               ? detail.analysis.matchScore
               : 0,
         }
@@ -519,9 +547,9 @@ export function JobHubDetailPanel({
 
   const showAnalysisDetailLoading = Boolean(
     job.jobAnalysisId &&
-      jobDetail.isLoading &&
-      !jobDetail.isError &&
-      !knownUnanalyzedJob,
+    jobDetail.isLoading &&
+    !jobDetail.isError &&
+    !knownUnanalyzedJob,
   );
 
   const hubPrefill = readHubJobPrefillSession(job.jobAnalysisId);
@@ -530,9 +558,13 @@ export function JobHubDetailPanel({
     (bookmarkDiscoveryDetail.data?.description ?? '').trim() ||
     (job.boardDescription ?? '').trim()
   ).trim();
-  const descriptionFromExtensionPrefill = (hubPrefill?.description ?? '').trim();
+  const descriptionFromExtensionPrefill = (
+    hubPrefill?.description ?? ''
+  ).trim();
   const descriptionHighlights =
-    detail?.descriptionHighlights ?? bookmarkDiscoveryDetail.data?.descriptionHighlights ?? null;
+    detail?.descriptionHighlights ??
+    bookmarkDiscoveryDetail.data?.descriptionHighlights ??
+    null;
   const descriptionBody =
     descriptionFromAnalysis ||
     descriptionFromDiscovery ||
@@ -542,7 +574,8 @@ export function JobHubDetailPanel({
     ((Boolean(job.jobAnalysisId) && jobDetail.isFetching) ||
       (Boolean(bookmarkListingId) && bookmarkDiscoveryDetail.isFetching));
 
-  const tailoredCvProfileIdForLink = analysisForCard?.tailoredCvProfileId?.trim() ?? '';
+  const tailoredCvProfileIdForLink =
+    analysisForCard?.tailoredCvProfileId?.trim() ?? '';
   const showTailoredCvInBuilderLink =
     Boolean(job.jobAnalysisId) &&
     Boolean(analysisForCard?.isTailored) &&
@@ -573,11 +606,15 @@ export function JobHubDetailPanel({
     );
   }, [analysisForCard]);
 
-  const coverBody = normalizeText(generated.data?.coverLetter as unknown).trim();
+  const coverBody = normalizeText(
+    generated.data?.coverLetter as unknown,
+  ).trim();
   const descriptionForCoverGenerate = (detail?.description ?? '').trim();
   const hasSavedCover = Boolean(coverBody);
   const canAttemptCoverGenerate =
-    Boolean(job.jobAnalysisId) && jobDetail.isSuccess && descriptionForCoverGenerate.length >= 30;
+    Boolean(job.jobAnalysisId) &&
+    jobDetail.isSuccess &&
+    descriptionForCoverGenerate.length >= 30;
 
   const openAnalyzePrefilled = useCallback(async () => {
     setAnalyzeNavigateBusy(true);
@@ -645,7 +682,9 @@ export function JobHubDetailPanel({
       if (base) {
         setLocalStepper(optimisticPipelineStepper(base, step.id));
       }
-      const hubStage = hubPipelineStepIdToHubStage(step.id, { hasAnalysis: job.hasAnalysis });
+      const hubStage = hubPipelineStepIdToHubStage(step.id, {
+        hasAnalysis: job.hasAnalysis,
+      });
       if (!hubStage) return;
       onStageChange(job, hubStage);
     },
@@ -664,7 +703,9 @@ export function JobHubDetailPanel({
         if (tabFromHref === 'email') {
           try {
             const u = new URL(href, 'https://applymate.local');
-            const tpl = coalesceJobHubEmailTemplateQueryParam(u.searchParams.get('template'));
+            const tpl = coalesceJobHubEmailTemplateQueryParam(
+              u.searchParams.get('template'),
+            );
             if (tpl) setEmailTemplate(tpl);
           } catch {
             /* ignore malformed href */
@@ -679,12 +720,19 @@ export function JobHubDetailPanel({
 
   const handleGuidanceToggle = useCallback(
     (taskId: string, userCompleted: boolean) => {
-      const task = (displayGuidance ?? guidance)?.tasks.find((t) => t.id === taskId);
+      const task = (displayGuidance ?? guidance)?.tasks.find(
+        (t) => t.id === taskId,
+      );
       if (task && !isGuidanceTaskUserToggleable(task)) return;
 
       if (job.applicationId) {
         patchGuidance.mutate(
-          { scope: 'application', applicationId: job.applicationId, taskId, userCompleted },
+          {
+            scope: 'application',
+            applicationId: job.applicationId,
+            taskId,
+            userCompleted,
+          },
           { onSuccess: (g) => setLocalGuidance(g) },
         );
         return;
@@ -700,7 +748,14 @@ export function JobHubDetailPanel({
         { onSuccess: (g) => setLocalGuidance(g) },
       );
     },
-    [displayGuidance, guidance, job.applicationId, job.hubBookmarkId, job.jobAnalysisId, patchGuidance],
+    [
+      displayGuidance,
+      guidance,
+      job.applicationId,
+      job.hubBookmarkId,
+      job.jobAnalysisId,
+      patchGuidance,
+    ],
   );
 
   const hubContextLoading =
@@ -714,7 +769,8 @@ export function JobHubDetailPanel({
         'flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col overflow-x-hidden bg-[#060a0a] lg:w-0',
         layoutVariant === 'stacked' &&
           'max-lg:mt-2 max-lg:rounded-t-[1.25rem] max-lg:border max-lg:border-[#00C9B1]/50 max-lg:shadow-[0_-6px_28px_-12px_rgba(0,201,177,0.45)]',
-        layoutVariant === 'sheet' && 'max-lg:mt-0 max-lg:rounded-none max-lg:border-0 max-lg:shadow-none',
+        layoutVariant === 'sheet' &&
+          'max-lg:mt-0 max-lg:rounded-none max-lg:border-0 max-lg:shadow-none',
         'lg:border-l lg:border-[#00C9B1]/35 lg:shadow-none',
         className,
       )}
@@ -730,20 +786,24 @@ export function JobHubDetailPanel({
               className="mt-0.5"
             />
             <div className="min-w-0 flex-1">
-            <h1 className="text-base font-semibold tracking-tight text-white sm:text-lg lg:text-xl">{job.title}</h1>
-            <p className="mt-0.5 text-[13px] text-white/55">{job.company}</p>
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-white/35">
-              {job.createdAt ? <span>{formatRelativeSaved(job.createdAt)}</span> : null}
-              {resolvedApplyUrl ? (
-                <button
-                  type="button"
-                  className="font-semibold text-[#00C9B1] hover:underline"
-                  onClick={() => openExternalJobApplyUrl(resolvedApplyUrl)}
-                >
-                  Apply on company site
-                </button>
-              ) : null}
-            </div>
+              <h1 className="text-base font-semibold tracking-tight text-white sm:text-lg lg:text-xl">
+                {job.title}
+              </h1>
+              <p className="mt-0.5 text-[13px] text-white/55">{job.company}</p>
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-white/35">
+                {job.createdAt ? (
+                  <span>{formatRelativeSaved(job.createdAt)}</span>
+                ) : null}
+                {resolvedApplyUrl ? (
+                  <button
+                    type="button"
+                    className="font-semibold text-[#00C9B1] hover:underline"
+                    onClick={() => openExternalJobApplyUrl(resolvedApplyUrl)}
+                  >
+                    Apply on company site
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -780,7 +840,10 @@ export function JobHubDetailPanel({
                 disabled={hubManagePending}
               />
             ) : (
-              <div className="h-8 animate-pulse rounded-md bg-white/[0.04]" aria-hidden />
+              <div
+                className="h-8 animate-pulse rounded-md bg-white/[0.04]"
+                aria-hidden
+              />
             )}
           </div>
         ) : null}
@@ -791,7 +854,9 @@ export function JobHubDetailPanel({
               guidance={displayGuidance}
               onToggleTask={handleGuidanceToggle}
               togglePendingTaskId={
-                patchGuidance.isPending ? (patchGuidance.variables?.taskId ?? null) : null
+                patchGuidance.isPending
+                  ? (patchGuidance.variables?.taskId ?? null)
+                  : null
               }
               onNavigate={handleGuidanceNavigate}
             />
@@ -822,14 +887,19 @@ export function JobHubDetailPanel({
             ) : verificationStatus !== 'none' ? (
               <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/12 px-3 py-2 text-[12px] text-white/55">
                 <CheckCircle2 className="h-4 w-4 text-[#00C9B1]" />
-                {verificationStatus === 'verified' ? 'Verified' : 'Pending review'}
+                {verificationStatus === 'verified'
+                  ? 'Verified'
+                  : 'Pending review'}
               </span>
             ) : null}
           </div>
         ) : null}
 
         {staleApplicationNotice?.show ? (
-          <StaleApplicationNoticeBanner notice={staleApplicationNotice} className="mt-2" />
+          <StaleApplicationNoticeBanner
+            notice={staleApplicationNotice}
+            className="mt-2"
+          />
         ) : null}
 
         <nav className="mt-2 flex gap-0 overflow-x-auto border-b border-white/[0.06] pb-px sm:gap-1">
@@ -866,8 +936,8 @@ export function JobHubDetailPanel({
                 {jobDetailSlowLoad ? (
                   <div className="max-w-sm space-y-3 text-center">
                     <p className="text-xs leading-relaxed text-white/40">
-                      This is taking longer than usual. The server may still be processing this
-                      job — you can wait or retry.
+                      This is taking longer than usual. The server may still be
+                      processing this job — you can wait or retry.
                     </p>
                     <Button
                       type="button"
@@ -882,10 +952,12 @@ export function JobHubDetailPanel({
               </div>
             ) : !hasCompletedAnalysis ? (
               <div className="border-t border-white/[0.08] pt-5">
-                <p className="text-sm font-medium text-white/80">No analysis on this job yet</p>
+                <p className="text-sm font-medium text-white/80">
+                  No analysis on this job yet
+                </p>
                 <p className="mt-2 text-sm text-white/55">
-                  Run the job analyzer to see your fit score, skill gaps, and tailored CV options for
-                  this role.
+                  Run the job analyzer to see your fit score, skill gaps, and
+                  tailored CV options for this role.
                 </p>
                 <div className="mt-4">
                   <Button
@@ -898,29 +970,38 @@ export function JobHubDetailPanel({
                 </div>
               </div>
             ) : jobDetail.isError ? (
-              <p className="text-sm text-rose-200">{getApiErrorMessage(jobDetail.error)}</p>
+              <p className="text-sm text-rose-200">
+                {getApiErrorMessage(jobDetail.error)}
+              </p>
             ) : analysisForCard ? (
               <div className="space-y-6">
                 <JobAnalysisCard
                   analysis={analysisForCard}
                   rematchInProgress={false}
-                  scoreBeforeTailor={analysisForCard.scoreBeforeTailoring ?? null}
+                  scoreBeforeTailor={
+                    analysisForCard.scoreBeforeTailoring ?? null
+                  }
                   isTailored={Boolean(analysisForCard.isTailored)}
                   showTailorAction={true}
                   hideAiReport
                   factorsDefaultOpen
                   applyUrl={resolvedApplyUrl}
                   onApplyNow={() => {
-                    if (resolvedApplyUrl) openExternalJobApplyUrl(resolvedApplyUrl);
+                    if (resolvedApplyUrl)
+                      openExternalJobApplyUrl(resolvedApplyUrl);
                   }}
                 />
-                {shouldShowScoreImprovementGuide(analysisForCard.scoreImprovement) ? (
+                {shouldShowScoreImprovementGuide(
+                  analysisForCard.scoreImprovement,
+                ) ? (
                   <ScoreImprovementGuideCard
                     guide={analysisForCard.scoreImprovement!}
                     readinessNote={analysisForCard.interviewReadinessNote}
                   />
                 ) : analysisForCard.interviewReadinessNote ? (
-                  <InterviewReadinessSection note={analysisForCard.interviewReadinessNote} />
+                  <InterviewReadinessSection
+                    note={analysisForCard.interviewReadinessNote}
+                  />
                 ) : null}
                 <AiRecruiterReportSection
                   analysis={analysisForCard}
@@ -928,7 +1009,8 @@ export function JobHubDetailPanel({
                   applyUrl={resolvedApplyUrl}
                   isTailored={Boolean(analysisForCard.isTailored)}
                   onApplyNow={() => {
-                    if (resolvedApplyUrl) openExternalJobApplyUrl(resolvedApplyUrl);
+                    if (resolvedApplyUrl)
+                      openExternalJobApplyUrl(resolvedApplyUrl);
                   }}
                 />
               </div>
@@ -939,12 +1021,17 @@ export function JobHubDetailPanel({
         {tab === 'description' ? (
           showDescriptionLoading ? (
             <div className="flex items-center gap-2 border-t border-white/[0.08] pt-5 text-sm text-white/45">
-              <Loader2 className={cn('h-6 w-6 animate-spin', TEAL.text)} aria-hidden />
+              <Loader2
+                className={cn('h-6 w-6 animate-spin', TEAL.text)}
+                aria-hidden
+              />
               Loading description…
             </div>
           ) : descriptionBody ? (
             <div className="border-t border-white/[0.08] pt-5">
-              <h2 className="text-sm font-semibold text-white">Job description</h2>
+              <h2 className="text-sm font-semibold text-white">
+                Job description
+              </h2>
               <p className="mt-1 max-w-3xl text-xs leading-relaxed text-white/40">
                 {hasCompletedAnalysis
                   ? 'Full job ad from your saved analysis.'
@@ -960,7 +1047,8 @@ export function JobHubDetailPanel({
               {!hasCompletedAnalysis ? (
                 <>
                   <p className="mt-4 text-sm text-white/45">
-                    Want the full workflow? Open the analyzer — we&apos;ll fill in what we know.
+                    Want the full workflow? Open the analyzer — we&apos;ll fill
+                    in what we know.
                   </p>
                   <Button
                     className="mt-3 bg-[#00C9B1] text-[#080A0A] hover:bg-[#00C9B1]"
@@ -982,8 +1070,12 @@ export function JobHubDetailPanel({
             </p>
           ) : (
             <div className="border-t border-white/[0.08] pt-5">
-              <p className="text-sm text-white/45">No description stored for this role yet.</p>
-              <p className="mt-2 text-sm text-white/45">Try the analyzer — you can paste the ad there.</p>
+              <p className="text-sm text-white/45">
+                No description stored for this role yet.
+              </p>
+              <p className="mt-2 text-sm text-white/45">
+                Try the analyzer — you can paste the ad there.
+              </p>
               <Button
                 className="mt-4 bg-[#00C9B1] text-[#080A0A] hover:bg-[#00C9B1]"
                 disabled={analyzeNavigateBusy}
@@ -1000,7 +1092,8 @@ export function JobHubDetailPanel({
             <div className="border-t border-white/[0.08] pt-5">
               <h2 className="text-sm font-semibold text-white">Cover letter</h2>
               <p className="mt-2 text-sm text-white/55">
-                Analyze this job first. Then you can write or generate a cover letter here.
+                Analyze this job first. Then you can write or generate a cover
+                letter here.
               </p>
               <Button
                 className="mt-4 bg-[#00C9B1] text-[#080A0A] hover:bg-[#00C9B1]"
@@ -1013,7 +1106,9 @@ export function JobHubDetailPanel({
           ) : (
             <div className="border-t border-white/[0.08] pt-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-sm font-semibold text-white">Cover letter</h2>
+                <h2 className="text-sm font-semibold text-white">
+                  Cover letter
+                </h2>
                 {coverBody ? (
                   <div className="flex flex-wrap gap-2">
                     <Button
@@ -1059,7 +1154,9 @@ export function JobHubDetailPanel({
                     disabled={
                       !canAttemptCoverGenerate ||
                       generateCover.isPending ||
-                      (!aiUsage.isPaidTier && !aiUsage.isLoading && (aiUsage.remaining ?? 0) === 0)
+                      (!aiUsage.isPaidTier &&
+                        !aiUsage.isLoading &&
+                        (aiUsage.remaining ?? 0) === 0)
                     }
                     title={
                       !canAttemptCoverGenerate
@@ -1086,42 +1183,61 @@ export function JobHubDetailPanel({
                             toast.success('Cover letter generated');
                             if (job.applicationId) {
                               void queryClient.invalidateQueries({
-                                queryKey: queryKeys.applications.detail(job.applicationId),
+                                queryKey: queryKeys.applications.detail(
+                                  job.applicationId,
+                                ),
                               });
                             }
                             if (job.jobAnalysisId) {
                               void queryClient.invalidateQueries({
-                                queryKey: queryKeys.jobs.analysis(job.jobAnalysisId),
+                                queryKey: queryKeys.jobs.analysis(
+                                  job.jobAnalysisId,
+                                ),
                               });
                             }
                           },
                           onError: (err) => {
                             toast.error(getApiErrorMessage(err));
-                            void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
+                            void queryClient.invalidateQueries({
+                              queryKey: queryKeys.auth.me(),
+                            });
                           },
                         },
                       );
                     }}
                   >
-                    {generateCover.isPending ? 'Generating…' : 'Generate cover letter'}
+                    {generateCover.isPending
+                      ? 'Generating…'
+                      : 'Generate cover letter'}
                   </Button>
                   {!canAttemptCoverGenerate ? (
                     <span className="text-xs text-white/40">
-                      Job ad on file is too short. Refresh it in the analyzer, then try again.
+                      Job ad on file is too short. Refresh it in the analyzer,
+                      then try again.
                     </span>
-                  ) : !aiUsage.isPaidTier && !aiUsage.isLoading && (aiUsage.remaining ?? 0) === 0 ? (
-                    <span className="text-xs text-amber-200/90">Daily free AI limit reached.</span>
+                  ) : !aiUsage.isPaidTier &&
+                    !aiUsage.isLoading &&
+                    (aiUsage.remaining ?? 0) === 0 ? (
+                    <span className="text-xs text-amber-200/90">
+                      Daily free AI limit reached.
+                    </span>
                   ) : null}
                 </div>
               ) : null}
               {generated.isLoading ? (
-                <Loader2 className={cn('mt-4 h-6 w-6 animate-spin', TEAL.text)} />
+                <Loader2
+                  className={cn('mt-4 h-6 w-6 animate-spin', TEAL.text)}
+                />
               ) : coverBody ? (
                 <div className="mt-3 pb-2">
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-white/80">{coverBody}</p>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-white/80">
+                    {coverBody}
+                  </p>
                 </div>
               ) : (
-                <p className="mt-3 text-sm text-white/45">No saved cover letter for this job yet.</p>
+                <p className="mt-3 text-sm text-white/45">
+                  No saved cover letter for this job yet.
+                </p>
               )}
             </div>
           )
@@ -1170,18 +1286,29 @@ export function JobHubDetailPanel({
               </Button>
 
               <div className="mt-5">
-                <h3 className="text-[11px] font-semibold uppercase tracking-wide text-white/45">Saved notes</h3>
-                <p className="mt-1 text-[11px] text-white/30">Tap a row to expand.</p>
+                <h3 className="text-[11px] font-semibold uppercase tracking-wide text-white/45">
+                  Saved notes
+                </h3>
+                <p className="mt-1 text-[11px] text-white/30">
+                  Tap a row to expand.
+                </p>
                 {noteScope && serverNotesQ.isLoading ? (
                   <div className="mt-3 flex items-center gap-2 text-xs text-white/45">
-                    <Loader2 className={cn('h-4 w-4 animate-spin', TEAL.text)} aria-hidden />
+                    <Loader2
+                      className={cn('h-4 w-4 animate-spin', TEAL.text)}
+                      aria-hidden
+                    />
                     Loading notes…
                   </div>
                 ) : noteScope && serverNotesQ.isError ? (
-                  <p className="mt-3 text-xs text-rose-200">{getApiErrorMessage(serverNotesQ.error)}</p>
+                  <p className="mt-3 text-xs text-rose-200">
+                    {getApiErrorMessage(serverNotesQ.error)}
+                  </p>
                 ) : savedNoteRows.length === 0 ? (
                   <p className="mt-3 text-xs text-white/35">
-                    {noteScope ? 'No saved notes yet — add text above.' : 'Notes appear after this role is saved to your hub.'}
+                    {noteScope
+                      ? 'No saved notes yet — add text above.'
+                      : 'Notes appear after this role is saved to your hub.'}
                   </p>
                 ) : (
                   <ul className="mt-3 space-y-1.5">
@@ -1195,21 +1322,32 @@ export function JobHubDetailPanel({
                           <button
                             type="button"
                             onClick={() =>
-                              setExpandedNoteIds((prev) => ({ ...prev, [row.id]: !open }))
+                              setExpandedNoteIds((prev) => ({
+                                ...prev,
+                                [row.id]: !open,
+                              }))
                             }
                             className="flex w-full items-start gap-2 px-3 py-2.5 text-left hover:bg-[#00C9B1]/12"
                           >
                             {open ? (
-                              <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-white/45" aria-hidden />
+                              <ChevronDown
+                                className="mt-0.5 h-4 w-4 shrink-0 text-white/45"
+                                aria-hidden
+                              />
                             ) : (
-                              <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-white/45" aria-hidden />
+                              <ChevronRight
+                                className="mt-0.5 h-4 w-4 shrink-0 text-white/45"
+                                aria-hidden
+                              />
                             )}
                             <span className="min-w-0 flex-1">
                               <span className="block text-[10px] font-medium uppercase tracking-wide text-white/35">
                                 {formatReminderWhen(row.createdAt)}
                               </span>
                               <span className="mt-0.5 block text-xs text-white/70">
-                                {row.snippet?.trim() ? row.snippet : noteSnippet(row.body)}
+                                {row.snippet?.trim()
+                                  ? row.snippet
+                                  : noteSnippet(row.body)}
                               </span>
                             </span>
                           </button>
@@ -1219,7 +1357,9 @@ export function JobHubDetailPanel({
                                 <div className="space-y-2">
                                   <textarea
                                     value={noteRowEditText}
-                                    onChange={(e) => setNoteRowEditText(e.target.value)}
+                                    onChange={(e) =>
+                                      setNoteRowEditText(e.target.value)
+                                    }
                                     rows={6}
                                     className={cn(
                                       'w-full resize-y rounded-lg border border-white/12 bg-[#080b0b] px-3 py-2 text-sm text-white focus:outline-none',
@@ -1231,7 +1371,10 @@ export function JobHubDetailPanel({
                                       type="button"
                                       variant="ghost"
                                       className="border border-white/12 text-xs"
-                                      disabled={notesMutationBusy || !noteRowEditText.trim()}
+                                      disabled={
+                                        notesMutationBusy ||
+                                        !noteRowEditText.trim()
+                                      }
                                       onClick={() =>
                                         patchHubNote.mutate(
                                           {
@@ -1243,7 +1386,10 @@ export function JobHubDetailPanel({
                                               setNoteRowEditId(null);
                                               setNoteRowEditText('');
                                             },
-                                            onError: (e) => toast.error(getApiErrorMessage(e)),
+                                            onError: (e) =>
+                                              toast.error(
+                                                getApiErrorMessage(e),
+                                              ),
                                           },
                                         )
                                       }
@@ -1276,13 +1422,19 @@ export function JobHubDetailPanel({
                                       type="button"
                                       variant="ghost"
                                       className="gap-1.5 border border-white/12 text-xs"
-                                      disabled={notesMutationBusy || noteRowEditId === row.id}
+                                      disabled={
+                                        notesMutationBusy ||
+                                        noteRowEditId === row.id
+                                      }
                                       onClick={() => {
                                         setNoteRowEditId(row.id);
                                         setNoteRowEditText(row.body);
                                       }}
                                     >
-                                      <Pencil className="h-3.5 w-3.5" aria-hidden />
+                                      <Pencil
+                                        className="h-3.5 w-3.5"
+                                        aria-hidden
+                                      />
                                       Edit
                                     </Button>
                                     <Button
@@ -1298,12 +1450,19 @@ export function JobHubDetailPanel({
                                         )
                                           return;
                                         deleteHubNote.mutate(row.id, {
-                                          onError: (e) => toast.error(getApiErrorMessage(e)),
+                                          onError: (e) =>
+                                            toast.error(getApiErrorMessage(e)),
                                         });
-                                        setExpandedNoteIds((prev) => ({ ...prev, [row.id]: false }));
+                                        setExpandedNoteIds((prev) => ({
+                                          ...prev,
+                                          [row.id]: false,
+                                        }));
                                       }}
                                     >
-                                      <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                                      <Trash2
+                                        className="h-3.5 w-3.5"
+                                        aria-hidden
+                                      />
                                       Delete
                                     </Button>
                                   </>
@@ -1323,7 +1482,8 @@ export function JobHubDetailPanel({
               <h2 className="text-sm font-semibold text-white">Reminders</h2>
               {canUseHubReminders ? (
                 <p className="mt-1 text-xs text-white/40">
-                  Hub follow-ups sync to your account (not application email reminders). Open from any device.
+                  Hub follow-ups sync to your account (not application email
+                  reminders). Open from any device.
                 </p>
               ) : (
                 <p className="mt-1 text-xs text-white/40">
@@ -1335,33 +1495,48 @@ export function JobHubDetailPanel({
                   type="button"
                   variant="ghost"
                   className="border border-white/12 text-xs"
-                  disabled={browserAlertsOn || typeof Notification === 'undefined'}
+                  disabled={
+                    browserAlertsOn || typeof Notification === 'undefined'
+                  }
                   onClick={async () => {
                     if (typeof Notification === 'undefined') {
-                      toast.error('This browser does not support notifications.');
+                      toast.error(
+                        'This browser does not support notifications.',
+                      );
                       return;
                     }
                     const p = await Notification.requestPermission();
                     if (p === 'granted') {
                       setBrowserAlertsOn(true);
-                      toast.success('You’ll get a pop-up when a reminder is due.');
+                      toast.success(
+                        'You’ll get a pop-up when a reminder is due.',
+                      );
                       notifyDueHubRemindersFromCache(queryClient);
                     } else {
-                      toast.error('Alerts stay off until you allow them in your browser settings.');
+                      toast.error(
+                        'Alerts stay off until you allow them in your browser settings.',
+                      );
                     }
                   }}
                 >
-                  {browserAlertsOn ? 'Browser alerts on' : 'Turn on browser alerts'}
+                  {browserAlertsOn
+                    ? 'Browser alerts on'
+                    : 'Turn on browser alerts'}
                 </Button>
               </div>
 
               {canUseHubReminders && hubRemindersQuery.isLoading ? (
                 <div className="mt-4 flex items-center gap-2 text-sm text-white/45">
-                  <Loader2 className={cn('h-5 w-5 animate-spin', TEAL.text)} aria-hidden />
+                  <Loader2
+                    className={cn('h-5 w-5 animate-spin', TEAL.text)}
+                    aria-hidden
+                  />
                   Loading follow-ups…
                 </div>
               ) : canUseHubReminders && hubRemindersQuery.isError ? (
-                <p className="mt-3 text-sm text-rose-200">{getApiErrorMessage(hubRemindersQuery.error)}</p>
+                <p className="mt-3 text-sm text-rose-200">
+                  {getApiErrorMessage(hubRemindersQuery.error)}
+                </p>
               ) : canUseHubReminders && hubRemindersDisplay.length > 0 ? (
                 <ul className="mt-4 space-y-2">
                   {hubRemindersDisplay.map((r) => {
@@ -1377,9 +1552,12 @@ export function JobHubDetailPanel({
                             <span
                               className={cn(
                                 'rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-                                st === 'upcoming' && 'bg-[#00C9B1]/20 text-[#00C9B1]',
-                                st === 'due' && 'bg-amber-500/20 text-amber-100',
-                                st === 'elapsed' && 'bg-white/[0.06] text-white/45',
+                                st === 'upcoming' &&
+                                  'bg-[#00C9B1]/20 text-[#00C9B1]',
+                                st === 'due' &&
+                                  'bg-amber-500/20 text-amber-100',
+                                st === 'elapsed' &&
+                                  'bg-white/[0.06] text-white/45',
                               )}
                             >
                               {hubReminderStatusLabel(st)}
@@ -1388,7 +1566,9 @@ export function JobHubDetailPanel({
                               Account
                             </span>
                           </div>
-                          <p className="mt-1 text-xs text-white/45">{formatReminderWhen(r.remindAt)}</p>
+                          <p className="mt-1 text-xs text-white/45">
+                            {formatReminderWhen(r.remindAt)}
+                          </p>
                           <p className="mt-1 text-sm text-white/85">{line}</p>
                         </div>
                         <div className="flex shrink-0 flex-col gap-1.5 self-start sm:items-end">
@@ -1398,7 +1578,10 @@ export function JobHubDetailPanel({
                             onClick={() =>
                               patchHubReminderMut.mutate(
                                 { id: r.id, status: 'completed' },
-                                { onError: (e) => toast.error(getApiErrorMessage(e)) },
+                                {
+                                  onError: (e) =>
+                                    toast.error(getApiErrorMessage(e)),
+                                },
                               )
                             }
                             disabled={hubRemindersMutating}
@@ -1409,9 +1592,11 @@ export function JobHubDetailPanel({
                             type="button"
                             className="rounded-lg border border-rose-400/25 px-2 py-1 text-[11px] text-rose-200/90 hover:bg-rose-500/10"
                             onClick={() => {
-                              if (!window.confirm('Delete this follow-up?')) return;
+                              if (!window.confirm('Delete this follow-up?'))
+                                return;
                               deleteHubReminderMut.mutate(r.id, {
-                                onError: (e) => toast.error(getApiErrorMessage(e)),
+                                onError: (e) =>
+                                  toast.error(getApiErrorMessage(e)),
                               });
                             }}
                             disabled={hubRemindersMutating}
@@ -1424,14 +1609,20 @@ export function JobHubDetailPanel({
                   })}
                 </ul>
               ) : canUseHubReminders ? (
-                <p className="mt-3 text-xs text-white/30">No open follow-ups for this job.</p>
+                <p className="mt-3 text-xs text-white/30">
+                  No open follow-ups for this job.
+                </p>
               ) : (
-                <p className="mt-3 text-xs text-white/30">Follow-ups appear after you analyze or bookmark this role.</p>
+                <p className="mt-3 text-xs text-white/30">
+                  Follow-ups appear after you analyze or bookmark this role.
+                </p>
               )}
 
               <div className="mt-5 space-y-4">
                 <div className="space-y-1.5">
-                  <span className="block text-[11px] font-medium uppercase tracking-wide text-white/45">When</span>
+                  <span className="block text-[11px] font-medium uppercase tracking-wide text-white/45">
+                    When
+                  </span>
                   <input
                     type="datetime-local"
                     value={reminderAt}
@@ -1462,7 +1653,11 @@ export function JobHubDetailPanel({
                 <Button
                   variant="ghost"
                   className="border border-white/12"
-                  disabled={!canUseHubReminders || !hubReminderTimeOk || hubRemindersMutating}
+                  disabled={
+                    !canUseHubReminders ||
+                    !hubReminderTimeOk ||
+                    hubRemindersMutating
+                  }
                   onClick={() => scheduleReminder()}
                 >
                   {hubRemindersMutating ? 'Saving…' : 'Save follow-up'}
@@ -1474,10 +1669,13 @@ export function JobHubDetailPanel({
 
         {tab === 'email' ? (
           <div className="border-t border-white/[0.08] pt-5">
-            <h2 className="text-sm font-semibold text-white">Email templates</h2>
+            <h2 className="text-sm font-semibold text-white">
+              Email templates
+            </h2>
             {!canGenerateEmail ? (
               <p className="mt-2 text-sm text-white/45">
-                Save an analysis or application first. Then you can draft emails here.
+                Save an analysis or application first. Then you can draft emails
+                here.
               </p>
             ) : (
               <>
@@ -1490,7 +1688,11 @@ export function JobHubDetailPanel({
                   </span>
                   <select
                     value={emailTemplate}
-                    onChange={(e) => setEmailTemplate(e.target.value as JobHubEmailTemplateType)}
+                    onChange={(e) =>
+                      setEmailTemplate(
+                        e.target.value as JobHubEmailTemplateType,
+                      )
+                    }
                     className={cn(
                       'block w-full rounded-xl border border-white/12 bg-[#080b0b] px-3 py-2.5 text-sm text-white focus:outline-none',
                       TEAL.focus,
@@ -1530,17 +1732,23 @@ export function JobHubDetailPanel({
                 </Button>
                 {emailDraft ? (
                   <div className="mt-6 space-y-3 rounded-xl border border-white/10 bg-[#080b0b] p-4">
-                    <p className="text-xs font-semibold text-white/55">Subject</p>
+                    <p className="text-xs font-semibold text-white/55">
+                      Subject
+                    </p>
                     <p className="text-sm text-white">{emailDraft.subject}</p>
                     <p className="text-xs font-semibold text-white/55">Body</p>
-                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-white/80">{emailDraft.body}</p>
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-white/80">
+                      {emailDraft.body}
+                    </p>
                     <Button
                       type="button"
                       variant="ghost"
                       className="gap-1.5 border border-white/12 text-xs"
                       onClick={async () => {
                         try {
-                          await navigator.clipboard.writeText(`${emailDraft.subject}\n\n${emailDraft.body}`);
+                          await navigator.clipboard.writeText(
+                            `${emailDraft.subject}\n\n${emailDraft.body}`,
+                          );
                           toast.success('Copied to clipboard');
                         } catch {
                           toast.error('Could not copy');
@@ -1559,18 +1767,26 @@ export function JobHubDetailPanel({
 
         {tab === 'resume' ? (
           <div className="border-t border-white/[0.08] pt-5">
-            <h2 className="text-sm font-semibold text-white">CV for this role</h2>
+            <h2 className="text-sm font-semibold text-white">
+              CV for this role
+            </h2>
             {!job.jobAnalysisId ? (
               <p className="mt-2 text-sm text-white/55">
-                Analyze this job first. After that you can tailor your CV to match it.
+                Analyze this job first. After that you can tailor your CV to
+                match it.
               </p>
-            ) : analysisForCard?.isTailored && analysisForCard.tailoredCvName ? (
+            ) : analysisForCard?.isTailored &&
+              analysisForCard.tailoredCvName ? (
               <p className="mt-2 text-sm text-white/75">
                 CV tailored for this job:{' '}
-                <span className="font-medium text-white">{analysisForCard.tailoredCvName}</span>
+                <span className="font-medium text-white">
+                  {analysisForCard.tailoredCvName}
+                </span>
               </p>
             ) : (
-              <p className="mt-2 text-sm text-white/55">No tailored CV saved for this job yet.</p>
+              <p className="mt-2 text-sm text-white/55">
+                No tailored CV saved for this job yet.
+              </p>
             )}
             <div className="mt-4 flex flex-wrap gap-2">
               {showTailoredCvInBuilderLink ? (

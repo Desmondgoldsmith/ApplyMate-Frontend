@@ -13,24 +13,54 @@ import type { DashboardSectionKey } from '@/lib/today-plan';
 describe('dashboardOrchestration', () => {
   it('dedupes duplicate recommendation clusters', () => {
     const out = dedupeByCluster([
-      { id: 'a', recommendationClusterId: 'followup:1', displayPriority: 5, priorityScore: 50 },
-      { id: 'b', recommendationClusterId: 'followup:1', displayPriority: 1, priorityScore: 10 },
-      { id: 'c', recommendationClusterId: 'interview:1', displayPriority: 3, priorityScore: 90 },
+      {
+        id: 'a',
+        recommendationClusterId: 'followup:1',
+        displayPriority: 5,
+        priorityScore: 50,
+      },
+      {
+        id: 'b',
+        recommendationClusterId: 'followup:1',
+        displayPriority: 1,
+        priorityScore: 10,
+      },
+      {
+        id: 'c',
+        recommendationClusterId: 'interview:1',
+        displayPriority: 3,
+        priorityScore: 90,
+      },
     ]);
     expect(out.map((x) => x.id)).toEqual(['b', 'c']);
   });
 
   it('dedupes by workflowEntityKey even when cluster id differs', () => {
     const out = dedupeByCluster([
-      { id: 'a', workflowEntityKey: 'application:1', recommendationClusterId: 'c1', displayPriority: 1 },
-      { id: 'b', workflowEntityKey: 'application:1', recommendationClusterId: 'c2', displayPriority: 2 },
+      {
+        id: 'a',
+        workflowEntityKey: 'application:1',
+        recommendationClusterId: 'c1',
+        displayPriority: 1,
+      },
+      {
+        id: 'b',
+        workflowEntityKey: 'application:1',
+        recommendationClusterId: 'c2',
+        displayPriority: 2,
+      },
     ]);
     expect(out.map((x) => x.id)).toEqual(['a']);
   });
 
   it('reserves cluster after workflow-keyed row so a cluster-only duplicate drops', () => {
     const out = dedupeByCluster([
-      { id: 'a', workflowEntityKey: 'application:1', recommendationClusterId: 'same', displayPriority: 1 },
+      {
+        id: 'a',
+        workflowEntityKey: 'application:1',
+        recommendationClusterId: 'same',
+        displayPriority: 1,
+      },
       { id: 'b', recommendationClusterId: 'same', displayPriority: 2 },
     ]);
     expect(out.map((x) => x.id)).toEqual(['a']);
@@ -57,7 +87,10 @@ describe('dashboardOrchestration', () => {
   });
 
   it('applies onboarding section simplification without recommendedSections', () => {
-    const plan = { dashboardMode: 'onboarding' as const, recommendedSections: [] };
+    const plan = {
+      dashboardMode: 'onboarding' as const,
+      recommendedSections: [],
+    };
     expect(shouldRenderSection('today_plan', plan)).toBe(true);
     expect(shouldRenderSection('cv', plan)).toBe(true);
     expect(shouldRenderSection('onboarding', plan)).toBe(true);
@@ -69,25 +102,40 @@ describe('dashboardOrchestration', () => {
   it('maps backend momentum key to progress gating', () => {
     const plan = {
       dashboardMode: 'active_search' as const,
-      recommendedSections: ['hero', 'today_plan', 'analyze', 'momentum', 'revisit'] as DashboardSectionKey[],
+      recommendedSections: [
+        'hero',
+        'today_plan',
+        'analyze',
+        'momentum',
+        'revisit',
+      ] as DashboardSectionKey[],
     };
     expect(shouldRenderSection('progress', plan)).toBe(true);
     expect(shouldRenderSection('momentum', plan)).toBe(true);
   });
 
   it('does not treat empty recommendedSections as full dashboard — uses mode fallback', () => {
-    const active = { dashboardMode: 'active_search' as const, recommendedSections: [] as DashboardSectionKey[] };
+    const active = {
+      dashboardMode: 'active_search' as const,
+      recommendedSections: [] as DashboardSectionKey[],
+    };
     expect(shouldRenderSection('progress', active)).toBe(true);
     expect(shouldRenderSection('analyze', active)).toBe(true);
     expect(shouldRenderSection('revisit', active)).toBe(true);
     expect(shouldRenderSection('nudges', active)).toBe(false);
 
-    const low = { dashboardMode: 'low_activity' as const, recommendedSections: [] as DashboardSectionKey[] };
+    const low = {
+      dashboardMode: 'low_activity' as const,
+      recommendedSections: [] as DashboardSectionKey[],
+    };
     expect(shouldRenderSection('today_plan', low)).toBe(true);
     expect(shouldRenderSection('progress', low)).toBe(true);
     expect(shouldRenderSection('analyze', low)).toBe(true);
 
-    const recovery = { dashboardMode: 'recovery' as const, recommendedSections: [] as DashboardSectionKey[] };
+    const recovery = {
+      dashboardMode: 'recovery' as const,
+      recommendedSections: [] as DashboardSectionKey[],
+    };
     expect(shouldRenderSection('revisit', recovery)).toBe(true);
     expect(shouldRenderSection('analyze', recovery)).toBe(false);
   });

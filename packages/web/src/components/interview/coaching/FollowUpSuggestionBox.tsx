@@ -32,9 +32,13 @@ export const FollowUpSuggestionBox = memo(function FollowUpSuggestionBox({
         <span aria-hidden>💡 </span>
         Try answering this next
       </p>
-      <p className="mt-1.5 text-sm leading-snug text-[var(--text-primary)]">{q}</p>
+      <p className="mt-1.5 text-sm leading-snug text-[var(--text-primary)]">
+        {q}
+      </p>
       {reasonCopy ? (
-        <p className="mt-1.5 text-[11px] text-[var(--text-muted)]">{reasonCopy}</p>
+        <p className="mt-1.5 text-[11px] text-[var(--text-muted)]">
+          {reasonCopy}
+        </p>
       ) : null}
       <p className="mt-2 text-[10px] text-[var(--text-muted)]">
         Optional — tap Next question when you are ready to continue.

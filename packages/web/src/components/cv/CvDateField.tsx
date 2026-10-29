@@ -4,7 +4,11 @@ import { Calendar } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { formatCvDateLabel, normalizeCvDateInput, parseYearFromCvDate } from '@/lib/cvDate';
+import {
+  formatCvDateLabel,
+  normalizeCvDateInput,
+  parseYearFromCvDate,
+} from '@/lib/cvDate';
 import { cn } from '@/lib/utils';
 
 const fieldClass =
@@ -63,7 +67,9 @@ export function CvDateField({
   }, [open]);
 
   const displayHint = value.trim() ? formatCvDateLabel(value) || value : '';
-  const monthInputValue = /^\d{4}-\d{2}/.test(value.trim()) ? value.trim().slice(0, 7) : '';
+  const monthInputValue = /^\d{4}-\d{2}/.test(value.trim())
+    ? value.trim().slice(0, 7)
+    : '';
   const selectedYear = parseYearFromCvDate(value) ?? new Date().getFullYear();
 
   const applyYear = (year: number) => {
@@ -87,7 +93,9 @@ export function CvDateField({
           value={value}
           disabled={disabled}
           placeholder={placeholder}
-          aria-describedby={displayHint && displayHint !== value ? `${panelId}-hint` : undefined}
+          aria-describedby={
+            displayHint && displayHint !== value ? `${panelId}-hint` : undefined
+          }
           onChange={(e) => onChange(normalizeCvDateInput(e.target.value))}
           onFocus={onFocus}
         />
@@ -107,7 +115,9 @@ export function CvDateField({
           Shows as: {displayHint}
         </p>
       ) : null}
-      {helper ? <p className="mt-1 text-[10px] text-white/30">{helper}</p> : null}
+      {helper ? (
+        <p className="mt-1 text-[10px] text-white/30">{helper}</p>
+      ) : null}
       {open && mounted
         ? createPortal(
             <div
@@ -135,7 +145,11 @@ export function CvDateField({
                     onChange={(e) => applyYear(Number(e.target.value))}
                   >
                     {years.map((y) => (
-                      <option key={y} value={y} style={{ background: '#111616', color: '#fff' }}>
+                      <option
+                        key={y}
+                        value={y}
+                        style={{ background: '#111616', color: '#fff' }}
+                      >
                         {y}
                       </option>
                     ))}

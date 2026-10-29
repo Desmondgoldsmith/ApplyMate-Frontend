@@ -16,9 +16,7 @@ export function patchJobHistoryDisplayScore(
     queryClient.setQueryData<JobHistoryItem[]>(
       queryKeys.jobs.history(includeAccepted),
       (old) =>
-        old?.map((item) =>
-          item.id === id ? { ...item, matchScore } : item,
-        ),
+        old?.map((item) => (item.id === id ? { ...item, matchScore } : item)),
     );
   }
 }

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CvApplyImprovementResult, CvDiffPreviewOpenParams } from '@/lib/api';
+import type {
+  CvApplyImprovementResult,
+  CvDiffPreviewOpenParams,
+} from '@/lib/api';
 
 import {
   CV_ASSISTANT_DIFF_PREVIEW_KEY,
@@ -10,7 +13,8 @@ import {
 } from '@/lib/cvDiffPreviewMap';
 
 function applyStub(
-  overrides: Partial<CvApplyImprovementResult> & Pick<CvApplyImprovementResult, 'pointer' | 'improvementId'>,
+  overrides: Partial<CvApplyImprovementResult> &
+    Pick<CvApplyImprovementResult, 'pointer' | 'improvementId'>,
 ): CvApplyImprovementResult {
   return {
     success: true,
@@ -34,7 +38,15 @@ describe('cvDiffPreviewMap', () => {
           pointer: id,
           improvementId: id,
           suggestionId: id,
-          changedFields: [{ field: 'x', fieldPath: `${id}.x`, before: 'a', after: 'b', type: 'changed' }],
+          changedFields: [
+            {
+              field: 'x',
+              fieldPath: `${id}.x`,
+              before: 'a',
+              after: 'b',
+              type: 'changed',
+            },
+          ],
         }),
         id,
       );
@@ -67,7 +79,9 @@ describe('cvDiffPreviewMap', () => {
   });
 
   it('cvStructuralDiffPayloadPresent is true when structured objects have keys', () => {
-    expect(cvStructuralDiffPayloadPresent({}, { summary: { text: 'x' } })).toBe(true);
+    expect(cvStructuralDiffPayloadPresent({}, { summary: { text: 'x' } })).toBe(
+      true,
+    );
     expect(cvStructuralDiffPayloadPresent(null, null)).toBe(false);
   });
 
@@ -77,7 +91,13 @@ describe('cvDiffPreviewMap', () => {
       improvementId: 'imp_1',
       suggestionId: 'imp_1',
       changedFields: [
-        { field: 'Summary', fieldPath: 'summary.text', before: 'old', after: 'new', type: 'changed' },
+        {
+          field: 'Summary',
+          fieldPath: 'summary.text',
+          before: 'old',
+          after: 'new',
+          type: 'changed',
+        },
       ],
     });
     const p = cvOpenParamsFromApplyResult(r, 'imp_1');

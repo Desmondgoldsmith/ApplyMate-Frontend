@@ -66,7 +66,8 @@ export function DashboardPredictiveOutlookCard({ data, phase15Empty }: Props) {
     timelineLabel != null ||
     data.pipelineHealth != null;
 
-  const isEmpty = !headline && !supporting && !hasAnyMetric && confidence == null;
+  const isEmpty =
+    !headline && !supporting && !hasAnyMetric && confidence == null;
 
   if (isEmpty) {
     const custom = phase15Empty?.message?.trim();
@@ -81,9 +82,13 @@ export function DashboardPredictiveOutlookCard({ data, phase15Empty }: Props) {
           'shadow-[0_24px_56px_-28px_rgba(0,201,177,0.16)] ring-1 ring-white/[0.05]',
         )}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9CF5EA]/65">Where your search is heading</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9CF5EA]/65">
+          Where your search is heading
+        </p>
         {custom ? (
-          <p className="mt-4 max-w-[72ch] text-[13px] leading-relaxed text-white/58">{cleanAiText(custom)}</p>
+          <p className="mt-4 max-w-[72ch] text-[13px] leading-relaxed text-white/58">
+            {cleanAiText(custom)}
+          </p>
         ) : (
           <>
             <p className="mt-4 max-w-[72ch] text-[13px] leading-relaxed text-white/58">
@@ -205,7 +210,9 @@ export function DashboardPredictiveOutlookCard({ data, phase15Empty }: Props) {
                     {healthLabel(data.pipelineHealth)}
                   </span>
                 ) : (
-                  <span className="text-[18px] font-semibold text-white/35">—</span>
+                  <span className="text-[18px] font-semibold text-white/35">
+                    —
+                  </span>
                 )}
               </div>
             </div>

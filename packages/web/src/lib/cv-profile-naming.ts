@@ -26,7 +26,9 @@ function slugPart(value: string): string {
 }
 
 /** Display label: `[user] — [Company] — [Role] (Tailored)` */
-export function formatCvProfileDisplayName(input: CvProfileNamingInput): string {
+export function formatCvProfileDisplayName(
+  input: CvProfileNamingInput,
+): string {
   const user = cleanPart(input.userName) || 'My CV';
   const company = cleanPart(input.company);
   const role = cleanPart(input.role);
@@ -39,7 +41,9 @@ export function formatCvProfileDisplayName(input: CvProfileNamingInput): string 
 }
 
 /** Download slug: `desmond-goldsmith-cv_google_frontend-engineer_tailored.pdf` */
-export function formatCvProfileDownloadBasename(input: CvProfileNamingInput): string {
+export function formatCvProfileDownloadBasename(
+  input: CvProfileNamingInput,
+): string {
   const userSlug = slugPart(cleanPart(input.userName) || 'cv') || 'cv';
   const companySlug = slugPart(cleanPart(input.company));
   const roleSlug = slugPart(cleanPart(input.role));
@@ -74,7 +78,8 @@ export function formatCvBackendExportFilename(
   if (input.tailored) {
     const company = titleSlugPart(input.company);
     const job = titleSlugPart(input.role);
-    if (company && job) return `${person}-${company}-${job}-CV-Tailored.${format}`;
+    if (company && job)
+      return `${person}-${company}-${job}-CV-Tailored.${format}`;
     if (company) return `${person}-${company}-CV-Tailored.${format}`;
     if (job) return `${person}-${job}-CV-Tailored.${format}`;
     return `${person}-CV-Tailored.${format}`;
@@ -86,10 +91,17 @@ export function formatCvBackendExportFilename(
 
 export function isGenericCvExportFilename(filename: string): boolean {
   const base = filename.trim().toLowerCase();
-  return base === 'cv.pdf' || base === 'cv.docx' || base === 'applymate-cv.pdf' || base === 'applymate-cv.docx';
+  return (
+    base === 'cv.pdf' ||
+    base === 'cv.docx' ||
+    base === 'applymate-cv.pdf' ||
+    base === 'applymate-cv.docx'
+  );
 }
 
-export function candidateNameFromCvProfile(profile: CVProfile | null | undefined): string {
+export function candidateNameFromCvProfile(
+  profile: CVProfile | null | undefined,
+): string {
   const st = profile?.structured as Record<string, unknown> | undefined;
   const fromStructured =
     (typeof st?.fullName === 'string' && st.fullName.trim()) ||
@@ -97,7 +109,8 @@ export function candidateNameFromCvProfile(profile: CVProfile | null | undefined
     (typeof st?.displayName === 'string' && st.displayName.trim()) ||
     (typeof st?.candidateName === 'string' && st.candidateName.trim()) ||
     '';
-  if (fromStructured && !isGenericCvProfileName(fromStructured)) return fromStructured.trim();
+  if (fromStructured && !isGenericCvProfileName(fromStructured))
+    return fromStructured.trim();
 
   const personal = st?.personal as { name?: string } | undefined;
   if (personal?.name?.trim() && !isGenericCvProfileName(personal.name)) {
@@ -107,13 +120,18 @@ export function candidateNameFromCvProfile(profile: CVProfile | null | undefined
   const apiName = profile?.name?.trim();
   if (apiName && !isGenericCvProfileName(apiName)) {
     const firstSegment = apiName.split(/\s[—–-]\s/)[0]?.trim();
-    if (firstSegment && !isGenericCvProfileName(firstSegment)) return firstSegment;
+    if (firstSegment && !isGenericCvProfileName(firstSegment))
+      return firstSegment;
   }
 
   const headline = profile?.headline?.trim();
   if (headline) {
     const short = normalizeProfessionalHeadlineTitle(headline);
-    if (short && short.length <= 48 && !/\b(engineer|developer|designer|manager)\b/i.test(short)) {
+    if (
+      short &&
+      short.length <= 48 &&
+      !/\b(engineer|developer|designer|manager)\b/i.test(short)
+    ) {
       return short;
     }
   }
@@ -121,11 +139,17 @@ export function candidateNameFromCvProfile(profile: CVProfile | null | undefined
 }
 
 /** Parse in-app CV label (e.g. `Desmond Goldsmith — DevOps Engineer`) into person + role. */
-export function parseCvDisplayLabelParts(displayLabel: string): { userName: string; role: string } {
+export function parseCvDisplayLabelParts(displayLabel: string): {
+  userName: string;
+  role: string;
+} {
   const label = cleanPart(displayLabel).replace(/\s*\(Tailored\)\s*$/i, '');
   if (!label) return { userName: '', role: '' };
 
-  const dashParts = label.split(/\s[—–-]\s/).map((p) => p.trim()).filter(Boolean);
+  const dashParts = label
+    .split(/\s[—–-]\s/)
+    .map((p) => p.trim())
+    .filter(Boolean);
   if (dashParts.length >= 2) {
     return {
       userName: dashParts[0]!,
@@ -141,7 +165,9 @@ export function parseCvDisplayLabelParts(displayLabel: string): { userName: stri
   return { userName: label, role: '' };
 }
 
-export function roleLabelFromCvProfile(profile: CVProfile | null | undefined): string {
+export function roleLabelFromCvProfile(
+  profile: CVProfile | null | undefined,
+): string {
   const headline = normalizeProfessionalHeadlineTitle(profile?.headline);
   if (headline) return headline;
   const exp = profile?.structured?.experience?.[0];
@@ -150,7 +176,10 @@ export function roleLabelFromCvProfile(profile: CVProfile | null | undefined): s
 }
 
 /** Prefer server `name` from GET /cv/profiles when it is already a display label. */
-export function preferApiCvProfileName(apiName: string | null | undefined, fallback: string): string {
+export function preferApiCvProfileName(
+  apiName: string | null | undefined,
+  fallback: string,
+): string {
   const n = apiName?.trim();
   if (n && !isGenericCvProfileName(n)) return n;
   return fallback;
@@ -158,10 +187,18 @@ export function preferApiCvProfileName(apiName: string | null | undefined, fallb
 
 export function buildCvNamingFromProfile(
   profile: CVProfile | null | undefined,
-  opts?: { userName?: string; company?: string | null; role?: string | null; tailored?: boolean },
+  opts?: {
+    userName?: string;
+    company?: string | null;
+    role?: string | null;
+    tailored?: boolean;
+  },
 ): CvProfileNamingInput {
   return {
-    userName: cleanPart(opts?.userName) || candidateNameFromCvProfile(profile) || 'My CV',
+    userName:
+      cleanPart(opts?.userName) ||
+      candidateNameFromCvProfile(profile) ||
+      'My CV',
     company: opts?.company ?? null,
     role: opts?.role ?? roleLabelFromCvProfile(profile) ?? null,
     tailored: opts?.tailored === true,
@@ -181,9 +218,16 @@ export function buildCvNamingForExport(
     fromProfile.userName ||
     candidateNameFromCvProfile(profile) ||
     'My CV';
-  const role = opts?.role ?? parsed.role ?? fromProfile.role ?? roleLabelFromCvProfile(profile) ?? null;
+  const role =
+    opts?.role ??
+    parsed.role ??
+    fromProfile.role ??
+    roleLabelFromCvProfile(profile) ??
+    null;
   return {
-    userName: isGenericCvProfileName(userName) ? candidateNameFromCvProfile(profile) || userName : userName,
+    userName: isGenericCvProfileName(userName)
+      ? candidateNameFromCvProfile(profile) || userName
+      : userName,
     company: opts?.company ?? fromProfile.company ?? null,
     role,
     tailored: opts?.tailored === true,

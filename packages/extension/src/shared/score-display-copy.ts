@@ -1,4 +1,7 @@
-import { gapLabelsFromScore, strengthLabelsFromScore } from '@/shared/job-session';
+import {
+  gapLabelsFromScore,
+  strengthLabelsFromScore,
+} from '@/shared/job-session';
 import type { CvScoreResult } from '@/shared/types';
 
 /** Plain-language summary for the analyze panel (not server jargon). */

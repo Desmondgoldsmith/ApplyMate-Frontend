@@ -34,7 +34,10 @@ import {
   resolveAnsweredQuestionText,
 } from '@/lib/interviewCoachingFeedback';
 import type { ProcessingInsightsDisplay } from '@/lib/interviewProcessingInsights';
-import type { PracticeCoachingResponse, TurnAnswerResponse } from '@/lib/interview-prep-types';
+import type {
+  PracticeCoachingResponse,
+  TurnAnswerResponse,
+} from '@/lib/interview-prep-types';
 import type { ResolvedInterviewPersona } from '@/lib/interviewPersonas';
 import { cn } from '@/lib/utils';
 
@@ -93,7 +96,9 @@ export const CoachingPanel = memo(function CoachingPanel({
 }: CoachingPanelProps) {
   const { settings } = coaching;
 
-  const isPracticeFeedback = Boolean(practiceFeedback && practiceQuestionText.trim());
+  const isPracticeFeedback = Boolean(
+    practiceFeedback && practiceQuestionText.trim(),
+  );
 
   const feedbackForCoaching = useMemo(() => {
     if (isPracticeFeedback && practiceFeedback) {
@@ -135,7 +140,8 @@ export const CoachingPanel = memo(function CoachingPanel({
   );
 
   const nextPlanned = useMemo(
-    () => (isPracticeFeedback ? null : resolveNextPlannedNavigation(lastFeedback)),
+    () =>
+      isPracticeFeedback ? null : resolveNextPlannedNavigation(lastFeedback),
     [isPracticeFeedback, lastFeedback],
   );
 
@@ -148,10 +154,14 @@ export const CoachingPanel = memo(function CoachingPanel({
     () =>
       isPracticeFeedback
         ? []
-        : followUpItemsFromCoaching(lastFeedback?.suggestedFollowUps, answeredQuestionText, {
-            excludeTexts: followUpExcludeTexts,
-            answeredSideQuestions,
-          }),
+        : followUpItemsFromCoaching(
+            lastFeedback?.suggestedFollowUps,
+            answeredQuestionText,
+            {
+              excludeTexts: followUpExcludeTexts,
+              answeredSideQuestions,
+            },
+          ),
     [
       answeredQuestionText,
       answeredSideQuestions,
@@ -161,7 +171,9 @@ export const CoachingPanel = memo(function CoachingPanel({
     ],
   );
 
-  const [dismissedFollowUpKeys, setDismissedFollowUpKeys] = useState<Set<string>>(() => new Set());
+  const [dismissedFollowUpKeys, setDismissedFollowUpKeys] = useState<
+    Set<string>
+  >(() => new Set());
 
   useEffect(() => {
     setDismissedFollowUpKeys(new Set());
@@ -169,7 +181,10 @@ export const CoachingPanel = memo(function CoachingPanel({
 
   const visibleFollowUps = useMemo(
     () =>
-      followUps.filter((item) => !dismissedFollowUpKeys.has(normalizeQuestionText(item.question))),
+      followUps.filter(
+        (item) =>
+          !dismissedFollowUpKeys.has(normalizeQuestionText(item.question)),
+      ),
     [dismissedFollowUpKeys, followUps],
   );
 
@@ -179,9 +194,13 @@ export const CoachingPanel = memo(function CoachingPanel({
     setDismissedFollowUpKeys((prev) => new Set(prev).add(key));
   };
 
-  const mainComplete = canEndInterviewSession(prep.questionProgress, lastFeedback);
+  const mainComplete = canEndInterviewSession(
+    prep.questionProgress,
+    lastFeedback,
+  );
   const optionalNext = useMemo(
-    () => (isPracticeFeedback ? null : resolveOptionalNextNavigation(lastFeedback)),
+    () =>
+      isPracticeFeedback ? null : resolveOptionalNextNavigation(lastFeedback),
     [isPracticeFeedback, lastFeedback],
   );
   const showMainCoaching =
@@ -199,7 +218,8 @@ export const CoachingPanel = memo(function CoachingPanel({
   const showNextMain =
     showMainCoaching &&
     !mainComplete &&
-    (visibleFollowUps.length === 0 || dismissedFollowUpKeys.size >= followUps.length);
+    (visibleFollowUps.length === 0 ||
+      dismissedFollowUpKeys.size >= followUps.length);
 
   const showEndInterview = showMainCoaching && mainComplete;
 
@@ -208,7 +228,10 @@ export const CoachingPanel = memo(function CoachingPanel({
   if (isProcessingAnswer) {
     return (
       <div className="flex min-h-[320px] w-full items-center justify-center border-t border-[var(--border-subtle)] bg-[var(--bg-surface-1)]/60 px-5 py-10">
-        <AnswerCoachingLoadingPanel insights={processingInsights} className="w-full max-w-md" />
+        <AnswerCoachingLoadingPanel
+          insights={processingInsights}
+          className="w-full max-w-md"
+        />
       </div>
     );
   }
@@ -227,7 +250,9 @@ export const CoachingPanel = memo(function CoachingPanel({
         <div className="space-y-4">
           <div>
             <p className="ip-coach-section-title text-[11px] font-semibold uppercase tracking-wider">
-              {isPracticeFeedback ? 'Side question coaching' : 'Coaching feedback'}
+              {isPracticeFeedback
+                ? 'Side question coaching'
+                : 'Coaching feedback'}
             </p>
             <p className="mt-0.5 text-xs text-[var(--text-muted)]">
               {isPracticeFeedback
@@ -299,7 +324,9 @@ export const CoachingPanel = memo(function CoachingPanel({
               className="mt-1"
               nextPlanned={optionalNext}
               onAnswerThis={() => {
-                prep.setSelectedFollowUpQuestion(optionalNext.questionText.trim());
+                prep.setSelectedFollowUpQuestion(
+                  optionalNext.questionText.trim(),
+                );
                 onAnswerFollowUp({
                   question: optionalNext.questionText.trim(),
                   reason: 'Optional follow-up on your last answer.',
@@ -312,8 +339,8 @@ export const CoachingPanel = memo(function CoachingPanel({
           {showEndInterview ? (
             <div className="space-y-2 pt-1">
               <p className="text-[10px] text-[var(--text-muted)]">
-                All main questions are done. End the interview to get your full report, or try a
-                side practice question first.
+                All main questions are done. End the interview to get your full
+                report, or try a side practice question first.
               </p>
               <button
                 type="button"
@@ -329,8 +356,8 @@ export const CoachingPanel = memo(function CoachingPanel({
             <div className="space-y-2 pt-1">
               {mainComplete ? (
                 <p className="text-[10px] text-[var(--text-muted)]">
-                  Return to coaching to try another side question or end the interview for your
-                  full report.
+                  Return to coaching to try another side question or end the
+                  interview for your full report.
                 </p>
               ) : null}
               <button
@@ -355,7 +382,8 @@ export const CoachingPanel = memo(function CoachingPanel({
           {showNextMain ? (
             <div className="space-y-2 pt-1">
               <p className="text-[10px] text-[var(--text-muted)]">
-                Continue moves to the next main interview question in your session.
+                Continue moves to the next main interview question in your
+                session.
               </p>
               <button
                 type="button"
@@ -377,7 +405,9 @@ export const CoachingPanel = memo(function CoachingPanel({
           lastFeedback={lastFeedback}
           persona={sessionPersona}
           scores={lastFeedback.scores}
-          starFeedback={lastFeedback.starFeedback ?? lastFeedback.coachInsight?.star}
+          starFeedback={
+            lastFeedback.starFeedback ?? lastFeedback.coachInsight?.star
+          }
           adaptiveProfile={prep.adaptiveSnapshot.profile}
           onContinue={onContinue}
           continueLabel={continueLabel}

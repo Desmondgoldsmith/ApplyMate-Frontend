@@ -7,7 +7,10 @@ import type {
   ExtractedJob,
 } from '@/shared/types';
 import { factorByKey } from '@/shared/factors-breakdown';
-import { canonicalJobViewUrl, normalizeJobPageUrl } from '@/shared/job-page-url';
+import {
+  canonicalJobViewUrl,
+  normalizeJobPageUrl,
+} from '@/shared/job-page-url';
 
 export type { ExtensionJobSession };
 
@@ -40,7 +43,11 @@ export async function clearJobStorageForUrl(url: string): Promise<void> {
   ]);
 }
 
-const JOB_SESSION_KEY_PREFIXES = ['jobSession:', 'savedJob:', 'extractLock:'] as const;
+const JOB_SESSION_KEY_PREFIXES = [
+  'jobSession:',
+  'savedJob:',
+  'extractLock:',
+] as const;
 const JOB_SESSION_ROOT_KEYS = [
   'currentJob',
   'pinnedJobUrl',
@@ -52,8 +59,9 @@ export async function clearAllExtensionJobStorage(): Promise<void> {
   const stored = await chrome.storage.session.get(null);
   const keys = Object.keys(stored ?? {}).filter(
     (key) =>
-      JOB_SESSION_ROOT_KEYS.includes(key as (typeof JOB_SESSION_ROOT_KEYS)[number]) ||
-      JOB_SESSION_KEY_PREFIXES.some((prefix) => key.startsWith(prefix)),
+      JOB_SESSION_ROOT_KEYS.includes(
+        key as (typeof JOB_SESSION_ROOT_KEYS)[number],
+      ) || JOB_SESSION_KEY_PREFIXES.some((prefix) => key.startsWith(prefix)),
   );
   if (keys.length > 0) {
     await chrome.storage.session.remove(keys);
@@ -87,17 +95,22 @@ export async function persistCoverLetterLocal(
   });
 }
 
-async function readCoverLetterLocal(url: string): Promise<CoverLetterResult | null> {
+async function readCoverLetterLocal(
+  url: string,
+): Promise<CoverLetterResult | null> {
   const key = coverLetterLocalStorageKey(url);
   const stored = await chrome.storage.local.get(key);
   const raw = stored[key];
   if (!raw || typeof raw !== 'object') return null;
   const letter = raw as CoverLetterResult;
-  if (typeof letter.coverLetter !== 'string' || !letter.coverLetter.trim()) return null;
+  if (typeof letter.coverLetter !== 'string' || !letter.coverLetter.trim())
+    return null;
   return letter;
 }
 
-export async function readJobSession(url: string): Promise<ExtensionJobSession | null> {
+export async function readJobSession(
+  url: string,
+): Promise<ExtensionJobSession | null> {
   const key = sessionKeyForUrl(url);
   const stored = await chrome.storage.session.get(key);
   const raw = stored[key];
@@ -119,7 +132,9 @@ export async function readJobSession(url: string): Promise<ExtensionJobSession |
   return session;
 }
 
-export async function writeJobSession(session: ExtensionJobSession): Promise<void> {
+export async function writeJobSession(
+  session: ExtensionJobSession,
+): Promise<void> {
   const key = sessionKeyForUrl(session.pageUrl);
   await chrome.storage.session.set({ [key]: JSON.stringify(session) });
 }
@@ -133,17 +148,19 @@ export async function mergeJobSession(
     ...existing,
     ...patch,
     pageUrl: url,
-    jobAnalysisId: patch.jobAnalysisId ?? patch.check?.jobId ?? existing.jobAnalysisId,
+    jobAnalysisId:
+      patch.jobAnalysisId ?? patch.check?.jobId ?? existing.jobAnalysisId,
   };
   await writeJobSession(merged);
   return merged;
 }
 
-export function sessionHasMeaningfulWork(session: ExtensionJobSession | null): boolean {
+export function sessionHasMeaningfulWork(
+  session: ExtensionJobSession | null,
+): boolean {
   if (!session) return false;
   const hasScore =
-    session.score != null &&
-    Number.isFinite(session.score.matchScore);
+    session.score != null && Number.isFinite(session.score.matchScore);
   return (
     hasScore ||
     isRichScore(session.score) ||
@@ -159,7 +176,8 @@ export function pinnedSessionHasLoadedJob(
 ): boolean {
   if (!session) return false;
   return (
-    Boolean(session.extractedJob?.title?.trim()) || sessionHasMeaningfulWork(session)
+    Boolean(session.extractedJob?.title?.trim()) ||
+    sessionHasMeaningfulWork(session)
   );
 }
 
@@ -190,11 +208,17 @@ export function strengthsFromScore(score: CvScoreResult, limit = 6): string[] {
     .slice(0, limit);
 }
 
-export function strengthLabelsFromScore(score: CvScoreResult, limit = 6): string[] {
+export function strengthLabelsFromScore(
+  score: CvScoreResult,
+  limit = 6,
+): string[] {
   return strengthsFromScore(score, limit);
 }
 
-export function gapLabelsFromScore(score: CvScoreResult, limit = MAX_GAP_LABELS): string[] {
+export function gapLabelsFromScore(
+  score: CvScoreResult,
+  limit = MAX_GAP_LABELS,
+): string[] {
   const skillsFactor = factorByKey(score.factorsBreakdown, 'skillsMatch');
   const keywordFactor = factorByKey(score.factorsBreakdown, 'keywordCoverage');
   const fromFactors = [
@@ -278,7 +302,10 @@ function normalizeScoreLabel(
   matchScore?: number | null,
 ): string {
   if (typeof label === 'string' && label.trim()) return label.trim();
-  const score = typeof matchScore === 'number' && Number.isFinite(matchScore) ? matchScore : 0;
+  const score =
+    typeof matchScore === 'number' && Number.isFinite(matchScore)
+      ? matchScore
+      : 0;
   if (score >= 85) return 'Excellent';
   if (score >= 70) return 'Strong';
   if (score >= 55) return 'Good';
@@ -296,7 +323,10 @@ export function scoreFromCheck(check: CheckResponse): CvScoreResult | null {
         .map((entry) =>
           typeof entry === 'string'
             ? { skill: entry.trim() }
-            : { skill: entry.skill?.trim() ?? '', importance: entry.importance },
+            : {
+                skill: entry.skill?.trim() ?? '',
+                importance: entry.importance,
+              },
         )
         .filter((entry) => entry.skill.length > 0)
     : [];
@@ -371,14 +401,15 @@ export function applyServerStateToSession(
   };
 
   const fromCheck = scoreFromCheck(check);
-  const mergedScore: CvScoreResult | null = isAlignedExtensionScore(session.score)
+  const mergedScore: CvScoreResult | null = isAlignedExtensionScore(
+    session.score,
+  )
     ? session.score
     : null;
 
   let coverLetter: CoverLetterResult | null = session.coverLetter;
   const coverLetterText =
-    state.coverLetter?.trim() ||
-    state.coverLetterPreview?.trim();
+    state.coverLetter?.trim() || state.coverLetterPreview?.trim();
   if (coverLetterText && state.hasCoverLetter) {
     coverLetter = {
       coverLetter: coverLetterText,
@@ -400,9 +431,7 @@ export function applyServerStateToSession(
   }
 
   const selectedCvId =
-    state.selectedCvProfileId?.trim() ||
-    session.selectedCvId ||
-    null;
+    state.selectedCvProfileId?.trim() || session.selectedCvId || null;
 
   return {
     ...session,

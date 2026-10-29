@@ -22,11 +22,14 @@ const IMPORT_KINDS = new Set<CvParseImportSectionKind>([
 
 function parseImportKind(v: unknown): CvParseImportSectionKind {
   const s = typeof v === 'string' ? v.trim().toLowerCase() : '';
-  if (IMPORT_KINDS.has(s as CvParseImportSectionKind)) return s as CvParseImportSectionKind;
+  if (IMPORT_KINDS.has(s as CvParseImportSectionKind))
+    return s as CvParseImportSectionKind;
   return 'core';
 }
 
-function normalizeImportSectionRow(raw: unknown): CvParseImportSectionRow | null {
+function normalizeImportSectionRow(
+  raw: unknown,
+): CvParseImportSectionRow | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
   const type = typeof o.type === 'string' ? o.type.trim() : '';
@@ -44,7 +47,9 @@ function normalizeImportSectionRow(raw: unknown): CvParseImportSectionRow | null
   };
 }
 
-export function normalizeCvParseImportSummary(raw: unknown): CvParseImportSummary | null {
+export function normalizeCvParseImportSummary(
+  raw: unknown,
+): CvParseImportSummary | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
   const sectionsRaw = o.sections;

@@ -81,7 +81,10 @@ function readLegacyNoteEntries(jobKey: string): LegacyNoteEntry[] {
 function readLegacyPrimaryNote(jobKey: string): string {
   if (typeof window === 'undefined') return '';
   try {
-    return window.localStorage.getItem(`${NOTES_LOCAL_PREFIX}${jobKey}`)?.trim() ?? '';
+    return (
+      window.localStorage.getItem(`${NOTES_LOCAL_PREFIX}${jobKey}`)?.trim() ??
+      ''
+    );
   } catch {
     return '';
   }
@@ -121,7 +124,9 @@ export function resolveJobKeyToScope(
 
   if (jobKey.startsWith('hubbk:')) {
     const bookmarkId = jobKey.slice('hubbk:'.length);
-    const bm = jobs.find((j) => j.hubBookmarkId === bookmarkId || j.key === jobKey);
+    const bm = jobs.find(
+      (j) => j.hubBookmarkId === bookmarkId || j.key === jobKey,
+    );
     if (bm) return hubNoteScopeFromJob(bm);
     if (bookmarkId) return { kind: 'bookmark', bookmarkId };
   }
@@ -299,20 +304,31 @@ export async function runJobHubLegacyMigration(
     }
     await migrateReminders(jobs);
     removeLegacyStorageKeys();
-    await queryClient.invalidateQueries({ queryKey: queryKeys.hub.notesRoot() });
-    await queryClient.invalidateQueries({ queryKey: queryKeys.hub.remindersRoot() });
-    await queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.hub.notesRoot(),
+    });
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.hub.remindersRoot(),
+    });
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.applications.root(),
+    });
     await queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
-    await queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.hub.bookmarks(),
+    });
     for (const j of jobs) {
       const scope = hubNoteScopeFromJob(j);
       if (scope) {
-        await queryClient.invalidateQueries({ queryKey: hubNotesQueryKey(scope) });
+        await queryClient.invalidateQueries({
+          queryKey: hubNotesQueryKey(scope),
+        });
       }
     }
     return { ok: true };
   } catch (e) {
-    const message = e instanceof Error ? e.message : 'Could not sync notes to your account';
+    const message =
+      e instanceof Error ? e.message : 'Could not sync notes to your account';
     return { ok: false, message };
   }
 }

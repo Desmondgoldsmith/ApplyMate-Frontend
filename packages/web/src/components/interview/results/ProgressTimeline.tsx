@@ -14,7 +14,9 @@ import { cn } from '@/lib/utils';
 
 const InterviewScoreBarChart = dynamic(
   () =>
-    import('@/components/interview/InterviewScoreBarChart').then((m) => m.InterviewScoreBarChart),
+    import('@/components/interview/InterviewScoreBarChart').then(
+      (m) => m.InterviewScoreBarChart,
+    ),
   {
     ssr: false,
     loading: () => (
@@ -44,7 +46,10 @@ export const ProgressTimeline = memo(function ProgressTimeline({
     return toInterviewChartPoints(enrichedSessions, { currentSessionId });
   }, [currentSessionId, enrichedSessions]);
 
-  const averageScore = useMemo(() => averageDisplayScore(enrichedSessions), [enrichedSessions]);
+  const averageScore = useMemo(
+    () => averageDisplayScore(enrichedSessions),
+    [enrichedSessions],
+  );
 
   const focusAreas = progress?.weakestCategories ?? [];
 
@@ -54,15 +59,22 @@ export const ProgressTimeline = memo(function ProgressTimeline({
 
   return (
     <section
-      className={cn('rounded-2xl border border-white/10 bg-[#0C0F0F] p-4 sm:p-5', className)}
+      className={cn(
+        'rounded-2xl border border-white/10 bg-[#0C0F0F] p-4 sm:p-5',
+        className,
+      )}
       aria-labelledby="progress-timeline-heading"
     >
-      <h3 id="progress-timeline-heading" className="text-sm font-semibold text-white">
+      <h3
+        id="progress-timeline-heading"
+        className="text-sm font-semibold text-white"
+      >
         Your progress
       </h3>
       {trend ? (
         <p className="mt-1 text-xs text-white/50">
-          {trend.sessionCount} sessions · avg {averageScore ?? Math.round(trend.averageComposite)}%
+          {trend.sessionCount} sessions · avg{' '}
+          {averageScore ?? Math.round(trend.averageComposite)}%
           {trend.improvementVelocity > 0 ? (
             <span className="text-emerald-300"> · improving</span>
           ) : trend.improvementVelocity < 0 ? (
@@ -70,7 +82,9 @@ export const ProgressTimeline = memo(function ProgressTimeline({
           ) : null}
         </p>
       ) : null}
-      <p className="mt-1 text-[11px] text-white/40">Hover a bar for score and focus areas.</p>
+      <p className="mt-1 text-[11px] text-white/40">
+        Hover a bar for score and focus areas.
+      </p>
       <div className="mt-4">
         <InterviewScoreBarChart
           points={chartPoints}

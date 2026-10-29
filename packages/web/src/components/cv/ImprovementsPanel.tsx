@@ -3,7 +3,13 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCvSuggestionMutations } from '@/hooks/useCvSuggestionMutations';
 import { motion } from 'framer-motion';
-import { CheckCircle2, ChevronLeft, ChevronRight, Loader2, Sparkles } from 'lucide-react';
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Sparkles,
+} from 'lucide-react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
 import { GlowCard } from '@/components/ui/GlowCard';
@@ -56,13 +62,20 @@ import {
   applySuggestionSelfFixToImprovementsCache,
 } from '@/lib/cvSuggestionsMutationApply';
 import { cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
-import { isCvApplyImprovementTerminalNoDiff, toastCopyForTerminalNoDiffApply } from '@/lib/cvApplyImprovementQueue';
+import {
+  isCvApplyImprovementTerminalNoDiff,
+  toastCopyForTerminalNoDiffApply,
+} from '@/lib/cvApplyImprovementQueue';
 import { cvOpenParamsFromApplyResult } from '@/lib/cvDiffPreviewMap';
 import { canDisplayCvImprovementDiffPreview } from '@/lib/cvImprovementDiffPreview';
 import { normalizeText } from '@/lib/normalizeText';
 import { shouldShowTruthfulnessAdjustNotice } from '@/lib/cvTruthfulnessUi';
 import { isAiOriginSuggestionId } from '@/lib/cvHybridScoring';
-import { isCvImprovementAiFixable, isCvImprovementTemplateWithPlaceholder, canShowCvImprovementFixWithAI } from '@/lib/cvImprovementFieldPath';
+import {
+  isCvImprovementAiFixable,
+  isCvImprovementTemplateWithPlaceholder,
+  canShowCvImprovementFixWithAI,
+} from '@/lib/cvImprovementFieldPath';
 import {
   CV_SUGGESTION_ACCEPT_ALL_MESSAGES,
   CV_SUGGESTION_APPLYING_MESSAGE,
@@ -91,8 +104,15 @@ type ImprovementsPanelProps = {
   onViewVersions?: () => void;
 };
 
-function PriorityBadge({ priority, severity }: { priority?: number; severity?: string }) {
-  const p = priority ?? (severity === 'HIGH' ? 1 : severity === 'MEDIUM' ? 2 : 3);
+function PriorityBadge({
+  priority,
+  severity,
+}: {
+  priority?: number;
+  severity?: string;
+}) {
+  const p =
+    priority ?? (severity === 'HIGH' ? 1 : severity === 'MEDIUM' ? 2 : 3);
   if (p === 1)
     return (
       <span className="inline-flex items-center rounded-full border border-[rgba(248,113,113,0.25)] bg-[rgba(248,113,113,0.12)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em] text-[#F87171]">
@@ -127,7 +147,10 @@ function ImprovementsPanelInner({
   const toast = useToast();
   const applyInflightBySuggestionIdRef = useRef<Set<string>>(new Set());
   /** Stable key for a suggestion — always the server id; index is a last-resort fallback only. */
-  const stableKey = (item: CVImprovementItem | undefined, i: number): string => {
+  const stableKey = (
+    item: CVImprovementItem | undefined,
+    i: number,
+  ): string => {
     const id = item?.id?.trim();
     return id && id.length > 0 ? id : `__idx_${i}`;
   };
@@ -148,7 +171,8 @@ function ImprovementsPanelInner({
     const pre = new Set<string>();
     improvements.forEach((item, i) => {
       const st = item.status ?? 'pending';
-      if (st !== 'pending' || item.resolved === true) pre.add(stableKey(item, i));
+      if (st !== 'pending' || item.resolved === true)
+        pre.add(stableKey(item, i));
     });
     setResolvedSet(pre);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -163,7 +187,9 @@ function ImprovementsPanelInner({
       .map((item, i) => ({ item, i, key: stableKey(item, i) }))
       .filter(({ item, key }) => {
         const st = item.status ?? 'pending';
-        return !resolvedSet.has(key) && st === 'pending' && item.resolved !== true;
+        return (
+          !resolvedSet.has(key) && st === 'pending' && item.resolved !== true
+        );
       });
     pending.sort((a, b) => {
       const aAi = isAiOriginSuggestionId(a.item.id) ? 0 : 1;
@@ -177,22 +203,32 @@ function ImprovementsPanelInner({
   }, [improvements, resolvedSet]);
 
   const effectiveAcceptAllQuota = acceptAllQuotaOverride ?? acceptAllQuota;
-  const acceptAllBlocked = isAcceptAllBlockedByDailyQuota(effectiveAcceptAllQuota);
+  const acceptAllBlocked = isAcceptAllBlockedByDailyQuota(
+    effectiveAcceptAllQuota,
+  );
   const acceptAllHelper = effectiveAcceptAllQuota?.message?.trim() ?? '';
   const showBulkActions = unresolvedItems.length > 1;
 
-  const clampedNav = Math.min(navIndex, Math.max(0, unresolvedItems.length - 1));
+  const clampedNav = Math.min(
+    navIndex,
+    Math.max(0, unresolvedItems.length - 1),
+  );
   const currentEntry = unresolvedItems[clampedNav];
-  const applyLoadingActive = Boolean(currentEntry && applyingSet.has(currentEntry.key));
+  const applyLoadingActive = Boolean(
+    currentEntry && applyingSet.has(currentEntry.key),
+  );
   const acceptAllLoadingActive = bulkBusy === 'accept';
   const [applyLoadingPhraseIndex, setApplyLoadingPhraseIndex] = useState(0);
-  const [acceptAllLoadingPhraseIndex, setAcceptAllLoadingPhraseIndex] = useState(0);
+  const [acceptAllLoadingPhraseIndex, setAcceptAllLoadingPhraseIndex] =
+    useState(0);
 
   useEffect(() => {
     if (!applyLoadingActive) return undefined;
     setApplyLoadingPhraseIndex(0);
     const id = window.setInterval(() => {
-      setApplyLoadingPhraseIndex((i) => (i + 1) % APPLY_WITH_AI_LOADING_MESSAGES.length);
+      setApplyLoadingPhraseIndex(
+        (i) => (i + 1) % APPLY_WITH_AI_LOADING_MESSAGES.length,
+      );
     }, 2600);
     return () => window.clearInterval(id);
   }, [applyLoadingActive]);
@@ -216,11 +252,13 @@ function ImprovementsPanelInner({
     const t0 = Date.now();
     try {
       const res = await api.cv.acceptAllSuggestions(profileId ?? undefined);
-      queryClient.setQueryData<CvImprovementsPayload>(qk, (p) =>
-        applyBulkAcceptToImprovementsCache(p, res) ?? p,
+      queryClient.setQueryData<CvImprovementsPayload>(
+        qk,
+        (p) => applyBulkAcceptToImprovementsCache(p, res) ?? p,
       );
       toast.success(buildAcceptAllSuccessToastMessage(res));
-      const appliedCount = res.acceptAllSummary?.applied ?? res.acceptedCount ?? 0;
+      const appliedCount =
+        res.acceptAllSummary?.applied ?? res.acceptedCount ?? 0;
       if (onViewVersions && appliedCount > 0) {
         toast.success(CV_VERSION_SAVED_BEFORE_ACCEPT_ALL_MESSAGE, {
           label: CV_VIEW_VERSIONS_LABEL,
@@ -295,8 +333,9 @@ function ImprovementsPanelInner({
     const t0 = Date.now();
     try {
       const res = await api.cv.rejectAllSuggestions(profileId ?? undefined);
-      queryClient.setQueryData<CvImprovementsPayload>(qk, (p) =>
-        applyBulkRejectToImprovementsCache(p, res) ?? p,
+      queryClient.setQueryData<CvImprovementsPayload>(
+        qk,
+        (p) => applyBulkRejectToImprovementsCache(p, res) ?? p,
       );
       toast.success('All suggestions dismissed.');
       const inv = reconcileAfterMutation(profileId, 'queueOnly');
@@ -307,7 +346,9 @@ function ImprovementsPanelInner({
     } catch (e) {
       logCvMutationErrorDev('rejectAllSuggestions', e);
       if (prev !== undefined) queryClient.setQueryData(qk, prev);
-      toast.error(getApiErrorMessage(e) || 'Could not dismiss all suggestions.');
+      toast.error(
+        getApiErrorMessage(e) || 'Could not dismiss all suggestions.',
+      );
     } finally {
       setBulkBusy(null);
     }
@@ -328,7 +369,9 @@ function ImprovementsPanelInner({
       setResolvedSet((prevSet) => new Set(prevSet).add(key));
       queryClient.setQueryData<CvImprovementsPayload>(qk, (p) => {
         if (!p?.improvements) return p;
-        const nextList = p.improvements.filter((it) => (it?.id ?? '').trim() !== id);
+        const nextList = p.improvements.filter(
+          (it) => (it?.id ?? '').trim() !== id,
+        );
         return {
           ...p,
           improvements: nextList,
@@ -336,12 +379,16 @@ function ImprovementsPanelInner({
         };
       });
       const res = await api.cv.selfFixSuggestion(id, profileId ?? undefined);
-      queryClient.setQueryData<CvImprovementsPayload>(qk, (p) =>
-        applySuggestionSelfFixToImprovementsCache(p, id, res) ?? p,
+      queryClient.setQueryData<CvImprovementsPayload>(
+        qk,
+        (p) => applySuggestionSelfFixToImprovementsCache(p, id, res) ?? p,
       );
       toast.success("We'll credit this when you save your edits.");
       const inv = reconcileAfterMutation(profileId, 'queueOnly');
-      logCvSuggestionMutationClientPerf('improvementsPanel.selfFix', t0, { invalidations: inv, cacheWrites: 2 });
+      logCvSuggestionMutationClientPerf('improvementsPanel.selfFix', t0, {
+        invalidations: inv,
+        cacheWrites: 2,
+      });
     } catch (e) {
       logCvMutationErrorDev('selfFixSuggestion', e);
       if (prev !== undefined) queryClient.setQueryData(qk, prev);
@@ -350,7 +397,8 @@ function ImprovementsPanelInner({
         n.delete(key);
         return n;
       });
-      const msg = getApiErrorMessage(e) || 'Could not update this suggestion. Try again.';
+      const msg =
+        getApiErrorMessage(e) || 'Could not update this suggestion. Try again.';
       setErrorMap((p) => ({ ...p, [key]: msg }));
     }
   };
@@ -370,7 +418,9 @@ function ImprovementsPanelInner({
       setResolvedSet((prevSet) => new Set(prevSet).add(key));
       queryClient.setQueryData<CvImprovementsPayload>(qk, (p) => {
         if (!p?.improvements) return p;
-        const nextList = p.improvements.filter((it) => (it?.id ?? '').trim() !== id);
+        const nextList = p.improvements.filter(
+          (it) => (it?.id ?? '').trim() !== id,
+        );
         return {
           ...p,
           improvements: nextList,
@@ -379,8 +429,9 @@ function ImprovementsPanelInner({
       });
       cacheWrites += 1;
       const res = await api.cv.rejectSuggestion(id, profileId ?? undefined);
-      queryClient.setQueryData<CvImprovementsPayload>(qk, (p) =>
-        applySuggestionRejectToImprovementsCache(p, id, res) ?? p,
+      queryClient.setQueryData<CvImprovementsPayload>(
+        qk,
+        (p) => applySuggestionRejectToImprovementsCache(p, id, res) ?? p,
       );
       cacheWrites += 1;
       if (res.idempotent) {
@@ -391,7 +442,10 @@ function ImprovementsPanelInner({
         toast.success('Suggestion dismissed.');
       }
       const inv = reconcileAfterMutation(profileId, 'queueOnly');
-      logCvSuggestionMutationClientPerf('improvementsPanel.markDone', t0, { invalidations: inv, cacheWrites });
+      logCvSuggestionMutationClientPerf('improvementsPanel.markDone', t0, {
+        invalidations: inv,
+        cacheWrites,
+      });
     } catch (e) {
       logCvMutationErrorDev('rejectSuggestion', e);
       if (prev !== undefined) queryClient.setQueryData(qk, prev);
@@ -400,7 +454,9 @@ function ImprovementsPanelInner({
         n.delete(key);
         return n;
       });
-      const msg = getApiErrorMessage(e) || 'Could not dismiss this suggestion. Try again.';
+      const msg =
+        getApiErrorMessage(e) ||
+        'Could not dismiss this suggestion. Try again.';
       if (isDailyAiLimitApiError(e)) {
         toast.error(msg);
       } else {
@@ -430,20 +486,35 @@ function ImprovementsPanelInner({
     const applyWithAiPerfT0 = performance.now();
     try {
       const pointer = pointerFor(idx);
-      const result = await api.cv.applyImprovement(pointer, profileId ?? undefined);
+      const result = await api.cv.applyImprovement(
+        pointer,
+        profileId ?? undefined,
+      );
       const qk = cvSuggestionsQueryKey(profileId);
       if (isCvApplyImprovementTerminalNoDiff(result)) {
-        const rid = String(result.suggestionId || result.improvementId || result.pointer || pointer).trim();
+        const rid = String(
+          result.suggestionId ||
+            result.improvementId ||
+            result.pointer ||
+            pointer,
+        ).trim();
         const t0 = Date.now();
-        queryClient.setQueryData<CvImprovementsPayload>(qk, (p) =>
-          applySuggestionAcceptToImprovementsCache(p, rid, {
-            pendingSuggestionsCount:
-              result.pendingSuggestionsCount ??
-              Math.max(0, (p?.improvements ?? []).filter((it) => (it?.id ?? '').trim() !== rid).length),
-            cvRevisionId: result.cvRevisionId ?? null,
-            alreadyApplied: true,
-            acceptedSuggestionIds: [rid],
-          }) ?? p,
+        queryClient.setQueryData<CvImprovementsPayload>(
+          qk,
+          (p) =>
+            applySuggestionAcceptToImprovementsCache(p, rid, {
+              pendingSuggestionsCount:
+                result.pendingSuggestionsCount ??
+                Math.max(
+                  0,
+                  (p?.improvements ?? []).filter(
+                    (it) => (it?.id ?? '').trim() !== rid,
+                  ).length,
+                ),
+              cvRevisionId: result.cvRevisionId ?? null,
+              alreadyApplied: true,
+              acceptedSuggestionIds: [rid],
+            }) ?? p,
         );
         setResolvedSet((prev) => new Set(prev).add(key));
         toast.success(toastCopyForTerminalNoDiffApply(result));
@@ -454,13 +525,20 @@ function ImprovementsPanelInner({
           refreshSuggestions: true,
           invalidateScore: true,
         });
-        logCvSuggestionMutationClientPerf('improvementsPanel.applyImprovement.terminalNoDiff', t0, {
-          invalidations: inv,
-          cacheWrites: 1,
-        });
+        logCvSuggestionMutationClientPerf(
+          'improvementsPanel.applyImprovement.terminalNoDiff',
+          t0,
+          {
+            invalidations: inv,
+            cacheWrites: 1,
+          },
+        );
         return;
       }
-      logCvMaterializePerformanceDev('improvementsPanel.applyImprovement', result);
+      logCvMaterializePerformanceDev(
+        'improvementsPanel.applyImprovement',
+        result,
+      );
       if (result.cacheHit === true) {
         toast.info('Using a previously generated preview.');
       } else if (result.duplicateSuppressed) {
@@ -481,19 +559,25 @@ function ImprovementsPanelInner({
       const pendingPaths = (result.changedFields ?? [])
         .map((cf) => cf.fieldPath?.trim())
         .filter((p): p is string => Boolean(p));
-      queryClient.setQueryData<CvImprovementsPayload>(qk, (p) =>
-        applySuggestionPreviewToImprovementsCache(p, stableId, {
-          pendingFieldPaths:
-            pendingPaths.length > 0
-              ? pendingPaths
-              : result.selectableFieldPaths?.map((p) => p.trim()).filter(Boolean),
-          lastPreviewDraftHash: result.draftHash,
-          lastPreviewForSuggestionId: stableId,
-        }) ?? p,
+      queryClient.setQueryData<CvImprovementsPayload>(
+        qk,
+        (p) =>
+          applySuggestionPreviewToImprovementsCache(p, stableId, {
+            pendingFieldPaths:
+              pendingPaths.length > 0
+                ? pendingPaths
+                : result.selectableFieldPaths
+                    ?.map((p) => p.trim())
+                    .filter(Boolean),
+            lastPreviewDraftHash: result.draftHash,
+            lastPreviewForSuggestionId: stableId,
+          }) ?? p,
       );
       onDiffPreview?.(openParams);
       if (shouldShowTruthfulnessAdjustNotice(result)) {
-        toast.info('Some suggested edits were adjusted to match your CV. See the preview note for details.');
+        toast.info(
+          'Some suggested edits were adjusted to match your CV. See the preview note for details.',
+        );
       }
       if (result.cacheHit !== true && !result.duplicateSuppressed) {
         if (result.aiUsage) {
@@ -520,7 +604,9 @@ function ImprovementsPanelInner({
         }));
       }
     } finally {
-      logCvDevPerf('cv.applyWithAi', applyWithAiPerfT0, { suggestionId: stableId });
+      logCvDevPerf('cv.applyWithAi', applyWithAiPerfT0, {
+        suggestionId: stableId,
+      });
       applyInflightBySuggestionIdRef.current.delete(stableId);
       setApplyingSet((prev) => {
         const n = new Set(prev);
@@ -542,21 +628,24 @@ function ImprovementsPanelInner({
           transition={{ type: 'spring', stiffness: 420, damping: 22 }}
           className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15 ring-2 ring-emerald-400/35"
         >
-          <CheckCircle2 className="h-6 w-6 text-emerald-400" strokeWidth={2.25} />
+          <CheckCircle2
+            className="h-6 w-6 text-emerald-400"
+            strokeWidth={2.25}
+          />
         </motion.div>
-        <p className="text-sm font-semibold text-white/90">Your CV looks great — no open suggestions.</p>
+        <p className="text-sm font-semibold text-white/90">
+          Your CV looks great — no open suggestions.
+        </p>
         <p className="mt-1 max-w-[240px] text-xs leading-relaxed text-white/45">
-          Run another scan anytime after you edit your CV to discover new opportunities.
+          Run another scan anytime after you edit your CV to discover new
+          opportunities.
         </p>
       </GlowCard>
     );
   }
 
   return (
-    <GlowCard
-      className="border border-white/[0.08]"
-      contentClassName="p-0"
-    >
+    <GlowCard className="border border-white/[0.08]" contentClassName="p-0">
       <div className="flex w-full min-w-0 items-center justify-between gap-3 px-3 pb-2.5 pt-2 sm:px-4">
         <span className="min-w-0 truncate text-[10px] font-semibold uppercase tracking-[0.1em] text-white/45 sm:text-[11px]">
           Suggested improvements
@@ -574,13 +663,17 @@ function ImprovementsPanelInner({
       {showBulkActions ? (
         <div className="space-y-2 border-b border-white/[0.06] px-3 pb-3 sm:px-4">
           {acceptAllHelper ? (
-            <p className="text-[10px] leading-snug text-white/45">{acceptAllHelper}</p>
+            <p className="text-[10px] leading-snug text-white/45">
+              {acceptAllHelper}
+            </p>
           ) : null}
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               data-testid="cv-improvement-accept-all"
-              disabled={Boolean(bulkBusy) || acceptAllBlocked || applyingSet.size > 0}
+              disabled={
+                Boolean(bulkBusy) || acceptAllBlocked || applyingSet.size > 0
+              }
               onClick={() => void handleAcceptAll()}
               className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#00C9B1] px-3 text-[11px] font-semibold text-[#080B0A] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-[8rem] sm:flex-none"
             >
@@ -633,7 +726,9 @@ function ImprovementsPanelInner({
           </span>
           <button
             type="button"
-            onClick={() => setNavIndex((v) => Math.min(unresolvedItems.length - 1, v + 1))}
+            onClick={() =>
+              setNavIndex((v) => Math.min(unresolvedItems.length - 1, v + 1))
+            }
             disabled={clampedNav === unresolvedItems.length - 1}
             className="flex h-7 w-7 items-center justify-center rounded-md border border-white/[0.10] bg-transparent text-white/50 transition hover:border-white/25 hover:text-white disabled:opacity-30"
           >
@@ -653,7 +748,8 @@ function ImprovementsPanelInner({
               item,
               activePreviewSuggestionId,
             );
-            const templateWithPlaceholder = isCvImprovementTemplateWithPlaceholder(item);
+            const templateWithPlaceholder =
+              isCvImprovementTemplateWithPlaceholder(item);
             const targetPath =
               item.targetFieldPath?.trim() ||
               item.pendingFieldPaths?.[0]?.trim() ||
@@ -668,7 +764,10 @@ function ImprovementsPanelInner({
                 )}
 
                 <div className="mb-2 flex flex-wrap items-center gap-1.5">
-                  <PriorityBadge priority={item.priority} severity={item.severity} />
+                  <PriorityBadge
+                    priority={item.priority}
+                    severity={item.severity}
+                  />
                   {isAiOriginSuggestionId(item.id) ? (
                     <span className="inline-flex items-center gap-0.5 rounded-full border border-[#00C9B1]/25 bg-[#00C9B1]/10 px-2 py-0.5 text-[10px] font-semibold text-[#7ef4e6]">
                       <Sparkles className="h-3 w-3" aria-hidden />
@@ -677,27 +776,34 @@ function ImprovementsPanelInner({
                   ) : null}
                 </div>
 
-                {Array.isArray(item.pendingFieldPaths) && item.pendingFieldPaths.length > 0 && (
-                  <p className="mb-2 text-[11px] font-medium text-[#00C9B1]/85">
-                    {item.pendingFieldPaths.length} change{item.pendingFieldPaths.length === 1 ? '' : 's'} remaining
-                  </p>
-                )}
+                {Array.isArray(item.pendingFieldPaths) &&
+                  item.pendingFieldPaths.length > 0 && (
+                    <p className="mb-2 text-[11px] font-medium text-[#00C9B1]/85">
+                      {item.pendingFieldPaths.length} change
+                      {item.pendingFieldPaths.length === 1 ? '' : 's'} remaining
+                    </p>
+                  )}
 
                 <p className="text-sm font-semibold leading-snug text-white/92">
                   {normalizeText(item.issue ?? item.message)}
                 </p>
 
                 {item.suggestion && (
-                  <p className="mt-2 text-xs leading-relaxed text-white/50">{normalizeText(item.suggestion)}</p>
+                  <p className="mt-2 text-xs leading-relaxed text-white/50">
+                    {normalizeText(item.suggestion)}
+                  </p>
                 )}
 
                 {!aiFixable ? (
                   <p className="mt-2.5 rounded-md border border-amber-500/20 bg-amber-500/8 px-2.5 py-2 text-[11px] leading-relaxed text-amber-200/90">
-                    This needs information only you have — please add it yourself.
+                    This needs information only you have — please add it
+                    yourself.
                   </p>
                 ) : templateWithPlaceholder ? (
                   <p className="mt-2.5 rounded-md border border-[#00C9B1]/20 bg-[#00C9B1]/8 px-2.5 py-2 text-[11px] leading-relaxed text-[#a8f5ea]/95">
-                    Fix with AI adds bracketed placeholders like [ADD %] — replace them with your real numbers in the preview before accepting.
+                    Fix with AI adds bracketed placeholders like [ADD %] —
+                    replace them with your real numbers in the preview before
+                    accepting.
                   </p>
                 ) : null}
 
@@ -718,11 +824,15 @@ function ImprovementsPanelInner({
                     <p className="mb-1.5 text-[10px] font-medium uppercase tracking-[0.08em] text-[rgba(0,201,177,0.60)]">
                       Example
                     </p>
-                    <p className="whitespace-pre-line text-[11px] leading-relaxed text-white/45">{item.example}</p>
+                    <p className="whitespace-pre-line text-[11px] leading-relaxed text-white/45">
+                      {item.example}
+                    </p>
                   </div>
                 )}
 
-                {error && <p className="mt-2 text-[11px] text-rose-400">{error}</p>}
+                {error && (
+                  <p className="mt-2 text-[11px] text-rose-400">{error}</p>
+                )}
 
                 <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                   {showFixWithAi ? (
@@ -738,7 +848,11 @@ function ImprovementsPanelInner({
                       ) : (
                         <Sparkles className="h-[14px] w-[14px]" />
                       )}
-                      {applying ? APPLY_WITH_AI_LOADING_MESSAGES[applyLoadingPhraseIndex] : 'Fix with AI'}
+                      {applying
+                        ? APPLY_WITH_AI_LOADING_MESSAGES[
+                            applyLoadingPhraseIndex
+                          ]
+                        : 'Fix with AI'}
                     </button>
                   ) : null}
                   <button

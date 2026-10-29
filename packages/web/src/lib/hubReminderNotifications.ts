@@ -8,7 +8,11 @@ const SESSION_FIRED_PREFIX = 'applymate:reminder-fired:';
 /** Browser notifications for due pending hub reminders already in the React Query cache. */
 export function notifyDueHubRemindersFromCache(queryClient: QueryClient): void {
   if (typeof window === 'undefined') return;
-  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  if (
+    typeof Notification === 'undefined' ||
+    Notification.permission !== 'granted'
+  )
+    return;
 
   const queries = queryClient.getQueriesData<HubReminderItem[]>({
     queryKey: queryKeys.hub.remindersRoot(),
@@ -28,8 +32,7 @@ export function notifyDueHubRemindersFromCache(queryClient: QueryClient): void {
       const flag = `${SESSION_FIRED_PREFIX}${r.id}`;
       try {
         if (sessionStorage.getItem(flag)) continue;
-        const body =
-          r.title?.trim() || r.note?.trim() || 'Scheduled follow-up';
+        const body = r.title?.trim() || r.note?.trim() || 'Scheduled follow-up';
         new Notification('ApplyMate reminder', { body });
         sessionStorage.setItem(flag, '1');
       } catch {

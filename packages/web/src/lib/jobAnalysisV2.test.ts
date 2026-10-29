@@ -14,7 +14,15 @@ describe('parseJobAnalysisV2', () => {
       },
       attackPlan: {
         topCVFixes: ['Lead with React delivery metrics'],
-        interviewRisks: ['Kotlin gap', 'Gap 2', 'Gap 3', 'Gap 4', 'Gap 5', 'Gap 6', 'Gap 7'],
+        interviewRisks: [
+          'Kotlin gap',
+          'Gap 2',
+          'Gap 3',
+          'Gap 4',
+          'Gap 5',
+          'Gap 6',
+          'Gap 7',
+        ],
         missingEvidence: ['Team size'],
         salaryRange: '$120k – $140k',
       },

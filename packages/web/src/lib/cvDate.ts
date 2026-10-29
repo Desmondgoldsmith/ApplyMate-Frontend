@@ -1,6 +1,19 @@
 /** CV date storage + display: YYYY, YYYY-MM, legacy MM/YYYY, and named months. */
 
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
+const MONTH_NAMES = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+] as const;
 
 const MONTH_NAME_MAP: Record<string, string> = {
   january: '01',
@@ -38,7 +51,10 @@ export function isMonthYearValue(raw: string): boolean {
 }
 
 /** Split stored range text (`2018 - 2020`, `2018 — 2020`) for picker seeds. */
-export function splitCvStoredRange(raw: string): { start: string; end: string } {
+export function splitCvStoredRange(raw: string): {
+  start: string;
+  end: string;
+} {
   const t = raw.trim();
   if (!t) return { start: '', end: '' };
   const m = t.match(/^(.*?)\s+[-–—]\s+(.*)$/);
@@ -71,7 +87,11 @@ export function formatCvDateLabel(raw: string): string {
   return s;
 }
 
-export function formatCvPeriod(start: string, end: string, current: boolean): string {
+export function formatCvPeriod(
+  start: string,
+  end: string,
+  current: boolean,
+): string {
   const a = formatCvDateLabel(start);
   const b = current ? 'Present' : formatCvDateLabel(end);
   const parts = [a, b].filter(Boolean);
@@ -79,7 +99,11 @@ export function formatCvPeriod(start: string, end: string, current: boolean): st
   return parts.join(' — ');
 }
 
-export function formatCvPeriodEnDash(start: string, end: string, current: boolean): string {
+export function formatCvPeriodEnDash(
+  start: string,
+  end: string,
+  current: boolean,
+): string {
   return formatCvPeriod(start, end, current).replace(/\s*—\s*/g, ' – ');
 }
 
@@ -87,7 +111,10 @@ export function formatEduRange(startYear: string, endYear: string): string {
   return formatCvPeriod(startYear, endYear, false);
 }
 
-export function formatEduRangeStacked(startYear: string, endYear: string): string {
+export function formatEduRangeStacked(
+  startYear: string,
+  endYear: string,
+): string {
   return formatEduRange(startYear, endYear).replace(/\s*—\s*/g, ' – ');
 }
 
@@ -153,7 +180,10 @@ export function parseMonthFromCvDate(raw: string): number | null {
   return null;
 }
 
-export function inferPickerGranularity(start: string, end: string): 'year' | 'month' {
+export function inferPickerGranularity(
+  start: string,
+  end: string,
+): 'year' | 'month' {
   const values = [start, end].filter(Boolean);
   if (values.length === 0) return 'year';
   if (values.every(isYearOnlyValue)) return 'year';

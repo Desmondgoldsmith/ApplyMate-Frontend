@@ -7,7 +7,10 @@ import {
 
 describe('buildApplyRecruiterFindingsPayload', () => {
   it('targets apply_recruiter_findings operation', () => {
-    const payload = buildApplyRecruiterFindingsPayload(['Fix summary'], 'cmd-9');
+    const payload = buildApplyRecruiterFindingsPayload(
+      ['Fix summary'],
+      'cmd-9',
+    );
     expect(payload.operation).toBe('apply_recruiter_findings');
     expect(payload.scanCommandId).toBe('cmd-9');
     expect(payload.findings).toEqual(['Fix summary']);

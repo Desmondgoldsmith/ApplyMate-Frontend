@@ -5,7 +5,10 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useLocationStore, type ResolvedGeoLocation } from '@/store/useLocationStore';
+import {
+  useLocationStore,
+  type ResolvedGeoLocation,
+} from '@/store/useLocationStore';
 
 function hasUsableGeo(geo: ResolvedGeoLocation | null): boolean {
   if (!geo) return false;

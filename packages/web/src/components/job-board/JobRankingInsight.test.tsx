@@ -6,7 +6,9 @@ import { JobRankingInsight } from '@/components/job-board/JobRankingInsight';
 import type { JobListingDto } from '@/lib/api';
 
 function renderInsight(job: JobListingDto) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
   return render(
     <QueryClientProvider client={qc}>
       <JobRankingInsight job={job} />
@@ -14,7 +16,9 @@ function renderInsight(job: JobListingDto) {
   );
 }
 
-const recordDecision = vi.fn().mockResolvedValue({ id: 'd1', decision: 'APPLY' });
+const recordDecision = vi
+  .fn()
+  .mockResolvedValue({ id: 'd1', decision: 'APPLY' });
 
 vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }),
@@ -64,7 +68,9 @@ describe('JobRankingInsight', () => {
     expect(screen.getByText(/Your CV aligns well/)).toBeInTheDocument();
     expect(screen.getByText('React')).toBeInTheDocument();
     expect(screen.getByText('Kotlin')).toBeInTheDocument();
-    expect(screen.getByText(/Requires some Kotlin exposure/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Requires some Kotlin exposure/),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
 

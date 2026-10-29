@@ -14,15 +14,22 @@ export function useGenerateContent() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
       queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.applications.root(),
+      });
       const jid = variables.jobAnalysisId?.trim();
       if (jid) {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.generated(jid) });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analysis(jid) });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.jobs.generated(jid),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.jobs.analysis(jid),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.jobs.analyses(),
+        });
       }
       invalidateTodayPlanQueries(queryClient);
     },
   });
 }
-

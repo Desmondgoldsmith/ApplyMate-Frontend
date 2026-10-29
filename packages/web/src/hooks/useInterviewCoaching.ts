@@ -165,10 +165,14 @@ export function useInterviewCoaching(options: {
       setPostStatus('loading');
 
       try {
-        const data = await interviewCoachingApi.postPostCoaching(sessionId, turnId, {
-          answerText,
-          durationSeconds,
-        });
+        const data = await interviewCoachingApi.postPostCoaching(
+          sessionId,
+          turnId,
+          {
+            answerText,
+            durationSeconds,
+          },
+        );
         setCachedPostCoaching(sessionId, turnId, data);
         setPost(data);
         setPostStatus('ready');

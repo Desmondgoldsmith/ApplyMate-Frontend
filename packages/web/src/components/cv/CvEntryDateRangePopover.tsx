@@ -35,8 +35,12 @@ export function CvEntryDateRangePopover({
   const years = yearOptions();
   const startYear = parseYearFromCvDate(start) ?? new Date().getFullYear();
   const endYear = parseYearFromCvDate(end) ?? new Date().getFullYear();
-  const startMonth = /^\d{4}-\d{2}/.test(start.trim()) ? start.trim().slice(0, 7) : '';
-  const endMonth = /^\d{4}-\d{2}/.test(end.trim()) ? end.trim().slice(0, 7) : '';
+  const startMonth = /^\d{4}-\d{2}/.test(start.trim())
+    ? start.trim().slice(0, 7)
+    : '';
+  const endMonth = /^\d{4}-\d{2}/.test(end.trim())
+    ? end.trim().slice(0, 7)
+    : '';
 
   const finish = (nextStart: string, nextEnd: string) => {
     onApply(nextStart, nextEnd);

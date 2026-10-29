@@ -10,4 +10,3 @@ export function useDashboardSeen() {
     mutationFn: () => api.dashboard.markSeen(),
   });
 }
-

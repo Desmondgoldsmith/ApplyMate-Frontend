@@ -74,8 +74,12 @@ describe('TodayPlanPanel', () => {
       />,
     );
 
-    expect(screen.getByText(/Could not load Today's Plan/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
+    expect(
+      screen.getByText(/Could not load Today's Plan/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /try again/i }),
+    ).toBeInTheDocument();
   }, 10_000);
 
   it('opens inline execution modal for follow-up cards', () => {
@@ -94,7 +98,10 @@ describe('TodayPlanPanel', () => {
               urgencyBucket: 'now',
               priorityScore: 80,
               reasonCodes: [],
-              cta: { label: 'Send follow-up', action: { type: 'OPEN_ANALYZE', jobAnalysisId: 'ja1' } },
+              cta: {
+                label: 'Send follow-up',
+                action: { type: 'OPEN_ANALYZE', jobAnalysisId: 'ja1' },
+              },
               executionContext: {
                 nextImmediateAction: 'Send one short note',
                 executionMode: 'inline_modal',
@@ -124,10 +131,28 @@ describe('TodayPlanPanel', () => {
             suppressionFamilyCount: 1,
           },
         },
-        sinceLastVisit: { newJobsCount: 0, newHighMatchCount: 0, newStalledCount: 0, statusChangedCount: 0, newRecommendationsCount: 1 },
-        progress: { actionsCompletedWeek: 1, pipelineAdvancedWeek: 0, actionsCompletedToday: 0 },
-        dailyMission: { isMeaningful: false, recommendedPriorityIds: [], targetActionsToday: 1, actionsRemainingToday: 1 },
-        continuationState: { routeValidated: false, routeValidationReason: 'missing_target' },
+        sinceLastVisit: {
+          newJobsCount: 0,
+          newHighMatchCount: 0,
+          newStalledCount: 0,
+          statusChangedCount: 0,
+          newRecommendationsCount: 1,
+        },
+        progress: {
+          actionsCompletedWeek: 1,
+          pipelineAdvancedWeek: 0,
+          actionsCompletedToday: 0,
+        },
+        dailyMission: {
+          isMeaningful: false,
+          recommendedPriorityIds: [],
+          targetActionsToday: 1,
+          actionsRemainingToday: 1,
+        },
+        continuationState: {
+          routeValidated: false,
+          routeValidationReason: 'missing_target',
+        },
         reentrySummary: { newStrongMatchesCount: 0, nearCompletionCount: 0 },
       },
     });
@@ -143,7 +168,9 @@ describe('TodayPlanPanel', () => {
     );
     fireEvent.click(screen.getByRole('link', { name: /send one short note/i }));
     expect(screen.getByText(/Assisted execution/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /copy message/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /copy message/i }),
+    ).toBeInTheDocument();
     expect(trackProductEvent).toHaveBeenCalledWith(
       'modal_opened',
       expect.objectContaining({ recommendationId: 'p1' }),
@@ -167,7 +194,10 @@ describe('TodayPlanPanel', () => {
               priorityScore: 70,
               reasonCodes: [],
               suppressionReason: 'stale_execution_reference',
-              cta: { label: 'Continue', action: { type: 'OPEN_JOB_HUB', jobAnalysisId: 'ja-missing' } },
+              cta: {
+                label: 'Continue',
+                action: { type: 'OPEN_JOB_HUB', jobAnalysisId: 'ja-missing' },
+              },
               executionContext: {
                 executionMode: 'continue_flow',
                 canExecuteInline: false,
@@ -189,9 +219,24 @@ describe('TodayPlanPanel', () => {
             suppressionFamilyCount: 1,
           },
         },
-        sinceLastVisit: { newJobsCount: 0, newHighMatchCount: 0, newStalledCount: 0, statusChangedCount: 0, newRecommendationsCount: 1 },
-        progress: { actionsCompletedWeek: 0, pipelineAdvancedWeek: 0, actionsCompletedToday: 0 },
-        dailyMission: { isMeaningful: false, recommendedPriorityIds: [], targetActionsToday: 1, actionsRemainingToday: 1 },
+        sinceLastVisit: {
+          newJobsCount: 0,
+          newHighMatchCount: 0,
+          newStalledCount: 0,
+          statusChangedCount: 0,
+          newRecommendationsCount: 1,
+        },
+        progress: {
+          actionsCompletedWeek: 0,
+          pipelineAdvancedWeek: 0,
+          actionsCompletedToday: 0,
+        },
+        dailyMission: {
+          isMeaningful: false,
+          recommendedPriorityIds: [],
+          targetActionsToday: 1,
+          actionsRemainingToday: 1,
+        },
         continuationState: {},
         reentrySummary: { newStrongMatchesCount: 0, nearCompletionCount: 0 },
       },
@@ -207,7 +252,10 @@ describe('TodayPlanPanel', () => {
       />,
     );
     const link = screen.getByRole('link', { name: /continue/i });
-    expect(link).toHaveAttribute('href', '/dashboard/jobs?view=active&recovered=1');
+    expect(link).toHaveAttribute(
+      'href',
+      '/dashboard/jobs?view=active&recovered=1',
+    );
     expect(screen.getByText(/Context refreshed/i)).toBeInTheDocument();
   });
 
@@ -229,7 +277,10 @@ describe('TodayPlanPanel', () => {
               displayPriority: 2,
               recommendationClusterId: 'cluster-hero',
               reasonCodes: [],
-              cta: { label: 'Continue', action: { type: 'OPEN_JOB_HUB', applicationId: 'app-1' } },
+              cta: {
+                label: 'Continue',
+                action: { type: 'OPEN_JOB_HUB', applicationId: 'app-1' },
+              },
               ids: { applicationId: 'app-1' },
             },
             {
@@ -241,7 +292,10 @@ describe('TodayPlanPanel', () => {
               displayPriority: 1,
               recommendationClusterId: 'cluster-other',
               reasonCodes: [],
-              cta: { label: 'Continue', action: { type: 'OPEN_JOB_HUB', applicationId: 'app-2' } },
+              cta: {
+                label: 'Continue',
+                action: { type: 'OPEN_JOB_HUB', applicationId: 'app-2' },
+              },
               ids: { applicationId: 'app-2' },
             },
             {
@@ -253,7 +307,10 @@ describe('TodayPlanPanel', () => {
               displayPriority: 3,
               recommendationClusterId: 'cluster-other',
               reasonCodes: [],
-              cta: { label: 'Continue', action: { type: 'OPEN_JOB_HUB', applicationId: 'app-3' } },
+              cta: {
+                label: 'Continue',
+                action: { type: 'OPEN_JOB_HUB', applicationId: 'app-3' },
+              },
               ids: { applicationId: 'app-3' },
             },
           ],
@@ -270,9 +327,24 @@ describe('TodayPlanPanel', () => {
             suppressionFamilyCount: 2,
           },
         },
-        sinceLastVisit: { newJobsCount: 0, newHighMatchCount: 0, newStalledCount: 0, statusChangedCount: 0, newRecommendationsCount: 2 },
-        progress: { actionsCompletedWeek: 0, pipelineAdvancedWeek: 0, actionsCompletedToday: 0 },
-        dailyMission: { isMeaningful: false, recommendedPriorityIds: [], targetActionsToday: 1, actionsRemainingToday: 1 },
+        sinceLastVisit: {
+          newJobsCount: 0,
+          newHighMatchCount: 0,
+          newStalledCount: 0,
+          statusChangedCount: 0,
+          newRecommendationsCount: 2,
+        },
+        progress: {
+          actionsCompletedWeek: 0,
+          pipelineAdvancedWeek: 0,
+          actionsCompletedToday: 0,
+        },
+        dailyMission: {
+          isMeaningful: false,
+          recommendedPriorityIds: [],
+          targetActionsToday: 1,
+          actionsRemainingToday: 1,
+        },
         continuationState: { message: 'Continue where you left off' },
         reentrySummary: { newStrongMatchesCount: 0, nearCompletionCount: 0 },
       },
@@ -289,10 +361,16 @@ describe('TodayPlanPanel', () => {
         suppressContinuation={true}
       />,
     );
-    expect(screen.queryByText(/Hero-owned follow-up duplicate/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Hero-owned follow-up duplicate/i),
+    ).not.toBeInTheDocument();
     expect(screen.getByText(/Keep thread warm/i)).toBeInTheDocument();
-    expect(screen.queryByText(/Keep thread warm duplicate/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Resume where you left off/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Keep thread warm duplicate/i),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Resume where you left off/i),
+    ).not.toBeInTheDocument();
   });
 
   it('shows neutral copy when interview context is missing and keeps backend fallback route', () => {
@@ -312,7 +390,10 @@ describe('TodayPlanPanel', () => {
               priorityScore: 75,
               reasonCodes: [],
               suppressionReason: 'missing_interview_context',
-              cta: { label: 'Continue', action: { type: 'OPEN_JOB_HUB', applicationId: 'app-22' } },
+              cta: {
+                label: 'Continue',
+                action: { type: 'OPEN_JOB_HUB', applicationId: 'app-22' },
+              },
               executionContext: {
                 executionMode: 'continue_flow',
                 canExecuteInline: false,
@@ -334,9 +415,24 @@ describe('TodayPlanPanel', () => {
             suppressionFamilyCount: 1,
           },
         },
-        sinceLastVisit: { newJobsCount: 0, newHighMatchCount: 0, newStalledCount: 0, statusChangedCount: 0, newRecommendationsCount: 1 },
-        progress: { actionsCompletedWeek: 0, pipelineAdvancedWeek: 0, actionsCompletedToday: 0 },
-        dailyMission: { isMeaningful: false, recommendedPriorityIds: [], targetActionsToday: 1, actionsRemainingToday: 1 },
+        sinceLastVisit: {
+          newJobsCount: 0,
+          newHighMatchCount: 0,
+          newStalledCount: 0,
+          statusChangedCount: 0,
+          newRecommendationsCount: 1,
+        },
+        progress: {
+          actionsCompletedWeek: 0,
+          pipelineAdvancedWeek: 0,
+          actionsCompletedToday: 0,
+        },
+        dailyMission: {
+          isMeaningful: false,
+          recommendedPriorityIds: [],
+          targetActionsToday: 1,
+          actionsRemainingToday: 1,
+        },
         continuationState: {},
         reentrySummary: { newStrongMatchesCount: 0, nearCompletionCount: 0 },
       },
@@ -352,9 +448,14 @@ describe('TodayPlanPanel', () => {
       />,
     );
     expect(
-      screen.getByText(/Interview prep is not available yet; here is your next valid step\./i),
+      screen.getByText(
+        /Interview prep is not available yet; here is your next valid step\./i,
+      ),
     ).toBeInTheDocument();
     const link = screen.getByRole('link', { name: /continue/i });
-    expect(link).toHaveAttribute('href', '/dashboard/jobs?applicationId=app-22&focus=followup');
+    expect(link).toHaveAttribute(
+      'href',
+      '/dashboard/jobs?applicationId=app-22&focus=followup',
+    );
   });
 });

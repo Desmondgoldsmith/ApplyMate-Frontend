@@ -25,7 +25,9 @@ export const InterruptionOverlay = memo(function InterruptionOverlay({
           'animate-in fade-in slide-in-from-top-2 duration-200',
         )}
       >
-        <p className="text-[10px] font-bold uppercase tracking-wider text-amber-300">Interruption</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
+          Interruption
+        </p>
         <p className="mt-0.5 text-sm font-medium text-white">{message}</p>
       </div>
     </div>

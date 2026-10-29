@@ -1,5 +1,8 @@
 /** Read a response header from Axios headers or a plain record. */
-export function readResponseHeader(headers: unknown, name: string): string | null {
+export function readResponseHeader(
+  headers: unknown,
+  name: string,
+): string | null {
   if (headers == null) return null;
   const lower = name.toLowerCase();
   if (typeof headers === 'object' && headers !== null) {
@@ -56,7 +59,10 @@ function sanitizeExportFilename(name: string): string {
 }
 
 /** Prefer `X-Export-Filename`, then Content-Disposition, then fallback. */
-export function resolveExportFilename(headers: unknown, fallback: string): string {
+export function resolveExportFilename(
+  headers: unknown,
+  fallback: string,
+): string {
   const fromCustom = readResponseHeader(headers, 'X-Export-Filename');
   if (fromCustom?.trim()) return sanitizeExportFilename(fromCustom);
 

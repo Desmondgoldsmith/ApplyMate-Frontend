@@ -1,7 +1,14 @@
 'use client';
 
 import { Bot, Loader2, Smile, Sparkles, Wand2, X } from 'lucide-react';
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 
 import { useCVEdit } from '@/components/cv/CVEditContext';
@@ -19,7 +26,9 @@ type CvSectionAssistantInlineProps = {
   sectionId: string;
 };
 
-export function CvSectionAssistantInline({ sectionId }: CvSectionAssistantInlineProps) {
+export function CvSectionAssistantInline({
+  sectionId,
+}: CvSectionAssistantInlineProps) {
   const ctx = useCVEdit();
   const overlayZ = useCvOverlayZIndex();
   const pinWrapRef = useRef<HTMLDivElement>(null);
@@ -27,14 +36,19 @@ export function CvSectionAssistantInline({ sectionId }: CvSectionAssistantInline
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
-  const [popoverPos, setPopoverPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const [popoverPos, setPopoverPos] = useState<{ top: number; left: number }>({
+    top: 0,
+    left: 0,
+  });
   const titleId = useId();
 
   const run = ctx?.runCvAssistantCommand;
   const busy = ctx?.cvAssistantBusy === true;
   const busyMessage = ctx?.cvAssistantBusyMessage ?? null;
 
-  const bundle = ctx?.data ? getCvSectionAssistantSuggestions(sectionId, ctx.data) : { suggestions: [] };
+  const bundle = ctx?.data
+    ? getCvSectionAssistantSuggestions(sectionId, ctx.data)
+    : { suggestions: [] };
   const sectionTitle = cvSectionAssistantPopoverTitle(sectionId, ctx?.data);
 
   useLayoutEffect(() => {
@@ -139,7 +153,11 @@ export function CvSectionAssistantInline({ sectionId }: CvSectionAssistantInline
       role="dialog"
       aria-label={sectionTitle}
       className="fixed w-[min(248px,calc(100vw-24px))] max-h-[min(420px,52vh)] overflow-y-auto rounded-xl border border-slate-200/90 bg-white p-2.5 text-slate-800 shadow-[0_12px_40px_rgba(15,23,42,0.22)]"
-      style={{ top: popoverPos.top, left: popoverPos.left, zIndex: overlayZ + 5 }}
+      style={{
+        top: popoverPos.top,
+        left: popoverPos.left,
+        zIndex: overlayZ + 5,
+      }}
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
@@ -219,7 +237,11 @@ export function CvSectionAssistantInline({ sectionId }: CvSectionAssistantInline
         disabled={busy || text.trim().length < 8}
         onClick={() => void onRun()}
       >
-        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+        {busy ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <Wand2 className="h-3.5 w-3.5" />
+        )}
         Run command
       </Button>
     </div>
@@ -227,7 +249,10 @@ export function CvSectionAssistantInline({ sectionId }: CvSectionAssistantInline
 
   return (
     <>
-      <div ref={pinWrapRef} className="pointer-events-auto absolute right-2 top-2 z-[1002]">
+      <div
+        ref={pinWrapRef}
+        className="pointer-events-auto absolute right-2 top-2 z-[1002]"
+      >
         <button
           type="button"
           title={sectionTitle}
@@ -247,7 +272,10 @@ export function CvSectionAssistantInline({ sectionId }: CvSectionAssistantInline
             'animate-cv-assistant-pin',
           )}
         >
-          <Bot className="relative z-[1] h-[17px] w-[17px]" strokeWidth={2.25} />
+          <Bot
+            className="relative z-[1] h-[17px] w-[17px]"
+            strokeWidth={2.25}
+          />
         </button>
       </div>
 

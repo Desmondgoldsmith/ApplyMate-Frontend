@@ -44,8 +44,7 @@ export function applyMobileTourPopoverPosition(
 
   // Prefer below for header/top targets; above for bottom nav / sheets.
   const placeBelow =
-    rect.top < vh * 0.45 &&
-    (spaceBelow >= 120 || spaceBelow >= spaceAbove);
+    rect.top < vh * 0.45 && (spaceBelow >= 120 || spaceBelow >= spaceAbove);
 
   if (placeBelow) {
     const top = Math.min(rect.bottom + GAP_PX, vh - popH - EDGE_PX);

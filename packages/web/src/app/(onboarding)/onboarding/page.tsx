@@ -193,7 +193,9 @@ export default function OnboardingPage() {
   const [uploadParsedProfile, setUploadParsedProfile] =
     useState<CVProfile | null>(null);
   const [sectionCount, setSectionCount] = useState(0);
-  const [uploadPhase, setUploadPhase] = useState<'zone' | 'summary' | 'score'>('zone');
+  const [uploadPhase, setUploadPhase] = useState<'zone' | 'summary' | 'score'>(
+    'zone',
+  );
   const [uploadImportSummary, setUploadImportSummary] =
     useState<CvParseImportSummary | null>(null);
 
@@ -203,8 +205,11 @@ export default function OnboardingPage() {
   const [pasteStatusIdx, setPasteStatusIdx] = useState(0);
   const [pasteImportSummary, setPasteImportSummary] =
     useState<CvParseImportSummary | null>(null);
-  const [pasteParsedProfile, setPasteParsedProfile] = useState<CVProfile | null>(null);
-  const [pasteParsedProfileId, setPasteParsedProfileId] = useState<string | null>(null);
+  const [pasteParsedProfile, setPasteParsedProfile] =
+    useState<CVProfile | null>(null);
+  const [pasteParsedProfileId, setPasteParsedProfileId] = useState<
+    string | null
+  >(null);
 
   const [processing, setProcessing] = useState(false);
   const [processingStepIdx, setProcessingStepIdx] = useState(0);
@@ -500,7 +505,9 @@ export default function OnboardingPage() {
         improvements: detailed.improvements ?? [],
         needsScoring: false,
       });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.cv.scoreRoot() });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.scoreRoot(),
+      });
       await queryClient.invalidateQueries({
         queryKey: CV_SUGGESTIONS_QUERY_ROOT,
       });
@@ -512,10 +519,18 @@ export default function OnboardingPage() {
   const onUploadParsed = useCallback(
     async (parse?: CvParseSuccessPayload) => {
       const fresh = parse?.profile;
-      await queryClient.invalidateQueries({ queryKey: queryKeys.cv.profileDefault() });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.cv.sectionsRoot() });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.cv.scoreRoot() });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.profileDefault(),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.sectionsRoot(),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.scoreRoot(),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.analytics.root(),
+      });
       const list = await queryClient.fetchQuery({
         queryKey: queryKeys.cv.sectionsActive(true),
         queryFn: () => api.cv.getSections(true),
@@ -653,8 +668,12 @@ export default function OnboardingPage() {
           template: selectedTemplate,
           cvProfileId: profileId,
         });
-        await queryClient.invalidateQueries({ queryKey: queryKeys.cv.sectionsRoot() });
-        await queryClient.invalidateQueries({ queryKey: queryKeys.cv.profileDefault() });
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.cv.sectionsRoot(),
+        });
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.cv.profileDefault(),
+        });
         const { profile } = await api.cv.getProfileById(profileId);
         try {
           await syncSuggestedCvProfileMetadata(
@@ -763,8 +782,12 @@ export default function OnboardingPage() {
         const score = await api.cv.getScore(sid || undefined);
         setFinalScore(score);
         setCompletionSource(opts.source);
-        void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.cv.profiles(),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.analytics.root(),
+        });
         void triggerPostCvScore();
         await saveProgress.mutateAsync({ step: 2, hasCV: true });
         setStep(3);
@@ -889,8 +912,7 @@ export default function OnboardingPage() {
                     opts?.referralSkipped === true
                       ? 'Skipped'
                       : (opts?.referralSource ?? referralSource);
-                  const refOther =
-                    opts?.referralOther ?? referralOther;
+                  const refOther = opts?.referralOther ?? referralOther;
                   const discovery = buildOnboardingDiscoveryApiFields({
                     focusHired,
                     focusStudent: false,
@@ -990,7 +1012,8 @@ export default function OnboardingPage() {
                   />
                 </div>
                 <p className="mt-4 text-center text-[12px] text-[rgba(255,255,255,0.35)]">
-                  Tap a template to continue. You can change it anytime in the clinic.
+                  Tap a template to continue. You can change it anytime in the
+                  clinic.
                 </p>
               </>
             ) : null}
@@ -998,7 +1021,9 @@ export default function OnboardingPage() {
             {cvPath === null && cvEntryPhase === 'paths' ? (
               <>
                 <div className="flex w-full flex-col items-center text-center">
-                  <OnboardingBackLink onClick={() => setCvEntryPhase('template')} />
+                  <OnboardingBackLink
+                    onClick={() => setCvEntryPhase('template')}
+                  />
                   <p
                     className="text-center text-[11px] font-medium uppercase text-[#00C9B1]"
                     style={{ letterSpacing: '0.12em' }}
@@ -1009,8 +1034,8 @@ export default function OnboardingPage() {
                     How would you like to add your career information?
                   </h2>
                   <p className={ONBOARDING_SUBTITLE_CLASS}>
-                    Pick what feels easiest. We&apos;ll score your resume so
-                    you see value right away.
+                    Pick what feels easiest. We&apos;ll score your resume so you
+                    see value right away.
                   </p>
                   <button
                     type="button"
@@ -1118,31 +1143,31 @@ export default function OnboardingPage() {
                     ) : (
                       <div className="w-full">
                         <CVChatInterface
-                        selectedTemplate={selectedTemplate}
-                        onSkip={async () => {
-                          setFinalScore(null);
-                          setCompletionProfile(null);
-                          await saveProgress.mutateAsync({
-                            step: 2,
-                            hasCV: false,
-                          });
-                          setCompletionSource('skip');
-                          setStep(3);
-                        }}
-                        onComplete={async (data) => {
-                          const pid = onboardingCvProfileQuery.data?.trim();
-                          if (!pid) {
-                            toast.error(
-                              'Resume workspace is not ready. Please tap Retry above.',
-                            );
-                            return;
-                          }
-                          await runProcessingThenFinish({
-                            source: 'chat',
-                            payload: data,
-                            profileId: pid,
-                          });
-                        }}
+                          selectedTemplate={selectedTemplate}
+                          onSkip={async () => {
+                            setFinalScore(null);
+                            setCompletionProfile(null);
+                            await saveProgress.mutateAsync({
+                              step: 2,
+                              hasCV: false,
+                            });
+                            setCompletionSource('skip');
+                            setStep(3);
+                          }}
+                          onComplete={async (data) => {
+                            const pid = onboardingCvProfileQuery.data?.trim();
+                            if (!pid) {
+                              toast.error(
+                                'Resume workspace is not ready. Please tap Retry above.',
+                              );
+                              return;
+                            }
+                            await runProcessingThenFinish({
+                              source: 'chat',
+                              payload: data,
+                              profileId: pid,
+                            });
+                          }}
                         />
                       </div>
                     )}
@@ -1173,7 +1198,9 @@ export default function OnboardingPage() {
                         setPasteParsedProfileId(null);
                       }}
                     />
-                    {pasteImportSummary && pasteParsedProfile && !pasteSubmitting ? (
+                    {pasteImportSummary &&
+                    pasteParsedProfile &&
+                    !pasteSubmitting ? (
                       <CvParseImportSummaryPanel
                         embedded
                         importSummary={pasteImportSummary}
@@ -1197,8 +1224,9 @@ export default function OnboardingPage() {
                         contentClassName="flex min-h-0 flex-col overflow-hidden p-5"
                       >
                         <p className="text-xs text-white/55">
-                          Paste your full resume, LinkedIn export, or notes. Up to{' '}
-                          {CV_CHAT_INPUT_MAX_CHARS.toLocaleString()} characters
+                          Paste your full resume, LinkedIn export, or notes. Up
+                          to {CV_CHAT_INPUT_MAX_CHARS.toLocaleString()}{' '}
+                          characters
                         </p>
                         <textarea
                           value={pasteText}
@@ -1410,13 +1438,14 @@ export default function OnboardingPage() {
                           Upload your resume
                         </h3>
                         <p className={ONBOARDING_SECTION_SUBHEADING_CLASS}>
-                          PDF or Word. We&apos;ll extract the structure automatically.
+                          PDF or Word. We&apos;ll extract the structure
+                          automatically.
                         </p>
                         <div className="w-full">
                           <CVUploadZone
-                          onSuccess={(data) => {
-                            void onUploadParsed(data);
-                          }}
+                            onSuccess={(data) => {
+                              void onUploadParsed(data);
+                            }}
                           />
                         </div>
                       </>
@@ -1682,7 +1711,9 @@ function CompletionPanel({
   completionSource: 'skip' | 'upload' | 'chat' | 'paste' | 'manual';
   selectedTemplate: string;
   accessToken: string | null;
-  onOpenResumeEditor: (profileId: string | null | undefined) => void | Promise<void>;
+  onOpenResumeEditor: (
+    profileId: string | null | undefined,
+  ) => void | Promise<void>;
 }) {
   const router = useRouter();
   const sub =

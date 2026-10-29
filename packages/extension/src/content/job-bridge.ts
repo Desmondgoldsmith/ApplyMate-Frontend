@@ -1,4 +1,8 @@
-import { collectAiFallbackPayload, extractJobFromPage, extractJobFromPageWithRetry } from '@/content/extractor';
+import {
+  collectAiFallbackPayload,
+  extractJobFromPage,
+  extractJobFromPageWithRetry,
+} from '@/content/extractor';
 import {
   getLinkedInActiveJobId,
   isLinkedInJobsPage,
@@ -40,7 +44,8 @@ function linkedInJobIdFromUrl(url: string): string | null {
   try {
     const parsed = new URL(url);
     const fromQuery =
-      parsed.searchParams.get('currentJobId') ?? parsed.searchParams.get('jobId');
+      parsed.searchParams.get('currentJobId') ??
+      parsed.searchParams.get('jobId');
     if (fromQuery && /^\d+$/.test(fromQuery)) return fromQuery;
     const pathMatch = parsed.pathname.match(/\/jobs\/view\/(\d+)/i);
     if (pathMatch?.[1]) return pathMatch[1];
@@ -72,9 +77,11 @@ async function probeAndNotify(): Promise<void> {
     if (!isLinkedInJobsPage(href)) {
       stopPageMonitoring();
     }
-    void chrome.runtime.sendMessage({ action: 'jobExtracted', job }).catch(() => {
-      /* sidebar may be closed */
-    });
+    void chrome.runtime
+      .sendMessage({ action: 'jobExtracted', job })
+      .catch(() => {
+        /* sidebar may be closed */
+      });
     return;
   }
 
@@ -86,9 +93,11 @@ async function probeAndNotify(): Promise<void> {
   const aiFingerprint = `${aiPayload.pageUrl}|${aiPayload.pageTitle}`;
   if (aiFingerprint === lastNotifiedFingerprint) return;
   lastNotifiedFingerprint = aiFingerprint;
-  void chrome.runtime.sendMessage({ action: 'extractJobAI', payload: aiPayload }).catch(() => {
-    /* ignore */
-  });
+  void chrome.runtime
+    .sendMessage({ action: 'extractJobAI', payload: aiPayload })
+    .catch(() => {
+      /* ignore */
+    });
 }
 
 let lastLinkedInJobId = '';
@@ -118,7 +127,8 @@ function scheduleLinkedInProbe(): void {
 }
 
 function scheduleProbe(): void {
-  if (monitoringStopped || !shouldMonitorPageForJob(window.location.href)) return;
+  if (monitoringStopped || !shouldMonitorPageForJob(window.location.href))
+    return;
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
     const now = Date.now();
@@ -211,56 +221,61 @@ if (extensionContextValid) {
 
 if (extensionContextValid) {
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if ((message as RunProbeMessage | undefined)?.action === 'runProbe') {
-    lastNotifiedFingerprint = '';
-    lastProbeAt = 0;
-    void probeAndNotify().finally(() => {
-      sendResponse({ ok: true });
-    });
-    return true;
-  }
+    if ((message as RunProbeMessage | undefined)?.action === 'runProbe') {
+      lastNotifiedFingerprint = '';
+      lastProbeAt = 0;
+      void probeAndNotify().finally(() => {
+        sendResponse({ ok: true });
+      });
+      return true;
+    }
 
-  if ((message as ProbeJobPageMessage | undefined)?.action !== 'probeJobPage') {
-    return false;
-  }
+    if (
+      (message as ProbeJobPageMessage | undefined)?.action !== 'probeJobPage'
+    ) {
+      return false;
+    }
 
-  void (async () => {
-    const href = window.location.href;
+    void (async () => {
+      const href = window.location.href;
 
-    if (isLinkedInJobsPage(href)) {
-      const jobId = getLinkedInActiveJobId();
-      if (jobId) {
-        await waitForLinkedInDetailPane(jobId, () => {
-          /* ready */
-        });
+      if (isLinkedInJobsPage(href)) {
+        const jobId = getLinkedInActiveJobId();
+        if (jobId) {
+          await waitForLinkedInDetailPane(jobId, () => {
+            /* ready */
+          });
+        }
+        const job = isLinkedInJobsPage(href)
+          ? await extractJobFromPageWithRetry()
+          : await extractJobFromPage();
+        sendResponse({ job, needsAi: false } satisfies ProbeJobPageResponse);
+        return;
       }
-      const job = isLinkedInJobsPage(href)
-        ? await extractJobFromPageWithRetry()
-        : await extractJobFromPage();
-      sendResponse({ job, needsAi: false } satisfies ProbeJobPageResponse);
-      return;
-    }
 
-    const job = await extractJobFromPage();
-    if (job) {
-      sendResponse({ job, needsAi: false } satisfies ProbeJobPageResponse);
-      return;
-    }
+      const job = await extractJobFromPage();
+      if (job) {
+        sendResponse({ job, needsAi: false } satisfies ProbeJobPageResponse);
+        return;
+      }
 
-    if (!shouldMonitorPageForJob(window.location.href)) {
-      sendResponse({ job: null, needsAi: false } satisfies ProbeJobPageResponse);
-      return;
-    }
+      if (!shouldMonitorPageForJob(window.location.href)) {
+        sendResponse({
+          job: null,
+          needsAi: false,
+        } satisfies ProbeJobPageResponse);
+        return;
+      }
 
-    const aiPayload = collectAiFallbackPayload();
-    sendResponse({
-      job: null,
-      needsAi: Boolean(aiPayload),
-      aiPayload: aiPayload ?? undefined,
-    } satisfies ProbeJobPageResponse);
-  })();
+      const aiPayload = collectAiFallbackPayload();
+      sendResponse({
+        job: null,
+        needsAi: Boolean(aiPayload),
+        aiPayload: aiPayload ?? undefined,
+      } satisfies ProbeJobPageResponse);
+    })();
 
-  return true;
+    return true;
   });
 }
 

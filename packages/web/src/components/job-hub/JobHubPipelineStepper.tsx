@@ -1,7 +1,10 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import type { JobHubPipelineStep, JobHubPipelineStepperPayload } from '@/lib/jobHubGuidance';
+import type {
+  JobHubPipelineStep,
+  JobHubPipelineStepperPayload,
+} from '@/lib/jobHubGuidance';
 
 type Props = {
   stepper: JobHubPipelineStepperPayload;
@@ -11,7 +14,10 @@ type Props = {
   compact?: boolean;
 };
 
-function stepClasses(state: JobHubPipelineStep['state'], clickable: boolean): string {
+function stepClasses(
+  state: JobHubPipelineStep['state'],
+  clickable: boolean,
+): string {
   if (state === 'complete') {
     return 'bg-[#00C9B1]/28 text-[#00C9B1]';
   }
@@ -24,7 +30,12 @@ function stepClasses(state: JobHubPipelineStep['state'], clickable: boolean): st
   return 'bg-[#111616] text-white/42 hover:bg-[#00C9B1]/12 hover:text-[#00C9B1]/90';
 }
 
-export function JobHubPipelineStepper({ stepper, onStepClick, disabled, compact = false }: Props) {
+export function JobHubPipelineStepper({
+  stepper,
+  onStepClick,
+  disabled,
+  compact = false,
+}: Props) {
   const steps = stepper.steps;
   const hint = stepper.statusHint?.trim();
 
@@ -35,7 +46,12 @@ export function JobHubPipelineStepper({ stepper, onStepClick, disabled, compact 
         role="list"
         aria-label="Application pipeline"
       >
-        <div className={cn('flex gap-0', compact ? 'min-w-[min(100%,480px)]' : 'min-w-[min(100%,640px)]')}>
+        <div
+          className={cn(
+            'flex gap-0',
+            compact ? 'min-w-[min(100%,480px)]' : 'min-w-[min(100%,640px)]',
+          )}
+        >
           {steps.map((step, index) => {
             const label = step.shortLabel?.trim() || step.label;
             const isCurrent = step.id === stepper.currentStepId;
@@ -63,7 +79,9 @@ export function JobHubPipelineStepper({ stepper, onStepClick, disabled, compact 
                 <span
                   className={cn(
                     'block font-semibold uppercase tracking-[0.04em]',
-                    compact ? 'text-[8px] leading-none sm:text-[9px]' : 'text-[10px] sm:text-[11px]',
+                    compact
+                      ? 'text-[8px] leading-none sm:text-[9px]'
+                      : 'text-[10px] sm:text-[11px]',
                   )}
                 >
                   {label}
@@ -74,7 +92,14 @@ export function JobHubPipelineStepper({ stepper, onStepClick, disabled, compact 
         </div>
       </div>
       {hint ? (
-        <p className={cn('truncate text-white/38', compact ? 'text-[10px]' : 'text-[11px]')}>{hint}</p>
+        <p
+          className={cn(
+            'truncate text-white/38',
+            compact ? 'text-[10px]' : 'text-[11px]',
+          )}
+        >
+          {hint}
+        </p>
       ) : null}
     </div>
   );

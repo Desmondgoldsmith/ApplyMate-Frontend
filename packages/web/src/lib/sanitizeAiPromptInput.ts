@@ -65,7 +65,10 @@ export function neutralizeAiPromptInjection(input: string): {
   };
 }
 
-export function truncateAiPromptInput(text: string, maxChars: number): {
+export function truncateAiPromptInput(
+  text: string,
+  maxChars: number,
+): {
   text: string;
   truncated: boolean;
 } {

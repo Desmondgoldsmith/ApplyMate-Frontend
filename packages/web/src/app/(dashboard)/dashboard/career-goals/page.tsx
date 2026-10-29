@@ -2,13 +2,22 @@
 
 import { motion } from 'framer-motion';
 import { Loader2, Plus, X } from 'lucide-react';
-import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useCareerGoals, useSaveCareerGoals } from '@/hooks/useCareerGoals';
-import type { CareerGoalsRemotePreference, CareerGoalsWorkspace } from '@/lib/api';
+import type {
+  CareerGoalsRemotePreference,
+  CareerGoalsWorkspace,
+} from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
 import { cn } from '@/lib/utils';
 
@@ -24,16 +33,34 @@ const EMPTY: CareerGoalsWorkspace = {
   remotePreference: null,
 };
 
-const EMPLOYMENT_PRESETS = ['Full-time', 'Contract', 'Internship', 'Part-time'] as const;
+const EMPLOYMENT_PRESETS = [
+  'Full-time',
+  'Contract',
+  'Internship',
+  'Part-time',
+] as const;
 
-const REMOTE_OPTIONS: { value: CareerGoalsRemotePreference; label: string; hint: string }[] = [
+const REMOTE_OPTIONS: {
+  value: CareerGoalsRemotePreference;
+  label: string;
+  hint: string;
+}[] = [
   { value: 'remote', label: 'Remote', hint: 'Mostly or fully distributed' },
   { value: 'hybrid', label: 'Hybrid', hint: 'Mix of office + remote' },
   { value: 'onsite', label: 'Onsite', hint: 'Primarily in-office' },
   { value: 'any', label: 'Any', hint: 'No strict preference' },
 ];
 
-const CURRENCIES = ['USD', 'GBP', 'EUR', 'CAD', 'AUD', 'GHS', 'NGN', 'ZAR'] as const;
+const CURRENCIES = [
+  'USD',
+  'GBP',
+  'EUR',
+  'CAD',
+  'AUD',
+  'GHS',
+  'NGN',
+  'ZAR',
+] as const;
 
 function normalizeChipList(items: string[]): string[] {
   const out: string[] = [];
@@ -61,7 +88,10 @@ function normalizeWorkspace(v: CareerGoalsWorkspace): CareerGoalsWorkspace {
     targetIndustries: normalizeChipList(v.targetIndustries ?? []),
     targetSkills: normalizeChipList(v.targetSkills ?? []),
     employmentTypes: normalizeChipList(v.employmentTypes ?? []),
-    salaryMin: typeof v.salaryMin === 'number' && Number.isFinite(v.salaryMin) ? Math.max(0, v.salaryMin) : null,
+    salaryMin:
+      typeof v.salaryMin === 'number' && Number.isFinite(v.salaryMin)
+        ? Math.max(0, v.salaryMin)
+        : null,
     salaryCurrency: v.salaryCurrency?.trim() ? v.salaryCurrency : null,
     remotePreference: v.remotePreference ?? null,
   };
@@ -112,7 +142,11 @@ function ChipListField({
     <div className="space-y-2">
       <div>
         <p className="text-[13px] font-semibold text-white/90">{label}</p>
-        {hint ? <p className="mt-0.5 text-[12px] leading-relaxed text-white/45">{hint}</p> : null}
+        {hint ? (
+          <p className="mt-0.5 text-[12px] leading-relaxed text-white/45">
+            {hint}
+          </p>
+        ) : null}
       </div>
       {items.length > 0 ? (
         <ul className="flex flex-wrap gap-2">
@@ -181,9 +215,13 @@ export default function CareerGoalsPage() {
 
   const toggleEmployment = useCallback((preset: string) => {
     setForm((prev) => {
-      const has = prev.employmentTypes.some((x) => x.toLowerCase() === preset.toLowerCase());
+      const has = prev.employmentTypes.some(
+        (x) => x.toLowerCase() === preset.toLowerCase(),
+      );
       const employmentTypes = has
-        ? prev.employmentTypes.filter((x) => x.toLowerCase() !== preset.toLowerCase())
+        ? prev.employmentTypes.filter(
+            (x) => x.toLowerCase() !== preset.toLowerCase(),
+          )
         : [...prev.employmentTypes, preset];
       return { ...prev, employmentTypes };
     });
@@ -200,9 +238,12 @@ export default function CareerGoalsPage() {
       const payload = normalizeWorkspace(form);
       save.mutate(payload, {
         onSuccess: (data) => {
-          if (data.updatedAt) setForm((prev) => ({ ...prev, updatedAt: data.updatedAt }));
+          if (data.updatedAt)
+            setForm((prev) => ({ ...prev, updatedAt: data.updatedAt }));
           setSavedKey(stableGoalsKey(data));
-          toast.success('Career goals saved. Dashboard recommendations will refresh.');
+          toast.success(
+            'Career goals saved. Dashboard recommendations will refresh.',
+          );
         },
         onError: (err) => {
           toast.error(getApiErrorMessage(err));
@@ -244,9 +285,12 @@ export default function CareerGoalsPage() {
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Career goals</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+            Career goals
+          </h1>
           <p className="mt-2 max-w-[72ch] text-[14px] leading-relaxed text-white/55">
-          Tell ApplyMate what roles and environments you want so we can align matches, scoring, and dashboard coaching.
+            Tell ApplyMate what roles and environments you want so we can align
+            matches, scoring, and dashboard coaching.
           </p>
           {form.updatedAt ? (
             <p className="mt-2 text-[11px] text-white/35">
@@ -271,13 +315,19 @@ export default function CareerGoalsPage() {
         </div>
       </div>
 
-      <form onSubmit={onSubmit} className="grid gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
+      <form
+        onSubmit={onSubmit}
+        className="grid gap-6 lg:grid-cols-[1fr_360px] lg:items-start"
+      >
         <div className="space-y-6">
           <section className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 shadow-[0_20px_70px_-50px_rgba(0,0,0,0.75)] sm:p-7">
             <div className="mb-6">
-              <p className="text-[13px] font-semibold text-white/80">What you’re aiming for</p>
+              <p className="text-[13px] font-semibold text-white/80">
+                What you’re aiming for
+              </p>
               <p className="mt-1 text-[12px] leading-relaxed text-white/45">
-                Keep this tight (2–5 items per field). Clear goals produce sharper recommendations.
+                Keep this tight (2–5 items per field). Clear goals produce
+                sharper recommendations.
               </p>
             </div>
             <div className="grid gap-7 lg:grid-cols-2">
@@ -314,9 +364,12 @@ export default function CareerGoalsPage() {
 
           <section className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 sm:p-7">
             <div className="mb-6">
-              <p className="text-[13px] font-semibold text-white/80">Signals to emphasize</p>
+              <p className="text-[13px] font-semibold text-white/80">
+                Signals to emphasize
+              </p>
               <p className="mt-1 text-[12px] leading-relaxed text-white/45">
-                These steer tailoring and discovery. Add the skills you want highlighted across roles.
+                These steer tailoring and discovery. Add the skills you want
+                highlighted across roles.
               </p>
             </div>
             <div className="grid gap-7 lg:grid-cols-2">
@@ -328,11 +381,17 @@ export default function CareerGoalsPage() {
                 onChange={(targetSkills) => merge({ targetSkills })}
               />
               <div className="space-y-3">
-                <p className="text-[13px] font-semibold text-white/90">Employment types</p>
-                <p className="text-[12px] text-white/45">Select any that apply.</p>
+                <p className="text-[13px] font-semibold text-white/90">
+                  Employment types
+                </p>
+                <p className="text-[12px] text-white/45">
+                  Select any that apply.
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {EMPLOYMENT_PRESETS.map((preset) => {
-                    const active = form.employmentTypes.some((x) => x.toLowerCase() === preset.toLowerCase());
+                    const active = form.employmentTypes.some(
+                      (x) => x.toLowerCase() === preset.toLowerCase(),
+                    );
                     return (
                       <button
                         key={preset}
@@ -356,14 +415,19 @@ export default function CareerGoalsPage() {
 
           <section className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 sm:p-7">
             <div className="mb-6">
-              <p className="text-[13px] font-semibold text-white/80">Constraints</p>
+              <p className="text-[13px] font-semibold text-white/80">
+                Constraints
+              </p>
               <p className="mt-1 text-[12px] leading-relaxed text-white/45">
                 Optional. These help filter or rank recommendations.
               </p>
             </div>
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="space-y-2">
-                <label className="text-[13px] font-semibold text-white/90" htmlFor="salary-min">
+                <label
+                  className="text-[13px] font-semibold text-white/90"
+                  htmlFor="salary-min"
+                >
                   Minimum salary
                 </label>
                 <input
@@ -376,20 +440,26 @@ export default function CareerGoalsPage() {
                   onChange={(e) => {
                     const v = e.target.value;
                     if (v === '') merge({ salaryMin: null });
-                    else if (Number.isFinite(Number(v))) merge({ salaryMin: Math.max(0, Number(v)) });
+                    else if (Number.isFinite(Number(v)))
+                      merge({ salaryMin: Math.max(0, Number(v)) });
                   }}
                   placeholder="e.g. 120000"
                   className="min-h-[44px] w-full rounded-xl border border-white/12 bg-[#0c1010] px-3 py-2 text-[13px] text-white placeholder:text-white/30 focus:border-[#00C9B1]/40 focus:outline-none"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[13px] font-semibold text-white/90" htmlFor="salary-ccy">
+                <label
+                  className="text-[13px] font-semibold text-white/90"
+                  htmlFor="salary-ccy"
+                >
                   Currency
                 </label>
                 <select
                   id="salary-ccy"
                   value={form.salaryCurrency ?? ''}
-                  onChange={(e) => merge({ salaryCurrency: e.target.value.trim() || null })}
+                  onChange={(e) =>
+                    merge({ salaryCurrency: e.target.value.trim() || null })
+                  }
                   className="min-h-[44px] w-full rounded-xl border border-white/12 bg-[#0c1010] px-3 py-2 text-[13px] text-white focus:border-[#00C9B1]/40 focus:outline-none"
                 >
                   <option value="">Select…</option>
@@ -403,7 +473,9 @@ export default function CareerGoalsPage() {
             </div>
 
             <div className="mt-7 space-y-3">
-              <p className="text-[13px] font-semibold text-white/90">Work preference</p>
+              <p className="text-[13px] font-semibold text-white/90">
+                Work preference
+              </p>
               <div className="grid gap-2 sm:grid-cols-2">
                 {REMOTE_OPTIONS.map((opt) => {
                   const active = form.remotePreference === opt.value;
@@ -419,8 +491,12 @@ export default function CareerGoalsPage() {
                           : 'border-white/10 bg-white/[0.02] hover:border-white/18',
                       )}
                     >
-                      <p className="text-[13px] font-semibold text-white">{opt.label}</p>
-                      <p className="mt-0.5 text-[11px] text-white/45">{opt.hint}</p>
+                      <p className="text-[13px] font-semibold text-white">
+                        {opt.label}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-white/45">
+                        {opt.hint}
+                      </p>
                     </button>
                   );
                 })}
@@ -433,9 +509,12 @@ export default function CareerGoalsPage() {
           <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 sm:p-7">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[13px] font-semibold text-white/85">Save changes</p>
+                <p className="text-[13px] font-semibold text-white/85">
+                  Save changes
+                </p>
                 <p className="mt-1 text-[12px] leading-relaxed text-white/45">
-                  Updates take effect immediately on your dashboard and job board.
+                  Updates take effect immediately on your dashboard and job
+                  board.
                 </p>
               </div>
               {isDirty ? (
@@ -465,7 +544,9 @@ export default function CareerGoalsPage() {
             </Button>
 
             <div className="mt-5 rounded-2xl border border-white/10 bg-[#0B1010] p-4">
-              <p className="text-[12px] font-semibold text-white/80">Tips for better results</p>
+              <p className="text-[12px] font-semibold text-white/80">
+                Tips for better results
+              </p>
               <ul className="mt-2 list-disc space-y-1 pl-4 text-[12px] leading-relaxed text-white/50">
                 <li>Use 2–5 target roles and keep titles specific.</li>
                 <li>Add 3–8 skills you want highlighted.</li>

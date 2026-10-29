@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CvImprovementsPayload, CvSuggestionMutationResult, CvSuggestionsBulkMutationResult } from '@/lib/api';
+import type {
+  CvImprovementsPayload,
+  CvSuggestionMutationResult,
+  CvSuggestionsBulkMutationResult,
+} from '@/lib/api';
 import {
   applyBulkAcceptToImprovementsCache,
   applyBulkRejectToImprovementsCache,
@@ -156,7 +160,11 @@ describe('applySuggestionRejectToImprovementsCache', () => {
       cvRevisionId: null,
       rejectedSuggestionIds: ['b'],
     };
-    const next = applySuggestionRejectToImprovementsCache(prev, 'ignored', product);
+    const next = applySuggestionRejectToImprovementsCache(
+      prev,
+      'ignored',
+      product,
+    );
     expect(next?.improvements.map((i) => i.id)).toEqual(['a']);
   });
 });

@@ -43,7 +43,9 @@ export function MatchScoreBar({
 
   return (
     <div ref={ref} className={`w-full ${className}`}>
-      <div className={`flex items-baseline justify-between ${featured ? 'mb-3.5' : 'mb-2.5'}`}>
+      <div
+        className={`flex items-baseline justify-between ${featured ? 'mb-3.5' : 'mb-2.5'}`}
+      >
         <span
           className={
             featured
@@ -93,7 +95,9 @@ export function MatchScoreBar({
       </div>
 
       {skills && skills.length > 0 ? (
-        <div className={`flex flex-wrap ${featured ? 'mt-5 gap-2.5' : 'mt-4 gap-2'}`}>
+        <div
+          className={`flex flex-wrap ${featured ? 'mt-5 gap-2.5' : 'mt-4 gap-2'}`}
+        >
           {skills.map((skill) => (
             <div
               key={skill.name}

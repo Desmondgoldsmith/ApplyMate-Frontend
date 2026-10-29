@@ -22,7 +22,8 @@ export function parseCvImprovementTargetFieldPath(
 }
 
 function sectionAccordionKey(sectionRoot: string): string {
-  if (sectionRoot === 'headline' || sectionRoot === 'contact') return 'personal';
+  if (sectionRoot === 'headline' || sectionRoot === 'contact')
+    return 'personal';
   return sectionRoot;
 }
 

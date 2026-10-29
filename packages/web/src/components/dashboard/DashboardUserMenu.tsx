@@ -26,7 +26,9 @@ export function DashboardUserMenu({ className }: { className?: string }) {
   const initials = getDisplayInitials(user);
   const name = getDisplayName(user);
   const showUserSkeleton =
-    meLoading && !me && (!storeUser?.email || getDisplayInitials(storeUser) === 'U');
+    meLoading &&
+    !me &&
+    (!storeUser?.email || getDisplayInitials(storeUser) === 'U');
   const marketingPaused = isMarketingPauseActive(user?.nudgePausedUntil);
   const [open, setOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
@@ -79,8 +81,12 @@ export function DashboardUserMenu({ className }: { className?: string }) {
           role="menu"
         >
           <div className="border-b border-white/[0.06] px-3 py-2">
-            <p className="truncate text-[13px] font-medium text-white">{name}</p>
-            {user?.email ? <p className="truncate text-[11px] text-white/40">{user.email}</p> : null}
+            <p className="truncate text-[13px] font-medium text-white">
+              {name}
+            </p>
+            {user?.email ? (
+              <p className="truncate text-[11px] text-white/40">{user.email}</p>
+            ) : null}
             {marketingPaused ? (
               <Link
                 href="/dashboard/settings?tab=notifications"

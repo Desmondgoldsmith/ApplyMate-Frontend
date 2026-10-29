@@ -154,7 +154,9 @@ export function MobileBottomNav() {
                       <Icon
                         className={cn(
                           'h-[17px] w-[17px] shrink-0',
-                          active ? 'text-[#00C9B1]' : 'text-[rgba(240,244,242,0.35)]',
+                          active
+                            ? 'text-[#00C9B1]'
+                            : 'text-[rgba(240,244,242,0.35)]',
                         )}
                       />
                       <span className="line-clamp-2 w-full text-center">
@@ -232,10 +234,14 @@ export function MobileBottomNav() {
                         <Icon
                           className={cn(
                             'h-6 w-6 shrink-0',
-                            active ? 'text-[#00C9B1]' : 'text-[rgba(240,244,242,0.60)]',
+                            active
+                              ? 'text-[#00C9B1]'
+                              : 'text-[rgba(240,244,242,0.60)]',
                           )}
                         />
-                        <span className="min-w-0 flex-1 text-left">{item.shortLabel}</span>
+                        <span className="min-w-0 flex-1 text-left">
+                          {item.shortLabel}
+                        </span>
                         {soon ? (
                           <span className="text-[10px] font-semibold uppercase tracking-wide text-[#00C9B1]">
                             Soon
@@ -279,7 +285,9 @@ export function MobileBottomNav() {
                       onClick={() => setJobsMenuOpen((v) => !v)}
                       className={cn(
                         'flex min-h-[4.1rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium leading-tight transition-colors active:scale-[0.98]',
-                        active ? 'text-[#00C9B1]' : 'text-[rgba(240,244,242,0.35)] hover:text-[rgba(240,244,242,0.60)]',
+                        active
+                          ? 'text-[#00C9B1]'
+                          : 'text-[rgba(240,244,242,0.35)] hover:text-[rgba(240,244,242,0.60)]',
                         !active && 'hover:bg-white/[0.04]',
                       )}
                       aria-expanded={jobsMenuOpen}
@@ -288,10 +296,17 @@ export function MobileBottomNav() {
                       <Briefcase
                         className={cn(
                           'h-[18px] w-[18px] shrink-0',
-                          active ? 'text-[#00C9B1]' : 'text-[rgba(240,244,242,0.35)]',
+                          active
+                            ? 'text-[#00C9B1]'
+                            : 'text-[rgba(240,244,242,0.35)]',
                         )}
                       />
-                      <span className={cn('line-clamp-2 w-full text-center', active && 'text-[#00C9B1]')}>
+                      <span
+                        className={cn(
+                          'line-clamp-2 w-full text-center',
+                          active && 'text-[#00C9B1]',
+                        )}
+                      >
                         {item.shortLabel}
                       </span>
                     </button>
@@ -306,19 +321,21 @@ export function MobileBottomNav() {
                     key={item.id}
                     href={item.href}
                     {...(tourAttr ? { 'data-tour': tourAttr } : {})}
-                      className={cn(
-                        'flex min-h-[4.1rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium leading-tight transition-colors active:scale-[0.98]',
-                        active
-                          ? 'text-[#00C9B1]'
-                          : 'text-[rgba(240,244,242,0.35)] hover:text-[rgba(240,244,242,0.60)]',
-                        !active && 'hover:bg-white/[0.04]',
-                        soon && 'opacity-75',
-                      )}
+                    className={cn(
+                      'flex min-h-[4.1rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium leading-tight transition-colors active:scale-[0.98]',
+                      active
+                        ? 'text-[#00C9B1]'
+                        : 'text-[rgba(240,244,242,0.35)] hover:text-[rgba(240,244,242,0.60)]',
+                      !active && 'hover:bg-white/[0.04]',
+                      soon && 'opacity-75',
+                    )}
                   >
                     <Icon
                       className={cn(
                         'h-[18px] w-[18px] shrink-0',
-                        active ? 'text-[#00C9B1]' : 'text-[rgba(240,244,242,0.35)]',
+                        active
+                          ? 'text-[#00C9B1]'
+                          : 'text-[rgba(240,244,242,0.35)]',
                       )}
                     />
                     <span className="line-clamp-2 w-full text-center">
@@ -351,10 +368,19 @@ export function MobileBottomNav() {
                 <MoreHorizontal
                   className={cn(
                     'h-[18px] w-[18px] shrink-0',
-                    moreActive || moreOpen ? 'text-[#00C9B1]' : 'text-[rgba(240,244,242,0.35)]',
+                    moreActive || moreOpen
+                      ? 'text-[#00C9B1]'
+                      : 'text-[rgba(240,244,242,0.35)]',
                   )}
                 />
-                <span className={cn('w-full text-center', (moreActive || moreOpen) && 'text-[#00C9B1]')}>More</span>
+                <span
+                  className={cn(
+                    'w-full text-center',
+                    (moreActive || moreOpen) && 'text-[#00C9B1]',
+                  )}
+                >
+                  More
+                </span>
               </button>
             </div>
           </motion.nav>

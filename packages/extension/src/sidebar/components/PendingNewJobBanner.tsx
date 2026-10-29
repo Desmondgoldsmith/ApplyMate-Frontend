@@ -11,8 +11,12 @@ const TOKENS = {
 
 /** Prompt when user opens a new job page while another analyzed job is still pinned. */
 export function PendingNewJobBanner() {
-  const { pendingNewJob, switchToPendingNewJob, dismissPendingNewJob, currentJob } =
-    useJobSession();
+  const {
+    pendingNewJob,
+    switchToPendingNewJob,
+    dismissPendingNewJob,
+    currentJob,
+  } = useJobSession();
 
   if (!pendingNewJob) return null;
 
@@ -30,13 +34,23 @@ export function PendingNewJobBanner() {
         fontFamily: TOKENS.font,
       }}
     >
-      <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: TOKENS.text }}>
+      <p
+        style={{ margin: 0, fontSize: 12, fontWeight: 600, color: TOKENS.text }}
+      >
         New job detected
       </p>
-      <p style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.55, color: TOKENS.textMuted }}>
-        You still have analysis for <span style={{ color: TOKENS.text }}>{currentLabel}</span>.
-        Switch to <span style={{ color: TOKENS.text }}>{nextLabel}</span> and clear the previous
-        job content?
+      <p
+        style={{
+          margin: '6px 0 0',
+          fontSize: 11,
+          lineHeight: 1.55,
+          color: TOKENS.textMuted,
+        }}
+      >
+        You still have analysis for{' '}
+        <span style={{ color: TOKENS.text }}>{currentLabel}</span>. Switch to{' '}
+        <span style={{ color: TOKENS.text }}>{nextLabel}</span> and clear the
+        previous job content?
       </p>
       <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
         <button

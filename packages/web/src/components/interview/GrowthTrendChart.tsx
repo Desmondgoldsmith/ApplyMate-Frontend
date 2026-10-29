@@ -9,7 +9,9 @@ import { cn } from '@/lib/utils';
 
 const InterviewScoreBarChart = dynamic(
   () =>
-    import('@/components/interview/InterviewScoreBarChart').then((m) => m.InterviewScoreBarChart),
+    import('@/components/interview/InterviewScoreBarChart').then(
+      (m) => m.InterviewScoreBarChart,
+    ),
   {
     ssr: false,
     loading: () => (
@@ -70,7 +72,9 @@ export const GrowthTrendChart = memo(function GrowthTrendChart({
         barLabel="Readiness"
       />
       {first < 50 && latest >= 65 ? (
-        <p className="mt-2 text-[11px] text-emerald-300/90">You crossed the interview-ready threshold.</p>
+        <p className="mt-2 text-[11px] text-emerald-300/90">
+          You crossed the interview-ready threshold.
+        </p>
       ) : null}
     </div>
   );

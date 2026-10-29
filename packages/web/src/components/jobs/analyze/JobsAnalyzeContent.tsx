@@ -51,7 +51,10 @@ import {
   canUseAiFromDailyAiUsage,
   DAILY_AI_LIMIT_REACHED_MESSAGE,
 } from '@/lib/ai-daily-usage';
-import { resolveCvProfileIdForSavedJob, resolveSelectedCvProfileId } from '@/lib/jobAnalysisCvContext';
+import {
+  resolveCvProfileIdForSavedJob,
+  resolveSelectedCvProfileId,
+} from '@/lib/jobAnalysisCvContext';
 import { isCompletedJobAnalysis } from '@/lib/jobAnalysisComplete';
 import { getTailorChecklistSkills } from '@/lib/skillCoverage';
 import {
@@ -83,7 +86,10 @@ import {
   markExecutionComplete,
   recordExecutionCheckpoint,
 } from '@/lib/executionMemory';
-import { resolveAnalysisAfterTailorMutation, commitTailorJobAnalysis } from '@/lib/applyTailorMutation';
+import {
+  resolveAnalysisAfterTailorMutation,
+  commitTailorJobAnalysis,
+} from '@/lib/applyTailorMutation';
 import { acceptedTailorSkillNames } from '@/lib/tailorAcceptedSkills';
 import { mergeTailorEstimatedScores } from '@/lib/tailorMatchScore';
 import { invalidateTodayPlanQueries } from '@/lib/today-plan';
@@ -110,7 +116,7 @@ import { TailoringPanel } from '@/components/jobs/analyze/TailoringPanel';
 import {
   STORAGE_ANALYSIS_KEY,
   STORAGE_COMPLETED_TAILOR_KEY,
-    STORAGE_FORM_KEY,
+  STORAGE_FORM_KEY,
   STORAGE_LAST_JOB_ID,
   buildAnalyzerDescriptionFromListing,
   historyRowKey,
@@ -287,7 +293,9 @@ export function JobsAnalyzeContent() {
       if (candidates.length === 0) return prev;
 
       const scoreMatch = candidates.find(
-        (x) => Math.round(x.matchScore ?? NaN) === Math.round(prev.matchScore ?? NaN),
+        (x) =>
+          Math.round(x.matchScore ?? NaN) ===
+          Math.round(prev.matchScore ?? NaN),
       );
       const sorted = [...candidates].sort(
         (a, b) =>
@@ -535,7 +543,8 @@ export function JobsAnalyzeContent() {
 
       if (tailorBaselineScoreRef.current == null && merged.isTailored) {
         const lockFrom =
-          merged.scoreBeforeTailoring != null && Number.isFinite(merged.scoreBeforeTailoring)
+          merged.scoreBeforeTailoring != null &&
+          Number.isFinite(merged.scoreBeforeTailoring)
             ? merged.scoreBeforeTailoring
             : null;
         if (lockFrom != null && Number.isFinite(lockFrom)) {
@@ -555,14 +564,27 @@ export function JobsAnalyzeContent() {
       setAnalysis(scored.analysis);
       setViewingSavedAnalysis(false);
       persistSessionSnapshot(title, company, description, scored.analysis);
-      queryClient.setQueryData(queryKeys.jobs.analysisCurrent(), scored.analysis);
+      queryClient.setQueryData(
+        queryKeys.jobs.analysisCurrent(),
+        scored.analysis,
+      );
       void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profileDefault() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profile(cvId) });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.analytics.root(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.profileDefault(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.profile(cvId),
+      });
       void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.score(cvId) });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.scoreRoot() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.score(cvId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.scoreRoot(),
+      });
       void queryClient.invalidateQueries({
         queryKey: cvSuggestionsQueryKey(cvId),
       });
@@ -570,12 +592,22 @@ export function JobsAnalyzeContent() {
         queryKey: CV_SUGGESTIONS_QUERY_ROOT,
       });
       window.setTimeout(() => {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.cv.score(cvId) });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.cv.scoreRoot() });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.cv.score(cvId),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.cv.scoreRoot(),
+        });
       }, 2500);
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analysis(jobId) });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.history(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.analyses(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.analysis(jobId),
+      });
       invalidateTodayPlanQueries(queryClient);
       toast.success('Job match updated from your saved analysis');
     } catch (e) {
@@ -642,7 +674,13 @@ export function JobsAnalyzeContent() {
     if (cv?.id) {
       setSelectedProfileId(cv.id);
     }
-  }, [cvProfileIdFromUrl, cvIdFromExtensionUrl, cvProfiles, selectedProfileId, cv?.id]);
+  }, [
+    cvProfileIdFromUrl,
+    cvIdFromExtensionUrl,
+    cvProfiles,
+    selectedProfileId,
+    cv?.id,
+  ]);
 
   const selectedProfile = useMemo((): CvProfileSummary | null => {
     const hit = cvProfiles.find((p) => p.id === selectedProfileId);
@@ -1165,7 +1203,8 @@ export function JobsAnalyzeContent() {
         if (sourceFromUrl === 'extension') {
           const jobTitle = searchParams.get('jobTitle')?.trim() ?? '';
           const companyParam = searchParams.get('company')?.trim() ?? '';
-          const descriptionParam = searchParams.get('description')?.trim() ?? '';
+          const descriptionParam =
+            searchParams.get('description')?.trim() ?? '';
           if (jobTitle) setTitle(jobTitle);
           if (companyParam) setCompany(companyParam);
           if (descriptionParam) setDescription(descriptionParam);
@@ -1436,7 +1475,9 @@ export function JobsAnalyzeContent() {
   const recordApplication = useMutation({
     mutationFn: api.applications.create,
     onMutate: async (payload) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.applications.root() });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.applications.root(),
+      });
       const previous = queryClient.getQueryData<ApplicationItem[]>([
         'applications',
       ]);
@@ -1456,15 +1497,22 @@ export function JobsAnalyzeContent() {
       return { previous };
     },
     onError: (_e, _v, ctx) => {
-      queryClient.setQueryData(queryKeys.applications.root(), ctx?.previous ?? []);
+      queryClient.setQueryData(
+        queryKeys.applications.root(),
+        ctx?.previous ?? [],
+      );
     },
     onSuccess: () => {
       invalidateNotificationList(queryClient);
       scheduleUnreadNotificationCountInvalidate(queryClient);
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.applications.root(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.analyses(),
+      });
       invalidateGrowthQueries(queryClient);
       invalidateTodayPlanQueries(queryClient);
     },
@@ -1523,7 +1571,9 @@ export function JobsAnalyzeContent() {
         setSelectedProfileId(matchedCv);
       }
       setViewingSavedAnalysis(false);
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.analyses(),
+      });
       const analysisId = (res.id ?? '').trim();
       const jlCapture = (
         jobListingIdFromUrl ||
@@ -1551,7 +1601,9 @@ export function JobsAnalyzeContent() {
               /* bookmark may already be linked or route missing */
             }
           }
-          await queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
+          await queryClient.invalidateQueries({
+            queryKey: queryKeys.hub.bookmarks(),
+          });
           invalidateTodayPlanQueries(queryClient);
         })();
       } else {
@@ -1974,8 +2026,8 @@ export function JobsAnalyzeContent() {
     hasCoverLetter ||
     Boolean(analysis?.hasCoverLetter);
   const savedDone =
-    analysis?.checklistSuggestions?.find((s) => s.id === 'auto_save')?.completed ===
-      true ||
+    analysis?.checklistSuggestions?.find((s) => s.id === 'auto_save')
+      ?.completed === true ||
     Boolean(loopSteps.savedToHub) ||
     viewingSavedAnalysis;
   const tailorDoneFromChecklist =
@@ -1991,7 +2043,9 @@ export function JobsAnalyzeContent() {
 
   const handleApplyToJobStep = useCallback(() => {
     if (!resolvedApplyUrl) {
-      toast.error('No posting link found for this job. Apply from the source listing.');
+      toast.error(
+        'No posting link found for this job. Apply from the source listing.',
+      );
       return;
     }
     openExternalJobApplyUrl(resolvedApplyUrl);
@@ -2033,7 +2087,15 @@ export function JobsAnalyzeContent() {
     router.push(
       `/dashboard/interview${qp.toString() ? `?${qp.toString()}` : ''}`,
     );
-  }, [analysis, company, cv?.id, router, selectedProfileId, title, updateLoopSteps]);
+  }, [
+    analysis,
+    company,
+    cv?.id,
+    router,
+    selectedProfileId,
+    title,
+    updateLoopSteps,
+  ]);
 
   const handleSaveJobToHub = useCallback(async () => {
     if (!analysis) return;
@@ -2088,7 +2150,10 @@ export function JobsAnalyzeContent() {
   );
 
   const analysisMutationBusy =
-    analyze.isPending || aiReportPending || generate.isPending || tailorSubmitting;
+    analyze.isPending ||
+    aiReportPending ||
+    generate.isPending ||
+    tailorSubmitting;
   const analyzeProgressLabel = useProgressPhrases(
     analyze.isPending || aiReportPending || awaitingListingAnalysis,
     ANALYZE_PROGRESS_PHRASES,
@@ -2101,12 +2166,11 @@ export function JobsAnalyzeContent() {
     tailorSubmitting || tailorDraftLoading,
     TAILOR_PROGRESS_PHRASES,
   );
-  const resultsLoadingLabel =
-    generate.isPending
-      ? coverLetterProgressLabel
-      : tailorSubmitting || tailorDraftLoading
-        ? tailorProgressLabel
-        : analyzeProgressLabel;
+  const resultsLoadingLabel = generate.isPending
+    ? coverLetterProgressLabel
+    : tailorSubmitting || tailorDraftLoading
+      ? tailorProgressLabel
+      : analyzeProgressLabel;
   const listingAutoBlockedByCv =
     Boolean(jobListingIdFromUrl) && cvProfiles.length > 1 && !selectedProfileId;
   const showEmptyStateLoader =
@@ -2122,7 +2186,10 @@ export function JobsAnalyzeContent() {
       analysis,
       Boolean(tailorDraftForCurrentJob),
     );
-    if (tailorUi.tailorCtaMode === 'view' || tailorUi.tailorCtaMode === 'continue') {
+    if (
+      tailorUi.tailorCtaMode === 'view' ||
+      tailorUi.tailorCtaMode === 'continue'
+    ) {
       void openTailorPanel();
       return;
     }
@@ -2265,38 +2332,37 @@ export function JobsAnalyzeContent() {
 
   const handleGenerateCoverLetter = useCallback(() => {
     if (!analysis) return;
-                            if (!canUseAiFromDailyAiUsage(aiUsage)) {
+    if (!canUseAiFromDailyAiUsage(aiUsage)) {
       trackUpgradePrompted('job_analyzer_cover_letter');
-                              toast.error(DAILY_AI_LIMIT_REACHED_MESSAGE);
-                              return;
-                            }
-                            generate.mutate(
-                              {
-                                title,
-                                company,
-                                description,
-                                questions: [],
+      toast.error(DAILY_AI_LIMIT_REACHED_MESSAGE);
+      return;
+    }
+    generate.mutate(
+      {
+        title,
+        company,
+        description,
+        questions: [],
         ...(analysis.id?.trim() ? { jobAnalysisId: analysis.id.trim() } : {}),
-                              },
-                              {
-                                onSuccess: async (res) => {
+      },
+      {
+        onSuccess: async (res) => {
           const raw = normalizeText(res.coverLetter as unknown).trim();
-                                  const letter =
-            raw !== '' ? raw : 'Generated content received.';
-                                  setGenerated(letter);
-                                  setCoverLetterAiBaseline(letter);
-                                  setCoverLetterEditing(false);
+          const letter = raw !== '' ? raw : 'Generated content received.';
+          setGenerated(letter);
+          setCoverLetterAiBaseline(letter);
+          setCoverLetterEditing(false);
           trackConversionFunnelEvent('cover_letter_generated', {
             jobAnalysisId: analysis.id?.trim() ?? undefined,
             title: title || undefined,
             company: company || undefined,
           });
-                                  try {
-                                    await recordApplication.mutateAsync({
-                                      title: title || 'Untitled role',
-                                      company: company || 'Unknown company',
-                                      url: '',
-                                      matchScore: analysis.matchScore,
+          try {
+            await recordApplication.mutateAsync({
+              title: title || 'Untitled role',
+              company: company || 'Unknown company',
+              url: '',
+              matchScore: analysis.matchScore,
               ...(analysis.id?.trim()
                 ? { jobAnalysisId: analysis.id.trim() }
                 : {}),
@@ -2307,37 +2373,39 @@ export function JobsAnalyzeContent() {
               title: title || undefined,
               company: company || undefined,
               via: 'cover_letter_generate',
-                                    });
-                                    toast.success('Job saved to your list');
-                                    trackFunnelEvent('apply_completed', {
-                                      jobAnalysisId: analysis.id ?? null,
-                                      title,
-                                      company,
-                                    });
-                                    void api.growth.trackEvent({
-                                      eventName: 'apply_completed',
-                                      context: {
-                                        jobAnalysisId: analysis.id ?? null,
-                                        title,
-                                        company,
-                                      },
-                                    });
-                                    void consumeGrowthFeedback();
-                                  } catch {
-                                    toast.error(
-                                      'Cover letter is ready, but it could not be saved to your tracker. You can still copy or download it below.',
-                                    );
-                                  } finally {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
-                                    invalidateTodayPlanQueries(queryClient);
-                                  }
-                                },
-                                onError: (err) => {
-                                  toast.error(getApiErrorMessage(err));
+            });
+            toast.success('Job saved to your list');
+            trackFunnelEvent('apply_completed', {
+              jobAnalysisId: analysis.id ?? null,
+              title,
+              company,
+            });
+            void api.growth.trackEvent({
+              eventName: 'apply_completed',
+              context: {
+                jobAnalysisId: analysis.id ?? null,
+                title,
+                company,
+              },
+            });
+            void consumeGrowthFeedback();
+          } catch {
+            toast.error(
+              'Cover letter is ready, but it could not be saved to your tracker. You can still copy or download it below.',
+            );
+          } finally {
+            void queryClient.invalidateQueries({
+              queryKey: queryKeys.jobs.analyses(),
+            });
+            invalidateTodayPlanQueries(queryClient);
+          }
+        },
+        onError: (err) => {
+          toast.error(getApiErrorMessage(err));
           queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
-                                },
-                              },
-                            );
+        },
+      },
+    );
   }, [
     aiUsage,
     analysis,
@@ -2396,9 +2464,9 @@ export function JobsAnalyzeContent() {
           </div>
         </div>
       ) : null}
-                        <motion.div
+      <motion.div
         initial={{ opacity: 0, y: 16 }}
-                          animate={{ opacity: 1, y: 0 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
         className="flex w-full min-w-0 max-w-full flex-col overflow-x-hidden lg:h-[calc(100dvh-7.5rem)] lg:min-h-0 lg:overflow-hidden"
       >
@@ -2407,9 +2475,9 @@ export function JobsAnalyzeContent() {
           {mobileTabs.map((tab) => {
             const active = mobileTab === tab.id;
             return (
-                                <button
+              <button
                 key={tab.id}
-                                  type="button"
+                type="button"
                 onClick={() => setMobileTab(tab.id)}
                 className={cn(
                   'flex h-11 flex-1 items-center justify-center border-b-2 text-[13px] transition-colors duration-150',
@@ -2420,7 +2488,7 @@ export function JobsAnalyzeContent() {
                 aria-current={active ? 'page' : undefined}
               >
                 {tab.label}
-                                </button>
+              </button>
             );
           })}
         </div>
@@ -2482,10 +2550,10 @@ export function JobsAnalyzeContent() {
                 </p>
                 <p className="mt-2 max-w-sm text-sm leading-relaxed text-white/45">
                   Select which resume to match against this job using the
-                  dropdown on the left. We will run the AI analysis against
-                  that profile.
+                  dropdown on the left. We will run the AI analysis against that
+                  profile.
                 </p>
-                            </div>
+              </div>
             ) : showEmptyStateLoader ? (
               <AnalyzerResultsLoadingShell
                 variant="empty"
@@ -2502,7 +2570,7 @@ export function JobsAnalyzeContent() {
                   your match score, skill gaps, salary estimate, and cover
                   letter.
                 </p>
-                          </div>
+              </div>
             ) : (
               <div className="relative min-h-[200px]">
                 {showResultsRefreshing ? (
@@ -2519,135 +2587,133 @@ export function JobsAnalyzeContent() {
                   )}
                 >
                   <MatchScorePanel
-                        analysis={analysis}
-                        rematching={rematching}
-                        displayScoreBeforeTailor={displayScoreBeforeTailor}
-                        isTailorComplete={isTailorComplete}
-                        acceptedSkillNames={acceptedSkillNames}
-                        resolvedApplyUrl={resolvedApplyUrl}
-                        analyzePending={analyze.isPending}
-                        aiReportPending={aiReportPending}
-                        onTailorFirst={handleTailorFirst}
-                        onApplyNow={handleApplyOnCompanySite}
-                      />
-                      <NextStepsPanel
-                        tailorDone={tailorDoneFromChecklist || isTailorComplete}
-                        coverLetterDone={coverLetterDone}
-                        coverLetterSkipped={Boolean(
-                          loopSteps.coverLetterSkipped,
-                        )}
-                        savedDone={savedDone}
-                        appliedDone={appliedDone}
-                        interviewPrepDone={interviewPrepDone}
-                        applyAvailable={Boolean(resolvedApplyUrl)}
-                        reminderDone={reminderDone}
-                        reminderSummary={reminderSummary}
-                        busy={{
-                          tailor: tailorSubmitting,
-                          coverLetter: generate.isPending,
-                          save: recordApplication.isPending,
-                          reminder: loopReminders.createReminder.isPending,
-                        }}
-                        onTailor={handleTailorFirst}
-                        onGenerateCoverLetter={handleGenerateCoverLetter}
-                        onSkipCoverLetter={handleSkipCoverLetter}
-                        onSaveJob={() => void handleSaveJobToHub()}
-                        onApplyToJob={handleApplyToJobStep}
-                        onPrepInterview={handlePrepInterviewStep}
-                        onSetReminder={handleSetFollowUpReminder}
-                      />
-                      <div className="min-w-0 max-w-full overflow-x-hidden rounded-2xl border border-[#00C9B1]/15 bg-[#0C0F0F] p-4 sm:p-6">
-                        <SkillGapPanel
-                          analysis={analysis}
-                          isTailorComplete={isTailorComplete}
-                          selectedSkillNames={selectedSkillNames}
-                          onToggleSkill={toggleSkillSelected}
-                          tailorSubmitting={tailorSubmitting}
-                          jobAnalysisIdForTailor={jobAnalysisIdForTailor}
-                          cvProfileIdForTailor={cvProfileIdForTailor}
-                          cvBootstrapPending={cvBootstrapPending}
-                          cvProfileCount={cvProfiles.length}
-                          selectedProfileId={selectedProfileId}
-                          tailorAiBlocked={tailorAiBlocked}
-                          hasTailorDraftForJob={Boolean(tailorDraftForCurrentJob)}
-                          onCreateTailorDraft={() =>
-                            void handleCreateTailorDraft()
-                          }
-                          onResumeTailoring={() => setTailorSidebarOpen(true)}
-                          onOpenTailorEditor={() => void openTailorPanel()}
-                        />
-                        <TailoringPanel
-                          analysis={analysis}
-                          isTailorComplete={isTailorComplete}
-                          displayScoreBeforeTailor={displayScoreBeforeTailor}
-                          hasTailorDraftForJob={Boolean(tailorDraftForCurrentJob)}
-                          rematching={rematching}
-                          analyzePending={analyze.isPending}
-                          onOpenTailorPanel={() => void openTailorPanel()}
-                          onRematch={() => void rematchJobToUpdatedCv()}
-                        />
-                      </div>
-                      <JobHubSavePanel
-                        analysis={analysis}
-                        title={title}
-                        company={company}
-                        description={description}
-                        hasCoverLetter={hasCoverLetter}
-                        generatePending={generate.isPending}
-                        savePending={recordApplication.isPending}
-                        aiUsage={{
-                          isPaidTier: aiUsage.isPaidTier,
-                          isLoading: aiUsage.isLoading,
-                          remaining: aiUsage.remaining,
-                        }}
-                        selectedProfileId={selectedProfileId}
-                        cvProfileId={cv?.id}
-                        tailoredCvProfileId={analysis.tailoredCvProfileId}
-                        sourceCvProfileId={analysis.sourceCvProfileId}
-                        exportTemplate={selectedProfile?.template ?? cv?.template ?? null}
-                        onGenerateCoverLetter={handleGenerateCoverLetter}
-                      />
-                      <CoverLetterPanel
-                        visible={hasCoverLetter}
-                        coverLetterDisplay={coverLetterDisplay}
-                        coverLetterEditing={coverLetterEditing}
-                        coverLetterDraft={coverLetterDraft}
-                        coverLetterAiBaseline={coverLetterAiBaseline}
-                        onStartEdit={() => {
-                          setCoverLetterDraft(coverLetterDisplay ?? '');
-                          setCoverLetterEditing(true);
-                        }}
-                        onDraftChange={setCoverLetterDraft}
-                        onCancelEdit={() => setCoverLetterEditing(false)}
-                        onSaveEdits={async (text) => {
-                          const next = text.trim() || null;
-                                      setGenerated(next);
-                                      setCoverLetterEditing(false);
-                          const jobId = analysis.id?.trim();
-                                      if (jobId && next) {
-                                        writeCoverLetterToStorage(jobId, next);
-                            await api.jobs.saveGeneratedCoverLetter(jobId, next);
-                                      }
-                                      toast.success('Cover letter updated');
-                                    }}
-                        onRevertToAi={() => {
-                                      const baseline =
-                            coverLetterAiBaseline ?? coverLetterDisplay ?? '';
-                                      setCoverLetterDraft(baseline);
-                                      setGenerated(baseline.trim() || null);
-                                      toast.success('Reverted to AI version');
-                                    }}
-                        onCopy={() => void copyCoverLetter()}
-                        onDownloadPdf={saveCoverLetterPdf}
-                      />
-                      <div
-                        aria-hidden
-                        className="hidden max-lg:block shrink-0"
-                        style={{ minHeight: mobileScrollClearance }}
-                      />
-                    </div>
+                    analysis={analysis}
+                    rematching={rematching}
+                    displayScoreBeforeTailor={displayScoreBeforeTailor}
+                    isTailorComplete={isTailorComplete}
+                    acceptedSkillNames={acceptedSkillNames}
+                    resolvedApplyUrl={resolvedApplyUrl}
+                    analyzePending={analyze.isPending}
+                    aiReportPending={aiReportPending}
+                    onTailorFirst={handleTailorFirst}
+                    onApplyNow={handleApplyOnCompanySite}
+                  />
+                  <NextStepsPanel
+                    tailorDone={tailorDoneFromChecklist || isTailorComplete}
+                    coverLetterDone={coverLetterDone}
+                    coverLetterSkipped={Boolean(loopSteps.coverLetterSkipped)}
+                    savedDone={savedDone}
+                    appliedDone={appliedDone}
+                    interviewPrepDone={interviewPrepDone}
+                    applyAvailable={Boolean(resolvedApplyUrl)}
+                    reminderDone={reminderDone}
+                    reminderSummary={reminderSummary}
+                    busy={{
+                      tailor: tailorSubmitting,
+                      coverLetter: generate.isPending,
+                      save: recordApplication.isPending,
+                      reminder: loopReminders.createReminder.isPending,
+                    }}
+                    onTailor={handleTailorFirst}
+                    onGenerateCoverLetter={handleGenerateCoverLetter}
+                    onSkipCoverLetter={handleSkipCoverLetter}
+                    onSaveJob={() => void handleSaveJobToHub()}
+                    onApplyToJob={handleApplyToJobStep}
+                    onPrepInterview={handlePrepInterviewStep}
+                    onSetReminder={handleSetFollowUpReminder}
+                  />
+                  <div className="min-w-0 max-w-full overflow-x-hidden rounded-2xl border border-[#00C9B1]/15 bg-[#0C0F0F] p-4 sm:p-6">
+                    <SkillGapPanel
+                      analysis={analysis}
+                      isTailorComplete={isTailorComplete}
+                      selectedSkillNames={selectedSkillNames}
+                      onToggleSkill={toggleSkillSelected}
+                      tailorSubmitting={tailorSubmitting}
+                      jobAnalysisIdForTailor={jobAnalysisIdForTailor}
+                      cvProfileIdForTailor={cvProfileIdForTailor}
+                      cvBootstrapPending={cvBootstrapPending}
+                      cvProfileCount={cvProfiles.length}
+                      selectedProfileId={selectedProfileId}
+                      tailorAiBlocked={tailorAiBlocked}
+                      hasTailorDraftForJob={Boolean(tailorDraftForCurrentJob)}
+                      onCreateTailorDraft={() => void handleCreateTailorDraft()}
+                      onResumeTailoring={() => setTailorSidebarOpen(true)}
+                      onOpenTailorEditor={() => void openTailorPanel()}
+                    />
+                    <TailoringPanel
+                      analysis={analysis}
+                      isTailorComplete={isTailorComplete}
+                      displayScoreBeforeTailor={displayScoreBeforeTailor}
+                      hasTailorDraftForJob={Boolean(tailorDraftForCurrentJob)}
+                      rematching={rematching}
+                      analyzePending={analyze.isPending}
+                      onOpenTailorPanel={() => void openTailorPanel()}
+                      onRematch={() => void rematchJobToUpdatedCv()}
+                    />
                   </div>
-                )}
+                  <JobHubSavePanel
+                    analysis={analysis}
+                    title={title}
+                    company={company}
+                    description={description}
+                    hasCoverLetter={hasCoverLetter}
+                    generatePending={generate.isPending}
+                    savePending={recordApplication.isPending}
+                    aiUsage={{
+                      isPaidTier: aiUsage.isPaidTier,
+                      isLoading: aiUsage.isLoading,
+                      remaining: aiUsage.remaining,
+                    }}
+                    selectedProfileId={selectedProfileId}
+                    cvProfileId={cv?.id}
+                    tailoredCvProfileId={analysis.tailoredCvProfileId}
+                    sourceCvProfileId={analysis.sourceCvProfileId}
+                    exportTemplate={
+                      selectedProfile?.template ?? cv?.template ?? null
+                    }
+                    onGenerateCoverLetter={handleGenerateCoverLetter}
+                  />
+                  <CoverLetterPanel
+                    visible={hasCoverLetter}
+                    coverLetterDisplay={coverLetterDisplay}
+                    coverLetterEditing={coverLetterEditing}
+                    coverLetterDraft={coverLetterDraft}
+                    coverLetterAiBaseline={coverLetterAiBaseline}
+                    onStartEdit={() => {
+                      setCoverLetterDraft(coverLetterDisplay ?? '');
+                      setCoverLetterEditing(true);
+                    }}
+                    onDraftChange={setCoverLetterDraft}
+                    onCancelEdit={() => setCoverLetterEditing(false)}
+                    onSaveEdits={async (text) => {
+                      const next = text.trim() || null;
+                      setGenerated(next);
+                      setCoverLetterEditing(false);
+                      const jobId = analysis.id?.trim();
+                      if (jobId && next) {
+                        writeCoverLetterToStorage(jobId, next);
+                        await api.jobs.saveGeneratedCoverLetter(jobId, next);
+                      }
+                      toast.success('Cover letter updated');
+                    }}
+                    onRevertToAi={() => {
+                      const baseline =
+                        coverLetterAiBaseline ?? coverLetterDisplay ?? '';
+                      setCoverLetterDraft(baseline);
+                      setGenerated(baseline.trim() || null);
+                      toast.success('Reverted to AI version');
+                    }}
+                    onCopy={() => void copyCoverLetter()}
+                    onDownloadPdf={saveCoverLetterPdf}
+                  />
+                  <div
+                    aria-hidden
+                    className="hidden max-lg:block shrink-0"
+                    style={{ minHeight: mobileScrollClearance }}
+                  />
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
         <div
@@ -2668,7 +2734,8 @@ export function JobsAnalyzeContent() {
           variant="primary"
           onClick={submit}
           disabled={
-            analysisMutationBusy || (cvProfiles.length > 1 && !selectedProfileId)
+            analysisMutationBusy ||
+            (cvProfiles.length > 1 && !selectedProfileId)
           }
           className="min-h-[48px] rounded-[10px] bg-gradient-to-br from-[#00C9B1] to-[#00A896] text-[15px] font-semibold text-[#080A0A] shadow-[0_6px_24px_rgba(0,201,177,0.35)]"
         >
@@ -2697,7 +2764,9 @@ export function JobsAnalyzeContent() {
         exportTemplate={selectedProfile?.template ?? cv?.template ?? null}
         onTailoringCvPersisted={() => {
           scheduleRematchAfterTailoring();
-          void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
+          void queryClient.invalidateQueries({
+            queryKey: queryKeys.jobs.analyses(),
+          });
           invalidateTodayPlanQueries(queryClient);
         }}
         scoreBeforeTailor={displayScoreBeforeTailor}

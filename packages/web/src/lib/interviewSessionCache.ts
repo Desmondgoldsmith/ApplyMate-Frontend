@@ -1,4 +1,8 @@
-import type { CoachInsight, SimulationState, TurnAnswerResponse } from '@/lib/interview-prep-types';
+import type {
+  CoachInsight,
+  SimulationState,
+  TurnAnswerResponse,
+} from '@/lib/interview-prep-types';
 import type { SessionAdaptiveSnapshot } from '@/lib/interviewAdaptive';
 import type { InterviewSession } from '@/lib/api';
 import { resolveCoachInsightFromResponse } from '@/lib/interviewCoachInsight';
@@ -28,7 +32,9 @@ function touchSession(sessionId: string): SessionBundle {
     bundle = { coaching: new Map(), lastGoodAt: Date.now() };
     sessions.set(sessionId, bundle);
     if (sessions.size > MAX_SESSIONS) {
-      const oldest = [...sessions.entries()].sort((a, b) => a[1].lastGoodAt - b[1].lastGoodAt)[0];
+      const oldest = [...sessions.entries()].sort(
+        (a, b) => a[1].lastGoodAt - b[1].lastGoodAt,
+      )[0];
       if (oldest) sessions.delete(oldest[0]);
     }
   }
@@ -54,7 +60,10 @@ export function getCachedTurnResponse(
   return sessions.get(sessionId)?.coaching.get(turnId)?.response ?? null;
 }
 
-export function setCachedTurnResponse(sessionId: string, response: TurnAnswerResponse): void {
+export function setCachedTurnResponse(
+  sessionId: string,
+  response: TurnAnswerResponse,
+): void {
   const turnId = response.turn?.id;
   if (!turnId) return;
   const bundle = touchSession(sessionId);
@@ -73,12 +82,17 @@ export function setCachedTurnResponse(sessionId: string, response: TurnAnswerRes
   }
 }
 
-export function setCachedSession(sessionId: string, session: InterviewSession): void {
+export function setCachedSession(
+  sessionId: string,
+  session: InterviewSession,
+): void {
   const bundle = touchSession(sessionId);
   bundle.session = session;
 }
 
-export function getCachedSession(sessionId: string): InterviewSession | undefined {
+export function getCachedSession(
+  sessionId: string,
+): InterviewSession | undefined {
   return sessions.get(sessionId)?.session;
 }
 
@@ -104,7 +118,9 @@ export function setCachedSimulation(
   bundle.simulation = state;
 }
 
-export function getCachedSimulation(sessionId: string): SimulationState | undefined {
+export function getCachedSimulation(
+  sessionId: string,
+): SimulationState | undefined {
   return sessions.get(sessionId)?.simulation;
 }
 

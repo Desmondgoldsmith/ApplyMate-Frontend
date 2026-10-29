@@ -3,7 +3,9 @@ import type { JobAnalysis, JobDetailForForm } from '@/lib/api';
 /**
  * CV profile for the editor/dropdown when opening a saved job (`selectedCvProfileId` semantics).
  */
-export function resolveCvProfileIdForSavedJob(detail: JobDetailForForm): string | null {
+export function resolveCvProfileIdForSavedJob(
+  detail: JobDetailForForm,
+): string | null {
   const a = detail.analysis;
   const selected = a.selectedCvProfileId?.trim();
   if (selected) return selected;

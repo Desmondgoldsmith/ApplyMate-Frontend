@@ -23,7 +23,9 @@ export function AnalyzerResultsLoadingShell({
         aria-hidden
       />
       <p className="text-lg font-semibold text-white">{headline}</p>
-      <p className="mt-3 max-w-md text-sm leading-relaxed text-white/50">{hint}</p>
+      <p className="mt-3 max-w-md text-sm leading-relaxed text-white/50">
+        {hint}
+      </p>
       <div className="mt-10 w-full max-w-md space-y-3">
         <div className="h-3 w-2/3 animate-pulse rounded-full bg-white/[0.08]" />
         <div className="h-3 w-full animate-pulse rounded-full bg-white/[0.06]" />

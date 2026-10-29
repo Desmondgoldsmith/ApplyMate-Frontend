@@ -2,7 +2,14 @@
 
 import { Loader2, Sparkles, Wand2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 
 import { CvAssistantScopeBadge } from '@/components/cv/CvAssistantScopeBadge';
 import { useMobileShell } from '@/components/dashboard/MobileShellContext';
@@ -72,8 +79,9 @@ export function AIGlobalAssistantPanel({
   const { navBottomOffset } = useMobileShell();
   const [text, setText] = useState('');
   const [pendingScopeLabel, setPendingScopeLabel] = useState('Entire resume');
-  const [pendingOperation, setPendingOperation] =
-    useState<CvGlobalAssistantOperationKey | undefined>(undefined);
+  const [pendingOperation, setPendingOperation] = useState<
+    CvGlobalAssistantOperationKey | undefined
+  >(undefined);
   const commandRef = useRef<HTMLTextAreaElement>(null);
 
   const presetOps = useMemo(
@@ -112,8 +120,7 @@ export function AIGlobalAssistantPanel({
     });
   }, []);
 
-  const inProgressLabel =
-    busyLabel?.trim() || CV_ASSISTANT_GENERATING_MESSAGE;
+  const inProgressLabel = busyLabel?.trim() || CV_ASSISTANT_GENERATING_MESSAGE;
 
   return (
     <>
@@ -139,7 +146,8 @@ export function AIGlobalAssistantPanel({
               ? {
                   bottom: '0.75rem',
                   right:
-                    fabRightOffsetPct != null && Number.isFinite(fabRightOffsetPct)
+                    fabRightOffsetPct != null &&
+                    Number.isFinite(fabRightOffsetPct)
                       ? `calc(${fabRightOffsetPct}% + 1rem)`
                       : 'clamp(5.5rem, 22vw, 17.5rem)',
                   transform: `translate3d(${drag.offset.x}px, ${drag.offset.y}px, 0)`,
@@ -224,7 +232,10 @@ export function AIGlobalAssistantPanel({
                     Loading presets…
                   </p>
                 ) : (
-                  <div className="mb-2 max-h-40 space-y-1 overflow-y-auto overscroll-y-contain touch-pan-y [-webkit-overflow-scrolling:touch]" data-lenis-prevent-wheel>
+                  <div
+                    className="mb-2 max-h-40 space-y-1 overflow-y-auto overscroll-y-contain touch-pan-y [-webkit-overflow-scrolling:touch]"
+                    data-lenis-prevent-wheel
+                  >
                     <p className="text-[10px] font-medium uppercase tracking-wide text-white/35">
                       Quick commands
                     </p>

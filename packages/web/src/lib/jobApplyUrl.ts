@@ -1,7 +1,13 @@
 import { api } from '@/lib/api';
-import { isValidExternalApplyUrl, pickApplyUrlFromRecord } from '@/lib/jobApplyUrlPick';
+import {
+  isValidExternalApplyUrl,
+  pickApplyUrlFromRecord,
+} from '@/lib/jobApplyUrlPick';
 
-export { isValidExternalApplyUrl, pickApplyUrlFromRecord } from '@/lib/jobApplyUrlPick';
+export {
+  isValidExternalApplyUrl,
+  pickApplyUrlFromRecord,
+} from '@/lib/jobApplyUrlPick';
 
 /** Open the employer posting in a new tab (never routes in-app). */
 export function openExternalJobApplyUrl(url: string) {

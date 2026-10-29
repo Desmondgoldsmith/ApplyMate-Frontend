@@ -19,8 +19,7 @@ export function CompanyLogoBadge({
   const [failed, setFailed] = useState(false);
   const initial = (company.trim()[0] ?? '?').toUpperCase();
   const raw = logoUrl?.trim();
-  const src =
-    raw && /^https?:\/\//i.test(raw) ? raw : null;
+  const src = raw && /^https?:\/\//i.test(raw) ? raw : null;
   const borderRadius = shape === 'circle' ? '50%' : 6;
 
   if (!src || failed) {

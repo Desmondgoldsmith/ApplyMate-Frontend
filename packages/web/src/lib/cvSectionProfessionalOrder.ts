@@ -37,13 +37,18 @@ export const PROFESSIONAL_SECTION_TYPE_ORDER = [
 export function professionalSectionRank(type: string): number {
   const tl = type.toLowerCase();
   if (tl === 'custom' || tl.startsWith('custom_')) return 950;
-  const idx = PROFESSIONAL_SECTION_TYPE_ORDER.indexOf(tl as (typeof PROFESSIONAL_SECTION_TYPE_ORDER)[number]);
+  const idx = PROFESSIONAL_SECTION_TYPE_ORDER.indexOf(
+    tl as (typeof PROFESSIONAL_SECTION_TYPE_ORDER)[number],
+  );
   if (idx >= 0) return idx;
   return 900;
 }
 
 /** Insert `newSectionId` at the first slot that matches canonical type order while preserving relative order of other rows. */
-export function insertNewSectionIdProfessionally(rows: CVSectionRecord[], newSectionId: string): string[] {
+export function insertNewSectionIdProfessionally(
+  rows: CVSectionRecord[],
+  newSectionId: string,
+): string[] {
   const byOrder = [...rows].sort((a, b) => a.order - b.order);
   const idOrder = byOrder.map((r) => r.id);
   const newRow = rows.find((r) => r.id === newSectionId);
@@ -60,7 +65,11 @@ export function insertNewSectionIdProfessionally(rows: CVSectionRecord[], newSec
       break;
     }
   }
-  return [...without.slice(0, insertAt), newSectionId, ...without.slice(insertAt)];
+  return [
+    ...without.slice(0, insertAt),
+    newSectionId,
+    ...without.slice(insertAt),
+  ];
 }
 
 /** Remove duplicate preview keys while keeping first-seen order (duplicates break drag/reorder). */

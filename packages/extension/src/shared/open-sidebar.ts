@@ -15,7 +15,10 @@ export function ensureSidePanelForTab(tabId: number): void {
   }
 }
 
-function tryOpenSidePanel(tabId: number | undefined, windowId: number | undefined): void {
+function tryOpenSidePanel(
+  tabId: number | undefined,
+  windowId: number | undefined,
+): void {
   if (tabId != null) {
     ensureSidePanelForTab(tabId);
     try {
@@ -38,7 +41,9 @@ export function openSidebarForTab(tab: chrome.tabs.Tab): void {
   tryOpenSidePanel(tab.id, tab.windowId);
 }
 
-export function openSidebarFromSender(sender: chrome.runtime.MessageSender): void {
+export function openSidebarFromSender(
+  sender: chrome.runtime.MessageSender,
+): void {
   const tabId = sender.tab?.id;
   const windowId = sender.tab?.windowId;
   if (tabId != null || windowId != null) {

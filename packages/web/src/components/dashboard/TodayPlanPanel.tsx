@@ -16,7 +16,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { StatusTag, inferStatusTagVariant } from '@/components/dashboard/StatusTag';
+import {
+  StatusTag,
+  inferStatusTagVariant,
+} from '@/components/dashboard/StatusTag';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
@@ -24,7 +27,10 @@ import { useApplications } from '@/hooks/useApplications';
 import { useJobHistory } from '@/hooks/useJobHistory';
 import { api } from '@/lib/api';
 import { trackFunnelEvent } from '@/lib/actionFunnel';
-import { orchestratePriorities, shouldRenderSection } from '@/lib/dashboardOrchestration';
+import {
+  orchestratePriorities,
+  shouldRenderSection,
+} from '@/lib/dashboardOrchestration';
 import {
   canonicalRowByRecommendationId,
   effectiveContinuationRecommendationId,
@@ -34,7 +40,10 @@ import {
   isPrimaryPrioritySurface,
   orchestratedRowByRecommendationId,
 } from '@/lib/dashboardOrchestrationModel';
-import { buildDashboardViewModel, shouldSuppressPriorityForContinuationDup } from '@/lib/dashboardViewModel';
+import {
+  buildDashboardViewModel,
+  shouldSuppressPriorityForContinuationDup,
+} from '@/lib/dashboardViewModel';
 import { resolveExecutionDestination } from '@/lib/executionRouting';
 import type {
   OrchestratedRecommendation,
@@ -49,7 +58,10 @@ import {
   todayPlanItemDedupeKey,
   unifiedPriorityDedupeKey,
 } from '@/lib/today-plan';
-import { cacheNextActionPrefetchBundle, prefillJobAnalyzerInStorage } from '@/lib/jobHubPrefill';
+import {
+  cacheNextActionPrefetchBundle,
+  prefillJobAnalyzerInStorage,
+} from '@/lib/jobHubPrefill';
 import { trackProductEvent } from '@/lib/productAnalytics';
 import {
   formatBlockersPreview,
@@ -63,7 +75,10 @@ import {
   laneLabelForPriorityState,
   shellAccentClassesForPriorityState,
 } from '@/lib/todayPlanLabels';
-import { safeHumanText, stripTechnicalTokens } from '@/components/dashboard/assistant-voice';
+import {
+  safeHumanText,
+  stripTechnicalTokens,
+} from '@/components/dashboard/assistant-voice';
 import { cn } from '@/lib/utils';
 
 function formatSeenRecency(iso: string | null): string | null {
@@ -89,13 +104,18 @@ function buildWhyNow(item: UnifiedPriorityItem): string | null {
   } else if (strategy === 'remote_fallback') {
     parts.push('remote fallback (no local qualifying matches)');
   }
-  if (typeof item.postedAgeHours === 'number' && Number.isFinite(item.postedAgeHours)) {
-    if (item.postedAgeHours < 24) parts.push(`posted ${Math.max(1, Math.round(item.postedAgeHours))}h ago`);
+  if (
+    typeof item.postedAgeHours === 'number' &&
+    Number.isFinite(item.postedAgeHours)
+  ) {
+    if (item.postedAgeHours < 24)
+      parts.push(`posted ${Math.max(1, Math.round(item.postedAgeHours))}h ago`);
     else parts.push(`posted ${Math.round(item.postedAgeHours / 24)}d ago`);
   }
   const recency = formatSeenRecency(item.lastSeenAt ?? item.firstSeenAt);
   if (recency) parts.push(recency);
-  if (item.priorityScore > 0) parts.push(`priority ${Math.round(item.priorityScore)}`);
+  if (item.priorityScore > 0)
+    parts.push(`priority ${Math.round(item.priorityScore)}`);
   if (item.whyNowShort) parts.push(item.whyNowShort);
   else if (item.reasonText) parts.push(item.reasonText);
   if (parts.length === 0) return null;
@@ -160,7 +180,9 @@ function PlanStatusTags({
   return (
     <div className="mt-2 flex flex-wrap items-center gap-1.5">
       {primary ? (
-        <span className="text-[12px] font-medium leading-relaxed text-white/60">{primary}</span>
+        <span className="text-[12px] font-medium leading-relaxed text-white/60">
+          {primary}
+        </span>
       ) : null}
       {tag ? (
         <span className="inline-flex items-center rounded-full border border-white/15 bg-white/[0.03] px-2.5 py-0.5 text-[10px] font-semibold tracking-[0.06em] text-white/65">
@@ -180,23 +202,33 @@ function PlanCtaPill({ label }: { label: string }) {
   );
 }
 
-function FastPathBadge({ minutes, actionLabel }: { minutes?: number | null; actionLabel?: string }) {
-  const mins = typeof minutes === 'number' && Number.isFinite(minutes) ? Math.max(1, Math.round(minutes)) : 1;
-  const k = String(actionLabel ?? '').trim().toLowerCase();
-  const label =
-    k.includes('apply')
-      ? 'Quick apply'
-      : k.includes('fix')
-        ? 'Quick fix'
-        : k.includes('analys') || k.includes('analyz')
-          ? 'Quick analysis'
-          : k.includes('review')
-            ? 'Quick review'
-            : k.includes('follow')
-              ? 'Quick follow-up'
-              : k.includes('open')
-                ? 'Quick step'
-                : 'Quick win';
+function FastPathBadge({
+  minutes,
+  actionLabel,
+}: {
+  minutes?: number | null;
+  actionLabel?: string;
+}) {
+  const mins =
+    typeof minutes === 'number' && Number.isFinite(minutes)
+      ? Math.max(1, Math.round(minutes))
+      : 1;
+  const k = String(actionLabel ?? '')
+    .trim()
+    .toLowerCase();
+  const label = k.includes('apply')
+    ? 'Quick apply'
+    : k.includes('fix')
+      ? 'Quick fix'
+      : k.includes('analys') || k.includes('analyz')
+        ? 'Quick analysis'
+        : k.includes('review')
+          ? 'Quick review'
+          : k.includes('follow')
+            ? 'Quick follow-up'
+            : k.includes('open')
+              ? 'Quick step'
+              : 'Quick win';
   return (
     <span className="inline-flex items-center rounded-full border border-[#00C9B1]/45 bg-[#00C9B1]/18 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#7EF4E6]">
       {label} (~{mins} min)
@@ -213,7 +245,10 @@ function appendQueryParam(href: string, key: string, value: string): string {
   return hash ? `${next}#${hash}` : next;
 }
 
-function shouldFocusCvImprovementsPriority(item: UnifiedPriorityItem, actionLabel: string): boolean {
+function shouldFocusCvImprovementsPriority(
+  item: UnifiedPriorityItem,
+  actionLabel: string,
+): boolean {
   const corpus = [
     item.kind,
     item.title,
@@ -228,7 +263,9 @@ function shouldFocusCvImprovementsPriority(item: UnifiedPriorityItem, actionLabe
     .filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
     .join(' ')
     .toLowerCase();
-  return /(improv|improvement|cv fix|resume fix|rewrite|bullet|grammar|spelling|spell check|ats)/.test(corpus);
+  return /(improv|improvement|cv fix|resume fix|rewrite|bullet|grammar|spelling|spell check|ats)/.test(
+    corpus,
+  );
 }
 
 function PlanInnerCard({
@@ -252,7 +289,9 @@ function PlanInnerCard({
     kind: 'plan_item',
     reasonCodes: item.reasonCodes,
     actionType:
-      typeof item.cta.action === 'object' && item.cta.action && !Array.isArray(item.cta.action)
+      typeof item.cta.action === 'object' &&
+      item.cta.action &&
+      !Array.isArray(item.cta.action)
         ? String((item.cta.action as Record<string, unknown>).type ?? '')
         : null,
     journeyNextRoute: item.journey?.nextRoute ?? null,
@@ -268,9 +307,12 @@ function PlanInnerCard({
       : remappedHref;
   const titleTrimmed = item.title.trim();
   const rawSubtitle = item.subtitle ?? item.rationale;
-  const subtitleTrimmed = typeof rawSubtitle === 'string' ? rawSubtitle.trim() : '';
+  const subtitleTrimmed =
+    typeof rawSubtitle === 'string' ? rawSubtitle.trim() : '';
   const jobLine =
-    item.company || item.jobTitle ? [item.jobTitle, item.company].filter(Boolean).join(', ') : '';
+    item.company || item.jobTitle
+      ? [item.jobTitle, item.company].filter(Boolean).join(', ')
+      : '';
   const normEq = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 
   let line2: string | null = null;
@@ -297,7 +339,9 @@ function PlanInnerCard({
       ? tagRaw
       : null;
   const score =
-    typeof item.matchScore === 'number' && Number.isFinite(item.matchScore) ? item.matchScore : null;
+    typeof item.matchScore === 'number' && Number.isFinite(item.matchScore)
+      ? item.matchScore
+      : null;
 
   const shellClass = cn(
     'group flex flex-col gap-4 rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 transition-[border-color,background-color] duration-150 sm:flex-row sm:items-center sm:justify-between sm:gap-5 sm:px-5 sm:py-4',
@@ -312,25 +356,40 @@ function PlanInnerCard({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[15px] font-semibold leading-snug text-white">{titleTrimmed}</p>
+            <p className="text-[15px] font-semibold leading-snug text-white">
+              {titleTrimmed}
+            </p>
             {score != null ? (
               <span
                 className={cn(
                   'rounded-full border px-2 py-0.5 text-[11px] font-semibold tabular-nums',
-                  score >= 70 && 'border-[#00C9B1]/35 bg-[#00C9B1]/10 text-[#00C9B1]',
-                  score >= 40 && score < 70 && 'border-amber-500/35 bg-amber-500/10 text-amber-200',
-                  score < 40 && 'border-rose-500/35 bg-rose-500/10 text-rose-200',
+                  score >= 70 &&
+                    'border-[#00C9B1]/35 bg-[#00C9B1]/10 text-[#00C9B1]',
+                  score >= 40 &&
+                    score < 70 &&
+                    'border-amber-500/35 bg-amber-500/10 text-amber-200',
+                  score < 40 &&
+                    'border-rose-500/35 bg-rose-500/10 text-rose-200',
                 )}
               >
                 {score}%
               </span>
             ) : null}
           </div>
-          {line2 ? <p className="mt-1 text-[13px] font-normal leading-snug text-white/50">{line2}</p> : null}
-          <PlanStatusTags statusLabel={effectiveStatusLabel} tagLabel={effectiveTagLabel} />
+          {line2 ? (
+            <p className="mt-1 text-[13px] font-normal leading-snug text-white/50">
+              {line2}
+            </p>
+          ) : null}
+          <PlanStatusTags
+            statusLabel={effectiveStatusLabel}
+            tagLabel={effectiveTagLabel}
+          />
         </div>
       </div>
-      <PlanCtaPill label={safeHumanText(canonicalActionLabel ?? null) ?? item.cta.label} />
+      <PlanCtaPill
+        label={safeHumanText(canonicalActionLabel ?? null) ?? item.cta.label}
+      />
     </>
   );
 
@@ -400,20 +459,30 @@ function UnifiedPriorityCard({
     safeHumanText(item.applyAssist?.primaryActionLabel ?? null) ??
     safeHumanText(item.executionContext?.nextImmediateAction ?? null) ??
     item.cta.label;
-  const trustOrchestration = Boolean(orchestratedRow?.canonicalActionLabel?.trim());
+  const trustOrchestration = Boolean(
+    orchestratedRow?.canonicalActionLabel?.trim(),
+  );
   const actionLooksApplyLike = /apply|review/i.test(rawActionLabel);
-  const actionLooksAnalyzeLike = /analysis|analy[sz]e|analyzer|review/i.test(rawActionLabel);
+  const actionLooksAnalyzeLike = /analysis|analy[sz]e|analyzer|review/i.test(
+    rawActionLabel,
+  );
   const actionLooksHubLike = /apply|review|hub|continue/i.test(rawActionLabel);
-  const reasonCodesUpper = (item.reasonCodes ?? []).map((x) => String(x).trim().toUpperCase());
+  const reasonCodesUpper = (item.reasonCodes ?? []).map((x) =>
+    String(x).trim().toUpperCase(),
+  );
   const analyzedNotAppliedReason = reasonCodesUpper.some(
-    (c) => c.includes('ANALYZED_NOT_APPLIED') || (c.includes('ANALYZED') && c.includes('NOT') && c.includes('APPLIED')),
+    (c) =>
+      c.includes('ANALYZED_NOT_APPLIED') ||
+      (c.includes('ANALYZED') && c.includes('NOT') && c.includes('APPLIED')),
   );
   const isCvLike =
     String(item.kind ?? '')
       .toLowerCase()
       .includes('cv') || /cv|resume|clinic|fix/i.test(rawActionLabel);
   const ctaAction =
-    item.cta.action !== null && typeof item.cta.action === 'object' && !Array.isArray(item.cta.action)
+    item.cta.action !== null &&
+    typeof item.cta.action === 'object' &&
+    !Array.isArray(item.cta.action)
       ? (item.cta.action as Record<string, unknown>)
       : {};
   const effectiveActionType =
@@ -426,30 +495,45 @@ function UnifiedPriorityCard({
   const bookmarkId = (item.ids.bookmarkId ?? '').trim();
   const listingId = (item.ids.jobListingId ?? '').trim();
   const cvProfileId = (defaultCvProfileId ?? item.ids.cvProfileId ?? '').trim();
-  const isAnalyzeActionType = normalizedActionType === 'OPEN_JOB_ANALYZE' || normalizedActionType === 'OPEN_TAILOR';
+  const isAnalyzeActionType =
+    normalizedActionType === 'OPEN_JOB_ANALYZE' ||
+    normalizedActionType === 'OPEN_TAILOR';
   const isHubActionType = normalizedActionType === 'OPEN_JOB_HUB';
   const isInterviewActionType = normalizedActionType.includes('INTERVIEW');
   const isInterviewPrepPriority =
-    isInterviewActionType || String(item.kind ?? '').toLowerCase().includes('interview_prep');
+    isInterviewActionType ||
+    String(item.kind ?? '')
+      .toLowerCase()
+      .includes('interview_prep');
   const inlineMode = item.executionContext?.executionMode;
   const canInline =
     item.executionContext?.canExecuteInline === true &&
-    (inlineMode === 'inline_modal' || inlineMode === 'checklist' || inlineMode === 'generator');
+    (inlineMode === 'inline_modal' ||
+      inlineMode === 'checklist' ||
+      inlineMode === 'generator');
   const interviewPrepContext = item.interviewPrepContext;
   const canonicalInterviewHref = (() => {
     const qp = new URLSearchParams();
-    const prepAnalysisId = (interviewPrepContext?.jobAnalysisId ?? analysisId).trim();
+    const prepAnalysisId = (
+      interviewPrepContext?.jobAnalysisId ?? analysisId
+    ).trim();
     const prepTitle = (interviewPrepContext?.jobTitle ?? '').trim();
     const prepCompany = (interviewPrepContext?.company ?? '').trim();
-    const selectedPrepCv = (interviewPrepContext?.selectedCvProfileId ?? '').trim();
+    const selectedPrepCv = (
+      interviewPrepContext?.selectedCvProfileId ?? ''
+    ).trim();
     const prepCv = (
       selectedPrepCv ||
       (interviewPrepContext?.cvProfileId ?? '').trim() ||
       cvProfileId
     ).trim();
-    const preferredCv = (interviewPrepContext?.preferredCvProfileId ?? '').trim();
+    const preferredCv = (
+      interviewPrepContext?.preferredCvProfileId ?? ''
+    ).trim();
     const analyzedCv = (interviewPrepContext?.analyzedCvProfileId ?? '').trim();
-    const tailoringCv = (interviewPrepContext?.tailoringCvProfileId ?? '').trim();
+    const tailoringCv = (
+      interviewPrepContext?.tailoringCvProfileId ?? ''
+    ).trim();
     if (prepAnalysisId) qp.set('jobAnalysisId', prepAnalysisId);
     if (prepTitle) qp.set('jobTitle', prepTitle);
     if (prepCompany) qp.set('company', prepCompany);
@@ -458,8 +542,10 @@ function UnifiedPriorityCard({
     if (preferredCv) qp.set('preferredCvProfileId', preferredCv);
     if (analyzedCv) qp.set('analyzedCvProfileId', analyzedCv);
     if (tailoringCv) qp.set('tailoringCvProfileId', tailoringCv);
-    if (interviewPrepContext?.hydrationReady === false) qp.set('hydrationReady', '0');
-    else if (interviewPrepContext?.hydrationReady === true) qp.set('hydrationReady', '1');
+    if (interviewPrepContext?.hydrationReady === false)
+      qp.set('hydrationReady', '0');
+    else if (interviewPrepContext?.hydrationReady === true)
+      qp.set('hydrationReady', '1');
     return `/dashboard/interview${qp.toString() ? `?${qp.toString()}` : ''}`;
   })();
   const canonicalAnalyzeHref = analysisId
@@ -489,10 +575,18 @@ function UnifiedPriorityCard({
       ...(bookmarkId ? { bookmarkId } : {}),
       ...(listingId ? { jobListingId: listingId } : {}),
       ...(cvProfileId ? { cvProfileId } : {}),
-      ...(item.executionContext?.applicationId ? { applicationId: item.executionContext.applicationId } : {}),
-      ...(item.executionContext?.canonicalJobId ? { canonicalJobId: item.executionContext.canonicalJobId } : {}),
-      ...(item.executionContext?.cvProfileId ? { cvProfileId: item.executionContext.cvProfileId } : {}),
-      ...(item.executionContext?.recommendationId ? { recommendationId: item.executionContext.recommendationId } : {}),
+      ...(item.executionContext?.applicationId
+        ? { applicationId: item.executionContext.applicationId }
+        : {}),
+      ...(item.executionContext?.canonicalJobId
+        ? { canonicalJobId: item.executionContext.canonicalJobId }
+        : {}),
+      ...(item.executionContext?.cvProfileId
+        ? { cvProfileId: item.executionContext.cvProfileId }
+        : {}),
+      ...(item.executionContext?.recommendationId
+        ? { recommendationId: item.executionContext.recommendationId }
+        : {}),
     },
   };
   const destination = resolveExecutionDestination({
@@ -515,7 +609,9 @@ function UnifiedPriorityCard({
     orchestrationFallbackRoute: orchestratedRow?.fallbackRoute ?? null,
   });
   const recommendationState = String(
-    item.executionPayload?.recommendationState ?? item.recommendationState ?? 'active',
+    item.executionPayload?.recommendationState ??
+      item.recommendationState ??
+      'active',
   )
     .trim()
     .toLowerCase();
@@ -526,9 +622,12 @@ function UnifiedPriorityCard({
     recommendationState === 'superseded';
   const isDegraded =
     destination.resolutionState !== 'resolved' ||
-    DEGRADED_SUPPRESSION_REASONS.has((item.suppressionReason ?? '').trim().toLowerCase());
+    DEGRADED_SUPPRESSION_REASONS.has(
+      (item.suppressionReason ?? '').trim().toLowerCase(),
+    );
   const missingInterviewContext =
-    (item.suppressionReason ?? '').trim().toLowerCase() === MISSING_INTERVIEW_CONTEXT_REASON;
+    (item.suppressionReason ?? '').trim().toLowerCase() ===
+    MISSING_INTERVIEW_CONTEXT_REASON;
   const href = (() => {
     if (isInactiveRecommendation) return '';
     let withToken =
@@ -543,7 +642,10 @@ function UnifiedPriorityCard({
     try {
       const u = new URL(withToken, 'https://applymate.invalid');
       if (!u.pathname.startsWith('/dashboard/interview')) return withToken;
-      const enrich = new URL(canonicalInterviewHref, 'https://applymate.invalid');
+      const enrich = new URL(
+        canonicalInterviewHref,
+        'https://applymate.invalid',
+      );
       enrich.searchParams.forEach((value, key) => {
         u.searchParams.set(key, value);
       });
@@ -552,8 +654,14 @@ function UnifiedPriorityCard({
       return withToken;
     }
   })();
-  const whyNow = item.explain?.short || item.whyNowShort || item.outcomeCopy || buildWhyNow(item);
-  const isAppliedOrLater = isAppliedOrLaterState(item.stateSnapshot?.sourceState);
+  const whyNow =
+    item.explain?.short ||
+    item.whyNowShort ||
+    item.outcomeCopy ||
+    buildWhyNow(item);
+  const isAppliedOrLater = isAppliedOrLaterState(
+    item.stateSnapshot?.sourceState,
+  );
   const effortBand = inferEffortBand(item);
   const priorityLane = item.priorityState;
   const laneChipLabel = laneLabelForPriorityState(priorityLane);
@@ -566,7 +674,9 @@ function UnifiedPriorityCard({
     else if (item.urgencyBucket === 'soon') parts.push('This week');
     else parts.push('Next up');
     parts.push(labelForEffortBand(effortBand));
-    const mins = item.executionContext?.estimatedMinutes ?? item.applyAssist?.estimatedMinutesToApply;
+    const mins =
+      item.executionContext?.estimatedMinutes ??
+      item.applyAssist?.estimatedMinutesToApply;
     if (typeof mins === 'number' && Number.isFinite(mins)) {
       parts.push(`~${Math.max(1, Math.round(mins))} min`);
     }
@@ -576,7 +686,8 @@ function UnifiedPriorityCard({
   })();
   const completionLikelihood = item.applyAssist?.completionLikelihood;
   const likelihoodLine =
-    typeof completionLikelihood === 'number' && Number.isFinite(completionLikelihood)
+    typeof completionLikelihood === 'number' &&
+    Number.isFinite(completionLikelihood)
       ? completionLikelihood >= 75
         ? 'Likely quick to finish'
         : completionLikelihood >= 45
@@ -585,11 +696,15 @@ function UnifiedPriorityCard({
       : null;
   const detailsHint = useMemo(() => {
     const candidates: string[] = [];
-    if (item.actionReassurance?.trim()) candidates.push(item.actionReassurance.trim());
-    if (item.reasonDetailed?.trim()) candidates.push(item.reasonDetailed.trim());
+    if (item.actionReassurance?.trim())
+      candidates.push(item.actionReassurance.trim());
+    if (item.reasonDetailed?.trim())
+      candidates.push(item.reasonDetailed.trim());
     if (whyNow) candidates.push(whyNow);
     if (item.applyAssist?.suggestedNextStep?.trim()) {
-      candidates.push(`Next step: ${item.applyAssist.suggestedNextStep.trim()}`);
+      candidates.push(
+        `Next step: ${item.applyAssist.suggestedNextStep.trim()}`,
+      );
     }
     if (likelihoodLine) candidates.push(likelihoodLine);
     candidates.push(effortMeta);
@@ -597,7 +712,9 @@ function UnifiedPriorityCard({
     const limited = candidates
       .filter(Boolean)
       .slice(0, 3)
-      .map((line) => (line.length > 120 ? `${line.slice(0, 117).trimEnd()}...` : line));
+      .map((line) =>
+        line.length > 120 ? `${line.slice(0, 117).trimEnd()}...` : line,
+      );
 
     return limited.join('\n\n') || null;
   }, [
@@ -608,7 +725,11 @@ function UnifiedPriorityCard({
     likelihoodLine,
     whyNow,
   ]);
-  const primaryLine = item.compactDisplay?.primaryLine?.trim() || item.subtitle || item.reasonText || '';
+  const primaryLine =
+    item.compactDisplay?.primaryLine?.trim() ||
+    item.subtitle ||
+    item.reasonText ||
+    '';
   const outcomeHeadline = (item.estimatedOutcome ?? '').trim();
   const subtitle = item.subtitle?.trim() ?? '';
   const contextLine =
@@ -617,20 +738,25 @@ function UnifiedPriorityCard({
     !item.title.toLowerCase().includes(subtitle.toLowerCase())
       ? subtitle
       : '';
-  const actionLabel =
-    trustOrchestration
-      ? displayActionLabel
-      : isAppliedOrLater && actionLooksApplyLike
-        ? 'Continue in Job Hub'
-        : displayActionLabel;
+  const actionLabel = trustOrchestration
+    ? displayActionLabel
+    : isAppliedOrLater && actionLooksApplyLike
+      ? 'Continue in Job Hub'
+      : displayActionLabel;
   const confShort = formatConfidenceShort(item.confidenceScore);
   const blockersLine = formatBlockersPreview(item.applyAssist?.blockers ?? []);
   const isFastPath =
-    item.applyAssist?.fastPathEligible === true && !isAppliedOrLater && effortBand === 'instant';
+    item.applyAssist?.fastPathEligible === true &&
+    !isAppliedOrLater &&
+    effortBand === 'instant';
   const matchedJobContext = (() => {
-    const byAnalysis = analysisId ? jobHistoryByAnalysisId.get(analysisId) : undefined;
+    const byAnalysis = analysisId
+      ? jobHistoryByAnalysisId.get(analysisId)
+      : undefined;
     if (byAnalysis) return byAnalysis;
-    const byListing = listingId ? jobHistoryByListingId.get(listingId) : undefined;
+    const byListing = listingId
+      ? jobHistoryByListingId.get(listingId)
+      : undefined;
     return byListing ?? null;
   })();
   const roleContextLine =
@@ -638,7 +764,9 @@ function UnifiedPriorityCard({
     (item.roleTitle?.trim() && item.roleCompany?.trim()
       ? `${item.roleTitle.trim()} · ${item.roleCompany.trim()}`
       : item.roleTitle?.trim() || null) ||
-    (matchedJobContext ? `${matchedJobContext.title} · ${matchedJobContext.company}` : null);
+    (matchedJobContext
+      ? `${matchedJobContext.title} · ${matchedJobContext.company}`
+      : null);
   const reassurance = (item.actionReassurance ?? '').trim();
   const primaryRationale = (() => {
     if (item.reasonShort?.trim()) return item.reasonShort.trim();
@@ -656,7 +784,8 @@ function UnifiedPriorityCard({
     ? `Channel: ${String(item.followUpContext.recommendedChannel).replace('_', ' ')}`
     : null;
   const followUpConfidence =
-    typeof item.followUpContext?.confidence === 'number' && Number.isFinite(item.followUpContext.confidence)
+    typeof item.followUpContext?.confidence === 'number' &&
+    Number.isFinite(item.followUpContext.confidence)
       ? item.followUpContext.confidence >= 0.7
         ? 'High recovery chance'
         : item.followUpContext.confidence >= 0.4
@@ -669,12 +798,15 @@ function UnifiedPriorityCard({
       ? `${Math.max(1, Math.round(item.followUpContext.daysSinceLastActivity))} days inactive`
       : null;
   const estimatedMinutesLabel =
-    typeof item.executionContext?.estimatedMinutes === 'number' && Number.isFinite(item.executionContext.estimatedMinutes)
+    typeof item.executionContext?.estimatedMinutes === 'number' &&
+    Number.isFinite(item.executionContext.estimatedMinutes)
       ? `~${Math.max(1, Math.round(item.executionContext.estimatedMinutes))} min`
       : null;
   const isLowValue =
     !emphasized &&
-    (item.urgencyBucket === 'later' || priorityLane === 'waiting' || (priorityLane === 'blocked' && !item.followUpContext?.suggested));
+    (item.urgencyBucket === 'later' ||
+      priorityLane === 'waiting' ||
+      (priorityLane === 'blocked' && !item.followUpContext?.suggested));
   const hydrateAnalyzePrefill = () => {
     if (isInterviewPrepPriority) return true;
     if (isAppliedOrLater && actionLooksApplyLike) {
@@ -693,7 +825,8 @@ function UnifiedPriorityCard({
       actionType === 'OPEN_TAILOR';
     if (!isAnalyzeFlow) return;
     prefillJobAnalyzerInStorage(item.title, item.subtitle ?? '', '', {
-      selectedCvId: item.prefill?.selectedCvId ?? item.ids.cvProfileId ?? undefined,
+      selectedCvId:
+        item.prefill?.selectedCvId ?? item.ids.cvProfileId ?? undefined,
       sourceContext: item.prefill?.sourceContext ?? undefined,
       resumeWorkingStep: item.resumeState?.workingStep ?? undefined,
       hubBookmarkId: item.ids.bookmarkId ?? undefined,
@@ -741,35 +874,61 @@ function UnifiedPriorityCard({
               New for you
             </span>
           ) : null}
-          {detailsHint ? <InfoHint text={detailsHint} buttonClassName="h-5 w-5 text-[#00C9B1]/80" /> : null}
+          {detailsHint ? (
+            <InfoHint
+              text={detailsHint}
+              buttonClassName="h-5 w-5 text-[#00C9B1]/80"
+            />
+          ) : null}
         </div>
-        <p className="text-[15px] font-semibold leading-snug text-white">{item.title}</p>
-        {roleContextLine ? <p className="mt-1 text-[12px] text-white/58">{roleContextLine}</p> : null}
+        <p className="text-[15px] font-semibold leading-snug text-white">
+          {item.title}
+        </p>
+        {roleContextLine ? (
+          <p className="mt-1 text-[12px] text-white/58">{roleContextLine}</p>
+        ) : null}
         {contextLine && !firstSupport ? (
           <p className="mt-1 text-[12px] text-white/50">{contextLine}</p>
         ) : null}
         {firstSupport ? (
-          <p className="mt-2 text-[13px] leading-snug text-white/78">{firstSupport}</p>
+          <p className="mt-2 text-[13px] leading-snug text-white/78">
+            {firstSupport}
+          </p>
         ) : null}
         {secondSupport && secondSupport !== firstSupport ? (
-          <p className="mt-1.5 text-[12px] leading-snug text-white/50">{secondSupport}</p>
+          <p className="mt-1.5 text-[12px] leading-snug text-white/50">
+            {secondSupport}
+          </p>
         ) : null}
         {item.kind === 'follow_up' ? (
           <p className="mt-1 text-[11px] text-white/45">
-            {[daysSinceFollowUp, followUpConfidence, recommendedChannel].filter(Boolean).slice(0, 2).join(' · ')}
+            {[daysSinceFollowUp, followUpConfidence, recommendedChannel]
+              .filter(Boolean)
+              .slice(0, 2)
+              .join(' · ')}
           </p>
         ) : null}
         {isDegraded ? (
-          <p className="mt-1 text-[10px] text-white/35">Context refreshed. Continuing with the safest next step.</p>
+          <p className="mt-1 text-[10px] text-white/35">
+            Context refreshed. Continuing with the safest next step.
+          </p>
         ) : null}
         {isInactiveRecommendation ? (
-          <p className="mt-1 text-[10px] text-white/35">This recommendation is no longer active. Showing the next best action.</p>
+          <p className="mt-1 text-[10px] text-white/35">
+            This recommendation is no longer active. Showing the next best
+            action.
+          </p>
         ) : null}
       </div>
       <div className="flex flex-col items-stretch gap-2 sm:items-end sm:pl-4">
-        {estimatedMinutesLabel ? <p className="text-[11px] text-white/45">{estimatedMinutesLabel}</p> : null}
+        {estimatedMinutesLabel ? (
+          <p className="text-[11px] text-white/45">{estimatedMinutesLabel}</p>
+        ) : null}
         {showQuickCue ? (
-          <FastPathBadge minutes={item.applyAssist?.estimatedMinutesToApply} actionLabel={actionLabel} />
+          <FastPathBadge
+            minutes={item.applyAssist?.estimatedMinutesToApply}
+            actionLabel={actionLabel}
+          />
         ) : null}
         <PlanCtaPill label={actionLabel} />
       </div>
@@ -822,8 +981,14 @@ function UnifiedPriorityCard({
             generationReason: item.generationReason ?? null,
             suppressionReason: item.suppressionReason ?? null,
             canonicalJobId: item.executionContext?.canonicalJobId ?? null,
-            applicationId: item.executionContext?.applicationId ?? item.ids.applicationId ?? null,
-            cvProfileId: item.executionContext?.cvProfileId ?? item.ids.cvProfileId ?? null,
+            applicationId:
+              item.executionContext?.applicationId ??
+              item.ids.applicationId ??
+              null,
+            cvProfileId:
+              item.executionContext?.cvProfileId ??
+              item.ids.cvProfileId ??
+              null,
             completionLatencyMs:
               item.firstSeenAt && !Number.isNaN(Date.parse(item.firstSeenAt))
                 ? Math.max(0, Date.now() - Date.parse(item.firstSeenAt))
@@ -870,21 +1035,31 @@ function UnifiedPriorityCard({
             return;
           }
           try {
-            window.sessionStorage.setItem('applymate:last-recommendation-clicked-at', String(Date.now()));
-            window.sessionStorage.setItem('applymate:last-recommendation-id', item.id);
+            window.sessionStorage.setItem(
+              'applymate:last-recommendation-clicked-at',
+              String(Date.now()),
+            );
+            window.sessionStorage.setItem(
+              'applymate:last-recommendation-id',
+              item.id,
+            );
           } catch {
             /* ignore */
           }
           if (item.kind === 'follow_up') {
             trackProductEvent('followup_started', {
               priorityId: item.id,
-              recommendedChannel: item.followUpContext?.recommendedChannel ?? null,
+              recommendedChannel:
+                item.followUpContext?.recommendedChannel ?? null,
               route: href,
               recommendationId: item.recommendationId ?? item.id,
               recommendationFamilyId: item.recommendationFamilyId ?? null,
               suppressionReason: item.suppressionReason ?? null,
               canonicalJobId: item.executionContext?.canonicalJobId ?? null,
-              applicationId: item.executionContext?.applicationId ?? item.ids.applicationId ?? null,
+              applicationId:
+                item.executionContext?.applicationId ??
+                item.ids.applicationId ??
+                null,
             });
             if (/send\s+follow-?up/i.test(actionLabel)) {
               trackProductEvent('followup_sent', {
@@ -920,18 +1095,28 @@ function UnifiedPriorityCard({
           const applicationIdMatch = href.match(/[?&]applicationId=([^&]+)/i);
           const jobIdMatch = href.match(/[?&]jobId=([^&]+)/i);
           const hasMissingApplicationTarget =
-            applicationIdMatch && !knownApplicationIds.has(decodeURIComponent(applicationIdMatch[1] ?? '').trim());
+            applicationIdMatch &&
+            !knownApplicationIds.has(
+              decodeURIComponent(applicationIdMatch[1] ?? '').trim(),
+            );
           const hasMissingJobTarget =
-            jobIdMatch && !knownAnalysisIds.has(decodeURIComponent(jobIdMatch[1] ?? '').trim());
-          if ((hasMissingApplicationTarget || hasMissingJobTarget) && destination.reason === 'local_fallback') {
+            jobIdMatch &&
+            !knownAnalysisIds.has(
+              decodeURIComponent(jobIdMatch[1] ?? '').trim(),
+            );
+          if (
+            (hasMissingApplicationTarget || hasMissingJobTarget) &&
+            destination.reason === 'local_fallback'
+          ) {
             e.preventDefault();
-            const fallback = item.kind === 'follow_up'
-              ? '/dashboard/jobs?view=active&recovered=1'
-              : isInterviewPrepPriority
-              ? '/dashboard/interview'
-              : listingId
-                ? `/dashboard/jobs/analyze?jobListingId=${encodeURIComponent(listingId)}`
-                : '/dashboard/jobs/analyze?new=1';
+            const fallback =
+              item.kind === 'follow_up'
+                ? '/dashboard/jobs?view=active&recovered=1'
+                : isInterviewPrepPriority
+                  ? '/dashboard/interview'
+                  : listingId
+                    ? `/dashboard/jobs/analyze?jobListingId=${encodeURIComponent(listingId)}`
+                    : '/dashboard/jobs/analyze?new=1';
             const target =
               item.journey?.contextToken && !fallback.includes('contextToken=')
                 ? `${fallback}&contextToken=${encodeURIComponent(item.journey.contextToken)}`
@@ -945,7 +1130,10 @@ function UnifiedPriorityCard({
     );
   }
   return (
-    <div className={shellClass} {...(tourDataAttr ? { 'data-tour': tourDataAttr } : {})}>
+    <div
+      className={shellClass}
+      {...(tourDataAttr ? { 'data-tour': tourDataAttr } : {})}
+    >
       {body}
     </div>
   );
@@ -976,35 +1164,62 @@ function InlineExecutionModal({
   const follow = item.followUpContext;
   const prep = item.interviewPrepContext;
   const cvFix = item.cvFixContext;
-  const checklist = item.executionContext?.preparationChecklist ?? prep?.preparationChecklist ?? [];
-  const talkingPoints = item.executionContext?.suggestedTalkingPoints ?? prep?.likelyTopics ?? [];
+  const checklist =
+    item.executionContext?.preparationChecklist ??
+    prep?.preparationChecklist ??
+    [];
+  const talkingPoints =
+    item.executionContext?.suggestedTalkingPoints ?? prep?.likelyTopics ?? [];
   const questions = prep?.likelyQuestions ?? [];
-  const draft = follow?.draftMessage ?? item.executionContext?.preparedDraft ?? '';
+  const draft =
+    follow?.draftMessage ?? item.executionContext?.preparedDraft ?? '';
   const [draftMessage, setDraftMessage] = useState(draft);
-  const role = item.roleLabel ?? [item.roleTitle, item.roleCompany].filter(Boolean).join(' at ');
+  const role =
+    item.roleLabel ??
+    [item.roleTitle, item.roleCompany].filter(Boolean).join(' at ');
   return (
     <div className="fixed inset-0 z-[80] bg-black/55 p-4 backdrop-blur-[1px]">
       <div className="mx-auto max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/15 bg-[#0B1111] p-5">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.08em] text-white/45">Assisted execution</p>
-            <h3 className="mt-1 text-[17px] font-semibold text-white">{item.title}</h3>
-            {role ? <p className="mt-1 text-[12px] text-white/55">{role}</p> : null}
+            <p className="text-[11px] uppercase tracking-[0.08em] text-white/45">
+              Assisted execution
+            </p>
+            <h3 className="mt-1 text-[17px] font-semibold text-white">
+              {item.title}
+            </h3>
+            {role ? (
+              <p className="mt-1 text-[12px] text-white/55">{role}</p>
+            ) : null}
           </div>
-          <button type="button" className="text-white/55 hover:text-white" onClick={onClose}>
+          <button
+            type="button"
+            className="text-white/55 hover:text-white"
+            onClick={onClose}
+          >
             Close
           </button>
         </div>
         {item.executionContext?.nextImmediateAction ? (
-          <p className="text-[13px] text-white/78">{item.executionContext.nextImmediateAction}</p>
+          <p className="text-[13px] text-white/78">
+            {item.executionContext.nextImmediateAction}
+          </p>
         ) : null}
         {item.executionContext?.emotionalBenefit ? (
-          <p className="mt-1 text-[12px] text-white/55">{item.executionContext.emotionalBenefit}</p>
+          <p className="mt-1 text-[12px] text-white/55">
+            {item.executionContext.emotionalBenefit}
+          </p>
         ) : null}
         {follow ? (
           <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
             <p className="text-[12px] text-white/70">
-              {[follow.daysSinceLastActivity != null ? `${Math.round(follow.daysSinceLastActivity)} days inactive` : null, follow.recommendedSendWindow, follow.rationaleShort]
+              {[
+                follow.daysSinceLastActivity != null
+                  ? `${Math.round(follow.daysSinceLastActivity)} days inactive`
+                  : null,
+                follow.recommendedSendWindow,
+                follow.rationaleShort,
+              ]
                 .filter(Boolean)
                 .slice(0, 2)
                 .join(' · ')}
@@ -1018,9 +1233,17 @@ function InlineExecutionModal({
         ) : null}
         {cvFix ? (
           <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-[12px] text-white/75">
-            <p>{cvFix.affectedSection ? `Section: ${cvFix.affectedSection}` : 'CV section needs attention'}</p>
-            {cvFix.suggestedPatch ? <p className="mt-1">{cvFix.suggestedPatch}</p> : null}
-            {cvFix.expectedImpact ? <p className="mt-1 text-[#9CF5EA]">{cvFix.expectedImpact}</p> : null}
+            <p>
+              {cvFix.affectedSection
+                ? `Section: ${cvFix.affectedSection}`
+                : 'CV section needs attention'}
+            </p>
+            {cvFix.suggestedPatch ? (
+              <p className="mt-1">{cvFix.suggestedPatch}</p>
+            ) : null}
+            {cvFix.expectedImpact ? (
+              <p className="mt-1 text-[#9CF5EA]">{cvFix.expectedImpact}</p>
+            ) : null}
           </div>
         ) : null}
         {checklist.length > 0 ? (
@@ -1035,7 +1258,9 @@ function InlineExecutionModal({
         ) : null}
         {talkingPoints.length > 0 ? (
           <div className="mt-3">
-            <p className="text-[12px] font-semibold text-white/85">Talking points</p>
+            <p className="text-[12px] font-semibold text-white/85">
+              Talking points
+            </p>
             <ul className="mt-1 space-y-1 text-[12px] text-white/70">
               {talkingPoints.slice(0, 4).map((x) => (
                 <li key={x}>- {x}</li>
@@ -1045,7 +1270,9 @@ function InlineExecutionModal({
         ) : null}
         {questions.length > 0 ? (
           <div className="mt-3">
-            <p className="text-[12px] font-semibold text-white/85">Likely questions</p>
+            <p className="text-[12px] font-semibold text-white/85">
+              Likely questions
+            </p>
             <ul className="mt-1 space-y-1 text-[12px] text-white/70">
               {questions.slice(0, 3).map((x) => (
                 <li key={x}>- {x}</li>
@@ -1054,7 +1281,11 @@ function InlineExecutionModal({
           </div>
         ) : null}
         <div className="mt-5 flex items-center justify-end gap-2">
-          <button type="button" className="rounded-full border border-white/20 px-4 py-2 text-[12px] text-white/80" onClick={onClose}>
+          <button
+            type="button"
+            className="rounded-full border border-white/20 px-4 py-2 text-[12px] text-white/80"
+            onClick={onClose}
+          >
             Later
           </button>
           {follow ? (
@@ -1063,7 +1294,8 @@ function InlineExecutionModal({
                 type="button"
                 className="rounded-full border border-white/20 px-4 py-2 text-[12px] text-white/85"
                 onClick={() => {
-                  if (draftMessage.trim()) void navigator.clipboard?.writeText(draftMessage.trim());
+                  if (draftMessage.trim())
+                    void navigator.clipboard?.writeText(draftMessage.trim());
                 }}
               >
                 Copy message
@@ -1077,7 +1309,11 @@ function InlineExecutionModal({
               </Link>
             </>
           ) : null}
-          <Link href={href} onClick={onComplete} className="rounded-full border border-[#00C9B1]/45 px-4 py-2 text-[12px] font-semibold text-[#00C9B1]">
+          <Link
+            href={href}
+            onClick={onComplete}
+            className="rounded-full border border-[#00C9B1]/45 px-4 py-2 text-[12px] font-semibold text-[#00C9B1]"
+          >
             Continue
           </Link>
         </div>
@@ -1101,16 +1337,24 @@ export function TodayPlanPanel({
   const prevActionsCompletedRef = useRef<number | null>(null);
   const prevActionsRemainingRef = useRef<number | null>(null);
   const [showSuccessPulse, setShowSuccessPulse] = useState(false);
-  const [inlineExecution, setInlineExecution] = useState<{ item: UnifiedPriorityItem; href: string; openedAt: number } | null>(
-    null,
-  );
+  const [inlineExecution, setInlineExecution] = useState<{
+    item: UnifiedPriorityItem;
+    href: string;
+    openedAt: number;
+  } | null>(null);
   const applications = useApplications();
   const history = useJobHistory();
   const appliedApplicationIds = useMemo(() => {
     const ids = new Set<string>();
     for (const app of applications.data ?? []) {
-      const status = String((app as { status?: unknown }).status ?? '').trim().toLowerCase();
-      if (isAppliedOrLaterState(status) && typeof app.id === 'string' && app.id.trim()) {
+      const status = String((app as { status?: unknown }).status ?? '')
+        .trim()
+        .toLowerCase();
+      if (
+        isAppliedOrLaterState(status) &&
+        typeof app.id === 'string' &&
+        app.id.trim()
+      ) {
         ids.add(app.id.trim());
       }
     }
@@ -1126,10 +1370,19 @@ export function TodayPlanPanel({
   const appliedAnalysisIds = useMemo(() => {
     const ids = new Set<string>();
     for (const row of history.data ?? []) {
-      const state = String((row as { state?: unknown }).state ?? '').trim().toLowerCase();
-      const pipeline = String((row as { pipelineStatus?: unknown }).pipelineStatus ?? '').trim().toLowerCase();
+      const state = String((row as { state?: unknown }).state ?? '')
+        .trim()
+        .toLowerCase();
+      const pipeline = String(
+        (row as { pipelineStatus?: unknown }).pipelineStatus ?? '',
+      )
+        .trim()
+        .toLowerCase();
       const isApplied = (row as { isApplied?: unknown }).isApplied === true;
-      if (isAppliedOrLaterState(state, isApplied) || isAppliedOrLaterState(pipeline, isApplied)) {
+      if (
+        isAppliedOrLaterState(state, isApplied) ||
+        isAppliedOrLaterState(pipeline, isApplied)
+      ) {
         if (typeof row.id === 'string' && row.id.trim()) ids.add(row.id.trim());
       }
     }
@@ -1162,7 +1415,10 @@ export function TodayPlanPanel({
       const title = (row.jobTitle || row.title || '').trim();
       const company = (row.company ?? '').trim();
       if (!title && !company) continue;
-      map.set(listingId, { title: title || 'Role', company: company || 'Company' });
+      map.set(listingId, {
+        title: title || 'Role',
+        company: company || 'Company',
+      });
     }
     return map;
   }, [history.data]);
@@ -1176,10 +1432,20 @@ export function TodayPlanPanel({
       if (listingId) {
         for (const row of history.data ?? []) {
           if ((row.jobListingId ?? '').trim() !== listingId) continue;
-          const state = String((row as { state?: unknown }).state ?? '').trim().toLowerCase();
-          const pipeline = String((row as { pipelineStatus?: unknown }).pipelineStatus ?? '').trim().toLowerCase();
+          const state = String((row as { state?: unknown }).state ?? '')
+            .trim()
+            .toLowerCase();
+          const pipeline = String(
+            (row as { pipelineStatus?: unknown }).pipelineStatus ?? '',
+          )
+            .trim()
+            .toLowerCase();
           const isApplied = (row as { isApplied?: unknown }).isApplied === true;
-          if (isAppliedOrLaterState(state, isApplied) || isAppliedOrLaterState(pipeline, isApplied)) return true;
+          if (
+            isAppliedOrLaterState(state, isApplied) ||
+            isAppliedOrLaterState(pipeline, isApplied)
+          )
+            return true;
         }
       }
       return false;
@@ -1211,9 +1477,17 @@ export function TodayPlanPanel({
     let pipeline = orchestratePriorities(items)
       .filter((x) => !isPriorityInvalidByState(x))
       .filter((x) => !x.suppressedBy)
-      .filter((x) => (heroClusterId ? (x.recommendationClusterId ?? '').trim() !== heroClusterId : true));
+      .filter((x) =>
+        heroClusterId
+          ? (x.recommendationClusterId ?? '').trim() !== heroClusterId
+          : true,
+      );
 
-    if (dashboardVm?.usesExperienceLayer && data && dashboardVm.priorityOrderHint.length > 0) {
+    if (
+      dashboardVm?.usesExperienceLayer &&
+      data &&
+      dashboardVm.priorityOrderHint.length > 0
+    ) {
       const byId = orchestratedRowByRecommendationId(data);
       const heroId = effectiveHeroRecommendationId(data);
       const contId = effectiveContinuationRecommendationId(data);
@@ -1257,8 +1531,15 @@ export function TodayPlanPanel({
         if (surf === 'hidden') return false;
         if (heroId && x.id === heroId) return false;
         if (contId && x.id === contId) return false;
-        if (dashboardVm?.usesExperienceLayer && dashboardVm.suppressedIds.has(x.id)) return false;
-        if (dashboardVm?.usesExperienceLayer && shouldSuppressPriorityForContinuationDup(data, x.id))
+        if (
+          dashboardVm?.usesExperienceLayer &&
+          dashboardVm.suppressedIds.has(x.id)
+        )
+          return false;
+        if (
+          dashboardVm?.usesExperienceLayer &&
+          shouldSuppressPriorityForContinuationDup(data, x.id)
+        )
           return false;
         return isPrimaryPrioritySurface(row.assignedSurface);
       });
@@ -1267,15 +1548,18 @@ export function TodayPlanPanel({
         const rb = byId.get(b.id)?.surfaceRank ?? 9999;
         if (ra !== rb) return ra - rb;
         const aOrder =
-          typeof a.displayPriority === 'number' && Number.isFinite(a.displayPriority)
+          typeof a.displayPriority === 'number' &&
+          Number.isFinite(a.displayPriority)
             ? a.displayPriority
             : Number.POSITIVE_INFINITY;
         const bOrder =
-          typeof b.displayPriority === 'number' && Number.isFinite(b.displayPriority)
+          typeof b.displayPriority === 'number' &&
+          Number.isFinite(b.displayPriority)
             ? b.displayPriority
             : Number.POSITIVE_INFINITY;
         if (aOrder !== bOrder) return aOrder - bOrder;
-        if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore;
+        if (b.priorityScore !== a.priorityScore)
+          return b.priorityScore - a.priorityScore;
         return a.id.localeCompare(b.id);
       });
       return pipeline;
@@ -1283,20 +1567,22 @@ export function TodayPlanPanel({
 
     pipeline = pipeline.filter((x) => !invalidByLiveState(x));
 
-    const sorted = pipeline
-      .sort((a, b) => {
-        const aOrder =
-          typeof a.displayPriority === 'number' && Number.isFinite(a.displayPriority)
-            ? a.displayPriority
-            : Number.POSITIVE_INFINITY;
-        const bOrder =
-          typeof b.displayPriority === 'number' && Number.isFinite(b.displayPriority)
-            ? b.displayPriority
-            : Number.POSITIVE_INFINITY;
-        if (aOrder !== bOrder) return aOrder - bOrder;
-        if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore;
-        return a.id.localeCompare(b.id);
-      });
+    const sorted = pipeline.sort((a, b) => {
+      const aOrder =
+        typeof a.displayPriority === 'number' &&
+        Number.isFinite(a.displayPriority)
+          ? a.displayPriority
+          : Number.POSITIVE_INFINITY;
+      const bOrder =
+        typeof b.displayPriority === 'number' &&
+        Number.isFinite(b.displayPriority)
+          ? b.displayPriority
+          : Number.POSITIVE_INFINITY;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      if (b.priorityScore !== a.priorityScore)
+        return b.priorityScore - a.priorityScore;
+      return a.id.localeCompare(b.id);
+    });
     const seen = new Set<string>();
     const seenFamily = new Set<string>();
     const deduped: UnifiedPriorityItem[] = [];
@@ -1342,7 +1628,11 @@ export function TodayPlanPanel({
     const k = todayPlanItemDedupeKey(ns);
     if (coveredUnifiedDestinationKeys.has(k)) return null;
     return ns;
-  }, [data, coveredUnifiedDestinationKeys, dashboardVm?.suppressLegacyNextStep]);
+  }, [
+    data,
+    coveredUnifiedDestinationKeys,
+    dashboardVm?.suppressLegacyNextStep,
+  ]);
 
   const suppressedKeys = useMemo(() => {
     const s = new Set(coveredUnifiedDestinationKeys);
@@ -1400,15 +1690,25 @@ export function TodayPlanPanel({
 
   const firstCvFixPriorityId = useMemo(
     () =>
-      sortedPriorities.find((x) => String(x.kind ?? '').toLowerCase() === 'cv_fix')?.id ??
-      sortedPriorities.find((x) => String(x.kind ?? '').toLowerCase().includes('cv'))?.id ??
+      sortedPriorities.find(
+        (x) => String(x.kind ?? '').toLowerCase() === 'cv_fix',
+      )?.id ??
+      sortedPriorities.find((x) =>
+        String(x.kind ?? '')
+          .toLowerCase()
+          .includes('cv'),
+      )?.id ??
       null,
     [sortedPriorities],
   );
 
-  const topPriorityIds = useMemo(() => sortedPriorities.slice(0, 3).map((x) => x.id), [sortedPriorities]);
+  const topPriorityIds = useMemo(
+    () => sortedPriorities.slice(0, 3).map((x) => x.id),
+    [sortedPriorities],
+  );
   const unseenTopPriorityIds = useMemo(
-    () => topPriorityIds.filter((id) => !prefetchedPriorityIdsRef.current.has(id)),
+    () =>
+      topPriorityIds.filter((id) => !prefetchedPriorityIdsRef.current.has(id)),
     [topPriorityIds],
   );
   useEffect(() => {
@@ -1419,7 +1719,8 @@ export function TodayPlanPanel({
         cacheNextActionPrefetchBundle(bundle);
       })
       .finally(() => {
-        for (const id of unseenTopPriorityIds) prefetchedPriorityIdsRef.current.add(id);
+        for (const id of unseenTopPriorityIds)
+          prefetchedPriorityIdsRef.current.add(id);
       });
   }, [unseenTopPriorityIds]);
 
@@ -1434,7 +1735,9 @@ export function TodayPlanPanel({
     }
     const completedIncreased = current > prevActionsCompletedRef.current;
     const becameDailyComplete =
-      prevActionsRemainingRef.current !== null && prevActionsRemainingRef.current > 0 && remaining === 0;
+      prevActionsRemainingRef.current !== null &&
+      prevActionsRemainingRef.current > 0 &&
+      remaining === 0;
     if (completedIncreased || becameDailyComplete) {
       setShowSuccessPulse(true);
       trackProductEvent('mission_completed', {
@@ -1442,12 +1745,20 @@ export function TodayPlanPanel({
         becameDailyComplete,
       });
       try {
-        const clickedAt = Number(window.sessionStorage.getItem('applymate:last-recommendation-clicked-at') ?? 0);
-        const clickedId = window.sessionStorage.getItem('applymate:last-recommendation-id') ?? '';
+        const clickedAt = Number(
+          window.sessionStorage.getItem(
+            'applymate:last-recommendation-clicked-at',
+          ) ?? 0,
+        );
+        const clickedId =
+          window.sessionStorage.getItem('applymate:last-recommendation-id') ??
+          '';
         trackProductEvent('recommendation_completed', {
           priorityId: clickedId || null,
           completionLatencyMs:
-            Number.isFinite(clickedAt) && clickedAt > 0 ? Math.max(0, Date.now() - clickedAt) : null,
+            Number.isFinite(clickedAt) && clickedAt > 0
+              ? Math.max(0, Date.now() - clickedAt)
+              : null,
         });
       } catch {
         trackProductEvent('recommendation_completed', {
@@ -1481,7 +1792,8 @@ export function TodayPlanPanel({
     return (
       <div className="rounded-2xl border border-rose-500/25 bg-rose-500/[0.06] p-6">
         <p className="text-[13px] font-medium text-rose-100/90">
-          Could not load Today&apos;s Plan. Your other dashboard data is unchanged.
+          Could not load Today&apos;s Plan. Your other dashboard data is
+          unchanged.
         </p>
         <button
           type="button"
@@ -1503,7 +1815,9 @@ export function TodayPlanPanel({
     needsAttentionFiltered.length > 0 ||
     Boolean(cvClinicEffective) ||
     continuationsFiltered.length > 0 ||
-    (dashboardVm && !dashboardVm.usesExperienceLayer ? dashboardVm.informationalSurfaces.length : 0) > 0;
+    (dashboardVm && !dashboardVm.usesExperienceLayer
+      ? dashboardVm.informationalSurfaces.length
+      : 0) > 0;
 
   if (!hasAny) {
     return (
@@ -1513,11 +1827,13 @@ export function TodayPlanPanel({
       >
         <div className="mb-3 flex items-center gap-2">
           <Sparkles className="h-5 w-5 shrink-0 text-[#00C9B1]" aria-hidden />
-          <h2 className="text-[16px] font-semibold text-white">Today&apos;s Plan</h2>
+          <h2 className="text-[16px] font-semibold text-white">
+            Today&apos;s Plan
+          </h2>
         </div>
         <p className="text-[13px] leading-relaxed text-white/60">
-          Nothing queued here yet. When you analyze a role or save a job, we will line up the best next move for
-          you.
+          Nothing queued here yet. When you analyze a role or save a job, we
+          will line up the best next move for you.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
@@ -1539,58 +1855,73 @@ export function TodayPlanPanel({
 
   const refreshed =
     data.generatedAt && !Number.isNaN(Date.parse(data.generatedAt))
-      ? new Date(data.generatedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+      ? new Date(data.generatedAt).toLocaleTimeString(undefined, {
+          hour: 'numeric',
+          minute: '2-digit',
+        })
       : null;
   const derivedCurrent = sortedPriorities.length;
-  const derivedNew = sortedPriorities.filter((x) => x.isNewSinceLastVisit).length;
+  const derivedNew = sortedPriorities.filter(
+    (x) => x.isNewSinceLastVisit,
+  ).length;
   const currentCount = derivedCurrent;
   const newCount = derivedNew;
   const localCount = data.unifiedPriorities.summary.localRecommendationsCount;
-  const remoteFallbackCount = data.unifiedPriorities.summary.remoteFallbackRecommendationsCount;
+  const remoteFallbackCount =
+    data.unifiedPriorities.summary.remoteFallbackRecommendationsCount;
   const validPriorityIds = new Set(sortedPriorities.map((x) => x.id));
-  const recommendedIds = new Set(data.dailyMission.recommendedPriorityIds.filter((id) => validPriorityIds.has(id)));
+  const recommendedIds = new Set(
+    data.dailyMission.recommendedPriorityIds.filter((id) =>
+      validPriorityIds.has(id),
+    ),
+  );
   const primaryPriorityId = data.dailyMission.primaryPriorityId;
   const continuationId = data.continuationState.suggestedPriorityId;
   const promotedPrimaryId =
-    (primaryPriorityId && validPriorityIds.has(primaryPriorityId) ? primaryPriorityId : null) ??
-    (continuationId && validPriorityIds.has(continuationId) ? continuationId : null) ??
+    (primaryPriorityId && validPriorityIds.has(primaryPriorityId)
+      ? primaryPriorityId
+      : null) ??
+    (continuationId && validPriorityIds.has(continuationId)
+      ? continuationId
+      : null) ??
     sortedPriorities[0]?.id ??
     null;
   const effectivePrimaryId = promotedPrimaryId;
-  const continuationPriority =
-    (() => {
-      if (data && isOrchestrationV1(data)) {
-        const cid = effectiveContinuationRecommendationId(data);
-        if (cid) {
-          const hit = data.unifiedPriorities.items.find((x) => x.id === cid);
-          if (hit) return hit;
-        }
+  const continuationPriority = (() => {
+    if (data && isOrchestrationV1(data)) {
+      const cid = effectiveContinuationRecommendationId(data);
+      if (cid) {
+        const hit = data.unifiedPriorities.items.find((x) => x.id === cid);
+        if (hit) return hit;
       }
-      const byId =
-        data.continuationState.suggestedPriorityId != null
-          ? sortedPriorities.find((x) => x.id === data.continuationState.suggestedPriorityId) ?? null
-          : null;
-      if (byId) return byId;
-      const rr = (data.continuationState.resolvedRoute ?? '').trim();
-      if (!rr) return null;
-      return (
-        sortedPriorities.find((x) => {
-          const href = resolveExecutionDestination({
-            cta: x.cta,
-            kind: x.kind,
-            reasonCodes: x.reasonCodes,
-            actionType: x.ctaHint,
-            executionContext: x.executionContext,
-            executionPayload: x.executionPayload,
-            journeyNextRoute: x.journey?.nextRoute ?? null,
-            ids: x.ids,
-            defaultCvProfileId,
-            safeFallback: '/dashboard/jobs',
-          }).href;
-          return href.trim() === rr;
-        }) ?? null
-      );
-    })();
+    }
+    const byId =
+      data.continuationState.suggestedPriorityId != null
+        ? (sortedPriorities.find(
+            (x) => x.id === data.continuationState.suggestedPriorityId,
+          ) ?? null)
+        : null;
+    if (byId) return byId;
+    const rr = (data.continuationState.resolvedRoute ?? '').trim();
+    if (!rr) return null;
+    return (
+      sortedPriorities.find((x) => {
+        const href = resolveExecutionDestination({
+          cta: x.cta,
+          kind: x.kind,
+          reasonCodes: x.reasonCodes,
+          actionType: x.ctaHint,
+          executionContext: x.executionContext,
+          executionPayload: x.executionPayload,
+          journeyNextRoute: x.journey?.nextRoute ?? null,
+          ids: x.ids,
+          defaultCvProfileId,
+          safeFallback: '/dashboard/jobs',
+        }).href;
+        return href.trim() === rr;
+      }) ?? null
+    );
+  })();
   const hasTopPriorityCards = sortedPriorities.length > 0;
   const displayedTopPriorities = (() => {
     const max = dashboardVm?.maxPriorityCards ?? 4;
@@ -1606,7 +1937,9 @@ export function TodayPlanPanel({
   const continuationFallbackPriority =
     continuationPriority ??
     (data.continuationState.suggestedPriorityId
-      ? sortedPriorities.find((x) => x.id === data.continuationState.suggestedPriorityId) ?? null
+      ? (sortedPriorities.find(
+          (x) => x.id === data.continuationState.suggestedPriorityId,
+        ) ?? null)
       : null) ??
     displayedTopPriorities[0] ??
     null;
@@ -1617,23 +1950,28 @@ export function TodayPlanPanel({
         reasonCodes: continuationFallbackPriority.reasonCodes,
         actionType: continuationFallbackPriority.ctaHint,
         executionContext: continuationFallbackPriority.executionContext,
-      executionPayload: continuationFallbackPriority.executionPayload,
-        journeyNextRoute: continuationFallbackPriority.journey?.nextRoute ?? null,
+        executionPayload: continuationFallbackPriority.executionPayload,
+        journeyNextRoute:
+          continuationFallbackPriority.journey?.nextRoute ?? null,
         ids: continuationFallbackPriority.ids,
         defaultCvProfileId,
         safeFallback: '/dashboard/jobs',
         orchestrationCanonicalRoute:
           data && isOrchestrationV1(data) && continuationFallbackPriority
-            ? getOrchestratedRowForItem(data, continuationFallbackPriority)?.canonicalRoute ?? null
+            ? (getOrchestratedRowForItem(data, continuationFallbackPriority)
+                ?.canonicalRoute ?? null)
             : null,
         orchestrationFallbackRoute:
           data && isOrchestrationV1(data) && continuationFallbackPriority
-            ? getOrchestratedRowForItem(data, continuationFallbackPriority)?.fallbackRoute ?? null
+            ? (getOrchestratedRowForItem(data, continuationFallbackPriority)
+                ?.fallbackRoute ?? null)
             : null,
       }).href
     : null;
   const continuationResolvedRouteRaw =
-    data && isOrchestrationV1(data) && data.continuationHint?.canonicalRoute?.trim()
+    data &&
+    isOrchestrationV1(data) &&
+    data.continuationHint?.canonicalRoute?.trim()
       ? data.continuationHint.canonicalRoute.trim()
       : (data.continuationState.resolvedRoute ?? '').trim() || null;
   const continuationResolvedRoute = continuationResolvedRouteRaw
@@ -1664,27 +2002,42 @@ export function TodayPlanPanel({
     ''
   ).trim();
   const continuationLabelLooksGeneric =
-    /^open\b/i.test(continuationRawLabel) || /^continue\b/i.test(continuationRawLabel);
+    /^open\b/i.test(continuationRawLabel) ||
+    /^continue\b/i.test(continuationRawLabel);
   const continuationTaskLabel =
     continuationRawLabel && !continuationLabelLooksGeneric
       ? continuationRawLabel
-      : continuationPriority?.title || continuationRawLabel || 'Continue your next task';
-  const missionTarget = data.dailyMission.targetActionsToday || (currentCount > 0 ? 1 : 0);
+      : continuationPriority?.title ||
+        continuationRawLabel ||
+        'Continue your next task';
+  const missionTarget =
+    data.dailyMission.targetActionsToday || (currentCount > 0 ? 1 : 0);
   const todayActionsLeft = Math.max(
     0,
-    data.dailyMission.actionsRemainingToday || Math.max(0, missionTarget - data.progress.actionsCompletedToday),
+    data.dailyMission.actionsRemainingToday ||
+      Math.max(0, missionTarget - data.progress.actionsCompletedToday),
   );
-  const isDailyGoalComplete = todayActionsLeft <= 0 && data.progress.actionsCompletedToday > 0;
+  const isDailyGoalComplete =
+    todayActionsLeft <= 0 && data.progress.actionsCompletedToday > 0;
   const showCompletionTag = isDailyGoalComplete || showSuccessPulse;
   const showMission = data.dailyMission.isMeaningful && effectivePrimaryId;
-  const missionProgressContextSafe = sanitizeHeroPlanCopy(data.dailyMission.progressContext);
-  const continuationMessageSafe = sanitizeHeroPlanCopy(data.continuationState.message);
-  const missionImpactLabelSafe = sanitizeHeroPlanCopy(data.dailyMission.impactLabel);
-  const completionRewardCopySafe = sanitizeHeroPlanCopy(data.dailyMission.completionRewardCopy);
+  const missionProgressContextSafe = sanitizeHeroPlanCopy(
+    data.dailyMission.progressContext,
+  );
+  const continuationMessageSafe = sanitizeHeroPlanCopy(
+    data.continuationState.message,
+  );
+  const missionImpactLabelSafe = sanitizeHeroPlanCopy(
+    data.dailyMission.impactLabel,
+  );
+  const completionRewardCopySafe = sanitizeHeroPlanCopy(
+    data.dailyMission.completionRewardCopy,
+  );
   const missionLead = showMission
     ? missionProgressContextSafe ||
       `Choose one action from the highlighted priority to complete today (${todayActionsLeft} left).`
-    : continuationMessageSafe || 'Keep momentum with one relevant action from your priorities below.';
+    : continuationMessageSafe ||
+      'Keep momentum with one relevant action from your priorities below.';
   const moreSignalsSummaryParts = [
     `${data.sinceLastVisit.newJobsCount} new jobs`,
     `${data.progress.actionsCompletedWeek} actions this week`,
@@ -1706,7 +2059,9 @@ export function TodayPlanPanel({
 
   const resume = data.continuationState;
   const resumeHeadline =
-    resume.lastMeaningfulAction?.title?.trim() || continuationTaskLabel || 'Pick up where you left off';
+    resume.lastMeaningfulAction?.title?.trim() ||
+    continuationTaskLabel ||
+    'Pick up where you left off';
   const resumeContextParts = [
     formatInterruptionAge(resume.interruptionAgeHours),
     resume.remainingSteps != null && resume.remainingSteps > 0
@@ -1748,39 +2103,55 @@ export function TodayPlanPanel({
     if (!inlineExecution) return;
     const latencyMs = Math.max(0, Date.now() - inlineExecution.openedAt);
     trackProductEvent('modal_closed', {
-      recommendationId: inlineExecution.item.recommendationId ?? inlineExecution.item.id,
-      recommendationFamilyId: inlineExecution.item.recommendationFamilyId ?? null,
-      executionMode: inlineExecution.item.executionContext?.executionMode ?? null,
+      recommendationId:
+        inlineExecution.item.recommendationId ?? inlineExecution.item.id,
+      recommendationFamilyId:
+        inlineExecution.item.recommendationFamilyId ?? null,
+      executionMode:
+        inlineExecution.item.executionContext?.executionMode ?? null,
       priorityState: inlineExecution.item.priorityState ?? null,
       latencyMs,
       outcome: completed ? 'completed' : 'dismissed',
     });
-    trackProductEvent(completed ? 'execution_completed' : 'execution_abandoned', {
-      recommendationId: inlineExecution.item.recommendationId ?? inlineExecution.item.id,
-      recommendationFamilyId: inlineExecution.item.recommendationFamilyId ?? null,
-      executionMode: inlineExecution.item.executionContext?.executionMode ?? null,
-      priorityState: inlineExecution.item.priorityState ?? null,
-      latencyMs,
-    });
+    trackProductEvent(
+      completed ? 'execution_completed' : 'execution_abandoned',
+      {
+        recommendationId:
+          inlineExecution.item.recommendationId ?? inlineExecution.item.id,
+        recommendationFamilyId:
+          inlineExecution.item.recommendationFamilyId ?? null,
+        executionMode:
+          inlineExecution.item.executionContext?.executionMode ?? null,
+        priorityState: inlineExecution.item.priorityState ?? null,
+        latencyMs,
+      },
+    );
     if (completed) {
       if (inlineExecution.item.kind === 'follow_up') {
         trackProductEvent('followup_sent', {
-          recommendationId: inlineExecution.item.recommendationId ?? inlineExecution.item.id,
-          recommendationFamilyId: inlineExecution.item.recommendationFamilyId ?? null,
-          channel: inlineExecution.item.followUpContext?.recommendedChannel ?? null,
+          recommendationId:
+            inlineExecution.item.recommendationId ?? inlineExecution.item.id,
+          recommendationFamilyId:
+            inlineExecution.item.recommendationFamilyId ?? null,
+          channel:
+            inlineExecution.item.followUpContext?.recommendedChannel ?? null,
         });
       }
       trackProductEvent('recommendation_completed', {
         ctaSource: 'inline_execution_modal',
-        recommendationId: inlineExecution.item.recommendationId ?? inlineExecution.item.id,
-        recommendationFamilyId: inlineExecution.item.recommendationFamilyId ?? null,
+        recommendationId:
+          inlineExecution.item.recommendationId ?? inlineExecution.item.id,
+        recommendationFamilyId:
+          inlineExecution.item.recommendationFamilyId ?? null,
         priorityState: inlineExecution.item.priorityState ?? null,
         completionLatencyMs: latencyMs,
       });
     } else if (inlineExecution.item.kind === 'follow_up') {
       trackProductEvent('followup_ignored', {
-        recommendationId: inlineExecution.item.recommendationId ?? inlineExecution.item.id,
-        recommendationFamilyId: inlineExecution.item.recommendationFamilyId ?? null,
+        recommendationId:
+          inlineExecution.item.recommendationId ?? inlineExecution.item.id,
+        recommendationFamilyId:
+          inlineExecution.item.recommendationFamilyId ?? null,
       });
     }
     setInlineExecution(null);
@@ -1795,7 +2166,9 @@ export function TodayPlanPanel({
         <div className="flex min-w-0 items-center gap-2.5">
           <Sparkles className="h-5 w-5 shrink-0 text-[#00C9B1]" aria-hidden />
           <div className="min-w-0">
-            <h2 className="text-[16px] font-semibold text-white">Today&apos;s Plan</h2>
+            <h2 className="text-[16px] font-semibold text-white">
+              Today&apos;s Plan
+            </h2>
             <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-medium text-white/35">
               {refreshed ? <span>Updated {refreshed}</span> : null}
               {isFetching ? (
@@ -1813,20 +2186,31 @@ export function TodayPlanPanel({
           disabled={isFetching}
           className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 text-[13px] font-medium text-[#00C9B1] transition-opacity hover:underline disabled:opacity-60 sm:min-h-0"
         >
-          <RotateCw className={cn('h-3.5 w-3.5', isFetching && 'animate-spin')} aria-hidden />
+          <RotateCw
+            className={cn('h-3.5 w-3.5', isFetching && 'animate-spin')}
+            aria-hidden
+          />
           Refresh plan
         </button>
       </div>
 
       {showResumeBanner && !suppressContinuation ? (
         <div className="mb-6 rounded-xl border border-[#00C9B1]/20 bg-[#00C9B1]/[0.06] p-4 sm:p-5">
-          <p className="text-[12px] font-medium text-[#9CF5EA]/80">Pick up where you left off</p>
-          <p className="mt-2 text-[15px] font-semibold leading-snug text-white">{resumeHeadline}</p>
+          <p className="text-[12px] font-medium text-[#9CF5EA]/80">
+            Pick up where you left off
+          </p>
+          <p className="mt-2 text-[15px] font-semibold leading-snug text-white">
+            {resumeHeadline}
+          </p>
           {resumeContextText ? (
-            <p className="mt-1.5 text-[12px] leading-relaxed text-white/55">{resumeContextText}</p>
+            <p className="mt-1.5 text-[12px] leading-relaxed text-white/55">
+              {resumeContextText}
+            </p>
           ) : null}
           {resume.taskRationaleShort?.trim() ? (
-            <p className="mt-2 text-[11px] leading-relaxed text-white/45">{resume.taskRationaleShort.trim()}</p>
+            <p className="mt-2 text-[11px] leading-relaxed text-white/45">
+              {resume.taskRationaleShort.trim()}
+            </p>
           ) : null}
           {continuationHref ? (
             <Link
@@ -1835,14 +2219,19 @@ export function TodayPlanPanel({
               onClick={() => {
                 if (!continuationCanDeepLink) {
                   trackProductEvent('stale_action_blocked', {
-                    routeValidationReason: data.continuationState.routeValidationReason ?? null,
-                    suggestedPriorityId: data.continuationState.suggestedPriorityId ?? null,
+                    routeValidationReason:
+                      data.continuationState.routeValidationReason ?? null,
+                    suggestedPriorityId:
+                      data.continuationState.suggestedPriorityId ?? null,
                     fallbackRoute: continuationHref,
                   });
                 }
                 trackProductEvent('continuation_resumed', {
                   route: continuationHref,
-                  priorityId: resume.suggestedPriorityId ?? resume.lastMeaningfulAction?.priorityId ?? null,
+                  priorityId:
+                    resume.suggestedPriorityId ??
+                    resume.lastMeaningfulAction?.priorityId ??
+                    null,
                   resumeConfidence: resume.resumeConfidence ?? null,
                   routeValidated: resume.routeValidated ?? null,
                   routeValidationReason: resume.routeValidationReason ?? null,
@@ -1856,8 +2245,13 @@ export function TodayPlanPanel({
         </div>
       ) : null}
 
-      {dashboardVm && !dashboardVm.usesExperienceLayer && dashboardVm.informationalSurfaces.length > 0 ? (
-        <section className="mb-6 grid gap-3 sm:grid-cols-2" aria-label="Dashboard insights">
+      {dashboardVm &&
+      !dashboardVm.usesExperienceLayer &&
+      dashboardVm.informationalSurfaces.length > 0 ? (
+        <section
+          className="mb-6 grid gap-3 sm:grid-cols-2"
+          aria-label="Dashboard insights"
+        >
           {dashboardVm.informationalSurfaces.map((surf, i) => (
             <div
               key={`${surf.category}-${i}`}
@@ -1870,7 +2264,8 @@ export function TodayPlanPanel({
             >
               {surf.headline ? (
                 <p className="text-[14px] font-semibold leading-snug text-white/88">
-                  {safeHumanText(surf.headline) ?? stripTechnicalTokens(surf.headline)}
+                  {safeHumanText(surf.headline) ??
+                    stripTechnicalTokens(surf.headline)}
                 </p>
               ) : null}
               {surf.body ? (
@@ -1914,7 +2309,9 @@ export function TodayPlanPanel({
                     : 'No priority actions pending right now.'}
         </p>
         {missionImpactLabelSafe ? (
-          <p className="mb-2 text-[11px] font-medium text-white/40">{missionImpactLabelSafe}</p>
+          <p className="mb-2 text-[11px] font-medium text-white/40">
+            {missionImpactLabelSafe}
+          </p>
         ) : null}
         {!dashboardVm?.usesExperienceLayer &&
         !showMission &&
@@ -1924,7 +2321,9 @@ export function TodayPlanPanel({
           <p
             className={cn(
               'mb-2 text-[11px]',
-              data.continuationState.taskLabelQuality === 'heuristic' ? 'text-amber-100/70' : 'text-amber-100/85',
+              data.continuationState.taskLabelQuality === 'heuristic'
+                ? 'text-amber-100/70'
+                : 'text-amber-100/85',
             )}
           >
             {data.continuationState.taskRationaleShort}
@@ -1934,12 +2333,16 @@ export function TodayPlanPanel({
           const showFresh = newCount > 0;
           const showProgress = currentCount > 0;
           const bothZero = !showFresh && !showProgress;
-          const quietLine = safeHumanText(data.unifiedPriorities.summary.quietDashboardHint ?? null);
+          const quietLine = safeHumanText(
+            data.unifiedPriorities.summary.quietDashboardHint ?? null,
+          );
           const neutralQuiet =
             "You're caught up on counts for now — we'll surface what's new when it matters.";
           if (bothZero) {
             return (
-              <p className="mb-2 text-[12px] leading-relaxed text-white/42">{quietLine ?? neutralQuiet}</p>
+              <p className="mb-2 text-[12px] leading-relaxed text-white/42">
+                {quietLine ?? neutralQuiet}
+              </p>
             );
           }
           const snapshotHint = (
@@ -1948,9 +2351,12 @@ export function TodayPlanPanel({
               Activity snapshot
               <InfoHint
                 text={`${moreSignalsText}${
-                  data.reentrySummary.newStrongMatchesCount > 0 || data.reentrySummary.nearCompletionCount > 0
+                  data.reentrySummary.newStrongMatchesCount > 0 ||
+                  data.reentrySummary.nearCompletionCount > 0
                     ? `. Since your last visit: ${data.reentrySummary.newStrongMatchesCount} strong match${
-                        data.reentrySummary.newStrongMatchesCount === 1 ? '' : 'es'
+                        data.reentrySummary.newStrongMatchesCount === 1
+                          ? ''
+                          : 'es'
                       } and ${data.reentrySummary.nearCompletionCount} almost-finished task${
                         data.reentrySummary.nearCompletionCount === 1 ? '' : 's'
                       }.`
@@ -1975,7 +2381,10 @@ export function TodayPlanPanel({
               ) : null}
               {showProgress ? (
                 <span className="inline-flex items-center gap-1">
-                  <ClipboardList className="h-3.5 w-3.5 text-[#00C9B1]" aria-hidden />
+                  <ClipboardList
+                    className="h-3.5 w-3.5 text-[#00C9B1]"
+                    aria-hidden
+                  />
                   {currentCount} in motion
                 </span>
               ) : null}
@@ -1992,7 +2401,9 @@ export function TodayPlanPanel({
 
       {sortedPriorities.length > 0 ? (
         <section className="mb-8">
-          <p className="mb-3 text-[13px] font-medium text-white/55">What to do next</p>
+          <p className="mb-3 text-[13px] font-medium text-white/55">
+            What to do next
+          </p>
           <div className="space-y-3">
             {displayedTopPriorities.map((it, idx) => (
               <div
@@ -2003,14 +2414,20 @@ export function TodayPlanPanel({
                 <UnifiedPriorityCard
                   item={it}
                   defaultCvProfileId={defaultCvProfileId}
-                  emphasized={effectivePrimaryId ? it.id === effectivePrimaryId : recommendedIds.has(it.id)}
+                  emphasized={
+                    effectivePrimaryId
+                      ? it.id === effectivePrimaryId
+                      : recommendedIds.has(it.id)
+                  }
                   orchestratedRow={getOrchestratedRowForItem(data, it)}
                   knownApplicationIds={knownApplicationIds}
                   knownAnalysisIds={knownAnalysisIds}
                   jobHistoryByAnalysisId={jobHistoryByAnalysisId}
                   jobHistoryByListingId={jobHistoryByListingId}
                   tourDataAttr={
-                    !cvClinicEffective && firstCvFixPriorityId === it.id ? 'cv-clinic-section' : undefined
+                    !cvClinicEffective && firstCvFixPriorityId === it.id
+                      ? 'cv-clinic-section'
+                      : undefined
                   }
                   onInvalidNavigate={() => {
                     trackProductEvent('stale_action_blocked', {
@@ -2025,7 +2442,9 @@ export function TodayPlanPanel({
                       priorityState: it.priorityState ?? null,
                       generationReason: it.generationReason ?? null,
                     });
-                    toast.info('This item was already resolved. We refreshed your next actions.');
+                    toast.info(
+                      'This item was already resolved. We refreshed your next actions.',
+                    );
                     onRefresh();
                   }}
                   onInlineExecute={handleInlineExecute}
@@ -2046,7 +2465,9 @@ export function TodayPlanPanel({
 
       {nextStepEffective ? (
         <section className="mb-8">
-          <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.1em] text-white/40">Next up</p>
+          <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.1em] text-white/40">
+            Next up
+          </p>
           <PlanInnerCard
             item={nextStepEffective}
             icon={Rocket}
@@ -2056,7 +2477,8 @@ export function TodayPlanPanel({
         </section>
       ) : null}
 
-      {data.unifiedPriorities.items.length === 0 && todaysFocusFiltered.length > 0 ? (
+      {data.unifiedPriorities.items.length === 0 &&
+      todaysFocusFiltered.length > 0 ? (
         <section className="mb-8">
           <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.1em] text-white/40">
             Today&apos;s focus
@@ -2075,7 +2497,8 @@ export function TodayPlanPanel({
         </section>
       ) : null}
 
-      {data.unifiedPriorities.items.length === 0 && needsAttentionFiltered.length > 0 ? (
+      {data.unifiedPriorities.items.length === 0 &&
+      needsAttentionFiltered.length > 0 ? (
         <section className="mb-8">
           <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.1em] text-amber-200/55">
             Needs attention
@@ -2096,7 +2519,9 @@ export function TodayPlanPanel({
 
       {cvClinicEffective ? (
         <section className="mb-8">
-          <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.1em] text-white/40">CV Clinic</p>
+          <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.1em] text-white/40">
+            CV Clinic
+          </p>
           <div data-tour="cv-clinic-section">
             <PlanInnerCard
               item={cvClinicEffective}
@@ -2108,14 +2533,19 @@ export function TodayPlanPanel({
         </section>
       ) : null}
 
-      {shouldRenderSection('history', data) && continuationsFiltered.length > 0 && !suppressContinuation ? (
+      {shouldRenderSection('history', data) &&
+      continuationsFiltered.length > 0 &&
+      !suppressContinuation ? (
         <section>
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-white/40">
               Pick up where you left off
             </p>
             {data.recentAnalysesContinuations.length > 3 ? (
-              <Link href="/dashboard/jobs" className="text-[13px] font-medium text-[#00C9B1] hover:underline">
+              <Link
+                href="/dashboard/jobs"
+                className="text-[13px] font-medium text-[#00C9B1] hover:underline"
+              >
                 View all →
               </Link>
             ) : null}

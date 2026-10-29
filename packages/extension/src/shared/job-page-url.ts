@@ -37,7 +37,10 @@ export function isKnownJobBoardUrl(url: string): boolean {
     if (hostname.includes('lever.co')) {
       return true;
     }
-    if (hostname.includes('myworkdayjobs.com') || hostname.includes('wd3.myworkday.com')) {
+    if (
+      hostname.includes('myworkdayjobs.com') ||
+      hostname.includes('wd3.myworkday.com')
+    ) {
       return true;
     }
     if (hostname.includes('jobberman.com')) {
@@ -62,7 +65,8 @@ export function urlLooksLikeJobListing(url: string): boolean {
     const parsed = new URL(url);
     if (!/^https?:$/i.test(parsed.protocol)) return false;
     if (CAREER_PATH_PATTERN.test(parsed.pathname)) return true;
-    if (/[?&](jobId|job_id|gh_jid|job|posting|req)=/i.test(parsed.href)) return true;
+    if (/[?&](jobId|job_id|gh_jid|job|posting|req)=/i.test(parsed.href))
+      return true;
     return false;
   } catch {
     return false;
@@ -88,9 +92,12 @@ export function normalizeJobPageUrl(raw: string): string | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
   try {
-    const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    const withScheme = /^https?:\/\//i.test(trimmed)
+      ? trimmed
+      : `https://${trimmed}`;
     const parsed = new URL(withScheme);
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:')
+      return null;
     return parsed.href;
   } catch {
     return null;
@@ -129,7 +136,8 @@ export function canonicalJobViewUrl(raw: string): string | null {
     }
 
     const jobId =
-      parsed.searchParams.get('currentJobId') ?? parsed.searchParams.get('jobId');
+      parsed.searchParams.get('currentJobId') ??
+      parsed.searchParams.get('jobId');
     if (jobId && /^\d+$/.test(jobId)) {
       return `https://www.linkedin.com/jobs/view/${jobId}/`;
     }
@@ -145,7 +153,8 @@ export function linkedInJobKeyFromUrl(url: string): string | null {
     const parsed = new URL(url);
     if (!parsed.hostname.includes('linkedin.com')) return null;
     const fromQuery =
-      parsed.searchParams.get('currentJobId') ?? parsed.searchParams.get('jobId');
+      parsed.searchParams.get('currentJobId') ??
+      parsed.searchParams.get('jobId');
     if (fromQuery && /^\d+$/.test(fromQuery)) return `linkedin:${fromQuery}`;
     const pathMatch = parsed.pathname.match(/\/jobs\/view\/(\d+)/i);
     if (pathMatch?.[1]) return `linkedin:${pathMatch[1]}`;

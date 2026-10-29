@@ -28,7 +28,8 @@ function renderPriorityCard(id: string, plan: TodayPlanPayload) {
         <DashboardOpportunityDetectionCard data={plan.opportunityDetection} />
       ) : null;
     case 'follow_up_intelligence':
-      return plan.followUpIntelligence || (plan.followUpJobs?.length ?? 0) > 0 ? (
+      return plan.followUpIntelligence ||
+        (plan.followUpJobs?.length ?? 0) > 0 ? (
         <DashboardFollowUpIntelligenceCard
           data={plan.followUpIntelligence}
           queueJobs={plan.followUpJobs}
@@ -41,16 +42,29 @@ function renderPriorityCard(id: string, plan: TodayPlanPayload) {
   }
 }
 
-export function DashboardPriorityIntelligenceZone({ plan, layout, excludeCardIds }: Props) {
+export function DashboardPriorityIntelligenceZone({
+  plan,
+  layout,
+  excludeCardIds,
+}: Props) {
   const slots = useMemo(
-    () => selectActionablePriorityCardIds(plan, layout, 3, excludeCardIds ?? new Set()),
+    () =>
+      selectActionablePriorityCardIds(
+        plan,
+        layout,
+        3,
+        excludeCardIds ?? new Set(),
+      ),
     [plan, layout, excludeCardIds],
   );
 
   if (!plan || slots.length === 0) return null;
 
   return (
-    <section className="scroll-mt-4 space-y-6" aria-label="Priority intelligence">
+    <section
+      className="scroll-mt-4 space-y-6"
+      aria-label="Priority intelligence"
+    >
       <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/38">
         Priority intelligence
       </p>

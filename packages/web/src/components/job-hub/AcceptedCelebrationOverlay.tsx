@@ -30,8 +30,12 @@ export function AcceptedCelebrationOverlay({ active }: { active: boolean }) {
         <p className="text-4xl" aria-hidden>
           🎉
         </p>
-        <p className="mt-2 text-lg font-semibold text-white">You accepted an offer!</p>
-        <p className="mt-1 text-sm text-white/55">Time to celebrate your win.</p>
+        <p className="mt-2 text-lg font-semibold text-white">
+          You accepted an offer!
+        </p>
+        <p className="mt-1 text-sm text-white/55">
+          Time to celebrate your win.
+        </p>
       </div>
     </div>
   );

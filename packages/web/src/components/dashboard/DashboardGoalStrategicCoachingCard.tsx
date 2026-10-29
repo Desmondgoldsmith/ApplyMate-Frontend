@@ -11,7 +11,9 @@ type Props = {
   data: GoalStrategicCoachingPayload;
 };
 
-function timeHorizonLabel(h: GoalStrategicCoachingPayload['timeHorizon']): string | null {
+function timeHorizonLabel(
+  h: GoalStrategicCoachingPayload['timeHorizon'],
+): string | null {
   switch (h) {
     case 'today':
       return 'Today';
@@ -61,7 +63,9 @@ export function DashboardGoalStrategicCoachingCard({ data }: Props) {
       <div className="relative">
         {/* Header: label + CTA share one row on desktop — no orphan empty column */}
         <div className="flex flex-col gap-4 border-b border-white/[0.08] pb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9CF5EA]/75">Goals &amp; strategy</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9CF5EA]/75">
+            Goals &amp; strategy
+          </p>
           <Link
             href={ctaHref}
             className={cn(
@@ -82,31 +86,43 @@ export function DashboardGoalStrategicCoachingCard({ data }: Props) {
               </h2>
             ) : null}
             {supporting ? (
-              <p className="text-[13px] leading-relaxed text-white/58 sm:text-[14px]">{supporting}</p>
+              <p className="text-[13px] leading-relaxed text-white/58 sm:text-[14px]">
+                {supporting}
+              </p>
             ) : null}
           </div>
 
           <div className="min-w-0 space-y-5">
             {recommendation ? (
               <div className="rounded-xl border border-[#00C9B1]/25 bg-[#00C9B1]/[0.06] px-4 py-4 sm:px-5">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9CF5EA]/90">Recommendation</p>
-                <p className="mt-2 text-[13px] leading-relaxed text-white/82 sm:text-[14px]">{recommendation}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9CF5EA]/90">
+                  Recommendation
+                </p>
+                <p className="mt-2 text-[13px] leading-relaxed text-white/82 sm:text-[14px]">
+                  {recommendation}
+                </p>
               </div>
             ) : null}
             {reasoning ? (
               <p className="text-[12px] leading-relaxed text-white/45 sm:text-[13px]">
-                <span className="font-medium text-white/55">Why</span> — {reasoning}
+                <span className="font-medium text-white/55">Why</span> —{' '}
+                {reasoning}
               </p>
             ) : null}
 
             <div className="flex flex-wrap items-center gap-3 text-[11px] text-white/40">
               {horizon ? (
-                <span className="rounded-full border border-white/12 px-2.5 py-1 text-white/55">{horizon}</span>
+                <span className="rounded-full border border-white/12 px-2.5 py-1 text-white/55">
+                  {horizon}
+                </span>
               ) : null}
               {confidence != null ? (
                 <span className="inline-flex items-center gap-1.5 tabular-nums text-white/48">
                   <span>Goal coaching priority</span>
-                  <InfoHint text={TOOLTIP_CONFIDENCE_STRATEGIC_COACHING} buttonAriaLabel="What is goal coaching priority?" />
+                  <InfoHint
+                    text={TOOLTIP_CONFIDENCE_STRATEGIC_COACHING}
+                    buttonAriaLabel="What is goal coaching priority?"
+                  />
                   <span>{confidence}%</span>
                 </span>
               ) : null}

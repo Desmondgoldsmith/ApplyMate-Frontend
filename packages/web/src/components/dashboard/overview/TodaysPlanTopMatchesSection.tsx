@@ -13,7 +13,11 @@ import {
   canonicalRowByRecommendationId,
   isOrchestrationV1,
 } from '@/lib/dashboardOrchestrationModel';
-import { isAppliedOrLaterState, type TodayPlanItem, type TodayPlanPayload } from '@/lib/today-plan';
+import {
+  isAppliedOrLaterState,
+  type TodayPlanItem,
+  type TodayPlanPayload,
+} from '@/lib/today-plan';
 import { formatConfidenceShort } from '@/lib/todayPlanLabels';
 import { TOOLTIP_JOB_MATCH_SCORE } from '@/lib/dashboardIntelligenceTooltips';
 import { cn } from '@/lib/utils';

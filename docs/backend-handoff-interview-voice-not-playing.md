@@ -28,13 +28,13 @@ Capture **`POST /interviews/{sessionId}/speech`** in Network for the first ~30 s
 
 **When it is called**
 
-| Phase | Example `text` (trimmed) | Notes |
-|-------|--------------------------|--------|
-| Intro greeting | Personality greeting, e.g. *"Hi! I'm Desmond Goldsmith…"* | Fired once per session start |
-| Intro prompt | *"Before we start, could you please introduce yourself?…"* | Chained after greeting `onEnd` |
-| Each question | Turn `questionText` or question bank text | After intro and between turns |
-| Feedback (classic flow) | Encouragement + transition phrase | Optional |
-| Submitting | Post-interview thank-you | Optional |
+| Phase                   | Example `text` (trimmed)                                   | Notes                          |
+| ----------------------- | ---------------------------------------------------------- | ------------------------------ |
+| Intro greeting          | Personality greeting, e.g. _"Hi! I'm Desmond Goldsmith…"_  | Fired once per session start   |
+| Intro prompt            | _"Before we start, could you please introduce yourself?…"_ | Chained after greeting `onEnd` |
+| Each question           | Turn `questionText` or question bank text                  | After intro and between turns  |
+| Feedback (classic flow) | Encouragement + transition phrase                          | Optional                       |
+| Submitting              | Post-interview thank-you                                   | Optional                       |
 
 **Request body (JSON)**
 
@@ -46,23 +46,23 @@ Capture **`POST /interviews/{sessionId}/speech`** in Network for the first ~30 s
 }
 ```
 
-| Field | Type | Frontend source |
-|-------|------|-----------------|
-| `text` | string, required | Text to synthesize (greeting, question, etc.) |
-| `interviewPersona` | string, optional | **Legacy avatar / voice id** — see below |
-| `speakingSpeed` | number, optional | Session slider, typically `0.75`–`1.25` |
+| Field              | Type             | Frontend source                               |
+| ------------------ | ---------------- | --------------------------------------------- |
+| `text`             | string, required | Text to synthesize (greeting, question, etc.) |
+| `interviewPersona` | string, optional | **Legacy avatar / voice id** — see below      |
+| `speakingSpeed`    | number, optional | Session slider, typically `0.75`–`1.25`       |
 
 **Important — `interviewPersona` values**
 
 The frontend now sends **legacy personality ids** used at session creation, **not** UX persona slugs:
 
-| Value | Maps to (UI) |
-|-------|----------------|
-| `alex` | Friendly coach / Desmond |
-| `sarah` | HR interviewer / Amara |
-| `marcus` | Strict interviewer / Isaac |
-| `zoe` | Technical interviewer / Priya |
-| `jordan` | Silent observer (if used) |
+| Value    | Maps to (UI)                  |
+| -------- | ----------------------------- |
+| `alex`   | Friendly coach / Desmond      |
+| `sarah`  | HR interviewer / Amara        |
+| `marcus` | Strict interviewer / Isaac    |
+| `zoe`    | Technical interviewer / Priya |
+| `jordan` | Silent observer (if used)     |
 
 Session create already sends `personality: "alex" | "sarah" | …` on `POST /interviews`. The `/speech` body should accept the **same** ids.
 
@@ -107,11 +107,11 @@ Or: HTTP 4xx/5xx, missing `audioBase64`, empty `audioBase64`, or `success: false
 
 ## Related endpoints (for context)
 
-| Endpoint | Purpose |
-|----------|---------|
-| `POST /interviews` | Creates session; body includes `personality`, `interviewPersona`, `speakingSpeed`, `prepMode`, etc. |
-| `GET /interviews/:sessionId` | Session + `turns[]` for prep flow |
-| `POST /interviews/:sessionId/turns/:turnId/audio` | Whisper STT for answers (separate from TTS) |
+| Endpoint                                          | Purpose                                                                                             |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `POST /interviews`                                | Creates session; body includes `personality`, `interviewPersona`, `speakingSpeed`, `prepMode`, etc. |
+| `GET /interviews/:sessionId`                      | Session + `turns[]` for prep flow                                                                   |
+| `POST /interviews/:sessionId/turns/:turnId/audio` | Whisper STT for answers (separate from TTS)                                                         |
 
 Analytics (fixed on frontend): `POST /analytics/events` with `eventName: "interview_started"` on session load — unrelated to audio but was previously 400 due to invalid event names.
 

@@ -5,8 +5,15 @@ import { useCallback } from 'react';
 
 import { useToast } from '@/components/ui/Toast';
 import { useCvSuggestionMutations } from '@/hooks/useCvSuggestionMutations';
-import { api, type CvDiffPreviewOpenParams, type CvImprovementsPayload } from '@/lib/api';
-import { isCvApplyImprovementTerminalNoDiff, toastCopyForTerminalNoDiffApply } from '@/lib/cvApplyImprovementQueue';
+import {
+  api,
+  type CvDiffPreviewOpenParams,
+  type CvImprovementsPayload,
+} from '@/lib/api';
+import {
+  isCvApplyImprovementTerminalNoDiff,
+  toastCopyForTerminalNoDiffApply,
+} from '@/lib/cvApplyImprovementQueue';
 import { cvOpenParamsFromApplyResult } from '@/lib/cvDiffPreviewMap';
 import { canDisplayCvImprovementDiffPreview } from '@/lib/cvImprovementDiffPreview';
 import { getApiErrorMessage, isDailyAiLimitApiError } from '@/lib/axios';
@@ -38,18 +45,30 @@ export function useCvScoreSectionActions(
       const qk = cvSuggestionsQueryKey(profileId);
       const t0 = performance.now();
       try {
-        const result = await api.cv.applyImprovement(id, profileId ?? undefined);
+        const result = await api.cv.applyImprovement(
+          id,
+          profileId ?? undefined,
+        );
         if (isCvApplyImprovementTerminalNoDiff(result)) {
-          const rid = String(result.suggestionId || result.improvementId || id).trim();
-          queryClient.setQueryData<CvImprovementsPayload>(qk, (p) =>
-            applySuggestionAcceptToImprovementsCache(p, rid, {
-              pendingSuggestionsCount:
-                result.pendingSuggestionsCount ??
-                Math.max(0, (p?.improvements ?? []).filter((it) => (it?.id ?? '').trim() !== rid).length),
-              cvRevisionId: result.cvRevisionId ?? null,
-              alreadyApplied: true,
-              acceptedSuggestionIds: [rid],
-            }) ?? p,
+          const rid = String(
+            result.suggestionId || result.improvementId || id,
+          ).trim();
+          queryClient.setQueryData<CvImprovementsPayload>(
+            qk,
+            (p) =>
+              applySuggestionAcceptToImprovementsCache(p, rid, {
+                pendingSuggestionsCount:
+                  result.pendingSuggestionsCount ??
+                  Math.max(
+                    0,
+                    (p?.improvements ?? []).filter(
+                      (it) => (it?.id ?? '').trim() !== rid,
+                    ).length,
+                  ),
+                cvRevisionId: result.cvRevisionId ?? null,
+                alreadyApplied: true,
+                acceptedSuggestionIds: [rid],
+              }) ?? p,
           );
           toast.success(toastCopyForTerminalNoDiffApply(result));
           reconcileAfterMutation(profileId, 'queueOnly');
@@ -66,30 +85,44 @@ export function useCvScoreSectionActions(
         const pendingPaths = (result.changedFields ?? [])
           .map((cf) => cf.fieldPath?.trim())
           .filter((p): p is string => Boolean(p));
-        queryClient.setQueryData<CvImprovementsPayload>(qk, (p) =>
-          applySuggestionPreviewToImprovementsCache(p, id, {
-            pendingFieldPaths:
-              pendingPaths.length > 0
-                ? pendingPaths
-                : result.selectableFieldPaths?.map((p) => p.trim()).filter(Boolean),
-            lastPreviewDraftHash: result.draftHash,
-            lastPreviewForSuggestionId: id,
-          }) ?? p,
+        queryClient.setQueryData<CvImprovementsPayload>(
+          qk,
+          (p) =>
+            applySuggestionPreviewToImprovementsCache(p, id, {
+              pendingFieldPaths:
+                pendingPaths.length > 0
+                  ? pendingPaths
+                  : result.selectableFieldPaths
+                      ?.map((p) => p.trim())
+                      .filter(Boolean),
+              lastPreviewDraftHash: result.draftHash,
+              lastPreviewForSuggestionId: id,
+            }) ?? p,
         );
         onDiffPreview?.(openParams);
         if (shouldShowTruthfulnessAdjustNotice(result)) {
-          toast.info('Some suggested edits were adjusted to match your CV. See the preview note for details.');
+          toast.info(
+            'Some suggested edits were adjusted to match your CV. See the preview note for details.',
+          );
         }
       } catch (e) {
         logCvMutationErrorDev('scoreSection.fixWithAi', e);
-        const msg = getApiErrorMessage(e) || 'AI could not start this fix. Try again.';
+        const msg =
+          getApiErrorMessage(e) || 'AI could not start this fix. Try again.';
         if (!isDailyAiLimitApiError(e)) toast.error(msg);
         else toast.error(msg);
       } finally {
         logCvSuggestionMutationClientPerf('scoreSection.fixWithAi', t0);
       }
     },
-    [profileId, queryClient, toast, reconcileAfterMutation, onDiffPreview, onScoreUpdated],
+    [
+      profileId,
+      queryClient,
+      toast,
+      reconcileAfterMutation,
+      onDiffPreview,
+      onScoreUpdated,
+    ],
   );
 
   const fixMyself = useCallback(
@@ -105,7 +138,9 @@ export function useCvScoreSectionActions(
       try {
         queryClient.setQueryData<CvImprovementsPayload>(qk, (p) => {
           if (!p?.improvements) return p;
-          const nextList = p.improvements.filter((it) => (it?.id ?? '').trim() !== id);
+          const nextList = p.improvements.filter(
+            (it) => (it?.id ?? '').trim() !== id,
+          );
           return {
             ...p,
             improvements: nextList,
@@ -113,17 +148,26 @@ export function useCvScoreSectionActions(
           };
         });
         const res = await api.cv.selfFixSuggestion(id, profileId ?? undefined);
-        queryClient.setQueryData<CvImprovementsPayload>(qk, (p) =>
-          applySuggestionSelfFixToImprovementsCache(p, id, res) ?? p,
+        queryClient.setQueryData<CvImprovementsPayload>(
+          qk,
+          (p) => applySuggestionSelfFixToImprovementsCache(p, id, res) ?? p,
         );
-        toast.success("Marked as in progress — we'll credit this section when you save.");
+        toast.success(
+          "Marked as in progress — we'll credit this section when you save.",
+        );
         const inv = reconcileAfterMutation(profileId, 'queueOnly');
-        logCvSuggestionMutationClientPerf('scoreSection.fixMyself', t0, { invalidations: inv, cacheWrites: 2 });
+        logCvSuggestionMutationClientPerf('scoreSection.fixMyself', t0, {
+          invalidations: inv,
+          cacheWrites: 2,
+        });
         onScoreUpdated?.();
       } catch (e) {
         logCvMutationErrorDev('scoreSection.selfFix', e);
         if (prev !== undefined) queryClient.setQueryData(qk, prev);
-        toast.error(getApiErrorMessage(e) || 'Could not update this suggestion. Try again.');
+        toast.error(
+          getApiErrorMessage(e) ||
+            'Could not update this suggestion. Try again.',
+        );
       }
     },
     [profileId, queryClient, toast, reconcileAfterMutation, onScoreUpdated],

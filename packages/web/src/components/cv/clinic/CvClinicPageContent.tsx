@@ -113,7 +113,11 @@ import {
   type CvTemplateId,
   type SaveCVBuilderDataResult,
 } from '@/lib/cvBuilder';
-import { isCvScoreInitialLoading, mergeBreakdownWithPublishedSections, resolveCvDisplayScore } from '@/lib/cvScoreDisplay';
+import {
+  isCvScoreInitialLoading,
+  mergeBreakdownWithPublishedSections,
+  resolveCvDisplayScore,
+} from '@/lib/cvScoreDisplay';
 import { resolveCvSpellcheckLanguage } from '@/lib/cvSpellcheckLanguage';
 import { filterPendingSuggestionsForDisplay } from '@/lib/cv-improvement-merge';
 import {
@@ -387,7 +391,10 @@ export function CvClinicPageContent() {
     (profilesQuery.isSuccess && profiles.length === 0 && legacyCv.isPending);
 
   /** Only open the builder when `?profileId=` is set — otherwise show the resume library hub. */
-  const targetId = useMemo(() => profileIdParam?.trim() || null, [profileIdParam]);
+  const targetId = useMemo(
+    () => profileIdParam?.trim() || null,
+    [profileIdParam],
+  );
 
   const {
     data: detail,
@@ -443,7 +450,9 @@ export function CvClinicPageContent() {
   const [mobileCvToolsOpen, setMobileCvToolsOpen] = useState(false);
   const [mobileCvInsightsOpen, setMobileCvInsightsOpen] = useState(false);
   const triplePanelContainerRef = useRef<HTMLDivElement>(null);
-  const tailorRightPctKey = isTailorMode ? CV_TAILOR_RIGHT_PCT_KEY : CV_CLINIC_RIGHT_PCT_KEY;
+  const tailorRightPctKey = isTailorMode
+    ? CV_TAILOR_RIGHT_PCT_KEY
+    : CV_CLINIC_RIGHT_PCT_KEY;
   const tailorRightPctMin = isTailorMode ? 38 : 22;
   const tailorRightPctMax = isTailorMode ? 52 : 38;
   const tailorRightPctDefault = isTailorMode ? 42 : 28;
@@ -465,10 +474,13 @@ export function CvClinicPageContent() {
   const [undoRedoControls, setUndoRedoControls] =
     useState<CvBuilderUndoRedoControls | null>(null);
   const undoRedoControlsRef = useRef<CvBuilderUndoRedoControls | null>(null);
-  const handleUndoRedoReady = useCallback((controls: CvBuilderUndoRedoControls) => {
-    undoRedoControlsRef.current = controls;
-    setUndoRedoControls(controls);
-  }, []);
+  const handleUndoRedoReady = useCallback(
+    (controls: CvBuilderUndoRedoControls) => {
+      undoRedoControlsRef.current = controls;
+      setUndoRedoControls(controls);
+    },
+    [],
+  );
   const clearUndoHistory = useCallback(() => {
     undoRedoControlsRef.current?.clearHistory();
   }, []);
@@ -722,7 +734,8 @@ export function CvClinicPageContent() {
       if (hasPatch && updatedSections) {
         immediateSectionPatchRef.current?.(updatedSections);
         const id = targetId?.trim();
-        if (id) patchCvSectionsCacheFromAccept(queryClient, id, updatedSections);
+        if (id)
+          patchCvSectionsCacheFromAccept(queryClient, id, updatedSections);
         // Refresh React Query caches only — avoid hydrate nonce (would race local patch / undo stack).
         void refreshCvState(id, {
           refreshProfile: true,
@@ -777,14 +790,17 @@ export function CvClinicPageContent() {
     targetSection: string;
   } | null>(null);
 
-  const activeClarification = globalAssistantClarification ?? assistantClarification;
+  const activeClarification =
+    globalAssistantClarification ?? assistantClarification;
   const clarificationQuestion =
-    recruiterScanClarification?.question ?? activeClarification?.question ?? null;
+    recruiterScanClarification?.question ??
+    activeClarification?.question ??
+    null;
   const assistantBusyMessage = useMemo(
     () =>
       assistantBusy
-        ? cvAssistantBusyMessage(assistantBusyStage) ??
-          cvAssistantBusyMessage('generating')
+        ? (cvAssistantBusyMessage(assistantBusyStage) ??
+          cvAssistantBusyMessage('generating'))
         : cvImprovementDiffActionsPending
           ? cvAssistantBusyMessage('validating')
           : null,
@@ -800,17 +816,15 @@ export function CvClinicPageContent() {
       if (!targetId?.trim() || !fieldPath.trim()) return null;
       try {
         const payload = await api.cv.getSuggestions(targetId, false);
-        const match = (payload.improvements ?? []).find(
-          (item) => {
-            if (typeof item.id !== 'string' || !item.id.trim()) return false;
-            const target = item.targetFieldPath?.trim();
-            if (target && target === fieldPath.trim()) return true;
-            return (
-              Array.isArray(item.pendingFieldPaths) &&
-              item.pendingFieldPaths.some((p) => p.trim() === fieldPath.trim())
-            );
-          },
-        );
+        const match = (payload.improvements ?? []).find((item) => {
+          if (typeof item.id !== 'string' || !item.id.trim()) return false;
+          const target = item.targetFieldPath?.trim();
+          if (target && target === fieldPath.trim()) return true;
+          return (
+            Array.isArray(item.pendingFieldPaths) &&
+            item.pendingFieldPaths.some((p) => p.trim() === fieldPath.trim())
+          );
+        });
         return match?.id?.trim() || null;
       } catch {
         return null;
@@ -979,7 +993,8 @@ export function CvClinicPageContent() {
     if (diffPreview?.section && jumpToSectionRef.current) {
       setTimeout(() => {
         jumpToSectionRef.current?.(
-          cvDiffPreviewBuilderSection(diffPreview.section) ?? diffPreview.section,
+          cvDiffPreviewBuilderSection(diffPreview.section) ??
+            diffPreview.section,
         );
       }, 350);
     }
@@ -1038,16 +1053,21 @@ export function CvClinicPageContent() {
   if (displayScoreValue != null) {
     stableToolbarScoreRef.current = displayScoreValue;
   }
-  const toolbarScoreValue =
-    displayScoreValue ?? stableToolbarScoreRef.current;
+  const toolbarScoreValue = displayScoreValue ?? stableToolbarScoreRef.current;
 
-  const scoreInitialLoading = isCvScoreInitialLoading(score.isPending, score.data);
+  const scoreInitialLoading = isCvScoreInitialLoading(
+    score.isPending,
+    score.data,
+  );
   const scoreRefreshing =
     score.isFetching && !scoreInitialLoading && displayScoreValue != null;
 
   const displayScoreBreakdown = useMemo(() => {
     const base = score.data?.breakdown as Record<string, unknown> | undefined;
-    if (improvements.data?.needsScoring && improvements.data.lastPublishedSectionScores) {
+    if (
+      improvements.data?.needsScoring &&
+      improvements.data.lastPublishedSectionScores
+    ) {
       return mergeBreakdownWithPublishedSections(
         base,
         improvements.data.lastPublishedSectionScores,
@@ -1064,7 +1084,10 @@ export function CvClinicPageContent() {
 
   const refreshScoreAfterSuggestion = useCallback(() => {
     if (!targetId) return;
-    void queryClient.invalidateQueries({ queryKey: queryKeys.cv.score(targetId), exact: true });
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.cv.score(targetId),
+      exact: true,
+    });
     void queryClient.invalidateQueries({
       queryKey: queryKeys.cv.suggestions(targetId),
       exact: true,
@@ -1079,8 +1102,15 @@ export function CvClinicPageContent() {
       cvDataSnapshot ?? initialData,
       sections,
     );
-    const { items, dropped } = filterUnrealisticCvSuggestions(pending, inventory);
-    logUnrealisticCvRecommendationDropDev('suggestions_panel', targetId, dropped);
+    const { items, dropped } = filterUnrealisticCvSuggestions(
+      pending,
+      inventory,
+    );
+    logUnrealisticCvRecommendationDropDev(
+      'suggestions_panel',
+      targetId,
+      dropped,
+    );
     return items;
   }, [
     improvements.data?.improvements,
@@ -1337,18 +1367,25 @@ export function CvClinicPageContent() {
     ) => {
       const { profile, importSummary } = payload;
       void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profileDefault() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.profileDefault(),
+      });
       await queryClient.refetchQueries({ queryKey: queryKeys.cv.profiles() });
       const id = profile.id?.trim();
       if (id) {
-        await queryClient.refetchQueries({ queryKey: queryKeys.cv.profile(id) });
+        await queryClient.refetchQueries({
+          queryKey: queryKeys.cv.profile(id),
+        });
         await refreshCvState(id, {
           refreshProfile: true,
           refreshSections: true,
           refreshSuggestions: true,
           invalidateScore: true,
         });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.cv.revisions(id), exact: true });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.cv.revisions(id),
+          exact: true,
+        });
         if (opts?.savedPreviousVersion) {
           toast.success(CV_VERSION_SAVED_AFTER_UPLOAD_MESSAGE, {
             label: CV_VIEW_VERSIONS_LABEL,
@@ -1381,7 +1418,9 @@ export function CvClinicPageContent() {
   const handleCvVersionRestored = useCallback(() => {
     const id = targetId?.trim();
     if (!id) return;
-    const detail = queryClient.getQueryData<CvProfileDetail>(queryKeys.cv.profile(id));
+    const detail = queryClient.getQueryData<CvProfileDetail>(
+      queryKeys.cv.profile(id),
+    );
     const restoredTemplate = detail?.profile?.template;
     if (isCvTemplateId(restoredTemplate)) {
       setTemplate(restoredTemplate);
@@ -1399,7 +1438,10 @@ export function CvClinicPageContent() {
     async (result?: SaveCVBuilderDataResult) => {
       if (!targetId?.trim()) return;
       if (result?.sections && result.sections.length > 0) {
-        queryClient.setQueryData(queryKeys.cv.sections(targetId), result.sections);
+        queryClient.setQueryData(
+          queryKeys.cv.sections(targetId),
+          result.sections,
+        );
       }
       void queryClient.invalidateQueries({
         queryKey: queryKeys.cv.profile(targetId),
@@ -1599,10 +1641,13 @@ export function CvClinicPageContent() {
         setAssistantBusyStage('validating');
         try {
           let patchToCommit: Record<string, unknown>;
-          let highlightSection = globalAssistantFullResult?.sectionDiffs[0]
-            ?.targetSection;
+          let highlightSection =
+            globalAssistantFullResult?.sectionDiffs[0]?.targetSection;
 
-          if (assistantScope === 'full_cv' && assistantSectionDiffs.length > 0) {
+          if (
+            assistantScope === 'full_cv' &&
+            assistantSectionDiffs.length > 0
+          ) {
             if (changeIndex != null && changeIndex >= 0) {
               const sd = assistantSectionDiffs[changeIndex];
               if (!sd) {
@@ -1614,7 +1659,8 @@ export function CvClinicPageContent() {
               highlightSection = sd.targetSection;
             } else {
               patchToCommit =
-                assistantPendingPatch && typeof assistantPendingPatch === 'object'
+                assistantPendingPatch &&
+                typeof assistantPendingPatch === 'object'
                   ? assistantPendingPatch
                   : {};
             }
@@ -1868,7 +1914,8 @@ export function CvClinicPageContent() {
         queryClient.setQueryData<CvImprovementsPayload>(
           cvSuggestionsQueryKey(targetId),
           (prev) =>
-            applyImprovementFieldAcceptToImprovementsCache(prev, result) ?? prev,
+            applyImprovementFieldAcceptToImprovementsCache(prev, result) ??
+            prev,
         );
         closeDiffPreviewForKey(opKey);
         toast.success('Suggestion applied successfully.');
@@ -1888,7 +1935,10 @@ export function CvClinicPageContent() {
         );
         applyMutationAiUsage(result.aiUsage);
         const t0 = Date.now();
-        void finishAcceptEditorSync(result.updatedSections, result.sectionsSynced);
+        void finishAcceptEditorSync(
+          result.updatedSections,
+          result.sectionsSynced,
+        );
         scheduleSectionResyncIfBackgroundTasks(result);
         const inv = reconcileAfterMutation(targetId, 'structuralAccept', {
           scoringTriggered: result.scoringTriggered,
@@ -2136,7 +2186,6 @@ export function CvClinicPageContent() {
           getApiErrorMessage(e) ||
             'Could not reject this improvement. Please try again.',
         );
-        
       } finally {
         cvImprovementDiffInFlightRef.current = false;
         setCvImprovementDiffActionsPending(false);
@@ -2242,20 +2291,14 @@ export function CvClinicPageContent() {
         );
         return 'ok';
       } catch (e) {
-        toast.error(
-          formatApiErrorForToast(e, 'Assistant command failed'),
-        );
+        toast.error(formatApiErrorForToast(e, 'Assistant command failed'));
         return 'error';
       } finally {
         setAssistantBusy(false);
         setAssistantBusyStage(null);
       }
     },
-    [
-      assistantClarification?.clarifications,
-      targetId,
-      toast,
-    ],
+    [assistantClarification?.clarifications, targetId, toast],
   );
 
   const runGlobalAssistantCommand = useCallback(
@@ -2271,7 +2314,9 @@ export function CvClinicPageContent() {
       if (!targetId?.trim()) return 'skipped';
       setAssistantBusy(true);
       setAssistantBusyStage(
-        options?.operation === 'apply_recruiter_findings' ? 'applying' : 'generating',
+        options?.operation === 'apply_recruiter_findings'
+          ? 'applying'
+          : 'generating',
       );
       try {
         const mergedClarifications =
@@ -2283,7 +2328,8 @@ export function CvClinicPageContent() {
             : globalAssistantClarification?.clarifications;
         const res = await api.cv.assistantGlobalCommand(targetId, {
           command,
-          operation: options?.operation ?? globalAssistantClarification?.operation,
+          operation:
+            options?.operation ?? globalAssistantClarification?.operation,
           clarifications: mergedClarifications,
           ...(options?.findings?.length ? { findings: options.findings } : {}),
           ...(options?.scanCommandId?.trim()
@@ -2332,7 +2378,8 @@ export function CvClinicPageContent() {
             targetId,
             dropped,
           );
-          const comprehensiveSession = recruiterScanSessionFromFindings(filteredFindings);
+          const comprehensiveSession =
+            recruiterScanSessionFromFindings(filteredFindings);
           if (comprehensiveSession && res.operation === 'recruiter_scan') {
             openRecruiterScanSession(comprehensiveSession);
             setGlobalAssistantFullResult(null);
@@ -2353,9 +2400,7 @@ export function CvClinicPageContent() {
           setAssistantSectionDiffs([]);
           closeDiffPreviewForKey(CV_ASSISTANT_DIFF_PREVIEW_KEY);
           setGlobalAssistantOpen(false);
-          toast.success(
-            res.diff.summary || `${res.affectedScopeLabel} ready`,
-          );
+          toast.success(res.diff.summary || `${res.affectedScopeLabel} ready`);
           return 'ok';
         }
 
@@ -2365,7 +2410,9 @@ export function CvClinicPageContent() {
         setAssistantPreviewMode(true);
         setAssistantPendingPatch(res.patch);
         setAssistantSectionDiffs(res.sectionDiffs);
-        const globalChangedFields = globalAssistantChangedFields(res.sectionDiffs);
+        const globalChangedFields = globalAssistantChangedFields(
+          res.sectionDiffs,
+        );
         setDiffPreviews((prev) => ({
           ...prev,
           [CV_ASSISTANT_DIFF_PREVIEW_KEY]: normalizeCvDiffPreviewParams({
@@ -2558,8 +2605,12 @@ export function CvClinicPageContent() {
     try {
       const profile = await api.cv.createOrSyncTemplate({ template: tpl });
       setPickTemplate(false);
-      await queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.cv.profileDefault() });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.profiles(),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.profileDefault(),
+      });
       await queryClient.refetchQueries({ queryKey: queryKeys.cv.profiles() });
       const id = profile.id?.trim();
       if (id && id !== 'cv-profile') {
@@ -2581,7 +2632,8 @@ export function CvClinicPageContent() {
     if (typeof window === 'undefined') return;
     try {
       const r = parseFloat(
-        localStorage.getItem(tailorRightPctKey) ?? String(tailorRightPctDefault),
+        localStorage.getItem(tailorRightPctKey) ??
+          String(tailorRightPctDefault),
       );
       if (Number.isFinite(r)) {
         setTripleRightPct(
@@ -2594,7 +2646,12 @@ export function CvClinicPageContent() {
     } catch {
       /* ignore */
     }
-  }, [tailorRightPctKey, tailorRightPctDefault, tailorRightPctMin, tailorRightPctMax]);
+  }, [
+    tailorRightPctKey,
+    tailorRightPctDefault,
+    tailorRightPctMin,
+    tailorRightPctMax,
+  ]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -2632,7 +2689,10 @@ export function CvClinicPageContent() {
       const onMove = (ev: PointerEvent) => {
         const delta = ((startX - ev.clientX) / totalW) * 100;
         setTripleRightPct(
-          Math.min(tailorRightPctMax, Math.max(tailorRightPctMin, startPct + delta)),
+          Math.min(
+            tailorRightPctMax,
+            Math.max(tailorRightPctMin, startPct + delta),
+          ),
         );
       };
       const onUp = () => {
@@ -2824,7 +2884,9 @@ export function CvClinicPageContent() {
                 onOpenTemplatePicker={() => setTemplatePickerOpen(true)}
                 onOpenSectionModal={() => setSectionModalOpen(true)}
                 onOpenSectionOrder={() =>
-                  sectionOrderFlow.openSuggestModal(sectionOrderFlow.suggestData)
+                  sectionOrderFlow.openSuggestModal(
+                    sectionOrderFlow.suggestData,
+                  )
                 }
                 onOpenAiChat={() => setAiChatOpen(true)}
                 onTriggerSpellCheck={() => setSpellCheckTrigger((n) => n + 1)}
@@ -2904,7 +2966,9 @@ export function CvClinicPageContent() {
         impr.pendingSuggestionsCount ??
         filterPendingSuggestionsForDisplay(impr.improvements).length;
       if (n === 0) {
-        toast.success('Scan complete — no open suggestions. Your CV looks great!');
+        toast.success(
+          'Scan complete — no open suggestions. Your CV looks great!',
+        );
       } else {
         toast.success(
           `Scan complete — ${n} suggestion${n === 1 ? '' : 's'} remaining`,
@@ -2927,7 +2991,9 @@ export function CvClinicPageContent() {
         onNewCv={() => setCreateCvOpen(true)}
         onOpenTemplatePicker={() => setTemplatePickerOpen(true)}
         onOpenSectionModal={() => setSectionModalOpen(true)}
-        onOpenSectionOrder={() => sectionOrderFlow.openSuggestModal(sectionOrderFlow.suggestData)}
+        onOpenSectionOrder={() =>
+          sectionOrderFlow.openSuggestModal(sectionOrderFlow.suggestData)
+        }
         isSectionOrderPending={sectionOrderFlow.suggestQuery.isFetching}
         isSpellChecking={qualitySignals.isSpellChecking}
         onSpellCheck={() => setSpellCheckTrigger((n) => n + 1)}
@@ -3030,7 +3096,9 @@ export function CvClinicPageContent() {
           onAcceptSucceeded={() => setBuilderSaveStatus('idle')}
           missingSkills={linkedJobQ.data?.analysis?.missingSkills ?? []}
           jobTitle={linkedJobQ.data?.title ?? linkedJobQ.data?.analysis?.title}
-          jobCompany={linkedJobQ.data?.company ?? linkedJobQ.data?.analysis?.company}
+          jobCompany={
+            linkedJobQ.data?.company ?? linkedJobQ.data?.analysis?.company
+          }
           className="h-full min-h-0"
         />
       );
@@ -3070,7 +3138,9 @@ export function CvClinicPageContent() {
         highlightImprovementsAttention={improvementsAttentionPulse}
         onAtsKeywordAssist={handleAtsKeywordAssist}
         onRecruiterScan={() => void runRecruiterScan()}
-        recruiterScanPending={assistantBusy && assistantBusyStage === 'generating'}
+        recruiterScanPending={
+          assistantBusy && assistantBusyStage === 'generating'
+        }
         onScoreRefresh={refreshScoreAfterSuggestion}
       />
     );
@@ -3248,9 +3318,7 @@ export function CvClinicPageContent() {
   }
 
   return (
-    <div
-      className="flex min-h-0 w-full min-w-0 max-w-full flex-col gap-1.5 pb-0 pt-0 max-lg:h-full max-lg:min-h-0 max-lg:flex-1 max-lg:gap-0 max-lg:overflow-hidden max-lg:px-0 md:-mt-2 lg:-mx-0 lg:h-full lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:pt-0"
-    >
+    <div className="flex min-h-0 w-full min-w-0 max-w-full flex-col gap-1.5 pb-0 pt-0 max-lg:h-full max-lg:min-h-0 max-lg:flex-1 max-lg:gap-0 max-lg:overflow-hidden max-lg:px-0 md:-mt-2 lg:-mx-0 lg:h-full lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:pt-0">
       <CreateCVProfileModal
         open={createCvOpen}
         onOpenChange={setCreateCvOpen}
@@ -3468,7 +3536,9 @@ export function CvClinicPageContent() {
         <CVUploadZone
           cvProfileId={targetId}
           onSuccess={(data) =>
-            void handleCvParseUploadSuccess(data, { savedPreviousVersion: true })
+            void handleCvParseUploadSuccess(data, {
+              savedPreviousVersion: true,
+            })
           }
         />
       </Modal>
@@ -3745,7 +3815,9 @@ export function CvClinicPageContent() {
                                 pendingImprovements={improvementList}
                                 onDiffPreview={mergeDiffPreviewOpen}
                                 onScoreRefresh={refreshScoreAfterSuggestion}
-                                activePreviewSuggestionId={activePreviewSuggestionId}
+                                activePreviewSuggestionId={
+                                  activePreviewSuggestionId
+                                }
                                 hideJobMatch
                               />
                             </div>
@@ -4041,8 +4113,8 @@ export function CvClinicPageContent() {
                                   Spelling & grammar
                                 </p>
                                 <p className="mt-1 text-[11px] text-white/45">
-                                  Run Re-check to scan this resume for spelling and
-                                  grammar. No issues right now.
+                                  Run Re-check to scan this resume for spelling
+                                  and grammar. No issues right now.
                                 </p>
                               </div>
                               <button
@@ -4086,7 +4158,9 @@ export function CvClinicPageContent() {
             <div className="mb-2 hidden shrink-0 px-1 lg:block">
               <CvSectionOrderProactiveBanner
                 onSuggest={() =>
-                  sectionOrderFlow.openSuggestModal(sectionOrderFlow.suggestData)
+                  sectionOrderFlow.openSuggestModal(
+                    sectionOrderFlow.suggestData,
+                  )
                 }
                 onDismiss={sectionOrderFlow.dismissBanner}
               />
@@ -4159,7 +4233,9 @@ export function CvClinicPageContent() {
               assistantAcceptHighlightNonce={
                 assistantAcceptHighlight?.nonce ?? 0
               }
-              recruiterScanHeatmap={recruiterScanPanelOpen ? recruiterScanHeatmap : null}
+              recruiterScanHeatmap={
+                recruiterScanPanelOpen ? recruiterScanHeatmap : null
+              }
               spellcheckLanguage={spellcheckLanguage}
               onUndoRedoReady={handleUndoRedoReady}
               onHistoryApplied={handleHistoryApplied}
@@ -4174,4 +4250,3 @@ export function CvClinicPageContent() {
     </div>
   );
 }
-

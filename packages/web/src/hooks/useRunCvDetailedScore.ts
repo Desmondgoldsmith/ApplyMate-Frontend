@@ -4,7 +4,11 @@ import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef } from 'react';
 
-import { api, type CVScorePayload, type CvImprovementsPayload } from '@/lib/api';
+import {
+  api,
+  type CVScorePayload,
+  type CvImprovementsPayload,
+} from '@/lib/api';
 import { cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
 
 export type RunDetailedScoreVariables =
@@ -44,11 +48,14 @@ export function useRunCvDetailedScore() {
   const scoreAbortRef = useRef<AbortController | null>(null);
   return useMutation({
     mutationKey: ['cv-detailed-score'],
-    mutationFn: async (variables: RunDetailedScoreVariables): Promise<CVScorePayload> => {
+    mutationFn: async (
+      variables: RunDetailedScoreVariables,
+    ): Promise<CVScorePayload> => {
       scoreAbortRef.current?.abort();
       const ac = new AbortController();
       scoreAbortRef.current = ac;
-      const { cvProfileId, jobDescription, targetRole } = normalizeRunDetailedVariables(variables);
+      const { cvProfileId, jobDescription, targetRole } =
+        normalizeRunDetailedVariables(variables);
       const id = cvProfileId?.trim();
       if (id) {
         return api.cv.getProfileScoreDetailed(id, {
@@ -64,7 +71,8 @@ export function useRunCvDetailedScore() {
       });
     },
     onSuccess: (payload, variables) => {
-      const { ephemeralJobPreview, cvProfileId } = normalizeRunDetailedVariables(variables);
+      const { ephemeralJobPreview, cvProfileId } =
+        normalizeRunDetailedVariables(variables);
       if (ephemeralJobPreview) return;
 
       const list = payload.improvements ?? [];
@@ -73,11 +81,20 @@ export function useRunCvDetailedScore() {
         needsScoring: false,
         pendingSuggestionsCount: list.length,
       };
-      queryClient.setQueryData<CvImprovementsPayload>(cvSuggestionsQueryKey(cvProfileId), next);
+      queryClient.setQueryData<CvImprovementsPayload>(
+        cvSuggestionsQueryKey(cvProfileId),
+        next,
+      );
       const id = cvProfileId?.trim();
-      queryClient.setQueryData<CVScorePayload>(queryKeys.cv.score(id ?? 'default'), payload);
+      queryClient.setQueryData<CVScorePayload>(
+        queryKeys.cv.score(id ?? 'default'),
+        payload,
+      );
       if (id) {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profile(id), exact: true });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.cv.profile(id),
+          exact: true,
+        });
       }
     },
   });

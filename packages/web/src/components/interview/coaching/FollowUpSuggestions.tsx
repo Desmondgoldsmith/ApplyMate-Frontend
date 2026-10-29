@@ -21,27 +21,37 @@ export const FollowUpSuggestions = memo(function FollowUpSuggestions({
   if (items.length === 0) return null;
 
   return (
-    <div className={cn('space-y-2', className)} role="region" aria-label="Follow-up questions">
+    <div
+      className={cn('space-y-2', className)}
+      role="region"
+      aria-label="Follow-up questions"
+    >
       <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
         Side questions (practice)
       </p>
       <p className="text-[10px] leading-relaxed text-[var(--text-muted)]">
-        These do not count toward your main question total. Answer for extra practice, or skip and
-        use Continue for the next main question.
+        These do not count toward your main question total. Answer for extra
+        practice, or skip and use Continue for the next main question.
       </p>
       {items.map((item, idx) => (
         <div
           key={`${item.question}-${idx}`}
           className="rounded-2xl rounded-bl-md border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] px-3 py-2.5 transition-shadow duration-200 hover:shadow-md"
         >
-          <p className="text-sm leading-snug text-[var(--text-primary)]">{item.question}</p>
+          <p className="text-sm leading-snug text-[var(--text-primary)]">
+            {item.question}
+          </p>
           <p className="mt-1 text-[10px] font-medium text-[var(--text-teal)]">
             Does not count · practice only
           </p>
           {item.contextLabel ? (
-            <p className="mt-0.5 text-[10px] italic text-[var(--text-muted)]">{item.contextLabel}</p>
+            <p className="mt-0.5 text-[10px] italic text-[var(--text-muted)]">
+              {item.contextLabel}
+            </p>
           ) : item.reason ? (
-            <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--text-muted)]">{item.reason}</p>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--text-muted)]">
+              {item.reason}
+            </p>
           ) : null}
           <div className="mt-2.5 flex flex-wrap gap-2">
             <button

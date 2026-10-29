@@ -19,12 +19,12 @@
 }
 ```
 
-| Field | Meaning |
-|-------|---------|
-| `mainTotal` | Main questions only (`session.totalQuestions`, `depth === 0`) |
-| `mainPending` | Remaining main questions — **0** → allow finish interview |
-| `optionalFollowUpPending` | Optional turns still available (not badge count) |
-| `optionalFollowUpAnswered` | **Preferred** for “+N optional answered” badge |
+| Field                      | Meaning                                                       |
+| -------------------------- | ------------------------------------------------------------- |
+| `mainTotal`                | Main questions only (`session.totalQuestions`, `depth === 0`) |
+| `mainPending`              | Remaining main questions — **0** → allow finish interview     |
+| `optionalFollowUpPending`  | Optional turns still available (not badge count)              |
+| `optionalFollowUpAnswered` | **Preferred** for “+N optional answered” badge                |
 
 `nextPlannedQuestion` is **null** when no main `pending` turns remain.
 
@@ -32,12 +32,12 @@
 
 ## Frontend behavior
 
-| UI | Source |
-|----|--------|
-| `Question N of M` | `mainTotal` + `mainQuestionNumber` / `mainAnswered` |
+| UI                     | Source                                                                                             |
+| ---------------------- | -------------------------------------------------------------------------------------------------- |
+| `Question N of M`      | `mainTotal` + `mainQuestionNumber` / `mainAnswered`                                                |
 | `+N optional answered` | `optionalFollowUpAnswered` (fallback: `total − pending`) + client-only `practice-coaching` answers |
-| Finish / End interview | `mainPending === 0` |
-| Progress bar % | `mainAnswered / mainTotal` |
+| Finish / End interview | `mainPending === 0`                                                                                |
+| Progress bar %         | `mainAnswered / mainTotal`                                                                         |
 
 Practice-only chips (`practiceOnly: true`) use `POST …/practice-coaching` and are tracked client-side until the server counts them.
 

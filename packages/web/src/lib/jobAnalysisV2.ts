@@ -1,7 +1,13 @@
-import type { AnalysisAxisKey, JobAnalysisV2, RecruiterVerdict, ApplyStrategy } from '@/lib/api';
+import type {
+  AnalysisAxisKey,
+  JobAnalysisV2,
+  RecruiterVerdict,
+  ApplyStrategy,
+} from '@/lib/api';
 
 function clampAxis(n: unknown): number {
-  const v = typeof n === 'number' ? n : typeof n === 'string' ? parseFloat(n) : NaN;
+  const v =
+    typeof n === 'number' ? n : typeof n === 'string' ? parseFloat(n) : NaN;
   if (!Number.isFinite(v)) return 0;
   return Math.max(0, Math.min(100, Math.round(v)));
 }
@@ -40,16 +46,19 @@ const AXIS_KEY_ALIASES: Record<string, AnalysisAxisKey> = {
 function parseAxisKey(raw: unknown): AnalysisAxisKey | null {
   const s = String(raw ?? '').trim();
   if (!s) return null;
-  if (s === 'skillMatch' || s === 'experienceFit' || s === 'industryFit' || s === 'evidenceStrength') {
+  if (
+    s === 'skillMatch' ||
+    s === 'experienceFit' ||
+    s === 'industryFit' ||
+    s === 'evidenceStrength'
+  ) {
     return s;
   }
   return AXIS_KEY_ALIASES[s.toLowerCase().replace(/-/g, '_')] ?? null;
 }
 
 function parsePairedFactorKey(raw: unknown): string | undefined {
-  const s =
-    (typeof raw === 'string' && raw.trim()) ||
-    '';
+  const s = (typeof raw === 'string' && raw.trim()) || '';
   return s || undefined;
 }
 
@@ -65,7 +74,10 @@ function parseAxisMeta(raw: unknown): JobAnalysisV2['axisMeta'] {
       (typeof o.tooltip === 'string' && o.tooltip.trim()) ||
       '';
     if (!key || !description) continue;
-    const label = typeof o.label === 'string' && o.label.trim() ? o.label.trim() : undefined;
+    const label =
+      typeof o.label === 'string' && o.label.trim()
+        ? o.label.trim()
+        : undefined;
     const pairedFactorKey = parsePairedFactorKey(
       o.pairedFactorKey ?? o.paired_factor_key,
     );
@@ -80,20 +92,35 @@ function parseAxisMeta(raw: unknown): JobAnalysisV2['axisMeta'] {
 }
 
 export function parseJobAnalysisV2(raw: unknown): JobAnalysisV2 | undefined {
-  if (raw === null || raw === undefined || typeof raw !== 'object' || Array.isArray(raw)) {
+  if (
+    raw === null ||
+    raw === undefined ||
+    typeof raw !== 'object' ||
+    Array.isArray(raw)
+  ) {
     return undefined;
   }
   const body = raw as Record<string, unknown>;
   const verdict = parseVerdict(body.recruiterVerdict ?? body.recruiter_verdict);
   const axesRaw = body.axes;
   const attackRaw = body.attackPlan ?? body.attack_plan;
-  const strategy = parseApplyStrategy(body.applyStrategy ?? body.apply_strategy);
-  if (!verdict || !strategy || axesRaw === null || typeof axesRaw !== 'object' || Array.isArray(axesRaw)) {
+  const strategy = parseApplyStrategy(
+    body.applyStrategy ?? body.apply_strategy,
+  );
+  if (
+    !verdict ||
+    !strategy ||
+    axesRaw === null ||
+    typeof axesRaw !== 'object' ||
+    Array.isArray(axesRaw)
+  ) {
     return undefined;
   }
   const axesObj = axesRaw as Record<string, unknown>;
   const attack =
-    attackRaw !== null && typeof attackRaw === 'object' && !Array.isArray(attackRaw)
+    attackRaw !== null &&
+    typeof attackRaw === 'object' &&
+    !Array.isArray(attackRaw)
       ? (attackRaw as Record<string, unknown>)
       : {};
 
@@ -103,12 +130,20 @@ export function parseJobAnalysisV2(raw: unknown): JobAnalysisV2 | undefined {
       skillMatch: clampAxis(axesObj.skillMatch ?? axesObj.skill_match),
       experienceFit: clampAxis(axesObj.experienceFit ?? axesObj.experience_fit),
       industryFit: clampAxis(axesObj.industryFit ?? axesObj.industry_fit),
-      evidenceStrength: clampAxis(axesObj.evidenceStrength ?? axesObj.evidence_strength),
+      evidenceStrength: clampAxis(
+        axesObj.evidenceStrength ?? axesObj.evidence_strength,
+      ),
     },
     attackPlan: {
       topCVFixes: parseStringArray(attack.topCVFixes ?? attack.top_cv_fixes, 6),
-      interviewRisks: parseStringArray(attack.interviewRisks ?? attack.interview_risks, 6),
-      missingEvidence: parseStringArray(attack.missingEvidence ?? attack.missing_evidence, 6),
+      interviewRisks: parseStringArray(
+        attack.interviewRisks ?? attack.interview_risks,
+        6,
+      ),
+      missingEvidence: parseStringArray(
+        attack.missingEvidence ?? attack.missing_evidence,
+        6,
+      ),
       salaryRange:
         typeof attack.salaryRange === 'string'
           ? attack.salaryRange.trim()
@@ -135,7 +170,9 @@ export function resolveAxisTooltips(
   );
   for (const item of v2.axisMeta) {
     const pairedKey = item.pairedFactorKey?.trim();
-    const pairedHint = pairedKey ? factorByKey.get(pairedKey)?.hint?.trim() : '';
+    const pairedHint = pairedKey
+      ? factorByKey.get(pairedKey)?.hint?.trim()
+      : '';
     if (pairedHint) {
       out[item.key] = pairedHint;
       continue;
@@ -166,21 +203,25 @@ export const ANALYSIS_AXIS_META = [
   {
     key: 'skillMatch' as const,
     label: 'Skill match',
-    tooltip: 'Overlap between required job skills and what your CV demonstrates.',
+    tooltip:
+      'Overlap between required job skills and what your CV demonstrates.',
   },
   {
     key: 'experienceFit' as const,
     label: 'Experience fit',
-    tooltip: 'How well your years and scope of experience align with this role level.',
+    tooltip:
+      'How well your years and scope of experience align with this role level.',
   },
   {
     key: 'industryFit' as const,
     label: 'Industry fit',
-    tooltip: 'Domain familiarity — sector, tools, and context the employer expects.',
+    tooltip:
+      'Domain familiarity — sector, tools, and context the employer expects.',
   },
   {
     key: 'evidenceStrength' as const,
     label: 'Evidence strength',
-    tooltip: 'How well your CV proves fit for this specific role — not generic CV length.',
+    tooltip:
+      'How well your CV proves fit for this specific role — not generic CV length.',
   },
 ];

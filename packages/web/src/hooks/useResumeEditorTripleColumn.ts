@@ -25,7 +25,9 @@ export function useResumeEditorTripleColumn(): {
       e.preventDefault();
       const startX = e.clientX;
       const startPct = rightPct;
-      const totalW = containerRef.current?.offsetWidth ?? (typeof window !== 'undefined' ? window.innerWidth : 1200);
+      const totalW =
+        containerRef.current?.offsetWidth ??
+        (typeof window !== 'undefined' ? window.innerWidth : 1200);
 
       const onMove = (ev: PointerEvent) => {
         const delta = ((startX - ev.clientX) / totalW) * 100;
@@ -50,7 +52,12 @@ export function useResumeEditorTripleColumn(): {
       onRightResizePointerDown,
       centerHeaderActions: null,
     }),
-    [rightCollapsed, onRightResizePointerDown, onToggleRightCollapsed, rightPct],
+    [
+      rightCollapsed,
+      onRightResizePointerDown,
+      onToggleRightCollapsed,
+      rightPct,
+    ],
   );
 
   return { tripleColumn, containerRef };

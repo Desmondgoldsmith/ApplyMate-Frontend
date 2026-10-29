@@ -3,7 +3,10 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
-import { clampWeeklyStallLimit, weeklyStallSummaryQueryKey } from '@/lib/weekly-stall-summary';
+import {
+  clampWeeklyStallLimit,
+  weeklyStallSummaryQueryKey,
+} from '@/lib/weekly-stall-summary';
 
 export function useWeeklyStallSummary(params?: { limit?: number }) {
   const limit = clampWeeklyStallLimit(params?.limit);

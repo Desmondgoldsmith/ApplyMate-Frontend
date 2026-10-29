@@ -362,11 +362,7 @@ export function NextStepsPanel({
           description="Run a mock interview tailored to this role and CV."
           isLast={!savedDone}
         >
-          <button
-            type="button"
-            className={ghostBtn}
-            onClick={onPrepInterview}
-          >
+          <button type="button" className={ghostBtn} onClick={onPrepInterview}>
             <Mic className="h-3.5 w-3.5" />
             {interviewPrepDone ? 'Resume prep' : 'Prep for interview'}
           </button>

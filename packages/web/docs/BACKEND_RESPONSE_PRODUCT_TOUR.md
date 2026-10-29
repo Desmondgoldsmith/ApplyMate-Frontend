@@ -19,11 +19,11 @@ No tour steps API, no new endpoints.
 
 ## Gates the frontend checks
 
-| Gate | Backend field | Endpoint |
-|------|---------------|----------|
-| Onboarding done | `onboardingCompleted` / `onboarding_completed` | `GET /api/users/me`, auth user object |
-| Tour not finished | `uiPrefs.tourCompleted === false` (or absent → now **false**) | `GET /api/users/me` |
-| Mark tour done | `PATCH /api/users/me` `{ "tourCompleted": true }` | Persists to `User.uiPrefs` |
+| Gate              | Backend field                                                 | Endpoint                              |
+| ----------------- | ------------------------------------------------------------- | ------------------------------------- |
+| Onboarding done   | `onboardingCompleted` / `onboarding_completed`                | `GET /api/users/me`, auth user object |
+| Tour not finished | `uiPrefs.tourCompleted === false` (or absent → now **false**) | `GET /api/users/me`                   |
+| Mark tour done    | `PATCH /api/users/me` `{ "tourCompleted": true }`             | Persists to `User.uiPrefs`            |
 
 ---
 
@@ -93,29 +93,29 @@ Dashboard should **`GET /users/me`** for tour flags (as your handoff specifies).
 
 ## QA checklist (backend)
 
-| # | Step | Expected |
-|---|------|----------|
-| 1 | New user → `GET /users/me` | `onboardingCompleted: false`, `uiPrefs.tourCompleted: false` |
-| 2 | Complete onboarding | `onboardingCompleted: true`, `tourCompleted: false` |
-| 3 | `GET /onboarding/status` | `completed: true` |
-| 4 | `PATCH /me` `{ tourCompleted: true }` | `uiPrefs.tourCompleted: true` |
-| 5 | Next `GET /me` | tour stays completed |
+| #   | Step                                  | Expected                                                     |
+| --- | ------------------------------------- | ------------------------------------------------------------ |
+| 1   | New user → `GET /users/me`            | `onboardingCompleted: false`, `uiPrefs.tourCompleted: false` |
+| 2   | Complete onboarding                   | `onboardingCompleted: true`, `tourCompleted: false`          |
+| 3   | `GET /onboarding/status`              | `completed: true`                                            |
+| 4   | `PATCH /me` `{ tourCompleted: true }` | `uiPrefs.tourCompleted: true`                                |
+| 5   | Next `GET /me`                        | tour stays completed                                         |
 
 ---
 
 ## Code touchpoints
 
-| File | Change |
-|------|--------|
-| `src/modules/users/serialize-user-me.ts` | Normalize uiPrefs + snake_case aliases |
-| `src/modules/users/users.controller.ts` | Use serializer on GET/PATCH `/me` |
-| `src/modules/onboarding/onboarding.service.ts` | Reset `tourCompleted: false` on complete |
-| `src/modules/users/users.service.ts` | PATCH merge (unchanged) |
-| `prisma/schema.prisma` | `uiPrefs Json?`, `onboardingCompleted Boolean` |
+| File                                           | Change                                         |
+| ---------------------------------------------- | ---------------------------------------------- |
+| `src/modules/users/serialize-user-me.ts`       | Normalize uiPrefs + snake_case aliases         |
+| `src/modules/users/users.controller.ts`        | Use serializer on GET/PATCH `/me`              |
+| `src/modules/onboarding/onboarding.service.ts` | Reset `tourCompleted: false` on complete       |
+| `src/modules/users/users.service.ts`           | PATCH merge (unchanged)                        |
+| `prisma/schema.prisma`                         | `uiPrefs Json?`, `onboardingCompleted Boolean` |
 
 ---
 
-## What we did *not* build
+## What we did _not_ build
 
 - Tour step definitions
 - Per-route tour state

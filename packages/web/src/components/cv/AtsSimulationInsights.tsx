@@ -64,46 +64,74 @@ function MetricCell({
       )}
       title={hint}
     >
-      <p className="text-[9px] font-semibold uppercase tracking-wider text-white/35">{label}</p>
-      <p className="mt-0.5 text-sm font-bold tabular-nums text-white/90">{value}</p>
+      <p className="text-[9px] font-semibold uppercase tracking-wider text-white/35">
+        {label}
+      </p>
+      <p className="mt-0.5 text-sm font-bold tabular-nums text-white/90">
+        {value}
+      </p>
     </div>
   );
 }
 
-function collectMissing(sim: AtsSimulationReport): { label: string; words: string[] }[] {
+function collectMissing(
+  sim: AtsSimulationReport,
+): { label: string; words: string[] }[] {
   const out: { label: string; words: string[] }[] = [];
   const k = sim.keywords;
-  if (k?.required?.missing?.length) out.push({ label: 'Required', words: k.required.missing });
-  if (k?.preferred?.missing?.length) out.push({ label: 'Preferred', words: k.preferred.missing });
-  if (k?.niceToHave?.missing?.length) out.push({ label: 'Nice to have', words: k.niceToHave.missing });
+  if (k?.required?.missing?.length)
+    out.push({ label: 'Required', words: k.required.missing });
+  if (k?.preferred?.missing?.length)
+    out.push({ label: 'Preferred', words: k.preferred.missing });
+  if (k?.niceToHave?.missing?.length)
+    out.push({ label: 'Nice to have', words: k.niceToHave.missing });
   return out;
 }
 
-function collectPresent(sim: AtsSimulationReport): { label: string; words: string[] }[] {
+function collectPresent(
+  sim: AtsSimulationReport,
+): { label: string; words: string[] }[] {
   const out: { label: string; words: string[] }[] = [];
   const k = sim.keywords;
-  if (k?.required?.present?.length) out.push({ label: 'Required', words: k.required.present });
-  if (k?.preferred?.present?.length) out.push({ label: 'Preferred', words: k.preferred.present });
-  if (k?.niceToHave?.present?.length) out.push({ label: 'Nice to have', words: k.niceToHave.present });
+  if (k?.required?.present?.length)
+    out.push({ label: 'Required', words: k.required.present });
+  if (k?.preferred?.present?.length)
+    out.push({ label: 'Preferred', words: k.preferred.present });
+  if (k?.niceToHave?.present?.length)
+    out.push({ label: 'Nice to have', words: k.niceToHave.present });
   return out;
 }
 
-export function AtsSimulationInsights({ simulation, compact, onRequestKeywordAssist }: AtsSimulationInsightsProps) {
+export function AtsSimulationInsights({
+  simulation,
+  compact,
+  onRequestKeywordAssist,
+}: AtsSimulationInsightsProps) {
   const dims = simulation.dimensions;
   const keywordMatch =
-    dimensionScoreByHint(dims, ['keywordmatch', 'keyword', 'keywords', 'lexical']) ??
+    dimensionScoreByHint(dims, [
+      'keywordmatch',
+      'keyword',
+      'keywords',
+      'lexical',
+    ]) ??
     simulation.coveragePercent ??
     simulation.overallScore;
   const hardSkills = hardSkillsMatchPercent(simulation);
-  const title = simulation.titleAlignmentScore ?? dimensionScoreByHint(dims, ['title', 'role']);
+  const title =
+    simulation.titleAlignmentScore ??
+    dimensionScoreByHint(dims, ['title', 'role']);
   const seniority =
     simulation.seniorityAlignment?.score0to100 ??
     simulation.seniorityAlignmentScore ??
     dimensionScoreByHint(dims, ['senior', 'level']);
   const seniorityDetail = simulation.seniorityAlignment?.detail?.trim();
-  const semantic = simulation.semanticSimilarityScore ?? dimensionScoreByHint(dims, ['semantic', 'similarity']);
+  const semantic =
+    simulation.semanticSimilarityScore ??
+    dimensionScoreByHint(dims, ['semantic', 'similarity']);
   const formatting =
-    simulation.formattingParseabilityScore ?? dimensionScoreByHint(dims, ['format', 'parse', 'layout']);
+    simulation.formattingParseabilityScore ??
+    dimensionScoreByHint(dims, ['format', 'parse', 'layout']);
 
   const missingGroups = collectMissing(simulation);
   const presentGroups = collectPresent(simulation);
@@ -119,7 +147,10 @@ export function AtsSimulationInsights({ simulation, compact, onRequestKeywordAss
 
   return (
     <div
-      className={cn('space-y-3 border-t border-white/[0.06] pt-3', compact ? 'mt-2' : 'mt-3')}
+      className={cn(
+        'space-y-3 border-t border-white/[0.06] pt-3',
+        compact ? 'mt-2' : 'mt-3',
+      )}
       data-testid="ats-simulation-root"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -137,7 +168,10 @@ export function AtsSimulationInsights({ simulation, compact, onRequestKeywordAss
       </div>
 
       <div
-        className={cn('grid gap-1.5', compact ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2 sm:grid-cols-3')}
+        className={cn(
+          'grid gap-1.5',
+          compact ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2 sm:grid-cols-3',
+        )}
         data-testid="ats-simulation-metrics"
       >
         <MetricCell
@@ -163,7 +197,10 @@ export function AtsSimulationInsights({ simulation, compact, onRequestKeywordAss
         <MetricCell
           label="Seniority alignment"
           value={pct(seniority)}
-          hint={seniorityDetail || 'How your experience level and title read vs the role.'}
+          hint={
+            seniorityDetail ||
+            'How your experience level and title read vs the role.'
+          }
           compact={compact}
           testId="ats-metric-seniority-alignment"
         />
@@ -192,18 +229,27 @@ export function AtsSimulationInsights({ simulation, compact, onRequestKeywordAss
 
       {dims && Object.keys(dims).length > 0 ? (
         <div className="space-y-1.5" data-testid="ats-simulation-dimensions">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-white/35">Dimension weights</p>
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-white/35">
+            Dimension weights
+          </p>
           <div className="space-y-1">
             {Object.entries(dims).map(([name, b]) => (
               <div key={name} className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate text-[10px] text-white/55" title={name}>
+                <span
+                  className="min-w-0 flex-1 truncate text-[10px] text-white/55"
+                  title={name}
+                >
                   {name.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ')}
                 </span>
-                <span className="shrink-0 text-[10px] tabular-nums text-white/45">{formatWeightPct(b.weight)}</span>
+                <span className="shrink-0 text-[10px] tabular-nums text-white/45">
+                  {formatWeightPct(b.weight)}
+                </span>
                 <div className="h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-white/[0.08]">
                   <div
                     className="h-full rounded-full bg-[#00C9B1]/80"
-                    style={{ width: `${Math.min(100, Math.max(0, b.score0to100))}%` }}
+                    style={{
+                      width: `${Math.min(100, Math.max(0, b.score0to100))}%`,
+                    }}
                   />
                 </div>
                 <span className="w-8 shrink-0 text-right text-[10px] font-semibold tabular-nums text-white/75">
@@ -221,12 +267,19 @@ export function AtsSimulationInsights({ simulation, compact, onRequestKeywordAss
             Hard skill ontology matches
           </p>
           <p className="mb-1.5 text-[10px] leading-snug text-white/38">
-            Canonical skills from the job — separate from lexical keyword hits above.
+            Canonical skills from the job — separate from lexical keyword hits
+            above.
           </p>
           <ul className="max-h-28 space-y-1 overflow-y-auto text-[11px] text-white/60">
             {simulation.hardSkillMatches.slice(0, 24).map((m, i) => (
               <li key={`${m.term ?? i}-${i}`} className="flex flex-wrap gap-1">
-                <span className={m.matched === true ? 'text-emerald-300/90' : 'text-amber-200/85'}>
+                <span
+                  className={
+                    m.matched === true
+                      ? 'text-emerald-300/90'
+                      : 'text-amber-200/85'
+                  }
+                >
                   {m.matched === true ? '✓' : '○'}
                 </span>
                 <span>{m.term ?? m.canonical ?? '—'}</span>
@@ -258,11 +311,14 @@ export function AtsSimulationInsights({ simulation, compact, onRequestKeywordAss
             ) : null}
           </div>
           <p className="mb-1.5 text-[10px] leading-snug text-white/40">
-            JD token/phrase gaps vs your CV text. Hard skill ontology matches are listed separately.
+            JD token/phrase gaps vs your CV text. Hard skill ontology matches
+            are listed separately.
           </p>
           {missingGroups.map((g) => (
             <div key={g.label} className="mb-2">
-              <p className="mb-1 text-[10px] font-medium text-white/45">{g.label}</p>
+              <p className="mb-1 text-[10px] font-medium text-white/45">
+                {g.label}
+              </p>
               <div className="flex flex-wrap gap-1">
                 {g.words.slice(0, 20).map((w) => (
                   <span
@@ -285,7 +341,9 @@ export function AtsSimulationInsights({ simulation, compact, onRequestKeywordAss
           </p>
           {presentGroups.map((g) => (
             <div key={g.label} className="mb-2">
-              <p className="mb-1 text-[10px] font-medium text-white/45">{g.label}</p>
+              <p className="mb-1 text-[10px] font-medium text-white/45">
+                {g.label}
+              </p>
               <div className="flex flex-wrap gap-1">
                 {g.words.slice(0, 24).map((w) => (
                   <span

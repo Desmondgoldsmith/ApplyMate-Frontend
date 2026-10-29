@@ -29,13 +29,15 @@ Up to **3** practice chips at **standard** intensity:
 
 ```json
 {
-  "suggestedFollowUps": [{
-    "questionText": "...",
-    "practiceOnly": true,
-    "parentQuestionText": "<main question answered>",
-    "contextLabel": "Optional practice — not counted toward your main question total",
-    "answerVia": "POST /api/interview-prep/sessions/:sessionId/practice-coaching"
-  }],
+  "suggestedFollowUps": [
+    {
+      "questionText": "...",
+      "practiceOnly": true,
+      "parentQuestionText": "<main question answered>",
+      "contextLabel": "Optional practice — not counted toward your main question total",
+      "answerVia": "POST /api/interview-prep/sessions/:sessionId/practice-coaching"
+    }
+  ],
   "nextPlannedQuestion": {
     "turnId": "...",
     "questionText": "...",
@@ -101,11 +103,11 @@ Frontend: `markInterviewPendingResult`, processing overlay, dashboard banner.
 
 `GET /api/interviews/:sessionId/result`
 
-| HTTP | Meaning |
-|------|---------|
-| 202 | `queued` / `processing` — keep polling |
-| 200 | `completed` + `result` |
-| 404 | `failed` — show retry, not null result |
+| HTTP | Meaning                                |
+| ---- | -------------------------------------- |
+| 202  | `queued` / `processing` — keep polling |
+| 200  | `completed` + `result`                 |
+| 404  | `failed` — show retry, not null result |
 
 ### Retry
 
@@ -119,14 +121,14 @@ Frontend: `markInterviewPendingResult`, processing overlay, dashboard banner.
 
 ## Quick checklist (verified on frontend)
 
-| # | Check |
-|---|--------|
-| 1 | Turn submit → loading uses `processingInsights` |
-| 2 | `suggestedFollowUps` shown (standard intensity) |
-| 3 | `mainPending === 0` → End interview; no TTS loop |
-| 4 | Submit → queued → poll until completed |
-| 5 | Failed eval → 404 / failed status, retry CTA |
-| 6 | Pre-coaching on answering phase |
+| #   | Check                                            |
+| --- | ------------------------------------------------ |
+| 1   | Turn submit → loading uses `processingInsights`  |
+| 2   | `suggestedFollowUps` shown (standard intensity)  |
+| 3   | `mainPending === 0` → End interview; no TTS loop |
+| 4   | Submit → queued → poll until completed           |
+| 5   | Failed eval → 404 / failed status, retry CTA     |
+| 6   | Pre-coaching on answering phase                  |
 
 ---
 

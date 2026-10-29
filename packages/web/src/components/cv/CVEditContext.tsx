@@ -103,8 +103,16 @@ export type CVEditContextValue = {
 
 const CVEditContext = createContext<CVEditContextValue | null>(null);
 
-export function CVEditProvider({ value, children }: { value: CVEditContextValue; children: ReactNode }) {
-  return <CVEditContext.Provider value={value}>{children}</CVEditContext.Provider>;
+export function CVEditProvider({
+  value,
+  children,
+}: {
+  value: CVEditContextValue;
+  children: ReactNode;
+}) {
+  return (
+    <CVEditContext.Provider value={value}>{children}</CVEditContext.Provider>
+  );
 }
 
 export function useCVEdit(): CVEditContextValue | null {

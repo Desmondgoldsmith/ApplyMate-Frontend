@@ -28,8 +28,14 @@ const DOMAIN_RULES: Array<{ re: RegExp; label: string }> = [
     re: /\b(backend|back-end|back end|node\.js|express|django|laravel|spring boot|nestjs|fastapi)\b/i,
     label: 'Backend',
   },
-  { re: /\b(devops|kubernetes|k8s|terraform|ci\s*\/\s*cd|ci\/cd)\b/i, label: 'DevOps' },
-  { re: /\b(ui\/ux|ux designer|ui designer|graphic design|product design)\b/i, label: 'Design' },
+  {
+    re: /\b(devops|kubernetes|k8s|terraform|ci\s*\/\s*cd|ci\/cd)\b/i,
+    label: 'DevOps',
+  },
+  {
+    re: /\b(ui\/ux|ux designer|ui designer|graphic design|product design)\b/i,
+    label: 'Design',
+  },
   { re: /(?:^|[^\w/])ux(?:$|[^\w/])/i, label: 'Design' },
   { re: /\b(qa|quality assurance)\b/i, label: 'QA' },
   { re: /\b(devrel|developer relations)\b/i, label: 'DevRel' },
@@ -55,7 +61,11 @@ function matchRoleLabelFromHeadlineRules(text: string): string | null {
   if (lower.includes('devops')) return 'DevOps';
   if (lower.includes('frontend')) return 'Frontend';
   if (lower.includes('backend')) return 'Backend';
-  if (lower.includes('full stack') || lower.includes('fullstack') || lower.includes('full-stack'))
+  if (
+    lower.includes('full stack') ||
+    lower.includes('fullstack') ||
+    lower.includes('full-stack')
+  )
     return 'Full Stack';
   if (lower.includes('mobile')) return 'Mobile';
   if (
@@ -64,12 +74,22 @@ function matchRoleLabelFromHeadlineRules(text: string): string | null {
     lower.includes('data engineer')
   )
     return 'Data';
-  if (lower.includes('design') || lower.includes('ui/ux') || /\bux\b/i.test(text)) return 'Design';
-  if (!lower.includes('frontend') && !lower.includes('backend') && lower.includes('product'))
+  if (
+    lower.includes('design') ||
+    lower.includes('ui/ux') ||
+    /\bux\b/i.test(text)
+  )
+    return 'Design';
+  if (
+    !lower.includes('frontend') &&
+    !lower.includes('backend') &&
+    lower.includes('product')
+  )
     return 'Product';
   if (/\bhr\b/i.test(text) || lower.includes('human resources')) return 'HR';
   if (/\bqa\b/i.test(text) || lower.includes('quality assurance')) return 'QA';
-  if (lower.includes('devrel') || lower.includes('developer relations')) return 'DevRel';
+  if (lower.includes('devrel') || lower.includes('developer relations'))
+    return 'DevRel';
   return null;
 }
 
@@ -83,15 +103,21 @@ function matchRoleLabelFromStructuredText(text: string): string | null {
     /\b(css|html)\b/i.test(text)
   )
     return 'Frontend';
-  if (/\b(Node\.js|Express|Django|Laravel|Spring Boot|NestJS|FastAPI)\b/i.test(text))
+  if (
+    /\b(Node\.js|Express|Django|Laravel|Spring Boot|NestJS|FastAPI)\b/i.test(
+      text,
+    )
+  )
     return 'Backend';
-  if (/\b(React Native|Flutter|Swift|Kotlin|iOS|Android)\b/i.test(text)) return 'Mobile';
+  if (/\b(React Native|Flutter|Swift|Kotlin|iOS|Android)\b/i.test(text))
+    return 'Mobile';
   if (
     /\b(Kubernetes|Terraform|CI\s*\/\s*CD|CI\/CD)\b/i.test(text) ||
     /\bdevops\b/i.test(text)
   )
     return 'DevOps';
-  if (/\b(Machine Learning|TensorFlow|PyTorch|Pandas)\b/i.test(text)) return 'Data';
+  if (/\b(Machine Learning|TensorFlow|PyTorch|Pandas)\b/i.test(text))
+    return 'Data';
   return null;
 }
 
@@ -99,7 +125,9 @@ function matchRoleLabelFromStructuredText(text: string): string | null {
  * Collapse marketing-style headlines to a short professional title (shown in CV header + used for naming signals).
  * Example: "DevOps Engineer focused on Automation, Cloud…" → "DevOps Engineer"
  */
-export function normalizeProfessionalHeadlineTitle(raw: string | null | undefined): string {
+export function normalizeProfessionalHeadlineTitle(
+  raw: string | null | undefined,
+): string {
   let s = (raw ?? '').trim();
   if (!s) return '';
   const commaIdx = s.indexOf(',');
@@ -141,11 +169,15 @@ export function inferCvProfileNameFromTextBlob(blob: string): string {
   return 'My CV';
 }
 
-function inferCvProfileNameFromProfileCore(profile: CVProfile | null | undefined): string {
+function inferCvProfileNameFromProfileCore(
+  profile: CVProfile | null | undefined,
+): string {
   if (!profile) return 'My CV';
 
   const named = formatCvProfileDisplayName(
-    buildCvNamingFromProfile(profile, { role: roleLabelFromCvProfile(profile) }),
+    buildCvNamingFromProfile(profile, {
+      role: roleLabelFromCvProfile(profile),
+    }),
   );
   if (named && named !== 'My CV' && !isGenericCvProfileName(named)) {
     return named;
@@ -154,18 +186,29 @@ function inferCvProfileNameFromProfileCore(profile: CVProfile | null | undefined
   const headline = profile.headline?.trim();
   if (headline) {
     const shortHeadline = normalizeProfessionalHeadlineTitle(headline);
-    const fromShort = shortHeadline ? matchRoleLabelFromHeadlineRules(shortHeadline) : null;
+    const fromShort = shortHeadline
+      ? matchRoleLabelFromHeadlineRules(shortHeadline)
+      : null;
     if (fromShort) return `My ${fromShort} CV`;
     const fromFull = matchRoleLabelFromHeadlineRules(headline);
     if (fromFull) return `My ${fromFull} CV`;
-    if (shortHeadline && shortHeadline.length >= 3 && shortHeadline.length <= 56 && !/\.\s/.test(shortHeadline)) {
+    if (
+      shortHeadline &&
+      shortHeadline.length >= 3 &&
+      shortHeadline.length <= 56 &&
+      !/\.\s/.test(shortHeadline)
+    ) {
       return `My ${shortHeadline.slice(0, 56)} CV`;
     }
   }
 
   const st = profile.structured;
   const primaryJoined = Array.isArray(st?.primarySkills)
-    ? st.primarySkills.filter((x): x is string => typeof x === 'string' && x.trim().length > 0).join('\n')
+    ? st.primarySkills
+        .filter(
+          (x): x is string => typeof x === 'string' && x.trim().length > 0,
+        )
+        .join('\n')
     : '';
   if (primaryJoined.trim()) {
     const m = matchRoleLabelFromStructuredText(primaryJoined);
@@ -173,7 +216,11 @@ function inferCvProfileNameFromProfileCore(profile: CVProfile | null | undefined
   }
 
   const skillsJoined = Array.isArray(st?.skills)
-    ? st.skills.filter((x): x is string => typeof x === 'string' && x.trim().length > 0).join('\n')
+    ? st.skills
+        .filter(
+          (x): x is string => typeof x === 'string' && x.trim().length > 0,
+        )
+        .join('\n')
     : '';
   if (skillsJoined.trim()) {
     const m = matchRoleLabelFromStructuredText(skillsJoined);
@@ -232,7 +279,16 @@ export function inferCvProfileNameFromBuilderData(
   return blobName;
 }
 
-export function isGenericCvProfileName(name: string | null | undefined): boolean {
+export function isGenericCvProfileName(
+  name: string | null | undefined,
+): boolean {
   const n = (name ?? '').trim().toLowerCase();
-  return n === '' || n === 'my cv' || n === 'cv' || n === 'untitled' || n === 'untitled cv' || n === 'new cv';
+  return (
+    n === '' ||
+    n === 'my cv' ||
+    n === 'cv' ||
+    n === 'untitled' ||
+    n === 'untitled cv' ||
+    n === 'new cv'
+  );
 }

@@ -43,22 +43,37 @@ export const SessionAdaptiveRail = memo(function SessionAdaptiveRail({
         snapshot.session?.recommendedDifficulty,
         snapshot.session?.nextQuestionType,
       ),
-    [snapshot.session?.nextQuestionType, snapshot.session?.recommendedDifficulty],
+    [
+      snapshot.session?.nextQuestionType,
+      snapshot.session?.recommendedDifficulty,
+    ],
   );
 
   const showWeakPanel = Boolean(snapshot.profile?.weakAreas?.length);
-  const showBehavior = snapshot.session?.recommendedDifficulty === 'hard' || behaviorMode !== 'calm';
+  const showBehavior =
+    snapshot.session?.recommendedDifficulty === 'hard' ||
+    behaviorMode !== 'calm';
 
   return (
-    <div className={cn('mx-5 space-y-2 pt-3', className)} aria-label="Adaptive interview">
+    <div
+      className={cn('mx-5 space-y-2 pt-3', className)}
+      aria-label="Adaptive interview"
+    >
       <div className="flex flex-wrap items-center gap-2">
-        <AdaptiveDifficultyBadge level={difficulty} showPulse={difficultyPulse} />
-        <span className="text-[10px] text-[var(--text-muted)]">Adapting to you</span>
+        <AdaptiveDifficultyBadge
+          level={difficulty}
+          showPulse={difficultyPulse}
+        />
+        <span className="text-[10px] text-[var(--text-muted)]">
+          Adapting to you
+        </span>
       </div>
 
       <AdaptiveTransitionNotice message={snapshot.transitionMessage} />
 
-      {showWeakPanel ? <WeakAreaIndicatorPanel profile={snapshot.profile} /> : null}
+      {showWeakPanel ? (
+        <WeakAreaIndicatorPanel profile={snapshot.profile} />
+      ) : null}
 
       {!showWeakPanel && showBehavior ? (
         <InterviewerBehaviorIndicator mode={behaviorMode} />

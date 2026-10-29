@@ -32,23 +32,31 @@ export const HUB_PIPELINE_TAB_LABELS: Record<HubPipelineTab, string> = {
   accepted: 'Accepted',
 };
 
-export function derivePipelineTab(job: TrackedJob): Exclude<HubPipelineTab, 'all'> {
+export function derivePipelineTab(
+  job: TrackedJob,
+): Exclude<HubPipelineTab, 'all'> {
   if (job.stage === 'accepted') return 'accepted';
   if (job.stage === 'negotiating') return 'negotiating';
   if (job.stage === 'interviewing') return 'interviewing';
   if (job.stage === 'applied' || job.isApplied) return 'applied';
   const tailored = job.applicationAssist?.hasTailoredCv === true;
-  if (tailored && (job.stage === 'analyzed' || job.stage === 'bookmarked')) return 'tailoring';
+  if (tailored && (job.stage === 'analyzed' || job.stage === 'bookmarked'))
+    return 'tailoring';
   if (job.hasAnalysis || job.stage === 'analyzed') return 'analyzing';
   return 'discovery';
 }
 
-export function jobMatchesPipelineTab(job: TrackedJob, tab: HubPipelineTab): boolean {
+export function jobMatchesPipelineTab(
+  job: TrackedJob,
+  tab: HubPipelineTab,
+): boolean {
   if (tab === 'all') return true;
   return derivePipelineTab(job) === tab;
 }
 
-export function pipelineTabCounts(jobs: TrackedJob[]): Partial<Record<HubPipelineTab, number>> {
+export function pipelineTabCounts(
+  jobs: TrackedJob[],
+): Partial<Record<HubPipelineTab, number>> {
   const c: Partial<Record<HubPipelineTab, number>> = { all: jobs.length };
   for (const j of jobs) {
     const t = derivePipelineTab(j);

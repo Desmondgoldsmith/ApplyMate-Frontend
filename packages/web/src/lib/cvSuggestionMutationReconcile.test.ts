@@ -20,12 +20,26 @@ describe('reconcileAfterCvSuggestionMutation', () => {
     const qc = new QueryClient();
     const spy = vi.spyOn(qc, 'invalidateQueries').mockResolvedValue(undefined);
     expect(reconcileAfterCvSuggestionMutation(qc, 'p1', 'queueOnly')).toBe(2);
-    expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.cv.score('p1'), exact: true });
-    expect(spy).toHaveBeenCalledWith({ queryKey: cvSuggestionsQueryKey('p1'), exact: true });
-    expect(spy).not.toHaveBeenCalledWith({ queryKey: queryKeys.cv.profiles(), exact: true });
+    expect(spy).toHaveBeenCalledWith({
+      queryKey: queryKeys.cv.score('p1'),
+      exact: true,
+    });
+    expect(spy).toHaveBeenCalledWith({
+      queryKey: cvSuggestionsQueryKey('p1'),
+      exact: true,
+    });
+    expect(spy).not.toHaveBeenCalledWith({
+      queryKey: queryKeys.cv.profiles(),
+      exact: true,
+    });
 
     spy.mockClear();
-    expect(reconcileAfterCvSuggestionMutation(qc, 'p1', 'structuralAccept')).toBe(3);
-    expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.cv.profiles(), exact: true });
+    expect(
+      reconcileAfterCvSuggestionMutation(qc, 'p1', 'structuralAccept'),
+    ).toBe(3);
+    expect(spy).toHaveBeenCalledWith({
+      queryKey: queryKeys.cv.profiles(),
+      exact: true,
+    });
   });
 });

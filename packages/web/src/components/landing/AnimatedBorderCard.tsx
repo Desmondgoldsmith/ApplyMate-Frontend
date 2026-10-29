@@ -52,7 +52,10 @@ export function AnimatedBorderCard({
       <div className="animated-border-rotating" aria-hidden />
       <div className="animated-border-mouse-glow" aria-hidden />
       <div
-        className={cn('card-content flex min-h-0 min-w-0 max-w-full flex-col overflow-x-hidden', contentClassName)}
+        className={cn(
+          'card-content flex min-h-0 min-w-0 max-w-full flex-col overflow-x-hidden',
+          contentClassName,
+        )}
         style={innerStyle}
       >
         {children}

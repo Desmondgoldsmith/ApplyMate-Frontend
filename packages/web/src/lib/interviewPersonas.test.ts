@@ -17,12 +17,16 @@ describe('isLegacyRoleInterviewerLabel', () => {
 describe('resolveInterviewerPersonName', () => {
   it('uses API human name when provided', () => {
     const base = INTERVIEW_PERSONAS.friendly_coach;
-    expect(resolveInterviewerPersonName('Desmond Goldsmith', base)).toBe('Desmond Goldsmith');
+    expect(resolveInterviewerPersonName('Desmond Goldsmith', base)).toBe(
+      'Desmond Goldsmith',
+    );
   });
 
   it('falls back for legacy role title in interviewerLabel', () => {
     const base = INTERVIEW_PERSONAS.friendly_coach;
-    expect(resolveInterviewerPersonName('Friendly Coach', base)).toBe('Desmond Goldsmith');
+    expect(resolveInterviewerPersonName('Friendly Coach', base)).toBe(
+      'Desmond Goldsmith',
+    );
   });
 });
 

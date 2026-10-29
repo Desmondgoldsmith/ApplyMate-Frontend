@@ -29,9 +29,20 @@ export function ConfirmModal({
   layerZIndex,
 }: ConfirmModalProps) {
   return (
-    <Modal open={open} onOpenChange={onOpenChange} title={title} description={description} layerZIndex={layerZIndex}>
+    <Modal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={title}
+      description={description}
+      layerZIndex={layerZIndex}
+    >
       <div className="flex flex-wrap justify-end gap-2 pt-2">
-        <Button type="button" variant="ghost" disabled={isPending} onClick={() => onOpenChange(false)}>
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={isPending}
+          onClick={() => onOpenChange(false)}
+        >
           {cancelLabel}
         </Button>
         <Button

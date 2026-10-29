@@ -25,20 +25,33 @@ export const InlineSkillsCommaField = memo(function InlineSkillsCommaField({
   placeholderTone?: 'default' | 'onDark';
 }) {
   const [text, setText] = useState(() =>
-    skills.map((s) => skillLabelForCommaField(s)).filter(Boolean).join(', '),
+    skills
+      .map((s) => skillLabelForCommaField(s))
+      .filter(Boolean)
+      .join(', '),
   );
   const focusedRef = useRef(false);
 
   useEffect(() => {
     if (!focusedRef.current) {
-      setText(skills.map((s) => skillLabelForCommaField(s)).filter(Boolean).join(', '));
+      setText(
+        skills
+          .map((s) => skillLabelForCommaField(s))
+          .filter(Boolean)
+          .join(', '),
+      );
     }
   }, [skills]);
 
   const commit = (raw: string) => {
     const next = resolveSkillsFromCommaInput(raw, skills);
     onChange(next);
-    setText(next.map((s) => skillLabelForCommaField(s)).filter(Boolean).join(', '));
+    setText(
+      next
+        .map((s) => skillLabelForCommaField(s))
+        .filter(Boolean)
+        .join(', '),
+    );
   };
 
   return (
@@ -46,7 +59,9 @@ export const InlineSkillsCommaField = memo(function InlineSkillsCommaField({
       type="text"
       className={cn(
         'block w-full min-w-0 rounded-sm border-0 border-b border-[rgba(0,174,175,0.5)] bg-transparent px-0 py-0.5 text-inherit outline-none',
-        placeholderTone === 'onDark' ? 'placeholder:text-white/45' : 'placeholder:text-black/40',
+        placeholderTone === 'onDark'
+          ? 'placeholder:text-white/45'
+          : 'placeholder:text-black/40',
         className,
       )}
       value={text}

@@ -41,7 +41,10 @@ export const useLocationStore = create<LocationStoreState>()(
       ...initialState,
       setDetectedLocation: (loc) => set({ detectedLocation: loc }),
       setSelectedLocation: (label) =>
-        set({ selectedLocation: label?.trim() || null, promptDismissedAt: null }),
+        set({
+          selectedLocation: label?.trim() || null,
+          promptDismissedAt: null,
+        }),
       setLoading: (loading) => set({ loading }),
       dismissPrompt: () => set({ promptDismissedAt: new Date().toISOString() }),
       clearDismissed: () => set({ promptDismissedAt: null }),

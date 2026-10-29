@@ -30,8 +30,9 @@ export function ExtensionAuthBridge() {
 
   useEffect(() => {
     const onExtensionPresent = (event: Event) => {
-      const extensionId = (event as CustomEvent<{ extensionId?: string }>).detail
-        ?.extensionId?.trim();
+      const extensionId = (
+        event as CustomEvent<{ extensionId?: string }>
+      ).detail?.extensionId?.trim();
       if (!extensionId) return;
       rememberExtensionId(extensionId);
 
@@ -42,14 +43,21 @@ export function ExtensionAuthBridge() {
       void handoffExtensionTokenIfInstalled(token);
     };
 
-    window.addEventListener(APPLYMATE_EXTENSION_PRESENT_EVENT, onExtensionPresent);
+    window.addEventListener(
+      APPLYMATE_EXTENSION_PRESENT_EVENT,
+      onExtensionPresent,
+    );
     return () => {
-      window.removeEventListener(APPLYMATE_EXTENSION_PRESENT_EVENT, onExtensionPresent);
+      window.removeEventListener(
+        APPLYMATE_EXTENSION_PRESENT_EVENT,
+        onExtensionPresent,
+      );
     };
   }, []);
 
   useEffect(() => {
-    if (restoreAttempted.current || isAuthenticated || isPublicAuthPath()) return;
+    if (restoreAttempted.current || isAuthenticated || isPublicAuthPath())
+      return;
     restoreAttempted.current = true;
     void tryRestoreSessionFromApiCookie();
   }, [isAuthenticated]);
@@ -59,7 +67,8 @@ export function ExtensionAuthBridge() {
       hydrateFromStorage();
     };
     window.addEventListener(APPLYMATE_AUTH_RESTORED_EVENT, onRestored);
-    return () => window.removeEventListener(APPLYMATE_AUTH_RESTORED_EVENT, onRestored);
+    return () =>
+      window.removeEventListener(APPLYMATE_AUTH_RESTORED_EVENT, onRestored);
   }, [hydrateFromStorage]);
 
   useEffect(() => {

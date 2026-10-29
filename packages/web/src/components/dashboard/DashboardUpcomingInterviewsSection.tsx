@@ -22,7 +22,8 @@ const DASHBOARD_UPCOMING_HOME_CAP = 2;
 function timingLine(card: UpcomingInterviewItem): string | null {
   if (isAppliedPrepUpcomingRow(card)) return null;
   const du =
-    typeof card.daysUntilInterview === 'number' && Number.isFinite(card.daysUntilInterview)
+    typeof card.daysUntilInterview === 'number' &&
+    Number.isFinite(card.daysUntilInterview)
       ? Math.max(0, Math.round(card.daysUntilInterview))
       : null;
   if (du === 0) return 'Today';
@@ -54,12 +55,16 @@ function sectionIntroCopy(rows: UpcomingInterviewItem[]): string {
 }
 
 /** Render only when `interviews.length > 0` (caller requirement). */
-export function DashboardUpcomingInterviewsSection({ interviews, upcomingInterviewCount }: Props) {
+export function DashboardUpcomingInterviewsSection({
+  interviews,
+  upcomingInterviewCount,
+}: Props) {
   if (interviews.length === 0) return null;
 
   const sorted = sortUpcomingInterviewsForDashboard(interviews);
   const totalFromApi =
-    typeof upcomingInterviewCount === 'number' && Number.isFinite(upcomingInterviewCount)
+    typeof upcomingInterviewCount === 'number' &&
+    Number.isFinite(upcomingInterviewCount)
       ? Math.max(0, Math.round(upcomingInterviewCount))
       : null;
   const total = totalFromApi ?? sorted.length;
@@ -70,18 +75,19 @@ export function DashboardUpcomingInterviewsSection({ interviews, upcomingIntervi
 
   const countBadge = upcomingInterviewsCountBadge(total, sorted);
 
-  const headerRight =
-    showViewAll ? (
-      <Link
-        href="/dashboard/interview-prep"
-        className="inline-flex flex-wrap items-center gap-x-1.5 text-[12px] font-medium leading-snug text-[var(--text-teal)] transition-opacity hover:opacity-80 hover:underline"
-      >
-        <span>View all →</span>
-        {moreCount > 0 ? (
-          <span className="font-normal text-[var(--text-muted)]">(+{moreCount} more)</span>
-        ) : null}
-      </Link>
-    ) : null;
+  const headerRight = showViewAll ? (
+    <Link
+      href="/dashboard/interview-prep"
+      className="inline-flex flex-wrap items-center gap-x-1.5 text-[12px] font-medium leading-snug text-[var(--text-teal)] transition-opacity hover:opacity-80 hover:underline"
+    >
+      <span>View all →</span>
+      {moreCount > 0 ? (
+        <span className="font-normal text-[var(--text-muted)]">
+          (+{moreCount} more)
+        </span>
+      ) : null}
+    </Link>
+  ) : null;
 
   return (
     <DashboardCollapsibleSection
@@ -102,19 +108,28 @@ export function DashboardUpcomingInterviewsSection({ interviews, upcomingIntervi
           const headline = card.headline.trim();
           const jobTitle = (card.jobTitle ?? '').trim();
           const supporting = card.supporting.trim();
-          const titleLine = appliedPrep ? headline || jobTitle || company : jobTitle || headline;
+          const titleLine = appliedPrep
+            ? headline || jobTitle || company
+            : jobTitle || headline;
           const updatedLabel = card.lastUpdatedLabel?.trim() || null;
           const subParts = appliedPrep
             ? [
-                supporting || (jobTitle && company ? `${jobTitle} · ${company}` : company || jobTitle),
+                supporting ||
+                  (jobTitle && company
+                    ? `${jobTitle} · ${company}`
+                    : company || jobTitle),
                 updatedLabel,
               ]
             : [company, timing, updatedLabel].filter(Boolean);
-          const subLine = subParts.filter(Boolean).join(appliedPrep ? ' ' : ' · ');
+          const subLine = subParts
+            .filter(Boolean)
+            .join(appliedPrep ? ' ' : ' · ');
 
           return (
             <div
-              key={card.id ? `${card.id}-${idx}` : `${card.jobAnalysisId}-${idx}`}
+              key={
+                card.id ? `${card.id}-${idx}` : `${card.jobAnalysisId}-${idx}`
+              }
               className={cn(
                 'flex flex-col gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3.5 transition-[border-color,background-color] duration-150 sm:flex-row sm:items-center sm:gap-3.5',
                 'hover:border-[var(--border-default)] hover:bg-[var(--bg-surface-hover)]',

@@ -35,7 +35,8 @@ export type StoredWizardState = {
 export function readStoredWizard(): Partial<StoredWizardState> | null {
   if (typeof window === 'undefined') return null;
   try {
-    const raw = window.localStorage.getItem(KEY) ?? window.sessionStorage.getItem(KEY);
+    const raw =
+      window.localStorage.getItem(KEY) ?? window.sessionStorage.getItem(KEY);
     if (!raw) return null;
     const o = JSON.parse(raw) as Record<string, unknown>;
     const out: Partial<StoredWizardState> = {};
@@ -49,27 +50,49 @@ export function readStoredWizard(): Partial<StoredWizardState> | null {
       o.cvPath === null
     )
       out.cvPath = o.cvPath;
-    if (o.buildPhase === 'pick' || o.buildPhase === 'builder') out.buildPhase = o.buildPhase;
-    if (o.uploadPhase === 'zone' || o.uploadPhase === 'summary' || o.uploadPhase === 'score')
+    if (o.buildPhase === 'pick' || o.buildPhase === 'builder')
+      out.buildPhase = o.buildPhase;
+    if (
+      o.uploadPhase === 'zone' ||
+      o.uploadPhase === 'summary' ||
+      o.uploadPhase === 'score'
+    )
       out.uploadPhase = o.uploadPhase;
-    if (o.cvEntryPhase === 'template' || o.cvEntryPhase === 'paths') out.cvEntryPhase = o.cvEntryPhase;
-    if (typeof o.selectedTemplate === 'string' && isCvTemplateId(o.selectedTemplate)) {
+    if (o.cvEntryPhase === 'template' || o.cvEntryPhase === 'paths')
+      out.cvEntryPhase = o.cvEntryPhase;
+    if (
+      typeof o.selectedTemplate === 'string' &&
+      isCvTemplateId(o.selectedTemplate)
+    ) {
       out.selectedTemplate = o.selectedTemplate;
     }
     if (Array.isArray(o.selectedFeatures)) {
-      out.selectedFeatures = o.selectedFeatures.filter((x): x is string => typeof x === 'string');
+      out.selectedFeatures = o.selectedFeatures.filter(
+        (x): x is string => typeof x === 'string',
+      );
     }
-    if (typeof o.discoveryStep === 'number' && o.discoveryStep >= 0 && o.discoveryStep <= 4) {
+    if (
+      typeof o.discoveryStep === 'number' &&
+      o.discoveryStep >= 0 &&
+      o.discoveryStep <= 4
+    ) {
       out.discoveryStep = Math.floor(o.discoveryStep);
     }
     if (typeof o.focusHired === 'boolean') out.focusHired = o.focusHired;
     if (typeof o.focusStudent === 'boolean') out.focusStudent = o.focusStudent;
-    if (o.jobSearchUrgency === 'asap' || o.jobSearchUrgency === 'few_months' || o.jobSearchUrgency === 'exploring') {
+    if (
+      o.jobSearchUrgency === 'asap' ||
+      o.jobSearchUrgency === 'few_months' ||
+      o.jobSearchUrgency === 'exploring'
+    ) {
       out.jobSearchUrgency = o.jobSearchUrgency;
     }
-    if (typeof o.targetRolesText === 'string') out.targetRolesText = o.targetRolesText;
-    if (typeof o.referralSource === 'string') out.referralSource = o.referralSource;
-    if (typeof o.referralOther === 'string') out.referralOther = o.referralOther;
+    if (typeof o.targetRolesText === 'string')
+      out.targetRolesText = o.targetRolesText;
+    if (typeof o.referralSource === 'string')
+      out.referralSource = o.referralSource;
+    if (typeof o.referralOther === 'string')
+      out.referralOther = o.referralOther;
     return Object.keys(out).length ? out : null;
   } catch {
     return null;

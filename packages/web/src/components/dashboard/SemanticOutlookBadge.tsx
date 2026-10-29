@@ -48,7 +48,9 @@ export function SemanticOutlookBadge({
         </span>
       </div>
       {basis ? (
-        <p className="mt-2 text-[12px] leading-relaxed text-white/48">{basis}</p>
+        <p className="mt-2 text-[12px] leading-relaxed text-white/48">
+          {basis}
+        </p>
       ) : null}
     </div>
   );

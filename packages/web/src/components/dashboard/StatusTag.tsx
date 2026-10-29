@@ -55,12 +55,25 @@ const STYLES: Record<
 /** Map backend reason codes / free text to a semantic tag variant. */
 export function inferStatusTagVariant(code: string): StatusTagVariant {
   const u = code.toUpperCase().replace(/\s+/g, '_');
-  if (u.includes('DISCOVERY') || u.includes('BOARD') || u.includes('LISTING')) return 'discovery_fit';
-  if (u.includes('HIGH_MATCH') || u.includes('STRONG_MATCH')) return 'high_match';
-  if (u.includes('NOT_APPLIED') || u.includes('NOTAPPLIED') || u.includes('SAVE')) return 'not_applied';
+  if (u.includes('DISCOVERY') || u.includes('BOARD') || u.includes('LISTING'))
+    return 'discovery_fit';
+  if (u.includes('HIGH_MATCH') || u.includes('STRONG_MATCH'))
+    return 'high_match';
+  if (
+    u.includes('NOT_APPLIED') ||
+    u.includes('NOTAPPLIED') ||
+    u.includes('SAVE')
+  )
+    return 'not_applied';
   if (u.includes('APPLIED') || u.includes('TRACKER')) return 'applied';
   if (u.includes('ANALYZ') || u.includes('ANALYSIS')) return 'analyzed';
-  if (u.includes('IMPROVE') || u.includes('CV') || u.includes('CLINIC') || u.includes('TAILOR')) return 'improvement';
+  if (
+    u.includes('IMPROVE') ||
+    u.includes('CV') ||
+    u.includes('CLINIC') ||
+    u.includes('TAILOR')
+  )
+    return 'improvement';
   return 'neutral';
 }
 
@@ -84,7 +97,12 @@ type StatusTagProps = {
  * Semantic status pill for dashboard (and reuse elsewhere).
  * 10px uppercase, letter-spacing per dashboard spec.
  */
-export function StatusTag({ variant = 'neutral', label, children, className }: StatusTagProps) {
+export function StatusTag({
+  variant = 'neutral',
+  label,
+  children,
+  className,
+}: StatusTagProps) {
   const s = STYLES[variant];
   const content =
     label != null

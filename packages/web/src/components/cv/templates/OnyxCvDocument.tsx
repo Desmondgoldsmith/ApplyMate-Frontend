@@ -1,7 +1,14 @@
 'use client';
 
 import { Montserrat } from 'next/font/google';
-import { Fragment, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  Fragment,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 import {
   GripVertical,
   Upload,
@@ -16,14 +23,20 @@ import {
   Flag as FlagIcon,
 } from 'lucide-react';
 
-import { DEFAULT_HEADER_PREVIEW, useCVEdit } from '@/components/cv/CVEditContext';
+import {
+  DEFAULT_HEADER_PREVIEW,
+  useCVEdit,
+} from '@/components/cv/CVEditContext';
 import { CVSectionWrapper } from '@/components/cv/CVSectionWrapper';
 import { EntryToolbar } from '@/components/cv/EntryToolbar';
 import { HeaderFloatingControls } from '@/components/cv/HeaderFloatingControls';
 import { InlineField } from '@/components/cv/InlineField';
 import { InlineSkillsCommaField } from '@/components/cv/InlineSkillsCommaField';
 import { SkillsRichComma } from '@/components/cv/SkillsRichComma';
-import { persistSectionTitleChange, resolveSectionDisplayTitle } from '@/lib/cvSectionTitlePersist';
+import {
+  persistSectionTitleChange,
+  resolveSectionDisplayTitle,
+} from '@/lib/cvSectionTitlePersist';
 import { useToast } from '@/components/ui/Toast';
 import {
   dispatchSectionDragEnd,
@@ -51,9 +64,15 @@ import {
   shouldRenderCustomLegacySection,
   orderedParsedPreviewKeys,
 } from '@/lib/cvParsedCustomSectionUtils';
-import { dedupePreviewSectionKeys, DEFAULT_PREVIEW_DRAG_SECTION_ORDER } from '@/lib/cvSectionProfessionalOrder';
+import {
+  dedupePreviewSectionKeys,
+  DEFAULT_PREVIEW_DRAG_SECTION_ORDER,
+} from '@/lib/cvSectionProfessionalOrder';
 import { formatCvPeriodEnDash, formatEduRange } from '@/lib/cvDate';
-import { compressImageFileToCvDataUrl, CV_PHOTO_TOO_LARGE_USER_MESSAGE } from '@/lib/cvPhotoCompress';
+import {
+  compressImageFileToCvDataUrl,
+  CV_PHOTO_TOO_LARGE_USER_MESSAGE,
+} from '@/lib/cvPhotoCompress';
 import { normalizeEditableHtml } from '@/lib/cvRichTextCore';
 import { toPreviewRichTextHtml } from '@/lib/cvRichTextPreview';
 import { cn } from '@/lib/utils';
@@ -70,11 +89,18 @@ export const ONYX_TEXT = '#333333';
 
 const ONYX_SIDEBAR_TITLE =
   'text-[11pt] font-semibold uppercase tracking-wide text-white border-b border-white/40 pb-1 mb-3';
-const ONYX_MAIN_TITLE = 'text-[11pt] font-semibold border-b border-[#333]/30 pb-1 mb-3 text-[#333333]';
+const ONYX_MAIN_TITLE =
+  'text-[11pt] font-semibold border-b border-[#333]/30 pb-1 mb-3 text-[#333333]';
 const ONYX_SIDEBAR_FIELD = 'text-[8.5pt] text-white';
 const ONYX_SIDEBAR_PLACEHOLDER_TONE = 'onDark' as const;
 
-const CORE_SECTION_IDS = new Set(['summary', 'experience', 'education', 'projects', 'skills']);
+const CORE_SECTION_IDS = new Set([
+  'summary',
+  'experience',
+  'education',
+  'projects',
+  'skills',
+]);
 const CV_PREVIEW_ITEM_SEP = '::';
 
 type CVSectionVisibilityMap = Record<string, boolean>;
@@ -92,12 +118,19 @@ type OnyxCvDocumentProps = {
   onReorderSections?: (nextOrder: string[]) => void;
 };
 
-function isCvSectionVisible(sectionKey: string, map?: CVSectionVisibilityMap | null): boolean {
+function isCvSectionVisible(
+  sectionKey: string,
+  map?: CVSectionVisibilityMap | null,
+): boolean {
   if (!map) return true;
   return map[sectionKey] !== false;
 }
 
-function reorderSectionKeys(sourceOrder: string[], dragId: string, targetId: string): string[] | null {
+function reorderSectionKeys(
+  sourceOrder: string[],
+  dragId: string,
+  targetId: string,
+): string[] | null {
   if (!dragId || dragId === targetId) return null;
   const base = dedupePreviewSectionKeys([...sourceOrder]);
   if (!base.includes(dragId)) base.push(dragId);
@@ -115,7 +148,11 @@ function isCoreSectionId(sectionId: string): boolean {
   return CORE_SECTION_IDS.has(sectionId);
 }
 
-function optionalSectionShown(presence: Set<string> | undefined, type: string, hasRows: boolean): boolean {
+function optionalSectionShown(
+  presence: Set<string> | undefined,
+  type: string,
+  hasRows: boolean,
+): boolean {
   if (!presence) return hasRows;
   return presence.has(type) || hasRows;
 }
@@ -135,7 +172,9 @@ function onyxMultilineLines(text: string): string[] {
     .filter(Boolean);
 }
 
-function onyxProjectLines(project: CVBuilderData['projects'][number]): string[] {
+function onyxProjectLines(
+  project: CVBuilderData['projects'][number],
+): string[] {
   const fromBullets = onyxBulletLines(project.bullets);
   if (fromBullets.length) return fromBullets;
   const fromDescription = onyxMultilineLines(project.description);
@@ -153,7 +192,13 @@ function RichText({ text, className }: { text: string; className?: string }) {
   );
 }
 
-function OnyxBulletList({ items, className }: { items: string[]; className?: string }) {
+function OnyxBulletList({
+  items,
+  className,
+}: {
+  items: string[];
+  className?: string;
+}) {
   if (items.length === 0) return null;
   return (
     <ul className={cn(ONYX_BULLET_LIST, className)}>
@@ -171,15 +216,23 @@ function normalizeBulletInput(value: string): string {
 }
 
 function cvBulletFieldDomIsEmpty(e: { currentTarget: HTMLElement }): boolean {
-  const t = (e.currentTarget.innerText || '').replace(/\u200b/g, '').replace(/\u00a0/g, ' ').trim();
+  const t = (e.currentTarget.innerText || '')
+    .replace(/\u200b/g, '')
+    .replace(/\u00a0/g, ' ')
+    .trim();
   return t.length === 0;
 }
 
-function experienceOuterSectionActive(activeSection: string | null | undefined): boolean {
+function experienceOuterSectionActive(
+  activeSection: string | null | undefined,
+): boolean {
   return activeSection === 'experience';
 }
 
-function experienceItemWrapClass(activeSection: string | null | undefined, jobId: string) {
+function experienceItemWrapClass(
+  activeSection: string | null | undefined,
+  jobId: string,
+) {
   const itemKey = `experience${CV_PREVIEW_ITEM_SEP}${jobId}`;
   const itemActive = activeSection === itemKey;
   return cn(
@@ -197,10 +250,14 @@ function entryFocusStyle(focused: boolean): CSSProperties {
   };
 }
 
-function splitDisplayName(raw: string): { firstParts: string; lastPart: string } {
+function splitDisplayName(raw: string): {
+  firstParts: string;
+  lastPart: string;
+} {
   const parts = raw.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return { firstParts: 'YOUR', lastPart: 'NAME' };
-  if (parts.length === 1) return { firstParts: '', lastPart: parts[0]!.toUpperCase() };
+  if (parts.length === 1)
+    return { firstParts: '', lastPart: parts[0]!.toUpperCase() };
   const last = parts[parts.length - 1]!.toUpperCase();
   const first = parts.slice(0, -1).join(' ').toUpperCase();
   return { firstParts: first, lastPart: last };
@@ -220,7 +277,9 @@ function eduDegreeLine(e: CVBuilderData['education']['items'][number]): string {
 function flattenSkillList(data: CVBuilderData, inline: boolean): string[] {
   const cats = inline
     ? data.skills.categories
-    : data.skills.categories.filter((c) => c.name.trim() || c.skills.some((s) => s.trim()));
+    : data.skills.categories.filter(
+        (c) => c.name.trim() || c.skills.some((s) => s.trim()),
+      );
   const out: string[] = [];
   for (const cat of cats) {
     for (const skill of cat.skills) {
@@ -243,7 +302,13 @@ function CvPreviewWatermarkFooter() {
   );
 }
 
-function EditableHeaderPhoto({ photoUrl, imgClassName }: { photoUrl: string; imgClassName: string }) {
+function EditableHeaderPhoto({
+  photoUrl,
+  imgClassName,
+}: {
+  photoUrl: string;
+  imgClassName: string;
+}) {
   const ctx = useCVEdit();
   const fileRef = useRef<HTMLInputElement>(null);
   const editing = Boolean(ctx?.isEditing);
@@ -263,7 +328,8 @@ function EditableHeaderPhoto({ photoUrl, imgClassName }: { photoUrl: string; img
         ctx.onUpdate({ personal: { ...ctx.data.personal, photoUrl: url } });
         ctx.setHeaderPreview?.({ showPhoto: true });
       } catch (e) {
-        const msg = e instanceof Error ? e.message : CV_PHOTO_TOO_LARGE_USER_MESSAGE;
+        const msg =
+          e instanceof Error ? e.message : CV_PHOTO_TOO_LARGE_USER_MESSAGE;
         toast.error(msg);
       }
     })();
@@ -277,7 +343,13 @@ function EditableHeaderPhoto({ photoUrl, imgClassName }: { photoUrl: string; img
 
   return (
     <>
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files)} />
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => onFile(e.target.files)}
+      />
       <div className="mb-4 flex justify-center">
         <div className="group relative inline-block">
           <img src={photoUrl.trim()} alt="" className={imgClassName} />
@@ -317,7 +389,11 @@ function OnyxPhotoReadOnlyPlaceholder() {
   return (
     <div className="mb-4 flex justify-center" aria-hidden>
       <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white/10">
-        <svg viewBox="0 0 96 96" className="h-full w-full text-white/35" fill="currentColor">
+        <svg
+          viewBox="0 0 96 96"
+          className="h-full w-full text-white/35"
+          fill="currentColor"
+        >
           <circle cx="48" cy="34" r="16" />
           <ellipse cx="48" cy="78" rx="28" ry="20" />
         </svg>
@@ -344,7 +420,8 @@ function OnyxPhotoPlaceholder() {
         ctx.onUpdate({ personal: { ...ctx.data.personal, photoUrl: url } });
         ctx.setHeaderPreview?.({ showPhoto: true });
       } catch (e) {
-        const msg = e instanceof Error ? e.message : CV_PHOTO_TOO_LARGE_USER_MESSAGE;
+        const msg =
+          e instanceof Error ? e.message : CV_PHOTO_TOO_LARGE_USER_MESSAGE;
         toast.error(msg);
       }
     })();
@@ -352,7 +429,13 @@ function OnyxPhotoPlaceholder() {
 
   return (
     <>
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files)} />
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => onFile(e.target.files)}
+      />
       <div className="mb-4 flex justify-center">
         <button
           type="button"
@@ -429,11 +512,17 @@ export function OnyxCvDocument({
   const ctx = useCVEdit();
   const inline = Boolean(ctx?.isEditing && ctx?.onUpdate);
   const hp = ctx?.headerPreview ?? DEFAULT_HEADER_PREVIEW;
-  const [sectionTitleOverrides, setSectionTitleOverrides] = useState<Record<string, string>>({});
+  const [sectionTitleOverrides, setSectionTitleOverrides] = useState<
+    Record<string, string>
+  >({});
   const [hiddenSections, setHiddenSections] = useState<Set<string>>(new Set());
-  const [entryFieldVisibility, setEntryFieldVisibility] = useState<Record<string, Record<string, boolean>>>({});
+  const [entryFieldVisibility, setEntryFieldVisibility] = useState<
+    Record<string, Record<string, boolean>>
+  >({});
   const draggingSectionIdRef = useRef<string | null>(null);
-  const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null);
+  const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!sectionVisibility) return;
@@ -452,7 +541,8 @@ export function OnyxCvDocument({
   }, [sectionVisibility]);
 
   const p = data.personal;
-  const vis = (k: string) => isCvSectionVisible(k, sectionVisibility) && !hiddenSections.has(k);
+  const vis = (k: string) =>
+    isCvSectionVisible(k, sectionVisibility) && !hiddenSections.has(k);
   const sectionBox = (
     id: string,
     className: string,
@@ -471,8 +561,13 @@ export function OnyxCvDocument({
       isOuterSectionActive,
     );
 
-  const entryFieldOn = (entryKey: string, field: string) => entryFieldVisibility[entryKey]?.[field] ?? true;
-  const setEntryFieldOn = (entryKey: string, field: string, enabled: boolean) => {
+  const entryFieldOn = (entryKey: string, field: string) =>
+    entryFieldVisibility[entryKey]?.[field] ?? true;
+  const setEntryFieldOn = (
+    entryKey: string,
+    field: string,
+    enabled: boolean,
+  ) => {
     setEntryFieldVisibility((prev) => ({
       ...prev,
       [entryKey]: { ...(prev[entryKey] ?? {}), [field]: enabled },
@@ -480,16 +575,28 @@ export function OnyxCvDocument({
   };
 
   const sectionTitle = (sectionId: string, fallback: string) =>
-    resolveSectionDisplayTitle(sectionId, fallback, data, sectionTitleOverrides);
+    resolveSectionDisplayTitle(
+      sectionId,
+      fallback,
+      data,
+      sectionTitleOverrides,
+    );
   const sectionIsActive = (sectionId: string) =>
     ctx?.focusedSection === sectionId || ctx?.focusedEntrySection === sectionId;
 
   const reorderPreviewSections = (targetSectionId: string) => {
-    const draggingSectionId = draggingSectionIdRef.current ?? getActiveDraggingSectionId();
+    const draggingSectionId =
+      draggingSectionIdRef.current ?? getActiveDraggingSectionId();
     if (!draggingSectionId || draggingSectionId === targetSectionId) return;
     const sourceOrder =
-      sectionOrder && sectionOrder.length > 0 ? sectionOrder : [...DEFAULT_PREVIEW_DRAG_SECTION_ORDER];
-    const next = reorderSectionKeys(sourceOrder, draggingSectionId, targetSectionId);
+      sectionOrder && sectionOrder.length > 0
+        ? sectionOrder
+        : [...DEFAULT_PREVIEW_DRAG_SECTION_ORDER];
+    const next = reorderSectionKeys(
+      sourceOrder,
+      draggingSectionId,
+      targetSectionId,
+    );
     if (!next) return;
     onReorderSections?.(next);
     draggingSectionIdRef.current = null;
@@ -502,9 +609,15 @@ export function OnyxCvDocument({
       if (!detail?.targetSectionId) return;
       reorderPreviewSections(detail.targetSectionId);
     };
-    window.addEventListener(SECTION_REORDER_DROP_EVENT_NAME, handler as EventListener);
+    window.addEventListener(
+      SECTION_REORDER_DROP_EVENT_NAME,
+      handler as EventListener,
+    );
     return () => {
-      window.removeEventListener(SECTION_REORDER_DROP_EVENT_NAME, handler as EventListener);
+      window.removeEventListener(
+        SECTION_REORDER_DROP_EVENT_NAME,
+        handler as EventListener,
+      );
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inline, sectionOrder, onReorderSections]);
@@ -521,7 +634,10 @@ export function OnyxCvDocument({
 
     return (
       <div
-        className={cn('relative', inline && sectionIsActive(sectionId) && 'group')}
+        className={cn(
+          'relative',
+          inline && sectionIsActive(sectionId) && 'group',
+        )}
         data-entry-id={titleEntryId}
         onDragOver={(e) => {
           if (!inline || !draggingSectionIdRef.current) return;
@@ -545,7 +661,9 @@ export function OnyxCvDocument({
           ctx?.setFocusedEntrySection(sectionId);
         }}
       >
-        {inline && dragOverSectionId === sectionId && draggingSectionIdRef.current !== sectionId ? (
+        {inline &&
+        dragOverSectionId === sectionId &&
+        draggingSectionIdRef.current !== sectionId ? (
           <div className="mb-1 rounded-md border-2 border-dashed border-[#00C9B1]/70 bg-[#00C9B1]/8 px-2 py-1 text-[10px] font-semibold tracking-wide text-[#007A7A]">
             Drop section here
           </div>
@@ -561,7 +679,11 @@ export function OnyxCvDocument({
               onDeleteSection();
               setHiddenSections((prev) => new Set(prev).add(sectionId));
               if (typeof window !== 'undefined') {
-                window.dispatchEvent(new CustomEvent('cv:section-hidden', { detail: { sectionId } }));
+                window.dispatchEvent(
+                  new CustomEvent('cv:section-hidden', {
+                    detail: { sectionId },
+                  }),
+                );
               }
               ctx?.setFocusedEntryId(null);
               ctx?.setFocusedEntrySection(null);
@@ -612,11 +734,25 @@ export function OnyxCvDocument({
               sectionId={sectionId}
               entryId={titleEntryId}
               onChange={(v) => {
-                const title = persistSectionTitleChange(sectionId, v, fallback, data, ctx?.onUpdate);
-                setSectionTitleOverrides((prev) => ({ ...prev, [sectionId]: title }));
+                const title = persistSectionTitleChange(
+                  sectionId,
+                  v,
+                  fallback,
+                  data,
+                  ctx?.onUpdate,
+                );
+                setSectionTitleOverrides((prev) => ({
+                  ...prev,
+                  [sectionId]: title,
+                }));
               }}
-              className={cn('font-semibold uppercase', sidebar ? 'text-white' : 'text-[#333333]')}
-              placeholderTone={sidebar ? ONYX_SIDEBAR_PLACEHOLDER_TONE : 'default'}
+              className={cn(
+                'font-semibold uppercase',
+                sidebar ? 'text-white' : 'text-[#333333]',
+              )}
+              placeholderTone={
+                sidebar ? ONYX_SIDEBAR_PLACEHOLDER_TONE : 'default'
+              }
             />
           ) : (
             sectionTitle(sectionId, fallback)
@@ -626,27 +762,21 @@ export function OnyxCvDocument({
     );
   };
 
-  const photoBlock = !hp.showPhoto
-    ? null
-    : p.photoUrl?.trim()
-      ? (
-          <EditableHeaderPhoto
-            photoUrl={p.photoUrl}
-            imgClassName={cn(
-              'h-24 w-24 border border-white/20 object-cover',
-              hp.photoStyle === 'circle' && 'rounded-full',
-              hp.photoStyle === 'square' && 'rounded-md',
-              hp.photoStyle === 'avatar' && 'rounded-full ring-2 ring-white/20',
-            )}
-          />
-        )
-      : inline
-        ? (
-            <OnyxPhotoPlaceholder />
-          )
-        : (
-            <OnyxPhotoReadOnlyPlaceholder />
-          );
+  const photoBlock = !hp.showPhoto ? null : p.photoUrl?.trim() ? (
+    <EditableHeaderPhoto
+      photoUrl={p.photoUrl}
+      imgClassName={cn(
+        'h-24 w-24 border border-white/20 object-cover',
+        hp.photoStyle === 'circle' && 'rounded-full',
+        hp.photoStyle === 'square' && 'rounded-md',
+        hp.photoStyle === 'avatar' && 'rounded-full ring-2 ring-white/20',
+      )}
+    />
+  ) : inline ? (
+    <OnyxPhotoPlaceholder />
+  ) : (
+    <OnyxPhotoReadOnlyPlaceholder />
+  );
 
   const renderSidebarContactRow = (
     show: boolean,
@@ -683,396 +813,554 @@ export function OnyxCvDocument({
   const aboutMeEl =
     vis('summary') && (inline || data.summary.text.trim()) ? (
       <CVSectionWrapper sectionId="summary">
-        {sectionBox('summary', 'mb-5', <>
-          {renderSectionTitle('summary', 'About Me', true, () => ctx?.onUpdate({ summary: { text: '' } }))}
-          <div className="text-[9pt] leading-relaxed text-white/95">
-            {inline && ctx ? (
-              <div
-                data-entry-id="summary-body"
-                style={entryFocusStyle(ctx.focusedEntryId === 'summary-body')}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  ctx.setFocusedSection('summary');
-                  ctx.setFocusedEntryId('summary-body');
-                  ctx.setFocusedEntrySection('summary');
-                }}
-              >
-                {ctx.focusedEntryId === 'summary-body' ? (
-                  <EntryToolbar
-                    sectionType="summary"
-                    onAddEntry={() => {}}
-                    onMoveUp={() => {}}
-                    onMoveDown={() => {}}
-                    onDelete={() => {
-                      ctx.onUpdate({ summary: { text: '' } });
-                      ctx.setFocusedEntryId(null);
-                      ctx.setFocusedEntrySection(null);
-                    }}
-                    showMoveUp={false}
-                    showMoveDown={false}
-                    showDatePicker={false}
-                    hideAddButton
+        {sectionBox(
+          'summary',
+          'mb-5',
+          <>
+            {renderSectionTitle('summary', 'About Me', true, () =>
+              ctx?.onUpdate({ summary: { text: '' } }),
+            )}
+            <div className="text-[9pt] leading-relaxed text-white/95">
+              {inline && ctx ? (
+                <div
+                  data-entry-id="summary-body"
+                  style={entryFocusStyle(ctx.focusedEntryId === 'summary-body')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    ctx.setFocusedSection('summary');
+                    ctx.setFocusedEntryId('summary-body');
+                    ctx.setFocusedEntrySection('summary');
+                  }}
+                >
+                  {ctx.focusedEntryId === 'summary-body' ? (
+                    <EntryToolbar
+                      sectionType="summary"
+                      onAddEntry={() => {}}
+                      onMoveUp={() => {}}
+                      onMoveDown={() => {}}
+                      onDelete={() => {
+                        ctx.onUpdate({ summary: { text: '' } });
+                        ctx.setFocusedEntryId(null);
+                        ctx.setFocusedEntrySection(null);
+                      }}
+                      showMoveUp={false}
+                      showMoveDown={false}
+                      showDatePicker={false}
+                      hideAddButton
+                    />
+                  ) : null}
+                  <InlineField
+                    multiline
+                    layout="block"
+                    sectionId="summary"
+                    entryId="summary-body"
+                    value={data.summary.text}
+                    placeholder="Brief professional summary"
+                    onChange={(v) => ctx.onUpdate({ summary: { text: v } })}
+                    placeholderTone={ONYX_SIDEBAR_PLACEHOLDER_TONE}
+                    className="text-[9pt] leading-relaxed text-white"
                   />
-                ) : null}
-                <InlineField
-                  multiline
-                  layout="block"
-                  sectionId="summary"
-                  entryId="summary-body"
-                  value={data.summary.text}
-                  placeholder="Brief professional summary"
-                  onChange={(v) => ctx.onUpdate({ summary: { text: v } })}
-                  placeholderTone={ONYX_SIDEBAR_PLACEHOLDER_TONE}
-                  className="text-[9pt] leading-relaxed text-white"
-                />
-              </div>
-            ) : (
-              <RichText text={data.summary.text} className="text-white/95" />
-            )}
-          </div>
-          <div className="mt-3 space-y-1.5 text-[8.5pt] text-white/90">
-            {renderSidebarContactRow(
-              hp.showPhone,
-              <PhoneIcon className="mt-0.5 h-3 w-3 shrink-0 text-white" aria-hidden />,
-              '__onyx-phone__',
-              p.phone ?? '',
-              'Phone',
-              (v) => ctx?.onUpdate({ personal: { ...data.personal, phone: v } }),
-            )}
-            {renderSidebarContactRow(
-              hp.showEmail,
-              <MailIcon className="mt-0.5 h-3 w-3 shrink-0 text-white" aria-hidden />,
-              '__onyx-email__',
-              p.email ?? '',
-              'Email',
-              (v) => ctx?.onUpdate({ personal: { ...data.personal, email: v } }),
-            )}
-            {renderSidebarContactRow(
-              hp.showLocation,
-              <MapPinIcon className="mt-0.5 h-3 w-3 shrink-0 text-white" aria-hidden />,
-              '__onyx-location__',
-              p.location ?? '',
-              'Location',
-              (v) => ctx?.onUpdate({ personal: { ...data.personal, location: v } }),
-            )}
-            {renderSidebarContactRow(
-              hp.showLinkedIn,
-              <Link2Icon className="mt-0.5 h-3 w-3 shrink-0 text-white" aria-hidden />,
-              '__onyx-linkedin__',
-              p.linkedin ?? '',
-              'LinkedIn',
-              (v) => ctx?.onUpdate({ personal: { ...data.personal, linkedin: v } }),
-            )}
-            {renderSidebarContactRow(
-              hp.showGithub,
-              <GitBranchIcon className="mt-0.5 h-3 w-3 shrink-0 text-white" aria-hidden />,
-              '__onyx-github__',
-              p.github ?? '',
-              'GitHub',
-              (v) => ctx?.onUpdate({ personal: { ...data.personal, github: v } }),
-            )}
-            {renderSidebarContactRow(
-              hp.showWebsiteToggle,
-              <GlobeIcon className="mt-0.5 h-3 w-3 shrink-0 text-white" aria-hidden />,
-              '__onyx-website__',
-              p.website ?? '',
-              'Website',
-              (v) => ctx?.onUpdate({ personal: { ...data.personal, website: v } }),
-            )}
-            {renderSidebarContactRow(
-              hp.showPortfolioToggle,
-              <GlobeIcon className="mt-0.5 h-3 w-3 shrink-0 text-white" aria-hidden />,
-              '__onyx-portfolio__',
-              p.portfolio ?? '',
-              'Portfolio',
-              (v) => ctx?.onUpdate({ personal: { ...data.personal, portfolio: v } }),
-            )}
-            {renderSidebarContactRow(
-              hp.nationality,
-              <FlagIcon className="mt-0.5 h-3 w-3 shrink-0 text-white" aria-hidden />,
-              '__onyx-nationality__',
-              p.nationality ?? '',
-              'Nationality',
-              (v) => ctx?.onUpdate({ personal: { ...data.personal, nationality: v } }),
-            )}
-            {renderSidebarContactRow(
-              hp.dateOfBirth,
-              <CalendarIcon className="mt-0.5 h-3 w-3 shrink-0 text-white" aria-hidden />,
-              '__onyx-dob__',
-              p.dateOfBirth ?? '',
-              'Date of birth',
-              (v) => ctx?.onUpdate({ personal: { ...data.personal, dateOfBirth: v } }),
-            )}
-          </div>
-        </>)}
+                </div>
+              ) : (
+                <RichText text={data.summary.text} className="text-white/95" />
+              )}
+            </div>
+            <div className="mt-3 space-y-1.5 text-[8.5pt] text-white/90">
+              {renderSidebarContactRow(
+                hp.showPhone,
+                <PhoneIcon
+                  className="mt-0.5 h-3 w-3 shrink-0 text-white"
+                  aria-hidden
+                />,
+                '__onyx-phone__',
+                p.phone ?? '',
+                'Phone',
+                (v) =>
+                  ctx?.onUpdate({ personal: { ...data.personal, phone: v } }),
+              )}
+              {renderSidebarContactRow(
+                hp.showEmail,
+                <MailIcon
+                  className="mt-0.5 h-3 w-3 shrink-0 text-white"
+                  aria-hidden
+                />,
+                '__onyx-email__',
+                p.email ?? '',
+                'Email',
+                (v) =>
+                  ctx?.onUpdate({ personal: { ...data.personal, email: v } }),
+              )}
+              {renderSidebarContactRow(
+                hp.showLocation,
+                <MapPinIcon
+                  className="mt-0.5 h-3 w-3 shrink-0 text-white"
+                  aria-hidden
+                />,
+                '__onyx-location__',
+                p.location ?? '',
+                'Location',
+                (v) =>
+                  ctx?.onUpdate({
+                    personal: { ...data.personal, location: v },
+                  }),
+              )}
+              {renderSidebarContactRow(
+                hp.showLinkedIn,
+                <Link2Icon
+                  className="mt-0.5 h-3 w-3 shrink-0 text-white"
+                  aria-hidden
+                />,
+                '__onyx-linkedin__',
+                p.linkedin ?? '',
+                'LinkedIn',
+                (v) =>
+                  ctx?.onUpdate({
+                    personal: { ...data.personal, linkedin: v },
+                  }),
+              )}
+              {renderSidebarContactRow(
+                hp.showGithub,
+                <GitBranchIcon
+                  className="mt-0.5 h-3 w-3 shrink-0 text-white"
+                  aria-hidden
+                />,
+                '__onyx-github__',
+                p.github ?? '',
+                'GitHub',
+                (v) =>
+                  ctx?.onUpdate({ personal: { ...data.personal, github: v } }),
+              )}
+              {renderSidebarContactRow(
+                hp.showWebsiteToggle,
+                <GlobeIcon
+                  className="mt-0.5 h-3 w-3 shrink-0 text-white"
+                  aria-hidden
+                />,
+                '__onyx-website__',
+                p.website ?? '',
+                'Website',
+                (v) =>
+                  ctx?.onUpdate({ personal: { ...data.personal, website: v } }),
+              )}
+              {renderSidebarContactRow(
+                hp.showPortfolioToggle,
+                <GlobeIcon
+                  className="mt-0.5 h-3 w-3 shrink-0 text-white"
+                  aria-hidden
+                />,
+                '__onyx-portfolio__',
+                p.portfolio ?? '',
+                'Portfolio',
+                (v) =>
+                  ctx?.onUpdate({
+                    personal: { ...data.personal, portfolio: v },
+                  }),
+              )}
+              {renderSidebarContactRow(
+                hp.nationality,
+                <FlagIcon
+                  className="mt-0.5 h-3 w-3 shrink-0 text-white"
+                  aria-hidden
+                />,
+                '__onyx-nationality__',
+                p.nationality ?? '',
+                'Nationality',
+                (v) =>
+                  ctx?.onUpdate({
+                    personal: { ...data.personal, nationality: v },
+                  }),
+              )}
+              {renderSidebarContactRow(
+                hp.dateOfBirth,
+                <CalendarIcon
+                  className="mt-0.5 h-3 w-3 shrink-0 text-white"
+                  aria-hidden
+                />,
+                '__onyx-dob__',
+                p.dateOfBirth ?? '',
+                'Date of birth',
+                (v) =>
+                  ctx?.onUpdate({
+                    personal: { ...data.personal, dateOfBirth: v },
+                  }),
+              )}
+            </div>
+          </>,
+        )}
       </CVSectionWrapper>
     ) : null;
 
   const educationEl = vis('education') ? (
     <CVSectionWrapper sectionId="education">
-      {sectionBox('education', 'mb-5', <>
-        {renderSectionTitle('education', 'Education', true, () => ctx?.onUpdate({ education: { items: [] } }))}
-        <div className="space-y-3 text-[9pt] leading-snug text-white/95">
-          {data.education.items.length ? (
-            data.education.items.map((e, eIdx) => {
-              const dates = formatEduRangeEnDash(e.startYear, e.endYear);
-              const degreeLine = eduDegreeLine(e);
-              return (
-                <div
-                  key={e.id}
-                  data-entry-id={e.id}
-                  style={entryFocusStyle(ctx?.focusedEntryId === e.id)}
-                  onClick={(ev) => {
-                    ev.stopPropagation();
-                    ctx?.setFocusedSection('education');
-                    ctx?.setFocusedEntryId(e.id);
-                    ctx?.setFocusedEntrySection('education');
-                  }}
-                >
-                  {inline && ctx?.focusedEntryId === e.id ? (
-                    <EntryToolbar
-                      sectionType="education"
-                      onAddEntry={() =>
-                        ctx.onUpdate({
-                          education: {
-                            items: [
-                              ...data.education.items,
-                              { id: newLocalId(), degree: '', field: '', school: '', startYear: '', endYear: '', grade: '' },
-                            ],
-                          },
-                        })
-                      }
-                      onMoveUp={() => {
-                        if (eIdx === 0) return;
-                        const next = [...data.education.items];
-                        [next[eIdx - 1], next[eIdx]] = [next[eIdx], next[eIdx - 1]];
-                        ctx.onUpdate({ education: { items: next } });
-                      }}
-                      onMoveDown={() => {
-                        if (eIdx >= data.education.items.length - 1) return;
-                        const next = [...data.education.items];
-                        [next[eIdx], next[eIdx + 1]] = [next[eIdx + 1], next[eIdx]];
-                        ctx.onUpdate({ education: { items: next } });
-                      }}
-                      onDelete={() => {
-                        ctx.onUpdate({ education: { items: data.education.items.filter((row) => row.id !== e.id) } });
-                        ctx.setFocusedEntryId(null);
-                        ctx.setFocusedEntrySection(null);
-                      }}
-                      onDatePick={(startDate, endDate) =>
-                        ctx.onUpdate({
-                          education: {
-                            items: data.education.items.map((row) =>
-                              row.id === e.id ? { ...row, startYear: startDate, endYear: endDate } : row,
-                            ),
-                          },
-                        })
-                      }
-                      showMoveUp={eIdx > 0}
-                      showMoveDown={eIdx < data.education.items.length - 1}
-                      dateStart={e.startYear}
-                      dateEnd={e.endYear}
-                      showDatePicker
-                    />
-                  ) : null}
-                  {inline && ctx ? (
-                    <>
-                      <p className="font-bold text-white">
-                        <InlineField
-                          value={e.school}
-                          placeholder="School"
-                          sectionId="education"
-                          entryId={e.id}
-                          onChange={(v) =>
-                            ctx.onUpdate({
-                              education: {
-                                items: data.education.items.map((row) => (row.id === e.id ? { ...row, school: v } : row)),
-                              },
-                            })
-                          }
-                          className="font-bold text-white"
-                          placeholderTone={ONYX_SIDEBAR_PLACEHOLDER_TONE}
-                        />
-                      </p>
-                      <p className="text-white/90">
-                        <InlineField
-                          value={degreeLine}
-                          placeholder="Degree, field"
-                          sectionId="education"
-                          entryId={e.id}
-                          onChange={(v) =>
-                            ctx.onUpdate({
-                              education: {
-                                items: data.education.items.map((row) =>
-                                  row.id === e.id ? { ...row, degree: v, field: '', grade: '' } : row,
-                                ),
-                              },
-                            })
-                          }
-                          className="text-white/90"
-                          placeholderTone={ONYX_SIDEBAR_PLACEHOLDER_TONE}
-                        />
-                      </p>
-                      <p className="text-white/75">
-                        <InlineField
-                          value={dates}
-                          placeholder="Date range"
-                          sectionId="education"
-                          entryId={e.id}
-                          onChange={(v) =>
-                            ctx.onUpdate({
-                              education: {
-                                items: data.education.items.map((row) =>
-                                  row.id === e.id ? { ...row, startYear: v.trim(), endYear: '' } : row,
-                                ),
-                              },
-                            })
-                          }
-                          className="text-white/75"
-                          placeholderTone={ONYX_SIDEBAR_PLACEHOLDER_TONE}
-                        />
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="font-bold text-white">{e.school || 'School'}</p>
-                      {degreeLine ? <p className="text-white/90">{degreeLine}</p> : null}
-                      {dates ? <p className="text-white/75">{dates}</p> : null}
-                    </>
-                  )}
-                </div>
-              );
-            })
-          ) : inline && ctx ? (
-            <button
-              type="button"
-              className="text-xs italic text-white/50 hover:text-[#00C9B1] hover:underline"
-              onClick={() =>
-                ctx.onUpdate({
-                  education: {
-                    items: [{ id: newLocalId(), degree: '', field: '', school: '', startYear: '', endYear: '', grade: '' }],
-                  },
-                })
-              }
-            >
-              + Click to add education
-            </button>
-          ) : (
-            <p className="text-white/60">Add your education in the editor.</p>
+      {sectionBox(
+        'education',
+        'mb-5',
+        <>
+          {renderSectionTitle('education', 'Education', true, () =>
+            ctx?.onUpdate({ education: { items: [] } }),
           )}
-        </div>
-      </>)}
+          <div className="space-y-3 text-[9pt] leading-snug text-white/95">
+            {data.education.items.length ? (
+              data.education.items.map((e, eIdx) => {
+                const dates = formatEduRangeEnDash(e.startYear, e.endYear);
+                const degreeLine = eduDegreeLine(e);
+                return (
+                  <div
+                    key={e.id}
+                    data-entry-id={e.id}
+                    style={entryFocusStyle(ctx?.focusedEntryId === e.id)}
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      ctx?.setFocusedSection('education');
+                      ctx?.setFocusedEntryId(e.id);
+                      ctx?.setFocusedEntrySection('education');
+                    }}
+                  >
+                    {inline && ctx?.focusedEntryId === e.id ? (
+                      <EntryToolbar
+                        sectionType="education"
+                        onAddEntry={() =>
+                          ctx.onUpdate({
+                            education: {
+                              items: [
+                                ...data.education.items,
+                                {
+                                  id: newLocalId(),
+                                  degree: '',
+                                  field: '',
+                                  school: '',
+                                  startYear: '',
+                                  endYear: '',
+                                  grade: '',
+                                },
+                              ],
+                            },
+                          })
+                        }
+                        onMoveUp={() => {
+                          if (eIdx === 0) return;
+                          const next = [...data.education.items];
+                          [next[eIdx - 1], next[eIdx]] = [
+                            next[eIdx],
+                            next[eIdx - 1],
+                          ];
+                          ctx.onUpdate({ education: { items: next } });
+                        }}
+                        onMoveDown={() => {
+                          if (eIdx >= data.education.items.length - 1) return;
+                          const next = [...data.education.items];
+                          [next[eIdx], next[eIdx + 1]] = [
+                            next[eIdx + 1],
+                            next[eIdx],
+                          ];
+                          ctx.onUpdate({ education: { items: next } });
+                        }}
+                        onDelete={() => {
+                          ctx.onUpdate({
+                            education: {
+                              items: data.education.items.filter(
+                                (row) => row.id !== e.id,
+                              ),
+                            },
+                          });
+                          ctx.setFocusedEntryId(null);
+                          ctx.setFocusedEntrySection(null);
+                        }}
+                        onDatePick={(startDate, endDate) =>
+                          ctx.onUpdate({
+                            education: {
+                              items: data.education.items.map((row) =>
+                                row.id === e.id
+                                  ? {
+                                      ...row,
+                                      startYear: startDate,
+                                      endYear: endDate,
+                                    }
+                                  : row,
+                              ),
+                            },
+                          })
+                        }
+                        showMoveUp={eIdx > 0}
+                        showMoveDown={eIdx < data.education.items.length - 1}
+                        dateStart={e.startYear}
+                        dateEnd={e.endYear}
+                        showDatePicker
+                      />
+                    ) : null}
+                    {inline && ctx ? (
+                      <>
+                        <p className="font-bold text-white">
+                          <InlineField
+                            value={e.school}
+                            placeholder="School"
+                            sectionId="education"
+                            entryId={e.id}
+                            onChange={(v) =>
+                              ctx.onUpdate({
+                                education: {
+                                  items: data.education.items.map((row) =>
+                                    row.id === e.id
+                                      ? { ...row, school: v }
+                                      : row,
+                                  ),
+                                },
+                              })
+                            }
+                            className="font-bold text-white"
+                            placeholderTone={ONYX_SIDEBAR_PLACEHOLDER_TONE}
+                          />
+                        </p>
+                        <p className="text-white/90">
+                          <InlineField
+                            value={degreeLine}
+                            placeholder="Degree, field"
+                            sectionId="education"
+                            entryId={e.id}
+                            onChange={(v) =>
+                              ctx.onUpdate({
+                                education: {
+                                  items: data.education.items.map((row) =>
+                                    row.id === e.id
+                                      ? {
+                                          ...row,
+                                          degree: v,
+                                          field: '',
+                                          grade: '',
+                                        }
+                                      : row,
+                                  ),
+                                },
+                              })
+                            }
+                            className="text-white/90"
+                            placeholderTone={ONYX_SIDEBAR_PLACEHOLDER_TONE}
+                          />
+                        </p>
+                        <p className="text-white/75">
+                          <InlineField
+                            value={dates}
+                            placeholder="Date range"
+                            sectionId="education"
+                            entryId={e.id}
+                            onChange={(v) =>
+                              ctx.onUpdate({
+                                education: {
+                                  items: data.education.items.map((row) =>
+                                    row.id === e.id
+                                      ? {
+                                          ...row,
+                                          startYear: v.trim(),
+                                          endYear: '',
+                                        }
+                                      : row,
+                                  ),
+                                },
+                              })
+                            }
+                            className="text-white/75"
+                            placeholderTone={ONYX_SIDEBAR_PLACEHOLDER_TONE}
+                          />
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-bold text-white">
+                          {e.school || 'School'}
+                        </p>
+                        {degreeLine ? (
+                          <p className="text-white/90">{degreeLine}</p>
+                        ) : null}
+                        {dates ? (
+                          <p className="text-white/75">{dates}</p>
+                        ) : null}
+                      </>
+                    )}
+                  </div>
+                );
+              })
+            ) : inline && ctx ? (
+              <button
+                type="button"
+                className="text-xs italic text-white/50 hover:text-[#00C9B1] hover:underline"
+                onClick={() =>
+                  ctx.onUpdate({
+                    education: {
+                      items: [
+                        {
+                          id: newLocalId(),
+                          degree: '',
+                          field: '',
+                          school: '',
+                          startYear: '',
+                          endYear: '',
+                          grade: '',
+                        },
+                      ],
+                    },
+                  })
+                }
+              >
+                + Click to add education
+              </button>
+            ) : (
+              <p className="text-white/60">Add your education in the editor.</p>
+            )}
+          </div>
+        </>,
+      )}
     </CVSectionWrapper>
   ) : null;
 
   const allSkillCats = inline
     ? data.skills.categories
-    : data.skills.categories.filter((c) => c.name.trim() || c.skills.some((s) => s.trim()));
+    : data.skills.categories.filter(
+        (c) => c.name.trim() || c.skills.some((s) => s.trim()),
+      );
   const flatSkills = flattenSkillList(data, inline);
 
   const skillsEl = vis('skills') ? (
     <CVSectionWrapper sectionId="skills">
-      {sectionBox('skills', 'mb-4', <>
-        {renderSectionTitle('skills', 'Skills', true, () => ctx?.onUpdate({ skills: { categories: [] } }))}
-        {inline && ctx ? (
-          <div className="space-y-2">
-            {allSkillCats.length === 0 ? (
-              <button
-                type="button"
-                className="text-xs italic text-white/50 hover:text-[#00C9B1] hover:underline"
-                onClick={() => {
-                  const id = newLocalId();
-                  ctx.onUpdate({ skills: { categories: [{ id, name: '', skills: [''] }] } });
-                  ctx.setFocusedEntryId(id);
-                  ctx.setFocusedSection('skills');
-                  ctx.setFocusedEntrySection('skills');
-                }}
-              >
-                + Click to add skills
-              </button>
-            ) : (
-              allSkillCats.map((cat, catIdx) => (
-                <div
-                  key={cat.id}
-                  data-entry-id={cat.id}
-                  style={entryFocusStyle(ctx.focusedEntryId === cat.id)}
-                  onClick={(e) => {
-                    e.stopPropagation();
+      {sectionBox(
+        'skills',
+        'mb-4',
+        <>
+          {renderSectionTitle('skills', 'Skills', true, () =>
+            ctx?.onUpdate({ skills: { categories: [] } }),
+          )}
+          {inline && ctx ? (
+            <div className="space-y-2">
+              {allSkillCats.length === 0 ? (
+                <button
+                  type="button"
+                  className="text-xs italic text-white/50 hover:text-[#00C9B1] hover:underline"
+                  onClick={() => {
+                    const id = newLocalId();
+                    ctx.onUpdate({
+                      skills: { categories: [{ id, name: '', skills: [''] }] },
+                    });
+                    ctx.setFocusedEntryId(id);
                     ctx.setFocusedSection('skills');
-                    ctx.setFocusedEntryId(cat.id);
                     ctx.setFocusedEntrySection('skills');
                   }}
                 >
-                  {ctx.focusedEntryId === cat.id ? (
-                    <EntryToolbar
-                      sectionType="skills"
-                      onAddEntry={() => {
-                        const id = newLocalId();
-                        ctx.onUpdate({ skills: { categories: [...data.skills.categories, { id, name: '', skills: [''] }] } });
-                        ctx.setFocusedEntryId(id);
-                      }}
-                      onAddSecondaryEntry={() => {
-                        const id = newLocalId();
-                        ctx.onUpdate({
-                          skills: { categories: [...data.skills.categories, { id, name: 'Group Title', skills: [''] }] },
-                        });
-                        ctx.setFocusedEntryId(id);
-                      }}
-                      onMoveUp={() => {
-                        if (catIdx === 0) return;
-                        const next = [...data.skills.categories];
-                        [next[catIdx - 1], next[catIdx]] = [next[catIdx], next[catIdx - 1]];
-                        ctx.onUpdate({ skills: { categories: next } });
-                      }}
-                      onMoveDown={() => {
-                        if (catIdx >= data.skills.categories.length - 1) return;
-                        const next = [...data.skills.categories];
-                        [next[catIdx], next[catIdx + 1]] = [next[catIdx + 1], next[catIdx]];
-                        ctx.onUpdate({ skills: { categories: next } });
-                      }}
-                      onDelete={() => {
-                        ctx.onUpdate({ skills: { categories: data.skills.categories.filter((c) => c.id !== cat.id) } });
-                        ctx.setFocusedEntryId(null);
-                        ctx.setFocusedEntrySection(null);
-                      }}
-                      showMoveUp={catIdx > 0}
-                      showMoveDown={catIdx < data.skills.categories.length - 1}
-                      addEntryLabel="+ Skill"
-                      addSecondaryEntryLabel="+ Group"
-                      showDatePicker={false}
-                    />
-                  ) : null}
-                  <InlineSkillsCommaField
-                    skills={cat.skills}
-                    onChange={(next) =>
-                      ctx.onUpdate({
-                        skills: {
-                          categories: data.skills.categories.map((row) =>
-                            row.id === cat.id ? { ...row, skills: next } : row,
-                          ),
-                        },
-                      })
-                    }
-                    onFocus={() => {
+                  + Click to add skills
+                </button>
+              ) : (
+                allSkillCats.map((cat, catIdx) => (
+                  <div
+                    key={cat.id}
+                    data-entry-id={cat.id}
+                    style={entryFocusStyle(ctx.focusedEntryId === cat.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
                       ctx.setFocusedSection('skills');
                       ctx.setFocusedEntryId(cat.id);
                       ctx.setFocusedEntrySection('skills');
                     }}
-                    className="text-white"
-                    placeholderTone={ONYX_SIDEBAR_PLACEHOLDER_TONE}
-                  />
-                </div>
-              ))
-            )}
-          </div>
-        ) : flatSkills.length ? (
-          <div className="text-[9pt] text-white/95">
-            <SkillsRichComma skills={flatSkills} />
-          </div>
-        ) : (
-          <p className="text-[9pt] text-white/60">Add skills in the editor.</p>
-        )}
-      </>)}
+                  >
+                    {ctx.focusedEntryId === cat.id ? (
+                      <EntryToolbar
+                        sectionType="skills"
+                        onAddEntry={() => {
+                          const id = newLocalId();
+                          ctx.onUpdate({
+                            skills: {
+                              categories: [
+                                ...data.skills.categories,
+                                { id, name: '', skills: [''] },
+                              ],
+                            },
+                          });
+                          ctx.setFocusedEntryId(id);
+                        }}
+                        onAddSecondaryEntry={() => {
+                          const id = newLocalId();
+                          ctx.onUpdate({
+                            skills: {
+                              categories: [
+                                ...data.skills.categories,
+                                { id, name: 'Group Title', skills: [''] },
+                              ],
+                            },
+                          });
+                          ctx.setFocusedEntryId(id);
+                        }}
+                        onMoveUp={() => {
+                          if (catIdx === 0) return;
+                          const next = [...data.skills.categories];
+                          [next[catIdx - 1], next[catIdx]] = [
+                            next[catIdx],
+                            next[catIdx - 1],
+                          ];
+                          ctx.onUpdate({ skills: { categories: next } });
+                        }}
+                        onMoveDown={() => {
+                          if (catIdx >= data.skills.categories.length - 1)
+                            return;
+                          const next = [...data.skills.categories];
+                          [next[catIdx], next[catIdx + 1]] = [
+                            next[catIdx + 1],
+                            next[catIdx],
+                          ];
+                          ctx.onUpdate({ skills: { categories: next } });
+                        }}
+                        onDelete={() => {
+                          ctx.onUpdate({
+                            skills: {
+                              categories: data.skills.categories.filter(
+                                (c) => c.id !== cat.id,
+                              ),
+                            },
+                          });
+                          ctx.setFocusedEntryId(null);
+                          ctx.setFocusedEntrySection(null);
+                        }}
+                        showMoveUp={catIdx > 0}
+                        showMoveDown={
+                          catIdx < data.skills.categories.length - 1
+                        }
+                        addEntryLabel="+ Skill"
+                        addSecondaryEntryLabel="+ Group"
+                        showDatePicker={false}
+                      />
+                    ) : null}
+                    <InlineSkillsCommaField
+                      skills={cat.skills}
+                      onChange={(next) =>
+                        ctx.onUpdate({
+                          skills: {
+                            categories: data.skills.categories.map((row) =>
+                              row.id === cat.id
+                                ? { ...row, skills: next }
+                                : row,
+                            ),
+                          },
+                        })
+                      }
+                      onFocus={() => {
+                        ctx.setFocusedSection('skills');
+                        ctx.setFocusedEntryId(cat.id);
+                        ctx.setFocusedEntrySection('skills');
+                      }}
+                      className="text-white"
+                      placeholderTone={ONYX_SIDEBAR_PLACEHOLDER_TONE}
+                    />
+                  </div>
+                ))
+              )}
+            </div>
+          ) : flatSkills.length ? (
+            <div className="text-[9pt] text-white/95">
+              <SkillsRichComma skills={flatSkills} />
+            </div>
+          ) : (
+            <p className="text-[9pt] text-white/60">
+              Add skills in the editor.
+            </p>
+          )}
+        </>,
+      )}
     </CVSectionWrapper>
   ) : null;
 
@@ -1104,18 +1392,23 @@ export function OnyxCvDocument({
                   placeholder="Your Name"
                   sectionId="personal"
                   entryId="__header-name__"
-                  onChange={(v) => ctx.onUpdate({ personal: { ...data.personal, name: v } })}
+                  onChange={(v) =>
+                    ctx.onUpdate({ personal: { ...data.personal, name: v } })
+                  }
                   className="text-[18pt] uppercase text-[#333]"
                 />
               ) : (
                 <>
-                  {firstParts ? <span className="font-light">{firstParts} </span> : null}
+                  {firstParts ? (
+                    <span className="font-light">{firstParts} </span>
+                  ) : null}
                   <span className="font-bold">{lastPart}</span>
                 </>
               )}
             </h1>
           ) : null}
-          {(inline && ctx && hp.showHeadline) || (!inline && hp.showHeadline && p.headline?.trim()) ? (
+          {(inline && ctx && hp.showHeadline) ||
+          (!inline && hp.showHeadline && p.headline?.trim()) ? (
             <p className="mt-1 text-[10pt] font-normal text-[#333333]">
               {inline && ctx && hp.showHeadline ? (
                 <InlineField
@@ -1123,7 +1416,11 @@ export function OnyxCvDocument({
                   placeholder="Professional title"
                   sectionId="personal"
                   entryId="__header-headline__"
-                  onChange={(v) => ctx.onUpdate({ personal: { ...data.personal, headline: v } })}
+                  onChange={(v) =>
+                    ctx.onUpdate({
+                      personal: { ...data.personal, headline: v },
+                    })
+                  }
                   className="text-[10pt] font-normal text-[#333]"
                 />
               ) : (
@@ -1142,7 +1439,9 @@ export function OnyxCvDocument({
         'experience',
         'mb-5',
         <>
-          {renderSectionTitle('experience', 'Experience', false, () => ctx?.onUpdate({ experience: { items: [] } }))}
+          {renderSectionTitle('experience', 'Experience', false, () =>
+            ctx?.onUpdate({ experience: { items: [] } }),
+          )}
           <div className="space-y-3.5">
             {data.experience.items.length ? (
               data.experience.items.map((x, itemIdx) => (
@@ -1188,8 +1487,16 @@ export function OnyxCvDocument({
                               if (row.id !== x.id) return row;
                               const base = Array.isArray(row.bullets)
                                 ? row.bullets
-                                : normalizeBullets(row.bullets as unknown as string | string[] | undefined);
-                              return { ...row, bullets: [...(base.length ? base : ['']), ''] };
+                                : normalizeBullets(
+                                    row.bullets as unknown as
+                                      | string
+                                      | string[]
+                                      | undefined,
+                                  );
+                              return {
+                                ...row,
+                                bullets: [...(base.length ? base : ['']), ''],
+                              };
                             }),
                           },
                         })
@@ -1197,17 +1504,29 @@ export function OnyxCvDocument({
                       onMoveUp={() => {
                         if (itemIdx === 0) return;
                         const next = [...data.experience.items];
-                        [next[itemIdx - 1], next[itemIdx]] = [next[itemIdx], next[itemIdx - 1]];
+                        [next[itemIdx - 1], next[itemIdx]] = [
+                          next[itemIdx],
+                          next[itemIdx - 1],
+                        ];
                         ctx.onUpdate({ experience: { items: next } });
                       }}
                       onMoveDown={() => {
                         if (itemIdx >= data.experience.items.length - 1) return;
                         const next = [...data.experience.items];
-                        [next[itemIdx], next[itemIdx + 1]] = [next[itemIdx + 1], next[itemIdx]];
+                        [next[itemIdx], next[itemIdx + 1]] = [
+                          next[itemIdx + 1],
+                          next[itemIdx],
+                        ];
                         ctx.onUpdate({ experience: { items: next } });
                       }}
                       onDelete={() => {
-                        ctx.onUpdate({ experience: { items: data.experience.items.filter((row) => row.id !== x.id) } });
+                        ctx.onUpdate({
+                          experience: {
+                            items: data.experience.items.filter(
+                              (row) => row.id !== x.id,
+                            ),
+                          },
+                        });
                         ctx.setFocusedEntryId(null);
                         ctx.setFocusedEntrySection(null);
                       }}
@@ -1215,7 +1534,9 @@ export function OnyxCvDocument({
                         ctx.onUpdate({
                           experience: {
                             items: data.experience.items.map((row) =>
-                              row.id === x.id ? { ...row, startDate, endDate } : row,
+                              row.id === x.id
+                                ? { ...row, startDate, endDate }
+                                : row,
                             ),
                           },
                         })
@@ -1227,10 +1548,52 @@ export function OnyxCvDocument({
                       dateEnd={x.endDate}
                       showDatePicker
                       settingsOptions={[
-                        { key: 'title', label: 'Title', enabled: entryFieldOn(`experience:${x.id}`, 'title'), onToggle: (next) => setEntryFieldOn(`experience:${x.id}`, 'title', next) },
-                        { key: 'company', label: 'Company', enabled: entryFieldOn(`experience:${x.id}`, 'company'), onToggle: (next) => setEntryFieldOn(`experience:${x.id}`, 'company', next) },
-                        { key: 'date', label: 'Date', enabled: entryFieldOn(`experience:${x.id}`, 'date'), onToggle: (next) => setEntryFieldOn(`experience:${x.id}`, 'date', next) },
-                        { key: 'bullets', label: 'Bullets', enabled: entryFieldOn(`experience:${x.id}`, 'bullets'), onToggle: (next) => setEntryFieldOn(`experience:${x.id}`, 'bullets', next) },
+                        {
+                          key: 'title',
+                          label: 'Title',
+                          enabled: entryFieldOn(`experience:${x.id}`, 'title'),
+                          onToggle: (next) =>
+                            setEntryFieldOn(
+                              `experience:${x.id}`,
+                              'title',
+                              next,
+                            ),
+                        },
+                        {
+                          key: 'company',
+                          label: 'Company',
+                          enabled: entryFieldOn(
+                            `experience:${x.id}`,
+                            'company',
+                          ),
+                          onToggle: (next) =>
+                            setEntryFieldOn(
+                              `experience:${x.id}`,
+                              'company',
+                              next,
+                            ),
+                        },
+                        {
+                          key: 'date',
+                          label: 'Date',
+                          enabled: entryFieldOn(`experience:${x.id}`, 'date'),
+                          onToggle: (next) =>
+                            setEntryFieldOn(`experience:${x.id}`, 'date', next),
+                        },
+                        {
+                          key: 'bullets',
+                          label: 'Bullets',
+                          enabled: entryFieldOn(
+                            `experience:${x.id}`,
+                            'bullets',
+                          ),
+                          onToggle: (next) =>
+                            setEntryFieldOn(
+                              `experience:${x.id}`,
+                              'bullets',
+                              next,
+                            ),
+                        },
                       ]}
                     />
                   ) : null}
@@ -1238,7 +1601,10 @@ export function OnyxCvDocument({
                     <>
                       <div className="flex justify-between gap-3">
                         {entryFieldOn(`experience:${x.id}`, 'title') ? (
-                          <span className="min-w-0 font-bold" style={{ color: ONYX_TEXT }}>
+                          <span
+                            className="min-w-0 font-bold"
+                            style={{ color: ONYX_TEXT }}
+                          >
                             <InlineField
                               value={x.title}
                               placeholder="Job title"
@@ -1247,7 +1613,11 @@ export function OnyxCvDocument({
                               onChange={(v) =>
                                 ctx.onUpdate({
                                   experience: {
-                                    items: data.experience.items.map((row) => (row.id === x.id ? { ...row, title: v } : row)),
+                                    items: data.experience.items.map((row) =>
+                                      row.id === x.id
+                                        ? { ...row, title: v }
+                                        : row,
+                                    ),
                                   },
                                 })
                               }
@@ -1258,9 +1628,16 @@ export function OnyxCvDocument({
                           <span />
                         )}
                         {entryFieldOn(`experience:${x.id}`, 'date') ? (
-                          <span className="shrink-0 italic" style={{ color: ONYX_TEXT }}>
+                          <span
+                            className="shrink-0 italic"
+                            style={{ color: ONYX_TEXT }}
+                          >
                             <InlineField
-                              value={formatCvPeriodEnDash(x.startDate, x.endDate, x.current)}
+                              value={formatCvPeriodEnDash(
+                                x.startDate,
+                                x.endDate,
+                                x.current,
+                              )}
                               placeholder="Dates"
                               sectionId="experience"
                               entryId={x.id}
@@ -1268,7 +1645,14 @@ export function OnyxCvDocument({
                                 ctx.onUpdate({
                                   experience: {
                                     items: data.experience.items.map((row) =>
-                                      row.id === x.id ? { ...row, startDate: v.trim(), endDate: '', current: false } : row,
+                                      row.id === x.id
+                                        ? {
+                                            ...row,
+                                            startDate: v.trim(),
+                                            endDate: '',
+                                            current: false,
+                                          }
+                                        : row,
                                     ),
                                   },
                                 })
@@ -1288,7 +1672,11 @@ export function OnyxCvDocument({
                             onChange={(v) =>
                               ctx.onUpdate({
                                 experience: {
-                                  items: data.experience.items.map((row) => (row.id === x.id ? { ...row, company: v } : row)),
+                                  items: data.experience.items.map((row) =>
+                                    row.id === x.id
+                                      ? { ...row, company: v }
+                                      : row,
+                                  ),
                                 },
                               })
                             }
@@ -1297,14 +1685,33 @@ export function OnyxCvDocument({
                         </p>
                       ) : null}
                       {entryFieldOn(`experience:${x.id}`, 'bullets') ? (
-                        <ul className={cn(ONYX_BULLET_LIST, 'marker:text-[#333333]')}>
+                        <ul
+                          className={cn(
+                            ONYX_BULLET_LIST,
+                            'marker:text-[#333333]',
+                          )}
+                        >
                           {(Array.isArray(x.bullets) && x.bullets.length > 0
                             ? x.bullets
-                            : normalizeBullets(x.bullets as unknown as string | string[] | undefined).length
-                              ? normalizeBullets(x.bullets as unknown as string | string[] | undefined)
+                            : normalizeBullets(
+                                  x.bullets as unknown as
+                                    | string
+                                    | string[]
+                                    | undefined,
+                                ).length
+                              ? normalizeBullets(
+                                  x.bullets as unknown as
+                                    | string
+                                    | string[]
+                                    | undefined,
+                                )
                               : ['']
                           ).map((bullet, bulletIdx) => (
-                            <li key={`${x.id}-b-${bulletIdx}`} className="group/bullet" style={{ color: ONYX_TEXT }}>
+                            <li
+                              key={`${x.id}-b-${bulletIdx}`}
+                              className="group/bullet"
+                              style={{ color: ONYX_TEXT }}
+                            >
                               <InlineField
                                 value={bullet}
                                 layout="block"
@@ -1316,13 +1723,23 @@ export function OnyxCvDocument({
                                 onChange={(v) => {
                                   const base = Array.isArray(x.bullets)
                                     ? x.bullets
-                                    : normalizeBullets(x.bullets as unknown as string | string[] | undefined);
-                                  const nextBullets = [...(base.length ? base : [''])];
-                                  nextBullets[bulletIdx] = normalizeBulletInput(v);
+                                    : normalizeBullets(
+                                        x.bullets as unknown as
+                                          | string
+                                          | string[]
+                                          | undefined,
+                                      );
+                                  const nextBullets = [
+                                    ...(base.length ? base : ['']),
+                                  ];
+                                  nextBullets[bulletIdx] =
+                                    normalizeBulletInput(v);
                                   ctx.onUpdate({
                                     experience: {
                                       items: data.experience.items.map((row) =>
-                                        row.id === x.id ? { ...row, bullets: nextBullets } : row,
+                                        row.id === x.id
+                                          ? { ...row, bullets: nextBullets }
+                                          : row,
                                       ),
                                     },
                                   });
@@ -1332,13 +1749,23 @@ export function OnyxCvDocument({
                                     e.preventDefault();
                                     const base = Array.isArray(x.bullets)
                                       ? x.bullets
-                                      : normalizeBullets(x.bullets as unknown as string | string[] | undefined);
-                                    const nextBullets = [...(base.length ? base : [''])];
+                                      : normalizeBullets(
+                                          x.bullets as unknown as
+                                            | string
+                                            | string[]
+                                            | undefined,
+                                        );
+                                    const nextBullets = [
+                                      ...(base.length ? base : ['']),
+                                    ];
                                     nextBullets.splice(bulletIdx + 1, 0, '');
                                     ctx.onUpdate({
                                       experience: {
-                                        items: data.experience.items.map((row) =>
-                                          row.id === x.id ? { ...row, bullets: nextBullets } : row,
+                                        items: data.experience.items.map(
+                                          (row) =>
+                                            row.id === x.id
+                                              ? { ...row, bullets: nextBullets }
+                                              : row,
                                         ),
                                       },
                                     });
@@ -1346,15 +1773,30 @@ export function OnyxCvDocument({
                                   if (e.key === 'Backspace') {
                                     const base = Array.isArray(x.bullets)
                                       ? x.bullets
-                                      : normalizeBullets(x.bullets as unknown as string | string[] | undefined);
-                                    if (cvBulletFieldDomIsEmpty(e) && base.length > 1) {
+                                      : normalizeBullets(
+                                          x.bullets as unknown as
+                                            | string
+                                            | string[]
+                                            | undefined,
+                                        );
+                                    if (
+                                      cvBulletFieldDomIsEmpty(e) &&
+                                      base.length > 1
+                                    ) {
                                       e.preventDefault();
                                       ctx.onUpdate({
                                         experience: {
-                                          items: data.experience.items.map((row) =>
-                                            row.id === x.id
-                                              ? { ...row, bullets: base.filter((_, bi) => bi !== bulletIdx) }
-                                              : row,
+                                          items: data.experience.items.map(
+                                            (row) =>
+                                              row.id === x.id
+                                                ? {
+                                                    ...row,
+                                                    bullets: base.filter(
+                                                      (_, bi) =>
+                                                        bi !== bulletIdx,
+                                                    ),
+                                                  }
+                                                : row,
                                           ),
                                         },
                                       });
@@ -1371,11 +1813,21 @@ export function OnyxCvDocument({
                   ) : (
                     <>
                       <div className="flex justify-between gap-3">
-                        <span className="min-w-0 font-bold" style={{ color: ONYX_TEXT }}>
+                        <span
+                          className="min-w-0 font-bold"
+                          style={{ color: ONYX_TEXT }}
+                        >
                           {x.title || 'Job title'}
                         </span>
-                        <span className="shrink-0 italic" style={{ color: ONYX_TEXT }}>
-                          {formatCvPeriodEnDash(x.startDate, x.endDate, x.current)}
+                        <span
+                          className="shrink-0 italic"
+                          style={{ color: ONYX_TEXT }}
+                        >
+                          {formatCvPeriodEnDash(
+                            x.startDate,
+                            x.endDate,
+                            x.current,
+                          )}
                         </span>
                       </div>
                       {x.company?.trim() ? (
@@ -1384,7 +1836,9 @@ export function OnyxCvDocument({
                         </p>
                       ) : null}
                       <OnyxBulletList
-                        items={onyxBulletLines(x.bullets as unknown as string | string[] | undefined)}
+                        items={onyxBulletLines(
+                          x.bullets as unknown as string | string[] | undefined,
+                        )}
                       />
                     </>
                   )}
@@ -1431,28 +1885,57 @@ export function OnyxCvDocument({
     optionalSectionShown(
       optionalSectionPresence,
       'references',
-      filterCvBuilderReferences(data.references).length > 0 || Boolean(inline && ctx),
+      filterCvBuilderReferences(data.references).length > 0 ||
+        Boolean(inline && ctx),
     ) && vis('references') ? (
       <CVSectionWrapper sectionId="references">
-        {sectionBox('references', 'mb-5', <>
-          {renderSectionTitle('references', 'References', false, () => ctx?.onUpdate({ references: [] }))}
-          <CvEditableReferencesList references={data.references} layout="onyx-grid" />
-        </>)}
+        {sectionBox(
+          'references',
+          'mb-5',
+          <>
+            {renderSectionTitle('references', 'References', false, () =>
+              ctx?.onUpdate({ references: [] }),
+            )}
+            <CvEditableReferencesList
+              references={data.references}
+              layout="onyx-grid"
+            />
+          </>,
+        )}
       </CVSectionWrapper>
     ) : null;
 
   const renderOptionalMainSection = (sectionId: string): ReactNode => {
     if (sectionId === 'projects') {
-      if (!optionalSectionShown(optionalSectionPresence, 'projects', data.projects.length > 0) || !vis('projects')) {
+      if (
+        !optionalSectionShown(
+          optionalSectionPresence,
+          'projects',
+          data.projects.length > 0,
+        ) ||
+        !vis('projects')
+      ) {
         return null;
       }
       return (
         <CVSectionWrapper key={sectionId} sectionId="projects">
-          {sectionBox('projects', 'mb-5', <>
-            {renderSectionTitle('projects', 'Projects', false, () => ctx?.onUpdate({ projects: [] }))}
-            <div className="space-y-2 text-[9pt]" style={{ color: ONYX_TEXT }}>
-              {(inline && ctx ? data.projects : data.projects.filter((pr) => pr.name.trim() || pr.description.trim())).map(
-                (pr, prIdx) => (
+          {sectionBox(
+            'projects',
+            'mb-5',
+            <>
+              {renderSectionTitle('projects', 'Projects', false, () =>
+                ctx?.onUpdate({ projects: [] }),
+              )}
+              <div
+                className="space-y-2 text-[9pt]"
+                style={{ color: ONYX_TEXT }}
+              >
+                {(inline && ctx
+                  ? data.projects
+                  : data.projects.filter(
+                      (pr) => pr.name.trim() || pr.description.trim(),
+                    )
+                ).map((pr, prIdx) => (
                   <div
                     key={pr.id}
                     data-entry-id={pr.id}
@@ -1471,24 +1954,41 @@ export function OnyxCvDocument({
                           ctx.onUpdate({
                             projects: [
                               ...data.projects,
-                              { id: newLocalId(), name: '', description: '', url: '', technologies: [], bullets: '' },
+                              {
+                                id: newLocalId(),
+                                name: '',
+                                description: '',
+                                url: '',
+                                technologies: [],
+                                bullets: '',
+                              },
                             ],
                           })
                         }
                         onMoveUp={() => {
                           if (prIdx === 0) return;
                           const next = [...data.projects];
-                          [next[prIdx - 1], next[prIdx]] = [next[prIdx], next[prIdx - 1]];
+                          [next[prIdx - 1], next[prIdx]] = [
+                            next[prIdx],
+                            next[prIdx - 1],
+                          ];
                           ctx.onUpdate({ projects: next });
                         }}
                         onMoveDown={() => {
                           if (prIdx >= data.projects.length - 1) return;
                           const next = [...data.projects];
-                          [next[prIdx], next[prIdx + 1]] = [next[prIdx + 1], next[prIdx]];
+                          [next[prIdx], next[prIdx + 1]] = [
+                            next[prIdx + 1],
+                            next[prIdx],
+                          ];
                           ctx.onUpdate({ projects: next });
                         }}
                         onDelete={() => {
-                          ctx.onUpdate({ projects: data.projects.filter((row) => row.id !== pr.id) });
+                          ctx.onUpdate({
+                            projects: data.projects.filter(
+                              (row) => row.id !== pr.id,
+                            ),
+                          });
                           ctx.setFocusedEntryId(null);
                           ctx.setFocusedEntrySection(null);
                         }}
@@ -1498,7 +1998,10 @@ export function OnyxCvDocument({
                               if (row.id !== pr.id) return row;
                               const base = onyxProjectLines(row);
                               const bullets = base.length ? base : [''];
-                              return { ...row, bullets: [...bullets, ''].join('\n') };
+                              return {
+                                ...row,
+                                bullets: [...bullets, ''].join('\n'),
+                              };
                             }),
                           })
                         }
@@ -1517,7 +2020,9 @@ export function OnyxCvDocument({
                           entryId={pr.id}
                           onChange={(v) =>
                             ctx.onUpdate({
-                              projects: data.projects.map((row) => (row.id === pr.id ? { ...row, name: v } : row)),
+                              projects: data.projects.map((row) =>
+                                row.id === pr.id ? { ...row, name: v } : row,
+                              ),
                             })
                           }
                           className="font-bold text-[#333]"
@@ -1536,7 +2041,11 @@ export function OnyxCvDocument({
                         entryId={pr.id}
                         onChange={(v) =>
                           ctx.onUpdate({
-                            projects: data.projects.map((row) => (row.id === pr.id ? { ...row, description: v } : row)),
+                            projects: data.projects.map((row) =>
+                              row.id === pr.id
+                                ? { ...row, description: v }
+                                : row,
+                            ),
                           })
                         }
                         className="text-[9pt] leading-relaxed text-[#333]"
@@ -1545,398 +2054,548 @@ export function OnyxCvDocument({
                       <OnyxBulletList items={onyxProjectLines(pr)} />
                     )}
                   </div>
-                ),
-              )}
-            </div>
-          </>)}
+                ))}
+              </div>
+            </>,
+          )}
         </CVSectionWrapper>
       );
     }
 
     if (sectionId === 'certifications') {
       if (
-        !optionalSectionShown(optionalSectionPresence, 'certifications', data.certifications.length > 0) ||
+        !optionalSectionShown(
+          optionalSectionPresence,
+          'certifications',
+          data.certifications.length > 0,
+        ) ||
         !vis('certifications')
       ) {
         return null;
       }
       return (
         <CVSectionWrapper key={sectionId} sectionId="certifications">
-          {sectionBox('certifications', 'mb-5', <>
-            {renderSectionTitle('certifications', 'Certifications', false, () => ctx?.onUpdate({ certifications: [] }))}
-            <div className="space-y-2 text-[9pt]" style={{ color: ONYX_TEXT }}>
-              {(inline && ctx
-                ? data.certifications
-                : data.certifications.filter((c) => c.name.trim() || c.issuer.trim())
-              ).map((c, cIdx) => (
-                <div
-                  key={c.id}
-                  data-entry-id={c.id}
-                  style={entryFocusStyle(ctx?.focusedEntryId === c.id)}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    ctx?.setFocusedSection('certifications');
-                    ctx?.setFocusedEntryId(c.id);
-                    ctx?.setFocusedEntrySection('certifications');
-                  }}
-                >
-                  {inline && ctx?.focusedEntryId === c.id ? (
-                    <EntryToolbar
-                      sectionType="certifications"
-                      onAddEntry={() =>
-                        ctx.onUpdate({
-                          certifications: [
-                            ...data.certifications,
-                            { id: newLocalId(), name: '', issuer: '', date: '', url: '' },
-                          ],
-                        })
-                      }
-                      onMoveUp={() => {
-                        if (cIdx === 0) return;
-                        const next = [...data.certifications];
-                        [next[cIdx - 1], next[cIdx]] = [next[cIdx], next[cIdx - 1]];
-                        ctx.onUpdate({ certifications: next });
-                      }}
-                      onMoveDown={() => {
-                        if (cIdx >= data.certifications.length - 1) return;
-                        const next = [...data.certifications];
-                        [next[cIdx], next[cIdx + 1]] = [next[cIdx + 1], next[cIdx]];
-                        ctx.onUpdate({ certifications: next });
-                      }}
-                      onDelete={() => {
-                        ctx.onUpdate({ certifications: data.certifications.filter((row) => row.id !== c.id) });
-                        ctx.setFocusedEntryId(null);
-                        ctx.setFocusedEntrySection(null);
-                      }}
-                      showMoveUp={cIdx > 0}
-                      showMoveDown={cIdx < data.certifications.length - 1}
-                      showDatePicker={false}
-                    />
-                  ) : null}
-                  <p className="font-bold">
-                    {inline && ctx ? (
-                      <InlineField
-                        value={c.name}
-                        placeholder="Certification"
-                        sectionId="certifications"
-                        entryId={c.id}
-                        onChange={(v) =>
+          {sectionBox(
+            'certifications',
+            'mb-5',
+            <>
+              {renderSectionTitle(
+                'certifications',
+                'Certifications',
+                false,
+                () => ctx?.onUpdate({ certifications: [] }),
+              )}
+              <div
+                className="space-y-2 text-[9pt]"
+                style={{ color: ONYX_TEXT }}
+              >
+                {(inline && ctx
+                  ? data.certifications
+                  : data.certifications.filter(
+                      (c) => c.name.trim() || c.issuer.trim(),
+                    )
+                ).map((c, cIdx) => (
+                  <div
+                    key={c.id}
+                    data-entry-id={c.id}
+                    style={entryFocusStyle(ctx?.focusedEntryId === c.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      ctx?.setFocusedSection('certifications');
+                      ctx?.setFocusedEntryId(c.id);
+                      ctx?.setFocusedEntrySection('certifications');
+                    }}
+                  >
+                    {inline && ctx?.focusedEntryId === c.id ? (
+                      <EntryToolbar
+                        sectionType="certifications"
+                        onAddEntry={() =>
                           ctx.onUpdate({
-                            certifications: data.certifications.map((row) => (row.id === c.id ? { ...row, name: v } : row)),
+                            certifications: [
+                              ...data.certifications,
+                              {
+                                id: newLocalId(),
+                                name: '',
+                                issuer: '',
+                                date: '',
+                                url: '',
+                              },
+                            ],
                           })
                         }
-                        className="font-bold text-[#333]"
-                      />
-                    ) : (
-                      c.name.trim() || 'Certification'
-                    )}
-                    {!inline && c.issuer.trim() ? <span> · {c.issuer.trim()}</span> : null}
-                    {!inline && c.date.trim() ? <span> · {c.date.trim()}</span> : null}
-                  </p>
-                  {inline && ctx ? (
-                    <p>
-                      <InlineField
-                        value={c.issuer}
-                        placeholder="Issuer"
-                        sectionId="certifications"
-                        entryId={c.id}
-                        onChange={(v) =>
+                        onMoveUp={() => {
+                          if (cIdx === 0) return;
+                          const next = [...data.certifications];
+                          [next[cIdx - 1], next[cIdx]] = [
+                            next[cIdx],
+                            next[cIdx - 1],
+                          ];
+                          ctx.onUpdate({ certifications: next });
+                        }}
+                        onMoveDown={() => {
+                          if (cIdx >= data.certifications.length - 1) return;
+                          const next = [...data.certifications];
+                          [next[cIdx], next[cIdx + 1]] = [
+                            next[cIdx + 1],
+                            next[cIdx],
+                          ];
+                          ctx.onUpdate({ certifications: next });
+                        }}
+                        onDelete={() => {
                           ctx.onUpdate({
-                            certifications: data.certifications.map((row) => (row.id === c.id ? { ...row, issuer: v } : row)),
-                          })
-                        }
-                        className="text-[#333]"
-                      />
-                      {' · '}
-                      <InlineField
-                        value={c.date}
-                        placeholder="Date"
-                        sectionId="certifications"
-                        entryId={c.id}
-                        onChange={(v) =>
-                          ctx.onUpdate({
-                            certifications: data.certifications.map((row) => (row.id === c.id ? { ...row, date: v } : row)),
-                          })
-                        }
-                        className="text-[#333]"
-                      />
-                    </p>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          </>)}
-        </CVSectionWrapper>
-      );
-    }
-
-    if (sectionId === 'languages') {
-      if (!optionalSectionShown(optionalSectionPresence, 'languages', data.languages.length > 0) || !vis('languages')) {
-        return null;
-      }
-      return (
-        <CVSectionWrapper key={sectionId} sectionId="languages">
-          {sectionBox('languages', 'mb-5', <>
-            {renderSectionTitle('languages', 'Languages', false, () => ctx?.onUpdate({ languages: [] }))}
-            <ul className="space-y-1 text-[9pt]" style={{ color: ONYX_TEXT }}>
-              {data.languages.map((l, lIdx) => (
-                <li
-                  key={l.id}
-                  data-entry-id={l.id}
-                  style={entryFocusStyle(ctx?.focusedEntryId === l.id)}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    ctx?.setFocusedSection('languages');
-                    ctx?.setFocusedEntryId(l.id);
-                    ctx?.setFocusedEntrySection('languages');
-                  }}
-                >
-                  {inline && ctx?.focusedEntryId === l.id ? (
-                    <EntryToolbar
-                      sectionType="languages"
-                      onAddEntry={() =>
-                        ctx.onUpdate({
-                          languages: [...data.languages, { id: newLocalId(), language: '', proficiency: '' }],
-                        })
-                      }
-                      onMoveUp={() => {
-                        if (lIdx === 0) return;
-                        const next = [...data.languages];
-                        [next[lIdx - 1], next[lIdx]] = [next[lIdx], next[lIdx - 1]];
-                        ctx.onUpdate({ languages: next });
-                      }}
-                      onMoveDown={() => {
-                        if (lIdx >= data.languages.length - 1) return;
-                        const next = [...data.languages];
-                        [next[lIdx], next[lIdx + 1]] = [next[lIdx + 1], next[lIdx]];
-                        ctx.onUpdate({ languages: next });
-                      }}
-                      onDelete={() => {
-                        ctx.onUpdate({ languages: data.languages.filter((row) => row.id !== l.id) });
-                        ctx.setFocusedEntryId(null);
-                        ctx.setFocusedEntrySection(null);
-                      }}
-                      showMoveUp={lIdx > 0}
-                      showMoveDown={lIdx < data.languages.length - 1}
-                      showDatePicker={false}
-                    />
-                  ) : null}
-                  {inline && ctx ? (
-                    <>
-                      <InlineField
-                        value={l.language}
-                        placeholder="Language"
-                        sectionId="languages"
-                        entryId={l.id}
-                        onChange={(v) =>
-                          ctx.onUpdate({
-                            languages: data.languages.map((row) => (row.id === l.id ? { ...row, language: v } : row)),
-                          })
-                        }
-                        className="font-semibold text-[#333]"
-                      />
-                      {' — '}
-                      <InlineField
-                        value={l.proficiency ?? ''}
-                        placeholder="e.g. Fluent, Intermediate"
-                        sectionId="languages"
-                        entryId={l.id}
-                        onChange={(v) =>
-                          ctx.onUpdate({
-                            languages: data.languages.map((row) =>
-                              row.id === l.id ? { ...row, proficiency: v as CVBuilderLanguage['proficiency'] } : row,
+                            certifications: data.certifications.filter(
+                              (row) => row.id !== c.id,
                             ),
-                          })
-                        }
-                        className="text-[#333]"
+                          });
+                          ctx.setFocusedEntryId(null);
+                          ctx.setFocusedEntrySection(null);
+                        }}
+                        showMoveUp={cIdx > 0}
+                        showMoveDown={cIdx < data.certifications.length - 1}
+                        showDatePicker={false}
                       />
-                    </>
-                  ) : (
-                    <>
-                      <span className="font-semibold">{l.language.trim() || 'Language'}</span>
-                      {l.proficiency?.trim() ? <span> — {l.proficiency.trim()}</span> : null}
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </>)}
-        </CVSectionWrapper>
-      );
-    }
-
-    if (sectionId === 'achievements') {
-      if (
-        !optionalSectionShown(optionalSectionPresence, 'achievements', data.achievements.length > 0) ||
-        !vis('achievements')
-      ) {
-        return null;
-      }
-      return (
-        <CVSectionWrapper key={sectionId} sectionId="achievements">
-          {sectionBox('achievements', 'mb-5', <>
-            {renderSectionTitle('achievements', 'Achievements', false, () => ctx?.onUpdate({ achievements: [] }))}
-            <div className="space-y-2 text-[9pt]" style={{ color: ONYX_TEXT }}>
-              {data.achievements.map((a, aIdx) => (
-                <div
-                  key={a.id}
-                  data-entry-id={a.id}
-                  style={entryFocusStyle(ctx?.focusedEntryId === a.id)}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    ctx?.setFocusedSection('achievements');
-                    ctx?.setFocusedEntryId(a.id);
-                    ctx?.setFocusedEntrySection('achievements');
-                  }}
-                >
-                  {inline && ctx?.focusedEntryId === a.id ? (
-                    <EntryToolbar
-                      sectionType="achievements"
-                      onAddEntry={() =>
-                        ctx.onUpdate({
-                          achievements: [...data.achievements, { id: newLocalId(), title: '', issuer: '', date: '', detail: '' }],
-                        })
-                      }
-                      onMoveUp={() => {
-                        if (aIdx === 0) return;
-                        const next = [...data.achievements];
-                        [next[aIdx - 1], next[aIdx]] = [next[aIdx], next[aIdx - 1]];
-                        ctx.onUpdate({ achievements: next });
-                      }}
-                      onMoveDown={() => {
-                        if (aIdx >= data.achievements.length - 1) return;
-                        const next = [...data.achievements];
-                        [next[aIdx], next[aIdx + 1]] = [next[aIdx + 1], next[aIdx]];
-                        ctx.onUpdate({ achievements: next });
-                      }}
-                      onDelete={() => {
-                        ctx.onUpdate({ achievements: data.achievements.filter((row) => row.id !== a.id) });
-                        ctx.setFocusedEntryId(null);
-                        ctx.setFocusedEntrySection(null);
-                      }}
-                      onDatePick={(startDate) =>
-                        ctx.onUpdate({
-                          achievements: data.achievements.map((row) =>
-                            row.id === a.id ? { ...row, date: startDate } : row,
-                          ),
-                        })
-                      }
-                      dateMode="single"
-                      dateStart={a.date}
-                      dateEnd=""
-                      showMoveUp={aIdx > 0}
-                      showMoveDown={aIdx < data.achievements.length - 1}
-                      showDatePicker
-                    />
-                  ) : null}
-                  <div className="flex flex-wrap justify-between gap-2">
-                    <p className="min-w-0 font-bold">
+                    ) : null}
+                    <p className="font-bold">
                       {inline && ctx ? (
                         <InlineField
-                          value={a.title}
-                          placeholder="Achievement"
-                          sectionId="achievements"
-                          entryId={a.id}
+                          value={c.name}
+                          placeholder="Certification"
+                          sectionId="certifications"
+                          entryId={c.id}
                           onChange={(v) =>
                             ctx.onUpdate({
-                              achievements: data.achievements.map((row) =>
-                                row.id === a.id ? { ...row, title: v } : row,
+                              certifications: data.certifications.map((row) =>
+                                row.id === c.id ? { ...row, name: v } : row,
                               ),
                             })
                           }
                           className="font-bold text-[#333]"
                         />
                       ) : (
-                        a.title.trim() || 'Achievement'
+                        c.name.trim() || 'Certification'
                       )}
+                      {!inline && c.issuer.trim() ? (
+                        <span> · {c.issuer.trim()}</span>
+                      ) : null}
+                      {!inline && c.date.trim() ? (
+                        <span> · {c.date.trim()}</span>
+                      ) : null}
                     </p>
                     {inline && ctx ? (
+                      <p>
+                        <InlineField
+                          value={c.issuer}
+                          placeholder="Issuer"
+                          sectionId="certifications"
+                          entryId={c.id}
+                          onChange={(v) =>
+                            ctx.onUpdate({
+                              certifications: data.certifications.map((row) =>
+                                row.id === c.id ? { ...row, issuer: v } : row,
+                              ),
+                            })
+                          }
+                          className="text-[#333]"
+                        />
+                        {' · '}
+                        <InlineField
+                          value={c.date}
+                          placeholder="Date"
+                          sectionId="certifications"
+                          entryId={c.id}
+                          onChange={(v) =>
+                            ctx.onUpdate({
+                              certifications: data.certifications.map((row) =>
+                                row.id === c.id ? { ...row, date: v } : row,
+                              ),
+                            })
+                          }
+                          className="text-[#333]"
+                        />
+                      </p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </>,
+          )}
+        </CVSectionWrapper>
+      );
+    }
+
+    if (sectionId === 'languages') {
+      if (
+        !optionalSectionShown(
+          optionalSectionPresence,
+          'languages',
+          data.languages.length > 0,
+        ) ||
+        !vis('languages')
+      ) {
+        return null;
+      }
+      return (
+        <CVSectionWrapper key={sectionId} sectionId="languages">
+          {sectionBox(
+            'languages',
+            'mb-5',
+            <>
+              {renderSectionTitle('languages', 'Languages', false, () =>
+                ctx?.onUpdate({ languages: [] }),
+              )}
+              <ul className="space-y-1 text-[9pt]" style={{ color: ONYX_TEXT }}>
+                {data.languages.map((l, lIdx) => (
+                  <li
+                    key={l.id}
+                    data-entry-id={l.id}
+                    style={entryFocusStyle(ctx?.focusedEntryId === l.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      ctx?.setFocusedSection('languages');
+                      ctx?.setFocusedEntryId(l.id);
+                      ctx?.setFocusedEntrySection('languages');
+                    }}
+                  >
+                    {inline && ctx?.focusedEntryId === l.id ? (
+                      <EntryToolbar
+                        sectionType="languages"
+                        onAddEntry={() =>
+                          ctx.onUpdate({
+                            languages: [
+                              ...data.languages,
+                              {
+                                id: newLocalId(),
+                                language: '',
+                                proficiency: '',
+                              },
+                            ],
+                          })
+                        }
+                        onMoveUp={() => {
+                          if (lIdx === 0) return;
+                          const next = [...data.languages];
+                          [next[lIdx - 1], next[lIdx]] = [
+                            next[lIdx],
+                            next[lIdx - 1],
+                          ];
+                          ctx.onUpdate({ languages: next });
+                        }}
+                        onMoveDown={() => {
+                          if (lIdx >= data.languages.length - 1) return;
+                          const next = [...data.languages];
+                          [next[lIdx], next[lIdx + 1]] = [
+                            next[lIdx + 1],
+                            next[lIdx],
+                          ];
+                          ctx.onUpdate({ languages: next });
+                        }}
+                        onDelete={() => {
+                          ctx.onUpdate({
+                            languages: data.languages.filter(
+                              (row) => row.id !== l.id,
+                            ),
+                          });
+                          ctx.setFocusedEntryId(null);
+                          ctx.setFocusedEntrySection(null);
+                        }}
+                        showMoveUp={lIdx > 0}
+                        showMoveDown={lIdx < data.languages.length - 1}
+                        showDatePicker={false}
+                      />
+                    ) : null}
+                    {inline && ctx ? (
+                      <>
+                        <InlineField
+                          value={l.language}
+                          placeholder="Language"
+                          sectionId="languages"
+                          entryId={l.id}
+                          onChange={(v) =>
+                            ctx.onUpdate({
+                              languages: data.languages.map((row) =>
+                                row.id === l.id ? { ...row, language: v } : row,
+                              ),
+                            })
+                          }
+                          className="font-semibold text-[#333]"
+                        />
+                        {' — '}
+                        <InlineField
+                          value={l.proficiency ?? ''}
+                          placeholder="e.g. Fluent, Intermediate"
+                          sectionId="languages"
+                          entryId={l.id}
+                          onChange={(v) =>
+                            ctx.onUpdate({
+                              languages: data.languages.map((row) =>
+                                row.id === l.id
+                                  ? {
+                                      ...row,
+                                      proficiency:
+                                        v as CVBuilderLanguage['proficiency'],
+                                    }
+                                  : row,
+                              ),
+                            })
+                          }
+                          className="text-[#333]"
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-semibold">
+                          {l.language.trim() || 'Language'}
+                        </span>
+                        {l.proficiency?.trim() ? (
+                          <span> — {l.proficiency.trim()}</span>
+                        ) : null}
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </>,
+          )}
+        </CVSectionWrapper>
+      );
+    }
+
+    if (sectionId === 'achievements') {
+      if (
+        !optionalSectionShown(
+          optionalSectionPresence,
+          'achievements',
+          data.achievements.length > 0,
+        ) ||
+        !vis('achievements')
+      ) {
+        return null;
+      }
+      return (
+        <CVSectionWrapper key={sectionId} sectionId="achievements">
+          {sectionBox(
+            'achievements',
+            'mb-5',
+            <>
+              {renderSectionTitle('achievements', 'Achievements', false, () =>
+                ctx?.onUpdate({ achievements: [] }),
+              )}
+              <div
+                className="space-y-2 text-[9pt]"
+                style={{ color: ONYX_TEXT }}
+              >
+                {data.achievements.map((a, aIdx) => (
+                  <div
+                    key={a.id}
+                    data-entry-id={a.id}
+                    style={entryFocusStyle(ctx?.focusedEntryId === a.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      ctx?.setFocusedSection('achievements');
+                      ctx?.setFocusedEntryId(a.id);
+                      ctx?.setFocusedEntrySection('achievements');
+                    }}
+                  >
+                    {inline && ctx?.focusedEntryId === a.id ? (
+                      <EntryToolbar
+                        sectionType="achievements"
+                        onAddEntry={() =>
+                          ctx.onUpdate({
+                            achievements: [
+                              ...data.achievements,
+                              {
+                                id: newLocalId(),
+                                title: '',
+                                issuer: '',
+                                date: '',
+                                detail: '',
+                              },
+                            ],
+                          })
+                        }
+                        onMoveUp={() => {
+                          if (aIdx === 0) return;
+                          const next = [...data.achievements];
+                          [next[aIdx - 1], next[aIdx]] = [
+                            next[aIdx],
+                            next[aIdx - 1],
+                          ];
+                          ctx.onUpdate({ achievements: next });
+                        }}
+                        onMoveDown={() => {
+                          if (aIdx >= data.achievements.length - 1) return;
+                          const next = [...data.achievements];
+                          [next[aIdx], next[aIdx + 1]] = [
+                            next[aIdx + 1],
+                            next[aIdx],
+                          ];
+                          ctx.onUpdate({ achievements: next });
+                        }}
+                        onDelete={() => {
+                          ctx.onUpdate({
+                            achievements: data.achievements.filter(
+                              (row) => row.id !== a.id,
+                            ),
+                          });
+                          ctx.setFocusedEntryId(null);
+                          ctx.setFocusedEntrySection(null);
+                        }}
+                        onDatePick={(startDate) =>
+                          ctx.onUpdate({
+                            achievements: data.achievements.map((row) =>
+                              row.id === a.id
+                                ? { ...row, date: startDate }
+                                : row,
+                            ),
+                          })
+                        }
+                        dateMode="single"
+                        dateStart={a.date}
+                        dateEnd=""
+                        showMoveUp={aIdx > 0}
+                        showMoveDown={aIdx < data.achievements.length - 1}
+                        showDatePicker
+                      />
+                    ) : null}
+                    <div className="flex flex-wrap justify-between gap-2">
+                      <p className="min-w-0 font-bold">
+                        {inline && ctx ? (
+                          <InlineField
+                            value={a.title}
+                            placeholder="Achievement"
+                            sectionId="achievements"
+                            entryId={a.id}
+                            onChange={(v) =>
+                              ctx.onUpdate({
+                                achievements: data.achievements.map((row) =>
+                                  row.id === a.id ? { ...row, title: v } : row,
+                                ),
+                              })
+                            }
+                            className="font-bold text-[#333]"
+                          />
+                        ) : (
+                          a.title.trim() || 'Achievement'
+                        )}
+                      </p>
+                      {inline && ctx ? (
+                        <InlineField
+                          value={a.date}
+                          placeholder="Date"
+                          sectionId="achievements"
+                          entryId={a.id}
+                          onChange={(v) =>
+                            ctx.onUpdate({
+                              achievements: data.achievements.map((row) =>
+                                row.id === a.id ? { ...row, date: v } : row,
+                              ),
+                            })
+                          }
+                          className="shrink-0 text-[#333]"
+                        />
+                      ) : a.date.trim() ? (
+                        <span className="shrink-0 italic text-[#333]">
+                          {a.date.trim()}
+                        </span>
+                      ) : null}
+                    </div>
+                    {inline && ctx && ctx.focusedEntryId === a.id ? (
                       <InlineField
-                        value={a.date}
-                        placeholder="Date"
+                        multiline
+                        layout="block"
+                        value={a.detail}
+                        placeholder="One detail per line"
                         sectionId="achievements"
                         entryId={a.id}
                         onChange={(v) =>
                           ctx.onUpdate({
                             achievements: data.achievements.map((row) =>
-                              row.id === a.id ? { ...row, date: v } : row,
+                              row.id === a.id ? { ...row, detail: v } : row,
                             ),
                           })
                         }
-                        className="shrink-0 text-[#333]"
+                        className="text-[9pt] text-[#333]"
                       />
-                    ) : a.date.trim() ? (
-                      <span className="shrink-0 italic text-[#333]">{a.date.trim()}</span>
-                    ) : null}
+                    ) : (
+                      <OnyxBulletList items={onyxMultilineLines(a.detail)} />
+                    )}
                   </div>
-                  {inline && ctx && ctx.focusedEntryId === a.id ? (
-                    <InlineField
-                      multiline
-                      layout="block"
-                      value={a.detail}
-                      placeholder="One detail per line"
-                      sectionId="achievements"
-                      entryId={a.id}
-                      onChange={(v) =>
-                        ctx.onUpdate({
-                          achievements: data.achievements.map((row) => (row.id === a.id ? { ...row, detail: v } : row)),
-                        })
-                      }
-                      className="text-[9pt] text-[#333]"
-                    />
-                  ) : (
-                    <OnyxBulletList items={onyxMultilineLines(a.detail)} />
-                  )}
-                </div>
-              ))}
-            </div>
-          </>)}
+                ))}
+              </div>
+            </>,
+          )}
         </CVSectionWrapper>
       );
     }
 
     if (sectionId === 'custom-legacy') {
-      if (!shouldRenderCustomLegacySection(data, inline) || !vis('custom-legacy')) {
+      if (
+        !shouldRenderCustomLegacySection(data, inline) ||
+        !vis('custom-legacy')
+      ) {
         return null;
       }
       return (
         <CVSectionWrapper key={sectionId} sectionId="custom-legacy">
-          {sectionBox('custom-legacy', 'mb-5', <>
-            {renderSectionTitle('custom-legacy', 'Custom section', false, () =>
-              ctx?.onUpdate({ customSections: [] }),
-            )}
-            <CvCustomLegacySectionBody
-              textClassName="text-[9pt] text-[#333]"
-              bodyClassName="text-[9pt] leading-relaxed text-[#333]"
-            />
-          </>)}
+          {sectionBox(
+            'custom-legacy',
+            'mb-5',
+            <>
+              {renderSectionTitle(
+                'custom-legacy',
+                'Custom section',
+                false,
+                () => ctx?.onUpdate({ customSections: [] }),
+              )}
+              <CvCustomLegacySectionBody
+                textClassName="text-[9pt] text-[#333]"
+                bodyClassName="text-[9pt] leading-relaxed text-[#333]"
+              />
+            </>,
+          )}
         </CVSectionWrapper>
       );
     }
 
     if (sectionId.startsWith('parsed-')) {
-      const block = filterParsedCustomSectionsForEditor(data.parsedCustomSections).find(
-        (b) => `parsed-${b.sectionId}` === sectionId,
-      );
+      const block = filterParsedCustomSectionsForEditor(
+        data.parsedCustomSections,
+      ).find((b) => `parsed-${b.sectionId}` === sectionId);
       if (!block || !vis(sectionId)) return null;
-      if (!(block.title.trim() || block.items.some((i) => i.text.trim() || i.subItems.length) || inline)) {
+      if (
+        !(
+          block.title.trim() ||
+          block.items.some((i) => i.text.trim() || i.subItems.length) ||
+          inline
+        )
+      ) {
         return null;
       }
       return (
         <CVSectionWrapper key={sectionId} sectionId={sectionId}>
-          {sectionBox(sectionId, 'mb-5', <>
-            {renderSectionTitle(sectionId, block.title.trim() || 'Additional', false, () =>
-              ctx?.onUpdate({
-                parsedCustomSections: data.parsedCustomSections.filter((b) => b.sectionId !== block.sectionId),
-              }),
-            )}
-            <CvParsedCustomSectionItems
-              block={block}
-              previewSectionId={sectionId}
-              textClassName="text-[9pt] text-[#333]"
-              className="space-y-2"
-            />
-          </>)}
+          {sectionBox(
+            sectionId,
+            'mb-5',
+            <>
+              {renderSectionTitle(
+                sectionId,
+                block.title.trim() || 'Additional',
+                false,
+                () =>
+                  ctx?.onUpdate({
+                    parsedCustomSections: data.parsedCustomSections.filter(
+                      (b) => b.sectionId !== block.sectionId,
+                    ),
+                  }),
+              )}
+              <CvParsedCustomSectionItems
+                block={block}
+                previewSectionId={sectionId}
+                textClassName="text-[9pt] text-[#333]"
+                className="space-y-2"
+              />
+            </>,
+          )}
         </CVSectionWrapper>
       );
     }
@@ -1961,10 +2620,14 @@ export function OnyxCvDocument({
   const parsedKeysOrdered = orderedParsedPreviewKeys(
     sectionOrder,
     filterParsedCustomSectionsForEditor(data.parsedCustomSections).filter(
-      (b) => b.title.trim() || b.items.some((i) => i.text.trim() || i.subItems.length) || inline,
+      (b) =>
+        b.title.trim() ||
+        b.items.some((i) => i.text.trim() || i.subItems.length) ||
+        inline,
     ),
   );
-  const showCustom = shouldRenderCustomLegacySection(data, inline) && vis('custom-legacy');
+  const showCustom =
+    shouldRenderCustomLegacySection(data, inline) && vis('custom-legacy');
 
   const defaultSidebarWalk = ['summary', 'education', 'skills'] as const;
   const defaultMainWalk = [
@@ -1978,10 +2641,13 @@ export function OnyxCvDocument({
     ...parsedKeysOrdered,
   ];
 
-  const { sidebar: sidebarWalk, main: mainWalk } = splitOnyxColumnOrder(sectionOrder, {
-    sidebar: defaultSidebarWalk,
-    main: defaultMainWalk,
-  });
+  const { sidebar: sidebarWalk, main: mainWalk } = splitOnyxColumnOrder(
+    sectionOrder,
+    {
+      sidebar: defaultSidebarWalk,
+      main: defaultMainWalk,
+    },
+  );
 
   return (
     <div
@@ -1991,17 +2657,24 @@ export function OnyxCvDocument({
       )}
     >
       <div className="flex min-h-[1123px] w-full">
-        <aside className="w-[35%] shrink-0 px-5 py-6 text-white" style={{ backgroundColor: ONYX_SIDEBAR }}>
+        <aside
+          className="w-[35%] shrink-0 px-5 py-6 text-white"
+          style={{ backgroundColor: ONYX_SIDEBAR }}
+        >
           {photoBlock}
           {sidebarWalk.map((id) => (
-            <Fragment key={`onyx-sidebar-${id}`}>{renderSidebarSection(id)}</Fragment>
+            <Fragment key={`onyx-sidebar-${id}`}>
+              {renderSidebarSection(id)}
+            </Fragment>
           ))}
         </aside>
         <div className="min-w-0 flex-1 bg-white">
           {headerEl}
           <div className="px-6 py-5" style={{ color: ONYX_TEXT }}>
             {mainWalk.map((id) => (
-              <Fragment key={`onyx-main-${id}`}>{renderMainSection(id)}</Fragment>
+              <Fragment key={`onyx-main-${id}`}>
+                {renderMainSection(id)}
+              </Fragment>
             ))}
           </div>
         </div>

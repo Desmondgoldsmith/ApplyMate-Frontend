@@ -1,4 +1,7 @@
-import type { CareerAchievementsPayload, TodayPlanAchievementPayload } from '@/lib/today-plan';
+import type {
+  CareerAchievementsPayload,
+  TodayPlanAchievementPayload,
+} from '@/lib/today-plan';
 
 export type AchievementShareCardInput = {
   displayName: string;
@@ -135,11 +138,21 @@ function measureLayout(
   let y = cardY + 88;
 
   y += 44 + 56;
-  y = measureWrapTextEndY(ctx, input.displayName, y, cardW - 112, 60, '700 52px system-ui, sans-serif', 2);
+  y = measureWrapTextEndY(
+    ctx,
+    input.displayName,
+    y,
+    cardW - 112,
+    60,
+    '700 52px system-ui, sans-serif',
+    2,
+  );
 
   const levelParts: string[] = [];
-  if (input.career?.level?.number != null) levelParts.push(`Level ${input.career.level.number}`);
-  if (input.career?.level?.title?.trim()) levelParts.push(input.career.level.title.trim());
+  if (input.career?.level?.number != null)
+    levelParts.push(`Level ${input.career.level.number}`);
+  if (input.career?.level?.title?.trim())
+    levelParts.push(input.career.level.title.trim());
   if (levelParts.length) y += 12 + 44;
 
   if (input.career?.summary?.totalUnlocked != null) y += 40;
@@ -164,7 +177,9 @@ function measureLayout(
 }
 
 /** Render a printable congratulations card to PNG (client-side canvas). */
-export async function renderAchievementShareCardPng(input: AchievementShareCardInput): Promise<Blob> {
+export async function renderAchievementShareCardPng(
+  input: AchievementShareCardInput,
+): Promise<Blob> {
   const measureCanvas = document.createElement('canvas');
   measureCanvas.width = W;
   measureCanvas.height = MIN_H;
@@ -209,7 +224,14 @@ export async function renderAchievementShareCardPng(input: AchievementShareCardI
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
-  const glow = ctx.createRadialGradient(W * 0.82, H * 0.12, 0, W * 0.82, H * 0.12, W * 0.55);
+  const glow = ctx.createRadialGradient(
+    W * 0.82,
+    H * 0.12,
+    0,
+    W * 0.82,
+    H * 0.12,
+    W * 0.55,
+  );
   glow.addColorStop(0, 'rgba(0, 201, 177, 0.22)');
   glow.addColorStop(1, 'rgba(0, 201, 177, 0)');
   ctx.fillStyle = glow;
@@ -247,11 +269,23 @@ export async function renderAchievementShareCardPng(input: AchievementShareCardI
   y += 56;
   ctx.font = '700 52px system-ui, -apple-system, Segoe UI, sans-serif';
   ctx.fillStyle = '#ffffff';
-  y = wrapText(ctx, input.displayName, pad, y, cardW - 112, 60, ctx.font, '#ffffff', 2);
+  y = wrapText(
+    ctx,
+    input.displayName,
+    pad,
+    y,
+    cardW - 112,
+    60,
+    ctx.font,
+    '#ffffff',
+    2,
+  );
 
   const levelParts: string[] = [];
-  if (input.career?.level?.number != null) levelParts.push(`Level ${input.career.level.number}`);
-  if (input.career?.level?.title?.trim()) levelParts.push(input.career.level.title.trim());
+  if (input.career?.level?.number != null)
+    levelParts.push(`Level ${input.career.level.number}`);
+  if (input.career?.level?.title?.trim())
+    levelParts.push(input.career.level.title.trim());
   if (levelParts.length) {
     y += 12;
     ctx.font = '500 30px system-ui, sans-serif';
@@ -263,7 +297,11 @@ export async function renderAchievementShareCardPng(input: AchievementShareCardI
   if (input.career?.summary?.totalUnlocked != null) {
     ctx.font = '600 24px system-ui, sans-serif';
     ctx.fillStyle = '#00C9B1';
-    ctx.fillText(`${input.career.summary.totalUnlocked} achievements unlocked`, pad, y);
+    ctx.fillText(
+      `${input.career.summary.totalUnlocked} achievements unlocked`,
+      pad,
+      y,
+    );
     y += 40;
   }
 
@@ -342,7 +380,11 @@ export async function renderAchievementShareCardPng(input: AchievementShareCardI
 
   ctx.font = '500 22px system-ui, sans-serif';
   ctx.fillStyle = 'rgba(255,255,255,0.42)';
-  ctx.fillText('Celebrating your momentum — applymate.app', pad, progressY + 36);
+  ctx.fillText(
+    'Celebrating your momentum — applymate.app',
+    pad,
+    progressY + 36,
+  );
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
@@ -356,9 +398,15 @@ export async function renderAchievementShareCardPng(input: AchievementShareCardI
   });
 }
 
-export function downloadAchievementShareCardPng(blob: Blob, displayName: string) {
+export function downloadAchievementShareCardPng(
+  blob: Blob,
+  displayName: string,
+) {
   const slug =
-    displayName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'achievements';
+    displayName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'achievements';
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

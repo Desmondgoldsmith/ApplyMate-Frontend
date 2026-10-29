@@ -29,7 +29,10 @@ export function sanitizeImprovedAnswer(
     const lower = out.toLowerCase();
     const qLower = q.toLowerCase();
     if (lower.startsWith(qLower) || lower.includes(`based on the question`)) {
-      out = out.slice(q.length).trim().replace(/^[:\-–—]\s*/, '');
+      out = out
+        .slice(q.length)
+        .trim()
+        .replace(/^[:\-–—]\s*/, '');
     }
   }
 
@@ -101,6 +104,8 @@ export function partialCoachingUiState(): TurnCoachingUiState {
   return { loading: true, partial: true, data: null };
 }
 
-export function readyCoachingUiState(data: CoachingSnapshot): TurnCoachingUiState {
+export function readyCoachingUiState(
+  data: CoachingSnapshot,
+): TurnCoachingUiState {
   return { loading: false, partial: false, data };
 }

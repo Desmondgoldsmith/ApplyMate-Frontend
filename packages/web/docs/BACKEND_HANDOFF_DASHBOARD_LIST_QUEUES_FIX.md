@@ -11,11 +11,11 @@
 
 All three issues are fixed end-to-end. Home snapshot caps stay at **2 items**; list pages call dedicated endpoints and return the **full queue**.
 
-| # | Issue | Fix |
-|---|--------|-----|
-| 1 | Interview prep “View all” opened interview launcher | `GET /dashboard/interview-prep` + `/dashboard/interview-prep` list page |
-| 2 | Follow-up page showed 2 of 15 (today-plan snapshot) | `GET /dashboard/follow-up-jobs` + fixed `followUpJobsTotalCount` |
-| 3 | Restored archive missing from quiet queue | Quiet clock anchored to `appliedAt` only (`quietEligibilityAnchorAt`, `quietEligibilityReason`) |
+| #   | Issue                                               | Fix                                                                                             |
+| --- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| 1   | Interview prep “View all” opened interview launcher | `GET /dashboard/interview-prep` + `/dashboard/interview-prep` list page                         |
+| 2   | Follow-up page showed 2 of 15 (today-plan snapshot) | `GET /dashboard/follow-up-jobs` + fixed `followUpJobsTotalCount`                                |
+| 3   | Restored archive missing from quiet queue           | Quiet clock anchored to `appliedAt` only (`quietEligibilityAnchorAt`, `quietEligibilityReason`) |
 
 ---
 
@@ -46,12 +46,12 @@ type DashboardInterviewPrepResponse = {
 };
 ```
 
-| Field | Notes |
-|-------|--------|
-| `upcomingInterviews` | Same shape as today-plan; include `lastUpdatedAt` + `lastUpdatedLabel` |
-| `upcomingInterviewCount` | Total before any client cap |
-| `interviewPreparationCards` | Same shape as today-plan |
-| `interviewPreparationCardsTotalCount` | Total prep cards |
+| Field                                 | Notes                                                                  |
+| ------------------------------------- | ---------------------------------------------------------------------- |
+| `upcomingInterviews`                  | Same shape as today-plan; include `lastUpdatedAt` + `lastUpdatedLabel` |
+| `upcomingInterviewCount`              | Total before any client cap                                            |
+| `interviewPreparationCards`           | Same shape as today-plan                                               |
+| `interviewPreparationCardsTotalCount` | Total prep cards                                                       |
 
 **Home snapshot** (`GET /dashboard/today-plan`) should continue capping at 2 for both arrays. **List endpoint** returns full ranked lists.
 
@@ -65,7 +65,7 @@ type DashboardInterviewPrepResponse = {
 
 - Dashboard **Recommended move** or **Priority / follow-up** strip: badge or “View all (15)”.
 - `/dashboard/follow-up-jobs` opens but only **2 rows** appear.
-- Banner: *“Snapshot shows 2 of 15 queued roles…”*
+- Banner: _“Snapshot shows 2 of 15 queued roles…”_
 
 ### What that message meant (bug, not feature)
 
@@ -87,17 +87,17 @@ Mirror quiet-applications pattern:
 ```typescript
 type DashboardFollowUpJobsResponse = {
   generatedAt: string;
-  followUpJobs: FollowUpJobRowPayload[];  // up to focusFeedMaxItems (default 100)
+  followUpJobs: FollowUpJobRowPayload[]; // up to focusFeedMaxItems (default 100)
   followUpJobsTotalCount: number;
 };
 ```
 
-| Rule | Detail |
-|------|--------|
-| Ranking | Same order as home snapshot / `followUpIntelligence` |
-| Cap param | `focusFeedMaxItems` 1–100 (default 100) |
-| Home vs list | `today-plan.followUpJobs` stays max **2**; this endpoint returns **full queue** |
-| `followUpJobsViewAllHref` | Should remain `/dashboard/follow-up-jobs` |
+| Rule                      | Detail                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------- |
+| Ranking                   | Same order as home snapshot / `followUpIntelligence`                            |
+| Cap param                 | `focusFeedMaxItems` 1–100 (default 100)                                         |
+| Home vs list              | `today-plan.followUpJobs` stays max **2**; this endpoint returns **full queue** |
+| `followUpJobsViewAllHref` | Should remain `/dashboard/follow-up-jobs`                                       |
 
 **Also verify:** `followUpJobsTotalCount` on today-plan matches the length of the full queue from this endpoint (not the snapshot length).
 
@@ -143,12 +143,12 @@ The application **falls below the 21-day threshold** even though the user has no
 
 **Recommended fix:**
 
-| Field | Use for quiet queue? |
-|-------|----------------------|
-| `appliedAt` / `submittedAt` | **Primary anchor** — days since application submitted |
-| Employer reply / interview events | Reset or exclude from quiet (already excluded for interview stage) |
-| `updatedAt` from archive/restore/metadata | **Must NOT** reset quiet eligibility |
-| User notes, email drafts, hub navigation | Optional: do not reset quiet clock unless they represent real employer contact |
+| Field                                     | Use for quiet queue?                                                           |
+| ----------------------------------------- | ------------------------------------------------------------------------------ |
+| `appliedAt` / `submittedAt`               | **Primary anchor** — days since application submitted                          |
+| Employer reply / interview events         | Reset or exclude from quiet (already excluded for interview stage)             |
+| `updatedAt` from archive/restore/metadata | **Must NOT** reset quiet eligibility                                           |
+| User notes, email drafts, hub navigation  | Optional: do not reset quiet clock unless they represent real employer contact |
 
 Expose in API for debugging:
 
@@ -176,12 +176,12 @@ If backend tracks “user archived from quiet nudge” or dismissed quiet coachi
 
 ### Required behavior after fix
 
-| Scenario | Expected |
-|----------|----------|
-| Applied 30 days ago, no reply, archived from quiet section | Removed from quiet queue while archived |
-| Same job restored from archive | **Reappears** in quiet queue if still ≥ 21 days since **apply/submit** |
-| Applied 10 days ago, archived and restored | Still **not** in quiet queue (< 21 days) |
-| Applied 30 days ago, user sent follow-up email yesterday | Product decision: either stay in follow-up queue (14–20d) or drop from quiet if employer signal — document rule |
+| Scenario                                                   | Expected                                                                                                        |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Applied 30 days ago, no reply, archived from quiet section | Removed from quiet queue while archived                                                                         |
+| Same job restored from archive                             | **Reappears** in quiet queue if still ≥ 21 days since **apply/submit**                                          |
+| Applied 10 days ago, archived and restored                 | Still **not** in quiet queue (< 21 days)                                                                        |
+| Applied 30 days ago, user sent follow-up email yesterday   | Product decision: either stay in follow-up queue (14–20d) or drop from quiet if employer signal — document rule |
 
 ### Acceptance tests
 
@@ -210,15 +210,15 @@ quietEligible =
   AND no employerReplyAt (or interview scheduled, offer, etc.)
 ```
 
-| Event | Affects quiet clock? |
-|-------|----------------------|
-| User moves job to **Applied** | **Starts** clock |
-| User edits CV, notes, opens Job Hub | No |
-| User archives / restores | No reset of apply anchor |
-| User sends follow-up email (no reply) | No reset — still quiet |
-| Employer reply / interview scheduled | **Removes** from quiet queue |
-| 14–20 days since apply | May appear in `focusItems` / follow-up (per prior handoff) |
-| 21+ days since apply, no reply | **`staleApplicationItems` only** |
+| Event                                 | Affects quiet clock?                                       |
+| ------------------------------------- | ---------------------------------------------------------- |
+| User moves job to **Applied**         | **Starts** clock                                           |
+| User edits CV, notes, opens Job Hub   | No                                                         |
+| User archives / restores              | No reset of apply anchor                                   |
+| User sends follow-up email (no reply) | No reset — still quiet                                     |
+| Employer reply / interview scheduled  | **Removes** from quiet queue                               |
+| 14–20 days since apply                | May appear in `focusItems` / follow-up (per prior handoff) |
+| 21+ days since apply, no reply        | **`staleApplicationItems` only**                           |
 
 **Do not** use `max(appliedAt, updatedAt)` if `updatedAt` changes on archive, restore, or internal metadata writes.
 
@@ -231,25 +231,25 @@ Prefer explicit fields:
 
 ## API checklist
 
-| Endpoint | Status | Purpose |
-|----------|--------|---------|
-| `GET /dashboard/today-plan` | ✅ | Home snapshot (caps at 2 per execution section) |
-| `GET /dashboard/quiet-applications` | ✅ | Full quiet queue |
-| `GET /dashboard/follow-up-jobs` | ✅ | Full follow-up queue |
-| `GET /dashboard/interview-prep` | ✅ | Full interview activity list |
-| `GET /applications/:id` | ✅ | `staleApplicationNotice` for Job Hub |
+| Endpoint                            | Status | Purpose                                         |
+| ----------------------------------- | ------ | ----------------------------------------------- |
+| `GET /dashboard/today-plan`         | ✅     | Home snapshot (caps at 2 per execution section) |
+| `GET /dashboard/quiet-applications` | ✅     | Full quiet queue                                |
+| `GET /dashboard/follow-up-jobs`     | ✅     | Full follow-up queue                            |
+| `GET /dashboard/interview-prep`     | ✅     | Full interview activity list                    |
+| `GET /applications/:id`             | ✅     | `staleApplicationNotice` for Job Hub            |
 
 ---
 
 ## Frontend files (for backend QA)
 
-| Area | Path |
-|------|------|
-| Interview prep list | `packages/web/src/app/(dashboard)/dashboard/interview-prep/page.tsx` |
-| Follow-up list | `packages/web/src/app/(dashboard)/dashboard/follow-up-jobs/page.tsx` |
-| Quiet list | `packages/web/src/app/(dashboard)/dashboard/quiet-applications/page.tsx` |
-| API client | `packages/web/src/lib/api.ts` → `dashboard.getInterviewPrep`, `getFollowUpJobs` |
-| Normalizers | `packages/web/src/lib/today-plan.ts` |
+| Area                | Path                                                                            |
+| ------------------- | ------------------------------------------------------------------------------- |
+| Interview prep list | `packages/web/src/app/(dashboard)/dashboard/interview-prep/page.tsx`            |
+| Follow-up list      | `packages/web/src/app/(dashboard)/dashboard/follow-up-jobs/page.tsx`            |
+| Quiet list          | `packages/web/src/app/(dashboard)/dashboard/quiet-applications/page.tsx`        |
+| API client          | `packages/web/src/lib/api.ts` → `dashboard.getInterviewPrep`, `getFollowUpJobs` |
+| Normalizers         | `packages/web/src/lib/today-plan.ts`                                            |
 
 ---
 

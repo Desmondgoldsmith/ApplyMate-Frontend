@@ -44,7 +44,10 @@ export function PlacementVerificationModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   jobId?: string | null;
-  onSubmitted?: (result: { pending: boolean; premiumActiveUntil?: string | null }) => void;
+  onSubmitted?: (result: {
+    pending: boolean;
+    premiumActiveUntil?: string | null;
+  }) => void;
 }) {
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -52,7 +55,9 @@ export function PlacementVerificationModal({
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [screenshotUrl, setScreenshotUrl] = useState('');
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
-  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(
+    null,
+  );
 
   const clearScreenshot = () => {
     setScreenshotFile(null);
@@ -74,7 +79,10 @@ export function PlacementVerificationModal({
     setScreenshotFile(file);
     setScreenshotUrl('');
     const reader = new FileReader();
-    reader.onload = () => setScreenshotPreview(typeof reader.result === 'string' ? reader.result : null);
+    reader.onload = () =>
+      setScreenshotPreview(
+        typeof reader.result === 'string' ? reader.result : null,
+      );
     reader.readAsDataURL(file);
   };
 
@@ -87,29 +95,41 @@ export function PlacementVerificationModal({
         screenshotFile: screenshotFile ?? undefined,
       }),
     onSuccess: (data) => {
-      if (data.premiumActiveUntil) writePremiumActiveUntil(data.premiumActiveUntil);
+      if (data.premiumActiveUntil)
+        writePremiumActiveUntil(data.premiumActiveUntil);
       toast.success(
         data.verified
           ? '🎉 Congratulations! You’ve unlocked 5 days of Premium access.'
           : 'Submitted — we will review your verification shortly.',
       );
-      onSubmitted?.({ pending: data.pendingApproval, premiumActiveUntil: data.premiumActiveUntil });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.career.dashboard() });
+      onSubmitted?.({
+        pending: data.pendingApproval,
+        premiumActiveUntil: data.premiumActiveUntil,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.career.dashboard(),
+      });
       void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
       onOpenChange(false);
       setLinkedinUrl('');
       setScreenshotUrl('');
       clearScreenshot();
     },
-    onError: (e) => toast.error(getApiErrorMessage(e) || 'Could not submit verification'),
+    onError: (e) =>
+      toast.error(getApiErrorMessage(e) || 'Could not submit verification'),
   });
 
   return (
-    <Modal open={open} onOpenChange={onOpenChange} title="Verify your placement">
+    <Modal
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Verify your placement"
+    >
       <div className="space-y-4">
         <p className="text-[13px] leading-relaxed text-white/60">
-          Share your social post about landing the role (LinkedIn or any platform). Upload a screenshot of
-          your post, or paste a public image URL.
+          Share your social post about landing the role (LinkedIn or any
+          platform). Upload a screenshot of your post, or paste a public image
+          URL.
         </p>
         <label className="block space-y-1.5">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/40">
@@ -136,7 +156,11 @@ export function PlacementVerificationModal({
           {screenshotPreview ? (
             <div className="relative overflow-hidden rounded-lg border border-white/12">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={screenshotPreview} alt="Screenshot preview" className="max-h-40 w-full object-contain bg-black/40" />
+              <img
+                src={screenshotPreview}
+                alt="Screenshot preview"
+                className="max-h-40 w-full object-contain bg-black/40"
+              />
               <button
                 type="button"
                 onClick={clearScreenshot}
@@ -153,8 +177,12 @@ export function PlacementVerificationModal({
               className="flex w-full flex-col items-center gap-2 rounded-lg border border-dashed border-white/20 bg-white/[0.03] px-4 py-6 text-center transition hover:border-[#00C9B1]/40 hover:bg-[#00C9B1]/[0.04]"
             >
               <ImagePlus className="h-6 w-6 text-[#00C9B1]" aria-hidden />
-              <span className="text-[13px] font-medium text-white/70">Upload screenshot</span>
-              <span className="text-[11px] text-white/40">PNG, JPG, or WebP · max {MAX_SCREENSHOT_MB} MB</span>
+              <span className="text-[13px] font-medium text-white/70">
+                Upload screenshot
+              </span>
+              <span className="text-[11px] text-white/40">
+                PNG, JPG, or WebP · max {MAX_SCREENSHOT_MB} MB
+              </span>
             </button>
           )}
           <p className="text-[11px] text-white/35">Or paste an image URL:</p>
@@ -175,7 +203,9 @@ export function PlacementVerificationModal({
           disabled={!linkedinUrl.trim() || submit.isPending}
           onClick={() => submit.mutate()}
         >
-          {submit.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {submit.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : null}
           Submit verification
         </Button>
       </div>

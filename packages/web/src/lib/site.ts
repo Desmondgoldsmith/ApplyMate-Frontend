@@ -10,9 +10,11 @@ export const SITE_DESCRIPTION =
   'ApplyMate scores your CV against any job, tailors applications, tracks your pipeline, and helps you apply smarter — from first click to offer.';
 
 export function getSiteUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim() || process.env.VERCEL_URL?.trim();
+  const raw =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() || process.env.VERCEL_URL?.trim();
   if (!raw) return 'http://localhost:3000';
-  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw.replace(/\/$/, '');
+  if (raw.startsWith('http://') || raw.startsWith('https://'))
+    return raw.replace(/\/$/, '');
   return `https://${raw.replace(/\/$/, '')}`;
 }
 

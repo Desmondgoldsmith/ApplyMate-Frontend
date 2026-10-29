@@ -13,7 +13,9 @@ const PERF_KEYS = [
 ] as const satisfies readonly (keyof CvPerformanceMeta)[];
 
 /** Keep only defined telemetry keys for diff preview state (avoids stale nested fields). */
-export function compactDiffPreviewPerformance(meta: CvPerformanceMeta): CvPerformanceMeta | undefined {
+export function compactDiffPreviewPerformance(
+  meta: CvPerformanceMeta,
+): CvPerformanceMeta | undefined {
   const o: CvPerformanceMeta = {};
   for (const k of PERF_KEYS) {
     const v = meta[k];
@@ -23,7 +25,10 @@ export function compactDiffPreviewPerformance(meta: CvPerformanceMeta): CvPerfor
 }
 
 /** Dev-only: log materialization telemetry from apply / accept / accept-all responses. */
-export function logCvMaterializePerformanceDev(source: string, meta: CvPerformanceMeta): void {
+export function logCvMaterializePerformanceDev(
+  source: string,
+  meta: CvPerformanceMeta,
+): void {
   if (process.env.NODE_ENV !== 'development') return;
   const row: Record<string, unknown> = { source };
   for (const k of PERF_KEYS) {

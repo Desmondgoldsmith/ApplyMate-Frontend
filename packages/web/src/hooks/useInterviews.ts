@@ -10,7 +10,10 @@ import {
   interviewResultFromPoll,
   type InterviewEvaluationPollState,
 } from '@/lib/interviewEvaluationPoll';
-import { getCachedSession, setCachedSession } from '@/lib/interviewSessionCache';
+import {
+  getCachedSession,
+  setCachedSession,
+} from '@/lib/interviewSessionCache';
 
 export function useInterviewSessions() {
   return useQuery({
@@ -44,7 +47,8 @@ export function useInterviewResult(sessionId: string | null, enabled: boolean) {
     retry: false,
     refetchInterval: (query) => {
       const poll = query.state.data as InterviewEvaluationPollState | undefined;
-      if (poll?.status === 'completed' || poll?.status === 'failed') return false;
+      if (poll?.status === 'completed' || poll?.status === 'failed')
+        return false;
       if (query.state.status === 'error') return false;
       return 4000;
     },
@@ -70,9 +74,15 @@ export function useRetryInterviewEvaluation(sessionId: string) {
   return useMutation({
     mutationFn: () => api.interviews.retryEvaluation(sessionId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.interview.result(sessionId) });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.interview.session(sessionId) });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.interview.sessions() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.interview.result(sessionId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.interview.session(sessionId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.interview.sessions(),
+      });
     },
   });
 }
@@ -92,7 +102,9 @@ export function useCreateInterview() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.interview.sessions(),
       });
-      void queryClient.invalidateQueries({ queryKey: INTERVIEW_PREP_QUOTA_KEY });
+      void queryClient.invalidateQueries({
+        queryKey: INTERVIEW_PREP_QUOTA_KEY,
+      });
     },
   });
 }
@@ -111,7 +123,9 @@ export function useSubmitInterviewAnswers(sessionId: string) {
       queryClient.invalidateQueries({
         queryKey: queryKeys.interview.session(sessionId),
       });
-      void queryClient.invalidateQueries({ queryKey: INTERVIEW_PREP_QUOTA_KEY });
+      void queryClient.invalidateQueries({
+        queryKey: INTERVIEW_PREP_QUOTA_KEY,
+      });
     },
   });
 }

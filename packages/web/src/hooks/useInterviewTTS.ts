@@ -13,7 +13,10 @@ import {
   INTERVIEW_VOICE_PAID_ONLY_CODE,
   readInterviewVoicePaidOnlyUpgradeMessage,
 } from '@/lib/interviewPrepQuota';
-import { INTERVIEW_QUESTION_SPEAK_PAUSE_MS, sleep } from '@/lib/interviewSpeech';
+import {
+  INTERVIEW_QUESTION_SPEAK_PAUSE_MS,
+  sleep,
+} from '@/lib/interviewSpeech';
 
 type CacheEntry = {
   objectUrl: string;
@@ -51,8 +54,14 @@ type FetchSpeechResult =
   | { status: 'error'; message: string; requestId: string | null }
   | { status: 'paid_only'; message: string; requestId: string | null };
 
-function cacheKey(sessionId: string, text: string, persona?: string, speed?: number): string {
-  const speedKey = typeof speed === 'number' ? Math.round(speed * 100) / 100 : 1;
+function cacheKey(
+  sessionId: string,
+  text: string,
+  persona?: string,
+  speed?: number,
+): string {
+  const speedKey =
+    typeof speed === 'number' ? Math.round(speed * 100) / 100 : 1;
   return `${sessionId}|${persona ?? ''}|${speedKey}|${text.trim()}`;
 }
 
@@ -105,7 +114,9 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
   } = speech;
 
   const cacheRef = useRef<Map<string, CacheEntry>>(new Map());
-  const inflightRef = useRef<Map<string, Promise<FetchSpeechResult>>>(new Map());
+  const inflightRef = useRef<Map<string, Promise<FetchSpeechResult>>>(
+    new Map(),
+  );
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const speakGenRef = useRef(0);
   const lastSpeakTextRef = useRef('');
@@ -118,7 +129,8 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
   const [usingBrowserVoice, setUsingBrowserVoice] = useState(false);
   const [isGeneratingVoice, setIsGeneratingVoice] = useState(false);
   const [usesElevenLabs, setUsesElevenLabs] = useState(false);
-  const [playbackIssue, setPlaybackIssue] = useState<InterviewVoicePlaybackIssue | null>(null);
+  const [playbackIssue, setPlaybackIssue] =
+    useState<InterviewVoicePlaybackIssue | null>(null);
 
   const stopAudioElement = useCallback(() => {
     const audio = audioRef.current;
@@ -149,7 +161,11 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
         };
       }
       if (!sessionId || !text.trim()) {
-        return { status: 'error', message: 'Missing session or text for voice.', requestId: null };
+        return {
+          status: 'error',
+          message: 'Missing session or text for voice.',
+          requestId: null,
+        };
       }
 
       const key = cacheKey(sessionId, text, interviewPersona, speakingSpeed);
@@ -166,11 +182,12 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
 
       const request = (async (): Promise<FetchSpeechResult> => {
         try {
-          const { data, requestId } = await interviewVoiceApi.synthesizeInterviewerSpeech(sessionId, {
-            text: text.trim(),
-            interviewPersona,
-            speakingSpeed,
-          });
+          const { data, requestId } =
+            await interviewVoiceApi.synthesizeInterviewerSpeech(sessionId, {
+              text: text.trim(),
+              interviewPersona,
+              speakingSpeed,
+            });
 
           if (data.disabled || !data.audioBase64?.trim()) {
             return {
@@ -182,11 +199,14 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
 
           if (!isPlayableInterviewSpeechBase64(data.audioBase64)) {
             if (process.env.NODE_ENV !== 'production') {
-              console.warn('[interview-tts] /speech returned unusable audio (stub or too small)', {
-                requestId,
-                cacheHit: data.cacheHit,
-                base64Length: data.audioBase64.length,
-              });
+              console.warn(
+                '[interview-tts] /speech returned unusable audio (stub or too small)',
+                {
+                  requestId,
+                  cacheHit: data.cacheHit,
+                  base64Length: data.audioBase64.length,
+                },
+              );
             }
             return {
               status: 'disabled',
@@ -195,17 +215,27 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
             };
           }
 
-          const blob = decodeInterviewSpeechBase64(data.audioBase64, data.contentType);
+          const blob = decodeInterviewSpeechBase64(
+            data.audioBase64,
+            data.contentType,
+          );
           const objectUrl = URL.createObjectURL(blob);
-          const entry: CacheEntry = { objectUrl, audioBase64: data.audioBase64 };
+          const entry: CacheEntry = {
+            objectUrl,
+            audioBase64: data.audioBase64,
+          };
           cacheRef.current.set(key, entry);
           return { status: 'ok', entry, requestId };
         } catch (err) {
           const paidOnlyMessage = readInterviewVoicePaidOnlyUpgradeMessage(err);
-          if (paidOnlyMessage || getApiErrorCode(err) === INTERVIEW_VOICE_PAID_ONLY_CODE) {
+          if (
+            paidOnlyMessage ||
+            getApiErrorCode(err) === INTERVIEW_VOICE_PAID_ONLY_CODE
+          ) {
             return {
               status: 'paid_only',
-              message: paidOnlyMessage ?? 'Interviewer voice is available on Pro.',
+              message:
+                paidOnlyMessage ?? 'Interviewer voice is available on Pro.',
               requestId: null,
             };
           }
@@ -253,7 +283,10 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
   }, []);
 
   const speakWithDeviceVoice = useCallback(
-    (text: string, speakOptions: SpeakInterviewerOptions = {}): Promise<void> => {
+    (
+      text: string,
+      speakOptions: SpeakInterviewerOptions = {},
+    ): Promise<void> => {
       const clean = text.trim();
       if (!clean) {
         speakOptions.onEnd?.();
@@ -318,7 +351,10 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
   );
 
   const speak = useCallback(
-    (text: string, speakOptions: SpeakInterviewerOptions = {}): Promise<void> => {
+    (
+      text: string,
+      speakOptions: SpeakInterviewerOptions = {},
+    ): Promise<void> => {
       const userOnEnd = speakOptions.onEnd;
       const finish = () => {
         userOnEnd?.();
@@ -353,10 +389,16 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
 
           browserStopListening();
           stopAudioElement();
-          setPlaybackIssue((prev) => (prev?.kind === 'browser_fallback' ? prev : null));
+          setPlaybackIssue((prev) =>
+            prev?.kind === 'browser_fallback' ? prev : null,
+          );
 
           if (!sessionId) {
-            const browserOk = await attemptBrowserFallback(clean, speakOptions, generation);
+            const browserOk = await attemptBrowserFallback(
+              clean,
+              speakOptions,
+              generation,
+            );
             if (browserOk) {
               complete();
               return;
@@ -386,7 +428,8 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
           };
 
           if (!speakOptions.skipLeadPause) {
-            const leadMs = speakOptions.leadPauseMs ?? INTERVIEW_QUESTION_SPEAK_PAUSE_MS;
+            const leadMs =
+              speakOptions.leadPauseMs ?? INTERVIEW_QUESTION_SPEAK_PAUSE_MS;
             if (leadMs > 0) {
               await sleep(leadMs);
               if (endIfStale()) return;
@@ -394,7 +437,11 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
           }
 
           if (preferBrowserVoiceRef.current && isSpeechSynthesisSupported) {
-            const browserOk = await attemptBrowserFallback(clean, speakOptions, generation);
+            const browserOk = await attemptBrowserFallback(
+              clean,
+              speakOptions,
+              generation,
+            );
             if (endIfStale()) return;
             if (browserOk) {
               complete();
@@ -422,7 +469,11 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
           }
 
           if (fetched.status === 'disabled') {
-            const browserOk = await attemptBrowserFallback(clean, speakOptions, generation);
+            const browserOk = await attemptBrowserFallback(
+              clean,
+              speakOptions,
+              generation,
+            );
             if (endIfStale()) return;
             if (browserOk) {
               complete();
@@ -445,7 +496,11 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
             if (process.env.NODE_ENV !== 'production') {
               console.warn('[interview-tts] /speech failed:', fetched.message);
             }
-            const browserOk = await attemptBrowserFallback(clean, speakOptions, generation);
+            const browserOk = await attemptBrowserFallback(
+              clean,
+              speakOptions,
+              generation,
+            );
             if (endIfStale()) return;
             if (browserOk) {
               complete();
@@ -485,7 +540,11 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
             setIsSpeaking(false);
             audioRef.current = null;
             void (async () => {
-              const browserOk = await attemptBrowserFallback(clean, speakOptions, generation);
+              const browserOk = await attemptBrowserFallback(
+                clean,
+                speakOptions,
+                generation,
+              );
               if (generation !== speakGenRef.current) return;
               if (browserOk) {
                 complete();
@@ -512,7 +571,11 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
               return;
             }
             stopAudioElement();
-            const browserOk = await attemptBrowserFallback(clean, speakOptions, generation);
+            const browserOk = await attemptBrowserFallback(
+              clean,
+              speakOptions,
+              generation,
+            );
             if (endIfStale()) return;
             if (browserOk) {
               complete();
@@ -520,14 +583,22 @@ export function useInterviewTTS(options: UseInterviewTTSOptions) {
             }
             const isAutoplay =
               err instanceof DOMException &&
-              (err.name === 'NotAllowedError' || err.name === 'NotSupportedError');
+              (err.name === 'NotAllowedError' ||
+                err.name === 'NotSupportedError');
             if (isAutoplay) {
-              const retryBrowser = await attemptBrowserFallback(clean, speakOptions, generation);
+              const retryBrowser = await attemptBrowserFallback(
+                clean,
+                speakOptions,
+                generation,
+              );
               if (retryBrowser) {
                 complete();
                 return;
               }
-              setPlaybackIssue({ kind: 'autoplay_blocked', requestId: fetched.requestId });
+              setPlaybackIssue({
+                kind: 'autoplay_blocked',
+                requestId: fetched.requestId,
+              });
             } else {
               setPlaybackIssue({
                 kind: 'network_error',

@@ -16,16 +16,16 @@ describe('featureTourStorage', () => {
   });
 
   it('shows tour only after onboarding and before completion', () => {
-    expect(shouldShowDashboardTour({ id: 'u1', onboardingCompleted: false })).toBe(
-      false,
-    );
-    expect(shouldShowDashboardTour({ id: 'u1', onboardingCompleted: true })).toBe(
-      true,
-    );
+    expect(
+      shouldShowDashboardTour({ id: 'u1', onboardingCompleted: false }),
+    ).toBe(false);
+    expect(
+      shouldShowDashboardTour({ id: 'u1', onboardingCompleted: true }),
+    ).toBe(true);
     markGlobalTourCompleted('u1');
-    expect(shouldShowDashboardTour({ id: 'u1', onboardingCompleted: true })).toBe(
-      false,
-    );
+    expect(
+      shouldShowDashboardTour({ id: 'u1', onboardingCompleted: true }),
+    ).toBe(false);
   });
 
   it('treats skip flag as finished', () => {
@@ -43,8 +43,8 @@ describe('featureTourStorage', () => {
     markGlobalTourCompleted('u1');
     resetGlobalTourFlags('u1');
     expect(localStorage.getItem(TOUR_COMPLETED_KEY)).toBeNull();
-    expect(shouldShowDashboardTour({ id: 'u1', onboardingCompleted: true })).toBe(
-      true,
-    );
+    expect(
+      shouldShowDashboardTour({ id: 'u1', onboardingCompleted: true }),
+    ).toBe(true);
   });
 });

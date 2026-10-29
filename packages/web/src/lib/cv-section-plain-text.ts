@@ -98,7 +98,9 @@ function experienceItemToText(o: Record<string, unknown>): string {
 }
 
 /** Line looks like "Category label:" (not a job title — company row). */
-function tryCategoryHeader(line: string): { title: string; rest: string } | null {
+function tryCategoryHeader(
+  line: string,
+): { title: string; rest: string } | null {
   const m = line.match(/^\s*(?:•\s*)?([^:\n]+?):\s*(.*)$/);
   if (!m) return null;
   const title = m[1]!.trim();
@@ -120,15 +122,28 @@ function splitOneLineBullets(line: string): string[] {
     return subDashSplit.map((s) => s.trim()).filter(Boolean);
   }
 
-  const byBullet = raw.split(/\s*•\s*/).map((s) => s.trim()).filter(Boolean);
+  const byBullet = raw
+    .split(/\s*•\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
   if (byBullet.length > 1) return byBullet;
 
-  if (raw.includes('|') && raw.split('|').length >= 2 && !/https?:/i.test(raw)) {
-    return raw.split('|').map((s) => s.trim()).filter(Boolean);
+  if (
+    raw.includes('|') &&
+    raw.split('|').length >= 2 &&
+    !/https?:/i.test(raw)
+  ) {
+    return raw
+      .split('|')
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
 
   if (raw.includes(',') && raw.split(',').length >= 4) {
-    return raw.split(',').map((s) => s.trim()).filter(Boolean);
+    return raw
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
 
   return [raw];
@@ -139,7 +154,10 @@ function splitBulletish(body: string): string[] {
   const raw = body.replace(/\r/g, '').trim();
   if (!raw) return [];
 
-  const lines = raw.split('\n').map((l) => l.trim()).filter(Boolean);
+  const lines = raw
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
   const out: string[] = [];
   for (const line of lines) {
     out.push(...splitOneLineBullets(line));
@@ -147,7 +165,10 @@ function splitBulletish(body: string): string[] {
   return out.filter(Boolean);
 }
 
-function buildCategoryItem(title: string, body: string): Record<string, unknown> {
+function buildCategoryItem(
+  title: string,
+  body: string,
+): Record<string, unknown> {
   const bullets = splitBulletish(body);
   if (bullets.length === 0) {
     return { title, company: '', description: body };
@@ -205,7 +226,10 @@ function parseAsCategoryStyle(lines: string[]): Record<string, unknown>[] {
 }
 
 function parseExperienceChunk(chunk: string): Record<string, unknown> {
-  const lines = chunk.split('\n').map((l) => l.trim()).filter(Boolean);
+  const lines = chunk
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
   if (lines.length === 0) return { title: '', company: '' };
   const first = lines[0]!;
   let title = '';
@@ -225,17 +249,29 @@ function parseExperienceChunk(chunk: string): Record<string, unknown> {
   const rest = lines.slice(1);
   let duration: string | undefined;
   let bodyStart = 0;
-  if (rest[0] && /(\d{4}|present|current|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(rest[0]!)) {
+  if (
+    rest[0] &&
+    /(\d{4}|present|current|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(
+      rest[0]!,
+    )
+  ) {
     duration = rest[0];
     bodyStart = 1;
   }
   const body = rest.slice(bodyStart);
   const bullets = body
     .filter((l) => l.startsWith('-') || l.startsWith('•') || /^\d+\.\s/.test(l))
-    .map((l) => l.replace(/^[-•]\s*/, '').replace(/^\d+\.\s*/, '').trim())
+    .map((l) =>
+      l
+        .replace(/^[-•]\s*/, '')
+        .replace(/^\d+\.\s*/, '')
+        .trim(),
+    )
     .filter(Boolean);
   const narrative = body
-    .filter((l) => !l.startsWith('-') && !l.startsWith('•') && !/^\d+\.\s/.test(l))
+    .filter(
+      (l) => !l.startsWith('-') && !l.startsWith('•') && !/^\d+\.\s/.test(l),
+    )
     .join('\n')
     .trim();
 
@@ -288,7 +324,9 @@ export function experienceDataToText(data: Record<string, unknown>): string {
     return (items as string[]).join('\n');
   }
   if (items.every((x) => x && typeof x === 'object' && !Array.isArray(x))) {
-    return (items as Record<string, unknown>[]).map(experienceItemToText).join('\n\n');
+    return (items as Record<string, unknown>[])
+      .map(experienceItemToText)
+      .join('\n\n');
   }
   return '';
 }
@@ -307,7 +345,10 @@ function educationItemToText(o: Record<string, unknown>): string {
 }
 
 function parseEducationChunk(chunk: string): Record<string, unknown> {
-  const lines = chunk.split('\n').map((l) => l.trim()).filter(Boolean);
+  const lines = chunk
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
   if (lines.length === 0) return { degree: '', school: '' };
   const first = lines[0]!;
   let degree = '';
@@ -322,7 +363,10 @@ function parseEducationChunk(chunk: string): Record<string, unknown> {
   const rest = lines.slice(1);
   const yearLine = rest.find((l) => /^\d{4}|class of|expected/i.test(l));
   const year = yearLine ?? '';
-  const other = rest.filter((l) => l !== yearLine).join('\n').trim();
+  const other = rest
+    .filter((l) => l !== yearLine)
+    .join('\n')
+    .trim();
 
   const out: Record<string, unknown> = {
     degree: degree || first,
@@ -342,7 +386,11 @@ export function educationTextToData(
     .map((c) => c.trim())
     .filter(Boolean);
   const items =
-    chunks.length > 0 ? chunks.map(parseEducationChunk) : text.trim() ? [parseEducationChunk(text)] : [];
+    chunks.length > 0
+      ? chunks.map(parseEducationChunk)
+      : text.trim()
+        ? [parseEducationChunk(text)]
+        : [];
   return { ...previous, items };
 }
 
@@ -353,18 +401,27 @@ export function educationDataToText(data: Record<string, unknown>): string {
     return (items as string[]).join('\n');
   }
   if (items.every((x) => x && typeof x === 'object' && !Array.isArray(x))) {
-    return (items as Record<string, unknown>[]).map(educationItemToText).join('\n\n');
+    return (items as Record<string, unknown>[])
+      .map(educationItemToText)
+      .join('\n\n');
   }
   return '';
 }
 
 /** Map section.type to plain-text strategy. */
-export function structuredDataToPlainText(data: Record<string, unknown>, sectionType: string): string {
+export function structuredDataToPlainText(
+  data: Record<string, unknown>,
+  sectionType: string,
+): string {
   const t = sectionType.toLowerCase();
   if (t.includes('skill')) {
     return skillsDataToText(data);
   }
-  if (t.includes('experience') || t.includes('employment') || t.includes('work')) {
+  if (
+    t.includes('experience') ||
+    t.includes('employment') ||
+    t.includes('work')
+  ) {
     return experienceDataToText(data);
   }
   if (t.includes('education') || t.includes('academic')) {
@@ -376,7 +433,9 @@ export function structuredDataToPlainText(data: Record<string, unknown>, section
       return (items as string[]).join('\n');
     }
     if (items.every((x) => x && typeof x === 'object' && !Array.isArray(x))) {
-      return (items as Record<string, unknown>[]).map((o) => experienceItemToText(o)).join('\n\n');
+      return (items as Record<string, unknown>[])
+        .map((o) => experienceItemToText(o))
+        .join('\n\n');
     }
   }
   if (data.categories) {
@@ -395,7 +454,11 @@ export function plainTextToStructuredData(
   if (t.includes('skill')) {
     return skillsTextToData(normalized, previous);
   }
-  if (t.includes('experience') || t.includes('employment') || t.includes('work')) {
+  if (
+    t.includes('experience') ||
+    t.includes('employment') ||
+    t.includes('work')
+  ) {
     return experienceTextToData(normalized, previous);
   }
   if (t.includes('education') || t.includes('academic')) {
@@ -413,7 +476,11 @@ export function structuredSectionHint(sectionType: string): string {
   if (t.includes('skill')) {
     return 'One skill per line (or separate with commas). Saves automatically.';
   }
-  if (t.includes('experience') || t.includes('employment') || t.includes('work')) {
+  if (
+    t.includes('experience') ||
+    t.includes('employment') ||
+    t.includes('work')
+  ) {
     return 'Jobs: title — company on one line, optional dates, then bullets. Or paste skill groups as Category: details (one heading per block). Saves after you edit.';
   }
   if (t.includes('education') || t.includes('academic')) {

@@ -45,14 +45,17 @@ export type CvAnalysisUiHints = {
 };
 
 /** Parse `analysisUiHints` from score breakdown (server-driven CV Analysis tab layout). */
-export function parseAnalysisUiHints(source: unknown): CvAnalysisUiHints | null {
+export function parseAnalysisUiHints(
+  source: unknown,
+): CvAnalysisUiHints | null {
   if (!source || typeof source !== 'object') return null;
   const o = source as Record<string, unknown>;
   const raw = o.analysisUiHints ?? o.analysis_ui_hints;
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const hints = raw as Record<string, unknown>;
   const showQualityDimensions = hints.showQualityDimensions !== false;
-  const placementRaw = hints.structuralAtsChecksPlacement ?? hints.structural_ats_checks_placement;
+  const placementRaw =
+    hints.structuralAtsChecksPlacement ?? hints.structural_ats_checks_placement;
   const structuralAtsChecksPlacement =
     placementRaw === 'after_ats_read_only' ? 'after_ats_read_only' : undefined;
   return {
@@ -101,7 +104,9 @@ function pickString(v: unknown): string | undefined {
   return typeof v === 'string' && v.trim() ? v.trim() : undefined;
 }
 
-function parseTransparencyMethod(raw: unknown): CvScoringTransparencyMethod | null {
+function parseTransparencyMethod(
+  raw: unknown,
+): CvScoringTransparencyMethod | null {
   if (!raw || typeof raw !== 'object') return null;
   const o = raw as Record<string, unknown>;
   const title = pickString(o.title);
@@ -124,7 +129,8 @@ function parseTransparency(raw: unknown): CvScoringTransparency | null {
   const weightsRaw = o.weights;
   const cache = parseTransparencyBlock(o.cache);
   const jobContext = parseTransparencyBlock(o.jobContext ?? o.job_context);
-  if (!hybrid || !rubricOnly || !structural || !ai || !cache || !jobContext) return null;
+  if (!hybrid || !rubricOnly || !structural || !ai || !cache || !jobContext)
+    return null;
   let structuralPercent = 30;
   let aiPercent = 70;
   let weightsShort = '';
@@ -150,7 +156,9 @@ function parseTransparency(raw: unknown): CvScoringTransparency | null {
   };
 }
 
-function parseTransparencyBlock(raw: unknown): { title: string; short: string } | null {
+function parseTransparencyBlock(
+  raw: unknown,
+): { title: string; short: string } | null {
   if (!raw || typeof raw !== 'object') return null;
   const o = raw as Record<string, unknown>;
   const title = pickString(o.title);
@@ -166,8 +174,14 @@ function parseAiAssessment(raw: unknown): CvAiAssessment | null {
   const overall = pickScore(o.overall);
   const dimensionsRaw = o.dimensions;
   const dimensions: Record<string, CvAiAssessmentDimension> = {};
-  if (dimensionsRaw && typeof dimensionsRaw === 'object' && !Array.isArray(dimensionsRaw)) {
-    for (const [key, val] of Object.entries(dimensionsRaw as Record<string, unknown>)) {
+  if (
+    dimensionsRaw &&
+    typeof dimensionsRaw === 'object' &&
+    !Array.isArray(dimensionsRaw)
+  ) {
+    for (const [key, val] of Object.entries(
+      dimensionsRaw as Record<string, unknown>,
+    )) {
       if (!val || typeof val !== 'object') continue;
       const d = val as Record<string, unknown>;
       const score = pickScore(d.score);
@@ -179,10 +193,14 @@ function parseAiAssessment(raw: unknown): CvAiAssessment | null {
     }
   }
   const strengths = Array.isArray(o.strengths)
-    ? o.strengths.filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+    ? o.strengths.filter(
+        (x): x is string => typeof x === 'string' && x.trim().length > 0,
+      )
     : [];
   const improvements = Array.isArray(o.improvements)
-    ? o.improvements.filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+    ? o.improvements.filter(
+        (x): x is string => typeof x === 'string' && x.trim().length > 0,
+      )
     : [];
   if (
     !summary &&
@@ -202,7 +220,10 @@ function parseAiAssessment(raw: unknown): CvAiAssessment | null {
   };
 }
 
-function parseScoringMethod(raw: unknown, aiScore: number | null): CvScoringMethod | null {
+function parseScoringMethod(
+  raw: unknown,
+  aiScore: number | null,
+): CvScoringMethod | null {
   const m = pickString(raw);
   if (m === 'hybrid' || m === 'rubric_only') return m;
   if (aiScore != null) return 'hybrid';
@@ -211,7 +232,9 @@ function parseScoringMethod(raw: unknown, aiScore: number | null): CvScoringMeth
 }
 
 /** Parse hybrid scoring fields from an API envelope, breakdown object, or score payload. */
-export function parseCvHybridScoring(source: unknown): CvHybridScoringMeta | null {
+export function parseCvHybridScoring(
+  source: unknown,
+): CvHybridScoringMeta | null {
   if (!source || typeof source !== 'object') return null;
   const o = source as Record<string, unknown>;
 
@@ -219,7 +242,11 @@ export function parseCvHybridScoring(source: unknown): CvHybridScoringMeta | nul
   const aiScore = pickScore(o.aiScore ?? o.ai_score);
   const scoringMethod =
     parseScoringMethod(o.scoringMethod ?? o.scoring_method, aiScore) ??
-    (structuralScore != null || aiScore != null ? (aiScore != null ? 'hybrid' : 'rubric_only') : null);
+    (structuralScore != null || aiScore != null
+      ? aiScore != null
+        ? 'hybrid'
+        : 'rubric_only'
+      : null);
 
   const scoringTransparency = parseTransparency(
     o.scoringTransparency ?? o.scoring_transparency,
@@ -321,8 +348,7 @@ export function hybridScoringFromScorePayload(
 ): CvHybridScoringMeta | null {
   if (!payload) return null;
   return (
-    parseCvHybridScoring(payload) ??
-    parseCvHybridScoring(payload.breakdown)
+    parseCvHybridScoring(payload) ?? parseCvHybridScoring(payload.breakdown)
   );
 }
 

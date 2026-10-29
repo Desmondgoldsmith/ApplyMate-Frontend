@@ -89,7 +89,10 @@ export type CvClinicToolbarProps = {
 function ToolbarDivider({ className }: { className?: string }) {
   return (
     <div
-      className={cn('mx-1.5 hidden h-5 w-px shrink-0 self-center bg-white/[0.08] min-[900px]:block', className)}
+      className={cn(
+        'mx-1.5 hidden h-5 w-px shrink-0 self-center bg-white/[0.08] min-[900px]:block',
+        className,
+      )}
       aria-hidden
     />
   );
@@ -159,10 +162,14 @@ export function CvClinicToolbar({
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
   const compactToolLabels = !sidebarCollapsed;
   const showLeftCluster = v.libraryLink || v.profilePicker || v.newCvButton;
-  const hasProfileSelect = v.profilePicker && profileOptions.length > 0 && targetId;
+  const hasProfileSelect =
+    v.profilePicker && profileOptions.length > 0 && targetId;
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
-  const [moreMenuPos, setMoreMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const [moreMenuPos, setMoreMenuPos] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
 
   useLayoutEffect(() => {
     if (!moreOpen || !moreRef.current) {
@@ -178,7 +185,8 @@ export function CvClinicToolbar({
     const onDoc = (e: MouseEvent) => {
       const t = e.target as Node;
       if (moreRef.current?.contains(t)) return;
-      if (t instanceof Element && t.closest('[data-cv-toolbar-more-menu]')) return;
+      if (t instanceof Element && t.closest('[data-cv-toolbar-more-menu]'))
+        return;
       setMoreOpen(false);
     };
     document.addEventListener('mousedown', onDoc);
@@ -225,7 +233,11 @@ export function CvClinicToolbar({
                   aria-label="Current resume"
                 >
                   {profileOptions.map((p) => (
-                    <option key={p.id} value={p.id} style={{ background: '#0F1512', color: '#fff' }}>
+                    <option
+                      key={p.id}
+                      value={p.id}
+                      style={{ background: '#0F1512', color: '#fff' }}
+                    >
                       {p.name}
                       {p.isDefault ? ' (default)' : ''}
                     </option>
@@ -242,7 +254,9 @@ export function CvClinicToolbar({
                 </button>
               ) : null}
               {!showLeftCluster && leftTitle ? (
-                <p className="min-w-0 truncate text-[11px] font-medium uppercase tracking-wide text-white/40">{leftTitle}</p>
+                <p className="min-w-0 truncate text-[11px] font-medium uppercase tracking-wide text-white/40">
+                  {leftTitle}
+                </p>
               ) : !showLeftCluster ? (
                 <div className="min-w-0 flex-1" aria-hidden />
               ) : null}
@@ -256,13 +270,22 @@ export function CvClinicToolbar({
         <div
           className={cn(
             'flex min-w-0 flex-1 items-center justify-center gap-0 px-0 sm:gap-0.5',
-            allowWrap && 'basis-full justify-start min-[900px]:basis-auto min-[900px]:justify-center',
+            allowWrap &&
+              'basis-full justify-start min-[900px]:basis-auto min-[900px]:justify-center',
           )}
         >
-          <ToolbarToolButton label="Template" compact={compactToolLabels} onClick={onOpenTemplatePicker}>
+          <ToolbarToolButton
+            label="Template"
+            compact={compactToolLabels}
+            onClick={onOpenTemplatePicker}
+          >
             <LayoutTemplate className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
           </ToolbarToolButton>
-          <ToolbarToolButton label="Sections" compact={compactToolLabels} onClick={onOpenSectionModal}>
+          <ToolbarToolButton
+            label="Sections"
+            compact={compactToolLabels}
+            onClick={onOpenSectionModal}
+          >
             <ListPlus className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
           </ToolbarToolButton>
           <ToolbarToolButton
@@ -338,7 +361,10 @@ export function CvClinicToolbar({
                       }}
                     >
                       <Undo2 className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
-                      Undo <span className="ml-auto text-[10px] text-white/35">Ctrl+Z</span>
+                      Undo{' '}
+                      <span className="ml-auto text-[10px] text-white/35">
+                        Ctrl+Z
+                      </span>
                     </button>
                     <button
                       type="button"
@@ -350,7 +376,10 @@ export function CvClinicToolbar({
                       }}
                     >
                       <Redo2 className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
-                      Redo <span className="ml-auto text-[10px] text-white/35">Ctrl+Y</span>
+                      Redo{' '}
+                      <span className="ml-auto text-[10px] text-white/35">
+                        Ctrl+Y
+                      </span>
                     </button>
                     {onOpenVersionHistory ? (
                       <button
@@ -379,10 +408,15 @@ export function CvClinicToolbar({
         <div
           className={cn(
             'flex shrink-0 items-center gap-1.5 sm:gap-2',
-            allowWrap && 'ml-auto w-full justify-end min-[900px]:ml-0 min-[900px]:w-auto',
+            allowWrap &&
+              'ml-auto w-full justify-end min-[900px]:ml-0 min-[900px]:w-auto',
           )}
         >
-          {rightAddon ? <div className="mr-1 flex shrink-0 flex-wrap items-center gap-1.5">{rightAddon}</div> : null}
+          {rightAddon ? (
+            <div className="mr-1 flex shrink-0 flex-wrap items-center gap-1.5">
+              {rightAddon}
+            </div>
+          ) : null}
           {v.pdfDocx ? (
             <>
               <button
@@ -391,7 +425,11 @@ export function CvClinicToolbar({
                 disabled={isExportPending}
                 onClick={onExportPdf}
               >
-                {isExportPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5" />}
+                {isExportPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <FileDown className="h-3.5 w-3.5" />
+                )}
                 PDF
               </button>
               <button
@@ -424,7 +462,10 @@ export function CvClinicToolbar({
             </button>
           ) : null}
           {builderSaveStatus !== 'idle' ? (
-            <span data-testid="cv-builder-save-status" className="shrink-0 text-[11px] text-white/40">
+            <span
+              data-testid="cv-builder-save-status"
+              className="shrink-0 text-[11px] text-white/40"
+            >
               {builderSaveStatus === 'saving' ? (
                 <span className="inline-flex items-center gap-1">
                   <Loader2 className="h-3 w-3 animate-spin" /> Saving…

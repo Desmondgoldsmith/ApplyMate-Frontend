@@ -44,7 +44,9 @@ export function DashboardStrategicCoachingCard({ data }: Props) {
           <h2 className="mt-3 text-[clamp(1.125rem,2.6vw,1.375rem)] font-semibold leading-snug tracking-tight text-white/92">
             {headline}
           </h2>
-          <p className="mt-3 max-w-[62ch] text-[13px] leading-relaxed text-white/58 sm:text-[14px]">{supporting}</p>
+          <p className="mt-3 max-w-[62ch] text-[13px] leading-relaxed text-white/58 sm:text-[14px]">
+            {supporting}
+          </p>
           {confidence != null ? (
             <div className="mt-5 max-w-xs">
               <div className="flex items-center justify-between gap-3 text-[11px] font-medium text-white/35">
@@ -55,7 +57,9 @@ export function DashboardStrategicCoachingCard({ data }: Props) {
                     buttonAriaLabel="What is strategic coaching priority?"
                   />
                 </span>
-                <span className="tabular-nums text-white/45">{confidence}%</span>
+                <span className="tabular-nums text-white/45">
+                  {confidence}%
+                </span>
               </div>
               <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/[0.06]">
                 <div

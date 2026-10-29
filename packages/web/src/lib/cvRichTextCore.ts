@@ -2,25 +2,38 @@
 
 export function containsCvChangeMarker(raw: string): boolean {
   return (
-    /<u\b[^>]*class=["'][^"']*\bcv-change-marker\b[^"']*["'][^>]*>/i.test(raw) ||
-    /&lt;u\b[^&]*cv-change-marker/i.test(raw)
+    /<u\b[^>]*class=["'][^"']*\bcv-change-marker\b[^"']*["'][^>]*>/i.test(
+      raw,
+    ) || /&lt;u\b[^&]*cv-change-marker/i.test(raw)
   );
 }
 
 /** Strip tailor builder markers before client-side export preview (server export strips too). */
 export function stripCvChangeMarkers(raw: string): string {
   return raw
-    .replace(/<u\b[^>]*class=["'][^"']*\bcv-change-marker\b[^"']*["'][^>]*>/gi, '')
+    .replace(
+      /<u\b[^>]*class=["'][^"']*\bcv-change-marker\b[^"']*["'][^>]*>/gi,
+      '',
+    )
     .replace(/<\/u>/gi, '');
 }
 
 /** Plain label for comma-separated skills input — does not mutate stored HTML. */
 export function skillLabelForCommaField(raw: string): string {
-  return richTextPlainText(raw) || raw.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  return (
+    richTextPlainText(raw) ||
+    raw
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  );
 }
 
 /** Commit comma-separated skills while preserving tailor marker HTML on unchanged skills. */
-export function resolveSkillsFromCommaInput(raw: string, previous: string[]): string[] {
+export function resolveSkillsFromCommaInput(
+  raw: string,
+  previous: string[],
+): string[] {
   const segments = raw
     .split(',')
     .map((s) => s.trim())
@@ -29,7 +42,8 @@ export function resolveSkillsFromCommaInput(raw: string, previous: string[]): st
   const next: string[] = [];
   for (const seg of segments) {
     const matchIdx = pool.findIndex(
-      (skill) => skillLabelForCommaField(skill).toLowerCase() === seg.toLowerCase(),
+      (skill) =>
+        skillLabelForCommaField(skill).toLowerCase() === seg.toLowerCase(),
     );
     if (matchIdx >= 0) {
       next.push(pool.splice(matchIdx, 1)[0]!);
@@ -63,7 +77,8 @@ export function sanitizeRichHtml(input: string): string {
   const allowed = new Set(['STRONG', 'EM', 'U', 'BR', 'A']);
 
   const walk = (node: Node): string => {
-    if (node.nodeType === Node.TEXT_NODE) return escapeHtml(node.textContent ?? '');
+    if (node.nodeType === Node.TEXT_NODE)
+      return escapeHtml(node.textContent ?? '');
     if (node.nodeType !== Node.ELEMENT_NODE) return '';
     const el = node as HTMLElement;
     const tag = el.tagName.toUpperCase();
@@ -73,25 +88,34 @@ export function sanitizeRichHtml(input: string): string {
         .trim()
         .split(/\s+/)
         .filter(Boolean);
-      const classAttr = classes.includes('cv-change-marker') ? ' class="cv-change-marker"' : '';
+      const classAttr = classes.includes('cv-change-marker')
+        ? ' class="cv-change-marker"'
+        : '';
       const children = Array.from(el.childNodes).map(walk).join('');
       return `<u${classAttr}>${children}</u>`;
     }
     if (tag === 'A') {
       const rawHref = (el.getAttribute('href') ?? '').trim();
       const safeHref =
-        rawHref.startsWith('http://') || rawHref.startsWith('https://') ? rawHref : '';
+        rawHref.startsWith('http://') || rawHref.startsWith('https://')
+          ? rawHref
+          : '';
       const children = Array.from(el.childNodes).map(walk).join('');
       if (!safeHref) return children;
       return `<a href="${escapeHtml(safeHref)}" target="_blank" rel="noreferrer">${children}</a>`;
     }
     const children = Array.from(el.childNodes).map(walk).join('');
-    if (allowed.has(tag)) return `<${tag.toLowerCase()}>${children}</${tag.toLowerCase()}>`;
+    if (allowed.has(tag))
+      return `<${tag.toLowerCase()}>${children}</${tag.toLowerCase()}>`;
     if (tag === 'DIV' || tag === 'P') return `${children}<br/>`;
     return children;
   };
 
-  return Array.from(root.childNodes).map(walk).join('').replace(/(<br\/>)+$/g, '').trim();
+  return Array.from(root.childNodes)
+    .map(walk)
+    .join('')
+    .replace(/(<br\/>)+$/g, '')
+    .trim();
 }
 
 /** Canonical storage form from a contenteditable field's innerHTML. */
@@ -128,12 +152,27 @@ function expandAnchors(input: string): string {
 /** Safe HTML for contenteditable display and CV preview (preserves links). */
 export function toDisplayRichHtml(input: string): string {
   const decoded = decodeHtml(input);
-  const withUnderline = decoded.replace(/&lt;u&gt;(.*?)&lt;\/u&gt;/g, '<u>$1</u>');
-  const withStrong = withUnderline.replace(/&lt;strong&gt;(.*?)&lt;\/strong&gt;/g, '<strong>$1</strong>');
-  const withEm = withStrong.replace(/&lt;em&gt;(.*?)&lt;\/em&gt;/g, '<em>$1</em>');
+  const withUnderline = decoded.replace(
+    /&lt;u&gt;(.*?)&lt;\/u&gt;/g,
+    '<u>$1</u>',
+  );
+  const withStrong = withUnderline.replace(
+    /&lt;strong&gt;(.*?)&lt;\/strong&gt;/g,
+    '<strong>$1</strong>',
+  );
+  const withEm = withStrong.replace(
+    /&lt;em&gt;(.*?)&lt;\/em&gt;/g,
+    '<em>$1</em>',
+  );
   const withAnchors = expandAnchors(withEm);
-  const withMdBold = withAnchors.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  const withMdItalic = withMdBold.replace(/(^|[^*])\*(?!\*)(.+?)\*(?!\*)/g, '$1<em>$2</em>');
+  const withMdBold = withAnchors.replace(
+    /\*\*(.+?)\*\*/g,
+    '<strong>$1</strong>',
+  );
+  const withMdItalic = withMdBold.replace(
+    /(^|[^*])\*(?!\*)(.+?)\*(?!\*)/g,
+    '$1<em>$2</em>',
+  );
   return sanitizeRichHtml(withMdItalic.replace(/\n/g, '<br/>'));
 }
 

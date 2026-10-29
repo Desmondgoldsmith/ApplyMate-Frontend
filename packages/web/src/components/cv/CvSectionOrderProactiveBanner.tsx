@@ -25,10 +25,13 @@ export function CvSectionOrderProactiveBanner({
       role="status"
     >
       <div className="flex min-w-0 items-start gap-2.5">
-        <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[#00C9B1]" aria-hidden />
+        <Sparkles
+          className="mt-0.5 h-4 w-4 shrink-0 text-[#00C9B1]"
+          aria-hidden
+        />
         <p className="text-sm leading-snug text-white/85">
-          Your sections may not be in the most effective order. Want us to suggest the best
-          arrangement?
+          Your sections may not be in the most effective order. Want us to
+          suggest the best arrangement?
         </p>
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-2">

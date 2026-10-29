@@ -33,9 +33,17 @@ function Bar({
     >
       <span className="text-[11px] text-[var(--text-secondary)]">{label}</span>
       <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-        <div className={cn('h-full rounded-full transition-[width] duration-300', meterClass)} style={{ width: `${v}%` }} />
+        <div
+          className={cn(
+            'h-full rounded-full transition-[width] duration-300',
+            meterClass,
+          )}
+          style={{ width: `${v}%` }}
+        />
       </div>
-      <span className="text-right text-[11px] font-semibold tabular-nums text-[var(--text-primary)]">{v}</span>
+      <span className="text-right text-[11px] font-semibold tabular-nums text-[var(--text-primary)]">
+        {v}
+      </span>
     </div>
   );
 }
@@ -53,7 +61,11 @@ export const AnswerQualityMeter = memo(function AnswerQualityMeter({
   const lowest = [...entries].sort((a, b) => a.value - b.value)[0];
 
   return (
-    <div className={cn('space-y-2', className)} role="group" aria-label="Answer quality">
+    <div
+      className={cn('space-y-2', className)}
+      role="group"
+      aria-label="Answer quality"
+    >
       {entries.map((d) => (
         <Bar
           key={d.key}

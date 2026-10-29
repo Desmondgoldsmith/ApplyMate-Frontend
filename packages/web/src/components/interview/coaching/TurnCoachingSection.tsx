@@ -107,15 +107,24 @@ export const TurnCoachingSection = memo(function TurnCoachingSection({
     return lastFeedback?.followUp?.question?.trim() ?? '';
   }, [insight?.followUpQuestion, lastFeedback?.followUp?.question]);
 
-  const followUpReason = lastFeedback?.followUp?.reason as FollowUpReason | undefined;
+  const followUpReason = lastFeedback?.followUp?.reason as
+    | FollowUpReason
+    | undefined;
 
   const isLoading = coachingStatus === 'loading';
   const showInsight = Boolean(insight) && coachingStatus === 'ready';
 
   if (!persona.showMidSessionFeedback) {
     return (
-      <div className={cn('rounded-xl border border-white/10 bg-[#0B1010] p-4', className)}>
-        <p className="text-sm text-white/60">Answer recorded. Full feedback will appear after the session.</p>
+      <div
+        className={cn(
+          'rounded-xl border border-white/10 bg-[#0B1010] p-4',
+          className,
+        )}
+      >
+        <p className="text-sm text-white/60">
+          Answer recorded. Full feedback will appear after the session.
+        </p>
         <Button className="mt-4 w-full" onClick={onContinue}>
           {continueLabel}
         </Button>
@@ -125,7 +134,8 @@ export const TurnCoachingSection = memo(function TurnCoachingSection({
 
   const legacyTip =
     lastFeedback?.coaching?.tip?.trim() ??
-    (insight?.hint?.trim() || 'Solid answer — keep that detail on the next question.');
+    (insight?.hint?.trim() ||
+      'Solid answer — keep that detail on the next question.');
 
   const inner = (
     <div className="space-y-3">
@@ -141,9 +151,14 @@ export const TurnCoachingSection = memo(function TurnCoachingSection({
             personaName={persona.personName}
           />
           {followUpQuestion ? (
-            <FollowUpSuggestionBox followUpQuestion={followUpQuestion} reason={followUpReason} />
+            <FollowUpSuggestionBox
+              followUpQuestion={followUpQuestion}
+              reason={followUpReason}
+            />
           ) : null}
-          {insight.sampleAnswer ? <SampleAnswerPreview sampleAnswer={insight.sampleAnswer} /> : null}
+          {insight.sampleAnswer ? (
+            <SampleAnswerPreview sampleAnswer={insight.sampleAnswer} />
+          ) : null}
         </>
       ) : null}
 
@@ -160,7 +175,11 @@ export const TurnCoachingSection = memo(function TurnCoachingSection({
 
   return (
     <div
-      className={cn('rounded-xl border p-4', persona.theme.cardClass, className)}
+      className={cn(
+        'rounded-xl border p-4',
+        persona.theme.cardClass,
+        className,
+      )}
       data-turn-id={turnId}
       role="region"
       aria-label="Answer coaching"
@@ -168,7 +187,11 @@ export const TurnCoachingSection = memo(function TurnCoachingSection({
       {reduceMotion ? (
         inner
       ) : (
-        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+        >
           {inner}
         </motion.div>
       )}

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { cvScoreJobContextMeaningful, cvScorePreferDetailedPostBodyForJobDescription } from '@/lib/cvScoreJobContext';
+import {
+  cvScoreJobContextMeaningful,
+  cvScorePreferDetailedPostBodyForJobDescription,
+} from '@/lib/cvScoreJobContext';
 
 describe('cvScoreJobContext', () => {
   it('requires JD length ≥40 or role length ≥3', () => {
@@ -12,7 +15,11 @@ describe('cvScoreJobContext', () => {
   });
 
   it('prefers POST body for long JD', () => {
-    expect(cvScorePreferDetailedPostBodyForJobDescription('a'.repeat(400))).toBe(false);
-    expect(cvScorePreferDetailedPostBodyForJobDescription('a'.repeat(401))).toBe(true);
+    expect(
+      cvScorePreferDetailedPostBodyForJobDescription('a'.repeat(400)),
+    ).toBe(false);
+    expect(
+      cvScorePreferDetailedPostBodyForJobDescription('a'.repeat(401)),
+    ).toBe(true);
   });
 });

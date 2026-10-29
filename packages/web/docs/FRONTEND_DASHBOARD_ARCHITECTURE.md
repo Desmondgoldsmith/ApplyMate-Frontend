@@ -133,6 +133,7 @@ Structure:
 **Analyze:** **`useAnalyzeJob`** → `POST /jobs/analyze` → normalized **`JobAnalysis`**; invalidates analytics & job history.
 
 **Generate cover letter:** **`useGenerateContent`** → `POST /jobs/generate`; on success:
+
 - Sets local cover letter text.
 - **`api.applications.create`** (tracker row: title, company, match score, etc.).
 - Placeholder substitution for **`[Candidate Name]`** via **`substituteCoverLetterCandidateName`** + **`getDisplayName`** for display/copy/PDF.
@@ -162,16 +163,16 @@ Structure:
 
 ## 10. TanStack Query — important keys
 
-| Key | Typical use |
-|-----|----------------|
-| `['me']` | Current user |
-| `['cv-profile']` | CV profile |
-| `['job-history']` | Job list / history (default `useJobHistory()`) |
-| `['applications']` | Application tracker |
-| `['analytics']` | Overview metrics |
-| `['cv-sections', …]` | CV sections |
-| `['cv', 'score']` / `['cv', 'improvements']` | CV scoring |
-| `['onboarding', 'status']` | Onboarding |
+| Key                                          | Typical use                                    |
+| -------------------------------------------- | ---------------------------------------------- |
+| `['me']`                                     | Current user                                   |
+| `['cv-profile']`                             | CV profile                                     |
+| `['job-history']`                            | Job list / history (default `useJobHistory()`) |
+| `['applications']`                           | Application tracker                            |
+| `['analytics']`                              | Overview metrics                               |
+| `['cv-sections', …]`                         | CV sections                                    |
+| `['cv', 'score']` / `['cv', 'improvements']` | CV scoring                                     |
+| `['onboarding', 'status']`                   | Onboarding                                     |
 
 Mutations (analyze, generate, applications create, CV updates) **invalidate** relevant keys — see individual hooks (`useAnalyzeJob`, etc.).
 
@@ -197,4 +198,4 @@ Mutations (analyze, generate, applications create, CV updates) **invalidate** re
 
 ---
 
-*Last aligned with the repo structure: dashboard routes, `api` export, hooks under `src/hooks`, and layouts as described above.*
+_Last aligned with the repo structure: dashboard routes, `api` export, hooks under `src/hooks`, and layouts as described above._

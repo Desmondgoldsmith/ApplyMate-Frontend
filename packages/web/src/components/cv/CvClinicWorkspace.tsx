@@ -3,7 +3,14 @@
 import { queryKeys } from '@/lib/queryKeys';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import { motion } from 'framer-motion';
 import { ArrowLeft, BarChart3 } from 'lucide-react';
@@ -31,7 +38,11 @@ import { useCvSuggestionMutations } from '@/hooks/useCvSuggestionMutations';
 import { useCVImprovements } from '@/hooks/useCVImprovements';
 import { useCVProfileById } from '@/hooks/useCVProfileById';
 import { useCVScore } from '@/hooks/useCVScore';
-import { isCvScoreInitialLoading, mergeBreakdownWithPublishedSections, resolveCvDisplayScore } from '@/lib/cvScoreDisplay';
+import {
+  isCvScoreInitialLoading,
+  mergeBreakdownWithPublishedSections,
+  resolveCvDisplayScore,
+} from '@/lib/cvScoreDisplay';
 import { resolveCvSpellcheckLanguage } from '@/lib/cvSpellcheckLanguage';
 import { useRunCvDetailedScore } from '@/hooks/useRunCvDetailedScore';
 import {
@@ -46,7 +57,11 @@ import {
   type CvDiffPreviewOpenParams,
   type CvAssistantSectionDiff,
 } from '@/lib/api';
-import { formatApiErrorForToast, getApiErrorCode, getApiErrorMessage } from '@/lib/axios';
+import {
+  formatApiErrorForToast,
+  getApiErrorCode,
+  getApiErrorMessage,
+} from '@/lib/axios';
 import {
   cvImprovementAcceptPreviewSyncUserMessage,
   recoverCvImprovementAcceptPreviewSync,
@@ -282,12 +297,18 @@ export function CvClinicWorkspace({
       ),
     [score.data, improvements.data?.needsScoring, improvements.data?.score],
   );
-  const scoreInitialLoading = isCvScoreInitialLoading(score.isPending, score.data);
+  const scoreInitialLoading = isCvScoreInitialLoading(
+    score.isPending,
+    score.data,
+  );
   const scoreRefreshing =
     score.isFetching && !scoreInitialLoading && displayScoreValue != null;
   const displayScoreBreakdown = useMemo(() => {
     const base = score.data?.breakdown as Record<string, unknown> | undefined;
-    if (improvements.data?.needsScoring && improvements.data.lastPublishedSectionScores) {
+    if (
+      improvements.data?.needsScoring &&
+      improvements.data.lastPublishedSectionScores
+    ) {
       return mergeBreakdownWithPublishedSections(
         base,
         improvements.data.lastPublishedSectionScores,
@@ -475,8 +496,8 @@ export function CvClinicWorkspace({
   const assistantBusyMessage = useMemo(
     () =>
       assistantBusy
-        ? cvAssistantBusyMessage(assistantBusyStage) ??
-          cvAssistantBusyMessage('generating')
+        ? (cvAssistantBusyMessage(assistantBusyStage) ??
+          cvAssistantBusyMessage('generating'))
         : cvImprovementDiffActionsPending
           ? cvAssistantBusyMessage('validating')
           : null,
@@ -558,9 +579,12 @@ export function CvClinicWorkspace({
     [openRecruiterScanSession, profileId, toast],
   );
 
-  const activeClarification = globalAssistantClarification ?? assistantClarification;
+  const activeClarification =
+    globalAssistantClarification ?? assistantClarification;
   const clarificationQuestion =
-    recruiterScanClarification?.question ?? activeClarification?.question ?? null;
+    recruiterScanClarification?.question ??
+    activeClarification?.question ??
+    null;
 
   const jumpToSectionRef = useRef<
     | ((sid: string, itemId?: string, opts?: { scrollForm?: boolean }) => void)
@@ -571,7 +595,8 @@ export function CvClinicWorkspace({
     if (diffPreview?.section && jumpToSectionRef.current) {
       const t = window.setTimeout(() => {
         jumpToSectionRef.current?.(
-          cvDiffPreviewBuilderSection(diffPreview.section) ?? diffPreview.section,
+          cvDiffPreviewBuilderSection(diffPreview.section) ??
+            diffPreview.section,
         );
       }, 350);
       return () => window.clearTimeout(t);
@@ -703,8 +728,15 @@ export function CvClinicWorkspace({
       cvDataSnapshot ?? initialData,
       sections,
     );
-    const { items, dropped } = filterUnrealisticCvSuggestions(pending, inventory);
-    logUnrealisticCvRecommendationDropDev('suggestions_panel', profileId, dropped);
+    const { items, dropped } = filterUnrealisticCvSuggestions(
+      pending,
+      inventory,
+    );
+    logUnrealisticCvRecommendationDropDev(
+      'suggestions_panel',
+      profileId,
+      dropped,
+    );
     return items;
   }, [
     improvements.data?.improvements,
@@ -907,8 +939,12 @@ export function CvClinicWorkspace({
         await queryClient.invalidateQueries({
           queryKey: queryKeys.cv.profile(profileId),
         });
-        await queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.cv.scoreRoot() });
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.cv.profiles(),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.cv.scoreRoot(),
+        });
         void queryClient.invalidateQueries({
           queryKey: CV_SUGGESTIONS_QUERY_ROOT,
         });
@@ -917,7 +953,9 @@ export function CvClinicWorkspace({
         });
         toast.success('Template updated');
         window.setTimeout(() => {
-          void queryClient.invalidateQueries({ queryKey: queryKeys.cv.scoreRoot() });
+          void queryClient.invalidateQueries({
+            queryKey: queryKeys.cv.scoreRoot(),
+          });
           void queryClient.invalidateQueries({
             queryKey: CV_SUGGESTIONS_QUERY_ROOT,
           });
@@ -932,7 +970,10 @@ export function CvClinicWorkspace({
   const handleDashboardSaved = useCallback(
     async (result?: SaveCVBuilderDataResult) => {
       if (result?.sections && result.sections.length > 0) {
-        queryClient.setQueryData(queryKeys.cv.sections(profileId), result.sections);
+        queryClient.setQueryData(
+          queryKeys.cv.sections(profileId),
+          result.sections,
+        );
       }
       void queryClient.invalidateQueries({
         queryKey: queryKeys.cv.profile(profileId),
@@ -994,9 +1035,10 @@ export function CvClinicWorkspace({
           const commitResult = await commitAssistantAcceptedPatch({
             queryClient,
             profileId: id,
-            patch: (patch && typeof patch === 'object'
-              ? patch
-              : {}) as Record<string, unknown>,
+            patch: (patch && typeof patch === 'object' ? patch : {}) as Record<
+              string,
+              unknown
+            >,
             commandId: assistantCommandIdRef.current.trim() || undefined,
             onRehydrated: () => {
               setCvServerHydrateNonce((n) => n + 1);
@@ -1091,7 +1133,9 @@ export function CvClinicWorkspace({
           closeDiffPreviewForKey(opKey);
           toast.success('Suggestion applied successfully.');
           await Promise.all([
-            queryClient.refetchQueries({ queryKey: queryKeys.cv.profile(profileId) }),
+            queryClient.refetchQueries({
+              queryKey: queryKeys.cv.profile(profileId),
+            }),
             queryClient.refetchQueries({
               queryKey: queryKeys.cv.sections(profileId),
               exact: true,
@@ -1196,7 +1240,9 @@ export function CvClinicWorkspace({
         toast.success('Suggestion applied successfully.');
         const t0Field = Date.now();
         await Promise.all([
-          queryClient.refetchQueries({ queryKey: queryKeys.cv.profile(profileId) }),
+          queryClient.refetchQueries({
+            queryKey: queryKeys.cv.profile(profileId),
+          }),
           queryClient.refetchQueries({
             queryKey: queryKeys.cv.sections(profileId),
             exact: true,
@@ -1229,7 +1275,6 @@ export function CvClinicWorkspace({
           getApiErrorMessage(e) ||
             'Could not apply this improvement. Please try again.',
         );
-        
       } finally {
         cvImprovementDiffInFlightRef.current = false;
         setCvImprovementDiffActionsPending(false);
@@ -1381,7 +1426,6 @@ export function CvClinicWorkspace({
           shouldClosePreview = false;
           return;
         }
-        
       } finally {
         cvImprovementDiffInFlightRef.current = false;
         setCvImprovementDiffActionsPending(false);
@@ -1479,9 +1523,7 @@ export function CvClinicWorkspace({
         );
         return 'ok';
       } catch (e) {
-        toast.error(
-          formatApiErrorForToast(e, 'Assistant command failed'),
-        );
+        toast.error(formatApiErrorForToast(e, 'Assistant command failed'));
         return 'error';
       } finally {
         setAssistantBusy(false);
@@ -1518,7 +1560,8 @@ export function CvClinicWorkspace({
             : globalAssistantClarification?.clarifications;
         const res = await api.cv.assistantGlobalCommand(profileId, {
           command,
-          operation: options?.operation ?? globalAssistantClarification?.operation,
+          operation:
+            options?.operation ?? globalAssistantClarification?.operation,
           clarifications: mergedClarifications,
           ...(options?.findings?.length ? { findings: options.findings } : {}),
           ...(options?.scanCommandId?.trim()
@@ -1531,7 +1574,8 @@ export function CvClinicWorkspace({
             command,
             question: res.question,
             clarifications: mergedClarifications ?? [],
-            operation: options?.operation ?? globalAssistantClarification?.operation,
+            operation:
+              options?.operation ?? globalAssistantClarification?.operation,
           });
           setClarificationModalOpen(true);
           return 'clarify';
@@ -1566,7 +1610,8 @@ export function CvClinicWorkspace({
             profileId,
             dropped,
           );
-          const comprehensiveSession = recruiterScanSessionFromFindings(filteredFindings);
+          const comprehensiveSession =
+            recruiterScanSessionFromFindings(filteredFindings);
           if (comprehensiveSession && res.operation === 'recruiter_scan') {
             openRecruiterScanSession(comprehensiveSession);
             setGlobalAssistantFullResult(null);
@@ -1627,7 +1672,9 @@ export function CvClinicWorkspace({
         );
         return 'ok';
       } catch (e) {
-        toast.error(formatApiErrorForToast(e, 'Global assistant command failed'));
+        toast.error(
+          formatApiErrorForToast(e, 'Global assistant command failed'),
+        );
         return 'error';
       } finally {
         setAssistantBusy(false);
@@ -1685,11 +1732,7 @@ export function CvClinicWorkspace({
       }
       if (!assistantClarification) return;
       const { command, question, targetSection } = assistantClarification;
-      await runAssistantCommand(
-        command,
-        [{ question, answer }],
-        targetSection,
-      );
+      await runAssistantCommand(command, [{ question, answer }], targetSection);
     },
     [
       assistantClarification,
@@ -1824,39 +1867,41 @@ export function CvClinicWorkspace({
     [sections],
   );
 
-  const toolbarLeftSlot = isOnboarding && onBack ? (
-    <button
-      type="button"
-      className="group flex shrink-0 cursor-pointer items-center gap-1.5 text-left text-[13px] text-[rgba(255,255,255,0.45)] transition-colors duration-200 hover:text-[rgba(255,255,255,0.8)]"
-      onClick={onBack}
-    >
-      <ArrowLeft
-        className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:-translate-x-0.5"
-        strokeWidth={2}
-      />
-      Back
-    </button>
-  ) : null;
-
-  const toolbarRightAddon = isOnboarding && onContinue && onSkip ? (
-    <div className="hidden flex-wrap items-center justify-end gap-1.5 sm:flex">
-      <Button
-        type="button"
-        className="h-8 shrink-0 px-3 text-[11px]"
-        disabled={continueDisabled}
-        onClick={() => onContinue(cvDataSnapshot ?? initialData)}
-      >
-        Continue →
-      </Button>
+  const toolbarLeftSlot =
+    isOnboarding && onBack ? (
       <button
         type="button"
-        className="h-8 shrink-0 px-2 text-[11px] text-white/45 transition hover:text-white/80"
-        onClick={onSkip}
+        className="group flex shrink-0 cursor-pointer items-center gap-1.5 text-left text-[13px] text-[rgba(255,255,255,0.45)] transition-colors duration-200 hover:text-[rgba(255,255,255,0.8)]"
+        onClick={onBack}
       >
-        Skip
+        <ArrowLeft
+          className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:-translate-x-0.5"
+          strokeWidth={2}
+        />
+        Back
       </button>
-    </div>
-  ) : null;
+    ) : null;
+
+  const toolbarRightAddon =
+    isOnboarding && onContinue && onSkip ? (
+      <div className="hidden flex-wrap items-center justify-end gap-1.5 sm:flex">
+        <Button
+          type="button"
+          className="h-8 shrink-0 px-3 text-[11px]"
+          disabled={continueDisabled}
+          onClick={() => onContinue(cvDataSnapshot ?? initialData)}
+        >
+          Continue →
+        </Button>
+        <button
+          type="button"
+          className="h-8 shrink-0 px-2 text-[11px] text-white/45 transition hover:text-white/80"
+          onClick={onSkip}
+        >
+          Skip
+        </button>
+      </div>
+    ) : null;
 
   const renderInsightsPanel = () => (
     <CvClinicTripleRightPanel
@@ -1885,7 +1930,9 @@ export function CvClinicWorkspace({
       analyzeScanPending={runScan.isPending}
       onAnalyzeScan={runRightPanelAnalyzeScan}
       onRecruiterScan={() => void runRecruiterScan()}
-      recruiterScanPending={assistantBusy && assistantBusyStage === 'generating'}
+      recruiterScanPending={
+        assistantBusy && assistantBusyStage === 'generating'
+      }
       onDiffPreview={mergeDiffPreviewOpen}
       onAtsKeywordAssist={handleAtsKeywordAssist}
       changesSlot={isTailoring ? tailorRightSlot : undefined}
@@ -1896,7 +1943,12 @@ export function CvClinicWorkspace({
   const tripleColumnRightSlot = renderInsightsPanel();
 
   return (
-    <div className={cn('flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col overflow-hidden', className)}>
+    <div
+      className={cn(
+        'flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col overflow-hidden',
+        className,
+      )}
+    >
       <CvAssistantClarificationModal
         open={clarificationModalOpen && Boolean(clarificationQuestion)}
         busy={assistantBusy}
@@ -1976,59 +2028,59 @@ export function CvClinicWorkspace({
           />
         </div>
         {isOnboarding && onBack ? (
-        <div className="shrink-0 border-b border-white/[0.06] bg-[#0C0F0F] px-3 py-2 lg:hidden">
-          <div className="flex min-w-0 items-center gap-2">
-            <button
-              type="button"
-              className="group flex h-8 shrink-0 cursor-pointer items-center gap-1 px-1 text-[11px] text-white/45 transition hover:text-white/80"
-              onClick={onBack}
-              aria-label="Back to previous step"
-            >
-              <ArrowLeft
-                className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:-translate-x-0.5"
-                strokeWidth={2}
-              />
-              Back
-            </button>
-            {onContinue && onSkip ? (
-            <div className="ml-auto flex min-w-0 items-center gap-2">
-              <Button
-                type="button"
-                className="h-8 shrink-0 px-3 text-[11px]"
-                disabled={continueDisabled}
-                onClick={() => onContinue(cvDataSnapshot ?? initialData)}
-              >
-                Continue →
-              </Button>
+          <div className="shrink-0 border-b border-white/[0.06] bg-[#0C0F0F] px-3 py-2 lg:hidden">
+            <div className="flex min-w-0 items-center gap-2">
               <button
                 type="button"
-                className="h-8 shrink-0 px-2 text-[11px] text-white/45 transition hover:text-white/80"
-                onClick={onSkip}
+                className="group flex h-8 shrink-0 cursor-pointer items-center gap-1 px-1 text-[11px] text-white/45 transition hover:text-white/80"
+                onClick={onBack}
+                aria-label="Back to previous step"
               >
-                Skip
+                <ArrowLeft
+                  className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:-translate-x-0.5"
+                  strokeWidth={2}
+                />
+                Back
               </button>
+              {onContinue && onSkip ? (
+                <div className="ml-auto flex min-w-0 items-center gap-2">
+                  <Button
+                    type="button"
+                    className="h-8 shrink-0 px-3 text-[11px]"
+                    disabled={continueDisabled}
+                    onClick={() => onContinue(cvDataSnapshot ?? initialData)}
+                  >
+                    Continue →
+                  </Button>
+                  <button
+                    type="button"
+                    className="h-8 shrink-0 px-2 text-[11px] text-white/45 transition hover:text-white/80"
+                    onClick={onSkip}
+                  >
+                    Skip
+                  </button>
+                </div>
+              ) : null}
             </div>
-            ) : null}
           </div>
-        </div>
         ) : null}
 
         {!isTailoring ? (
-        <MobileDockFab
-          open={mobileInsightsOpen}
-          onOpenChange={setMobileInsightsOpen}
-          icon={BarChart3}
-          label="Score and tips"
-          fabId="onboarding-cv-insights"
-          stackIndex={0}
-        >
-          <div className="space-y-3 pb-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-white/50">
-              Score breakdown & tips
-            </p>
-            {renderInsightsPanel()}
-          </div>
-        </MobileDockFab>
+          <MobileDockFab
+            open={mobileInsightsOpen}
+            onOpenChange={setMobileInsightsOpen}
+            icon={BarChart3}
+            label="Score and tips"
+            fabId="onboarding-cv-insights"
+            stackIndex={0}
+          >
+            <div className="space-y-3 pb-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-white/50">
+                Score breakdown & tips
+              </p>
+              {renderInsightsPanel()}
+            </div>
+          </MobileDockFab>
         ) : null}
 
         {sectionOrderFlow.showProactiveBanner ? (
@@ -2079,7 +2131,9 @@ export function CvClinicWorkspace({
             onJumpToSectionReady={(fn) => {
               jumpToSectionRef.current = fn;
             }}
-            diffSection={cvDiffPreviewBuilderSection(diffPreview?.section ?? null)}
+            diffSection={cvDiffPreviewBuilderSection(
+              diffPreview?.section ?? null,
+            )}
             diffBefore={diffPreview?.before ?? null}
             diffAfter={diffPreview?.after ?? null}
             diffChangedFields={diffPreview?.changedFields ?? null}
@@ -2108,7 +2162,9 @@ export function CvClinicWorkspace({
             cvAssistantClarificationQuestion={null}
             externalPatch={effectiveExternalPatch}
             externalPatchNonce={effectiveExternalPatchNonce}
-            serverHydrateNonce={cvServerHydrateNonce + externalServerHydrateNonce}
+            serverHydrateNonce={
+              cvServerHydrateNonce + externalServerHydrateNonce
+            }
             forceServerHydrateNonce={forceServerHydrateNonce}
             onAiStructuredPersisted={() => {
               setCvServerHydrateNonce((n) => n + 1);
@@ -2117,13 +2173,13 @@ export function CvClinicWorkspace({
             assistantAcceptHighlightSectionId={
               assistantAcceptHighlight?.sectionId ?? null
             }
-            assistantAcceptHighlightNonce={
-              assistantAcceptHighlight?.nonce ?? 0
-            }
+            assistantAcceptHighlightNonce={assistantAcceptHighlight?.nonce ?? 0}
             tailorHighlightSectionId={tailorHighlightSectionId}
             tailorHighlightNonce={tailorHighlightNonce}
             tailorHighlightAction={tailorHighlightAction}
-            recruiterScanHeatmap={recruiterScanPanelOpen ? recruiterScanHeatmap : null}
+            recruiterScanHeatmap={
+              recruiterScanPanelOpen ? recruiterScanHeatmap : null
+            }
             spellcheckLanguage={spellcheckLanguage}
           />
         </div>

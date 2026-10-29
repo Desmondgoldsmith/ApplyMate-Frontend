@@ -83,7 +83,8 @@ export function resolveGlobalAssistantPresets(
       label: remote.label.trim() || def.label,
       description: remote.description.trim() || def.description,
       exampleCommand,
-      affectedScopeLabel: remote.affectedScopeLabel.trim() || def.affectedScopeLabel,
+      affectedScopeLabel:
+        remote.affectedScopeLabel.trim() || def.affectedScopeLabel,
       scope: remote.scope === 'findings' ? 'findings' : def.scope,
     };
   });

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatInterviewChartDate, toInterviewChartPoints } from './interviewChartData';
+import {
+  formatInterviewChartDate,
+  toInterviewChartPoints,
+} from './interviewChartData';
 import type { ProgressTrendPoint } from './interview-prep-types';
 
 describe('interviewChartData', () => {
@@ -23,7 +26,9 @@ describe('interviewChartData', () => {
     const chart = toInterviewChartPoints(points);
     expect(chart[0]!.sessionId).toBe('a');
     expect(chart[1]!.score).toBe(39);
-    expect(chart[0]!.dateLabel).toBe(formatInterviewChartDate('2026-05-18T12:00:00.000Z'));
+    expect(chart[0]!.dateLabel).toBe(
+      formatInterviewChartDate('2026-05-18T12:00:00.000Z'),
+    );
   });
 
   it('uses readiness score when it differs from composite', () => {

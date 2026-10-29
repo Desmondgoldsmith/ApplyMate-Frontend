@@ -3,8 +3,14 @@ import { useEffect, useState, type Dispatch, type ReactNode } from 'react';
 import { coverLetterBlockReason } from '@/shared/cover-letter-payload';
 import { downloadCoverLetterPdf } from '@/shared/cover-letter-pdf';
 import { cvScoreBlockReason } from '@/shared/cv-score-payload';
-import { factorByKey, warnFactorScoreInconsistency } from '@/shared/factors-breakdown';
-import { allGapLabelsFromScore, strengthsFromScore } from '@/shared/job-session';
+import {
+  factorByKey,
+  warnFactorScoreInconsistency,
+} from '@/shared/factors-breakdown';
+import {
+  allGapLabelsFromScore,
+  strengthsFromScore,
+} from '@/shared/job-session';
 import {
   COVER_LETTER_PROGRESS_PHRASES,
   SCORE_PROGRESS_PHRASES,
@@ -58,7 +64,8 @@ const TOKENS = {
 } as const;
 
 const WEB_APP_BASE =
-  import.meta.env.VITE_WEB_APP_URL?.replace(/\/$/, '') ?? 'http://localhost:3001';
+  import.meta.env.VITE_WEB_APP_URL?.replace(/\/$/, '') ??
+  'http://localhost:3001';
 
 const JOB_HUB_URL = `${WEB_APP_BASE}/dashboard/jobs`;
 
@@ -107,43 +114,43 @@ function scoreLabelPillStyle(label: string): {
 } {
   const key = label.trim().toLowerCase();
   if (key.includes('excellent')) {
-      return {
-        background: 'rgba(52,211,153,0.12)',
-        border: 'rgba(52,211,153,0.25)',
-        color: TOKENS.green,
-      };
+    return {
+      background: 'rgba(52,211,153,0.12)',
+      border: 'rgba(52,211,153,0.25)',
+      color: TOKENS.green,
+    };
   }
   if (key.includes('strong')) {
-      return {
-        background: TOKENS.teal12,
-        border: TOKENS.teal25,
-        color: TOKENS.primary,
-      };
+    return {
+      background: TOKENS.teal12,
+      border: TOKENS.teal25,
+      color: TOKENS.primary,
+    };
   }
   if (key.includes('good')) {
-      return {
-        background: 'rgba(96,165,250,0.12)',
-        border: 'rgba(96,165,250,0.25)',
-        color: TOKENS.blue,
-      };
+    return {
+      background: 'rgba(96,165,250,0.12)',
+      border: 'rgba(96,165,250,0.25)',
+      color: TOKENS.blue,
+    };
   }
   if (key.includes('fair') || key.includes('partial')) {
-      return {
-        background: 'rgba(245,158,11,0.12)',
-        border: 'rgba(245,158,11,0.25)',
-        color: TOKENS.amber,
-      };
+    return {
+      background: 'rgba(245,158,11,0.12)',
+      border: 'rgba(245,158,11,0.25)',
+      color: TOKENS.amber,
+    };
   }
   if (key.includes('weak') || key.includes('low')) {
-      return {
-        background: 'rgba(248,113,113,0.12)',
-        border: 'rgba(248,113,113,0.25)',
-        color: TOKENS.red,
-      };
+    return {
+      background: 'rgba(248,113,113,0.12)',
+      border: 'rgba(248,113,113,0.25)',
+      color: TOKENS.red,
+    };
   }
   return {
-        background: 'rgba(255,255,255,0.06)',
-        border: 'rgba(255,255,255,0.10)',
+    background: 'rgba(255,255,255,0.06)',
+    border: 'rgba(255,255,255,0.10)',
     color: TOKENS.textSecondary,
   };
 }
@@ -204,7 +211,14 @@ function SkillList({
 }) {
   if (items.length === 0) {
     return (
-      <p style={{ margin: 0, fontSize: 11, color: TOKENS.textMuted, lineHeight: 1.5 }}>
+      <p
+        style={{
+          margin: 0,
+          fontSize: 11,
+          color: TOKENS.textMuted,
+          lineHeight: 1.5,
+        }}
+      >
         None listed
       </p>
     );
@@ -228,7 +242,10 @@ function SkillList({
             background: bg,
             fontSize: 11,
             lineHeight: 1.45,
-            color: tone === 'strength' ? 'rgba(167,243,208,0.95)' : 'rgba(254,202,202,0.95)',
+            color:
+              tone === 'strength'
+                ? 'rgba(167,243,208,0.95)'
+                : 'rgba(254,202,202,0.95)',
           }}
         >
           <span
@@ -259,7 +276,9 @@ function CvSelectorSection({
   dispatch: Dispatch<CvTabAction>;
   disabled?: boolean;
 }) {
-  const selectedProfile = state.profiles.find((p) => p.id === state.selectedCvId);
+  const selectedProfile = state.profiles.find(
+    (p) => p.id === state.selectedCvId,
+  );
 
   if (state.profilesLoading) {
     return (
@@ -293,8 +312,16 @@ function CvSelectorSection({
             fontFamily: TOKENS.font,
           }}
         >
-          <p style={{ margin: 0, fontSize: 12, color: TOKENS.amber }}>No CV profiles found.</p>
-          <p style={{ margin: '4px 0 0', fontSize: 11, color: 'rgba(240,244,242,0.40)' }}>
+          <p style={{ margin: 0, fontSize: 12, color: TOKENS.amber }}>
+            No CV profiles found.
+          </p>
+          <p
+            style={{
+              margin: '4px 0 0',
+              fontSize: 11,
+              color: 'rgba(240,244,242,0.40)',
+            }}
+          >
             Create a CV on the dashboard first.
           </p>
           <button
@@ -376,7 +403,13 @@ function CvSelectorSection({
         ))}
       </select>
       {selectedProfile ? (
-        <p style={{ margin: '6px 0 0', fontSize: 11, color: TOKENS.textDisabled }}>
+        <p
+          style={{
+            margin: '6px 0 0',
+            fontSize: 11,
+            color: TOKENS.textDisabled,
+          }}
+        >
           Last updated {relativeTime(selectedProfile.lastUpdated)}
         </p>
       ) : null}
@@ -395,7 +428,14 @@ function NoJobWarning() {
         fontFamily: TOKENS.font,
       }}
     >
-      <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: TOKENS.textSecondary }}>
+      <p
+        style={{
+          margin: 0,
+          fontSize: 13,
+          fontWeight: 500,
+          color: TOKENS.textSecondary,
+        }}
+      >
         Open a job listing first
       </p>
       <p
@@ -406,14 +446,20 @@ function NoJobWarning() {
           lineHeight: 1.6,
         }}
       >
-        Navigate to a job page and the CV scoring and cover letter features will activate
-        automatically.
+        Navigate to a job page and the CV scoring and cover letter features will
+        activate automatically.
       </p>
     </div>
   );
 }
 
-function ScoreRing({ score, animatedScore }: { score: number; animatedScore: number }) {
+function ScoreRing({
+  score,
+  animatedScore,
+}: {
+  score: number;
+  animatedScore: number;
+}) {
   const color = scoreColor(score);
   const dashLength = animatedScore * 2.01;
 
@@ -525,7 +571,10 @@ function FactorChips({
 
 function FactorBreakdownChips({ scoreResult }: { scoreResult: CvScoreResult }) {
   const skillsFactor = factorByKey(scoreResult.factorsBreakdown, 'skillsMatch');
-  const atsFactor = factorByKey(scoreResult.factorsBreakdown, 'keywordCoverage');
+  const atsFactor = factorByKey(
+    scoreResult.factorsBreakdown,
+    'keywordCoverage',
+  );
   if (!skillsFactor && !atsFactor) return null;
 
   const sections: Array<{
@@ -621,7 +670,7 @@ function MatchScoreSection({
   const resolvedJobAnalysisId =
     jobAnalysisId ??
     (state.scoreState.status === 'done'
-      ? state.scoreState.result.jobAnalysisId ?? null
+      ? (state.scoreState.result.jobAnalysisId ?? null)
       : null);
 
   const openAnalyzer = () => {
@@ -703,20 +752,20 @@ function MatchScoreSection({
             </span>
           ) : null}
           {state.scoreState.status === 'done' && pillStyle ? (
-          <span
-            style={{
-              borderRadius: 20,
-              padding: '3px 10px',
-              fontSize: 11,
-              fontWeight: 600,
-              background: pillStyle.background,
-              border: `1px solid ${pillStyle.border}`,
-              color: pillStyle.color,
-            }}
-          >
-            {state.scoreState.result.scoreLabel}
-          </span>
-        ) : null}
+            <span
+              style={{
+                borderRadius: 20,
+                padding: '3px 10px',
+                fontSize: 11,
+                fontWeight: 600,
+                background: pillStyle.background,
+                border: `1px solid ${pillStyle.border}`,
+                color: pillStyle.color,
+              }}
+            >
+              {state.scoreState.result.scoreLabel}
+            </span>
+          ) : null}
         </div>
       </div>
 
@@ -742,29 +791,38 @@ function MatchScoreSection({
               dispatch({ type: 'setScoreState', state: { status: 'loading' } });
               void chrome.runtime
                 .sendMessage({
-                action: 'getCvScore',
-                cvId: state.selectedCvId,
-                jobDescription: currentJob.description.trim(),
-                jobTitle: currentJob.title.trim(),
-                company: currentJob.company?.trim() || undefined,
-                jobAnalysisId,
-                sourceUrl: currentJob.sourceUrl,
-                sourceSite: currentJob.sourceSite,
-              } satisfies MessageAction)
+                  action: 'getCvScore',
+                  cvId: state.selectedCvId,
+                  jobDescription: currentJob.description.trim(),
+                  jobTitle: currentJob.title.trim(),
+                  company: currentJob.company?.trim() || undefined,
+                  jobAnalysisId,
+                  sourceUrl: currentJob.sourceUrl,
+                  sourceSite: currentJob.sourceSite,
+                } satisfies MessageAction)
                 .catch(() => {
                   dispatch({
                     type: 'setScoreState',
-                    state: { status: 'error', message: 'Could not start analysis. Try again.' },
+                    state: {
+                      status: 'error',
+                      message: 'Could not start analysis. Try again.',
+                    },
                   });
                 });
             }}
             style={{
               width: '100%',
               padding: 10,
-              background: canAnalyze && !scoreBlocked ? TOKENS.teal10 : 'rgba(255,255,255,0.04)',
+              background:
+                canAnalyze && !scoreBlocked
+                  ? TOKENS.teal10
+                  : 'rgba(255,255,255,0.04)',
               border: `1px solid ${canAnalyze && !scoreBlocked ? TOKENS.teal25 : TOKENS.borderDefault}`,
               borderRadius: 8,
-              color: canAnalyze && !scoreBlocked ? TOKENS.primary : TOKENS.textDisabled,
+              color:
+                canAnalyze && !scoreBlocked
+                  ? TOKENS.primary
+                  : TOKENS.textDisabled,
               fontSize: 13,
               fontWeight: 600,
               cursor: canAnalyze && !scoreBlocked ? 'pointer' : 'not-allowed',
@@ -817,7 +875,9 @@ function MatchScoreSection({
           </p>
           <button
             type="button"
-            onClick={() => dispatch({ type: 'setScoreState', state: { status: 'idle' } })}
+            onClick={() =>
+              dispatch({ type: 'setScoreState', state: { status: 'idle' } })
+            }
             style={{
               marginTop: 8,
               padding: 0,
@@ -834,267 +894,307 @@ function MatchScoreSection({
         </div>
       ) : null}
 
-      {state.scoreState.status === 'done' ? (() => {
-        const scoreResult = state.scoreState.result;
-        const gapLabels = allGapLabelsFromScore(scoreResult);
-        const strengthLabels = strengthsFromScore(scoreResult);
-        const beforeTailor = scoreResult.scoreBeforeTailoring;
-        const showTailorDelta =
-          scoreResult.isTailored === true &&
-          beforeTailor != null &&
-          Number.isFinite(beforeTailor) &&
-          Math.round(beforeTailor) !== Math.round(scoreResult.matchScore);
-        const salaryNote = scoreResult.salaryEstimate?.note?.toLowerCase() ?? '';
-        const salaryFromPosting =
-          scoreResult.salaryEstimate?.source === 'job_description' &&
-          !salaryNote.includes('no specific pay band');
-        return (
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-            <ScoreRing score={scoreResult.matchScore} animatedScore={animatedScore} />
-            <div style={{ flex: 1 }}>
-              {showTailorDelta ? (
-                <p
+      {state.scoreState.status === 'done'
+        ? (() => {
+            const scoreResult = state.scoreState.result;
+            const gapLabels = allGapLabelsFromScore(scoreResult);
+            const strengthLabels = strengthsFromScore(scoreResult);
+            const beforeTailor = scoreResult.scoreBeforeTailoring;
+            const showTailorDelta =
+              scoreResult.isTailored === true &&
+              beforeTailor != null &&
+              Number.isFinite(beforeTailor) &&
+              Math.round(beforeTailor) !== Math.round(scoreResult.matchScore);
+            const salaryNote =
+              scoreResult.salaryEstimate?.note?.toLowerCase() ?? '';
+            const salaryFromPosting =
+              scoreResult.salaryEstimate?.source === 'job_description' &&
+              !salaryNote.includes('no specific pay band');
+            return (
+              <div style={cardStyle}>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                  <ScoreRing
+                    score={scoreResult.matchScore}
+                    animatedScore={animatedScore}
+                  />
+                  <div style={{ flex: 1 }}>
+                    {showTailorDelta ? (
+                      <p
+                        style={{
+                          margin: '0 0 6px',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: TOKENS.green,
+                        }}
+                      >
+                        {Math.round(beforeTailor!)}% →{' '}
+                        {Math.round(scoreResult.matchScore)}%
+                        {scoreResult.tailoredCvName
+                          ? ` · ${scoreResult.tailoredCvName}`
+                          : ''}
+                      </p>
+                    ) : scoreResult.isTailored && scoreResult.tailoredCvName ? (
+                      <p
+                        style={{
+                          margin: '0 0 6px',
+                          fontSize: 11,
+                          color: TOKENS.textSecondary,
+                        }}
+                      >
+                        {scoreResult.tailoredCvName}
+                      </p>
+                    ) : null}
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: TOKENS.primary,
+                        letterSpacing: '0.04em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {scoreResult.fromCache
+                        ? 'Saved analysis'
+                        : 'Match summary'}
+                    </p>
+                    <p
+                      style={{
+                        margin: '4px 0 0',
+                        fontSize: 12,
+                        color: TOKENS.textSecondary,
+                        lineHeight: 1.55,
+                      }}
+                    >
+                      {humanScoreSummary(scoreResult)}
+                    </p>
+                  </div>
+                </div>
+
+                {scoreResult.locationEligibility?.message ? (
+                  <div
+                    style={{
+                      marginTop: 12,
+                      borderRadius: 10,
+                      border: '1px solid rgba(56,189,248,0.25)',
+                      background: 'rgba(56,189,248,0.08)',
+                      padding: '10px 12px',
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 11,
+                        color: 'rgba(186,230,253,0.92)',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {scoreResult.locationEligibility.message}
+                    </p>
+                  </div>
+                ) : null}
+
+                {scoreResult.salaryEstimate ? (
+                  <div style={{ marginTop: 12 }}>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        borderRadius: 20,
+                        border: `1px solid ${salaryFromPosting ? 'rgba(52,211,153,0.30)' : 'rgba(245,158,11,0.30)'}`,
+                        background: salaryFromPosting
+                          ? 'rgba(52,211,153,0.10)'
+                          : 'rgba(245,158,11,0.10)',
+                        padding: '3px 10px',
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color: salaryFromPosting ? TOKENS.green : TOKENS.amber,
+                      }}
+                    >
+                      {salaryFromPosting ? 'From job posting' : 'AI estimate'}
+                    </span>
+                    <p
+                      style={{
+                        margin: '6px 0 0',
+                        fontSize: 11,
+                        color: TOKENS.textSecondary,
+                      }}
+                    >
+                      {scoreResult.salaryEstimate.currency}{' '}
+                      {Math.round(
+                        scoreResult.salaryEstimate.min,
+                      ).toLocaleString()}{' '}
+                      –{' '}
+                      {Math.round(
+                        scoreResult.salaryEstimate.max,
+                      ).toLocaleString()}
+                      {scoreResult.salaryEstimate.basis
+                        ? ` / ${scoreResult.salaryEstimate.basis}`
+                        : ''}
+                    </p>
+                  </div>
+                ) : null}
+
+                <div
                   style={{
-                    margin: '0 0 6px',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: TOKENS.green,
+                    margin: '14px 0',
+                    height: 1,
+                    background: TOKENS.borderSubtle,
+                  }}
+                  aria-hidden
+                />
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: 12,
                   }}
                 >
-                  {Math.round(beforeTailor!)}% → {Math.round(scoreResult.matchScore)}%
-                  {scoreResult.tailoredCvName
-                    ? ` · ${scoreResult.tailoredCvName}`
-                    : ''}
-                </p>
-              ) : scoreResult.isTailored && scoreResult.tailoredCvName ? (
-                <p
+                  <div>
+                    <p
+                      style={{
+                        margin: '0 0 8px',
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color: 'rgba(52,211,153,0.80)',
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Strengths
+                    </p>
+                    <SkillList items={strengthLabels} tone="strength" />
+                  </div>
+                  <div>
+                    <p
+                      style={{
+                        margin: '0 0 8px',
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color: 'rgba(248,113,113,0.80)',
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Gaps
+                    </p>
+                    <SkillList items={gapLabels} tone="gap" />
+                  </div>
+                </div>
+
+                <FactorBreakdownChips scoreResult={scoreResult} />
+
+                {scoreResult.recommendation ? (
+                  <p
+                    style={{
+                      margin: '12px 0 0',
+                      fontSize: 12,
+                      color: 'rgba(240,244,242,0.50)',
+                      lineHeight: 1.6,
+                      fontStyle: 'italic',
+                      borderLeft: `2px solid ${TOKENS.borderDefault}`,
+                      paddingLeft: 10,
+                    }}
+                  >
+                    {scoreResult.recommendation}
+                  </p>
+                ) : null}
+
+                {scoreResult.fromCache ? (
+                  <p
+                    style={{
+                      margin: '10px 0 0',
+                      fontSize: 11,
+                      color: TOKENS.textMuted,
+                    }}
+                  >
+                    Loaded saved analysis — no AI used.
+                  </p>
+                ) : null}
+
+                <div
                   style={{
-                    margin: '0 0 6px',
-                    fontSize: 11,
-                    color: TOKENS.textSecondary,
+                    marginTop: 12,
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: 8,
                   }}
                 >
-                  {scoreResult.tailoredCvName}
-                </p>
-              ) : null}
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: TOKENS.primary,
-                  letterSpacing: '0.04em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {scoreResult.fromCache ? 'Saved analysis' : 'Match summary'}
-              </p>
-              <p
-                style={{
-                  margin: '4px 0 0',
-                  fontSize: 12,
-                  color: TOKENS.textSecondary,
-                  lineHeight: 1.55,
-                }}
-              >
-                {humanScoreSummary(scoreResult)}
-              </p>
-            </div>
-          </div>
+                  <button
+                    type="button"
+                    onClick={openAnalyzer}
+                    style={{
+                      padding: 10,
+                      background: TOKENS.primary,
+                      color: TOKENS.bg,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      borderRadius: 8,
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontFamily: TOKENS.font,
+                    }}
+                  >
+                    Gaps &amp; tailor →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openHub}
+                    style={{
+                      padding: 10,
+                      background: 'transparent',
+                      color: TOKENS.textSecondary,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      borderRadius: 8,
+                      border: `1px solid ${TOKENS.borderDefault}`,
+                      cursor: 'pointer',
+                      fontFamily: TOKENS.font,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = TOKENS.borderHover;
+                      e.currentTarget.style.color = TOKENS.textPrimary;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = TOKENS.borderDefault;
+                      e.currentTarget.style.color = TOKENS.textSecondary;
+                    }}
+                  >
+                    Track in Hub
+                  </button>
+                </div>
 
-          {scoreResult.locationEligibility?.message ? (
-            <div
-              style={{
-                marginTop: 12,
-                borderRadius: 10,
-                border: '1px solid rgba(56,189,248,0.25)',
-                background: 'rgba(56,189,248,0.08)',
-                padding: '10px 12px',
-              }}
-            >
-              <p style={{ margin: 0, fontSize: 11, color: 'rgba(186,230,253,0.92)', lineHeight: 1.5 }}>
-                {scoreResult.locationEligibility.message}
-              </p>
-            </div>
-          ) : null}
-
-          {scoreResult.salaryEstimate ? (
-            <div style={{ marginTop: 12 }}>
-              <span
-                style={{
-                  display: 'inline-block',
-                  borderRadius: 20,
-                  border: `1px solid ${salaryFromPosting ? 'rgba(52,211,153,0.30)' : 'rgba(245,158,11,0.30)'}`,
-                  background: salaryFromPosting ? 'rgba(52,211,153,0.10)' : 'rgba(245,158,11,0.10)',
-                  padding: '3px 10px',
-                  fontSize: 10,
-                  fontWeight: 600,
-                  color: salaryFromPosting ? TOKENS.green : TOKENS.amber,
-                }}
-              >
-                {salaryFromPosting ? 'From job posting' : 'AI estimate'}
-              </span>
-              <p style={{ margin: '6px 0 0', fontSize: 11, color: TOKENS.textSecondary }}>
-                {scoreResult.salaryEstimate.currency}{' '}
-                {Math.round(scoreResult.salaryEstimate.min).toLocaleString()} –{' '}
-                {Math.round(scoreResult.salaryEstimate.max).toLocaleString()}
-                {scoreResult.salaryEstimate.basis ? ` / ${scoreResult.salaryEstimate.basis}` : ''}
-              </p>
-            </div>
-          ) : null}
-
-          <div
-            style={{ margin: '14px 0', height: 1, background: TOKENS.borderSubtle }}
-            aria-hidden
-          />
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 12,
-            }}
-          >
-            <div>
-              <p
-                style={{
-                  margin: '0 0 8px',
-                  fontSize: 10,
-                  fontWeight: 600,
-                  color: 'rgba(52,211,153,0.80)',
-                  letterSpacing: '0.06em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                Strengths
-              </p>
-              <SkillList items={strengthLabels} tone="strength" />
-            </div>
-            <div>
-              <p
-                style={{
-                  margin: '0 0 8px',
-                  fontSize: 10,
-                  fontWeight: 600,
-                  color: 'rgba(248,113,113,0.80)',
-                  letterSpacing: '0.06em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                Gaps
-              </p>
-              <SkillList items={gapLabels} tone="gap" />
-            </div>
-          </div>
-
-          <FactorBreakdownChips scoreResult={scoreResult} />
-
-          {scoreResult.recommendation ? (
-            <p
-              style={{
-                margin: '12px 0 0',
-                fontSize: 12,
-                color: 'rgba(240,244,242,0.50)',
-                lineHeight: 1.6,
-                fontStyle: 'italic',
-                borderLeft: `2px solid ${TOKENS.borderDefault}`,
-                paddingLeft: 10,
-              }}
-            >
-              {scoreResult.recommendation}
-            </p>
-          ) : null}
-
-          {scoreResult.fromCache ? (
-            <p
-              style={{
-                margin: '10px 0 0',
-                fontSize: 11,
-                color: TOKENS.textMuted,
-              }}
-            >
-              Loaded saved analysis — no AI used.
-            </p>
-          ) : null}
-
-          <div
-            style={{
-              marginTop: 12,
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 8,
-            }}
-          >
-            <button
-              type="button"
-              onClick={openAnalyzer}
-              style={{
-                padding: 10,
-                background: TOKENS.primary,
-                color: TOKENS.bg,
-                fontSize: 12,
-                fontWeight: 600,
-                borderRadius: 8,
-                border: 'none',
-                cursor: 'pointer',
-                fontFamily: TOKENS.font,
-              }}
-            >
-              Gaps &amp; tailor →
-            </button>
-            <button
-              type="button"
-              onClick={openHub}
-              style={{
-                padding: 10,
-                background: 'transparent',
-                color: TOKENS.textSecondary,
-                fontSize: 12,
-                fontWeight: 600,
-                borderRadius: 8,
-                border: `1px solid ${TOKENS.borderDefault}`,
-                cursor: 'pointer',
-                fontFamily: TOKENS.font,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = TOKENS.borderHover;
-                e.currentTarget.style.color = TOKENS.textPrimary;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = TOKENS.borderDefault;
-                e.currentTarget.style.color = TOKENS.textSecondary;
-              }}
-            >
-              Track in Hub
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => dispatch({ type: 'setScoreState', state: { status: 'idle' } })}
-            style={{
-              marginTop: 10,
-              padding: 0,
-              border: 'none',
-              background: 'none',
-              fontSize: 11,
-              color: 'rgba(240,244,242,0.30)',
-              cursor: 'pointer',
-              fontFamily: TOKENS.font,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'rgba(240,244,242,0.60)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'rgba(240,244,242,0.30)';
-            }}
-          >
-            Rescore with different CV ↑
-          </button>
-        </div>
-        );
-      })() : null}
+                <button
+                  type="button"
+                  onClick={() =>
+                    dispatch({
+                      type: 'setScoreState',
+                      state: { status: 'idle' },
+                    })
+                  }
+                  style={{
+                    marginTop: 10,
+                    padding: 0,
+                    border: 'none',
+                    background: 'none',
+                    fontSize: 11,
+                    color: 'rgba(240,244,242,0.30)',
+                    cursor: 'pointer',
+                    fontFamily: TOKENS.font,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'rgba(240,244,242,0.60)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = 'rgba(240,244,242,0.30)';
+                  }}
+                >
+                  Rescore with different CV ↑
+                </button>
+              </div>
+            );
+          })()
+        : null}
     </div>
   );
 }
@@ -1176,24 +1276,38 @@ function CoverLetterSection({
             type="button"
             disabled={!canGenerateCoverLetter || letterBlocked}
             onClick={() => {
-              if (!state.selectedCvId || !canGenerateCoverLetter || letterBlocked) return;
-              dispatch({ type: 'setCoverLetterState', state: { status: 'loading' } });
+              if (
+                !state.selectedCvId ||
+                !canGenerateCoverLetter ||
+                letterBlocked
+              )
+                return;
+              dispatch({
+                type: 'setCoverLetterState',
+                state: { status: 'loading' },
+              });
               void chrome.runtime
                 .sendMessage({
-                action: 'generateCoverLetter',
-                cvId: state.selectedCvId,
-                jobDescription: currentJob.description.trim(),
-                jobTitle: currentJob.title.trim(),
-                company: (currentJob.company ?? '').trim(),
-                jobLocation: currentJob.location?.trim() ? currentJob.location : undefined,
-                jobType: currentJob.jobType ?? undefined,
-                jobAnalysisId,
-                sourceUrl: currentJob.sourceUrl,
-              } satisfies MessageAction)
+                  action: 'generateCoverLetter',
+                  cvId: state.selectedCvId,
+                  jobDescription: currentJob.description.trim(),
+                  jobTitle: currentJob.title.trim(),
+                  company: (currentJob.company ?? '').trim(),
+                  jobLocation: currentJob.location?.trim()
+                    ? currentJob.location
+                    : undefined,
+                  jobType: currentJob.jobType ?? undefined,
+                  jobAnalysisId,
+                  sourceUrl: currentJob.sourceUrl,
+                } satisfies MessageAction)
                 .catch(() => {
                   dispatch({
                     type: 'setCoverLetterState',
-                    state: { status: 'error', message: 'Could not start cover letter generation. Try again.' },
+                    state: {
+                      status: 'error',
+                      message:
+                        'Could not start cover letter generation. Try again.',
+                    },
                   });
                 });
             }}
@@ -1201,14 +1315,21 @@ function CoverLetterSection({
               width: '100%',
               padding: 10,
               background:
-                canGenerateCoverLetter && !letterBlocked ? TOKENS.teal10 : 'rgba(255,255,255,0.04)',
+                canGenerateCoverLetter && !letterBlocked
+                  ? TOKENS.teal10
+                  : 'rgba(255,255,255,0.04)',
               border: `1px solid ${canGenerateCoverLetter && !letterBlocked ? TOKENS.teal25 : TOKENS.borderDefault}`,
               borderRadius: 8,
               color:
-                canGenerateCoverLetter && !letterBlocked ? TOKENS.primary : TOKENS.textDisabled,
+                canGenerateCoverLetter && !letterBlocked
+                  ? TOKENS.primary
+                  : TOKENS.textDisabled,
               fontSize: 13,
               fontWeight: 600,
-              cursor: canGenerateCoverLetter && !letterBlocked ? 'pointer' : 'not-allowed',
+              cursor:
+                canGenerateCoverLetter && !letterBlocked
+                  ? 'pointer'
+                  : 'not-allowed',
               fontFamily: TOKENS.font,
               transition: 'all 0.15s ease',
             }}
@@ -1259,7 +1380,10 @@ function CoverLetterSection({
           <button
             type="button"
             onClick={() =>
-              dispatch({ type: 'setCoverLetterState', state: { status: 'idle' } })
+              dispatch({
+                type: 'setCoverLetterState',
+                state: { status: 'idle' },
+              })
             }
             style={{
               marginTop: 8,
@@ -1287,7 +1411,13 @@ function CoverLetterSection({
               marginBottom: 12,
             }}
           >
-            <span style={{ fontSize: 13, fontWeight: 600, color: TOKENS.textPrimary }}>
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: TOKENS.textPrimary,
+              }}
+            >
               Your cover letter
             </span>
             <span
@@ -1313,8 +1443,8 @@ function CoverLetterSection({
                 lineHeight: 1.5,
               }}
             >
-              Run &quot;Get match score&quot; first to save this cover letter to your Job Hub
-              history.
+              Run &quot;Get match score&quot; first to save this cover letter to
+              your Job Hub history.
             </p>
           ) : null}
           <textarea
@@ -1446,7 +1576,9 @@ function TailorCvSection({
         company: currentJob.company ?? '',
         jobDescription: currentJob.description ?? '',
         returnToUrl: currentJob.sourceUrl,
-        jobLocation: currentJob.location?.trim() ? currentJob.location : undefined,
+        jobLocation: currentJob.location?.trim()
+          ? currentJob.location
+          : undefined,
         jobType: currentJob.jobType ?? undefined,
       },
     } satisfies MessageAction);
@@ -1505,7 +1637,9 @@ function TailorCvSection({
             }}
             aria-hidden
           />
-          <span style={{ fontSize: 13, fontWeight: 600, color: TOKENS.primary }}>
+          <span
+            style={{ fontSize: 13, fontWeight: 600, color: TOKENS.primary }}
+          >
             Tailoring in progress
           </span>
         </div>
@@ -1677,7 +1811,9 @@ function TailorCvSection({
           fontFamily: TOKENS.font,
         }}
       >
-        <p style={{ margin: 0, fontSize: 13, color: TOKENS.red }}>{tailorState.message}</p>
+        <p style={{ margin: 0, fontSize: 13, color: TOKENS.red }}>
+          {tailorState.message}
+        </p>
         <button
           type="button"
           onClick={() => setTailorState({ status: 'idle' })}
@@ -1763,7 +1899,9 @@ function TailorCvSection({
 
 export function CVTab() {
   const session = useJobSession();
-  const [tailorState, setTailorState] = useState<TailorStatus>({ status: 'idle' });
+  const [tailorState, setTailorState] = useState<TailorStatus>({
+    status: 'idle',
+  });
   const busyOperation = session.busyOperation;
   const isBusy = busyOperation != null;
 
@@ -1801,9 +1939,14 @@ export function CVTab() {
 
       if (typeof stored.tailorCompleted === 'string') {
         try {
-          const data = JSON.parse(stored.tailorCompleted) as { tailoredCvId?: string };
+          const data = JSON.parse(stored.tailorCompleted) as {
+            tailoredCvId?: string;
+          };
           if (data.tailoredCvId) {
-            setTailorState({ status: 'completed', tailoredCvId: data.tailoredCvId });
+            setTailorState({
+              status: 'completed',
+              tailoredCvId: data.tailoredCvId,
+            });
           }
         } catch {
           /* ignore */
@@ -1811,9 +1954,14 @@ export function CVTab() {
         void chrome.storage.session.remove('tailorCompleted');
       } else if (typeof stored.activeTailorSession === 'string') {
         try {
-          const tailorSession = JSON.parse(stored.activeTailorSession) as { sessionId?: string };
+          const tailorSession = JSON.parse(stored.activeTailorSession) as {
+            sessionId?: string;
+          };
           if (tailorSession.sessionId) {
-            setTailorState({ status: 'in-progress', sessionId: tailorSession.sessionId });
+            setTailorState({
+              status: 'in-progress',
+              sessionId: tailorSession.sessionId,
+            });
             void chrome.runtime.sendMessage({
               action: 'checkTailorStatus',
               sessionId: tailorSession.sessionId,
@@ -1873,7 +2021,8 @@ export function CVTab() {
       }
     : null;
   const displayJob = state.currentJob ?? scoreOnlyJob;
-  const showJobSections = hasProfiles && state.selectedCvId && displayJob != null;
+  const showJobSections =
+    hasProfiles && state.selectedCvId && displayJob != null;
 
   return (
     <div
@@ -1902,9 +2051,17 @@ export function CVTab() {
                 fontFamily: TOKENS.font,
               }}
             >
-              <p style={{ margin: 0, fontSize: 11, lineHeight: 1.5, color: TOKENS.textSecondary }}>
-                Showing match analysis from a job page you visited earlier. Return to that listing or
-                use Clear on the Job tab when you are done.
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 11,
+                  lineHeight: 1.5,
+                  color: TOKENS.textSecondary,
+                }}
+              >
+                Showing match analysis from a job page you visited earlier.
+                Return to that listing or use Clear on the Job tab when you are
+                done.
               </p>
             </div>
           ) : null}

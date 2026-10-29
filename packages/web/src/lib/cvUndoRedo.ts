@@ -50,7 +50,10 @@ function cloneBuilderData(data: CVBuilderData): CVBuilderData {
   return structuredClone(data);
 }
 
-function cloneHistoryEntry(data: CVBuilderData, label: string): UndoHistoryEntry {
+function cloneHistoryEntry(
+  data: CVBuilderData,
+  label: string,
+): UndoHistoryEntry {
   return {
     data: cloneBuilderData(data),
     label,
@@ -148,10 +151,9 @@ export function redoHistoryState(
   const future = [...state.future];
   const entry = future.pop();
   if (!entry) return null;
-  const past = [
-    ...state.past,
-    cloneHistoryEntry(current, 'Undo point'),
-  ].slice(-MAX_UNDO_STEPS);
+  const past = [...state.past, cloneHistoryEntry(current, 'Undo point')].slice(
+    -MAX_UNDO_STEPS,
+  );
   return {
     state: { past, future },
     restored: cloneBuilderData(entry.data),
@@ -164,7 +166,10 @@ export function undoCvStack(stack: UndoHistoryState): {
   restored: CvUndoEntry | null;
   current: CvUndoEntry | null;
 } {
-  const result = undoHistoryState(stack, stack.past[stack.past.length - 1]?.data ?? ({} as CVBuilderData));
+  const result = undoHistoryState(
+    stack,
+    stack.past[stack.past.length - 1]?.data ?? ({} as CVBuilderData),
+  );
   if (!result) {
     return { stack, restored: null, current: null };
   }

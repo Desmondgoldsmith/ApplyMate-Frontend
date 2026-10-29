@@ -6,9 +6,12 @@ import type {
 } from '@/lib/today-plan';
 
 /** Coach-style directive from strategic recommendation + rationale heuristics. */
-export function directiveFromStrategicRecommendation(data: StrategicRecommendationPayload): string {
+export function directiveFromStrategicRecommendation(
+  data: StrategicRecommendationPayload,
+): string {
   const daysInterview =
-    typeof data.rationale?.daysUntilInterview === 'number' && Number.isFinite(data.rationale.daysUntilInterview)
+    typeof data.rationale?.daysUntilInterview === 'number' &&
+    Number.isFinite(data.rationale.daysUntilInterview)
       ? Math.max(0, Math.round(data.rationale.daysUntilInterview))
       : null;
   if (daysInterview != null && daysInterview <= 14) {
@@ -25,7 +28,10 @@ export function directiveFromStrategicRecommendation(data: StrategicRecommendati
 
   const cat = data.category as StrategicRecommendationCategory | null;
   if (cat === 'follow_up') {
-    return data.headline?.trim() || 'Follow up on applications that are still open — a short message keeps momentum.';
+    return (
+      data.headline?.trim() ||
+      'Follow up on applications that are still open — a short message keeps momentum.'
+    );
   }
 
   return (
@@ -39,8 +45,14 @@ export function directiveFromStrategicRecommendation(data: StrategicRecommendati
 function isGarbageFollowUpTarget(s: string): boolean {
   const t = s.trim().toLowerCase().replace(/\s+/g, ' ');
   if (!t) return true;
-  if (t === 'this application' || t === 'your application' || t === 'an application') return true;
-  if (/application submitted/.test(t) && /\d+\s*days?\s*ago/.test(t)) return true;
+  if (
+    t === 'this application' ||
+    t === 'your application' ||
+    t === 'an application'
+  )
+    return true;
+  if (/application submitted/.test(t) && /\d+\s*days?\s*ago/.test(t))
+    return true;
   if (/^application submitted(\s+\d+\s*days?\s*ago)?$/.test(t)) return true;
   if (/^submitted\s+\d+\s*days?\s*ago$/.test(t)) return true;
   return false;
@@ -62,11 +74,15 @@ export function sanitizeFollowUpDirectiveMessage(message: string): string {
   if (!isGarbageFollowUpTarget(target)) return raw;
   const n = Number(days);
   const dayWord = Number.isFinite(n) && n === 1 ? 'day' : 'days';
-  const safeDays = Number.isFinite(n) ? String(Math.max(0, Math.round(n))) : days;
+  const safeDays = Number.isFinite(n)
+    ? String(Math.max(0, Math.round(n)))
+    : days;
   return `It's been ${safeDays} ${dayWord} since you last applied${tail}`;
 }
 
-export function directiveFromOpportunityDetection(data: OpportunityDetectionPayload): string {
+export function directiveFromOpportunityDetection(
+  data: OpportunityDetectionPayload,
+): string {
   const rawBlob = `${data.headline ?? ''} ${data.supporting ?? ''}`;
   const head = rawBlob.toLowerCase();
   if (head.includes('follow')) {
@@ -82,7 +98,11 @@ export function directiveFromOpportunityDetection(data: OpportunityDetectionPayl
       "It's been quiet long enough — a polite follow-up may bring your application back into focus."
     );
   }
-  return data.headline?.trim() || data.supporting?.trim() || 'There is a strong opportunity in your pipeline worth acting on today.';
+  return (
+    data.headline?.trim() ||
+    data.supporting?.trim() ||
+    'There is a strong opportunity in your pipeline worth acting on today.'
+  );
 }
 
 function extractJobTitleFromFollowUpBlob(blob: string): string | null {
@@ -104,7 +124,9 @@ function extractJobTitleFromFollowUpBlob(blob: string): string | null {
 }
 
 /** Only this stage may use “applied” / “last applied” wording (backend contract). */
-export function isFollowUpCoachingSubmitted(stage: string | null | undefined): boolean {
+export function isFollowUpCoachingSubmitted(
+  stage: string | null | undefined,
+): boolean {
   return (stage ?? '').trim().toLowerCase() === 'submitted';
 }
 
@@ -120,25 +142,34 @@ function resolveFollowUpCompanyAndTitle(
     fromFields(extractCompanyHint(blob)) ||
     ''
   ).trim();
-  const company = companyRaw && !isGarbageFollowUpTarget(companyRaw) ? companyRaw : null;
+  const company =
+    companyRaw && !isGarbageFollowUpTarget(companyRaw) ? companyRaw : null;
 
   const titleRaw = (
     fromFields(data.jobTitle) ||
     fromFields(extractJobTitleFromFollowUpBlob(blob)) ||
     ''
   ).trim();
-  const title = titleRaw && !isGarbageFollowUpTarget(titleRaw) ? titleRaw : null;
+  const title =
+    titleRaw && !isGarbageFollowUpTarget(titleRaw) ? titleRaw : null;
 
   return { company, title };
 }
 
-export function directiveFromFollowUpIntelligence(data: FollowUpIntelligencePayload, companyHint?: string | null): string {
+export function directiveFromFollowUpIntelligence(
+  data: FollowUpIntelligencePayload,
+  companyHint?: string | null,
+): string {
   const days =
-    typeof data.daysSinceApplication === 'number' && Number.isFinite(data.daysSinceApplication)
+    typeof data.daysSinceApplication === 'number' &&
+    Number.isFinite(data.daysSinceApplication)
       ? Math.max(0, Math.round(data.daysSinceApplication))
       : null;
   if (days != null) {
-    const { company, title } = resolveFollowUpCompanyAndTitle(data, companyHint);
+    const { company, title } = resolveFollowUpCompanyAndTitle(
+      data,
+      companyHint,
+    );
     const dayWord = days === 1 ? 'day' : 'days';
     const tail = '. A short follow-up today could revive this opportunity.';
     const submitted = isFollowUpCoachingSubmitted(data.coachingStage);
@@ -187,7 +218,9 @@ function extractCompanyHint(blob: string): string | null {
     const s = applied[1].trim();
     if (s && !isGarbageFollowUpTarget(s)) return s;
   }
-  const toFor = blob.match(/\bto\s+([A-Za-z0-9][A-Za-z0-9&.'\-\s]{1,48}?)\s+for\s+(?:the\s+)?/i);
+  const toFor = blob.match(
+    /\bto\s+([A-Za-z0-9][A-Za-z0-9&.'\-\s]{1,48}?)\s+for\s+(?:the\s+)?/i,
+  );
   if (toFor?.[1]) {
     const s = toFor[1].trim();
     if (s && !isGarbageFollowUpTarget(s)) return s;

@@ -4,7 +4,9 @@ import type { QueryClient } from '@tanstack/react-query';
 import { logCvDevPerfWallMs } from '@/lib/cvDevPerf';
 import { cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
 
-export type CvSuggestionMutationReconcileKind = 'structuralAccept' | 'queueOnly';
+export type CvSuggestionMutationReconcileKind =
+  | 'structuralAccept'
+  | 'queueOnly';
 
 export type CvSuggestionMutationReconcileOptions = {
   scoringTriggered?: boolean;
@@ -25,7 +27,10 @@ export function reconcileAfterCvSuggestionMutation(
   const id = profileId?.trim();
   if (!id) return 0;
   let n = 0;
-  void queryClient.invalidateQueries({ queryKey: queryKeys.cv.score(id), exact: true });
+  void queryClient.invalidateQueries({
+    queryKey: queryKeys.cv.score(id),
+    exact: true,
+  });
   n += 1;
   if (!options?.skipSuggestionsInvalidation) {
     const invalidateSuggestions = () => {
@@ -42,7 +47,10 @@ export function reconcileAfterCvSuggestionMutation(
     n += 1;
   }
   if (kind === 'structuralAccept') {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles(), exact: true });
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.cv.profiles(),
+      exact: true,
+    });
     n += 1;
   }
   return n;
@@ -55,6 +63,10 @@ export function logCvSuggestionMutationClientPerf(
 ): void {
   if (process.env.NODE_ENV !== 'development') return;
   // eslint-disable-next-line no-console -- intentional dev diagnostics
-  console.info('[cv:suggestion-mutation]', { label, clientMs: Date.now() - startedAt, ...detail });
+  console.info('[cv:suggestion-mutation]', {
+    label,
+    clientMs: Date.now() - startedAt,
+    ...detail,
+  });
   logCvDevPerfWallMs(`cv.suggestionMutation.${label}`, startedAt, detail);
 }

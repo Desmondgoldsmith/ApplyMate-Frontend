@@ -4,7 +4,12 @@ import { RECORDING_MIN_VALID_BYTES } from '@/lib/interviewSpeech';
 let cachedStrategy: RecordingStrategyResponse | null = null;
 let fetchPromise: Promise<RecordingStrategyResponse> | null = null;
 
-export type DetectedBrowser = 'edge' | 'chrome' | 'safari' | 'firefox' | 'unknown';
+export type DetectedBrowser =
+  | 'edge'
+  | 'chrome'
+  | 'safari'
+  | 'firefox'
+  | 'unknown';
 
 export function detectBrowser(): DetectedBrowser {
   if (typeof navigator === 'undefined') return 'unknown';
@@ -64,7 +69,9 @@ export function pickMimeTypeFromStrategy(
   return undefined;
 }
 
-export function minBlobBytesFromStrategy(strategy: RecordingStrategyResponse | null): number {
+export function minBlobBytesFromStrategy(
+  strategy: RecordingStrategyResponse | null,
+): number {
   return strategy?.minBlobBytes ?? RECORDING_MIN_VALID_BYTES;
 }
 

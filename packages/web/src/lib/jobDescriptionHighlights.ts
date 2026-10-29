@@ -34,7 +34,8 @@ export function splitTextWithHighlights(
   return parts.map((part) => ({
     text: part,
     highlight: uniqueTerms.some(
-      (term) => part.localeCompare(term, undefined, { sensitivity: 'accent' }) === 0,
+      (term) =>
+        part.localeCompare(term, undefined, { sensitivity: 'accent' }) === 0,
     ),
   }));
 }
@@ -42,12 +43,14 @@ export function splitTextWithHighlights(
 export function hasStructuredDescriptionSections(
   highlights: JobDescriptionHighlights | null | undefined,
 ): boolean {
-  return Boolean(highlights?.sections?.some((section) => sectionHasContent(section)));
+  return Boolean(
+    highlights?.sections?.some((section) => sectionHasContent(section)),
+  );
 }
 
 function sectionHasContent(section: JobDescriptionHighlightSection): boolean {
   if (section.format === 'bullets') {
-    return (section.items?.some((item) => item.trim()) ?? false);
+    return section.items?.some((item) => item.trim()) ?? false;
   }
   return Boolean(section.body?.trim());
 }

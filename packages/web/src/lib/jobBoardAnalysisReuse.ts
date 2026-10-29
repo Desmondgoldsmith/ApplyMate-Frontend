@@ -8,7 +8,10 @@ function normWs(s: string): string {
  * True when two job bodies are likely the same posting (discovery vs stored analysis).
  * Conservative on length skew to avoid reusing a different role.
  */
-export function jobDescriptionsLikelySame(stored: string, incoming: string): boolean {
+export function jobDescriptionsLikelySame(
+  stored: string,
+  incoming: string,
+): boolean {
   const a = normWs(stored);
   const b = normWs(incoming);
   if (a.length < 30 || b.length < 30) return false;
@@ -24,7 +27,9 @@ function titleCompanyKey(title: string, company: string): string {
   return `${title.trim().toLowerCase()}\u001f${company.trim().toLowerCase()}`;
 }
 
-function pickBestAnalysisRow(rows: JobAnalysisSummary[]): JobAnalysisSummary | null {
+function pickBestAnalysisRow(
+  rows: JobAnalysisSummary[],
+): JobAnalysisSummary | null {
   if (rows.length === 0) return null;
   const sorted = [...rows].sort((a, b) => {
     if (a.isTailored !== b.isTailored) return a.isTailored ? -1 : 1;
@@ -38,10 +43,15 @@ function pickBestAnalysisRow(rows: JobAnalysisSummary[]): JobAnalysisSummary | n
 /**
  * Rows from `GET /jobs/analyses?jobListingId=` — pick best analysis id for this CV (tailored first).
  */
-export function pickAnalysisIdForListing(rows: JobAnalysisSummary[], cvProfileId: string): string | null {
+export function pickAnalysisIdForListing(
+  rows: JobAnalysisSummary[],
+  cvProfileId: string,
+): string | null {
   const cv = cvProfileId.trim();
   if (!cv || rows.length === 0) return null;
-  const scoped = rows.filter((a) => !a.cvProfileId?.trim() || a.cvProfileId.trim() === cv);
+  const scoped = rows.filter(
+    (a) => !a.cvProfileId?.trim() || a.cvProfileId.trim() === cv,
+  );
   const best = pickBestAnalysisRow(scoped);
   return best?.id?.trim() || null;
 }

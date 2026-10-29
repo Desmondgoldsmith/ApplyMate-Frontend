@@ -94,7 +94,9 @@ export function Modal({
           type="button"
           aria-label="Close dialog"
           className="absolute inset-0"
-          onClick={() => (closeOnOverlayClick ? onOpenChange(false) : undefined)}
+          onClick={() =>
+            closeOnOverlayClick ? onOpenChange(false) : undefined
+          }
         />
         <div
           role="dialog"
@@ -135,9 +137,15 @@ export function Modal({
                 </button>
               ) : null}
               {title ? (
-                <h2 className={cn('text-lg font-bold text-white', titleClassName)}>{title}</h2>
+                <h2
+                  className={cn('text-lg font-bold text-white', titleClassName)}
+                >
+                  {title}
+                </h2>
               ) : null}
-              {description ? <p className="mt-2 text-sm text-white/55">{description}</p> : null}
+              {description ? (
+                <p className="mt-2 text-sm text-white/55">{description}</p>
+              ) : null}
             </div>
           ) : null}
           <div

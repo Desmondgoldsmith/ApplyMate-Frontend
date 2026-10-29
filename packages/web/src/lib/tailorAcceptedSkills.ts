@@ -8,7 +8,9 @@ export function acceptedTailorSkillNames(
   if (!draft) return [];
 
   const skillsEntry = draft.drafts.find(
-    (d) => d.sectionType?.trim().toLowerCase() === 'skills' && d.status === 'accepted',
+    (d) =>
+      d.sectionType?.trim().toLowerCase() === 'skills' &&
+      d.status === 'accepted',
   );
   if (!skillsEntry) return [];
 

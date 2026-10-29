@@ -1,4 +1,7 @@
-import type { DashboardLayoutConfigPayload, TodayPlanPayload } from '@/lib/today-plan';
+import type {
+  DashboardLayoutConfigPayload,
+  TodayPlanPayload,
+} from '@/lib/today-plan';
 
 /**
  * Normalizes backend Phase 14 card ids (camelCase, snake_case, kebab) to canonical
@@ -77,7 +80,9 @@ export const PROGRESS_INTELLIGENCE_CORE_IDS = [
 
 /** Full secondary render order: core progress cards first, then remaining cards (excluding Goals & Strategy). */
 export function buildSecondaryCardsCollapsibleOrder(): string[] {
-  const coreSet = new Set<string>(PROGRESS_INTELLIGENCE_CORE_IDS as unknown as string[]);
+  const coreSet = new Set<string>(
+    PROGRESS_INTELLIGENCE_CORE_IDS as unknown as string[],
+  );
   const tail = SECONDARY_CARD_RENDER_ORDER.filter(
     (id) => id !== 'goal_strategic_coaching' && !coreSet.has(id),
   );
@@ -114,7 +119,9 @@ function mergeStringLists(
   primary: readonly string[] | undefined,
   fallback: readonly string[],
 ): string[] {
-  const p = primary?.length ? primary.map(normalizeDashboardCardId) : [...fallback];
+  const p = primary?.length
+    ? primary.map(normalizeDashboardCardId)
+    : [...fallback];
   return p;
 }
 
@@ -127,8 +134,14 @@ export function resolveDashboardPhase14Layout(
     hidden.add(normalizeDashboardCardId(h));
   }
 
-  const priorityOrder = mergeStringLists(config?.priorityCards, DEFAULT_PRIORITY);
-  const secondaryOrder = mergeStringLists(config?.secondaryCards, DEFAULT_SECONDARY);
+  const priorityOrder = mergeStringLists(
+    config?.priorityCards,
+    DEFAULT_PRIORITY,
+  );
+  const secondaryOrder = mergeStringLists(
+    config?.secondaryCards,
+    DEFAULT_SECONDARY,
+  );
 
   const collapsible = new Set<string>();
   const collapsibleSource =
@@ -140,13 +153,15 @@ export function resolveDashboardPhase14Layout(
   }
 
   const mergeLandscapeIntoPipeline =
-    config?.mergeLandscapeIntoPipeline !== null && config?.mergeLandscapeIntoPipeline !== undefined
+    config?.mergeLandscapeIntoPipeline !== null &&
+    config?.mergeLandscapeIntoPipeline !== undefined
       ? config.mergeLandscapeIntoPipeline
       : true;
 
   let suppressInsightGuidance = Boolean(options?.heroSuppressesInsights);
   if (config?.suppressInsightGuidance === true) suppressInsightGuidance = true;
-  else if (config?.suppressInsightGuidance === false) suppressInsightGuidance = false;
+  else if (config?.suppressInsightGuidance === false)
+    suppressInsightGuidance = false;
   else if (hidden.has('guidance')) suppressInsightGuidance = true;
 
   return {
@@ -159,7 +174,10 @@ export function resolveDashboardPhase14Layout(
   };
 }
 
-export function dashboardCardHasData(plan: TodayPlanPayload | null | undefined, id: string): boolean {
+export function dashboardCardHasData(
+  plan: TodayPlanPayload | null | undefined,
+  id: string,
+): boolean {
   const card = normalizeDashboardCardId(id);
   if (!plan) return false;
   switch (card) {
@@ -237,7 +255,8 @@ export function shouldShowSecondaryCard(
     return false;
   }
   if (cid === 'growth_momentum') return Boolean(flags?.allowGrowthMomentum);
-  if (cid === 'growth_achievements') return Boolean(flags?.allowGrowthAchievements);
+  if (cid === 'growth_achievements')
+    return Boolean(flags?.allowGrowthAchievements);
   return dashboardCardHasData(plan, cid);
 }
 

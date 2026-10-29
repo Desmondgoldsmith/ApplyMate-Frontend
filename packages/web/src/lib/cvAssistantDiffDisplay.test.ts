@@ -14,11 +14,11 @@ describe('assistantDiffDisplayStrings', () => {
   });
 
   it('formats patch operation blobs as value text', () => {
-    const { after } = assistantDiffDisplayStrings(
-      'summary',
-      null,
-      { action: 'replace', field: 'summary', value: 'Readable paragraph.' },
-    );
+    const { after } = assistantDiffDisplayStrings('summary', null, {
+      action: 'replace',
+      field: 'summary',
+      value: 'Readable paragraph.',
+    });
     expect(after).toBe('Readable paragraph.');
     expect(after).not.toContain('action');
   });

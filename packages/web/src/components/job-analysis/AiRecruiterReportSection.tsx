@@ -49,7 +49,8 @@ export function AiRecruiterReportSection({
         onClick={() => setOpen((o) => !o)}
         className={cn(
           'flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition',
-          showGlow && 'animate-[pulse_2.4s_ease-in-out_infinite] bg-[#00C9B1]/[0.06]',
+          showGlow &&
+            'animate-[pulse_2.4s_ease-in-out_infinite] bg-[#00C9B1]/[0.06]',
           !showGlow && 'bg-white/[0.03]',
         )}
         aria-expanded={open}
@@ -70,7 +71,9 @@ export function AiRecruiterReportSection({
             )}
           </span>
           <div>
-            <p className="text-sm font-semibold text-white">AI recruiter report</p>
+            <p className="text-sm font-semibold text-white">
+              AI recruiter report
+            </p>
             <p className="text-[11px] text-white/45">
               {loading
                 ? 'Generating deep analysis…'
@@ -81,7 +84,10 @@ export function AiRecruiterReportSection({
           </div>
         </div>
         <ChevronDown
-          className={cn('h-5 w-5 shrink-0 text-white/45 transition-transform', open && 'rotate-180')}
+          className={cn(
+            'h-5 w-5 shrink-0 text-white/45 transition-transform',
+            open && 'rotate-180',
+          )}
           aria-hidden
         />
       </button>
@@ -98,8 +104,9 @@ export function AiRecruiterReportSection({
             />
           ) : (
             <p className="text-sm text-white/50">
-              No deep recruiter report is stored for this analysis yet. Re-run analysis from the Job Analyzer to
-              generate verdict, axes, and an attack plan.
+              No deep recruiter report is stored for this analysis yet. Re-run
+              analysis from the Job Analyzer to generate verdict, axes, and an
+              attack plan.
             </p>
           )}
         </div>
@@ -107,4 +114,3 @@ export function AiRecruiterReportSection({
     </div>
   );
 }
-

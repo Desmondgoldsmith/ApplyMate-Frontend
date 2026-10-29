@@ -13,7 +13,8 @@ export function useSessionReuseToast() {
   useEffect(() => {
     if (shown.current || typeof window === 'undefined') return;
     try {
-      if (sessionStorage.getItem(REFRESH_TOKEN_REUSE_SESSION_KEY) !== 'reuse') return;
+      if (sessionStorage.getItem(REFRESH_TOKEN_REUSE_SESSION_KEY) !== 'reuse')
+        return;
       sessionStorage.removeItem(REFRESH_TOKEN_REUSE_SESSION_KEY);
     } catch {
       return;

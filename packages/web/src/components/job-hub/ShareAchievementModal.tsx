@@ -93,7 +93,8 @@ export function ShareAchievementModal({
 
   const openLinkedIn = useCallback(() => {
     const url =
-      resolveLinkedInOpenUrl(shareText, badge?.shareLink) ?? 'https://www.linkedin.com/feed/';
+      resolveLinkedInOpenUrl(shareText, badge?.shareLink) ??
+      'https://www.linkedin.com/feed/';
     copyThenOpen(url, 'LinkedIn');
   }, [badge?.shareLink, copyThenOpen, shareText]);
 
@@ -113,12 +114,16 @@ export function ShareAchievementModal({
             🏆
           </p>
           {badge?.description ? (
-            <p className="mt-2 text-[13px] text-white/65">{badge.description}</p>
+            <p className="mt-2 text-[13px] text-white/65">
+              {badge.description}
+            </p>
           ) : null}
         </div>
 
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-          <p className="whitespace-pre-wrap text-[12px] leading-relaxed text-white/70">{shareText}</p>
+          <p className="whitespace-pre-wrap text-[12px] leading-relaxed text-white/70">
+            {shareText}
+          </p>
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -146,8 +151,9 @@ export function ShareAchievementModal({
           </Button>
         </div>
         <p className="text-[11px] leading-relaxed text-white/40">
-          We copy your message first, then open the site in a new tab. Paste into LinkedIn, X, Instagram,
-          WhatsApp, or any platform you use — we never post on your behalf.
+          We copy your message first, then open the site in a new tab. Paste
+          into LinkedIn, X, Instagram, WhatsApp, or any platform you use — we
+          never post on your behalf.
         </p>
       </div>
     </Modal>

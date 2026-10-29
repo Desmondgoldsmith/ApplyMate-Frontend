@@ -123,7 +123,10 @@ import {
   TOOLTIP_PREDICTIVE_OUTLOOK,
 } from '@/lib/dashboardIntelligenceTooltips';
 import { trackProductEvent } from '@/lib/productAnalytics';
-import { sanitizeDashboardDisplayText, cleanAiText } from '@/lib/dashboardDisplayCopy';
+import {
+  sanitizeDashboardDisplayText,
+  cleanAiText,
+} from '@/lib/dashboardDisplayCopy';
 import { emitDashboardBehaviorEvent } from '@/lib/dashboardBehaviorEvents';
 import {
   atmosphereForMode,
@@ -1207,14 +1210,17 @@ export function DashboardOverviewContent() {
                   <p
                     className={cn(
                       'mt-2 text-[13px] font-medium',
-                      subtextClassForMomentumType(dashboardHeader?.momentumType),
+                      subtextClassForMomentumType(
+                        dashboardHeader?.momentumType,
+                      ),
                     )}
                   >
                     {cleanAiText(heroSubtext)}
                   </p>
                 )}
                 {dashboardVm?.usesExperienceLayer &&
-                dashboardVm.hero?.title ? null : orchestratedHero?.supportingLine ? (
+                dashboardVm.hero
+                  ?.title ? null : orchestratedHero?.supportingLine ? (
                   <p className="mt-1 text-[12px] text-white/50">
                     {cleanAiText(orchestratedHero.supportingLine)}
                   </p>
@@ -1229,7 +1235,9 @@ export function DashboardOverviewContent() {
                 !dashboardVm?.hero?.title ? (
                   <p className="mt-2 inline-flex items-center gap-1.5 text-[12px] text-[#00C9B1]/85">
                     <TrendingUp className="h-3.5 w-3.5" aria-hidden />
-                    {cleanAiText(growthDirection.data.dailyDirection.progressContext)}
+                    {cleanAiText(
+                      growthDirection.data.dailyDirection.progressContext,
+                    )}
                   </p>
                 ) : null}
               </div>
@@ -1267,7 +1275,10 @@ export function DashboardOverviewContent() {
                     }}
                   />
                 ) : showLimitInHero ? (
-                  <AiUsageBadge variant="default" className="w-full sm:w-auto" />
+                  <AiUsageBadge
+                    variant="default"
+                    className="w-full sm:w-auto"
+                  />
                 ) : orchestratedHero ? (
                   <>
                     {orchestratedHero.minutes ? (
@@ -1303,7 +1314,8 @@ export function DashboardOverviewContent() {
                           ctaSource: 'hero_action_context',
                           actionType: heroAction?.type ?? null,
                           route: heroActionHref,
-                          recommendationId: heroAction?.recommendationId ?? null,
+                          recommendationId:
+                            heroAction?.recommendationId ?? null,
                           applicationId: heroAction?.applicationId ?? null,
                           canonicalJobId: heroAction?.canonicalJobId ?? null,
                           cvProfileId: heroAction?.cvProfileId ?? null,
@@ -1316,8 +1328,8 @@ export function DashboardOverviewContent() {
                   </>
                 ) : !dashboardVm?.usesExperienceLayer ? (
                   <p className="text-[12px] font-medium leading-relaxed text-white/35">
-                    Tip: Revisit your top matches weekly. Small updates to your CV often
-                    improve fit scores.
+                    Tip: Revisit your top matches weekly. Small updates to your
+                    CV often improve fit scores.
                   </p>
                 ) : null}
                 {!dashboardVm?.usesExperienceLayer &&
@@ -1355,518 +1367,528 @@ export function DashboardOverviewContent() {
           {showDashboardLoading ? (
             <DashboardMainContentSkeleton />
           ) : (
-          <div
-            data-tour="todays-plan"
-            className={cn(
-              'flex min-w-0 flex-col',
-              dashboardVm?.usesExperienceLayer
-                ? assistantAtmosphere.sectionGapClass
-                : 'gap-4 max-md:gap-4 md:gap-6',
-            )}
-          >
-            <ContinuationSection
-              items={continuationList}
-              continuationCount={continuationTotal}
-            />
-
-            <InterviewPendingResultBanner className="mb-2" />
-            {upcomingInterviews.length > 0 ? (
-              <DashboardUpcomingInterviewsSection
-                interviews={upcomingInterviews}
-                upcomingInterviewCount={
-                  todayPlan.data?.upcomingInterviewCount ??
-                  upcomingInterviews.length
-                }
+            <div
+              data-tour="todays-plan"
+              className={cn(
+                'flex min-w-0 flex-col',
+                dashboardVm?.usesExperienceLayer
+                  ? assistantAtmosphere.sectionGapClass
+                  : 'gap-4 max-md:gap-4 md:gap-6',
+              )}
+            >
+              <ContinuationSection
+                items={continuationList}
+                continuationCount={continuationTotal}
               />
-            ) : null}
-            {!suppressGenericInterviewCoaching ? (
-              <DashboardInterviewPreparationSection
-                cards={todayPlan.data?.interviewPreparationCards ?? []}
-                totalCount={todayPlan.data?.interviewPreparationCardsTotalCount ?? null}
-              />
-            ) : null}
 
-            {recommendedMove ? (
-              <DashboardRecommendedMoveSection
-                action={recommendedMove}
-                sectionEyebrow={recommendedMoveEyebrow}
-                followUpJobsSnapshotCount={
-                  todayPlan.data?.followUpJobs?.length ?? 0
-                }
-                followUpJobsTotalCount={
-                  todayPlan.data?.followUpJobsTotalCount ?? null
-                }
-                followUpJobsViewAllHref={
-                  todayPlan.data?.followUpJobsViewAllHref ?? null
-                }
-              />
-            ) : null}
-            <TodaysPlanSection
-              items={focusItems}
-              totalCount={todayPlan.data?.focusItemsTotalCount ?? null}
-            />
-            <QuietApplicationsSection
-              items={todayPlan.data?.staleApplicationItems ?? []}
-              totalCount={todayPlan.data?.staleApplicationItemsTotalCount ?? null}
-              viewAllHref={todayPlan.data?.staleApplicationItemsViewAllHref ?? null}
-              plan={todayPlan.data ?? null}
-            />
+              <InterviewPendingResultBanner className="mb-2" />
+              {upcomingInterviews.length > 0 ? (
+                <DashboardUpcomingInterviewsSection
+                  interviews={upcomingInterviews}
+                  upcomingInterviewCount={
+                    todayPlan.data?.upcomingInterviewCount ??
+                    upcomingInterviews.length
+                  }
+                />
+              ) : null}
+              {!suppressGenericInterviewCoaching ? (
+                <DashboardInterviewPreparationSection
+                  cards={todayPlan.data?.interviewPreparationCards ?? []}
+                  totalCount={
+                    todayPlan.data?.interviewPreparationCardsTotalCount ?? null
+                  }
+                />
+              ) : null}
 
-            {showMergedPipelineCard || showStandaloneLandscapeCard ? (
-              <motion.section
-                id="dashboard-deep-summary"
+              {recommendedMove ? (
+                <DashboardRecommendedMoveSection
+                  action={recommendedMove}
+                  sectionEyebrow={recommendedMoveEyebrow}
+                  followUpJobsSnapshotCount={
+                    todayPlan.data?.followUpJobs?.length ?? 0
+                  }
+                  followUpJobsTotalCount={
+                    todayPlan.data?.followUpJobsTotalCount ?? null
+                  }
+                  followUpJobsViewAllHref={
+                    todayPlan.data?.followUpJobsViewAllHref ?? null
+                  }
+                />
+              ) : null}
+              <TodaysPlanSection
+                items={focusItems}
+                totalCount={todayPlan.data?.focusItemsTotalCount ?? null}
+              />
+              <QuietApplicationsSection
+                items={todayPlan.data?.staleApplicationItems ?? []}
+                totalCount={
+                  todayPlan.data?.staleApplicationItemsTotalCount ?? null
+                }
+                viewAllHref={
+                  todayPlan.data?.staleApplicationItemsViewAllHref ?? null
+                }
+                plan={todayPlan.data ?? null}
+              />
+
+              {showMergedPipelineCard || showStandaloneLandscapeCard ? (
+                <motion.section
+                  id="dashboard-deep-summary"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.35,
+                    delay: 0.1,
+                    ease: [0.21, 0.47, 0.32, 0.98],
+                  }}
+                  className="scroll-mt-4 flex flex-col gap-6"
+                  aria-label="Your pipeline at a glance"
+                >
+                  {showMergedPipelineCard ? (
+                    <PipelineRenderer
+                      metrics={dashboardVm?.pipelineMetrics ?? []}
+                      headline={pipelineDisplayHeadline}
+                      body={
+                        pipelineMergedBody ??
+                        (typeof pipelineInfoSurface?.body === 'string'
+                          ? dedupeNearDuplicateSentences(
+                              pipelineInfoSurface.body,
+                            )
+                          : null)
+                      }
+                      forceRender={true}
+                      titleOverride={null}
+                      emptyStateCopyOverride={null}
+                      sectionEyebrow={
+                        normalizedSectionTitle(
+                          todayPlan.data,
+                          'search_at_a_glance',
+                          '',
+                        )?.trim() || 'Your pipeline at a glance'
+                      }
+                      primaryLineFallback={null}
+                      disableOuterMotion
+                      mode={committedExp?.mode ?? dashboardVm?.mode ?? null}
+                      fatigueAdjusted={
+                        todayPlan.data?.dashboardExperience?.narrative
+                          ?.fatigueAdjusted ??
+                        committedExp?.narrativeFatigueAdjusted ??
+                        null
+                      }
+                    />
+                  ) : null}
+                  {showStandaloneLandscapeCard ? (
+                    <DashboardLandscapeCard
+                      title={landscapeSectionTitle}
+                      body={landscapeCoachingBody}
+                      emptyStateCopy={
+                        todayPlan.data?.sectionPayloads?.landscape
+                          ?.emptyStateCopy ?? null
+                      }
+                    />
+                  ) : null}
+                </motion.section>
+              ) : null}
+
+              {showCvTeaserInExecution ? (
+                <motion.section
+                  {...sectionMotion}
+                  transition={{
+                    duration: 0.35,
+                    delay: 0.09,
+                    ease: [0.21, 0.47, 0.32, 0.98],
+                  }}
+                  aria-label="CV profiles"
+                >
+                  <DashboardCvProfileTeaser
+                    onNewCv={() => setCreateCvOpen(true)}
+                  />
+                </motion.section>
+              ) : null}
+
+              {showCvClinicSectionInExecution ? (
+                <motion.section
+                  {...sectionMotion}
+                  transition={{
+                    duration: 0.35,
+                    delay: 0.095,
+                    ease: [0.21, 0.47, 0.32, 0.98],
+                  }}
+                  aria-label="CV Clinic"
+                  data-tour="cv-clinic-section"
+                  className="rounded-3xl border border-white/[0.08] bg-white/[0.03] p-4 shadow-[0_24px_60px_-32px_rgba(0,0,0,0.45)] ring-1 ring-white/[0.05] sm:p-6"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-lg font-semibold text-white/90">
+                        {normalizedSectionTitle(todayPlan.data, 'cv', '') ||
+                          todayPlan.data?.sectionPayloads?.cv?.title?.trim() ||
+                          'CV Clinic'}
+                      </h2>
+                      <p className="mt-2 text-[13px] font-medium leading-relaxed text-white/50">
+                        Start with a scan to get a score and section-by-section
+                        improvements.
+                      </p>
+                    </div>
+                    <Link
+                      href="/dashboard/cv"
+                      className="text-[13px] font-medium text-[#00C9B1] hover:underline"
+                    >
+                      Open CV Clinic →
+                    </Link>
+                  </div>
+                </motion.section>
+              ) : null}
+
+              {!hasUnifiedPriorities ? (
+                <motion.section
+                  {...sectionMotion}
+                  transition={{
+                    duration: 0.35,
+                    delay: 0.118,
+                    ease: [0.21, 0.47, 0.32, 0.98],
+                  }}
+                >
+                  <TodaysPlanTopMatchesSection
+                    items={topMatches}
+                    todayPlanPayload={todayPlan.data ?? null}
+                    onInvalidNavigate={() => {
+                      toast.info(
+                        'That task is already resolved. Showing your current priorities.',
+                      );
+                      void todayPlan.refetch();
+                    }}
+                  />
+                </motion.section>
+              ) : null}
+
+              {hasProgressCollapsibleContent ? (
+                <DashboardProgressIntelligenceCollapsible>
+                  {secondaryCollapsibleIds.map((id) => {
+                    if (id === 'goal_strategic_coaching') return null;
+                    if (
+                      !shouldShowSecondaryCard(
+                        id,
+                        todayPlan.data ?? null,
+                        phase14Layout,
+                        priorityZoneCardIds,
+                        phase14SecondaryFlags,
+                      )
+                    ) {
+                      return null;
+                    }
+                    const plan = todayPlan.data;
+                    if (!plan) return null;
+                    let inner: ReactNode = null;
+                    switch (id) {
+                      case 'career_momentum':
+                        inner = <CareerMomentumSection />;
+                        break;
+                      case 'predictive_outlook':
+                        inner = <PredictiveOutlookSection />;
+                        break;
+                      case 'weekly_briefing':
+                        inner = plan.weeklyBriefing ? (
+                          <DashboardWeeklyBriefingCard
+                            data={plan.weeklyBriefing}
+                          />
+                        ) : null;
+                        break;
+                      case 'strategic_weekly_coaching':
+                        inner = plan.strategicWeeklyCoaching ? (
+                          <DashboardStrategicWeeklyCoachingCard
+                            data={plan.strategicWeeklyCoaching}
+                          />
+                        ) : null;
+                        break;
+                      case 'goal_alignment':
+                        inner = (
+                          <GoalAlignmentSection
+                            suppressedByDedupe={goalAlignmentSuppressedByDedupe}
+                          />
+                        );
+                        break;
+                      case 'strategic_coaching':
+                        inner =
+                          plan.strategicCoaching &&
+                          !(
+                            suppressGenericInterviewCoaching &&
+                            plan.strategicCoaching.reason === 'interview_focus'
+                          ) ? (
+                            <DashboardStrategicCoachingCard
+                              data={plan.strategicCoaching}
+                            />
+                          ) : null;
+                        break;
+                      case 'adaptive_coaching':
+                        inner =
+                          plan.adaptiveCoaching &&
+                          !(
+                            suppressGenericInterviewCoaching &&
+                            plan.adaptiveCoaching.category ===
+                              'interview_momentum'
+                          ) ? (
+                            <DashboardAdaptiveCoachingCard
+                              data={plan.adaptiveCoaching}
+                            />
+                          ) : null;
+                        break;
+                      case 'milestone_celebration':
+                        inner = plan.milestoneCelebration ? (
+                          <DashboardMilestoneCelebration
+                            data={plan.milestoneCelebration}
+                            timeZone={browserTz}
+                          />
+                        ) : null;
+                        break;
+                      case 'habit_progress':
+                        inner = <ConsistencySection />;
+                        break;
+                      case 'today_plan_achievements':
+                        inner = (
+                          <AchievementsSection
+                            heading={careerAchievementsHeading}
+                          />
+                        );
+                        break;
+                      case 'growth_momentum':
+                        inner = (
+                          <GrowthProgressCard
+                            window={growthWindow}
+                            onWindowChange={setGrowthWindow}
+                            emptyStateCopy={
+                              todayPlan.data?.sectionPayloads?.momentum
+                                ?.emptyStateCopy ?? null
+                            }
+                            sectionTitle={
+                              normalizedSectionTitle(
+                                todayPlan.data,
+                                'momentum',
+                                '',
+                              ) ||
+                              todayPlan.data?.sectionPayloads?.momentum?.title?.trim() ||
+                              null
+                            }
+                          />
+                        );
+                        break;
+                      case 'growth_achievements':
+                        inner =
+                          shouldRenderSection(
+                            'achievements',
+                            todayPlan.data ?? null,
+                          ) && growthAchievements.data?.items?.length ? (
+                            <section className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-5 sm:p-6">
+                              <p className="mb-3 text-[15px] font-semibold text-white/90">
+                                {normalizedSectionTitle(
+                                  todayPlan.data,
+                                  'achievements',
+                                  '',
+                                ) ||
+                                  todayPlan.data?.sectionPayloads?.achievements?.title?.trim() ||
+                                  'Achievements'}
+                              </p>
+                              <div className="space-y-2">
+                                {growthAchievements.data.items
+                                  .slice(0, 3)
+                                  .map((item) => (
+                                    <div
+                                      key={item.id}
+                                      className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-3"
+                                    >
+                                      <div className="min-w-0">
+                                        <p className="truncate text-[13px] font-semibold text-white">
+                                          {item.title}
+                                        </p>
+                                        <p className="truncate text-[12px] text-white/50">
+                                          {item.subtitle}
+                                        </p>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-white/15 px-2.5 text-[12px] text-white/75 hover:border-[#00C9B1]/40 hover:text-[#00C9B1]"
+                                        onClick={async () => {
+                                          const text = `${item.sharePayload.badge}${item.sharePayload.value != null ? `: ${item.sharePayload.value}` : ''} - ${item.sharePayload.note}`;
+                                          if (navigator.share) {
+                                            try {
+                                              await navigator.share({
+                                                title: item.title,
+                                                text,
+                                              });
+                                              return;
+                                            } catch {
+                                              // ignore and fallback to clipboard
+                                            }
+                                          }
+                                          await navigator.clipboard.writeText(
+                                            text,
+                                          );
+                                          toast.success(
+                                            'Achievement copied for sharing',
+                                          );
+                                        }}
+                                      >
+                                        <Share2
+                                          className="h-3.5 w-3.5"
+                                          aria-hidden
+                                        />
+                                        Share
+                                      </button>
+                                    </div>
+                                  ))}
+                              </div>
+                            </section>
+                          ) : null;
+                        break;
+                      default:
+                        inner = null;
+                    }
+                    if (!inner) return null;
+                    return (
+                      <div key={id} className={phase14SecondaryWrapClass}>
+                        {inner}
+                      </div>
+                    );
+                  })}
+                </DashboardProgressIntelligenceCollapsible>
+              ) : null}
+
+              {hasGoalsStrategyCard && todayPlan.data?.goalStrategicCoaching ? (
+                <motion.section
+                  {...sectionMotion}
+                  transition={{
+                    duration: 0.35,
+                    delay: 0.117,
+                    ease: [0.21, 0.47, 0.32, 0.98],
+                  }}
+                  aria-label="Goals and strategy"
+                >
+                  <div className={phase14SecondaryWrapClass}>
+                    <DashboardGoalStrategicCoachingCard
+                      data={todayPlan.data.goalStrategicCoaching}
+                    />
+                  </div>
+                </motion.section>
+              ) : null}
+
+              {dashboardVm?.usesExperienceLayer &&
+              visibleInsightSurfaces.length > 0 &&
+              !phase14Layout.suppressInsightGuidance &&
+              todayPlan.data?.assistantNarrative?.suppressGuidanceCard !==
+                true ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{
+                    duration: assistantAtmosphere.motionTransition.duration,
+                    ease: assistantAtmosphere.motionTransition.ease as [
+                      number,
+                      number,
+                      number,
+                      number,
+                    ],
+                  }}
+                >
+                  <section
+                    className="grid gap-4 sm:grid-cols-2"
+                    aria-label="Guidance for you"
+                  >
+                    {visibleInsightSurfaces
+                      .slice(
+                        0,
+                        assistantAtmosphere.insightDensity === 'sparse' ? 4 : 6,
+                      )
+                      .map((surf, i) => (
+                        <InsightRenderer
+                          key={`${surf.category}-${i}`}
+                          surface={surf}
+                          mode={committedExp?.mode ?? dashboardVm?.mode ?? null}
+                          insightDensity={assistantAtmosphere.insightDensity}
+                          fatigueAdjusted={
+                            todayPlan.data?.dashboardExperience?.narrative
+                              ?.fatigueAdjusted ??
+                            committedExp?.narrativeFatigueAdjusted ??
+                            null
+                          }
+                          onDismiss={() => {
+                            const k = `${String(surf.category ?? '').trim()}:${String(surf.headline ?? '').trim()}:${String(surf.insightCategory ?? '').trim()}`;
+                            setDismissedInsights((prev) => {
+                              const next = new Set(prev);
+                              next.add(k);
+                              return next;
+                            });
+                            emitDashboardBehaviorEvent({
+                              eventName: 'dashboard_insight_dismissed',
+                              context: {
+                                surfaceKind: 'insight',
+                                category: surf.category ?? null,
+                                insightCategory: surf.insightCategory ?? null,
+                                headline: surf.headline ?? null,
+                              },
+                            });
+                          }}
+                        />
+                      ))}
+                  </section>
+                </motion.div>
+              ) : null}
+
+              <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{
                   duration: 0.35,
-                  delay: 0.1,
+                  delay: 0.14,
                   ease: [0.21, 0.47, 0.32, 0.98],
                 }}
-                className="scroll-mt-4 flex flex-col gap-6"
-                aria-label="Your pipeline at a glance"
               >
-                {showMergedPipelineCard ? (
-                  <PipelineRenderer
-                    metrics={dashboardVm?.pipelineMetrics ?? []}
-                    headline={pipelineDisplayHeadline}
-                    body={
-                      pipelineMergedBody ??
-                      (typeof pipelineInfoSurface?.body === 'string'
-                        ? dedupeNearDuplicateSentences(pipelineInfoSurface.body)
-                        : null)
-                    }
-                    forceRender={true}
-                    titleOverride={null}
-                    emptyStateCopyOverride={null}
-                    sectionEyebrow={
-                      normalizedSectionTitle(
-                        todayPlan.data,
-                        'search_at_a_glance',
-                        '',
-                      )?.trim() || 'Your pipeline at a glance'
-                    }
-                    primaryLineFallback={null}
-                    disableOuterMotion
-                    mode={committedExp?.mode ?? dashboardVm?.mode ?? null}
-                    fatigueAdjusted={
-                      todayPlan.data?.dashboardExperience?.narrative
-                        ?.fatigueAdjusted ??
-                      committedExp?.narrativeFatigueAdjusted ??
-                      null
-                    }
-                  />
-                ) : null}
-                {showStandaloneLandscapeCard ? (
-                  <DashboardLandscapeCard
-                    title={landscapeSectionTitle}
-                    body={landscapeCoachingBody}
-                    emptyStateCopy={
-                      todayPlan.data?.sectionPayloads?.landscape
-                        ?.emptyStateCopy ?? null
-                    }
-                  />
-                ) : null}
-              </motion.section>
-            ) : null}
-
-            {showCvTeaserInExecution ? (
-              <motion.section
-                {...sectionMotion}
-                transition={{
-                  duration: 0.35,
-                  delay: 0.09,
-                  ease: [0.21, 0.47, 0.32, 0.98],
-                }}
-                aria-label="CV profiles"
-              >
-                <DashboardCvProfileTeaser
-                  onNewCv={() => setCreateCvOpen(true)}
-                />
-              </motion.section>
-            ) : null}
-
-            {showCvClinicSectionInExecution ? (
-              <motion.section
-                {...sectionMotion}
-                transition={{
-                  duration: 0.35,
-                  delay: 0.095,
-                  ease: [0.21, 0.47, 0.32, 0.98],
-                }}
-                aria-label="CV Clinic"
-                data-tour="cv-clinic-section"
-                className="rounded-3xl border border-white/[0.08] bg-white/[0.03] p-4 shadow-[0_24px_60px_-32px_rgba(0,0,0,0.45)] ring-1 ring-white/[0.05] sm:p-6"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-semibold text-white/90">
-                      {normalizedSectionTitle(todayPlan.data, 'cv', '') ||
-                        todayPlan.data?.sectionPayloads?.cv?.title?.trim() ||
-                        'CV Clinic'}
-                    </h2>
-                    <p className="mt-2 text-[13px] font-medium leading-relaxed text-white/50">
-                      Start with a scan to get a score and section-by-section
-                      improvements.
+                {showLegacyNudges &&
+                !dashboardVm?.continuation &&
+                shouldRenderSection('nudges', todayPlan.data ?? null) &&
+                footerNudges.length > 0 ? (
+                  <section className="rounded-3xl border border-white/[0.08] bg-white/[0.03] p-5 shadow-[0_24px_60px_-32px_rgba(0,0,0,0.35)] ring-1 ring-white/[0.05] sm:p-6">
+                    <p className="mb-3 text-xl font-semibold tracking-tight text-white/90">
+                      {normalizedSectionTitle(todayPlan.data, 'nudges', '') ||
+                        todayPlan.data?.sectionPayloads?.nudges?.title?.trim() ||
+                        'Suggestions for you'}
                     </p>
-                  </div>
-                  <Link
-                    href="/dashboard/cv"
-                    className="text-[13px] font-medium text-[#00C9B1] hover:underline"
-                  >
-                    Open CV Clinic →
-                  </Link>
-                </div>
-              </motion.section>
-            ) : null}
-
-            {!hasUnifiedPriorities ? (
-              <motion.section
-                {...sectionMotion}
-                transition={{
-                  duration: 0.35,
-                  delay: 0.118,
-                  ease: [0.21, 0.47, 0.32, 0.98],
-                }}
-              >
-                <TodaysPlanTopMatchesSection
-                  items={topMatches}
-                  todayPlanPayload={todayPlan.data ?? null}
-                  onInvalidNavigate={() => {
-                    toast.info(
-                      'That task is already resolved. Showing your current priorities.',
-                    );
-                    void todayPlan.refetch();
-                  }}
-                />
-              </motion.section>
-            ) : null}
-
-            {hasProgressCollapsibleContent ? (
-              <DashboardProgressIntelligenceCollapsible>
-                {secondaryCollapsibleIds.map((id) => {
-                  if (id === 'goal_strategic_coaching') return null;
-                  if (
-                    !shouldShowSecondaryCard(
-                      id,
-                      todayPlan.data ?? null,
-                      phase14Layout,
-                      priorityZoneCardIds,
-                      phase14SecondaryFlags,
-                    )
-                  ) {
-                    return null;
-                  }
-                  const plan = todayPlan.data;
-                  if (!plan) return null;
-                  let inner: ReactNode = null;
-                  switch (id) {
-                    case 'career_momentum':
-                      inner = <CareerMomentumSection />;
-                      break;
-                    case 'predictive_outlook':
-                      inner = <PredictiveOutlookSection />;
-                      break;
-                    case 'weekly_briefing':
-                      inner = plan.weeklyBriefing ? (
-                        <DashboardWeeklyBriefingCard
-                          data={plan.weeklyBriefing}
-                        />
-                      ) : null;
-                      break;
-                    case 'strategic_weekly_coaching':
-                      inner = plan.strategicWeeklyCoaching ? (
-                        <DashboardStrategicWeeklyCoachingCard
-                          data={plan.strategicWeeklyCoaching}
-                        />
-                      ) : null;
-                      break;
-                    case 'goal_alignment':
-                      inner = (
-                        <GoalAlignmentSection
-                          suppressedByDedupe={goalAlignmentSuppressedByDedupe}
-                        />
-                      );
-                      break;
-                    case 'strategic_coaching':
-                      inner =
-                        plan.strategicCoaching &&
-                        !(
-                          suppressGenericInterviewCoaching &&
-                          plan.strategicCoaching.reason === 'interview_focus'
-                        ) ? (
-                          <DashboardStrategicCoachingCard
-                            data={plan.strategicCoaching}
-                          />
-                        ) : null;
-                      break;
-                    case 'adaptive_coaching':
-                      inner =
-                        plan.adaptiveCoaching &&
-                        !(
-                          suppressGenericInterviewCoaching &&
-                          plan.adaptiveCoaching.category ===
-                            'interview_momentum'
-                        ) ? (
-                          <DashboardAdaptiveCoachingCard
-                            data={plan.adaptiveCoaching}
-                          />
-                        ) : null;
-                      break;
-                    case 'milestone_celebration':
-                      inner = plan.milestoneCelebration ? (
-                        <DashboardMilestoneCelebration
-                          data={plan.milestoneCelebration}
-                          timeZone={browserTz}
-                        />
-                      ) : null;
-                      break;
-                    case 'habit_progress':
-                      inner = <ConsistencySection />;
-                      break;
-                    case 'today_plan_achievements':
-                      inner = (
-                        <AchievementsSection heading={careerAchievementsHeading} />
-                      );
-                      break;
-                    case 'growth_momentum':
-                      inner = (
-                        <GrowthProgressCard
-                          window={growthWindow}
-                          onWindowChange={setGrowthWindow}
-                          emptyStateCopy={
-                            todayPlan.data?.sectionPayloads?.momentum
-                              ?.emptyStateCopy ?? null
-                          }
-                          sectionTitle={
-                            normalizedSectionTitle(
-                              todayPlan.data,
-                              'momentum',
-                              '',
-                            ) ||
-                            todayPlan.data?.sectionPayloads?.momentum?.title?.trim() ||
-                            null
-                          }
-                        />
-                      );
-                      break;
-                    case 'growth_achievements':
-                      inner =
-                        shouldRenderSection(
-                          'achievements',
-                          todayPlan.data ?? null,
-                        ) && growthAchievements.data?.items?.length ? (
-                          <section className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-5 sm:p-6">
-                            <p className="mb-3 text-[15px] font-semibold text-white/90">
-                              {normalizedSectionTitle(
-                                todayPlan.data,
-                                'achievements',
-                                '',
-                              ) ||
-                                todayPlan.data?.sectionPayloads?.achievements?.title?.trim() ||
-                                'Achievements'}
-                            </p>
-                            <div className="space-y-2">
-                              {growthAchievements.data.items
-                                .slice(0, 3)
-                                .map((item) => (
-                                  <div
-                                    key={item.id}
-                                    className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-3"
-                                  >
-                                    <div className="min-w-0">
-                                      <p className="truncate text-[13px] font-semibold text-white">
-                                        {item.title}
-                                      </p>
-                                      <p className="truncate text-[12px] text-white/50">
-                                        {item.subtitle}
-                                      </p>
-                                    </div>
-                                    <button
-                                      type="button"
-                                      className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-white/15 px-2.5 text-[12px] text-white/75 hover:border-[#00C9B1]/40 hover:text-[#00C9B1]"
-                                      onClick={async () => {
-                                        const text = `${item.sharePayload.badge}${item.sharePayload.value != null ? `: ${item.sharePayload.value}` : ''} - ${item.sharePayload.note}`;
-                                        if (navigator.share) {
-                                          try {
-                                            await navigator.share({
-                                              title: item.title,
-                                              text,
-                                            });
-                                            return;
-                                          } catch {
-                                            // ignore and fallback to clipboard
-                                          }
-                                        }
-                                        await navigator.clipboard.writeText(
-                                          text,
-                                        );
-                                        toast.success(
-                                          'Achievement copied for sharing',
-                                        );
-                                      }}
-                                    >
-                                      <Share2
-                                        className="h-3.5 w-3.5"
-                                        aria-hidden
-                                      />
-                                      Share
-                                    </button>
-                                  </div>
-                                ))}
-                            </div>
-                          </section>
-                        ) : null;
-                      break;
-                    default:
-                      inner = null;
-                  }
-                  if (!inner) return null;
-                  return (
-                    <div key={id} className={phase14SecondaryWrapClass}>
-                      {inner}
+                    <div className="space-y-2">
+                      {footerNudges.map((nudge) => (
+                        <Link
+                          key={nudge.id}
+                          href={nudge.route}
+                          className="block rounded-2xl border border-white/10 bg-white/[0.02] p-3 transition-colors hover:border-white/20 hover:bg-white/[0.04]"
+                        >
+                          <p className="text-[13px] font-semibold text-white">
+                            {nudge.title}
+                          </p>
+                          <p className="mt-1 text-[12px] text-white/50">
+                            {nudge.message}
+                          </p>
+                          <p className="mt-2 text-[12px] font-medium text-[#00C9B1]">
+                            {nudge.actionLabel} →
+                          </p>
+                        </Link>
+                      ))}
                     </div>
-                  );
-                })}
-              </DashboardProgressIntelligenceCollapsible>
-            ) : null}
-
-            {hasGoalsStrategyCard && todayPlan.data?.goalStrategicCoaching ? (
-              <motion.section
-                {...sectionMotion}
-                transition={{
-                  duration: 0.35,
-                  delay: 0.117,
-                  ease: [0.21, 0.47, 0.32, 0.98],
-                }}
-                aria-label="Goals and strategy"
-              >
-                <div className={phase14SecondaryWrapClass}>
-                  <DashboardGoalStrategicCoachingCard
-                    data={todayPlan.data.goalStrategicCoaching}
-                  />
-                </div>
-              </motion.section>
-            ) : null}
-
-            {dashboardVm?.usesExperienceLayer &&
-            visibleInsightSurfaces.length > 0 &&
-            !phase14Layout.suppressInsightGuidance &&
-            todayPlan.data?.assistantNarrative?.suppressGuidanceCard !==
-              true ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{
-                  duration: assistantAtmosphere.motionTransition.duration,
-                  ease: assistantAtmosphere.motionTransition.ease as [
-                    number,
-                    number,
-                    number,
-                    number,
-                  ],
-                }}
-              >
-                <section
-                  className="grid gap-4 sm:grid-cols-2"
-                  aria-label="Guidance for you"
-                >
-                  {visibleInsightSurfaces
-                    .slice(
-                      0,
-                      assistantAtmosphere.insightDensity === 'sparse' ? 4 : 6,
-                    )
-                    .map((surf, i) => (
-                      <InsightRenderer
-                        key={`${surf.category}-${i}`}
-                        surface={surf}
-                        mode={committedExp?.mode ?? dashboardVm?.mode ?? null}
-                        insightDensity={assistantAtmosphere.insightDensity}
-                        fatigueAdjusted={
-                          todayPlan.data?.dashboardExperience?.narrative
-                            ?.fatigueAdjusted ??
-                          committedExp?.narrativeFatigueAdjusted ??
-                          null
-                        }
-                        onDismiss={() => {
-                          const k = `${String(surf.category ?? '').trim()}:${String(surf.headline ?? '').trim()}:${String(surf.insightCategory ?? '').trim()}`;
-                          setDismissedInsights((prev) => {
-                            const next = new Set(prev);
-                            next.add(k);
-                            return next;
-                          });
-                          emitDashboardBehaviorEvent({
-                            eventName: 'dashboard_insight_dismissed',
-                            context: {
-                              surfaceKind: 'insight',
-                              category: surf.category ?? null,
-                              insightCategory: surf.insightCategory ?? null,
-                              headline: surf.headline ?? null,
-                            },
-                          });
-                        }}
-                      />
-                    ))}
-                </section>
+                  </section>
+                ) : null}
               </motion.div>
-            ) : null}
 
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.35,
-                delay: 0.14,
-                ease: [0.21, 0.47, 0.32, 0.98],
-              }}
-            >
-              {showLegacyNudges &&
-              !dashboardVm?.continuation &&
-              shouldRenderSection('nudges', todayPlan.data ?? null) &&
-              footerNudges.length > 0 ? (
-                <section className="rounded-3xl border border-white/[0.08] bg-white/[0.03] p-5 shadow-[0_24px_60px_-32px_rgba(0,0,0,0.35)] ring-1 ring-white/[0.05] sm:p-6">
-                  <p className="mb-3 text-xl font-semibold tracking-tight text-white/90">
-                    {normalizedSectionTitle(todayPlan.data, 'nudges', '') ||
-                      todayPlan.data?.sectionPayloads?.nudges?.title?.trim() ||
-                      'Suggestions for you'}
-                  </p>
-                  <div className="space-y-2">
-                    {footerNudges.map((nudge) => (
-                      <Link
-                        key={nudge.id}
-                        href={nudge.route}
-                        className="block rounded-2xl border border-white/10 bg-white/[0.02] p-3 transition-colors hover:border-white/20 hover:bg-white/[0.04]"
-                      >
-                        <p className="text-[13px] font-semibold text-white">
-                          {nudge.title}
-                        </p>
-                        <p className="mt-1 text-[12px] text-white/50">
-                          {nudge.message}
-                        </p>
-                        <p className="mt-2 text-[12px] font-medium text-[#00C9B1]">
-                          {nudge.actionLabel} →
-                        </p>
-                      </Link>
-                    ))}
-                  </div>
-                </section>
+              {showChecklist ? (
+                <GettingStartedChecklist
+                  hasCvProfile={displayRows.length > 0}
+                  anyProfileScored={anyProfileScored}
+                  totalJobsAnalyzed={totalJobsAnalyzed}
+                />
               ) : null}
-            </motion.div>
 
-            {showChecklist ? (
-              <GettingStartedChecklist
-                hasCvProfile={displayRows.length > 0}
-                anyProfileScored={anyProfileScored}
-                totalJobsAnalyzed={totalJobsAnalyzed}
-              />
-            ) : null}
-
-            {showAnalyzeNextRoleBanner ? (
-              <AnalyzeNextRoleBanner
-                primaryGoal={primaryGoal}
-                defaultProfile={defaultProfile}
-              />
-            ) : null}
-          </div>
+              {showAnalyzeNextRoleBanner ? (
+                <AnalyzeNextRoleBanner
+                  primaryGoal={primaryGoal}
+                  defaultProfile={defaultProfile}
+                />
+              ) : null}
+            </div>
           )}
 
           <CreateCVProfileModal

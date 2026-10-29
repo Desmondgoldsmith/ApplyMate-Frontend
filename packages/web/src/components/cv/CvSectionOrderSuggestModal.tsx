@@ -50,7 +50,9 @@ function OrderColumn({
 
   return (
     <div className="min-w-0 flex-1">
-      <h3 className="text-[11px] font-semibold uppercase tracking-wide text-white/45">{title}</h3>
+      <h3 className="text-[11px] font-semibold uppercase tracking-wide text-white/45">
+        {title}
+      </h3>
       <ol className="mt-2 space-y-2">
         {rows.length === 0 ? (
           <li className="text-xs text-white/35">No sections</li>
@@ -71,7 +73,9 @@ function OrderColumn({
                   {idx + 1}. {labelForSectionId(id, sections, changes)}
                 </p>
                 {change?.explanation ? (
-                  <p className="mt-1 text-xs leading-relaxed text-white/55">{change.explanation}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-white/55">
+                    {change.explanation}
+                  </p>
                 ) : null}
               </li>
             );
@@ -93,16 +97,23 @@ export function CvSectionOrderSuggestModal({
 }: CvSectionOrderSuggestModalProps) {
   const toast = useToast();
   const queryClient = useQueryClient();
-  const [suggest, setSuggest] = useState<CvSectionOrderSuggestResult | null>(null);
+  const [suggest, setSuggest] = useState<CvSectionOrderSuggestResult | null>(
+    null,
+  );
   const [adjusting, setAdjusting] = useState(false);
   const [adjustedVisible, setAdjustedVisible] = useState<string[]>([]);
 
   const fetchSuggest = useMutation({
     mutationFn: () => api.cv.suggestSectionOrder(profileId),
     onSuccess: (data) => {
-      const merged = mergeSectionOrderSuggestWithClientFallback(data, existingSections) ?? data;
+      const merged =
+        mergeSectionOrderSuggestWithClientFallback(data, existingSections) ??
+        data;
       setSuggest(merged);
-      const { visible } = splitSuggestedOrder(merged.currentOrder, merged.suggestedOrder);
+      const { visible } = splitSuggestedOrder(
+        merged.currentOrder,
+        merged.suggestedOrder,
+      );
       setAdjustedVisible(visible);
       setAdjusting(false);
     },
@@ -141,11 +152,17 @@ export function CvSectionOrderSuggestModal({
       return;
     }
     const seed = initialSuggest
-      ? mergeSectionOrderSuggestWithClientFallback(initialSuggest, existingSections)
+      ? mergeSectionOrderSuggestWithClientFallback(
+          initialSuggest,
+          existingSections,
+        )
       : null;
     if (seed) {
       setSuggest(seed);
-      const { visible } = splitSuggestedOrder(seed.currentOrder, seed.suggestedOrder);
+      const { visible } = splitSuggestedOrder(
+        seed.currentOrder,
+        seed.suggestedOrder,
+      );
       setAdjustedVisible(visible);
       setAdjusting(false);
       return;
@@ -210,13 +227,15 @@ export function CvSectionOrderSuggestModal({
           ) : null}
           {isOptimal ? (
             <p className="rounded-xl border border-[#00C9B1]/25 bg-[#00C9B1]/10 px-4 py-3 text-sm text-white/80">
-              Your sections are already in a strong order for this profile. No changes are
-              needed.
+              Your sections are already in a strong order for this profile. No
+              changes are needed.
             </p>
           ) : (
             <>
               {suggest.overview ? (
-                <p className="text-sm leading-relaxed text-white/75">{suggest.overview}</p>
+                <p className="text-sm leading-relaxed text-white/75">
+                  {suggest.overview}
+                </p>
               ) : null}
               {!adjusting ? (
                 <div className="flex flex-col gap-4 sm:flex-row">
@@ -236,8 +255,8 @@ export function CvSectionOrderSuggestModal({
               ) : (
                 <div>
                   <p className="mb-2 text-xs text-white/45">
-                    Drag order with the arrows, then apply. Hidden sections stay at the end of your
-                    CV automatically.
+                    Drag order with the arrows, then apply. Hidden sections stay
+                    at the end of your CV automatically.
                   </p>
                   <ol className="space-y-2">
                     {adjustedVisible.map((id, idx) => {
@@ -247,13 +266,22 @@ export function CvSectionOrderSuggestModal({
                           key={id}
                           className="flex items-start gap-2 rounded-lg border border-white/[0.08] bg-[#080b0b]/80 px-2 py-2"
                         >
-                          <GripVertical className="mt-1 h-4 w-4 shrink-0 text-white/25" aria-hidden />
+                          <GripVertical
+                            className="mt-1 h-4 w-4 shrink-0 text-white/25"
+                            aria-hidden
+                          />
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-medium text-white/90">
-                              {labelForSectionId(id, existingSections, suggest.changes)}
+                              {labelForSectionId(
+                                id,
+                                existingSections,
+                                suggest.changes,
+                              )}
                             </p>
                             {change?.explanation ? (
-                              <p className="mt-0.5 text-xs text-white/50">{change.explanation}</p>
+                              <p className="mt-0.5 text-xs text-white/50">
+                                {change.explanation}
+                              </p>
                             ) : null}
                           </div>
                           <div className="flex shrink-0 flex-col gap-0.5">
@@ -269,7 +297,9 @@ export function CvSectionOrderSuggestModal({
                             <button
                               type="button"
                               className="rounded border border-white/10 p-1 text-white/55 hover:border-[#00C9B1]/40 disabled:opacity-30"
-                              disabled={idx >= adjustedVisible.length - 1 || busy}
+                              disabled={
+                                idx >= adjustedVisible.length - 1 || busy
+                              }
                               onClick={() => moveVisible(idx, 1)}
                               aria-label="Move down"
                             >

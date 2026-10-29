@@ -23,7 +23,9 @@ export function useUploadCV(cvProfileId?: string | null) {
     onSuccess: async (result) => {
       await refreshCvStateAfterCvParseSuccess(queryClient, result.profile);
       void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.analytics.root(),
+      });
     },
   });
 }

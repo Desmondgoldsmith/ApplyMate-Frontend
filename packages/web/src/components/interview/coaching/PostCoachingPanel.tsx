@@ -5,7 +5,10 @@ import { ChevronDown } from 'lucide-react';
 
 import { AnswerQualityMeter } from '@/components/interview/coaching/AnswerQualityMeter';
 import { CoachingInsightSkeleton } from '@/components/interview/coaching/CoachingInsightSkeleton';
-import type { CoachingLoadStatus, PostCoachingResponse } from '@/lib/interview-coaching-types';
+import type {
+  CoachingLoadStatus,
+  PostCoachingResponse,
+} from '@/lib/interview-coaching-types';
 import type { CoachInsightScore } from '@/lib/interview-prep-types';
 import { cn } from '@/lib/utils';
 
@@ -22,7 +25,12 @@ export const PostCoachingPanel = memo(function PostCoachingPanel({
 
   if (status === 'loading' && !data) {
     return (
-      <div className={cn('rounded-xl border border-[var(--border-subtle)] p-4', className)}>
+      <div
+        className={cn(
+          'rounded-xl border border-[var(--border-subtle)] p-4',
+          className,
+        )}
+      >
         <CoachingInsightSkeleton />
       </div>
     );
@@ -92,7 +100,10 @@ export const PostCoachingPanel = memo(function PostCoachingPanel({
               Stronger way to say it
             </span>
             <ChevronDown
-              className={cn('h-4 w-4 text-[var(--text-muted)] transition', improvedOpen && 'rotate-180')}
+              className={cn(
+                'h-4 w-4 text-[var(--text-muted)] transition',
+                improvedOpen && 'rotate-180',
+              )}
             />
           </button>
           {improvedOpen ? (
@@ -104,7 +115,9 @@ export const PostCoachingPanel = memo(function PostCoachingPanel({
       ) : null}
 
       {data.source !== 'gemini' && process.env.NODE_ENV !== 'production' ? (
-        <p className="text-[9px] text-[var(--text-muted)]">Source: {data.source}</p>
+        <p className="text-[9px] text-[var(--text-muted)]">
+          Source: {data.source}
+        </p>
       ) : null}
     </div>
   );

@@ -12,7 +12,14 @@ type StatCardProps = {
   loading?: boolean;
 };
 
-export function StatCard({ label, value, suffix, hint, icon, loading }: StatCardProps) {
+export function StatCard({
+  label,
+  value,
+  suffix,
+  hint,
+  icon,
+  loading,
+}: StatCardProps) {
   return (
     <GlowCard contentClassName="p-5">
       {loading ? (
@@ -24,12 +31,16 @@ export function StatCard({ label, value, suffix, hint, icon, loading }: StatCard
       ) : (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-[0.08em] text-white/45">{label}</p>
+            <p className="text-xs uppercase tracking-[0.08em] text-white/45">
+              {label}
+            </p>
             {icon}
           </div>
           <p className="text-3xl font-extrabold text-white">
             {value}
-            {suffix ? <span className="ml-0.5 text-base text-[#00C9B1]">{suffix}</span> : null}
+            {suffix ? (
+              <span className="ml-0.5 text-base text-[#00C9B1]">{suffix}</span>
+            ) : null}
           </p>
           {hint ? <p className="text-xs text-white/50">{hint}</p> : null}
         </div>
@@ -37,4 +48,3 @@ export function StatCard({ label, value, suffix, hint, icon, loading }: StatCard
     </GlowCard>
   );
 }
-

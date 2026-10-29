@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { dedupeExplainerCopy, parseExplainerBlocks } from '@/lib/parseExplainerBody';
+import {
+  dedupeExplainerCopy,
+  parseExplainerBlocks,
+} from '@/lib/parseExplainerBody';
 
 describe('parseExplainerBody', () => {
   it('dedupes repeated sentences', () => {
@@ -16,8 +19,14 @@ describe('parseExplainerBody', () => {
       'Start every bullet with a powerful verb: Built, Architected, Reduced, Led, Launched, Optimised. Weak: Was responsible for performance → Strong: Optimised API response time by 40%. This is the single most impactful change you can make.';
     const blocks = parseExplainerBlocks(raw);
     expect(blocks.some((b) => b.kind === 'verbs')).toBe(true);
-    expect(blocks.some((b) => b.kind === 'compare' && b.weak.includes('responsible'))).toBe(true);
-    expect(blocks.some((b) => b.kind === 'compare' && b.strong.includes('40%'))).toBe(true);
+    expect(
+      blocks.some(
+        (b) => b.kind === 'compare' && b.weak.includes('responsible'),
+      ),
+    ).toBe(true);
+    expect(
+      blocks.some((b) => b.kind === 'compare' && b.strong.includes('40%')),
+    ).toBe(true);
     expect(blocks.filter((b) => b.kind === 'paragraph')).toHaveLength(1);
   });
 });

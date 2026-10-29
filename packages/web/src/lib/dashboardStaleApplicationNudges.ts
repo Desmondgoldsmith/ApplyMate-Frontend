@@ -33,10 +33,15 @@ export function readArchiveNudgeDismissals(): Record<string, string> {
     const raw = window.localStorage.getItem(ARCHIVE_NUDGE_DISMISS_STORAGE_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
+      return {};
     const out: Record<string, string> = {};
     for (const [key, value] of Object.entries(parsed)) {
-      if (typeof key === 'string' && typeof value === 'string' && value.trim()) {
+      if (
+        typeof key === 'string' &&
+        typeof value === 'string' &&
+        value.trim()
+      ) {
         out[key] = value;
       }
     }

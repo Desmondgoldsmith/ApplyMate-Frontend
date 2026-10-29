@@ -71,7 +71,9 @@ const baseItem = (over: Partial<UnifiedPriorityItem>): UnifiedPriorityItem =>
 
 describe('todayPlanLabels', () => {
   it('maps readyState to plain language', () => {
-    expect(labelForReadyState('needs_cv_tailoring')).toBe('Needs CV tailoring first');
+    expect(labelForReadyState('needs_cv_tailoring')).toBe(
+      'Needs CV tailoring first',
+    );
     expect(labelForReadyState('ready')).toBe('Ready to go');
   });
 
@@ -96,10 +98,17 @@ describe('todayPlanLabels', () => {
   });
 
   it('infers job history scan tone without unified priorities', () => {
-    expect(scanLabelForJobHistoryRow({ hasCoverLetter: false, isTailored: true }).label).toContain('cover');
-    expect(scanLabelForJobHistoryRow({ matchScore: 80, hasCoverLetter: true, isTailored: true }).label).toBe(
-      'Strong match',
-    );
+    expect(
+      scanLabelForJobHistoryRow({ hasCoverLetter: false, isTailored: true })
+        .label,
+    ).toContain('cover');
+    expect(
+      scanLabelForJobHistoryRow({
+        matchScore: 80,
+        hasCoverLetter: true,
+        isTailored: true,
+      }).label,
+    ).toBe('Strong match');
     expect(
       scanLabelForJobHistoryRow({
         pipelineStatus: 'interviewing',

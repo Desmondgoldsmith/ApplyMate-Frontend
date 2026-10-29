@@ -6,11 +6,16 @@ export function resolveTailorBaselineScore(
   analysisScoreBeforeTailoring: number | null | undefined,
   currentMatchScore: number | null | undefined,
 ): number | null {
-  if (lockedBaseline != null && Number.isFinite(lockedBaseline)) return lockedBaseline;
-  if (analysisScoreBeforeTailoring != null && Number.isFinite(analysisScoreBeforeTailoring)) {
+  if (lockedBaseline != null && Number.isFinite(lockedBaseline))
+    return lockedBaseline;
+  if (
+    analysisScoreBeforeTailoring != null &&
+    Number.isFinite(analysisScoreBeforeTailoring)
+  ) {
     return analysisScoreBeforeTailoring;
   }
-  if (currentMatchScore != null && Number.isFinite(currentMatchScore)) return currentMatchScore;
+  if (currentMatchScore != null && Number.isFinite(currentMatchScore))
+    return currentMatchScore;
   return null;
 }
 
@@ -24,15 +29,19 @@ export type TailorScoreMergeResult = {
  * Trust stored `matchScore` from the API — no client-side preview or partial-tailor estimation.
  * Score delta copy uses `scoreBeforeTailoring` only when `isTailored === true`.
  */
-export function mergeTailorEstimatedScores<T extends {
-  matchScore?: number;
-  scoreBeforeTailoring?: number | null;
-  isTailored?: boolean;
-}>(
+export function mergeTailorEstimatedScores<
+  T extends {
+    matchScore?: number;
+    scoreBeforeTailoring?: number | null;
+    isTailored?: boolean;
+  },
+>(
   analysis: T,
   _draft: CvTailorDraft | null | undefined,
   lockedBaseline: number | null,
-): TailorScoreMergeResult & { analysis: T & { matchScore: number; scoreBeforeTailoring: number | null } } {
+): TailorScoreMergeResult & {
+  analysis: T & { matchScore: number; scoreBeforeTailoring: number | null };
+} {
   const matchScore =
     analysis.matchScore != null && Number.isFinite(analysis.matchScore)
       ? Math.round(analysis.matchScore)
@@ -40,12 +49,17 @@ export function mergeTailorEstimatedScores<T extends {
 
   const scoreBeforeTailoring =
     analysis.isTailored === true
-      ? resolveTailorBaselineScore(lockedBaseline, analysis.scoreBeforeTailoring, undefined)
-      : analysis.scoreBeforeTailoring ?? null;
+      ? resolveTailorBaselineScore(
+          lockedBaseline,
+          analysis.scoreBeforeTailoring,
+          undefined,
+        )
+      : (analysis.scoreBeforeTailoring ?? null);
 
   const nextLocked =
     lockedBaseline ??
-    (analysis.scoreBeforeTailoring != null && Number.isFinite(analysis.scoreBeforeTailoring)
+    (analysis.scoreBeforeTailoring != null &&
+    Number.isFinite(analysis.scoreBeforeTailoring)
       ? Math.round(analysis.scoreBeforeTailoring)
       : null);
 
@@ -55,10 +69,11 @@ export function mergeTailorEstimatedScores<T extends {
       matchScore,
       scoreBeforeTailoring:
         analysis.isTailored === true
-          ? scoreBeforeTailoring ?? null
-          : analysis.scoreBeforeTailoring ?? null,
+          ? (scoreBeforeTailoring ?? null)
+          : (analysis.scoreBeforeTailoring ?? null),
     },
     lockedBaseline: nextLocked,
-    scoreBeforeTailor: analysis.isTailored === true ? scoreBeforeTailoring : null,
+    scoreBeforeTailor:
+      analysis.isTailored === true ? scoreBeforeTailoring : null,
   };
 }

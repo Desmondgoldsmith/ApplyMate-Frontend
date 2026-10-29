@@ -1,4 +1,7 @@
-import { canonicalJobViewUrl, isLinkedInJobSearchUrl } from '@/shared/job-page-url';
+import {
+  canonicalJobViewUrl,
+  isLinkedInJobSearchUrl,
+} from '@/shared/job-page-url';
 
 /** Allowed fields for POST /extension/cover-letter. */
 export type CoverLetterRequestPayload = {
@@ -77,7 +80,9 @@ export function buildCoverLetterPayload(input: {
     payload.jobAnalysisId = jobAnalysisId;
   }
 
-  const sourceUrl = input.sourceUrl ? canonicalJobViewUrl(input.sourceUrl) : null;
+  const sourceUrl = input.sourceUrl
+    ? canonicalJobViewUrl(input.sourceUrl)
+    : null;
   if (sourceUrl) {
     payload.sourceUrl = sourceUrl;
   }

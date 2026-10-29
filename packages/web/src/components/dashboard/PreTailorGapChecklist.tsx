@@ -4,7 +4,9 @@ import { useMemo } from 'react';
 
 import type { JobAnalysis } from '@/lib/api';
 
-export type TailorMissingSkill = NonNullable<JobAnalysis['missingSkills']>[number];
+export type TailorMissingSkill = NonNullable<
+  JobAnalysis['missingSkills']
+>[number];
 
 function sectionTitle(sectionType: string): string {
   const s = sectionType?.trim() || 'section';
@@ -25,14 +27,20 @@ export function PreTailorGapChecklist({
   plannedSections?: string[];
 }) {
   const selectedLower = useMemo(
-    () => new Set(selectedSkills.map((s) => s.trim().toLowerCase()).filter(Boolean)),
+    () =>
+      new Set(
+        selectedSkills.map((s) => s.trim().toLowerCase()).filter(Boolean),
+      ),
     [selectedSkills],
   );
   const openGaps = useMemo(
     () =>
       missingSkills
         .map(normalizeMissingSkillLabel)
-        .filter((skill) => skill.length > 0 && !selectedLower.has(skill.toLowerCase())),
+        .filter(
+          (skill) =>
+            skill.length > 0 && !selectedLower.has(skill.toLowerCase()),
+        ),
     [missingSkills, selectedLower],
   );
   const sections = plannedSections?.filter(Boolean) ?? [];
@@ -50,7 +58,8 @@ export function PreTailorGapChecklist({
       {openGaps.length > 0 ? (
         <>
           <p className="mt-2 text-[12px] leading-relaxed text-white/60">
-            Skill gaps from the job analysis. Selected skills will be reflected in the draft below.
+            Skill gaps from the job analysis. Selected skills will be reflected
+            in the draft below.
           </p>
           <div className="mt-2.5 flex flex-wrap gap-1.5">
             {openGaps.slice(0, 24).map((skill) => (
@@ -66,8 +75,7 @@ export function PreTailorGapChecklist({
       ) : null}
       {sections.length > 0 ? (
         <p className="mt-2 text-[11px] text-white/45">
-          Planned sections:{' '}
-          {sections.map((st) => sectionTitle(st)).join(' · ')}
+          Planned sections: {sections.map((st) => sectionTitle(st)).join(' · ')}
         </p>
       ) : null}
     </div>

@@ -17,11 +17,16 @@ describe('authSync', () => {
       close = close;
     }
 
-    vi.stubGlobal('BroadcastChannel', MockChannel as unknown as typeof BroadcastChannel);
+    vi.stubGlobal(
+      'BroadcastChannel',
+      MockChannel as unknown as typeof BroadcastChannel,
+    );
 
     broadcastAuthLogout();
 
-    expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: 'logout' }));
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'logout' }),
+    );
     expect(close).toHaveBeenCalled();
   });
 
@@ -39,13 +44,18 @@ describe('authSync', () => {
       close = vi.fn();
     }
 
-    vi.stubGlobal('BroadcastChannel', MockChannel as unknown as typeof BroadcastChannel);
+    vi.stubGlobal(
+      'BroadcastChannel',
+      MockChannel as unknown as typeof BroadcastChannel,
+    );
 
     const onLogout = vi.fn();
     const unsub = subscribeAuthLogout(onLogout);
 
     expect(channel).not.toBeNull();
-    channel!.onmessage?.(new MessageEvent('message', { data: { type: 'logout' } }));
+    channel!.onmessage?.(
+      new MessageEvent('message', { data: { type: 'logout' } }),
+    );
 
     expect(onLogout).toHaveBeenCalledTimes(1);
     unsub();

@@ -22,17 +22,17 @@ Populate **`followUpIntelligence`** with **stable structured fields** so the das
 
 Extend the existing object (do **not** remove current fields). Add or guarantee:
 
-| Field | Type | Required when | Notes |
-|-------|------|-----------------|--------|
-| `daysSinceApplication` | integer ≥ 0 | follow-up strip shown | Already used; keep accurate. |
-| `companyName` | string | **Whenever** the follow-up refers to a specific employer | Human-readable legal or brand name (e.g. `Stripe`, `Acme Corp`). **Not** a status sentence. |
-| `jobTitle` | string | **Whenever** the follow-up refers to a specific opening | Role line only (e.g. `Senior Software Engineer`). **Not** “Application submitted…”. |
-| `headline` | string | optional | Short coaching line; may echo the structured sentence but must **not** be the only place company/title live. |
-| `supporting` | string | optional | Extra context; same hygiene as headline. |
-| `ctaLabel` | string | yes | e.g. `Send follow-up` |
-| `ctaHref` | string | yes | Deep link to the application / follow-up composer. |
-| `confidence` | number 0–100 | recommended | Unchanged semantics. |
-| `reason` | enum string | optional | Unchanged allowed values. |
+| Field                  | Type         | Required when                                            | Notes                                                                                                        |
+| ---------------------- | ------------ | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `daysSinceApplication` | integer ≥ 0  | follow-up strip shown                                    | Already used; keep accurate.                                                                                 |
+| `companyName`          | string       | **Whenever** the follow-up refers to a specific employer | Human-readable legal or brand name (e.g. `Stripe`, `Acme Corp`). **Not** a status sentence.                  |
+| `jobTitle`             | string       | **Whenever** the follow-up refers to a specific opening  | Role line only (e.g. `Senior Software Engineer`). **Not** “Application submitted…”.                          |
+| `headline`             | string       | optional                                                 | Short coaching line; may echo the structured sentence but must **not** be the only place company/title live. |
+| `supporting`           | string       | optional                                                 | Extra context; same hygiene as headline.                                                                     |
+| `ctaLabel`             | string       | yes                                                      | e.g. `Send follow-up`                                                                                        |
+| `ctaHref`              | string       | yes                                                      | Deep link to the application / follow-up composer.                                                           |
+| `confidence`           | number 0–100 | recommended                                              | Unchanged semantics.                                                                                         |
+| `reason`               | enum string  | optional                                                 | Unchanged allowed values.                                                                                    |
 
 ### Accepted key aliases (if you prefer snake_case in JSON)
 
@@ -68,12 +68,12 @@ If the application record truly has no employer or title in your DB, omit `compa
 
 Given `daysSinceApplication`, `companyName`, `jobTitle`:
 
-| Data | Resulting first sentence (conceptually) |
-|------|----------------------------------------|
+| Data            | Resulting first sentence (conceptually)                            |
+| --------------- | ------------------------------------------------------------------ |
 | company + title | …since you last applied to **Company** for the **Title** position. |
-| company only | …since you last applied to **Company**. |
-| title only | …since you applied for the **Title** position. |
-| neither | …since you last applied. |
+| company only    | …since you last applied to **Company**.                            |
+| title only      | …since you applied for the **Title** position.                     |
+| neither         | …since you last applied.                                           |
 
 Trailing sentence is fixed: **A short follow-up today could revive this opportunity.**
 

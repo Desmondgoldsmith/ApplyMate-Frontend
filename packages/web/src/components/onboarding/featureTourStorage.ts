@@ -90,11 +90,13 @@ export function shouldShowDashboardTour(
 ): boolean {
   if (!user?.id) return false;
   const onboardingDone =
-    user.onboardingCompleted === true || opts?.onboardingCompletedOverride === true;
+    user.onboardingCompleted === true ||
+    opts?.onboardingCompletedOverride === true;
   if (!onboardingDone) return false;
   if (user.uiPrefs?.tourCompleted === true) return false;
   if (isTourPageCompletedOnServer('dashboard', user.uiPrefs)) return false;
-  if (readLocal(TOUR_COMPLETED_KEY) || readLocal(TOUR_SKIPPED_KEY)) return false;
+  if (readLocal(TOUR_COMPLETED_KEY) || readLocal(TOUR_SKIPPED_KEY))
+    return false;
   if (legacyTourFinished(user.id)) return false;
   return true;
 }
@@ -119,17 +121,11 @@ export function shouldShowPageTour(
   return !isPageTourFinished(tourId, userId, uiPrefs);
 }
 
-export function markPageTourCompleted(
-  tourId: TourId,
-  userId?: string,
-): void {
+export function markPageTourCompleted(tourId: TourId, userId?: string): void {
   writeLocal(tourStorageKey(tourId, userId));
 }
 
-export function markPageTourSkipped(
-  tourId: TourId,
-  userId?: string,
-): void {
+export function markPageTourSkipped(tourId: TourId, userId?: string): void {
   writeLocal(tourStorageKey(tourId, userId));
 }
 

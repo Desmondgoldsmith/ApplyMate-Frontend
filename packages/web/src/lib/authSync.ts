@@ -1,7 +1,8 @@
 const CHANNEL_NAME = 'applymate-auth-sync';
 
 function openChannel(): BroadcastChannel | null {
-  if (typeof window === 'undefined' || typeof BroadcastChannel === 'undefined') return null;
+  if (typeof window === 'undefined' || typeof BroadcastChannel === 'undefined')
+    return null;
   try {
     return new BroadcastChannel(CHANNEL_NAME);
   } catch {
@@ -12,9 +13,10 @@ function openChannel(): BroadcastChannel | null {
 /** Paths where we should not silently restore a session from API refresh cookies. */
 export function isPublicAuthPath(pathname?: string): boolean {
   const path =
-    pathname ??
-    (typeof window !== 'undefined' ? window.location.pathname : '');
-  return path === '/login' || path === '/register' || path === '/oauth-complete';
+    pathname ?? (typeof window !== 'undefined' ? window.location.pathname : '');
+  return (
+    path === '/login' || path === '/register' || path === '/oauth-complete'
+  );
 }
 
 /** Notify other tabs that the session ended (logout or forced clear). */
@@ -62,7 +64,9 @@ export function subscribeAuthLogout(onLogout: () => void): AuthSyncUnsubscribe {
   };
 }
 
-export function subscribeAuthTokensUpdated(onUpdate: () => void): AuthSyncUnsubscribe {
+export function subscribeAuthTokensUpdated(
+  onUpdate: () => void,
+): AuthSyncUnsubscribe {
   if (typeof window === 'undefined') return () => {};
 
   const ch = openChannel();

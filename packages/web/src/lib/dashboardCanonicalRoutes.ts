@@ -12,15 +12,14 @@ export const DASHBOARD_ROUTES = {
   followUpJobs: '/dashboard/follow-up-jobs',
 } as const;
 
-export function firstSearchParam(
-  sp: URLSearchParams,
-  key: string,
-): string {
+export function firstSearchParam(sp: URLSearchParams, key: string): string {
   return sp.get(key)?.trim() ?? '';
 }
 
 /** Legacy `/dashboard/job-analyzer` → `/dashboard/jobs/analyze` (preserves query). */
-export function buildJobAnalyzerAliasRedirect(searchParams: URLSearchParams): string {
+export function buildJobAnalyzerAliasRedirect(
+  searchParams: URLSearchParams,
+): string {
   const qp = new URLSearchParams();
 
   const jobListingId = firstSearchParam(searchParams, 'jobListingId');
@@ -42,7 +41,9 @@ export function buildJobAnalyzerAliasRedirect(searchParams: URLSearchParams): st
 }
 
 /** Legacy `/dashboard/job-hub` → `/dashboard/jobs` (or analyze / follow-up when applicable). */
-export function buildJobHubAliasRedirect(searchParams: URLSearchParams): string {
+export function buildJobHubAliasRedirect(
+  searchParams: URLSearchParams,
+): string {
   const followUps = firstSearchParam(searchParams, 'followUps');
   if (followUps) {
     return DASHBOARD_ROUTES.followUpJobs;
@@ -64,7 +65,10 @@ export function buildJobHubAliasRedirect(searchParams: URLSearchParams): string 
   const analysisKey = jobId || jobAnalysisId;
 
   if (focus.toLowerCase() === 'tailor' && analysisKey) {
-    const tailorQp = new URLSearchParams({ jobId: analysisKey, openTailor: '1' });
+    const tailorQp = new URLSearchParams({
+      jobId: analysisKey,
+      openTailor: '1',
+    });
     if (tailorSection) tailorQp.set('tailorSection', tailorSection);
     return `${DASHBOARD_ROUTES.jobAnalyze}?${tailorQp.toString()}`;
   }
@@ -84,7 +88,9 @@ export function buildJobHubAliasRedirect(searchParams: URLSearchParams): string 
 }
 
 /** Legacy `/dashboard/interviews` → `/dashboard/interview-prep` list (preserves query). */
-export function buildInterviewsAliasRedirect(searchParams: URLSearchParams): string {
+export function buildInterviewsAliasRedirect(
+  searchParams: URLSearchParams,
+): string {
   const qp = new URLSearchParams();
   searchParams.forEach((value, key) => {
     const val = value.trim();
@@ -126,14 +132,21 @@ export function normalizeDashboardRoute(href: string): string {
       return `${u.pathname}${u.search}${u.hash}`;
     }
 
-    if (path === '/dashboard/job-archive' || path === '/dashboard/jobs/archived') {
+    if (
+      path === '/dashboard/job-archive' ||
+      path === '/dashboard/jobs/archived'
+    ) {
       u.pathname = '/dashboard/jobs/archive';
       return `${u.pathname}${u.search}${u.hash}`;
     }
 
     /** Backend quiet-app CTAs: `/dashboard/jobs/{applicationId}` → query form Job Hub expects. */
     const jobsAppPath = path.match(/^\/dashboard\/jobs\/([^/]+)$/);
-    if (jobsAppPath?.[1] && !u.searchParams.has('applicationId') && !u.searchParams.has('jobId')) {
+    if (
+      jobsAppPath?.[1] &&
+      !u.searchParams.has('applicationId') &&
+      !u.searchParams.has('jobId')
+    ) {
       u.pathname = DASHBOARD_ROUTES.jobs;
       u.searchParams.set('applicationId', jobsAppPath[1]);
       return `${u.pathname}${u.search}${u.hash}`;
@@ -145,7 +158,10 @@ export function normalizeDashboardRoute(href: string): string {
   }
 }
 
-export function jobHubAnalysisHref(jobAnalysisId: string, focus = 'analysis'): string {
+export function jobHubAnalysisHref(
+  jobAnalysisId: string,
+  focus = 'analysis',
+): string {
   const qp = new URLSearchParams();
   qp.set('jobId', jobAnalysisId);
   if (focus) qp.set('focus', focus);

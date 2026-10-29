@@ -26,7 +26,9 @@ export function CvProfileDownloadActions({
 }: CvProfileDownloadActionsProps) {
   const exportCv = useExportCV();
   const toast = useToast();
-  const [exportingFormat, setExportingFormat] = useState<'pdf' | 'docx' | null>(null);
+  const [exportingFormat, setExportingFormat] = useState<'pdf' | 'docx' | null>(
+    null,
+  );
   const profileId = cvProfileId.trim();
   const resolvedTemplate = template?.trim() || 'modern';
 

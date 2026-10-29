@@ -9,23 +9,23 @@
 
 ## Summary
 
-| Issue | Backend | Extension |
-|-------|---------|-----------|
-| Logo missing after Analyze | ✅ `logoCandidateUrl` on `POST /extension/cv/score`; check returns `companyLogoUrl` | ✅ Sends logo on score; merges response + check; save fallback if still unset |
-| Cover letter 400 | ✅ DTO unchanged; `sourceSite` added | ✅ Whitelisted payload (no `action` key) |
-| Save upsert clears analysis | ✅ Confirmed safe | Post-score save only when logo still missing after score + check |
+| Issue                       | Backend                                                                             | Extension                                                                     |
+| --------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Logo missing after Analyze  | ✅ `logoCandidateUrl` on `POST /extension/cv/score`; check returns `companyLogoUrl` | ✅ Sends logo on score; merges response + check; save fallback if still unset |
+| Cover letter 400            | ✅ DTO unchanged; `sourceSite` added                                                | ✅ Whitelisted payload (no `action` key)                                      |
+| Save upsert clears analysis | ✅ Confirmed safe                                                                   | Post-score save only when logo still missing after score + check              |
 
 ---
 
 ## Extension implementation (complete)
 
-| Change | File |
-|--------|------|
-| `logoCandidateUrl` on score POST | `cv-score-payload.ts`, `service-worker.ts` |
-| Map `companyLogoUrl` from score + check | `api.ts`, `types.ts` |
-| Merge logo into session after score | `service-worker.ts` (`mergeScoreLogoIntoSession`) |
-| Save fallback when score/check have no logo | `save-job-payload.ts`, `syncJobLogoAfterAnalyze` |
-| Cover letter whitelisted payload + UI gates | `cover-letter-payload.ts`, `CVTab.tsx` |
+| Change                                      | File                                              |
+| ------------------------------------------- | ------------------------------------------------- |
+| `logoCandidateUrl` on score POST            | `cv-score-payload.ts`, `service-worker.ts`        |
+| Map `companyLogoUrl` from score + check     | `api.ts`, `types.ts`                              |
+| Merge logo into session after score         | `service-worker.ts` (`mergeScoreLogoIntoSession`) |
+| Save fallback when score/check have no logo | `save-job-payload.ts`, `syncJobLogoAfterAnalyze`  |
+| Cover letter whitelisted payload + UI gates | `cover-letter-payload.ts`, `CVTab.tsx`            |
 
 ### Score request (includes logo)
 

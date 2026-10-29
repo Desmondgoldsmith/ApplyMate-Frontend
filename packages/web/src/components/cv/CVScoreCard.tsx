@@ -100,7 +100,9 @@ function parseAtsStructureIssues(raw: unknown): AtsStructureIssue[] {
       (typeof o.issueType === 'string' && o.issueType.trim()) ||
       'structure';
     const severityRaw =
-      typeof o.severity === 'string' ? o.severity.trim().toLowerCase() : 'medium';
+      typeof o.severity === 'string'
+        ? o.severity.trim().toLowerCase()
+        : 'medium';
     const affectedSection =
       (typeof o.affectedSection === 'string' && o.affectedSection.trim()) ||
       (typeof o.affected_section === 'string' && o.affected_section.trim()) ||
@@ -136,7 +138,8 @@ function parseAts(raw: unknown): ATSCompatibility {
     );
     const structureScoreRaw = o.structureScore ?? o.structure_score;
     const structureScore =
-      typeof structureScoreRaw === 'number' && Number.isFinite(structureScoreRaw)
+      typeof structureScoreRaw === 'number' &&
+      Number.isFinite(structureScoreRaw)
         ? Math.round(structureScoreRaw)
         : undefined;
     const structurePassedRaw = o.structurePassed ?? o.structure_passed;
@@ -329,7 +332,8 @@ function CvHybridScoringBlock({
   // AI breakdown unavailable → show a clear heuristic note instead of an empty card.
   if (!hybrid.aiBreakdownAvailable) {
     const structural = hybrid.structuralScore;
-    const insufficient = hybrid.aiBreakdownUnavailableReason === 'insufficient_content';
+    const insufficient =
+      hybrid.aiBreakdownUnavailableReason === 'insufficient_content';
     return (
       <div className={cn('mt-3 w-full min-w-0', compact ? 'px-1' : 'px-0.5')}>
         <div
@@ -357,11 +361,17 @@ function CvHybridScoringBlock({
                 compact ? 'text-[9px]' : 'text-[10px]',
               )}
             >
-              The AI quality review refreshes automatically once AI is available again.
+              The AI quality review refreshes automatically once AI is available
+              again.
               {structural != null ? ` Structure score: ${structural}/100.` : ''}
             </p>
           ) : structural != null ? (
-            <p className={cn('mt-1 text-white/45', compact ? 'text-[9px]' : 'text-[10px]')}>
+            <p
+              className={cn(
+                'mt-1 text-white/45',
+                compact ? 'text-[9px]' : 'text-[10px]',
+              )}
+            >
               Structure score: {structural}/100.
             </p>
           ) : null}
@@ -384,9 +394,7 @@ function CvHybridScoringBlock({
     hybrid.structuralScore != null ? hybrid.structuralScore : null;
   const ai = hybrid.aiScore != null ? hybrid.aiScore : null;
   const showBlend =
-    hybrid.scoringMethod === 'hybrid' &&
-    structural != null &&
-    ai != null;
+    hybrid.scoringMethod === 'hybrid' && structural != null && ai != null;
   const overallRounded = Math.round(overallScore);
   const blendCompactLine =
     showBlend && structural != null && ai != null
@@ -510,7 +518,9 @@ function CvHybridScoringBlock({
                 <p className="text-[9px] font-medium uppercase tracking-wide text-[#00C9B1]/80">
                   Overall score
                 </p>
-                <p className="mt-0.5 text-[9px] text-[#00C9B1]/60">weighted blend</p>
+                <p className="mt-0.5 text-[9px] text-[#00C9B1]/60">
+                  weighted blend
+                </p>
                 <p className="mt-0.5 text-base font-semibold leading-none text-white">
                   {Math.round(overallScore)}
                 </p>
@@ -564,7 +574,11 @@ function CvHybridScoringBlock({
           </p>
           <div className="space-y-2">
             {dimensionEntries.map(([key, dim]) => (
-              <div key={key} className="min-w-0" title={dim.note?.trim() || undefined}>
+              <div
+                key={key}
+                className="min-w-0"
+                title={dim.note?.trim() || undefined}
+              >
                 <div className="mb-1 flex items-center justify-between gap-2">
                   <span
                     className={cn(
@@ -631,7 +645,8 @@ export function CVScoreCard({
     parseAnalysisUiHints(raw) ??
     parseAnalysisUiHints(scorePayload?.breakdown) ??
     parseAnalysisUiHints(scorePayload);
-  const showQualityDimensions = analysisUiHints?.showQualityDimensions !== false;
+  const showQualityDimensions =
+    analysisUiHints?.showQualityDimensions !== false;
   // Never render an empty ring: only show the circle when there is a real score.
   const roundedScore = Math.round(score);
   const showScoreRing = roundedScore > 0;
@@ -994,21 +1009,24 @@ export function CVScoreCard({
             >
               Resume score
             </span>
-            {hybrid ? (
-              (() => {
-                const t = hybrid.scoringTransparency;
-                const hint = [t?.headline, t?.methods[hybrid.scoringMethod]?.short]
-                  .filter(Boolean)
-                  .join('\n\n');
-                return hint ? (
-                  <InfoHint
-                    text={hint}
-                    buttonAriaLabel="How your resume score is calculated"
-                    tooltipClassName="max-w-[min(22rem,92vw)]"
-                  />
-                ) : null;
-              })()
-            ) : null}
+            {hybrid
+              ? (() => {
+                  const t = hybrid.scoringTransparency;
+                  const hint = [
+                    t?.headline,
+                    t?.methods[hybrid.scoringMethod]?.short,
+                  ]
+                    .filter(Boolean)
+                    .join('\n\n');
+                  return hint ? (
+                    <InfoHint
+                      text={hint}
+                      buttonAriaLabel="How your resume score is calculated"
+                      tooltipClassName="max-w-[min(22rem,92vw)]"
+                    />
+                  ) : null;
+                })()
+              : null}
           </div>
           {showScoreRing ? (
             <>
@@ -1099,8 +1117,8 @@ export function CVScoreCard({
                 Preview (not saved)
               </span>
               <span className="mt-1 block font-normal text-white/40">
-                Stored resume score updates only when you run a full scan without
-                pasted job text.
+                Stored resume score updates only when you run a full scan
+                without pasted job text.
               </span>
             </span>
           ) : null}
@@ -1121,17 +1139,21 @@ export function CVScoreCard({
               const barColor = sectionScoreBarColor(sc);
               const weightPct =
                 w !== undefined && w > 0 ? Math.round(w * 100) : null;
-              const actionsEnabled = Boolean(cvProfileId?.trim() && explainer?.suggestionId);
+              const actionsEnabled = Boolean(
+                cvProfileId?.trim() && explainer?.suggestionId,
+              );
               const suggestionId = explainer?.suggestionId?.trim();
-              const suggestionRow = suggestionId ? improvementById.get(suggestionId) : undefined;
+              const suggestionRow = suggestionId
+                ? improvementById.get(suggestionId)
+                : undefined;
               const showFixWithAi =
                 actionsEnabled &&
                 Boolean(
                   suggestionId &&
-                    canShowCvImprovementFixWithAI(
-                      suggestionRow ?? { id: suggestionId },
-                      activePreviewSuggestionId,
-                    ),
+                  canShowCvImprovementFixWithAI(
+                    suggestionRow ?? { id: suggestionId },
+                    activePreviewSuggestionId,
+                  ),
                 );
               return (
                 <div
@@ -1178,9 +1200,7 @@ export function CVScoreCard({
                       explainer={explainer}
                       compact={mode === 'compact'}
                       busy={
-                        actionBusy?.key === sectionKey
-                          ? actionBusy.kind
-                          : null
+                        actionBusy?.key === sectionKey ? actionBusy.kind : null
                       }
                       onFixWithAi={
                         showFixWithAi && suggestionId
@@ -1208,8 +1228,8 @@ export function CVScoreCard({
                 {Math.round(jobMatch?.score ?? 0)}%
               </p>
               <p className="mt-1 text-[11px] leading-relaxed text-white/35">
-                Heuristic alignment with the job text you provided, not a
-                hiring decision or interview guarantee.
+                Heuristic alignment with the job text you provided, not a hiring
+                decision or interview guarantee.
               </p>
               {jobMatch?.feedback?.trim() ? (
                 <p className="mb-3 text-xs leading-relaxed text-white/65">
@@ -1292,9 +1312,9 @@ export function CVScoreCard({
                   lineHeight: 1.5,
                 }}
               >
-                If you uploaded a resume, some sections may not have been extracted
-                correctly. Re-upload your resume from the resume editor page to get an
-                accurate score.
+                If you uploaded a resume, some sections may not have been
+                extracted correctly. Re-upload your resume from the resume
+                editor page to get an accurate score.
               </p>
             </div>
           ) : null}

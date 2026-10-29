@@ -1,5 +1,8 @@
 /** Calendar day in `YYYY-MM-DD` for a given IANA zone (matches backend “local day” semantics). */
-export function formatCalendarDayKeyInTimeZone(date: Date, timeZone: string): string {
+export function formatCalendarDayKeyInTimeZone(
+  date: Date,
+  timeZone: string,
+): string {
   try {
     return new Intl.DateTimeFormat('en-CA', {
       timeZone,

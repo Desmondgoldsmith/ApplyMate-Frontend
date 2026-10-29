@@ -91,10 +91,7 @@ const boardRows = [
 
 export function FeaturesBento() {
   return (
-    <section
-      id="features"
-      className="px-4 pb-[120px] pt-0 sm:px-6 lg:px-[8%]"
-    >
+    <section id="features" className="px-4 pb-[120px] pt-0 sm:px-6 lg:px-[8%]">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -109,9 +106,7 @@ export function FeaturesBento() {
         </h2>
       </motion.div>
 
-      <div
-        className="mt-14 grid grid-cols-1 gap-0.5 overflow-hidden rounded-[24px] border border-[rgba(0,201,177,0.08)] md:grid-cols-3"
-      >
+      <div className="mt-14 grid grid-cols-1 gap-0.5 overflow-hidden rounded-[24px] border border-[rgba(0,201,177,0.08)] md:grid-cols-3">
         <BentoTile index={0} colSpan="md:col-span-2" corner="tr">
           <div className="flex h-full min-h-[318px] flex-col px-8 pb-0 pt-8">
             <TileTitle
@@ -222,8 +217,7 @@ export function FeaturesBento() {
                 className="relative z-[1] w-full max-w-md rounded-lg border border-[rgba(255,255,255,0.06)] px-6 py-5 shadow-xl"
                 style={{
                   transform: 'rotate(1deg)',
-                  background:
-                    'linear-gradient(135deg, #141818, #0f1313)',
+                  background: 'linear-gradient(135deg, #141818, #0f1313)',
                 }}
               >
                 <div className="text-[11px] text-[rgba(255,255,255,0.25)]">
@@ -272,7 +266,8 @@ export function FeaturesBento() {
               <div
                 className="grid w-full grid-cols-3 gap-2 sm:gap-2.5"
                 style={{
-                  gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)',
+                  gridTemplateColumns:
+                    'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)',
                 }}
               >
                 {[

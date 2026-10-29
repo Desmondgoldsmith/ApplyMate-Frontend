@@ -54,7 +54,8 @@ export function cvSectionAssistantDisplayName(sectionId: string): string {
     const typeLabel = PARSED_SECTION_TYPE_LABELS[lower];
     if (typeLabel) return typeLabel;
     const rest = withoutParsed.slice(7).replace(/_/g, ' ').trim();
-    if (!rest || /^section_\d+$/i.test(rest.replace(/\s/g, '_'))) return 'Custom section';
+    if (!rest || /^section_\d+$/i.test(rest.replace(/\s/g, '_')))
+      return 'Custom section';
     return titleCaseWord(rest);
   }
 

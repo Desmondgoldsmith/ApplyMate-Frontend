@@ -21,7 +21,10 @@ function isApplyMateUrl(url: string): boolean {
 /**
  * Resolves the URL for "Open link" on career badges — prefers LinkedIn over internal ApplyMate links.
  */
-export function resolveLinkedInOpenUrl(shareText: string, shareLink: string | null | undefined): string | null {
+export function resolveLinkedInOpenUrl(
+  shareText: string,
+  shareLink: string | null | undefined,
+): string | null {
   const link = shareLink?.trim() ?? '';
   const text = shareText.trim();
 

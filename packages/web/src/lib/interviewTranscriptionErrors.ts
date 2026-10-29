@@ -50,12 +50,15 @@ function readNestedDetails(data: unknown): Record<string, unknown> | null {
   return root;
 }
 
-export function parseTranscriptionErrorCode(error: unknown): TurnTranscriptionErrorCode | undefined {
+export function parseTranscriptionErrorCode(
+  error: unknown,
+): TurnTranscriptionErrorCode | undefined {
   if (error instanceof TranscriptionFailedError) return error.errorCode;
   if (!axios.isAxiosError(error)) return undefined;
   const details = readNestedDetails(error.response?.data);
   const fromDetails = details?.errorCode;
-  if (typeof fromDetails === 'string' && fromDetails.trim()) return fromDetails.trim();
+  if (typeof fromDetails === 'string' && fromDetails.trim())
+    return fromDetails.trim();
   const code = getApiErrorCode(error);
   return code ?? undefined;
 }
@@ -94,7 +97,9 @@ export function transcriptionErrorMessage(
   }
 }
 
-export function transcriptionFailedFromUnknown(error: unknown): TranscriptionFailedError {
+export function transcriptionFailedFromUnknown(
+  error: unknown,
+): TranscriptionFailedError {
   if (error instanceof TranscriptionFailedError) return error;
   const errorCode = parseTranscriptionErrorCode(error);
   const apiCode = getApiErrorCode(error);

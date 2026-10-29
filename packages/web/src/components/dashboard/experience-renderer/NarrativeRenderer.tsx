@@ -26,7 +26,10 @@ export function NarrativeRenderer({
       aria-label="Assistant narrative"
     >
       {lines.map((line, i) => (
-        <p key={`${i}-${line.slice(0, 32)}`} className="text-[12px] font-medium leading-relaxed text-white/58">
+        <p
+          key={`${i}-${line.slice(0, 32)}`}
+          className="text-[12px] font-medium leading-relaxed text-white/58"
+        >
           {line.trim()}
         </p>
       ))}

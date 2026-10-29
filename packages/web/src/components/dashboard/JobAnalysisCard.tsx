@@ -51,7 +51,9 @@ export function JobAnalysisCard({
   const acceptedLower = useMemo(
     () =>
       new Set(
-        (acceptedSkillNames ?? []).map((s) => s.trim().toLowerCase()).filter(Boolean),
+        (acceptedSkillNames ?? [])
+          .map((s) => s.trim().toLowerCase())
+          .filter(Boolean),
       ),
     [acceptedSkillNames],
   );
@@ -90,7 +92,11 @@ export function JobAnalysisCard({
     cvMeta.cvProfileId ??
     ''
   ).trim();
-  const analyzedCvProfileId = (cvMeta.sourceCvProfileId ?? cvMeta.cvProfileId ?? '').trim();
+  const analyzedCvProfileId = (
+    cvMeta.sourceCvProfileId ??
+    cvMeta.cvProfileId ??
+    ''
+  ).trim();
   const fallbackCvProfileId = (cvMeta.cvProfileId ?? '').trim();
   const hasV2 = Boolean(analysis.analysisV2);
   const factorsBreakdown = analysis.factorsBreakdown;
@@ -109,9 +115,18 @@ export function JobAnalysisCard({
           />
           <div className="min-w-0">
             {headerTitle ? (
-              <p className="text-base font-semibold leading-snug text-white sm:text-lg">{headerTitle}</p>
+              <p className="text-base font-semibold leading-snug text-white sm:text-lg">
+                {headerTitle}
+              </p>
             ) : null}
-            <p className={cn('text-[13px] text-white/55', headerTitle && 'mt-0.5')}>{headerCompany}</p>
+            <p
+              className={cn(
+                'text-[13px] text-white/55',
+                headerTitle && 'mt-0.5',
+              )}
+            >
+              {headerCompany}
+            </p>
           </div>
         </div>
       ) : null}
@@ -121,12 +136,17 @@ export function JobAnalysisCard({
           aria-live="polite"
           aria-busy="true"
         >
-          <Loader2 className="h-8 w-8 animate-spin text-[#00C9B1]" strokeWidth={2} />
+          <Loader2
+            className="h-8 w-8 animate-spin text-[#00C9B1]"
+            strokeWidth={2}
+          />
           <p className="text-sm font-medium text-white/80">Updating match…</p>
         </div>
       ) : null}
       {analysis.locationEligibility ? (
-        <LocationEligibilityCallout eligibility={analysis.locationEligibility} />
+        <LocationEligibilityCallout
+          eligibility={analysis.locationEligibility}
+        />
       ) : null}
       {hasV2 && !hideAiReport ? (
         <JobAnalysisV2Panel
@@ -160,7 +180,8 @@ export function JobAnalysisCard({
           ) : null}
           {analysis.scoreSource === 'heuristic' ? (
             <p className="mt-2 text-[11px] leading-relaxed text-white/40">
-              Quick estimate only. Use Job Analyzer for a full AI gap review and tailoring list.
+              Quick estimate only. Use Job Analyzer for a full AI gap review and
+              tailoring list.
             </p>
           ) : analysis.scoreSource === 'ai' ? (
             <p className="mt-2 text-[11px] leading-relaxed text-emerald-200/65">
@@ -182,14 +203,18 @@ export function JobAnalysisCard({
           ) : null}
         </>
       ) : null}
-      {analysis.id && typeof analysis.matchScore === 'number' && Number.isFinite(analysis.matchScore) ? (
+      {analysis.id &&
+      typeof analysis.matchScore === 'number' &&
+      Number.isFinite(analysis.matchScore) ? (
         <div className="flex min-w-0 flex-wrap justify-start gap-2">
           {showTailorAction && !resolvedTailoredForScore ? (
             <Button
               variant="ghost"
               className="min-h-[44px] gap-2 rounded-[10px] border border-[#00C9B1]/40 px-5 text-[13px] font-medium text-[#00C9B1] transition hover:border-[#00C9B1] hover:bg-[#00C9B1]/12"
               onClick={() =>
-                router.push(`/dashboard/jobs/analyze?jobId=${encodeURIComponent(analysis.id!)}&openTailor=1`)
+                router.push(
+                  `/dashboard/jobs/analyze?jobId=${encodeURIComponent(analysis.id!)}&openTailor=1`,
+                )
               }
             >
               Tailor CV for this job
@@ -211,55 +236,60 @@ export function JobAnalysisCard({
               : 'Gaps to address'}
         </h3>
         <div className="flex flex-wrap gap-2">
-          {resolvedTailoredForScore
-            ? skillsAddedToCv.length > 0
-              ? skillsAddedToCv.map((skill) => (
+          {resolvedTailoredForScore ? (
+            skillsAddedToCv.length > 0 ? (
+              skillsAddedToCv.map((skill) => (
+                <span
+                  key={skill}
+                  className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-[12px] font-medium text-emerald-200"
+                >
+                  {skill}
+                  <span className="ml-1.5 text-[10px] font-semibold text-emerald-300/90">
+                    Added
+                  </span>
+                </span>
+              ))
+            ) : (
+              <p className="text-[12px] leading-relaxed text-white/45">
+                No additional skills were added during tailoring.
+              </p>
+            )
+          ) : (
+            gapSkills.map((skill) => {
+              const accepted =
+                resolvedTailoredForScore ||
+                acceptedLower.has(skill.name.trim().toLowerCase());
+              if (accepted) {
+                return (
                   <span
-                    key={skill}
+                    key={skill.name}
                     className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-[12px] font-medium text-emerald-200"
                   >
-                    {skill}
-                    <span className="ml-1.5 text-[10px] font-semibold text-emerald-300/90">Added</span>
+                    {skill.name}
+                    <span className="ml-1.5 text-[10px] font-semibold text-emerald-300/90">
+                      {resolvedTailoredForScore ? 'Added' : '✓'}
+                    </span>
                   </span>
-                ))
-              : (
-                  <p className="text-[12px] leading-relaxed text-white/45">
-                    No additional skills were added during tailoring.
-                  </p>
-                )
-            : gapSkills.map((skill) => {
-            const accepted =
-              resolvedTailoredForScore || acceptedLower.has(skill.name.trim().toLowerCase());
-            if (accepted) {
+                );
+              }
               return (
                 <span
                   key={skill.name}
-                  className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-[12px] font-medium text-emerald-200"
+                  title={`${skill.name} (${skill.importance})`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] px-3.5 py-1.5 text-[12px] font-medium text-[rgba(239,68,68,0.92)]"
                 >
                   {skill.name}
-                  <span className="ml-1.5 text-[10px] font-semibold text-emerald-300/90">
-                    {resolvedTailoredForScore ? 'Added' : '✓'}
+                  <SkillTierBadge tier={skill.tier} />
+                  {skill.requirementKind ? (
+                    <RequirementKindBadge kind={skill.requirementKind} />
+                  ) : null}
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-white/35">
+                    {skill.importance}
                   </span>
                 </span>
               );
-            }
-            return (
-              <span
-                key={skill.name}
-                title={`${skill.name} (${skill.importance})`}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] px-3.5 py-1.5 text-[12px] font-medium text-[rgba(239,68,68,0.92)]"
-              >
-                {skill.name}
-                <SkillTierBadge tier={skill.tier} />
-                {skill.requirementKind ? (
-                  <RequirementKindBadge kind={skill.requirementKind} />
-                ) : null}
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-white/35">
-                  {skill.importance}
-                </span>
-              </span>
-            );
-          })}
+            })
+          )}
         </div>
       </div>
 
@@ -268,14 +298,20 @@ export function JobAnalysisCard({
       ) : null}
 
       <div>
-        <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">Your strengths</h3>
+        <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">
+          Your strengths
+        </h3>
         <ul className="flex flex-col gap-1.5">
           {(analysis.strengths ?? []).map((strength) => (
             <li
               key={strength}
               className="flex gap-3 rounded-lg border-l-2 border-[rgba(16,185,129,0.3)] bg-[rgba(16,185,129,0.04)] px-3.5 py-2.5 text-[13px] leading-snug text-white/80"
             >
-              <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#10B981]" strokeWidth={2.5} aria-hidden />
+              <Check
+                className="mt-0.5 h-4 w-4 shrink-0 text-[#10B981]"
+                strokeWidth={2.5}
+                aria-hidden
+              />
               <span>{strength}</span>
             </li>
           ))}

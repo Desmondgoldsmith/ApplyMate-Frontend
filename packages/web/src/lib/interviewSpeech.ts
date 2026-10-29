@@ -140,11 +140,15 @@ export function isEdgeBrowser(): boolean {
 }
 
 export function sttDelayAfterTts(): number {
-  return isEdgeBrowser() ? STT_AFTER_TTS_DELAY_EDGE_MS : STT_AFTER_TTS_DELAY_DEFAULT_MS;
+  return isEdgeBrowser()
+    ? STT_AFTER_TTS_DELAY_EDGE_MS
+    : STT_AFTER_TTS_DELAY_DEFAULT_MS;
 }
 
 export function sttRecognitionRestartDelay(): number {
-  return isEdgeBrowser() ? STT_RESTART_DELAY_EDGE_MS : STT_RESTART_DELAY_DEFAULT_MS;
+  return isEdgeBrowser()
+    ? STT_RESTART_DELAY_EDGE_MS
+    : STT_RESTART_DELAY_DEFAULT_MS;
 }
 
 export function sleep(ms: number): Promise<void> {
@@ -166,7 +170,11 @@ export function isNoSpeechError(code: string): boolean {
 }
 
 export function shouldFallbackToManual(code: string): boolean {
-  return code === 'not-allowed' || code === 'service-not-allowed' || code === 'audio-capture';
+  return (
+    code === 'not-allowed' ||
+    code === 'service-not-allowed' ||
+    code === 'audio-capture'
+  );
 }
 
 export function shouldRetryStt(code: string): boolean {
@@ -196,7 +204,11 @@ export function resolveAnswerSource(options: {
   userEditedTranscript: boolean;
   fellBackToManual: boolean;
 }): AnswerSource {
-  if (options.inputMode === 'type' && !options.usedBrowserStt && !options.usedWhisper) {
+  if (
+    options.inputMode === 'type' &&
+    !options.usedBrowserStt &&
+    !options.usedWhisper
+  ) {
     return 'typed';
   }
   if (options.fellBackToManual || options.userEditedTranscript) return 'manual';
@@ -206,7 +218,12 @@ export function resolveAnswerSource(options: {
 }
 
 export function mapApiTranscriptionSource(
-  source: 'whisper' | 'browser' | 'browser_stt_fallback' | 'fallback' | 'failed',
+  source:
+    | 'whisper'
+    | 'browser'
+    | 'browser_stt_fallback'
+    | 'fallback'
+    | 'failed',
 ): HybridTranscriptSource {
   if (source === 'whisper') return 'whisper';
   return 'browser';

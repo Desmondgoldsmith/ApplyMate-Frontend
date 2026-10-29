@@ -4,7 +4,10 @@ import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 
 import { InfoHint } from '@/components/ui/InfoHint';
-import type { JobMatchFactor, JobMatchFactorsBreakdown } from '@/lib/jobMatchFactorsBreakdown';
+import type {
+  JobMatchFactor,
+  JobMatchFactorsBreakdown,
+} from '@/lib/jobMatchFactorsBreakdown';
 import {
   factorBarColor,
   factorChipCopy,
@@ -14,7 +17,13 @@ import {
 } from '@/lib/jobMatchFactorsBreakdown';
 import { cn } from '@/lib/utils';
 
-function FactorChip({ label, tone }: { label: string; tone: 'found' | 'missing' }) {
+function FactorChip({
+  label,
+  tone,
+}: {
+  label: string;
+  tone: 'found' | 'missing';
+}) {
   return (
     <span
       className={cn(
@@ -31,7 +40,8 @@ function FactorChip({ label, tone }: { label: string; tone: 'found' | 'missing' 
 
 /** Chips bind to API `found` / `missing` only — never parse `explanation`. */
 function FactorChips({ factor }: { factor: JobMatchFactor }) {
-  if (factor.key !== 'skillsMatch' && factor.key !== 'keywordCoverage') return null;
+  if (factor.key !== 'skillsMatch' && factor.key !== 'keywordCoverage')
+    return null;
 
   const found = factor.found ?? [];
   const missing = factor.missing ?? [];
@@ -65,7 +75,11 @@ function FactorChips({ factor }: { factor: JobMatchFactor }) {
           </p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {missing.map((label) => (
-              <FactorChip key={`missing-${label}`} label={label} tone="missing" />
+              <FactorChip
+                key={`missing-${label}`}
+                label={label}
+                tone="missing"
+              />
             ))}
           </div>
         </div>
@@ -117,7 +131,9 @@ function FactorRow({
     <li className="space-y-2 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3.5 py-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex items-start gap-1.5">
-          <span className="block text-[12px] font-semibold text-white/88">{factor.label}</span>
+          <span className="block text-[12px] font-semibold text-white/88">
+            {factor.label}
+          </span>
           {factor.hint ? (
             <InfoHint
               text={factor.hint}
@@ -130,7 +146,10 @@ function FactorRow({
       </div>
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
         <div
-          className={cn('h-full rounded-full transition-[width] duration-500', barClass)}
+          className={cn(
+            'h-full rounded-full transition-[width] duration-500',
+            barClass,
+          )}
           style={{ width: `${factor.score}%` }}
           role="progressbar"
           aria-valuenow={factor.score}
@@ -160,7 +179,9 @@ function FactorRow({
           <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-white/40">
             {factorMissingExplanationLabel(factor.key)}
           </p>
-          <p className="text-[11px] leading-relaxed text-white/52">{divergenceNote}</p>
+          <p className="text-[11px] leading-relaxed text-white/52">
+            {divergenceNote}
+          </p>
         </div>
       ) : null}
     </li>
@@ -195,7 +216,8 @@ export function MatchScoreFactorsBreakdown({
   const [open, setOpen] = useState(defaultOpen);
   const factors = breakdown.factors;
   if (factors.length === 0) return null;
-  const formulaTooltip = scoreFormulaTooltip?.trim() || DEFAULT_SCORE_FORMULA_TOOLTIP;
+  const formulaTooltip =
+    scoreFormulaTooltip?.trim() || DEFAULT_SCORE_FORMULA_TOOLTIP;
   const compositionNote = headlineCompositionNote?.trim() ?? '';
 
   return (
@@ -208,7 +230,10 @@ export function MatchScoreFactorsBreakdown({
           className="flex flex-1 items-center gap-1.5 rounded-lg py-1 text-left text-[12px] font-medium text-white/50 transition hover:text-[#00C9B1]"
         >
           <ChevronDown
-            className={cn('h-4 w-4 shrink-0 transition-transform', open && 'rotate-180')}
+            className={cn(
+              'h-4 w-4 shrink-0 transition-transform',
+              open && 'rotate-180',
+            )}
             aria-hidden
           />
           Why this score?
@@ -220,12 +245,18 @@ export function MatchScoreFactorsBreakdown({
         />
       </div>
       {compositionNote ? (
-        <p className="mt-1.5 text-[11px] leading-relaxed text-white/42">{compositionNote}</p>
+        <p className="mt-1.5 text-[11px] leading-relaxed text-white/42">
+          {compositionNote}
+        </p>
       ) : null}
       {open ? (
         <ul className="mt-2 space-y-2.5" aria-label="Match score breakdown">
           {factors.map((factor) => (
-            <FactorRow key={factor.key} factor={factor} isTailored={isTailored} />
+            <FactorRow
+              key={factor.key}
+              factor={factor}
+              isTailored={isTailored}
+            />
           ))}
         </ul>
       ) : null}

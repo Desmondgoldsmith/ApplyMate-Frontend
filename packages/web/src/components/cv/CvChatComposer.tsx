@@ -4,7 +4,10 @@ import { Loader2, Send } from 'lucide-react';
 
 import { Button } from '@/components/ui/Button';
 import { CV_CHAT_INPUT_MAX_CHARS } from '@/lib/cv-chat-input.constants';
-import { CV_CHAT_PASTE_HINT, formatCvChatCharCount } from '@/lib/cvChatInputDisplay';
+import {
+  CV_CHAT_PASTE_HINT,
+  formatCvChatCharCount,
+} from '@/lib/cvChatInputDisplay';
 import { cn } from '@/lib/utils';
 
 export type CvChatComposerProps = {
@@ -37,7 +40,9 @@ export function CvChatComposer({
   return (
     <div className={className}>
       {showPasteHint ? (
-        <p className="mb-2 text-[11px] leading-snug text-white/45">{CV_CHAT_PASTE_HINT}</p>
+        <p className="mb-2 text-[11px] leading-snug text-white/45">
+          {CV_CHAT_PASTE_HINT}
+        </p>
       ) : null}
       <div className="flex items-end gap-2">
         <textarea
@@ -69,7 +74,11 @@ export function CvChatComposer({
           onClick={onSend}
           aria-label="Send"
         >
-          {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          {sending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
         </Button>
       </div>
       <p

@@ -29,7 +29,9 @@ export const PrepQuestionProgress = memo(function PrepQuestionProgress({
   return (
     <div className={cn('flex flex-wrap items-center gap-2', className)}>
       {main ? (
-        <span className="text-[13px] font-medium text-[var(--text-muted)]">{main}</span>
+        <span className="text-[13px] font-medium text-[var(--text-muted)]">
+          {main}
+        </span>
       ) : null}
       {optionalBadge ? (
         <span className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-secondary)]">

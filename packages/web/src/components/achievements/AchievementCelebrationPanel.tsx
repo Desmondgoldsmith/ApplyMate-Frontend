@@ -11,7 +11,10 @@ import {
   renderAchievementShareCardPng,
 } from '@/lib/achievementShareCardImage';
 import { getDisplayName } from '@/lib/display-name';
-import type { CareerAchievementsPayload, TodayPlanAchievementPayload } from '@/lib/today-plan';
+import type {
+  CareerAchievementsPayload,
+  TodayPlanAchievementPayload,
+} from '@/lib/today-plan';
 import { useAuthStore } from '@/store/useAuthStore';
 import { cn } from '@/lib/utils';
 
@@ -50,7 +53,9 @@ function buildShareLines(
   if (almost.length) {
     lines.push('', 'Almost there:');
     for (const m of almost) {
-      lines.push(`• ${m.title?.trim() || 'Milestone'} (${m.progressCurrent}/${m.progressTarget})`);
+      lines.push(
+        `• ${m.title?.trim() || 'Milestone'} (${m.progressCurrent}/${m.progressTarget})`,
+      );
     }
   }
   lines.push('', 'Tracked with ApplyMate — applymate.app');
@@ -105,7 +110,10 @@ export function AchievementCelebrationPanel({ career, achievements }: Props) {
   const downloadCard = async () => {
     setDownloading(true);
     try {
-      const targetRole = me?.targetRoles?.[0]?.trim() || storeUser?.targetRoles?.[0]?.trim() || null;
+      const targetRole =
+        me?.targetRoles?.[0]?.trim() ||
+        storeUser?.targetRoles?.[0]?.trim() ||
+        null;
       const blob = await renderAchievementShareCardPng({
         displayName,
         career,
@@ -122,14 +130,21 @@ export function AchievementCelebrationPanel({ career, achievements }: Props) {
 
   return (
     <div className="relative overflow-hidden rounded-3xl border border-white/[0.1] bg-gradient-to-br from-[#00C9B1]/[0.12] via-white/[0.04] to-violet-500/[0.08] p-6 shadow-[0_32px_80px_-40px_rgba(0,201,177,0.35)] sm:p-8">
-      <Sparkles className="pointer-events-none absolute right-6 top-6 h-8 w-8 text-amber-300/40" aria-hidden />
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5EEAD4]">Your wins</p>
+      <Sparkles
+        className="pointer-events-none absolute right-6 top-6 h-8 w-8 text-amber-300/40"
+        aria-hidden
+      />
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5EEAD4]">
+        Your wins
+      </p>
       <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
         {displayName}, you&apos;re on a roll
       </h2>
       {career?.level?.title?.trim() || career?.level?.number != null ? (
         <p className="mt-2 text-[15px] font-medium text-[#00C9B1]">
-          {career.level?.number != null ? <>Level {career.level.number} </> : null}
+          {career.level?.number != null ? (
+            <>Level {career.level.number} </>
+          ) : null}
           {career.level?.title?.trim() ?? ''}
         </p>
       ) : null}
@@ -140,13 +155,19 @@ export function AchievementCelebrationPanel({ career, achievements }: Props) {
               key={w.key?.trim() || w.title?.trim() || `win-${i}`}
               className={cn(
                 'rounded-xl border border-white/[0.1] bg-white/[0.04] px-3.5 py-3',
-                w.rarity === 'legendary' && 'border-amber-400/35 bg-amber-400/[0.06]',
-                w.rarity === 'epic' && 'border-violet-400/30 bg-violet-400/[0.06]',
+                w.rarity === 'legendary' &&
+                  'border-amber-400/35 bg-amber-400/[0.06]',
+                w.rarity === 'epic' &&
+                  'border-violet-400/30 bg-violet-400/[0.06]',
               )}
             >
-              <p className="text-[13px] font-semibold text-white/92">{w.title?.trim() || 'Achievement'}</p>
+              <p className="text-[13px] font-semibold text-white/92">
+                {w.title?.trim() || 'Achievement'}
+              </p>
               {w.description?.trim() ? (
-                <p className="mt-1 line-clamp-2 text-[11px] text-white/48">{w.description.trim()}</p>
+                <p className="mt-1 line-clamp-2 text-[11px] text-white/48">
+                  {w.description.trim()}
+                </p>
               ) : null}
             </li>
           ))}
@@ -161,7 +182,12 @@ export function AchievementCelebrationPanel({ career, achievements }: Props) {
           <PartyPopper className="h-4 w-4" aria-hidden />
           Celebrate
         </Button>
-        <Button type="button" variant="ghost" className="gap-2 border border-white/12" onClick={() => void copySummary()}>
+        <Button
+          type="button"
+          variant="ghost"
+          className="gap-2 border border-white/12"
+          onClick={() => void copySummary()}
+        >
           <Copy className="h-4 w-4" aria-hidden />
           {copied ? 'Copied!' : 'Copy summary'}
         </Button>

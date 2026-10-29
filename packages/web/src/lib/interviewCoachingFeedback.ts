@@ -156,7 +156,9 @@ function normalizeBulletKey(text: string): string {
 }
 
 /** Merge coaching bullet lists without repeating the same line. */
-export function dedupeCoachingBullets(...lists: Array<string[] | undefined>): string[] {
+export function dedupeCoachingBullets(
+  ...lists: Array<string[] | undefined>
+): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const list of lists) {
@@ -198,7 +200,9 @@ export type StarBreakdownPart = {
   isMissing: boolean;
 };
 
-export function isRenderableExampleAnswer(text: string | null | undefined): boolean {
+export function isRenderableExampleAnswer(
+  text: string | null | undefined,
+): boolean {
   const t = text?.trim();
   if (!t || t.length < 40) return false;
   return !INVALID_EXAMPLE_PATTERNS.some((re) => re.test(t));
@@ -210,7 +214,8 @@ export function resolveExampleAnswer(
   answeredQuestionText?: string,
 ): string | null {
   const fromFeedback = feedback?.exampleAnswer?.trim();
-  if (fromFeedback && isRenderableExampleAnswer(fromFeedback)) return fromFeedback;
+  if (fromFeedback && isRenderableExampleAnswer(fromFeedback))
+    return fromFeedback;
   if (snapshot) {
     const fromSnapshot = displayImprovedAnswer(snapshot, answeredQuestionText);
     if (isRenderableExampleAnswer(fromSnapshot)) return fromSnapshot;
@@ -222,7 +227,9 @@ export function starBreakdownIsTriplicate(
   star: CoachingStarBreakdown | null | undefined,
 ): boolean {
   if (!star) return false;
-  const values = STAR_PART_KEYS.map((k) => star[k]?.trim()).filter(Boolean) as string[];
+  const values = STAR_PART_KEYS.map((k) => star[k]?.trim()).filter(
+    Boolean,
+  ) as string[];
   if (values.length < 2) return false;
   const first = normalizeBulletKey(values[0]!);
   return values.every((v) => normalizeBulletKey(v) === first);
@@ -254,12 +261,18 @@ export function assertCoachingResponseQuality(
 
   const example = response.coachingFeedback.exampleAnswer?.trim();
   if (example && example.length <= 80) {
-    console.warn('[interview-coaching] exampleAnswer shorter than expected', example.length);
+    console.warn(
+      '[interview-coaching] exampleAnswer shorter than expected',
+      example.length,
+    );
   }
 
   const star = response.coachingFeedback.starBreakdown;
   if (star && starBreakdownIsTriplicate(star)) {
-    console.warn('[interview-coaching] STAR breakdown appears triplicate', star);
+    console.warn(
+      '[interview-coaching] STAR breakdown appears triplicate',
+      star,
+    );
   }
 }
 
@@ -277,7 +290,12 @@ export function focusAreaLabel(focusArea: string): string {
 
 export type CoachingPanelView = {
   summary: string;
-  scores: { clarity: number; structure: number; depth: number; relevance: number };
+  scores: {
+    clarity: number;
+    structure: number;
+    depth: number;
+    relevance: number;
+  };
   focusArea: string;
   focusLabel: string;
   improvements: string[];
@@ -307,7 +325,8 @@ export function buildCoachingPanelView(
       feedback.keyIssues,
     );
     const view: CoachingPanelView = {
-      summary: feedback.summary?.trim() || snapshot?.coachingSummary?.trim() || '',
+      summary:
+        feedback.summary?.trim() || snapshot?.coachingSummary?.trim() || '',
       scores: {
         clarity: feedback.clarityScore,
         structure: feedback.structureScore,
@@ -322,13 +341,19 @@ export function buildCoachingPanelView(
       starBreakdown: feedback.starBreakdown ?? null,
       starParts: buildStarBreakdownParts(feedback.starBreakdown),
       starShowHintOnly: starBreakdownIsTriplicate(feedback.starBreakdown),
-      exampleAnswer: resolveExampleAnswer(feedback, snapshot, answeredQuestionText),
+      exampleAnswer: resolveExampleAnswer(
+        feedback,
+        snapshot,
+        answeredQuestionText,
+      ),
       showScores: intensity !== 'light',
       showStar: Boolean(
         buildStarBreakdownParts(feedback.starBreakdown)?.length ||
-          starBreakdownIsTriplicate(feedback.starBreakdown),
+        starBreakdownIsTriplicate(feedback.starBreakdown),
       ),
-      showExample: Boolean(resolveExampleAnswer(feedback, snapshot, answeredQuestionText)),
+      showExample: Boolean(
+        resolveExampleAnswer(feedback, snapshot, answeredQuestionText),
+      ),
       showFollowUps: intensity === 'intensive',
       showInterviewerInsight: Boolean(interviewerContext?.trim()),
     };

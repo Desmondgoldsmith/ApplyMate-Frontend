@@ -6,7 +6,10 @@ export type PresentationGap = {
   guidance: string;
 };
 
-const ADVICE_TYPES = new Set<PresentationGapAdviceType>(['use_in_bullets', 'soft_context']);
+const ADVICE_TYPES = new Set<PresentationGapAdviceType>([
+  'use_in_bullets',
+  'soft_context',
+]);
 
 function parseAdviceType(raw: unknown): PresentationGapAdviceType {
   const s = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
@@ -17,7 +20,9 @@ function parseAdviceType(raw: unknown): PresentationGapAdviceType {
 }
 
 /** Descriptor / soft gaps — weave into bullets, not skills list (GET /jobs/:id, analyze). */
-export function parsePresentationGaps(raw: unknown): PresentationGap[] | undefined {
+export function parsePresentationGaps(
+  raw: unknown,
+): PresentationGap[] | undefined {
   if (!Array.isArray(raw) || raw.length === 0) return undefined;
   const items: PresentationGap[] = [];
   for (const row of raw) {
@@ -44,6 +49,10 @@ export function parsePresentationGaps(raw: unknown): PresentationGap[] | undefin
 
 export const PRESENTATION_GAPS_SECTION_TITLE = 'Use in your experience bullets';
 
-export function presentationGapAdviceLabel(type: PresentationGapAdviceType): string {
-  return type === 'soft_context' ? 'Mention in summary or bullets' : 'Weave into a bullet';
+export function presentationGapAdviceLabel(
+  type: PresentationGapAdviceType,
+): string {
+  return type === 'soft_context'
+    ? 'Mention in summary or bullets'
+    : 'Weave into a bullet';
 }

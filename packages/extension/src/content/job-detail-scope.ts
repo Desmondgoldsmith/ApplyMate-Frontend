@@ -209,7 +209,10 @@ function getGenericDetailRoot(doc: Document): Element | null {
 }
 
 /** DOM subtree for the job the user is viewing (not the surrounding results list). */
-export function getJobDetailRoot(doc: Document = document, url?: string): Element | null {
+export function getJobDetailRoot(
+  doc: Document = document,
+  url?: string,
+): Element | null {
   const href = url ?? doc.defaultView?.location.href ?? '';
   const parsed = parseUrl(href);
   if (!parsed) return null;
@@ -244,7 +247,9 @@ export function looksLikeSplitViewJobListingPage(
 
   if (host.includes('indeed.com')) {
     if (parsed.pathname.includes('/jobs') && !/viewjob/i.test(url)) return true;
-    return Boolean(doc.querySelector('.jobsearch-LeftPane, #mosaic-provider-jobcards'));
+    return Boolean(
+      doc.querySelector('.jobsearch-LeftPane, #mosaic-provider-jobcards'),
+    );
   }
 
   const detailRoot = getJobDetailRoot(doc, url);

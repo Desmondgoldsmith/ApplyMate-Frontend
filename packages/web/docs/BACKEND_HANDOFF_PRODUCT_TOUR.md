@@ -9,12 +9,12 @@
 
 All of the following must be true:
 
-| Gate | Source |
-|------|--------|
-| User is on `/dashboard` | Routing |
-| `user.id` present | `GET /api/users/me` (or auth login payload) |
-| Onboarding finished | `onboardingCompleted === true` on user **or** optimistic client state after wizard |
-| Tour not finished | See below |
+| Gate                    | Source                                                                             |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| User is on `/dashboard` | Routing                                                                            |
+| `user.id` present       | `GET /api/users/me` (or auth login payload)                                        |
+| Onboarding finished     | `onboardingCompleted === true` on user **or** optimistic client state after wizard |
+| Tour not finished       | See below                                                                          |
 
 Tour does **not** run on Job Analyzer, CV Clinic, Job Hub, etc. (single global tour only).
 
@@ -82,7 +82,7 @@ Users can reset via **Settings → Features → Restart product tour**.
 
 ---
 
-## What backend does *not* need to build
+## What backend does _not_ need to build
 
 - No new tour API or tour step payloads
 - No per-page tour endpoints

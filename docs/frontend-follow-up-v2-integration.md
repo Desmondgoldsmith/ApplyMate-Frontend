@@ -16,12 +16,12 @@ This doc is the handoff for frontend implementation and QA. Backend payload deta
 
 Single **“best”** follow-up row — same product purpose as today’s hero follow-up slot.
 
-| Field | Use |
-|-------|-----|
-| **`coachingStage`** | **Source of truth** for all user-facing “applied / pipeline” wording. See [Copy rules](#copy-rules). |
-| **`companyName`**, **`jobTitle`** | **Prefer** these over parsing `headline` / `supporting`. |
-| **`ctaHref`**, **`ctaLabel`** | Primary action. Expected to target **`/dashboard/job-board?…`** with resolver-validated **`jobAnalysisId`** and/or **`applicationId`** (and other ids as applicable). |
-| Existing fields | `headline`, `supporting`, `confidence`, `daysSinceApplication`, `reason`, etc. — unchanged semantics unless superseded below. |
+| Field                             | Use                                                                                                                                                                   |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`coachingStage`**               | **Source of truth** for all user-facing “applied / pipeline” wording. See [Copy rules](#copy-rules).                                                                  |
+| **`companyName`**, **`jobTitle`** | **Prefer** these over parsing `headline` / `supporting`.                                                                                                              |
+| **`ctaHref`**, **`ctaLabel`**     | Primary action. Expected to target **`/dashboard/job-board?…`** with resolver-validated **`jobAnalysisId`** and/or **`applicationId`** (and other ids as applicable). |
+| Existing fields                   | `headline`, `supporting`, `confidence`, `daysSinceApplication`, `reason`, etc. — unchanged semantics unless superseded below.                                         |
 
 **Types / parsing:** extend `FollowUpIntelligencePayload` and `pickFollowUpIntelligence` in `packages/web/src/lib/today-plan.ts` to include `coachingStage` (and confirm `companyName` / `jobTitle` pickers match backend keys, including snake_case aliases if any).
 
@@ -69,9 +69,9 @@ Include at minimum what the API guarantees; the UI should deep-link using **whic
 
 ## Copy rules {#copy-rules}
 
-| `coachingStage` | Allowed language |
-|-----------------|-------------------|
-| **`submitted`** | You may say they **applied** *N* days ago (e.g. “since you last applied to …”). |
+| `coachingStage`                                        | Allowed language                                                                                                                               |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`submitted`**                                        | You may say they **applied** _N_ days ago (e.g. “since you last applied to …”).                                                                |
 | **Any other stage** (especially **`pre_application`**) | Use **neutral pipeline** language: finish, move forward, revisit, nudge — **do not** say **“applied”** unless `coachingStage === 'submitted'`. |
 
 **Assembly:**
@@ -109,15 +109,15 @@ Include at minimum what the API guarantees; the UI should deep-link using **whic
 
 ## Implementation checklist (repo map)
 
-| Area | Files / notes |
-|------|----------------|
-| Types + pickers | `packages/web/src/lib/today-plan.ts` — `FollowUpIntelligencePayload`, `pickFollowUpIntelligence`; add `coachingStage`, `followUpJobs`, `followUpJobsTotalCount`, row type. |
-| Command bar + copy | `DashboardCommandBar.tsx`, `dashboardCommandCopy.ts` — stage-aware strings; align with `commandBar.message` when from API. |
-| Primary follow-up card | `DashboardFollowUpIntelligenceCard.tsx`, `DashboardPriorityIntelligenceZone.tsx` |
-| Dedup / section visibility | `dashboardFocusMerge.ts`, `dashboardPhase14Layout.ts`, `dashboard/page.tsx` (dedupe href sets) |
-| Job board deep links | `packages/web/src/app/(dashboard)/dashboard/job-board/JobBoardContent.tsx` (+ any resolver API) |
-| Queue UI | **New** component(s) + route/modal entry — not present at time of this doc. |
-| Analytics | Reuse / extend `trackProductEvent` / funnel events for “view all” and row clicks. |
+| Area                       | Files / notes                                                                                                                                                              |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Types + pickers            | `packages/web/src/lib/today-plan.ts` — `FollowUpIntelligencePayload`, `pickFollowUpIntelligence`; add `coachingStage`, `followUpJobs`, `followUpJobsTotalCount`, row type. |
+| Command bar + copy         | `DashboardCommandBar.tsx`, `dashboardCommandCopy.ts` — stage-aware strings; align with `commandBar.message` when from API.                                                 |
+| Primary follow-up card     | `DashboardFollowUpIntelligenceCard.tsx`, `DashboardPriorityIntelligenceZone.tsx`                                                                                           |
+| Dedup / section visibility | `dashboardFocusMerge.ts`, `dashboardPhase14Layout.ts`, `dashboard/page.tsx` (dedupe href sets)                                                                             |
+| Job board deep links       | `packages/web/src/app/(dashboard)/dashboard/job-board/JobBoardContent.tsx` (+ any resolver API)                                                                            |
+| Queue UI                   | **New** component(s) + route/modal entry — not present at time of this doc.                                                                                                |
+| Analytics                  | Reuse / extend `trackProductEvent` / funnel events for “view all” and row clicks.                                                                                          |
 
 ---
 

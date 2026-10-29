@@ -46,24 +46,24 @@ The frontend calls the same endpoint via `api.cv.suggestSectionOrder(profileId)`
 
 ## Canonical type order (shared contract)
 
-| Rank | Type |
-|------|------|
-| 0 | `personal` |
-| 1 | `links` |
-| 2 | `summary` |
-| 3 | `experience` |
-| 4 | `education` |
-| 5 | `skills` |
-| 6 | `projects` |
-| 7 | `certifications` |
-| 8 | `languages` |
-| 9 | `achievements` |
-| 10 | `references` |
-| 11 | `volunteering` |
-| 12 | `interests` |
-| 13 | `publications` |
-| 950 | `custom` / `custom_*` |
-| 900 | unknown types |
+| Rank | Type                  |
+| ---- | --------------------- |
+| 0    | `personal`            |
+| 1    | `links`               |
+| 2    | `summary`             |
+| 3    | `experience`          |
+| 4    | `education`           |
+| 5    | `skills`              |
+| 6    | `projects`            |
+| 7    | `certifications`      |
+| 8    | `languages`           |
+| 9    | `achievements`        |
+| 10   | `references`          |
+| 11   | `volunteering`        |
+| 12   | `interests`           |
+| 13   | `publications`        |
+| 950  | `custom` / `custom_*` |
+| 900  | unknown types         |
 
 Frontend source: `packages/web/src/lib/cvSectionProfessionalOrder.ts`
 

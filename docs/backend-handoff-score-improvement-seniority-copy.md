@@ -10,10 +10,10 @@ Users read **"mid"** twice and assume we mean their CV literally says the word "
 
 ## What we actually mean
 
-| Phrase (intended) | Meaning |
-|-------------------|---------|
-| Role is **mid-level** | The job posting targets mid-level seniority (title, years, scope in the JD). |
-| CV **reads as mid-level** | Our model infers mid-level from experience depth, titles, and scope on the CV — not a literal keyword. |
+| Phrase (intended)           | Meaning                                                                                                      |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Role is **mid-level**       | The job posting targets mid-level seniority (title, years, scope in the JD).                                 |
+| CV **reads as mid-level**   | Our model infers mid-level from experience depth, titles, and scope on the CV — not a literal keyword.       |
 | Both mid-level, still a gap | Level is aligned; the score cap is from **years, scope, must-haves, or industry depth** — not title wording. |
 
 ## Rules for `build-score-improvement-guide.ts` (and attack plan if reused)
@@ -29,6 +29,7 @@ Users read **"mid"** twice and assume we mean their CV literally says the word "
 ## Example rewrites
 
 **Before (bad):**
+
 ```json
 {
   "id": "role-mid-senior",
@@ -40,6 +41,7 @@ Users read **"mid"** twice and assume we mean their CV literally says the word "
 ```
 
 **After (good — aligned level):**
+
 ```json
 {
   "id": "role-level-scope",
@@ -51,6 +53,7 @@ Users read **"mid"** twice and assume we mean their CV literally says the word "
 ```
 
 **After (good — under-level for role):**
+
 ```json
 {
   "id": "role-level-gap",
@@ -67,6 +70,6 @@ Users read **"mid"** twice and assume we mean their CV literally says the word "
 
 ## QA
 
-- [ ] No `detail` string contains standalone ` mid ` or ` reads as mid ` without `-level`.
+- [ ] No `detail` string contains standalone `mid` or `reads as mid` without `-level`.
 - [ ] When inferred job level equals CV level, copy does not claim a seniority mismatch.
 - [ ] `role_level` items never suggest tailoring; advice-only post-tailor card.

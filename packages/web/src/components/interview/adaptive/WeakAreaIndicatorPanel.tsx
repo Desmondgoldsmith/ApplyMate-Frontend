@@ -2,7 +2,11 @@
 
 import { memo } from 'react';
 
-import { pickImprovingArea, pickPrimaryWeakArea, weakAreaLabel } from '@/lib/interviewAdaptive';
+import {
+  pickImprovingArea,
+  pickPrimaryWeakArea,
+  weakAreaLabel,
+} from '@/lib/interviewAdaptive';
 import type { InterviewDimensionalProfile } from '@/lib/interview-prep-types';
 import { cn } from '@/lib/utils';
 
@@ -32,13 +36,22 @@ export const WeakAreaIndicatorPanel = memo(function WeakAreaIndicatorPanel({
     >
       {improving ? (
         <p className="text-xs text-[var(--text-secondary)]">
-          <span className="font-semibold text-emerald-300/90">You&apos;re improving in: </span>
+          <span className="font-semibold text-emerald-300/90">
+            You&apos;re improving in:{' '}
+          </span>
           {improving}
         </p>
       ) : null}
       {focus ? (
-        <p className={cn('text-xs text-[var(--text-secondary)]', improving && 'mt-1.5')}>
-          <span className="font-semibold text-[var(--text-teal)]">Focus area: </span>
+        <p
+          className={cn(
+            'text-xs text-[var(--text-secondary)]',
+            improving && 'mt-1.5',
+          )}
+        >
+          <span className="font-semibold text-[var(--text-teal)]">
+            Focus area:{' '}
+          </span>
           {focus}
         </p>
       ) : null}

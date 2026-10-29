@@ -11,7 +11,9 @@ export function useJobApplyUrl(opts: {
   jobListingId?: string | null;
   enabled?: boolean;
 }) {
-  const direct = isValidExternalApplyUrl(opts.applyUrl) ? opts.applyUrl.trim() : null;
+  const direct = isValidExternalApplyUrl(opts.applyUrl)
+    ? opts.applyUrl.trim()
+    : null;
   const listingId = opts.jobListingId?.trim() ?? '';
   const enabled = opts.enabled !== false && !direct && Boolean(listingId);
 

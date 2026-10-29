@@ -14,7 +14,14 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import type { MouseEvent as ReactMouseEvent, ReactNode } from 'react';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 
 import { ScrollContentEnd } from '@/components/ui/ScrollContentEnd';
@@ -57,7 +64,11 @@ function HubViewToggle({
   idPrefix: string;
 }) {
   return (
-    <div className="inline-flex rounded-xl border border-white/[0.08] bg-black/30 p-0.5" role="group" aria-label="View mode">
+    <div
+      className="inline-flex rounded-xl border border-white/[0.08] bg-black/30 p-0.5"
+      role="group"
+      aria-label="View mode"
+    >
       <button
         type="button"
         id={`${idPrefix}-cards`}
@@ -65,7 +76,9 @@ function HubViewToggle({
         onClick={() => onChange('cards')}
         className={cn(
           'inline-flex h-8 w-8 items-center justify-center rounded-lg transition',
-          value === 'cards' ? 'bg-[#00C9B1]/20 text-[#00C9B1]' : 'text-white/45 hover:text-white/75',
+          value === 'cards'
+            ? 'bg-[#00C9B1]/20 text-[#00C9B1]'
+            : 'text-white/45 hover:text-white/75',
         )}
         title="Card view"
       >
@@ -78,7 +91,9 @@ function HubViewToggle({
         onClick={() => onChange('table')}
         className={cn(
           'inline-flex h-8 w-8 items-center justify-center rounded-lg transition',
-          value === 'table' ? 'bg-[#00C9B1]/20 text-[#00C9B1]' : 'text-white/45 hover:text-white/75',
+          value === 'table'
+            ? 'bg-[#00C9B1]/20 text-[#00C9B1]'
+            : 'text-white/45 hover:text-white/75',
         )}
         title="Table view"
       >
@@ -102,7 +117,12 @@ function HubActionTile({
   onClick: () => void;
 }) {
   return (
-    <button type="button" aria-label={title} onClick={onClick} className={ACTION_TILE}>
+    <button
+      type="button"
+      aria-label={title}
+      onClick={onClick}
+      className={ACTION_TILE}
+    >
       <span
         className={cn(
           'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 transition group-hover:opacity-95 sm:h-11 sm:w-11',
@@ -112,8 +132,12 @@ function HubActionTile({
         {icon}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-white sm:text-[15px]">{title}</p>
-        <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-white/45">{description}</p>
+        <p className="text-sm font-semibold text-white sm:text-[15px]">
+          {title}
+        </p>
+        <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-white/45">
+          {description}
+        </p>
       </div>
     </button>
   );
@@ -143,8 +167,12 @@ function HubActionLink({
         {icon}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-white sm:text-[15px]">{title}</p>
-        <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-white/45">{description}</p>
+        <p className="text-sm font-semibold text-white sm:text-[15px]">
+          {title}
+        </p>
+        <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-white/45">
+          {description}
+        </p>
       </div>
     </Link>
   );
@@ -228,9 +256,16 @@ function HubProfileActions({
   const del = useDeleteCVProfile();
   const rename = useRenameCVProfile();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuAnchor, setMenuAnchor] = useState<{ top: number; right: number } | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<CvProfileSummary | null>(null);
-  const [renameTarget, setRenameTarget] = useState<CvProfileSummary | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<{
+    top: number;
+    right: number;
+  } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CvProfileSummary | null>(
+    null,
+  );
+  const [renameTarget, setRenameTarget] = useState<CvProfileSummary | null>(
+    null,
+  );
   const [renameValue, setRenameValue] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -264,13 +299,19 @@ function HubProfileActions({
     e.stopPropagation();
     const el = e.currentTarget as HTMLElement;
     const rect = el.getBoundingClientRect();
-    setMenuAnchor({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    setMenuAnchor({
+      top: rect.bottom + 4,
+      right: window.innerWidth - rect.right,
+    });
     setMenuOpen(true);
   }, []);
 
   return (
     <>
-      <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="flex shrink-0 items-center gap-1"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           type="button"
           onClick={() => onOpenCv(profile.id)}
@@ -334,7 +375,9 @@ function HubProfileActions({
         }}
         title="Delete resume?"
         description={
-          deleteTarget ? `Permanently remove “${deleteTarget.name}”? This cannot be undone.` : undefined
+          deleteTarget
+            ? `Permanently remove “${deleteTarget.name}”? This cannot be undone.`
+            : undefined
         }
         confirmLabel="Delete"
         variant="danger"
@@ -412,7 +455,10 @@ export function CvClinicHub({
     () =>
       jobItems
         .filter((j) => j.hasCoverLetter)
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        ),
     [jobItems],
   );
 
@@ -420,7 +466,9 @@ export function CvClinicHub({
     const q = norm(cvSearch);
     if (!q) return profiles;
     return profiles.filter((p) => {
-      const hay = [p.name, p.headline ?? '', p.location ?? '', p.template ?? ''].map(norm).join(' ');
+      const hay = [p.name, p.headline ?? '', p.location ?? '', p.template ?? '']
+        .map(norm)
+        .join(' ');
       return hay.includes(q);
     });
   }, [profiles, cvSearch]);
@@ -442,15 +490,23 @@ export function CvClinicHub({
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 pb-6 pt-2 sm:gap-10 sm:pb-8">
       <header className="space-y-2 px-4 sm:px-0" data-tour="cv-clinic-intro">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#00C9B1]">Resume workspace</p>
-        <h1 className="text-xl font-extrabold tracking-tight text-white sm:text-3xl">What would you like to do?</h1>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#00C9B1]">
+          Resume workspace
+        </p>
+        <h1 className="text-xl font-extrabold tracking-tight text-white sm:text-3xl">
+          What would you like to do?
+        </h1>
         <p className="max-w-2xl text-sm leading-relaxed text-white/50">
-          Start a resume, upload an existing one, or jump to jobs and analyses. Open anything below to keep editing —
-          your work saves automatically.
+          Start a resume, upload an existing one, or jump to jobs and analyses.
+          Open anything below to keep editing — your work saves automatically.
         </p>
       </header>
 
-      <section aria-label="Quick actions" className="grid gap-3 px-4 sm:grid-cols-2 sm:gap-4 sm:px-0" data-tour="cv-clinic-actions">
+      <section
+        aria-label="Quick actions"
+        className="grid gap-3 px-4 sm:grid-cols-2 sm:gap-4 sm:px-0"
+        data-tour="cv-clinic-actions"
+      >
         <HubActionTile
           icon={<Plus className="h-5 w-5" strokeWidth={2.25} />}
           iconWrapClassName="bg-[#00C9B1]/15 text-[#00C9B1] ring-[#00C9B1]/25 group-hover:bg-[#00C9B1]/20"
@@ -468,12 +524,18 @@ export function CvClinicHub({
       </section>
 
       <div
-        className={cn(SECTION_SHELL, 'mx-4 flex flex-col gap-3 p-4 sm:mx-0 sm:flex-row sm:items-center sm:justify-between sm:p-5')}
+        className={cn(
+          SECTION_SHELL,
+          'mx-4 flex flex-col gap-3 p-4 sm:mx-0 sm:flex-row sm:items-center sm:justify-between sm:p-5',
+        )}
       >
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#00C9B1]/90">Tip</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#00C9B1]/90">
+            Tip
+          </p>
           <p className="mt-1 text-sm leading-relaxed text-white/55">
-            Open any resume below to edit, score, and export. Cover letters open on the letter tab in Jobs.
+            Open any resume below to edit, score, and export. Cover letters open
+            on the letter tab in Jobs.
           </p>
         </div>
         <Link
@@ -485,13 +547,22 @@ export function CvClinicHub({
         </Link>
       </div>
 
-      <section aria-labelledby="cv-library-heading" className={cn(SECTION_SHELL, 'space-y-4 p-4 sm:p-5')} data-tour="cv-clinic-library">
+      <section
+        aria-labelledby="cv-library-heading"
+        className={cn(SECTION_SHELL, 'space-y-4 p-4 sm:p-5')}
+        data-tour="cv-clinic-library"
+      >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 id="cv-library-heading" className="text-lg font-bold text-white sm:text-xl">
+            <h2
+              id="cv-library-heading"
+              className="text-lg font-bold text-white sm:text-xl"
+            >
               Recent resumes
             </h2>
-            <p className="mt-0.5 text-sm text-white/45">Open a resume to enter the Resume Clinic editor</p>
+            <p className="mt-0.5 text-sm text-white/45">
+              Open a resume to enter the Resume Clinic editor
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative min-w-[12rem] flex-1 sm:max-w-xs">
@@ -528,8 +599,12 @@ export function CvClinicHub({
         ) : filteredProfiles.length === 0 ? (
           <div className="rounded-xl border border-dashed border-white/[0.1] bg-black/20 px-6 py-10 text-center">
             <FileText className="mx-auto h-9 w-9 text-white/20" />
-            <p className="mt-3 text-sm font-medium text-white/70">No resumes match your search</p>
-            <p className="mt-1 text-xs text-white/40">Try another term or clear the search box</p>
+            <p className="mt-3 text-sm font-medium text-white/70">
+              No resumes match your search
+            </p>
+            <p className="mt-1 text-xs text-white/40">
+              Try another term or clear the search box
+            </p>
           </div>
         ) : cvView === 'cards' ? (
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -564,31 +639,52 @@ export function CvClinicHub({
                     ) : null}
                   </div>
                   {(p.headline ?? '').trim() ? (
-                    <p className="mt-2 line-clamp-2 text-xs text-white/50">{p.headline}</p>
+                    <p className="mt-2 line-clamp-2 text-xs text-white/50">
+                      {p.headline}
+                    </p>
                   ) : (
-                    <p className="mt-2 text-xs italic text-white/30">No headline yet</p>
+                    <p className="mt-2 text-xs italic text-white/30">
+                      No headline yet
+                    </p>
                   )}
                   <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/[0.06] pt-3 text-[11px] text-white/40">
-                    {p.template ? <span className="capitalize text-white/55">{p.template}</span> : null}
-                    {p.score != null ? (
-                      <span className="font-semibold tabular-nums text-[#00C9B1]">{p.score}/100</span>
+                    {p.template ? (
+                      <span className="capitalize text-white/55">
+                        {p.template}
+                      </span>
                     ) : null}
-                    <span className="text-white/35">· {formatRelativeEdited(p.updatedAt)}</span>
+                    {p.score != null ? (
+                      <span className="font-semibold tabular-nums text-[#00C9B1]">
+                        {p.score}/100
+                      </span>
+                    ) : null}
+                    <span className="text-white/35">
+                      · {formatRelativeEdited(p.updatedAt)}
+                    </span>
                   </div>
                   <div className="mt-4 flex justify-end border-t border-white/[0.06] pt-3">
-                    <HubProfileActions profile={p} profiles={profiles} onOpenCv={onOpenCv} />
+                    <HubProfileActions
+                      profile={p}
+                      profiles={profiles}
+                      onOpenCv={onOpenCv}
+                    />
                   </div>
                 </div>
               </li>
             ))}
           </ul>
         ) : (
-          <GlowCard className="overflow-hidden border border-white/[0.08]" contentClassName="p-0">
+          <GlowCard
+            className="overflow-hidden border border-white/[0.08]"
+            contentClassName="p-0"
+          >
             <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-white/[0.08] bg-white/[0.03] text-[11px] font-semibold uppercase tracking-wide text-white/45">
-                    {profiles.length > 1 ? <th className="w-10 px-2 py-3" /> : null}
+                    {profiles.length > 1 ? (
+                      <th className="w-10 px-2 py-3" />
+                    ) : null}
                     <th className="px-4 py-3">Name</th>
                     <th className="px-4 py-3">Headline</th>
                     <th className="px-4 py-3">Template</th>
@@ -599,7 +695,10 @@ export function CvClinicHub({
                 </thead>
                 <tbody>
                   {pagedProfiles.map((p) => (
-                    <tr key={p.id} className="border-b border-white/[0.05] transition hover:bg-white/[0.03]">
+                    <tr
+                      key={p.id}
+                      className="border-b border-white/[0.05] transition hover:bg-white/[0.03]"
+                    >
                       {profiles.length > 1 ? (
                         <td className="px-2 py-3">
                           <CvProfileMergeCheckbox
@@ -622,14 +721,26 @@ export function CvClinicHub({
                           {p.name}
                         </button>
                       </td>
-                      <td className="max-w-[200px] truncate px-4 py-3 text-white/50">{p.headline?.trim() || '—'}</td>
-                      <td className="px-4 py-3 capitalize text-white/55">{p.template ?? '—'}</td>
-                      <td className="px-4 py-3 tabular-nums text-[#00C9B1]">{p.score != null ? `${p.score}/100` : '—'}</td>
+                      <td className="max-w-[200px] truncate px-4 py-3 text-white/50">
+                        {p.headline?.trim() || '—'}
+                      </td>
+                      <td className="px-4 py-3 capitalize text-white/55">
+                        {p.template ?? '—'}
+                      </td>
+                      <td className="px-4 py-3 tabular-nums text-[#00C9B1]">
+                        {p.score != null ? `${p.score}/100` : '—'}
+                      </td>
                       <td className="px-4 py-3 text-white/40">
-                        {p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : '—'}
+                        {p.updatedAt
+                          ? new Date(p.updatedAt).toLocaleDateString()
+                          : '—'}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <HubProfileActions profile={p} profiles={profiles} onOpenCv={onOpenCv} />
+                        <HubProfileActions
+                          profile={p}
+                          profiles={profiles}
+                          onOpenCv={onOpenCv}
+                        />
                       </td>
                     </tr>
                   ))}
@@ -641,13 +752,21 @@ export function CvClinicHub({
         <HubPagination {...cvPagination} />
       </section>
 
-      <section aria-labelledby="cl-heading" className={cn(SECTION_SHELL, 'space-y-4 p-4 sm:p-5')}>
+      <section
+        aria-labelledby="cl-heading"
+        className={cn(SECTION_SHELL, 'space-y-4 p-4 sm:p-5')}
+      >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 id="cl-heading" className="text-lg font-bold text-white sm:text-xl">
+            <h2
+              id="cl-heading"
+              className="text-lg font-bold text-white sm:text-xl"
+            >
               Cover letters
             </h2>
-            <p className="mt-0.5 text-sm text-white/45">Opens directly on the cover letter tab in Jobs</p>
+            <p className="mt-0.5 text-sm text-white/45">
+              Opens directly on the cover letter tab in Jobs
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative min-w-[12rem] flex-1 sm:max-w-xs">
@@ -675,7 +794,9 @@ export function CvClinicHub({
           <div className="rounded-xl border border-dashed border-white/[0.1] bg-black/20 px-6 py-10 text-center">
             <ScrollText className="mx-auto h-9 w-9 text-white/20" />
             <p className="mt-3 text-sm font-medium text-white/70">
-              {coverLetterRows.length === 0 ? 'No saved cover letters yet' : 'No matches for your search'}
+              {coverLetterRows.length === 0
+                ? 'No saved cover letters yet'
+                : 'No matches for your search'}
             </p>
             <p className="mt-1 text-xs text-white/40">
               {coverLetterRows.length === 0
@@ -691,7 +812,10 @@ export function CvClinicHub({
             </Link>
             <p className="mt-4 text-[11px] text-white/30">
               Or browse{' '}
-              <Link href="/dashboard/analyses" className="text-[#00C9B1] hover:underline">
+              <Link
+                href="/dashboard/analyses"
+                className="text-[#00C9B1] hover:underline"
+              >
                 all job analyses
               </Link>
               .
@@ -705,21 +829,32 @@ export function CvClinicHub({
                   href={jobCoverLetterHref(j.id)}
                   className="group flex h-full flex-col rounded-xl border border-white/[0.08] bg-black/20 p-4 transition hover:border-[#00C9B1]/30 hover:bg-white/[0.02]"
                 >
-                  <p className="font-semibold text-white group-hover:text-[#00C9B1]">{j.company || 'Company'}</p>
-                  <p className="mt-1 line-clamp-2 text-sm text-white/55">{j.jobTitle || j.title || 'Role'}</p>
+                  <p className="font-semibold text-white group-hover:text-[#00C9B1]">
+                    {j.company || 'Company'}
+                  </p>
+                  <p className="mt-1 line-clamp-2 text-sm text-white/55">
+                    {j.jobTitle || j.title || 'Role'}
+                  </p>
                   <div className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-3 text-[11px] text-white/40">
                     <span className="inline-flex items-center gap-1 text-[#00C9B1]/90">
                       <ScrollText className="h-3.5 w-3.5" />
                       Cover letter
                     </span>
-                    <span>{j.createdAt ? new Date(j.createdAt).toLocaleDateString() : ''}</span>
+                    <span>
+                      {j.createdAt
+                        ? new Date(j.createdAt).toLocaleDateString()
+                        : ''}
+                    </span>
                   </div>
                 </Link>
               </li>
             ))}
           </ul>
         ) : (
-          <GlowCard className="overflow-hidden border border-white/[0.08]" contentClassName="p-0">
+          <GlowCard
+            className="overflow-hidden border border-white/[0.08]"
+            contentClassName="p-0"
+          >
             <div className="overflow-x-auto">
               <table className="w-full min-w-[480px] text-left text-sm">
                 <thead>
@@ -733,12 +868,23 @@ export function CvClinicHub({
                 </thead>
                 <tbody>
                   {pagedLetters.map((j) => (
-                    <tr key={j.id} className="border-b border-white/[0.05] transition hover:bg-white/[0.03]">
-                      <td className="px-4 py-3 font-medium text-white">{j.company || '—'}</td>
-                      <td className="max-w-[220px] truncate px-4 py-3 text-white/55">{j.jobTitle || j.title || '—'}</td>
-                      <td className="px-4 py-3 tabular-nums text-white/60">{j.matchScore ?? '—'}%</td>
+                    <tr
+                      key={j.id}
+                      className="border-b border-white/[0.05] transition hover:bg-white/[0.03]"
+                    >
+                      <td className="px-4 py-3 font-medium text-white">
+                        {j.company || '—'}
+                      </td>
+                      <td className="max-w-[220px] truncate px-4 py-3 text-white/55">
+                        {j.jobTitle || j.title || '—'}
+                      </td>
+                      <td className="px-4 py-3 tabular-nums text-white/60">
+                        {j.matchScore ?? '—'}%
+                      </td>
                       <td className="px-4 py-3 text-white/40">
-                        {j.createdAt ? new Date(j.createdAt).toLocaleDateString() : '—'}
+                        {j.createdAt
+                          ? new Date(j.createdAt).toLocaleDateString()
+                          : '—'}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Link

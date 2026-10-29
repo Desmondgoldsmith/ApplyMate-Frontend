@@ -28,7 +28,9 @@ export const LearningMomentCard = memo(function LearningMomentCard({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
       >
-        <span className="text-[11px] font-semibold text-emerald-100/90">What you improved</span>
+        <span className="text-[11px] font-semibold text-emerald-100/90">
+          What you improved
+        </span>
         <ChevronDown
           className={cn(
             'h-3.5 w-3.5 text-emerald-200/70 transition-transform duration-200',
@@ -45,7 +47,10 @@ export const LearningMomentCard = memo(function LearningMomentCard({
         <div className="overflow-hidden">
           <ul className="space-y-1 px-3 pb-2.5">
             {moments.map((line) => (
-              <li key={line} className="text-xs leading-relaxed text-[var(--text-secondary)]">
+              <li
+                key={line}
+                className="text-xs leading-relaxed text-[var(--text-secondary)]"
+              >
                 · {line}
               </li>
             ))}

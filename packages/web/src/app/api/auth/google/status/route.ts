@@ -28,21 +28,26 @@ export async function GET() {
   const normalizedApiUrl = readNormalizedPublicApiUrl();
   const rawApiUrl = process.env.NEXT_PUBLIC_API_URL ?? null;
   const apiUrlHadWhitespace =
-    typeof rawApiUrl === 'string' && rawApiUrl.replace(/\s+/g, '') !== rawApiUrl.trim().replace(/\s+/g, '');
+    typeof rawApiUrl === 'string' &&
+    rawApiUrl.replace(/\s+/g, '') !== rawApiUrl.trim().replace(/\s+/g, '');
 
   let apiReachable: boolean | null = null;
   let apiReachableNote: string | null = null;
   try {
     const probe = await fetch(`${normalizedApiUrl}auth/login`, {
       method: 'OPTIONS',
-      headers: ngrokSkipHeaders({ Accept: 'application/json' }, normalizedApiUrl),
+      headers: ngrokSkipHeaders(
+        { Accept: 'application/json' },
+        normalizedApiUrl,
+      ),
       signal: AbortSignal.timeout(8000),
     });
     apiReachable = probe.status < 500;
     apiReachableNote = `OPTIONS auth/login → HTTP ${probe.status}`;
   } catch {
     apiReachable = false;
-    apiReachableNote = 'Could not reach Nest via NEXT_PUBLIC_API_URL (ngrok down, wrong URL, or Nest not running).';
+    apiReachableNote =
+      'Could not reach Nest via NEXT_PUBLIC_API_URL (ngrok down, wrong URL, or Nest not running).';
   }
 
   return NextResponse.json({
@@ -76,8 +81,8 @@ export async function GET() {
     normalizedApiUrl,
     apiUrlHadWhitespace,
     vercelNgrokBrowserProxy:
-      process.env.NEXT_PUBLIC_USE_NGROK_TUNNEL?.trim().toLowerCase() === 'true' &&
-      isNgrokFreeTunnel(normalizedApiUrl),
+      process.env.NEXT_PUBLIC_USE_NGROK_TUNNEL?.trim().toLowerCase() ===
+        'true' && isNgrokFreeTunnel(normalizedApiUrl),
     apiReachable,
     apiReachableNote,
     hint: isGoogleAuthConfigured()

@@ -43,7 +43,10 @@ export function TypingText({
     }
     return out;
   }, [tokens]);
-  const wordIdx = useMemo(() => activeWordIndex(text, charIndex), [charIndex, text]);
+  const wordIdx = useMemo(
+    () => activeWordIndex(text, charIndex),
+    [charIndex, text],
+  );
 
   if (!text.trim()) return null;
 
@@ -58,13 +61,20 @@ export function TypingText({
       {tokens.map((token, idx) => {
         if (!token.trim()) return <span key={`s-${idx}`}>{token}</span>;
         const seenWord = tokenWordIndex[idx] ?? -1;
-        if (!isActive || wordIdx < 0) return <span key={`w-${idx}`}>{token}</span>;
+        if (!isActive || wordIdx < 0)
+          return <span key={`w-${idx}`}>{token}</span>;
         const active = seenWord === wordIdx;
         const spoken = seenWord < wordIdx;
         return (
           <span
             key={`w-${idx}`}
-            className={cn(active ? 'font-medium text-white' : spoken ? 'text-white/80' : 'text-white/50')}
+            className={cn(
+              active
+                ? 'font-medium text-white'
+                : spoken
+                  ? 'text-white/80'
+                  : 'text-white/50',
+            )}
           >
             {token}
           </span>

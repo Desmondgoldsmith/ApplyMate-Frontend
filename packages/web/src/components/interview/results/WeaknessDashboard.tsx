@@ -7,8 +7,10 @@ import { WEAKNESS_TAG_LABELS } from '@/lib/interview-prep-types';
 import { cn } from '@/lib/utils';
 
 function severityClass(severity: string): string {
-  if (severity === 'high') return 'border-rose-400/35 bg-rose-500/10 text-rose-200';
-  if (severity === 'medium') return 'border-amber-400/35 bg-amber-500/10 text-amber-100';
+  if (severity === 'high')
+    return 'border-rose-400/35 bg-rose-500/10 text-rose-200';
+  if (severity === 'medium')
+    return 'border-amber-400/35 bg-amber-500/10 text-amber-100';
   return 'border-white/15 bg-white/[0.04] text-white/65';
 }
 
@@ -28,11 +30,19 @@ export const WeaknessDashboard = memo(function WeaknessDashboard({
   });
 
   return (
-    <section className={cn('rounded-2xl border border-white/10 bg-[#0C0F0F] p-4 sm:p-5', className)} aria-labelledby="weakness-heading">
+    <section
+      className={cn(
+        'rounded-2xl border border-white/10 bg-[#0C0F0F] p-4 sm:p-5',
+        className,
+      )}
+      aria-labelledby="weakness-heading"
+    >
       <h3 id="weakness-heading" className="text-sm font-semibold text-white">
         Top areas to improve
       </h3>
-      <p className="mt-1 text-xs text-white/50">Patterns from this session — practice these next.</p>
+      <p className="mt-1 text-xs text-white/50">
+        Patterns from this session — practice these next.
+      </p>
       <ul className="mt-4 space-y-2">
         {sorted.slice(0, 5).map((w) => (
           <li
@@ -47,7 +57,9 @@ export const WeaknessDashboard = memo(function WeaknessDashboard({
             </div>
             <div className="flex shrink-0 items-center gap-2">
               {w.count > 1 ? (
-                <span className="text-[11px] tabular-nums text-white/40">×{w.count}</span>
+                <span className="text-[11px] tabular-nums text-white/40">
+                  ×{w.count}
+                </span>
               ) : null}
               <span
                 className={cn(

@@ -18,8 +18,20 @@ describe('jobHubGuidance parsers', () => {
       currentStepId: 'applied',
       statusHint: 'Applied 12 days ago',
       steps: [
-        { id: 'bookmarked', label: 'Saved', state: 'complete', order: 0, clickable: false },
-        { id: 'applied', label: 'Applied', state: 'current', order: 2, clickable: false },
+        {
+          id: 'bookmarked',
+          label: 'Saved',
+          state: 'complete',
+          order: 0,
+          clickable: false,
+        },
+        {
+          id: 'applied',
+          label: 'Applied',
+          state: 'current',
+          order: 2,
+          clickable: false,
+        },
       ],
     });
     expect(stepper?.currentStepId).toBe('applied');
@@ -49,24 +61,54 @@ describe('jobHubGuidance parsers', () => {
   });
 
   it('maps step ids to hub stages', () => {
-    expect(hubPipelineStepIdToHubStage('preparing', { hasAnalysis: true })).toBe('analyzed');
-    expect(hubPipelineStepIdToHubStage('negotiating', { hasAnalysis: false })).toBe('negotiating');
+    expect(
+      hubPipelineStepIdToHubStage('preparing', { hasAnalysis: true }),
+    ).toBe('analyzed');
+    expect(
+      hubPipelineStepIdToHubStage('negotiating', { hasAnalysis: false }),
+    ).toBe('negotiating');
   });
 
   it('resolves match score from job detail fallback', () => {
     expect(
-      resolveTrackedJobMatchScore({ matchScore: null, jobAnalysisId: 'j1' }, 92),
+      resolveTrackedJobMatchScore(
+        { matchScore: null, jobAnalysisId: 'j1' },
+        92,
+      ),
     ).toBe(92);
-    expect(resolveTrackedJobMatchScore({ matchScore: 88, jobAnalysisId: 'j1' }, null)).toBe(88);
+    expect(
+      resolveTrackedJobMatchScore(
+        { matchScore: 88, jobAnalysisId: 'j1' },
+        null,
+      ),
+    ).toBe(88);
   });
 
   it('optimistically advances stepper', () => {
     const base = parseJobHubPipelineStepper({
       currentStepId: 'preparing',
       steps: [
-        { id: 'bookmarked', label: 'Saved', state: 'complete', order: 0, clickable: false },
-        { id: 'preparing', label: 'Prep', state: 'current', order: 1, clickable: false },
-        { id: 'applied', label: 'Applied', state: 'upcoming', order: 2, clickable: true },
+        {
+          id: 'bookmarked',
+          label: 'Saved',
+          state: 'complete',
+          order: 0,
+          clickable: false,
+        },
+        {
+          id: 'preparing',
+          label: 'Prep',
+          state: 'current',
+          order: 1,
+          clickable: false,
+        },
+        {
+          id: 'applied',
+          label: 'Applied',
+          state: 'upcoming',
+          order: 2,
+          clickable: true,
+        },
       ],
     })!;
     const next = optimisticPipelineStepper(base, 'applied');
@@ -80,10 +122,12 @@ describe('jobHubGuidance parsers', () => {
         '/dashboard/jobs?applicationId=x&tab=email-templates&template=follow-up-no-response',
       ),
     ).toBe('email');
-    expect(parseJobHubDetailTabFromHref('/dashboard/jobs?jobId=y&tab=description')).toBe(
-      'description',
-    );
-    expect(parseJobHubDetailTabFromHref('/dashboard/jobs?jobId=y&tab=cover-letter')).toBe('cover');
+    expect(
+      parseJobHubDetailTabFromHref('/dashboard/jobs?jobId=y&tab=description'),
+    ).toBe('description');
+    expect(
+      parseJobHubDetailTabFromHref('/dashboard/jobs?jobId=y&tab=cover-letter'),
+    ).toBe('cover');
   });
 
   it('locks verified guidance tasks from user toggle', () => {

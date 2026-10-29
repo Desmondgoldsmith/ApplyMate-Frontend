@@ -1,4 +1,8 @@
-import type { PrepMode, SimulationPersona, SimulationPersonaTone } from '@/lib/interview-prep-types';
+import type {
+  PrepMode,
+  SimulationPersona,
+  SimulationPersonaTone,
+} from '@/lib/interview-prep-types';
 
 export type SimulationPersonaUi = {
   id: SimulationPersona;
@@ -9,7 +13,10 @@ export type SimulationPersonaUi = {
   atmosphere: 'calm' | 'neutral' | 'tense' | 'intense';
 };
 
-export const SIMULATION_PERSONA_UI: Record<SimulationPersona, SimulationPersonaUi> = {
+export const SIMULATION_PERSONA_UI: Record<
+  SimulationPersona,
+  SimulationPersonaUi
+> = {
   friendly_hr: {
     id: 'friendly_hr',
     title: 'HR interviewer',

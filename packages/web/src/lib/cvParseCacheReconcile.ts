@@ -14,7 +14,10 @@ export async function refreshCvStateAfterCvParseSuccess(
 ): Promise<void> {
   const id = profile.id?.trim();
   if (!id) {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles(), exact: true });
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.cv.profiles(),
+      exact: true,
+    });
     return;
   }
   queryClient.setQueryData(queryKeys.cv.profile(id), profile);

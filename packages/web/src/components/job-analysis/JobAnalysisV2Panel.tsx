@@ -38,9 +38,7 @@ export function JobAnalysisV2Panel({
   const v2 = analysis.analysisV2;
   if (!v2) return null;
 
-  const isTailored =
-    isTailoredOverride ??
-    Boolean(analysis.isTailored);
+  const isTailored = isTailoredOverride ?? Boolean(analysis.isTailored);
   const axisTooltips = resolveAxisTooltips(v2, analysis.factorsBreakdown);
   const displayAxes = resolveAnalysisV2Axes(v2, analysis.factorsBreakdown);
 

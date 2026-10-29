@@ -6,7 +6,10 @@ import type { ReactNode } from 'react';
 import { DashboardCollapsibleSection } from '@/components/dashboard/DashboardCollapsibleSection';
 import type { DashboardEmptyStatePayload } from '@/lib/today-plan';
 import type { FocusItem } from '@/lib/dashboardFocusMerge';
-import { sanitizeDashboardDisplayText, sanitizeFocusMetaLine } from '@/lib/dashboardDisplayCopy';
+import {
+  sanitizeDashboardDisplayText,
+  sanitizeFocusMetaLine,
+} from '@/lib/dashboardDisplayCopy';
 import { cn } from '@/lib/utils';
 
 /** Dashboard home: server caps at 2; slice defensively for legacy payloads. */
@@ -68,9 +71,9 @@ export function DashboardFocusRow({
           {(() => {
             const meta = sanitizeFocusMetaLine(it.metaLine);
             return meta ? (
-            <p className="mt-1.5 text-[11px] font-medium text-white/40">
-              {meta}
-            </p>
+              <p className="mt-1.5 text-[11px] font-medium text-white/40">
+                {meta}
+              </p>
             ) : null;
           })()}
         </div>
@@ -147,7 +150,9 @@ export function DashboardFocusSection({
     >
       <span>View all →</span>
       {moreCount > 0 ? (
-        <span className="font-normal text-[var(--text-muted)]">(+{moreCount} more)</span>
+        <span className="font-normal text-[var(--text-muted)]">
+          (+{moreCount} more)
+        </span>
       ) : null}
     </Link>
   ) : null;

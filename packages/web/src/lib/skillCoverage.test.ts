@@ -11,8 +11,19 @@ import {
 describe('skillCoverage gap quality', () => {
   it('treats satisfied OR siblings as non-primary gaps', () => {
     const items = [
-      { skill: 'React', status: 'found' as const, importance: 'HIGH' as const, orGroupId: 'or_1' },
-      { skill: 'Vue', status: 'missing' as const, importance: 'HIGH' as const, orGroupId: 'or_1', tier: 'preferred' as const },
+      {
+        skill: 'React',
+        status: 'found' as const,
+        importance: 'HIGH' as const,
+        orGroupId: 'or_1',
+      },
+      {
+        skill: 'Vue',
+        status: 'missing' as const,
+        importance: 'HIGH' as const,
+        orGroupId: 'or_1',
+        tier: 'preferred' as const,
+      },
     ];
     const satisfied = satisfiedOrGroupIds(items);
     expect(satisfied.has('or_1')).toBe(true);
@@ -23,8 +34,18 @@ describe('skillCoverage gap quality', () => {
     const analysis = {
       matchScore: 70,
       skillCoverage: [
-        { skill: 'TypeScript', status: 'missing', importance: 'HIGH', tier: 'required' },
-        { skill: 'web development', status: 'missing', importance: 'LOW', tier: 'mentioned' },
+        {
+          skill: 'TypeScript',
+          status: 'missing',
+          importance: 'HIGH',
+          tier: 'required',
+        },
+        {
+          skill: 'web development',
+          status: 'missing',
+          importance: 'LOW',
+          tier: 'mentioned',
+        },
       ],
     } satisfies JobAnalysis;
     expect(getGapDisplaySkills(analysis)).toEqual([]);
@@ -37,7 +58,10 @@ describe('skillCoverage gap quality', () => {
       tier: 'required' as const,
       requirementKind: i % 2 === 0 ? ('tool' as const) : ('phrase' as const),
     }));
-    const analysis = { matchScore: 50, missingSkills: gaps } satisfies JobAnalysis;
+    const analysis = {
+      matchScore: 50,
+      missingSkills: gaps,
+    } satisfies JobAnalysis;
     expect(getGapDisplaySkills(analysis)).toHaveLength(7);
   });
 
@@ -82,6 +106,8 @@ describe('skillCoverage gap quality', () => {
         { skill: 'Vue', status: 'missing', importance: 'HIGH' },
       ],
     } satisfies JobAnalysis;
-    expect(getTailorChecklistSkills(analysis).map((g) => g.name)).toEqual(['GraphQL']);
+    expect(getTailorChecklistSkills(analysis).map((g) => g.name)).toEqual([
+      'GraphQL',
+    ]);
   });
 });

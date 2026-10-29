@@ -11,7 +11,11 @@ import {
 describe('cvAiPatchDisplay', () => {
   it('detects patch operations', () => {
     expect(
-      isAiPatchOperation({ action: 'replace', field: 'summary', value: 'New text' }),
+      isAiPatchOperation({
+        action: 'replace',
+        field: 'summary',
+        value: 'New text',
+      }),
     ).toBe(true);
   });
 
@@ -42,7 +46,9 @@ describe('cvAiPatchDisplay', () => {
       field: 'summary',
       value: 'From JSON string',
     });
-    expect(coerceAiPatchToDisplayString(raw, 'summary')).toBe('From JSON string');
+    expect(coerceAiPatchToDisplayString(raw, 'summary')).toBe(
+      'From JSON string',
+    );
   });
 
   it('normalizeCvDiffPreviewParams fixes object changedFields', () => {
@@ -81,7 +87,11 @@ describe('cvAiPatchDisplay', () => {
 
   it('coerceAiPatchSectionBlob avoids raw JSON for tailor line diff', () => {
     const s = coerceAiPatchSectionBlob(
-      JSON.stringify({ action: 'replace', field: 'summary', value: 'Tailored summary.' }),
+      JSON.stringify({
+        action: 'replace',
+        field: 'summary',
+        value: 'Tailored summary.',
+      }),
       'summary',
     );
     expect(s).toBe('Tailored summary.');

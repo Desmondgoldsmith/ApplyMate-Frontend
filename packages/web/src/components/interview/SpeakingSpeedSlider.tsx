@@ -27,7 +27,10 @@ export const SpeakingSpeedSlider = memo(function SpeakingSpeedSlider({
   return (
     <div className={className}>
       <div className="flex max-w-[560px] items-center justify-between gap-2">
-        <label htmlFor={id} className="text-[13px] font-medium text-[var(--text-primary)]">
+        <label
+          htmlFor={id}
+          className="text-[13px] font-medium text-[var(--text-primary)]"
+        >
           Speaking speed
         </label>
         <span className="text-[13px] font-semibold tabular-nums text-[var(--text-teal)]">
@@ -56,7 +59,8 @@ export const SpeakingSpeedSlider = memo(function SpeakingSpeedSlider({
             onClick={() => onChange(s.value)}
             className={cn(
               'rounded px-1 py-0.5 transition hover:text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--teal)]',
-              Math.abs(clamped - s.value) < 0.06 && 'font-semibold text-[var(--text-teal)]',
+              Math.abs(clamped - s.value) < 0.06 &&
+                'font-semibold text-[var(--text-teal)]',
             )}
           >
             {s.label}

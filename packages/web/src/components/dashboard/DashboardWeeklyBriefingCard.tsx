@@ -1,7 +1,10 @@
 'use client';
 
 import { InfoHint } from '@/components/ui/InfoHint';
-import type { WeeklyBriefingPayload, WeeklyBriefingTone } from '@/lib/today-plan';
+import type {
+  WeeklyBriefingPayload,
+  WeeklyBriefingTone,
+} from '@/lib/today-plan';
 import { TOOLTIP_BRIEFING_CONFIDENCE } from '@/lib/dashboardIntelligenceTooltips';
 import { cn } from '@/lib/utils';
 
@@ -9,7 +12,11 @@ type Props = {
   data: WeeklyBriefingPayload;
 };
 
-function toneShell(tone: WeeklyBriefingTone | null): { ring: string; glow: string; badge: string } {
+function toneShell(tone: WeeklyBriefingTone | null): {
+  ring: string;
+  glow: string;
+  badge: string;
+} {
   switch (tone) {
     case 'celebratory':
       return {
@@ -78,7 +85,10 @@ export function DashboardWeeklyBriefingCard({ data }: Props) {
         shell.ring,
       )}
     >
-      <div aria-hidden className={cn('pointer-events-none absolute inset-0', shell.glow)} />
+      <div
+        aria-hidden
+        className={cn('pointer-events-none absolute inset-0', shell.glow)}
+      />
 
       <div className="relative space-y-5">
         <div className="flex flex-wrap items-center gap-2">
@@ -116,7 +126,10 @@ export function DashboardWeeklyBriefingCard({ data }: Props) {
             </p>
             <ul className="mt-2 list-disc space-y-2 pl-5 marker:text-[#00C9B1]/55">
               {wins.map((line, idx) => (
-                <li key={`w:${idx}:${line}`} className="text-[13px] leading-relaxed text-white/72">
+                <li
+                  key={`w:${idx}:${line}`}
+                  className="text-[13px] leading-relaxed text-white/72"
+                >
                   {line}
                 </li>
               ))}
@@ -131,7 +144,10 @@ export function DashboardWeeklyBriefingCard({ data }: Props) {
             </p>
             <ul className="mt-2 list-disc space-y-2 pl-5 marker:text-amber-400/55">
               {needsAttention.map((line, idx) => (
-                <li key={`n:${idx}:${line}`} className="text-[13px] leading-relaxed text-white/72">
+                <li
+                  key={`n:${idx}:${line}`}
+                  className="text-[13px] leading-relaxed text-white/72"
+                >
                   {line}
                 </li>
               ))}
@@ -144,7 +160,9 @@ export function DashboardWeeklyBriefingCard({ data }: Props) {
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9CF5EA]/65">
               Recommended focus
             </p>
-            <p className="mt-2 text-[13px] leading-relaxed text-white/85 sm:text-[14px]">{recommendedFocus}</p>
+            <p className="mt-2 text-[13px] leading-relaxed text-white/85 sm:text-[14px]">
+              {recommendedFocus}
+            </p>
           </div>
         ) : null}
 
@@ -153,7 +171,10 @@ export function DashboardWeeklyBriefingCard({ data }: Props) {
             <div className="flex items-center justify-between gap-3 text-[11px] font-medium text-white/35">
               <span className="inline-flex items-center gap-1.5">
                 <span>Week signal strength</span>
-                <InfoHint text={TOOLTIP_BRIEFING_CONFIDENCE} buttonAriaLabel="What is week signal strength?" />
+                <InfoHint
+                  text={TOOLTIP_BRIEFING_CONFIDENCE}
+                  buttonAriaLabel="What is week signal strength?"
+                />
               </span>
               <span className="tabular-nums text-white/45">{confidence}%</span>
             </div>

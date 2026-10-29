@@ -16,7 +16,11 @@ export const InterviewMicroReaction = memo(function InterviewMicroReaction({
   if (!lines.length && !reactionText?.trim()) return null;
 
   return (
-    <div className={cn('space-y-1.5 px-5', className)} role="status" aria-live="polite">
+    <div
+      className={cn('space-y-1.5 px-5', className)}
+      role="status"
+      aria-live="polite"
+    >
       {reactionText?.trim() ? (
         <p className="text-xs italic leading-relaxed text-[var(--text-secondary)]">
           {reactionText.trim()}

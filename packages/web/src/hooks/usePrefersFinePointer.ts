@@ -7,7 +7,10 @@ export function usePrefersFinePointer(): boolean {
   const [fine, setFine] = useState(true);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    if (
+      typeof window === 'undefined' ||
+      typeof window.matchMedia !== 'function'
+    ) {
       setFine(true);
       return;
     }

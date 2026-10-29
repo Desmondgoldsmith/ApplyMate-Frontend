@@ -1,7 +1,12 @@
-import type { CvAcceptAllSummary, CvSuggestionsBulkMutationResult } from '@/lib/api';
+import type {
+  CvAcceptAllSummary,
+  CvSuggestionsBulkMutationResult,
+} from '@/lib/api';
 
 function nz(n: number | undefined): number {
-  return typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+  return typeof n === 'number' && Number.isFinite(n)
+    ? Math.max(0, Math.floor(n))
+    : 0;
 }
 
 function nzOverflowCount(r: CvSuggestionsBulkMutationResult): number {
@@ -36,14 +41,18 @@ export function buildAcceptAllSuggestionsSummaryMessage(
 ): string {
   const s: CvAcceptAllSummary | undefined = r.acceptAllSummary;
   const applied = nz(
-    s?.applied !== undefined ? s.applied : r.acceptedCount ?? fallbackAppliedCount,
+    s?.applied !== undefined
+      ? s.applied
+      : (r.acceptedCount ?? fallbackAppliedCount),
   );
   const skippedDup = nz(s?.skippedDuplicate);
   const skippedNoop = nz(s?.skippedNoop);
   const skippedBudget = nz(s?.skippedAiBudget);
   const skippedTotal = skippedDup + skippedNoop + skippedBudget;
   const failedTruth = nz(
-    s?.failedTruthfulness !== undefined ? s.failedTruthfulness : r.failedTruthfulnessCount,
+    s?.failedTruthfulness !== undefined
+      ? s.failedTruthfulness
+      : r.failedTruthfulnessCount,
   );
   const leftPending = nz(
     s?.leftPending !== undefined
@@ -62,7 +71,9 @@ export function buildAcceptAllSuggestionsSummaryMessage(
     if (skippedDup) detail.push(`${skippedDup} duplicate`);
     if (skippedNoop) detail.push(`${skippedNoop} unchanged`);
     if (skippedBudget) detail.push(`${skippedBudget} AI budget`);
-    parts.push(`${skippedTotal} skipped${detail.length ? ` (${detail.join(', ')})` : ''}`);
+    parts.push(
+      `${skippedTotal} skipped${detail.length ? ` (${detail.join(', ')})` : ''}`,
+    );
   }
   if (failedTruth > 0) {
     parts.push(`${failedTruth} failed validation`);
@@ -76,7 +87,8 @@ export function buildAcceptAllSuggestionsSummaryMessage(
     }
   }
   const aiCalls =
-    typeof r.acceptAllAiCalls === 'number' && Number.isFinite(r.acceptAllAiCalls)
+    typeof r.acceptAllAiCalls === 'number' &&
+    Number.isFinite(r.acceptAllAiCalls)
       ? Math.max(0, Math.floor(r.acceptAllAiCalls))
       : null;
   if (aiCalls === 0) {
@@ -94,10 +106,12 @@ export function buildAcceptAllSuccessToastMessage(
   r: CvSuggestionsBulkMutationResult,
   fallbackAppliedCount?: number,
 ): string {
-  const summary = buildAcceptAllSuggestionsSummaryMessage(r, fallbackAppliedCount);
+  const summary = buildAcceptAllSuggestionsSummaryMessage(
+    r,
+    fallbackAppliedCount,
+  );
   const server = r.message?.trim();
-  const base =
-    server && summary ? `${server} (${summary})` : server || summary;
+  const base = server && summary ? `${server} (${summary})` : server || summary;
   if (hasAcceptAllOverflow(r)) {
     return `${base} — click Accept All again for the rest.`;
   }
@@ -105,7 +119,9 @@ export function buildAcceptAllSuccessToastMessage(
 }
 
 /** Optional info toast when single accept auto-resolves sibling suggestions (Round 4). */
-export function buildAutoResolvedSuggestionsMessage(autoResolvedIds?: string[]): string | null {
+export function buildAutoResolvedSuggestionsMessage(
+  autoResolvedIds?: string[],
+): string | null {
   const n = autoResolvedIds?.map((id) => id.trim()).filter(Boolean).length ?? 0;
   if (n <= 0) return null;
   return `Also resolved ${n} related suggestion${n === 1 ? '' : 's'}.`;

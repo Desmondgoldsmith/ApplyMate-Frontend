@@ -42,13 +42,13 @@ If ≥80% of stems match a prior session, backend logs `interview_questions_high
 
 ## Frontend contract (unchanged — verified)
 
-| Rule | Implementation |
-|------|----------------|
-| Display server questions | `session.questions`, `turns[].questionText` via `resolveTurnQuestionText` |
-| Progress | `questionProgress.mainQuestionNumber` / `mainTotal` |
-| No client shuffle | Turn queue sorted by `order` only; no randomization |
-| Per-session cache | `interviewSessionCache` keyed by `sessionId`; React Query `['interview-session', sessionId]` |
-| Refresh resume | Pending turn from `session.turns` — intro skipped when answers exist |
+| Rule                     | Implementation                                                                               |
+| ------------------------ | -------------------------------------------------------------------------------------------- |
+| Display server questions | `session.questions`, `turns[].questionText` via `resolveTurnQuestionText`                    |
+| Progress                 | `questionProgress.mainQuestionNumber` / `mainTotal`                                          |
+| No client shuffle        | Turn queue sorted by `order` only; no randomization                                          |
+| Per-session cache        | `interviewSessionCache` keyed by `sessionId`; React Query `['interview-session', sessionId]` |
+| Refresh resume           | Pending turn from `session.turns` — intro skipped when answers exist                         |
 
 **No frontend workarounds** for duplicate questions were added or removed; variety is entirely server-side.
 
@@ -56,11 +56,11 @@ If ≥80% of stems match a prior session, backend logs `interview_questions_high
 
 ## Acceptance alignment
 
-| # | Expectation | Owner |
-|---|-------------|--------|
-| 1 | New sessions for same job → new stems (exclude prior) | Backend |
-| 2 | In-progress GET → same `questions` / turns | Backend + frontend resume |
-| 3 | Completed → new session not job-only cache | Backend |
+| #   | Expectation                                           | Owner                     |
+| --- | ----------------------------------------------------- | ------------------------- |
+| 1   | New sessions for same job → new stems (exclude prior) | Backend                   |
+| 2   | In-progress GET → same `questions` / turns            | Backend + frontend resume |
+| 3   | Completed → new session not job-only cache            | Backend                   |
 
 ---
 

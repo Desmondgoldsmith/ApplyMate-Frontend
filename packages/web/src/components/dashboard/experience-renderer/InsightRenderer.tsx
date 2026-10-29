@@ -8,9 +8,14 @@ import { insightKindLabel } from '@/components/dashboard/assistant-voice/insight
 import type { InformationalSurfaceView } from '@/lib/dashboardViewModel';
 import { cn } from '@/lib/utils';
 
-import { confidenceBandFromScore, isRecoveryVisualMode } from '@/components/dashboard/experience-renderer/experienceGrammar';
+import {
+  confidenceBandFromScore,
+  isRecoveryVisualMode,
+} from '@/components/dashboard/experience-renderer/experienceGrammar';
 
-function aggregateSurfaceConfidence(s: InformationalSurfaceView): number | null {
+function aggregateSurfaceConfidence(
+  s: InformationalSurfaceView,
+): number | null {
   const c = s.confidence;
   if (!c) return null;
   const vals = [
@@ -23,40 +28,76 @@ function aggregateSurfaceConfidence(s: InformationalSurfaceView): number | null 
   return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
 }
 
-type Variant = 'coaching' | 'analytics' | 'encouragement' | 'momentum' | 'recovery' | 'generic';
+type Variant =
+  | 'coaching'
+  | 'analytics'
+  | 'encouragement'
+  | 'momentum'
+  | 'recovery'
+  | 'generic';
 
 function inferVariant(s: InformationalSurfaceView): Variant {
-  const k = String(s.insightCategory ?? s.category ?? '').trim().toLowerCase();
+  const k = String(s.insightCategory ?? s.category ?? '')
+    .trim()
+    .toLowerCase();
   if (k.includes('coach')) return 'coaching';
   if (k.includes('analytic') || k === 'pipeline') return 'analytics';
   if (k.includes('encourag') || k.includes('celebrat')) return 'encouragement';
   if (k.includes('momentum') || k.includes('direction')) return 'momentum';
-  if (k.includes('recovery') || k.includes('burnout') || k.includes('fatigue')) return 'recovery';
+  if (k.includes('recovery') || k.includes('burnout') || k.includes('fatigue'))
+    return 'recovery';
   return 'generic';
 }
 
-function nudgeShell(variant: Variant, tone: 'quiet' | 'normal', recoveryVisual: boolean, density: 'sparse' | 'normal' | 'rich'): string {
+function nudgeShell(
+  variant: Variant,
+  tone: 'quiet' | 'normal',
+  recoveryVisual: boolean,
+  density: 'sparse' | 'normal' | 'rich',
+): string {
   const pad = density === 'sparse' ? 'p-5 sm:p-6' : 'p-4 sm:p-5';
-  const base = cn('rounded-2xl border transition-colors duration-500 ease-out', pad);
+  const base = cn(
+    'rounded-2xl border transition-colors duration-500 ease-out',
+    pad,
+  );
   if (recoveryVisual) {
     return cn(base, 'border-white/[0.05] bg-white/[0.018]');
   }
   if (variant === 'recovery') {
-    return cn(base, 'border-white/[0.06] bg-gradient-to-b from-sky-950/25 to-transparent');
+    return cn(
+      base,
+      'border-white/[0.06] bg-gradient-to-b from-sky-950/25 to-transparent',
+    );
   }
   if (variant === 'encouragement') {
-    return cn(base, 'border-amber-400/12 bg-gradient-to-b from-amber-950/20 to-transparent');
+    return cn(
+      base,
+      'border-amber-400/12 bg-gradient-to-b from-amber-950/20 to-transparent',
+    );
   }
   if (variant === 'momentum') {
-    return cn(base, 'border-[#00C9B1]/12 bg-gradient-to-b from-[#00C9B1]/[0.06] to-transparent');
+    return cn(
+      base,
+      'border-[#00C9B1]/12 bg-gradient-to-b from-[#00C9B1]/[0.06] to-transparent',
+    );
   }
   if (variant === 'analytics') {
-    return cn(base, tone === 'quiet' ? 'border-white/[0.05] bg-[#0a0e0e]' : 'border-white/[0.07] bg-white/[0.025]');
+    return cn(
+      base,
+      tone === 'quiet'
+        ? 'border-white/[0.05] bg-[#0a0e0e]'
+        : 'border-white/[0.07] bg-white/[0.025]',
+    );
   }
   if (variant === 'coaching') {
     return cn(base, 'border-violet-400/12 bg-violet-950/15');
   }
-  return cn(base, tone === 'quiet' ? 'border-white/[0.05] bg-white/[0.02]' : 'border-white/[0.07] bg-white/[0.03]');
+  return cn(
+    base,
+    tone === 'quiet'
+      ? 'border-white/[0.05] bg-white/[0.02]'
+      : 'border-white/[0.07] bg-white/[0.03]',
+  );
 }
 
 export function InsightRenderer({
@@ -77,7 +118,10 @@ export function InsightRenderer({
   const band = confidenceBandFromScore(confidence);
   const tone: 'quiet' | 'normal' =
     surface.visualWeight === 'quiet' || band === 'low' ? 'quiet' : 'normal';
-  const recoveryVisual = isRecoveryVisualMode(mode ?? null, fatigueAdjusted ?? null);
+  const recoveryVisual = isRecoveryVisualMode(
+    mode ?? null,
+    fatigueAdjusted ?? null,
+  );
 
   const kind = insightKindLabel(surface.category, surface.insightCategory);
   const title = surface.headline?.trim() || null;
@@ -102,7 +146,13 @@ export function InsightRenderer({
             <p className="text-[11px] font-medium text-[#9CF5EA]/55">{kind}</p>
           ) : null}
           {title ? (
-            <p className={cn('mt-1 text-[15px] font-medium leading-snug text-white/88')}>{title}</p>
+            <p
+              className={cn(
+                'mt-1 text-[15px] font-medium leading-snug text-white/88',
+              )}
+            >
+              {title}
+            </p>
           ) : null}
         </div>
         {onDismiss ? (
@@ -117,10 +167,17 @@ export function InsightRenderer({
         ) : null}
       </div>
       {disc?.memoryMicrocopy ? (
-        <p className="mt-3 text-[12px] leading-relaxed text-white/48">{disc.memoryMicrocopy}</p>
+        <p className="mt-3 text-[12px] leading-relaxed text-white/48">
+          {disc.memoryMicrocopy}
+        </p>
       ) : null}
       {body ? (
-        <p className={cn('mt-3 text-[13px] leading-relaxed', band === 'low' ? 'text-white/45' : 'text-white/55')}>
+        <p
+          className={cn(
+            'mt-3 text-[13px] leading-relaxed',
+            band === 'low' ? 'text-white/45' : 'text-white/55',
+          )}
+        >
           {body}
         </p>
       ) : null}
@@ -134,7 +191,13 @@ export function InsightRenderer({
             onClick={() => setOpen((v) => !v)}
           >
             Tell me more
-            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform duration-300', open && 'rotate-180')} aria-hidden />
+            <ChevronDown
+              className={cn(
+                'h-3.5 w-3.5 transition-transform duration-300',
+                open && 'rotate-180',
+              )}
+              aria-hidden
+            />
           </button>
           {open ? (
             <div className="mt-3 space-y-2.5 text-[13px] leading-relaxed text-white/48">

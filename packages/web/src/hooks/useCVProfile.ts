@@ -12,4 +12,3 @@ export function useCVProfile() {
     staleTime: 60_000,
   });
 }
-

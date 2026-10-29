@@ -36,13 +36,13 @@ The dashboard home page needs **server-authored structure and copy** so the fron
 
 After the **five stat cards** (vitals row), the frontend will render sections in this **fixed order**:
 
-| Order | Section | Show when |
-|------:|---------|-----------|
-| 1 | **Pick up where you left off** | `continuationItems.length > 0` |
-| 2 | **Latest activity** (interviews, pending results, interview prep) | `upcomingInterviews`, interview banners, or `interviewPreparationCards` |
-| 3 | **Recommended move** | `recommendedMove` / strategic recommendation resolved |
-| 4 | **Your focus** | Active focus items only (see §2) |
-| 5 | **Quiet applications** (new) | Stale items only — 21+ days no update (see §2) |
+| Order | Section                                                           | Show when                                                               |
+| ----: | ----------------------------------------------------------------- | ----------------------------------------------------------------------- |
+|     1 | **Pick up where you left off**                                    | `continuationItems.length > 0`                                          |
+|     2 | **Latest activity** (interviews, pending results, interview prep) | `upcomingInterviews`, interview banners, or `interviewPreparationCards` |
+|     3 | **Recommended move**                                              | `recommendedMove` / strategic recommendation resolved                   |
+|     4 | **Your focus**                                                    | Active focus items only (see §2)                                        |
+|     5 | **Quiet applications** (new)                                      | Stale items only — 21+ days no update (see §2)                          |
 
 Everything else (pipeline summary, CV teaser, growth, etc.) stays **below** this execution stack.
 
@@ -78,7 +78,7 @@ type DashboardStaleApplicationItemPayload = {
   supporting: string;
   /** Primary CTA */
   ctaLabel: string; // e.g. "Send follow-up" | "Archive job"
-  ctaHref: string;  // canonical Job Hub deep link — see §6
+  ctaHref: string; // canonical Job Hub deep link — see §6
   /** Secondary CTA optional */
   secondaryCtaLabel?: string | null; // e.g. "Archive instead"
   secondaryCtaHref?: string | null;
@@ -88,19 +88,21 @@ type DashboardStaleApplicationItemPayload = {
 
 **Rules:**
 
-| Rule | Detail |
-|------|--------|
-| Threshold | **21 days** (3 weeks) since last activity **after application submitted** with **no employer reply** |
-| Exclude | `rejected`, `withdrawn`, `archived`, `offer_received`, `accepted`, `ghosted` (terminal states) |
-| `focusItems` | Must **exclude** all rows that belong in `staleApplicationItems` |
+| Rule          | Detail                                                                                                                                 |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Threshold     | **21 days** (3 weeks) since last activity **after application submitted** with **no employer reply**                                   |
+| Exclude       | `rejected`, `withdrawn`, `archived`, `offer_received`, `accepted`, `ghosted` (terminal states)                                         |
+| `focusItems`  | Must **exclude** all rows that belong in `staleApplicationItems`                                                                       |
 | Section title | Provide `normalizedSectionTitles.quiet_applications` (suggested: **“Applications going quiet”** or **“Time to follow up or archive”**) |
-| Empty state | When queue empty, omit array or send `[]` — frontend hides section |
+| Empty state   | When queue empty, omit array or send `[]` — frontend hides section                                                                     |
 
 **Dashboard snapshot cap:** Return **max 2** items in `staleApplicationItems` on the home snapshot. Add:
 
 ```json
 {
-  "staleApplicationItems": [ /* max 2 */ ],
+  "staleApplicationItems": [
+    /* max 2 */
+  ],
   "staleApplicationItemsTotalCount": 7,
   "staleApplicationItemsViewAllHref": "/dashboard/quiet-applications"
 }
@@ -121,17 +123,17 @@ Users still see internal terms:
 
 Frontend fallbacks are already human-friendly when backend titles are missing:
 
-| Section key (`normalizedSectionTitles`) | Required user-facing title |
-|----------------------------------------|----------------------------|
-| `career_momentum` | **Search momentum** |
-| `predictive_outlook` | **Where your search is heading** |
-| `best_match` | **Best match** |
-| `applications` | **Applications in progress** |
-| `consistency` | **Daily streak** |
-| `focus` | **Your focus** |
-| `continuation` | **Pick up where you left off** |
-| `recommended_move` | **Recommended move** |
-| `quiet_applications` | **Applications going quiet** (new) |
+| Section key (`normalizedSectionTitles`) | Required user-facing title         |
+| --------------------------------------- | ---------------------------------- |
+| `career_momentum`                       | **Search momentum**                |
+| `predictive_outlook`                    | **Where your search is heading**   |
+| `best_match`                            | **Best match**                     |
+| `applications`                          | **Applications in progress**       |
+| `consistency`                           | **Daily streak**                   |
+| `focus`                                 | **Your focus**                     |
+| `continuation`                          | **Pick up where you left off**     |
+| `recommended_move`                      | **Recommended move**               |
+| `quiet_applications`                    | **Applications going quiet** (new) |
 
 **Backend action:**
 
@@ -151,14 +153,14 @@ Continuation rows can show `lastActiveLabel`, but focus items, recommended move,
 
 Add ISO timestamp + optional preformatted label on **every** home-page row type:
 
-| Queue | Fields to add / enforce |
-|-------|-------------------------|
-| `continuationItems` | `lastActiveAt` (ISO, required for sort), `lastActiveLabel` (e.g. `"2 hours ago"`) |
-| `focusItems` | `lastActivityAt`, `lastActivityLabel` |
-| `staleApplicationItems` | `lastActivityAt`, `lastActivityLabel`, `daysSinceActivity` |
-| `upcomingInterviews` | Already has `lastUpdatedAt` — also send `lastUpdatedLabel` |
-| `interviewPreparationCards` | `lastActivityAt`, `lastActivityLabel` |
-| Recommended move | `generatedAt` or `relevantActivityAt` + label on strategic recommendation payload |
+| Queue                       | Fields to add / enforce                                                           |
+| --------------------------- | --------------------------------------------------------------------------------- |
+| `continuationItems`         | `lastActiveAt` (ISO, required for sort), `lastActiveLabel` (e.g. `"2 hours ago"`) |
+| `focusItems`                | `lastActivityAt`, `lastActivityLabel`                                             |
+| `staleApplicationItems`     | `lastActivityAt`, `lastActivityLabel`, `daysSinceActivity`                        |
+| `upcomingInterviews`        | Already has `lastUpdatedAt` — also send `lastUpdatedLabel`                        |
+| `interviewPreparationCards` | `lastActivityAt`, `lastActivityLabel`                                             |
+| Recommended move            | `generatedAt` or `relevantActivityAt` + label on strategic recommendation payload |
 
 **Formatting rules (backend or shared contract):**
 
@@ -201,10 +203,10 @@ For applications **≥ 21 days** since submit with **no employer reply**:
 
 **CTAs:**
 
-| CTA | Label | When |
-|-----|-------|------|
-| Primary | `Send follow-up` | Default when follow-up is appropriate |
-| Secondary | `Archive job` | Always available |
+| CTA       | Label            | When                                  |
+| --------- | ---------------- | ------------------------------------- |
+| Primary   | `Send follow-up` | Default when follow-up is appropriate |
+| Secondary | `Archive job`    | Always available                      |
 
 **Do not:**
 
@@ -237,8 +239,8 @@ When the user taps **Send follow-up**, the frontend will open Job Hub with:
 
 Frontend alias map (`jobHubEmailTemplates.ts`):
 
-| Query `template` | API `templateType` |
-|------------------|-------------------|
+| Query `template`        | API `templateType`        |
+| ----------------------- | ------------------------- |
 | `follow-up-no-response` | `follow_up_after_silence` |
 
 **Backend action:** Set `ctaHref` on stale/follow-up rows to the canonical URL above. Do not rely on frontend to inject query params.
@@ -255,8 +257,8 @@ Whenever the user opens a job/application that meets the **21-day stale** rule, 
 type StaleApplicationNoticePayload = {
   show: boolean;
   daysSinceActivity: number;
-  headline: string;    // e.g. "No updates in 24 days"
-  supporting: string;  // archive vs follow-up guidance
+  headline: string; // e.g. "No updates in 24 days"
+  supporting: string; // archive vs follow-up guidance
   primaryCtaLabel: string;
   primaryCtaHref: string;
   secondaryCtaLabel?: string | null;
@@ -277,13 +279,13 @@ Frontend will render a calm banner (not blocking) at the top of Job Hub detail �
 
 Frontend will cap display at **2 items** per section on the dashboard home. Backend should:
 
-| Field | Cap on home snapshot | Total count field | View-all href |
-|-------|---------------------|-------------------|---------------|
-| `continuationItems` | 2 | `continuationCount` (existing) | `/dashboard/continuation` (existing) |
-| `focusItems` | 2 | `focusItemsTotalCount` (new) | `/dashboard/focus` (existing) |
-| `staleApplicationItems` | 2 | `staleApplicationItemsTotalCount` (new) | `/dashboard/quiet-applications` (new) |
-| `upcomingInterviews` | 2 | `upcomingInterviewCount` (existing) | existing interviews routes |
-| `followUpJobs` | 2 | `followUpJobsTotalCount` (existing) | existing |
+| Field                   | Cap on home snapshot | Total count field                       | View-all href                         |
+| ----------------------- | -------------------- | --------------------------------------- | ------------------------------------- |
+| `continuationItems`     | 2                    | `continuationCount` (existing)          | `/dashboard/continuation` (existing)  |
+| `focusItems`            | 2                    | `focusItemsTotalCount` (new)            | `/dashboard/focus` (existing)         |
+| `staleApplicationItems` | 2                    | `staleApplicationItemsTotalCount` (new) | `/dashboard/quiet-applications` (new) |
+| `upcomingInterviews`    | 2                    | `upcomingInterviewCount` (existing)     | existing interviews routes            |
+| `followUpJobs`          | 2                    | `followUpJobsTotalCount` (existing)     | existing                              |
 
 Return items **already sorted** by priority/recency. Frontend will not re-rank beyond defensive dedupe.
 
@@ -399,11 +401,11 @@ Frontend will integrate from that doc.
 
 ## References (frontend)
 
-| Area | Path |
-|------|------|
-| Dashboard orchestrator | `packages/web/src/components/dashboard/overview/DashboardOverviewContent.tsx` |
-| Focus merge (legacy) | `packages/web/src/lib/dashboardFocusMerge.ts` |
-| Client stale nudge (to retire) | `packages/web/src/lib/dashboardStaleApplicationNudges.ts` |
-| Job Hub template deep links | `packages/web/src/app/(dashboard)/dashboard/jobs/jobHubEmailTemplates.ts` |
-| Today-plan types | `packages/web/src/lib/today-plan.ts` |
-| Follow-up copy sanitizers | `packages/web/src/lib/dashboardCommandCopy.ts` |
+| Area                           | Path                                                                          |
+| ------------------------------ | ----------------------------------------------------------------------------- |
+| Dashboard orchestrator         | `packages/web/src/components/dashboard/overview/DashboardOverviewContent.tsx` |
+| Focus merge (legacy)           | `packages/web/src/lib/dashboardFocusMerge.ts`                                 |
+| Client stale nudge (to retire) | `packages/web/src/lib/dashboardStaleApplicationNudges.ts`                     |
+| Job Hub template deep links    | `packages/web/src/app/(dashboard)/dashboard/jobs/jobHubEmailTemplates.ts`     |
+| Today-plan types               | `packages/web/src/lib/today-plan.ts`                                          |
+| Follow-up copy sanitizers      | `packages/web/src/lib/dashboardCommandCopy.ts`                                |

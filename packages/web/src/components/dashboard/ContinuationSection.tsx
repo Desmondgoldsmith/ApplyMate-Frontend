@@ -8,7 +8,10 @@ import type { ReactNode } from 'react';
 import { DashboardCollapsibleSection } from '@/components/dashboard/DashboardCollapsibleSection';
 import { cleanAiText } from '@/lib/dashboardDisplayCopy';
 import { mapApiContinuationHref } from '@/lib/executionRouting';
-import { sortContinuationItemsNewestFirst, type DashboardContinuationItemPayload } from '@/lib/today-plan';
+import {
+  sortContinuationItemsNewestFirst,
+  type DashboardContinuationItemPayload,
+} from '@/lib/today-plan';
 import { cn } from '@/lib/utils';
 
 const TYPE_LABELS: Record<DashboardContinuationItemPayload['type'], string> = {
@@ -20,14 +23,15 @@ const TYPE_LABELS: Record<DashboardContinuationItemPayload['type'], string> = {
   follow_up: 'Follow-up',
 };
 
-const TYPE_ICON: Record<DashboardContinuationItemPayload['type'], LucideIcon> = {
-  cv: FileText,
-  analysis: Search,
-  application: Briefcase,
-  interview: Mic2,
-  cover_letter: PenLine,
-  follow_up: Mail,
-};
+const TYPE_ICON: Record<DashboardContinuationItemPayload['type'], LucideIcon> =
+  {
+    cv: FileText,
+    analysis: Search,
+    application: Briefcase,
+    interview: Mic2,
+    cover_letter: PenLine,
+    follow_up: Mail,
+  };
 
 /** Visible estimate for `estimatedMinutes` — always names what the time is for. */
 function continuationTimeEstimateLabel(
@@ -68,10 +72,15 @@ function activityPillClass(last: string): string {
   return 'border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] text-[var(--text-secondary)]';
 }
 
-function ContinuationMeta({ item }: { item: DashboardContinuationItemPayload }) {
+function ContinuationMeta({
+  item,
+}: {
+  item: DashboardContinuationItemPayload;
+}) {
   const last = item.lastActiveLabel?.trim() ?? '';
   const mins =
-    typeof item.estimatedMinutes === 'number' && Number.isFinite(item.estimatedMinutes)
+    typeof item.estimatedMinutes === 'number' &&
+    Number.isFinite(item.estimatedMinutes)
       ? Math.round(item.estimatedMinutes)
       : null;
 
@@ -80,7 +89,10 @@ function ContinuationMeta({ item }: { item: DashboardContinuationItemPayload }) 
     segments.push(
       <span
         key="last"
-        className={cn('rounded-full px-2 py-0.5 text-[11px] font-medium', activityPillClass(last))}
+        className={cn(
+          'rounded-full px-2 py-0.5 text-[11px] font-medium',
+          activityPillClass(last),
+        )}
       >
         {last}
       </span>,
@@ -102,7 +114,11 @@ function ContinuationMeta({ item }: { item: DashboardContinuationItemPayload }) 
   const withDots = segments.reduce<ReactNode[]>((acc, el, i) => {
     if (i > 0)
       acc.push(
-        <span key={`dot-${i}`} className="text-[var(--text-muted)] opacity-50" aria-hidden>
+        <span
+          key={`dot-${i}`}
+          className="text-[var(--text-muted)] opacity-50"
+          aria-hidden
+        >
           {' '}
           ·{' '}
         </span>,
@@ -112,11 +128,17 @@ function ContinuationMeta({ item }: { item: DashboardContinuationItemPayload }) 
   }, []);
 
   return (
-    <p className="mt-2 flex flex-wrap items-center gap-x-1 gap-y-1.5 text-[11px] font-medium">{withDots}</p>
+    <p className="mt-2 flex flex-wrap items-center gap-x-1 gap-y-1.5 text-[11px] font-medium">
+      {withDots}
+    </p>
   );
 }
 
-function ContinuationTaskCard({ item }: { item: DashboardContinuationItemPayload }) {
+function ContinuationTaskCard({
+  item,
+}: {
+  item: DashboardContinuationItemPayload;
+}) {
   const title = cleanAiText(item.title.trim());
   const subtitle = cleanAiText(item.subtitle?.trim() ?? '');
   const description = cleanAiText(item.description.trim());
@@ -141,12 +163,18 @@ function ContinuationTaskCard({ item }: { item: DashboardContinuationItemPayload
           <Icon className="h-4 w-4" strokeWidth={2} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-semibold leading-snug text-[var(--text-primary)] max-[480px]:whitespace-normal max-[480px]:line-clamp-2 sm:truncate">{title}</p>
+          <p className="truncate text-[14px] font-semibold leading-snug text-[var(--text-primary)] max-[480px]:whitespace-normal max-[480px]:line-clamp-2 sm:truncate">
+            {title}
+          </p>
           {subtitle ? (
-            <p className="text-[12px] font-medium leading-snug text-[var(--text-secondary)] max-[480px]:whitespace-normal max-[480px]:line-clamp-2 sm:truncate">{subtitle}</p>
+            <p className="text-[12px] font-medium leading-snug text-[var(--text-secondary)] max-[480px]:whitespace-normal max-[480px]:line-clamp-2 sm:truncate">
+              {subtitle}
+            </p>
           ) : null}
           {description ? (
-            <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">{description}</p>
+            <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+              {description}
+            </p>
           ) : null}
           <ContinuationMeta item={item} />
         </div>
@@ -166,7 +194,10 @@ function ContinuationTaskCard({ item }: { item: DashboardContinuationItemPayload
 
 const DASHBOARD_CONTINUATION_HOME_CAP = 2;
 
-export function ContinuationSection({ items, continuationCount }: ContinuationSectionProps) {
+export function ContinuationSection({
+  items,
+  continuationCount,
+}: ContinuationSectionProps) {
   if (!items.length) return null;
 
   const sorted = sortContinuationItemsNewestFirst(items);
@@ -184,7 +215,9 @@ export function ContinuationSection({ items, continuationCount }: ContinuationSe
     >
       <span>View all →</span>
       {moreInQueue > 0 ? (
-        <span className="font-normal text-[var(--text-muted)]">(+{moreInQueue} more)</span>
+        <span className="font-normal text-[var(--text-muted)]">
+          (+{moreInQueue} more)
+        </span>
       ) : null}
     </Link>
   ) : null;
@@ -205,6 +238,8 @@ export function ContinuationSection({ items, continuationCount }: ContinuationSe
   );
 }
 
-export function continuationTypeLabel(type: DashboardContinuationItemPayload['type']): string {
+export function continuationTypeLabel(
+  type: DashboardContinuationItemPayload['type'],
+): string {
   return TYPE_LABELS[type] ?? type;
 }

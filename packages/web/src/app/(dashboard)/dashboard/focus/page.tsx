@@ -31,11 +31,18 @@ function FocusTable({ items }: { items: FocusItem[] }) {
         </thead>
         <tbody>
           {items.map((it) => (
-            <tr key={it.id} className="border-b border-white/[0.05] transition-colors hover:bg-white/[0.03]">
+            <tr
+              key={it.id}
+              className="border-b border-white/[0.05] transition-colors hover:bg-white/[0.03]"
+            >
               <td className="max-w-[220px] px-4 py-3.5 pl-5 align-middle">
-                <p className="text-[13px] font-semibold text-white/90">{it.title}</p>
+                <p className="text-[13px] font-semibold text-white/90">
+                  {it.title}
+                </p>
                 {it.metaLine?.trim() ? (
-                  <p className="mt-0.5 text-[11px] text-white/40">{it.metaLine}</p>
+                  <p className="mt-0.5 text-[11px] text-white/40">
+                    {it.metaLine}
+                  </p>
                 ) : null}
               </td>
               <td className="max-w-md px-4 py-3.5 align-middle text-[12px] leading-relaxed text-white/50">
@@ -102,9 +109,12 @@ export default function DashboardFocusPage() {
   return (
     <div className="w-full min-w-0 max-w-full space-y-4 overflow-x-hidden sm:space-y-5">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">Your Focus</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
+          Your Focus
+        </h1>
         <p className="mt-1 max-w-2xl text-sm text-white/45">
-          Ranked actions from your focus feed — same rules as the dashboard snapshot, with search and pagination.
+          Ranked actions from your focus feed — same rules as the dashboard
+          snapshot, with search and pagination.
         </p>
       </div>
 
@@ -122,14 +132,20 @@ export default function DashboardFocusPage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="sr-only">View mode</span>
-          <div className="flex rounded-xl border border-white/12 p-0.5" role="group" aria-label="View mode">
+          <div
+            className="flex rounded-xl border border-white/12 p-0.5"
+            role="group"
+            aria-label="View mode"
+          >
             <button
               type="button"
               title="Table"
               onClick={() => setView('list')}
               className={cn(
                 'rounded-lg p-2 transition-colors',
-                view === 'list' ? 'bg-[#00C9B1]/20 text-[#00C9B1]' : 'text-white/45 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]',
+                view === 'list'
+                  ? 'bg-[#00C9B1]/20 text-[#00C9B1]'
+                  : 'text-white/45 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]',
               )}
             >
               <List className="h-4 w-4" />
@@ -140,7 +156,9 @@ export default function DashboardFocusPage() {
               onClick={() => setView('board')}
               className={cn(
                 'rounded-lg p-2 transition-colors',
-                view === 'board' ? 'bg-[#00C9B1]/20 text-[#00C9B1]' : 'text-white/45 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]',
+                view === 'board'
+                  ? 'bg-[#00C9B1]/20 text-[#00C9B1]'
+                  : 'text-white/45 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]',
               )}
             >
               <LayoutGrid className="h-4 w-4" />
@@ -153,18 +171,30 @@ export default function DashboardFocusPage() {
         <ListPageShimmer cardCount={6} tableRows={8} />
       ) : focusQuery.isError ? (
         <GlowCard contentClassName="p-6">
-          <p className="text-sm text-rose-200">Could not load your focus list.</p>
-          <Button className="mt-4" variant="ghost" onClick={() => void focusQuery.refetch()}>
+          <p className="text-sm text-rose-200">
+            Could not load your focus list.
+          </p>
+          <Button
+            className="mt-4"
+            variant="ghost"
+            onClick={() => void focusQuery.refetch()}
+          >
             Retry
           </Button>
         </GlowCard>
       ) : pagination.total === 0 ? (
         <GlowCard contentClassName="flex min-h-[200px] flex-col items-center justify-center p-8 text-center">
-          <p className="text-lg font-semibold text-white/90">No focus actions right now</p>
-          <p className="mt-2 max-w-md text-sm text-white/45">
-            When the service has ranked steps for you, they appear here. Check your dashboard for the latest snapshot.
+          <p className="text-lg font-semibold text-white/90">
+            No focus actions right now
           </p>
-          <Button asChild className="mt-6 bg-[#00C9B1] text-[#080A0A] hover:bg-[#00C9B1]">
+          <p className="mt-2 max-w-md text-sm text-white/45">
+            When the service has ranked steps for you, they appear here. Check
+            your dashboard for the latest snapshot.
+          </p>
+          <Button
+            asChild
+            className="mt-6 bg-[#00C9B1] text-[#080A0A] hover:bg-[#00C9B1]"
+          >
             <Link href="/dashboard">Back to dashboard</Link>
           </Button>
         </GlowCard>

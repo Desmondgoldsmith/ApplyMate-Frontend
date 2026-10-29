@@ -18,7 +18,8 @@ export function jobAnalyzeCandidateLocationFields(input: {
     input.cvProfileLocation?.trim() ||
     '';
 
-  const candidateCountryCode = input.detectedCountryCode?.trim().toUpperCase() ?? '';
+  const candidateCountryCode =
+    input.detectedCountryCode?.trim().toUpperCase() ?? '';
 
   const out: JobAnalyzeCandidateLocationFields = {};
   if (candidateLocation) out.candidateLocation = candidateLocation;

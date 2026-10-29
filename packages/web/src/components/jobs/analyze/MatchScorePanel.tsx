@@ -34,7 +34,10 @@ export function MatchScorePanel({
   onTailorFirst,
   onApplyNow,
 }: MatchScorePanelProps) {
-  const scoreBefore = displayScoreBeforeTailorForAnalysis(analysis, displayScoreBeforeTailor);
+  const scoreBefore = displayScoreBeforeTailorForAnalysis(
+    analysis,
+    displayScoreBeforeTailor,
+  );
 
   return (
     <>

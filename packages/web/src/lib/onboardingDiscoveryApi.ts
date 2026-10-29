@@ -35,7 +35,10 @@ export function buildOnboardingDiscoveryApiFields(opts: {
 }): OnboardingDiscoveryApiFields | null {
   if (!opts.jobSearchUrgency) return null;
   const targetRoles = parseTargetRolesList(opts.targetRolesText);
-  if (opts.referralSkipped === true || opts.referralSource.trim() === 'Skipped') {
+  if (
+    opts.referralSkipped === true ||
+    opts.referralSource.trim() === 'Skipped'
+  ) {
     return {
       focusGetHired: opts.focusHired,
       focusStudentLaunchpad: opts.focusStudent,

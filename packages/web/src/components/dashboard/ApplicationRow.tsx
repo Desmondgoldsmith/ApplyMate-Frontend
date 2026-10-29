@@ -29,4 +29,3 @@ export function ApplicationRow({
     </div>
   );
 }
-

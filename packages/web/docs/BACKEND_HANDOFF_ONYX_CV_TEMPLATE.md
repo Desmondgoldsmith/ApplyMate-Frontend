@@ -10,13 +10,13 @@
 
 Remove PDF/export support for these template IDs (frontend no longer offers them):
 
-| Template ID (legacy) | Notes |
-|----------------------|--------|
+| Template ID (legacy)                    | Notes            |
+| --------------------------------------- | ---------------- |
 | `europass_classic` / `europass-classic` | Europass Classic |
-| `europass_modern` / `europass-modern` | Europass Modern |
-| `french_cv` / `french-cv` | French CV |
-| `german_cv` / `german-cv` | German CV |
-| `uk_cv` / `uk-cv` | UK CV |
+| `europass_modern` / `europass-modern`   | Europass Modern  |
+| `french_cv` / `french-cv`               | French CV        |
+| `german_cv` / `german-cv`               | German CV        |
+| `uk_cv` / `uk-cv`                       | UK CV            |
 
 **Migration:** Existing profiles saved with a removed template should fall back to `classic` (or prompt the user to pick a new template). Do not silently render with a broken layout.
 
@@ -45,21 +45,21 @@ Match the attached screenshot pixel-for-pixel where possible (spacing, weights, 
 
 ## 3. Page & layout dimensions
 
-| Property | Value |
-|----------|--------|
-| Page size | **A4** — 210 × 297 mm |
+| Property                | Value                                 |
+| ----------------------- | ------------------------------------- |
+| Page size               | **A4** — 210 × 297 mm                 |
 | Frontend preview canvas | **794 × 1123 px** (96 DPI equivalent) |
-| Sidebar width | **35%** of content width |
-| Main column width | **65%** (flex remainder) |
-| Min page height | Full A4 (1123 px in preview) |
-| Outer max width | 794 px centered |
+| Sidebar width           | **35%** of content width              |
+| Main column width       | **65%** (flex remainder)              |
+| Min page height         | Full A4 (1123 px in preview)          |
+| Outer max width         | 794 px centered                       |
 
 ### Column padding
 
-| Area | Padding |
-|------|---------|
-| Sidebar | `px-5 py-6` → **~20 px** horizontal, **~24 px** vertical |
-| Main header band | `px-6 py-5` → **~24 px** horizontal, **~20 px** vertical |
+| Area               | Padding                                                  |
+| ------------------ | -------------------------------------------------------- |
+| Sidebar            | `px-5 py-6` → **~20 px** horizontal, **~24 px** vertical |
+| Main header band   | `px-6 py-5` → **~24 px** horizontal, **~20 px** vertical |
 | Main body sections | `px-6 py-5` → **~24 px** horizontal, **~20 px** vertical |
 
 ### Section spacing
@@ -72,18 +72,18 @@ Match the attached screenshot pixel-for-pixel where possible (spacing, weights, 
 
 ## 4. Colors
 
-| Token | Hex | Usage |
-|-------|-----|--------|
-| `ONYX_SIDEBAR` | `#313131` | Left sidebar background |
-| `ONYX_HEADER` | `#EBEBEB` | Name / headline header band (right column top) |
-| `ONYX_TEXT` | `#333333` | Primary body text (main column) |
-| Sidebar text | `#FFFFFF` | All sidebar copy |
-| Sidebar muted text | `white @ 95% opacity` | Summary body |
-| Sidebar contact text | `white @ 90% opacity` | Phone / email / location rows |
-| Sidebar rules | `white @ 40% opacity` | Under section titles |
-| Main column rules | `#333 @ 30% opacity` | Under section titles |
-| Hyperlinks | `#1D4ED8` | Underlined links in rich text |
-| Photo border | `white @ 20% opacity` | Circle photo ring |
+| Token                | Hex                   | Usage                                          |
+| -------------------- | --------------------- | ---------------------------------------------- |
+| `ONYX_SIDEBAR`       | `#313131`             | Left sidebar background                        |
+| `ONYX_HEADER`        | `#EBEBEB`             | Name / headline header band (right column top) |
+| `ONYX_TEXT`          | `#333333`             | Primary body text (main column)                |
+| Sidebar text         | `#FFFFFF`             | All sidebar copy                               |
+| Sidebar muted text   | `white @ 95% opacity` | Summary body                                   |
+| Sidebar contact text | `white @ 90% opacity` | Phone / email / location rows                  |
+| Sidebar rules        | `white @ 40% opacity` | Under section titles                           |
+| Main column rules    | `#333 @ 30% opacity`  | Under section titles                           |
+| Hyperlinks           | `#1D4ED8`             | Underlined links in rich text                  |
+| Photo border         | `white @ 20% opacity` | Circle photo ring                              |
 
 ---
 
@@ -91,31 +91,31 @@ Match the attached screenshot pixel-for-pixel where possible (spacing, weights, 
 
 **Font family:** [Montserrat](https://fonts.google.com/specimen/Montserrat) (Google Fonts)
 
-| Weight | CSS | Used for |
-|--------|-----|----------|
-| 300 | Light | First name part in header |
-| 400 | Regular | Headline, company names, body |
-| 500 | Medium | — |
-| 600 | Semibold | Section titles, school names |
-| 700 | Bold | Last name, job titles, reference names, bold labels |
+| Weight | CSS      | Used for                                            |
+| ------ | -------- | --------------------------------------------------- |
+| 300    | Light    | First name part in header                           |
+| 400    | Regular  | Headline, company names, body                       |
+| 500    | Medium   | —                                                   |
+| 600    | Semibold | Section titles, school names                        |
+| 700    | Bold     | Last name, job titles, reference names, bold labels |
 
 ### Type scale (pt → use same ratios in PDF)
 
-| Element | Size | Weight | Case | Notes |
-|---------|------|--------|------|-------|
-| Full name | **18 pt** | 300 + 700 split | UPPERCASE | First word(s) light, last word bold |
-| Headline / job title (header) | **10 pt** | 400 | Sentence | Below name in gray band |
-| Sidebar section titles | **11 pt** | 600 | UPPERCASE | White + bottom border |
-| Main section titles | **11 pt** | 600 | UPPERCASE | `#333` + bottom border |
-| Sidebar summary | **9 pt** | 400 | — | Line-height ~1.625 |
-| Sidebar contact rows | **8.5 pt** | 400 | — | Icon + text, 12 px icon |
-| Sidebar education / skills | **9 pt** | 400–600 | — | School bold, dates regular |
-| Experience job title | **9 pt** | 700 | — | Left on row 1 |
-| Experience dates | **9 pt** | 400 italic | — | Right-aligned on row 1 |
-| Experience company | **9 pt** | 400 | — | Row 2 |
-| Experience bullets | **9 pt** | 400 | — | Disc list, outside marker |
-| References | **9 pt** | 400 / 700 | — | Name bold; “Phone:” / “Email:” labels bold |
-| Default body | **9.5 pt** | 400 | — | Base document size |
+| Element                       | Size       | Weight          | Case      | Notes                                      |
+| ----------------------------- | ---------- | --------------- | --------- | ------------------------------------------ |
+| Full name                     | **18 pt**  | 300 + 700 split | UPPERCASE | First word(s) light, last word bold        |
+| Headline / job title (header) | **10 pt**  | 400             | Sentence  | Below name in gray band                    |
+| Sidebar section titles        | **11 pt**  | 600             | UPPERCASE | White + bottom border                      |
+| Main section titles           | **11 pt**  | 600             | UPPERCASE | `#333` + bottom border                     |
+| Sidebar summary               | **9 pt**   | 400             | —         | Line-height ~1.625                         |
+| Sidebar contact rows          | **8.5 pt** | 400             | —         | Icon + text, 12 px icon                    |
+| Sidebar education / skills    | **9 pt**   | 400–600         | —         | School bold, dates regular                 |
+| Experience job title          | **9 pt**   | 700             | —         | Left on row 1                              |
+| Experience dates              | **9 pt**   | 400 italic      | —         | Right-aligned on row 1                     |
+| Experience company            | **9 pt**   | 400             | —         | Row 2                                      |
+| Experience bullets            | **9 pt**   | 400             | —         | Disc list, outside marker                  |
+| References                    | **9 pt**   | 400 / 700       | —         | Name bold; “Phone:” / “Email:” labels bold |
+| Default body                  | **9.5 pt** | 400             | —         | Base document size                         |
 
 **Letter-spacing:** Section titles use slight tracking (`tracking-wide` / ~0.05 em).
 
@@ -281,22 +281,22 @@ Default English labels: About Me, Education, Skills, Experience, References. Use
 
 ## 12. Frontend implementation reference
 
-| File | Purpose |
-|------|---------|
+| File                                                          | Purpose                                                                      |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | `packages/web/src/components/cv/templates/OnyxCvDocument.tsx` | Full layout + styling constants (`ONYX_SIDEBAR`, `ONYX_HEADER`, `ONYX_TEXT`) |
-| `packages/web/src/lib/cvBuilder.ts` | Template ID `onyx`, sample data `cvOnyxTemplatePreviewSampleData()` |
-| `packages/web/public/cv-templates/onyx-preview-reference.png` | Visual reference screenshot |
+| `packages/web/src/lib/cvBuilder.ts`                           | Template ID `onyx`, sample data `cvOnyxTemplatePreviewSampleData()`          |
+| `packages/web/public/cv-templates/onyx-preview-reference.png` | Visual reference screenshot                                                  |
 
 Export constants for PDF engine:
 
 ```typescript
-ONYX_SIDEBAR = '#313131'
-ONYX_HEADER = '#EBEBEB'
-ONYX_TEXT   = '#333333'
-FONT        = 'Montserrat'
-SIDEBAR_WIDTH_RATIO = 0.35
-PAGE_WIDTH_PX = 794
-PAGE_HEIGHT_PX = 1123
+ONYX_SIDEBAR = '#313131';
+ONYX_HEADER = '#EBEBEB';
+ONYX_TEXT = '#333333';
+FONT = 'Montserrat';
+SIDEBAR_WIDTH_RATIO = 0.35;
+PAGE_WIDTH_PX = 794;
+PAGE_HEIGHT_PX = 1123;
 ```
 
 ---

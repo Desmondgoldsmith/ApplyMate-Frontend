@@ -9,7 +9,7 @@ Failed to proxy http://localhost:3000/api/analytics/events Error: socket hang up
 ```
 
 **Frontend status:** ✅ Mitigations shipped (see below)  
-**Backend status:** Action needed — root cause is upstream Nest, not Next.js routing  
+**Backend status:** Action needed — root cause is upstream Nest, not Next.js routing
 
 ---
 
@@ -29,9 +29,9 @@ This is **not** a CORS issue and **not** a missing route (those return 404/405 w
 
 ## Endpoints seen failing (prioritize these)
 
-| Endpoint | Typical trigger |
-|----------|-----------------|
-| `GET /api/jobs/:id` | Job Hub detail, analyzer load, row prefetch |
+| Endpoint                     | Typical trigger                              |
+| ---------------------------- | -------------------------------------------- |
+| `GET /api/jobs/:id`          | Job Hub detail, analyzer load, row prefetch  |
 | `POST /api/analytics/events` | Funnel / product analytics (fire-and-forget) |
 
 When **multiple job IDs** fail in one page view, Nest is likely **serially blocking** or ** crashing on repeated detail loads** — not separate frontend bugs.
@@ -90,12 +90,12 @@ Frontend can use this later for a “API unavailable” banner.
 
 ## Frontend mitigations (shipped)
 
-| Change | Purpose |
-|--------|---------|
-| `app/backend-api/[...path]/route.ts` | Replaces Next **rewrite** proxy — 90s timeout, returns **502 JSON** instead of raw `ECONNRESET` spam |
-| `axios` 90s timeout + `isBackendConnectionError()` | Clear user message; no infinite hang |
-| `shouldRetryFailedQuery` | **No retries** on ECONNRESET / 502 / 503 — stops amplifying a dying backend |
-| Exponential `retryDelay` | Reduces burst load on transient 5xx |
+| Change                                             | Purpose                                                                                              |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `app/backend-api/[...path]/route.ts`               | Replaces Next **rewrite** proxy — 90s timeout, returns **502 JSON** instead of raw `ECONNRESET` spam |
+| `axios` 90s timeout + `isBackendConnectionError()` | Clear user message; no infinite hang                                                                 |
+| `shouldRetryFailedQuery`                           | **No retries** on ECONNRESET / 502 / 503 — stops amplifying a dying backend                          |
+| Exponential `retryDelay`                           | Reduces burst load on transient 5xx                                                                  |
 
 After pulling frontend changes, restart **`npm run dev`** in `packages/web` so the new route handler is active.
 

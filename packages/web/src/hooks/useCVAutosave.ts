@@ -97,7 +97,11 @@ export function useCVAutosave(props: UseCVAutosaveParams): UseCVAutosaveResult {
   const flushDashboardAutosave = useCallback(async () => {
     if (mode !== 'dashboard' || !profileId?.trim()) return;
     if (contentConflictRef.current) return;
-    const fp = computeCvBuilderSaveFingerprint(dataRef.current, templateRef.current, sectionsRef.current);
+    const fp = computeCvBuilderSaveFingerprint(
+      dataRef.current,
+      templateRef.current,
+      sectionsRef.current,
+    );
     if (fp === lastPersistedFingerprintRef.current) {
       setDirty(false);
       setSaveStatus('idle');
@@ -111,25 +115,35 @@ export function useCVAutosave(props: UseCVAutosaveParams): UseCVAutosaveResult {
     setSaveStatus('saving');
     const t0 = performance.now();
     try {
-      const res = await saveCVBuilderData(dataRef.current, sectionsRef.current, {
-        template: templateRef.current,
-        cvProfileId: profileId ?? undefined,
-        contentVersionRef,
-      });
+      const res = await saveCVBuilderData(
+        dataRef.current,
+        sectionsRef.current,
+        {
+          template: templateRef.current,
+          cvProfileId: profileId ?? undefined,
+          contentVersionRef,
+        },
+      );
       logCvBuilderSavePerfDev('autosave.flush', t0, {
         usedBatch: res.usedBatch,
         updated: res.batch?.updated,
         unchanged: res.batch?.unchanged,
       });
-      const sectionRowsForFp = res.sections && res.sections.length > 0 ? res.sections : sectionsRef.current;
+      const sectionRowsForFp =
+        res.sections && res.sections.length > 0
+          ? res.sections
+          : sectionsRef.current;
       lastPersistedFingerprintRef.current = computeCvBuilderSaveFingerprint(
         dataRef.current,
         templateRef.current,
         sectionRowsForFp,
       );
       const stillDirty =
-        computeCvBuilderSaveFingerprint(dataRef.current, templateRef.current, sectionsRef.current) !==
-        lastPersistedFingerprintRef.current;
+        computeCvBuilderSaveFingerprint(
+          dataRef.current,
+          templateRef.current,
+          sectionsRef.current,
+        ) !== lastPersistedFingerprintRef.current;
       setDirty(stillDirty);
       setSaveStatus(stillDirty ? 'dirty' : 'saved');
       await Promise.resolve(onDashboardSavedRef.current?.(res));
@@ -160,8 +174,21 @@ export function useCVAutosave(props: UseCVAutosaveParams): UseCVAutosaveResult {
   useEffect(() => {
     if (mode !== 'dashboard' || !profileId?.trim()) return;
     if (dirty) return;
-    lastPersistedFingerprintRef.current = computeCvBuilderSaveFingerprint(data, selectedTemplate, sectionsRef.current);
-  }, [mode, profileId, dirty, data, selectedTemplate, cvSectionRowsSig, lastPersistedFingerprintRef, sectionsRef]);
+    lastPersistedFingerprintRef.current = computeCvBuilderSaveFingerprint(
+      data,
+      selectedTemplate,
+      sectionsRef.current,
+    );
+  }, [
+    mode,
+    profileId,
+    dirty,
+    data,
+    selectedTemplate,
+    cvSectionRowsSig,
+    lastPersistedFingerprintRef,
+    sectionsRef,
+  ]);
 
   useEffect(() => {
     if (mode !== 'dashboard' || !dirty) return;
@@ -173,9 +200,19 @@ export function useCVAutosave(props: UseCVAutosaveParams): UseCVAutosaveResult {
       void flushDashboardAutosave();
     }, 800);
     return () => {
-      if (autosaveTimerRef.current) window.clearTimeout(autosaveTimerRef.current);
+      if (autosaveTimerRef.current)
+        window.clearTimeout(autosaveTimerRef.current);
     };
-  }, [data, mode, dirty, isDiffOverlayOpen, selectedTemplate, profileId, flushDashboardAutosave, setSaveStatus]);
+  }, [
+    data,
+    mode,
+    dirty,
+    isDiffOverlayOpen,
+    selectedTemplate,
+    profileId,
+    flushDashboardAutosave,
+    setSaveStatus,
+  ]);
 
   return { flushDashboardAutosave };
 }

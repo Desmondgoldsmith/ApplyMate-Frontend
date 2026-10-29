@@ -88,9 +88,7 @@ function parseFactorItem(raw: unknown): JobMatchFactor | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
   const key =
-    parseFactorKey(o.key) ??
-    parseFactorKey(o.factor) ??
-    parseFactorKey(o.id);
+    parseFactorKey(o.key) ?? parseFactorKey(o.factor) ?? parseFactorKey(o.id);
   if (!key) return null;
 
   const scoreRaw = o.score ?? o.percent ?? o.value;
@@ -118,7 +116,8 @@ function parseFactorItem(raw: unknown): JobMatchFactor | null {
   const hint = hintRaw ? stripAnalysisCopyEmDash(hintRaw) : undefined;
   const missingExplanationRaw =
     (typeof o.missingExplanation === 'string' && o.missingExplanation.trim()) ||
-    (typeof o.missing_explanation === 'string' && o.missing_explanation.trim()) ||
+    (typeof o.missing_explanation === 'string' &&
+      o.missing_explanation.trim()) ||
     undefined;
   const missingExplanation = missingExplanationRaw
     ? stripAnalysisCopyEmDash(missingExplanationRaw)
@@ -139,8 +138,10 @@ function parseFactorItem(raw: unknown): JobMatchFactor | null {
     o.semanticOnlyItems ?? o.semantic_only_items,
   );
 
-  const found = parseStringList(o.found ?? o.foundSkills ?? o.found_keywords) ?? [];
-  const missing = parseStringList(o.missing ?? o.missingSkills ?? o.missing_keywords) ?? [];
+  const found =
+    parseStringList(o.found ?? o.foundSkills ?? o.found_keywords) ?? [];
+  const missing =
+    parseStringList(o.missing ?? o.missingSkills ?? o.missing_keywords) ?? [];
 
   return {
     key,
@@ -173,7 +174,9 @@ export function parseJobMatchFactorsBreakdown(
   }
   if (byKey.size === 0) return null;
 
-  const factors = FACTOR_ORDER.filter((k) => byKey.has(k)).map((k) => byKey.get(k)!);
+  const factors = FACTOR_ORDER.filter((k) => byKey.has(k)).map(
+    (k) => byKey.get(k)!,
+  );
   for (const [k, f] of byKey) {
     if (!factors.some((x) => x.key === k)) factors.push(f);
   }
@@ -196,7 +199,8 @@ export function factorTextColor(score: number): string {
 /** Split comma-separated skill/requirement lists (attack plan display only — not factor chips). */
 export function splitFactorListItems(raw: string): string[] {
   const trimmed = raw.trim().replace(/\.$/, '');
-  if (!trimmed || trimmed === '—' || trimmed === '-' || trimmed === '—.') return [];
+  if (!trimmed || trimmed === '—' || trimmed === '-' || trimmed === '—.')
+    return [];
   return trimmed
     .split(/,\s+(?=[\p{L}\p{N}])/u)
     .map((s) => s.trim().replace(/\.$/, ''))
@@ -227,7 +231,9 @@ export type ResolvedFactorSkillLists = {
 };
 
 /** Chip lists come from API `found` / `missing` only — never parse `explanation` prose. */
-export function resolveFactorSkillLists(factor: JobMatchFactor): ResolvedFactorSkillLists {
+export function resolveFactorSkillLists(
+  factor: JobMatchFactor,
+): ResolvedFactorSkillLists {
   const dedupe = (items: string[]) => {
     const seen = new Set<string>();
     return items.filter((item) => {

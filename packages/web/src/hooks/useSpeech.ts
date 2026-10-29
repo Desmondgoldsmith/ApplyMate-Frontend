@@ -65,7 +65,11 @@ export function useSpeech() {
     onError?: (error: string) => void;
   } | null>(null);
 
-  const [speechApis, setSpeechApis] = useState<{ ready: boolean; synth: boolean; rec: boolean }>({
+  const [speechApis, setSpeechApis] = useState<{
+    ready: boolean;
+    synth: boolean;
+    rec: boolean;
+  }>({
     ready: false,
     synth: false,
     rec: false,
@@ -109,21 +113,25 @@ export function useSpeech() {
     }
   }, []);
 
-  const pickVoice = useCallback((voiceName?: string): SpeechSynthesisVoice | null => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return null;
-    const voices = window.speechSynthesis.getVoices();
-    if (!voices.length) return null;
-    if (!voiceName?.trim()) return voices[0] ?? null;
-    const hint = voiceName.toLowerCase();
-    const exact = voices.find((v) => v.name.toLowerCase() === hint);
-    if (exact) return exact;
-    const partial = voices.find((v) => v.name.toLowerCase().includes(hint));
-    return partial ?? voices[0] ?? null;
-  }, []);
+  const pickVoice = useCallback(
+    (voiceName?: string): SpeechSynthesisVoice | null => {
+      if (typeof window === 'undefined' || !window.speechSynthesis) return null;
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices.length) return null;
+      if (!voiceName?.trim()) return voices[0] ?? null;
+      const hint = voiceName.toLowerCase();
+      const exact = voices.find((v) => v.name.toLowerCase() === hint);
+      if (exact) return exact;
+      const partial = voices.find((v) => v.name.toLowerCase().includes(hint));
+      return partial ?? voices[0] ?? null;
+    },
+    [],
+  );
 
   const updateSpeakingRate = useCallback((rate: number): boolean => {
     const utterance = speechRef.current;
-    if (!utterance || typeof window === 'undefined' || !window.speechSynthesis) return false;
+    if (!utterance || typeof window === 'undefined' || !window.speechSynthesis)
+      return false;
     if (!isSynthesisActive()) return false;
     utterance.rate = rate;
     return true;
@@ -208,7 +216,8 @@ export function useSpeech() {
           options.onEnd?.();
         };
         utterance.onboundary = (evt) => {
-          if (typeof evt.charIndex === 'number') options.onBoundary?.(evt.charIndex);
+          if (typeof evt.charIndex === 'number')
+            options.onBoundary?.(evt.charIndex);
         };
         speechRef.current = utterance;
         window.speechSynthesis.speak(utterance);
@@ -270,7 +279,8 @@ export function useSpeech() {
       if (typeof window === 'undefined') return false;
       if (isSynthesisActive() || isSpeaking) return false;
 
-      const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const Recognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!Recognition) return false;
 
       if (recognitionRestartTimerRef.current) {
@@ -318,13 +328,20 @@ export function useSpeech() {
           recognitionCallbacksRef.current?.onError?.(code);
           return;
         }
-        if (code === 'not-allowed' || code === 'service-not-allowed' || code === 'audio-capture') {
+        if (
+          code === 'not-allowed' ||
+          code === 'service-not-allowed' ||
+          code === 'audio-capture'
+        ) {
           listeningActiveRef.current = false;
         }
         recognitionCallbacksRef.current?.onError?.(code);
       };
       recognition.onend = () => {
-        if (!listeningActiveRef.current || recognitionRef.current !== recognition) {
+        if (
+          !listeningActiveRef.current ||
+          recognitionRef.current !== recognition
+        ) {
           setIsListening(false);
           recognitionRestartScheduledRef.current = false;
           return;
@@ -341,7 +358,10 @@ export function useSpeech() {
         recognitionRestartTimerRef.current = window.setTimeout(() => {
           recognitionRestartTimerRef.current = null;
           recognitionRestartScheduledRef.current = false;
-          if (!listeningActiveRef.current || recognitionRef.current !== recognition) {
+          if (
+            !listeningActiveRef.current ||
+            recognitionRef.current !== recognition
+          ) {
             setIsListening(false);
             return;
           }

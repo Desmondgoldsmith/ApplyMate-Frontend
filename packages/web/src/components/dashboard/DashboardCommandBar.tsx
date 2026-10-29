@@ -14,7 +14,10 @@ import { canonicalDashboardHref } from '@/lib/dashboardHrefDedupe';
 import { descriptiveFollowUpLeadIn } from '@/lib/followUpJobsUiCopy';
 import { resolveFollowUpJobsListHref } from '@/lib/followUpListRoute';
 import { isGenericInterviewCoachingCopy } from '@/lib/genericInterviewCoaching';
-import type { DashboardCommandBarSource, TodayPlanPayload } from '@/lib/today-plan';
+import type {
+  DashboardCommandBarSource,
+  TodayPlanPayload,
+} from '@/lib/today-plan';
 
 type Props = {
   plan: TodayPlanPayload | null | undefined;
@@ -26,7 +29,10 @@ type Props = {
   suppressGenericInterviewPriority?: boolean;
 };
 
-type LegacyCandidateSource = 'strategic_recommendation' | 'opportunity_detection' | 'follow_up_intelligence';
+type LegacyCandidateSource =
+  | 'strategic_recommendation'
+  | 'opportunity_detection'
+  | 'follow_up_intelligence';
 
 type CommandNoticeSource = DashboardCommandBarSource | LegacyCandidateSource;
 
@@ -79,7 +85,10 @@ export function DashboardCommandBar({
     ) {
       if (
         !suppressGenericInterviewPriority ||
-        !isGenericInterviewCoachingCopy(sr.headline.trim(), sr.supporting.trim())
+        !isGenericInterviewCoachingCopy(
+          sr.headline.trim(),
+          sr.supporting.trim(),
+        )
       ) {
         const confidence =
           typeof sr.confidence === 'number' && Number.isFinite(sr.confidence)
@@ -96,10 +105,18 @@ export function DashboardCommandBar({
     }
 
     const od = plan.opportunityDetection;
-    if (od?.headline?.trim() && od.supporting?.trim() && od.ctaLabel?.trim() && od.ctaHref?.trim()) {
+    if (
+      od?.headline?.trim() &&
+      od.supporting?.trim() &&
+      od.ctaLabel?.trim() &&
+      od.ctaHref?.trim()
+    ) {
       if (
         !suppressGenericInterviewPriority ||
-        !isGenericInterviewCoachingCopy(od.headline.trim(), od.supporting.trim())
+        !isGenericInterviewCoachingCopy(
+          od.headline.trim(),
+          od.supporting.trim(),
+        )
       ) {
         const confidence =
           typeof od.confidence === 'number' && Number.isFinite(od.confidence)
@@ -116,14 +133,21 @@ export function DashboardCommandBar({
     }
 
     const fu = plan.followUpIntelligence;
-    if (fu?.headline?.trim() && fu.supporting?.trim() && fu.ctaLabel?.trim() && fu.ctaHref?.trim()) {
+    if (
+      fu?.headline?.trim() &&
+      fu.supporting?.trim() &&
+      fu.ctaLabel?.trim() &&
+      fu.ctaHref?.trim()
+    ) {
       const confidence =
         typeof fu.confidence === 'number' && Number.isFinite(fu.confidence)
           ? Math.min(100, Math.max(0, Math.round(fu.confidence)))
           : 72;
       list.push({
         confidence,
-        directive: sanitizeFollowUpDirectiveMessage(directiveFromFollowUpIntelligence(fu, null)),
+        directive: sanitizeFollowUpDirectiveMessage(
+          directiveFromFollowUpIntelligence(fu, null),
+        ),
         ctaLabel: fu.ctaLabel.trim(),
         ctaHref: fu.ctaHref.trim(),
         source: 'follow_up_intelligence',
@@ -137,16 +161,29 @@ export function DashboardCommandBar({
         : list;
     filtered.sort((a, b) => b.confidence - a.confidence);
     return filtered.find((c) => c.confidence >= 70) ?? null;
-  }, [plan, isBrandNewUser, omitCanonicalCtaHrefs, suppressGenericInterviewPriority]);
+  }, [
+    plan,
+    isBrandNewUser,
+    omitCanonicalCtaHrefs,
+    suppressGenericInterviewPriority,
+  ]);
 
   const fromApiDeduped = useMemo(() => {
     if (!fromApi?.ctaHref?.trim()) return null;
     const omit = omitCanonicalCtaHrefs;
-    if (omit && omit.size > 0 && omit.has(canonicalDashboardHref(fromApi.ctaHref))) return null;
+    if (
+      omit &&
+      omit.size > 0 &&
+      omit.has(canonicalDashboardHref(fromApi.ctaHref))
+    )
+      return null;
     if (
       suppressGenericInterviewPriority &&
       fromApi.message?.trim() &&
-      isGenericInterviewCoachingCopy(fromApi.message.trim(), fromApi.ctaLabel ?? '')
+      isGenericInterviewCoachingCopy(
+        fromApi.message.trim(),
+        fromApi.ctaLabel ?? '',
+      )
     ) {
       return null;
     }
@@ -162,8 +199,13 @@ export function DashboardCommandBar({
     if (fromApiBar != null) {
       const msg = fromApiBar.message?.trim() ?? '';
       if (msg) return sanitizeFollowUpDirectiveMessage(msg);
-      if (fromApiBar.source === 'follow_up_intelligence' && plan?.followUpIntelligence) {
-        return sanitizeFollowUpDirectiveMessage(directiveFromFollowUpIntelligence(plan.followUpIntelligence, null));
+      if (
+        fromApiBar.source === 'follow_up_intelligence' &&
+        plan?.followUpIntelligence
+      ) {
+        return sanitizeFollowUpDirectiveMessage(
+          directiveFromFollowUpIntelligence(plan.followUpIntelligence, null),
+        );
       }
       return '';
     }
@@ -171,30 +213,38 @@ export function DashboardCommandBar({
   })();
   const ctaLabel =
     fromApiBar != null ? fromApiBar.ctaLabel : legacyTop!.ctaLabel;
-  const ctaHref =
-    fromApiBar != null ? fromApiBar.ctaHref : legacyTop!.ctaHref;
+  const ctaHref = fromApiBar != null ? fromApiBar.ctaHref : legacyTop!.ctaHref;
   const noticeSource =
     fromApiBar != null ? fromApiBar.source : legacyTop!.source;
   const noticeLabel = noticeEyebrow(noticeSource as CommandNoticeSource);
 
   const followUpQueueJobs = plan?.followUpJobs ?? [];
   const followUpQueueTotal = plan?.followUpJobsTotalCount ?? null;
-  const followUpViewAllBackendHref = plan?.followUpJobsViewAllHref?.trim() ?? '';
+  const followUpViewAllBackendHref =
+    plan?.followUpJobsViewAllHref?.trim() ?? '';
   const followUpQueueHasSignal =
-    followUpViewAllBackendHref.length > 0 || (followUpQueueTotal ?? 0) > 0 || followUpQueueJobs.length > 0;
+    followUpViewAllBackendHref.length > 0 ||
+    (followUpQueueTotal ?? 0) > 0 ||
+    followUpQueueJobs.length > 0;
   const followUpLatest = followUpQueueJobs[0];
   const useRichFollowUpCopy = Boolean(followUpLatest) && followUpQueueHasSignal;
   const directiveDisplay =
-    useRichFollowUpCopy && followUpLatest ? descriptiveFollowUpLeadIn(followUpLatest) : directive;
+    useRichFollowUpCopy && followUpLatest
+      ? descriptiveFollowUpLeadIn(followUpLatest)
+      : directive;
   const followUpSupportingSnippet =
-    useRichFollowUpCopy && followUpLatest?.supporting?.trim() ? followUpLatest.supporting.trim() : null;
+    useRichFollowUpCopy && followUpLatest?.supporting?.trim()
+      ? followUpLatest.supporting.trim()
+      : null;
 
   const followUpViewAllHrefResolved = followUpQueueHasSignal
     ? resolveFollowUpJobsListHref(followUpViewAllBackendHref || null)
     : '';
   const followUpHasMultiple =
-    followUpQueueJobs.length > 1 || (followUpQueueTotal != null && followUpQueueTotal > 1);
-  const showFollowUpShowAll = Boolean(followUpViewAllHrefResolved) && followUpHasMultiple;
+    followUpQueueJobs.length > 1 ||
+    (followUpQueueTotal != null && followUpQueueTotal > 1);
+  const showFollowUpShowAll =
+    Boolean(followUpViewAllHrefResolved) && followUpHasMultiple;
   const followUpShowAllLabel =
     followUpQueueTotal != null && followUpQueueTotal > followUpQueueJobs.length
       ? `View all (${followUpQueueTotal})`
@@ -247,7 +297,11 @@ export function DashboardCommandBar({
               {directiveDisplay}
             </p>
             {followUpSupportingSnippet &&
-            !directiveDisplay.toLowerCase().includes(followUpSupportingSnippet.slice(0, 48).toLowerCase()) ? (
+            !directiveDisplay
+              .toLowerCase()
+              .includes(
+                followUpSupportingSnippet.slice(0, 48).toLowerCase(),
+              ) ? (
               <p className="mt-2 max-w-prose text-[12px] leading-relaxed text-[var(--text-muted)] line-clamp-4">
                 {followUpSupportingSnippet}
               </p>

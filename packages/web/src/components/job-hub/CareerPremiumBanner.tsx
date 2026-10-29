@@ -7,7 +7,11 @@ import { readPremiumActiveUntil } from '@/components/job-hub/PlacementVerificati
 function formatUntil(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  return d.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 export function CareerPremiumBanner() {
@@ -29,7 +33,8 @@ export function CareerPremiumBanner() {
 
   return (
     <div className="rounded-xl border border-[#00C9B1]/25 bg-[#00C9B1]/10 px-4 py-2.5 text-[13px] text-[#8af3e7]">
-      Premium active until: <span className="font-semibold text-white">{formatUntil(until)}</span>
+      Premium active until:{' '}
+      <span className="font-semibold text-white">{formatUntil(until)}</span>
     </div>
   );
 }

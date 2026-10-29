@@ -57,8 +57,7 @@ export function CvGlobalAssistantFindingsPanel({
   if (!open || !result || !grouped) return null;
 
   const title =
-    result.operationLabel?.trim() ||
-    result.operation.replace(/_/g, ' ');
+    result.operationLabel?.trim() || result.operation.replace(/_/g, ' ');
 
   const { positives, otherNotes } = grouped;
   const hasActionableFindings = actionableForUi.length > 0;
@@ -257,7 +256,9 @@ export function CvGlobalAssistantFindingsPanel({
                 ) : (
                   <Sparkles className="h-3.5 w-3.5" />
                 )}
-                {busy ? CV_ASSISTANT_APPLYING_FIXES_MESSAGE : 'Apply all fixes (global)'}
+                {busy
+                  ? CV_ASSISTANT_APPLYING_FIXES_MESSAGE
+                  : 'Apply all fixes (global)'}
               </Button>
             ) : null}
           </div>

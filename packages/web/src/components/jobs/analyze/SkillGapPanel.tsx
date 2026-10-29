@@ -95,8 +95,8 @@ export function SkillGapPanel({
       {showGapChecklist ? (
         <>
           <p className="mb-3 text-xs text-white/50">
-            Select which gaps to address. Critical and high-importance skills are
-            pre-selected.
+            Select which gaps to address. Critical and high-importance skills
+            are pre-selected.
           </p>
           <div className="flex flex-col gap-2">
             {missingSkills.map((skill: MissingSkill) => {
@@ -142,7 +142,8 @@ export function SkillGapPanel({
         </p>
       ) : missingSkills.length === 0 ? (
         <p className="mb-3 text-xs text-white/50">
-          No skill gaps were returned, but you can still tailor summary, experience, and other sections for this role.
+          No skill gaps were returned, but you can still tailor summary,
+          experience, and other sections for this role.
         </p>
       ) : null}
 
@@ -157,11 +158,16 @@ export function SkillGapPanel({
               ? 'This analysis is not linked to a saved job record yet. Open this job from Recent analyses, or Clear form and run Analyze again.'
               : tailorAiBlocked
                 ? DAILY_AI_LIMIT_REACHED_MESSAGE
-                : tailorUi.tailorCtaMode === 'start' && cvProfileCount > 1 && !selectedProfileId
+                : tailorUi.tailorCtaMode === 'start' &&
+                    cvProfileCount > 1 &&
+                    !selectedProfileId
                   ? 'Choose which CV to tailor in the dropdown above.'
-                  : tailorUi.tailorCtaMode === 'start' && !cvProfileIdForTailor && !cvBootstrapPending
+                  : tailorUi.tailorCtaMode === 'start' &&
+                      !cvProfileIdForTailor &&
+                      !cvBootstrapPending
                     ? 'Upload or select a CV profile first.'
-                    : tailorUi.tailorCtaMode === 'start' && selectedSkillNames.length === 0
+                    : tailorUi.tailorCtaMode === 'start' &&
+                        selectedSkillNames.length === 0
                       ? 'Select at least one skill gap to tailor toward.'
                       : undefined
           }
@@ -187,11 +193,11 @@ export function SkillGapPanel({
       {!jobAnalysisIdForTailor ? (
         <p className="mt-2 text-xs text-amber-200/85">
           Tailoring needs a saved job id. We try to attach it from Recent
-          analyses automatically. If this stays disabled, click this job in
-          the list on the left, or use{' '}
-          <span className="font-semibold text-white/90">Clear form</span> and run{' '}
-          <span className="font-semibold text-white/90">Analyze Job</span> once
-          more.
+          analyses automatically. If this stays disabled, click this job in the
+          list on the left, or use{' '}
+          <span className="font-semibold text-white/90">Clear form</span> and
+          run <span className="font-semibold text-white/90">Analyze Job</span>{' '}
+          once more.
         </p>
       ) : null}
     </>

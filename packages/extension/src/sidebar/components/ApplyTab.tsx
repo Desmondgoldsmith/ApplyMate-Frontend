@@ -1,4 +1,10 @@
-function TabPlaceholder({ title, subtitle }: { title: string; subtitle: string }) {
+function TabPlaceholder({
+  title,
+  subtitle,
+}: {
+  title: string;
+  subtitle: string;
+}) {
   return (
     <div className="rounded-card border border-am-border bg-am-surface p-5">
       <h2 className="text-[15px] font-semibold text-am-text">{title}</h2>

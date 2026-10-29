@@ -13,12 +13,14 @@ import type { CvRevisionRestoreResult, CvRevisionSummary } from '@/lib/api';
 import { cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
 import { queryKeys } from '@/lib/queryKeys';
 
-const { listRevisions, restoreRevision, toastSuccess, toastError } = vi.hoisted(() => ({
-  listRevisions: vi.fn(),
-  restoreRevision: vi.fn(),
-  toastSuccess: vi.fn(),
-  toastError: vi.fn(),
-}));
+const { listRevisions, restoreRevision, toastSuccess, toastError } = vi.hoisted(
+  () => ({
+    listRevisions: vi.fn(),
+    restoreRevision: vi.fn(),
+    toastSuccess: vi.fn(),
+    toastError: vi.fn(),
+  }),
+);
 
 vi.mock('@/lib/api', () => ({
   api: { cv: { listRevisions, restoreRevision } },
@@ -31,22 +33,37 @@ vi.mock('@/components/ui/Toast', () => ({
 const PROFILE_ID = 'profile-1';
 const TWO_HOURS_AGO = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
 
-function revision(id: string, reason: string, sectionCount = 7): CvRevisionSummary {
+function revision(
+  id: string,
+  reason: string,
+  sectionCount = 7,
+): CvRevisionSummary {
   return { id, reason, createdAt: TWO_HOURS_AGO, sectionCount };
 }
 
 function notFoundError(): AxiosError {
   const config = { headers: new AxiosHeaders() } as InternalAxiosRequestConfig;
-  return new AxiosError('Request failed with status code 404', AxiosError.ERR_BAD_REQUEST, config, undefined, {
-    data: { success: false, error: { statusCode: 404, message: 'CV profile not found' } },
-    status: 404,
-    statusText: 'Not Found',
-    headers: {},
+  return new AxiosError(
+    'Request failed with status code 404',
+    AxiosError.ERR_BAD_REQUEST,
     config,
-  });
+    undefined,
+    {
+      data: {
+        success: false,
+        error: { statusCode: 404, message: 'CV profile not found' },
+      },
+      status: 404,
+      statusText: 'Not Found',
+      headers: {},
+      config,
+    },
+  );
 }
 
-function renderModal(props: Partial<Parameters<typeof CvVersionHistoryModal>[0]> = {}) {
+function renderModal(
+  props: Partial<Parameters<typeof CvVersionHistoryModal>[0]> = {},
+) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -68,12 +85,19 @@ function renderModal(props: Partial<Parameters<typeof CvVersionHistoryModal>[0]>
   return { queryClient, clearUndoHistory, onRestored, onOpenChange };
 }
 
-async function openConfirmAndRestore(user: ReturnType<typeof userEvent.setup>, rowIndex = 0) {
+async function openConfirmAndRestore(
+  user: ReturnType<typeof userEvent.setup>,
+  rowIndex = 0,
+) {
   const rows = await screen.findAllByRole('listitem');
-  await user.click(within(rows[rowIndex]!).getByRole('button', { name: 'Restore' }));
+  await user.click(
+    within(rows[rowIndex]!).getByRole('button', { name: 'Restore' }),
+  );
   const dialogs = await screen.findAllByRole('dialog');
   const confirm = dialogs[dialogs.length - 1]!;
-  expect(within(confirm).getByText('Restore this version?')).toBeInTheDocument();
+  expect(
+    within(confirm).getByText('Restore this version?'),
+  ).toBeInTheDocument();
   await user.click(within(confirm).getByRole('button', { name: 'Restore' }));
 }
 
@@ -93,11 +117,19 @@ describe('CvVersionHistoryModal', () => {
     ]);
     renderModal();
 
-    expect(await screen.findByText('Before uploading a new CV file')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Before uploading a new CV file'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Before importing CV text')).toBeInTheDocument();
-    expect(screen.getByText('Before accepting all suggestions')).toBeInTheDocument();
-    expect(screen.getByText('Before applying tailored changes')).toBeInTheDocument();
-    expect(screen.getByText('Before restoring an earlier version')).toBeInTheDocument();
+    expect(
+      screen.getByText('Before accepting all suggestions'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Before applying tailored changes'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Before restoring an earlier version'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Saved version')).toBeInTheDocument();
     expect(screen.getAllByText(/2 hours ago/)).toHaveLength(6);
     expect(screen.getByText(/2 hours ago · 1 section$/)).toBeInTheDocument();
@@ -119,27 +151,38 @@ describe('CvVersionHistoryModal', () => {
     listRevisions.mockRejectedValueOnce(notFoundError());
     renderModal();
 
-    expect(await screen.findByText('Version not available')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Version not available'),
+    ).toBeInTheDocument();
   });
 
   it('restores a version, refreshes CV queries, clears undo history and confirms', async () => {
     listRevisions.mockResolvedValue([revision('r1', 'cv_upload')]);
-    const result: CvRevisionRestoreResult = { restored: true, revisionId: 'r1', sections: [] };
+    const result: CvRevisionRestoreResult = {
+      restored: true,
+      revisionId: 'r1',
+      sections: [],
+    };
     restoreRevision.mockResolvedValueOnce(result);
     const user = userEvent.setup();
-    const { queryClient, clearUndoHistory, onRestored, onOpenChange } = renderModal();
+    const { queryClient, clearUndoHistory, onRestored, onOpenChange } =
+      renderModal();
     const refetch = vi.spyOn(queryClient, 'refetchQueries');
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
 
     await openConfirmAndRestore(user);
 
-    await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith('Version restored.'));
+    await waitFor(() =>
+      expect(toastSuccess).toHaveBeenCalledWith('Version restored.'),
+    );
     expect(restoreRevision).toHaveBeenCalledWith(PROFILE_ID, 'r1');
     expect(clearUndoHistory).toHaveBeenCalledTimes(1);
     expect(onRestored).toHaveBeenCalledWith(result);
     expect(onOpenChange).toHaveBeenCalledWith(false);
 
-    const refetchedKeys = refetch.mock.calls.map(([filters]) => filters?.queryKey);
+    const refetchedKeys = refetch.mock.calls.map(
+      ([filters]) => filters?.queryKey,
+    );
     expect(refetchedKeys).toEqual(
       expect.arrayContaining([
         queryKeys.cv.profile(PROFILE_ID),
@@ -147,7 +190,9 @@ describe('CvVersionHistoryModal', () => {
         cvSuggestionsQueryKey(PROFILE_ID),
       ]),
     );
-    const invalidatedKeys = invalidate.mock.calls.map(([filters]) => filters?.queryKey);
+    const invalidatedKeys = invalidate.mock.calls.map(
+      ([filters]) => filters?.queryKey,
+    );
     expect(invalidatedKeys).toEqual(
       expect.arrayContaining([
         queryKeys.cv.score(PROFILE_ID),
@@ -166,7 +211,9 @@ describe('CvVersionHistoryModal', () => {
 
     await openConfirmAndRestore(user);
 
-    await waitFor(() => expect(toastError).toHaveBeenCalledWith('Version not available.'));
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith('Version not available.'),
+    );
     expect(clearUndoHistory).not.toHaveBeenCalled();
     expect(onRestored).not.toHaveBeenCalled();
     expect(toastSuccess).not.toHaveBeenCalled();
@@ -177,7 +224,9 @@ describe('CvVersionHistoryModal', () => {
     renderModal({ restoreBlockedReason: 'Saving your latest edits.' });
 
     const rows = await screen.findAllByRole('listitem');
-    expect(within(rows[0]!).getByRole('button', { name: 'Restore' })).toBeDisabled();
+    expect(
+      within(rows[0]!).getByRole('button', { name: 'Restore' }),
+    ).toBeDisabled();
     expect(screen.getByText('Saving your latest edits.')).toBeInTheDocument();
   });
 });

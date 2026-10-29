@@ -41,7 +41,11 @@ export function useCvSectionOrderFlow(
   });
 
   const effectiveSuggestData = useMemo(
-    () => mergeSectionOrderSuggestWithClientFallback(suggestQuery.data, sectionRows),
+    () =>
+      mergeSectionOrderSuggestWithClientFallback(
+        suggestQuery.data,
+        sectionRows,
+      ),
     [suggestQuery.data, sectionRows],
   );
 
@@ -49,11 +53,15 @@ export function useCvSectionOrderFlow(
     if (!pid || bannerDismissed) return false;
     const data = effectiveSuggestData;
     if (data?.isOptimal) return false;
-    if (data?.suggestedOrder?.length && sectionOrderMatchesSuggested(sectionRows, data.suggestedOrder)) {
+    if (
+      data?.suggestedOrder?.length &&
+      sectionOrderMatchesSuggested(sectionRows, data.suggestedOrder)
+    ) {
       return false;
     }
     if (data && data.showProactiveSuggestion === false) return false;
-    if (sectionRows.length > 0 && sectionsOrderIsSuboptimal(sectionRows)) return true;
+    if (sectionRows.length > 0 && sectionsOrderIsSuboptimal(sectionRows))
+      return true;
     if (data && !data.isOptimal) return true;
     return false;
   }, [pid, bannerDismissed, effectiveSuggestData, sectionRows]);
@@ -74,7 +82,10 @@ export function useCvSectionOrderFlow(
 
   const openSuggestModal = useCallback(
     (prefetch?: CvSectionOrderSuggestResult | null) => {
-      const merged = mergeSectionOrderSuggestWithClientFallback(prefetch, sectionRows);
+      const merged = mergeSectionOrderSuggestWithClientFallback(
+        prefetch,
+        sectionRows,
+      );
       if (merged) {
         queryClient.setQueryData(cvSectionOrderSuggestQueryKey(pid), merged);
       }

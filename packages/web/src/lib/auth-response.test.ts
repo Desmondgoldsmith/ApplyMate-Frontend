@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { normalizeAuthResponse, normalizeRefreshResponse } from '@/lib/auth-response';
+import {
+  normalizeAuthResponse,
+  normalizeRefreshResponse,
+} from '@/lib/auth-response';
 
 describe('normalizeAuthResponse', () => {
   it('unwraps success envelope with refreshToken and onboardingCompleted', () => {

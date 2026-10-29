@@ -19,7 +19,9 @@ describe('dashboardSemanticOutlook', () => {
   });
 
   it('prefers timelineOutlookLabel from API', () => {
-    expect(formatTimelineOutlookLabel('near-term', 'Near-term')).toBe('Near-term');
+    expect(formatTimelineOutlookLabel('near-term', 'Near-term')).toBe(
+      'Near-term',
+    );
     expect(formatTimelineOutlookLabel('extended', null)).toBe('Extended');
   });
 

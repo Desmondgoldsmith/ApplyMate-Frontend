@@ -14,10 +14,10 @@ For snapshot/heuristic fallback, `weaknesses` was mapped to both lists.
 
 ## Desired backend contract
 
-| Field | Semantics | UI |
-|--------|-----------|-----|
-| `improvements` | 1–4 **actionable** tips (“Add a metric…”, “Use STAR…”) | **Key feedback** |
-| `keyIssues` | **Only** gaps not already covered in `improvements` (deeper diagnosis, missing STAR part, etc.) | **Key improvements** (collapsible); omit or `[]` if redundant |
+| Field          | Semantics                                                                                       | UI                                                            |
+| -------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `improvements` | 1–4 **actionable** tips (“Add a metric…”, “Use STAR…”)                                          | **Key feedback**                                              |
+| `keyIssues`    | **Only** gaps not already covered in `improvements` (deeper diagnosis, missing STAR part, etc.) | **Key improvements** (collapsible); omit or `[]` if redundant |
 
 **Rules:**
 
@@ -35,9 +35,7 @@ For snapshot/heuristic fallback, `weaknesses` was mapped to both lists.
     "Name the stakeholder and deadline in the situation.",
     "Quantify the outcome (%, time saved, revenue)."
   ],
-  "keyIssues": [
-    "Result was implied but never stated in one sentence."
-  ]
+  "keyIssues": ["Result was implied but never stated in one sentence."]
 }
 ```
 

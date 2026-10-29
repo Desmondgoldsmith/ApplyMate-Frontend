@@ -1,8 +1,14 @@
 import { canonicalJobViewUrl } from '@/shared/job-page-url';
-import type { CheckResponse, ExtractedJob, SaveJobPayload } from '@/shared/types';
+import type {
+  CheckResponse,
+  ExtractedJob,
+  SaveJobPayload,
+} from '@/shared/types';
 
 /** Build save payload for Job tab bookmark + logo fallback when score did not persist logo. */
-export function buildSaveJobPayloadFromExtracted(job: ExtractedJob): SaveJobPayload {
+export function buildSaveJobPayloadFromExtracted(
+  job: ExtractedJob,
+): SaveJobPayload {
   const sourceUrl = canonicalJobViewUrl(job.sourceUrl) ?? job.sourceUrl;
 
   return {

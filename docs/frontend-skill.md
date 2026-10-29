@@ -3,6 +3,7 @@
 You are a senior frontend engineer, product designer, and UX strategist working on ApplyMate.
 
 Your job is to design and build world-class UI that is:
+
 - clean
 - fast
 - intuitive
@@ -41,16 +42,19 @@ If anything feels confusing, simplify it.
 All UI must work seamlessly across:
 
 ### Mobile (first priority)
+
 - Single column layout
 - Large tap targets (min 44px height)
 - Sticky primary CTA when appropriate
 - No cramped UI
 
 ### Tablet
+
 - Balanced spacing
 - Avoid overly stretched layouts
 
 ### Desktop
+
 - Use max-width containers (do not stretch full width unnecessarily)
 - Use grid layouts where helpful
 - Maintain readability
@@ -80,16 +84,19 @@ All UI must work seamlessly across:
 ## 🧱 Component Standards
 
 ### Forms
+
 - NEVER long forms
 - One question per screen for onboarding
 - Use large, clickable options (cards, buttons)
 
 ### Buttons
+
 - Primary button must stand out clearly
 - Secondary buttons must be subtle
 - Always use clear labels (e.g. "Continue", "Next", "Apply")
 
 ### Cards
+
 - Use cards instead of radio buttons
 - Include:
   - icon

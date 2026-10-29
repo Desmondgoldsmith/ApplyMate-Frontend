@@ -6,7 +6,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { CvChatComposer } from '@/components/cv/CvChatComposer';
 import { Button } from '@/components/ui/Button';
-import { api, type ChatConversationHistoryItem, type ChatCreateCVPayload } from '@/lib/api';
+import {
+  api,
+  type ChatConversationHistoryItem,
+  type ChatCreateCVPayload,
+} from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
 import type { CvTemplateId } from '@/lib/cvBuilder';
 import {
@@ -25,8 +29,10 @@ function summarizeExtracted(d: ChatCreateCVPayload): string[] {
   const edu = Array.isArray(d.education) ? d.education.length : 0;
   const skills = Array.isArray(d.skills) ? d.skills.length : 0;
   const out: string[] = [];
-  if (exp > 0) out.push(`${exp} experience entr${exp === 1 ? 'y' : 'ies'} ready`);
-  if (edu > 0) out.push(`${edu} education entr${edu === 1 ? 'y' : 'ies'} ready`);
+  if (exp > 0)
+    out.push(`${exp} experience entr${exp === 1 ? 'y' : 'ies'} ready`);
+  if (edu > 0)
+    out.push(`${edu} education entr${edu === 1 ? 'y' : 'ies'} ready`);
   if (skills > 0) out.push(`${skills} skills detected`);
   return out.length ? out : ['CV data captured'];
 }
@@ -38,12 +44,20 @@ export type AIChatDrawerProps = {
   onCreated: (profileId: string) => void;
 };
 
-export function AIChatDrawer({ open, onOpenChange, selectedTemplate, onCreated }: AIChatDrawerProps) {
-  const [messages, setMessages] = useState<Msg[]>([{ role: 'assistant', content: OPENING }]);
+export function AIChatDrawer({
+  open,
+  onOpenChange,
+  selectedTemplate,
+  onCreated,
+}: AIChatDrawerProps) {
+  const [messages, setMessages] = useState<Msg[]>([
+    { role: 'assistant', content: OPENING },
+  ]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [building, setBuilding] = useState(false);
-  const [extractedData, setExtractedData] = useState<ChatCreateCVPayload | null>(null);
+  const [extractedData, setExtractedData] =
+    useState<ChatCreateCVPayload | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -52,7 +66,10 @@ export function AIChatDrawer({ open, onOpenChange, selectedTemplate, onCreated }
   }, [open]);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: 'smooth',
+    });
   }, [messages, sending, extractedData]);
 
   const send = async () => {
@@ -73,7 +90,10 @@ export function AIChatDrawer({ open, onOpenChange, selectedTemplate, onCreated }
     setInput('');
     setSending(true);
     try {
-      const res = await api.cv.chatConversation({ message: text, history: prior });
+      const res = await api.cv.chatConversation({
+        message: text,
+        history: prior,
+      });
       if (res.type === 'complete') {
         setExtractedData(res.extractedData);
       }
@@ -81,7 +101,12 @@ export function AIChatDrawer({ open, onOpenChange, selectedTemplate, onCreated }
     } catch (e) {
       setMessages((m) => [
         ...m,
-        { role: 'assistant', content: getApiErrorMessage(e) || 'I had trouble understanding that. Try again.' },
+        {
+          role: 'assistant',
+          content:
+            getApiErrorMessage(e) ||
+            'I had trouble understanding that. Try again.',
+        },
       ]);
     } finally {
       setSending(false);
@@ -118,7 +143,10 @@ export function AIChatDrawer({ open, onOpenChange, selectedTemplate, onCreated }
           >
             <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
               <div>
-                <h2 id="build-with-ai-title" className="text-sm font-semibold text-white">
+                <h2
+                  id="build-with-ai-title"
+                  className="text-sm font-semibold text-white"
+                >
                   Build with AI
                 </h2>
                 <p className="text-[11px] text-white/45">{progressLabel}</p>
@@ -133,9 +161,18 @@ export function AIChatDrawer({ open, onOpenChange, selectedTemplate, onCreated }
               </button>
             </div>
 
-            <div ref={scrollRef} className="app-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4">
+            <div
+              ref={scrollRef}
+              className="app-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4"
+            >
               {messages.map((m, idx) => (
-                <div key={idx} className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
+                <div
+                  key={idx}
+                  className={cn(
+                    'flex',
+                    m.role === 'user' ? 'justify-end' : 'justify-start',
+                  )}
+                >
                   <div
                     className={cn(
                       'max-w-[88%] rounded-[12px] px-3.5 py-2.5 text-sm text-white',
@@ -160,13 +197,17 @@ export function AIChatDrawer({ open, onOpenChange, selectedTemplate, onCreated }
             <div className="border-t border-white/[0.06] px-4 py-3">
               {extractedData ? (
                 <div className="mb-3 rounded-lg border border-[rgba(16,185,129,0.35)] bg-[rgba(16,185,129,0.08)] p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">Ready to build</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">
+                    Ready to build
+                  </p>
                   <ul className="mt-2 space-y-1 text-xs text-white/75">
                     {summarizeExtracted(extractedData).map((line) => (
                       <li key={line}>- {line}</li>
                     ))}
                   </ul>
-                  <p className="mt-2 text-[10px] text-white/40">Template: {selectedTemplate}</p>
+                  <p className="mt-2 text-[10px] text-white/40">
+                    Template: {selectedTemplate}
+                  </p>
                 </div>
               ) : null}
               <CvChatComposer
@@ -193,13 +234,23 @@ export function AIChatDrawer({ open, onOpenChange, selectedTemplate, onCreated }
                       onCreated(profileId);
                       onOpenChange(false);
                     } catch {
-                      setMessages((m) => [...m, { role: 'assistant', content: 'Build failed. Please try again.' }]);
+                      setMessages((m) => [
+                        ...m,
+                        {
+                          role: 'assistant',
+                          content: 'Build failed. Please try again.',
+                        },
+                      ]);
                     } finally {
                       setBuilding(false);
                     }
                   }}
                 >
-                  {building ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  {building ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
                   Build CV
                 </Button>
               ) : null}
@@ -210,4 +261,3 @@ export function AIChatDrawer({ open, onOpenChange, selectedTemplate, onCreated }
     </AnimatePresence>
   );
 }
-

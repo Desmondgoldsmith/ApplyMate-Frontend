@@ -10,7 +10,10 @@ import {
   upcomingInterviewsCountBadge,
 } from '@/lib/upcomingInterviews';
 
-function row(partial: Partial<UpcomingInterviewItem> & Pick<UpcomingInterviewItem, 'jobAnalysisId'>): UpcomingInterviewItem {
+function row(
+  partial: Partial<UpcomingInterviewItem> &
+    Pick<UpcomingInterviewItem, 'jobAnalysisId'>,
+): UpcomingInterviewItem {
   return {
     id: partial.jobAnalysisId,
     headline: partial.headline ?? 'Headline',
@@ -32,7 +35,12 @@ describe('sortUpcomingInterviewsForDashboard', () => {
   it('ranks scheduled interviews above applied_prep', () => {
     const sorted = sortUpcomingInterviewsForDashboard([
       row({ jobAnalysisId: 'a', stage: 'applied_prep', confidence: 90 }),
-      row({ jobAnalysisId: 'b', stage: 'technical_interview', daysUntilInterview: 5, confidence: 50 }),
+      row({
+        jobAnalysisId: 'b',
+        stage: 'technical_interview',
+        daysUntilInterview: 5,
+        confidence: 50,
+      }),
     ]);
     expect(sorted[0]?.jobAnalysisId).toBe('b');
     expect(sorted[1]?.jobAnalysisId).toBe('a');
@@ -49,8 +57,14 @@ describe('sortUpcomingInterviewsForDashboard', () => {
 
 describe('isAppliedPrepUpcomingRow', () => {
   it('detects applied_prep stage', () => {
-    expect(isAppliedPrepUpcomingRow(row({ jobAnalysisId: 'x', stage: 'applied_prep' }))).toBe(true);
-    expect(isAppliedPrepUpcomingRow(row({ jobAnalysisId: 'x', stage: 'interview' }))).toBe(false);
+    expect(
+      isAppliedPrepUpcomingRow(
+        row({ jobAnalysisId: 'x', stage: 'applied_prep' }),
+      ),
+    ).toBe(true);
+    expect(
+      isAppliedPrepUpcomingRow(row({ jobAnalysisId: 'x', stage: 'interview' })),
+    ).toBe(false);
   });
 });
 

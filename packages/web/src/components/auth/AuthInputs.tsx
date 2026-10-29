@@ -88,7 +88,11 @@ export function AuthPasswordInput({
           className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-md p-1.5 text-[#00C9B1] transition hover:bg-white/5 hover:text-[#00C9B1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00C9B1]"
           onClick={() => setVisible((v) => !v)}
         >
-          {visible ? <EyeOff className="h-5 w-5" strokeWidth={2} /> : <Eye className="h-5 w-5" strokeWidth={2} />}
+          {visible ? (
+            <EyeOff className="h-5 w-5" strokeWidth={2} />
+          ) : (
+            <Eye className="h-5 w-5" strokeWidth={2} />
+          )}
         </button>
       </div>
       {error ? <p className="mt-1 text-xs text-red-300">{error}</p> : null}

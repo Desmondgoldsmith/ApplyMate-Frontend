@@ -4,10 +4,15 @@ import { Flag, Map, Zap } from 'lucide-react';
 
 import type { DashboardContinuationView } from '@/lib/dashboardViewModel';
 
-export function ExecutionTimeline({ continuation }: { continuation: DashboardContinuationView }) {
+export function ExecutionTimeline({
+  continuation,
+}: {
+  continuation: DashboardContinuationView;
+}) {
   const idx = continuation.continuationContext?.exactStepIndex;
   const total = continuation.continuationContext?.totalSteps;
-  const stepLabel = continuation.continuationContext?.exactStepLabel?.trim() || null;
+  const stepLabel =
+    continuation.continuationContext?.exactStepLabel?.trim() || null;
   const has =
     typeof idx === 'number' &&
     Number.isFinite(idx) &&
@@ -34,21 +39,27 @@ export function ExecutionTimeline({ continuation }: { continuation: DashboardCon
             <Flag className="h-3.5 w-3.5 text-white/30" aria-hidden />
             Behind you
           </p>
-          <p className="mt-1 text-[15px] font-semibold tabular-nums text-white/85">{done}</p>
+          <p className="mt-1 text-[15px] font-semibold tabular-nums text-white/85">
+            {done}
+          </p>
         </div>
         <div className="rounded-lg border border-[#00C9B1]/14 bg-[#00C9B1]/[0.05] p-2.5">
           <p className="flex items-center gap-1 text-[10px] text-white/50">
             <Zap className="h-3.5 w-3.5 text-[#00C9B1]/75" aria-hidden />
             Now
           </p>
-          <p className="mt-1 text-[15px] font-semibold tabular-nums text-white">{current}</p>
+          <p className="mt-1 text-[15px] font-semibold tabular-nums text-white">
+            {current}
+          </p>
         </div>
         <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-2.5">
           <p className="flex items-center gap-1 text-[10px] text-white/38">
             <Map className="h-3.5 w-3.5 text-white/30" aria-hidden />
             Ahead
           </p>
-          <p className="mt-1 text-[15px] font-semibold tabular-nums text-white/85">{remaining}</p>
+          <p className="mt-1 text-[15px] font-semibold tabular-nums text-white/85">
+            {remaining}
+          </p>
         </div>
       </div>
       {stepLabel ? (

@@ -5,6 +5,7 @@
 ApplyMate’s frontend is **much more than a stub**: the dashboard experience, CV clinic (editing + scoring + improvements), job analyzer (match score + tailoring + cover letter), and interview setup/simulation surfaces are present and wired through React Query hooks and a typed `api` client. The product is **not yet “global SaaS ready”** mainly due to **flow fragmentation (alias routes + multiple legacy paths), heavy client-side complexity in single files, and incomplete evidence of durable subscription gating + lifecycle reliability** (auth/session expiry handling is not obviously centralized in the pieces reviewed). With focused hardening, it could launch to a small beta; for a $1M+ revenue run-rate, the top needs are **(1) workflow polish + consistency across CV↔Jobs↔Interview loop, (2) reliability/observability for errors + session expiry, (3) clear plan gating + upgrade moments at “value peaks.”**
 
 Top 3 must-fix items before a serious launch:
+
 - **Stabilize core loop UX** (CV → analyze job → tailor CV → generate cover letter → job hub tracking → interview practice) so it feels like one coherent product, not separate “zones.”
 - **Make error + auth/session expiry handling explicit and consistent** (currently a lot of complex client pages depend on async data; ensure user-facing failures are actionable).
 - **Move high-complexity UI logic out of mega-pages** (e.g. `dashboard/page.tsx`, `cv/page.tsx`, `JobsAnalyzeContent.tsx`) to reduce regressions and enable team scaling.
@@ -13,18 +14,18 @@ Top 3 must-fix items before a serious launch:
 
 ## Feature Scorecard
 
-| Feature | Status | Quality (1-10) | User Value (1-10) | Critical Gaps |
-|---|---|---:|---:|---|
-| CV Builder | **Partially built (strong base)** | 7 | 8 | Confirm all “9 templates”; export formats (DOCX) not evidenced; needs stronger autosave guarantees + robustness |
-| AI CV Creation | **Partially built** | 6 | 7 | Chat + upload parsing present; unclear breadth (summary/bullet rewrite coverage) without deeper endpoint scan |
-| CV Tailoring | **Partially built (job-driven)** | 7 | 8 | Tailoring is strongly integrated into job analysis; need clearer diff UX and durable “save as new profile” confirmations |
-| Job Analyzer | **Built (core)** | 7 | 8 | Salary estimate + skill gap depth not confirmed; depends heavily on AI usage limit behavior |
-| Job Board / Discovery | **Partially built** | 6 | 6 | Job board shell exists; need confirm AI discovery + bookmarks + pipeline completeness |
-| Interview Preparation | **Partially built (strong UI surface)** | 7 | 7 | Setup stepper exists; voice + adaptive + STAR scoring require deeper verification of runtime wiring |
-| Smart Dashboard | **Built (ambitious)** | 7 | 7 | Sophisticated orchestration; risk of “too complex / too AI-written” without strong determinism + caching |
-| Onboarding Flow | **Built (multi-path)** | 7 | 7 | Strong: upload/chat/paste/manual paths; needs clearer “aha” + fewer choices upfront |
-| Browser Extension Integration | **Present (repo-level)** | 5 | 5 | Extension package exists per repo README; dashboard connection paths not verified in this pass |
-| Authentication & User Management | **Partially built** | 6 | 6 | NextAuth routes exist; need verify session expiry UX + protected routing |
+| Feature                          | Status                                  | Quality (1-10) | User Value (1-10) | Critical Gaps                                                                                                            |
+| -------------------------------- | --------------------------------------- | -------------: | ----------------: | ------------------------------------------------------------------------------------------------------------------------ |
+| CV Builder                       | **Partially built (strong base)**       |              7 |                 8 | Confirm all “9 templates”; export formats (DOCX) not evidenced; needs stronger autosave guarantees + robustness          |
+| AI CV Creation                   | **Partially built**                     |              6 |                 7 | Chat + upload parsing present; unclear breadth (summary/bullet rewrite coverage) without deeper endpoint scan            |
+| CV Tailoring                     | **Partially built (job-driven)**        |              7 |                 8 | Tailoring is strongly integrated into job analysis; need clearer diff UX and durable “save as new profile” confirmations |
+| Job Analyzer                     | **Built (core)**                        |              7 |                 8 | Salary estimate + skill gap depth not confirmed; depends heavily on AI usage limit behavior                              |
+| Job Board / Discovery            | **Partially built**                     |              6 |                 6 | Job board shell exists; need confirm AI discovery + bookmarks + pipeline completeness                                    |
+| Interview Preparation            | **Partially built (strong UI surface)** |              7 |                 7 | Setup stepper exists; voice + adaptive + STAR scoring require deeper verification of runtime wiring                      |
+| Smart Dashboard                  | **Built (ambitious)**                   |              7 |                 7 | Sophisticated orchestration; risk of “too complex / too AI-written” without strong determinism + caching                 |
+| Onboarding Flow                  | **Built (multi-path)**                  |              7 |                 7 | Strong: upload/chat/paste/manual paths; needs clearer “aha” + fewer choices upfront                                      |
+| Browser Extension Integration    | **Present (repo-level)**                |              5 |                 5 | Extension package exists per repo README; dashboard connection paths not verified in this pass                           |
+| Authentication & User Management | **Partially built**                     |              6 |                 6 | NextAuth routes exist; need verify session expiry UX + protected routing                                                 |
 
 ---
 
@@ -295,7 +296,7 @@ This user story is written as a concrete, end-to-end workflow that exercises **e
      - **Match & gaps**: revisit analysis and guidance
      - **Description**: keep the JD on hand
      - **Cover letter**: view/download/copy the generated letter for this job
-     - **Notes**: capture recruiter calls, interview feedback, pros/cons  
+     - **Notes**: capture recruiter calls, interview feedback, pros/cons
        - Notes are saved locally and appended into a dated notes history (`jobHubNotesEntries.ts`)
      - **Email templates**: generate follow-up emails using templates
      - **Resumes**: keep resume variants associated with the job
@@ -310,9 +311,10 @@ This user story is written as a concrete, end-to-end workflow that exercises **e
    - During sessions, Alex receives structured feedback and coaching visuals (live feedback/scoring/coaching components are present in the codebase).
 
 10. **Back to the dashboard: Alex sees updated momentum and next steps** (`/dashboard`)
-   - Because Job Hub mutations invalidate growth/today-plan queries, Alex’s dashboard updates:
-     - Momentum/progress indicators reflect pipeline movement.
-     - The next directive can steer Alex to: tailor the next job, send follow-ups, or continue interview practice.
+
+- Because Job Hub mutations invalidate growth/today-plan queries, Alex’s dashboard updates:
+  - Momentum/progress indicators reflect pipeline movement.
+  - The next directive can steer Alex to: tailor the next job, send follow-ups, or continue interview practice.
 
 Outcome: Alex completes the full loop **inside ApplyMate**: onboarding → CV creation/editing → job discovery → analysis → tailoring → cover letter → tracking + notes + reminders → interview prep + session history.
 
@@ -322,7 +324,7 @@ Outcome: Alex completes the full loop **inside ApplyMate**: onboarding → CV cr
 
 - **Status**: Fully built (complex client page)
 - **How it works (high level)**:
-  - Dashboard is a client route (`'use client'`) and composes many “growth” / “plan” / “pipeline” sections. Evidence: imports include `useTodayPlan`, `useDailyAiUsage`, `useGrowth*`, orchestration helpers like `buildDashboardViewModel`.  
+  - Dashboard is a client route (`'use client'`) and composes many “growth” / “plan” / “pipeline” sections. Evidence: imports include `useTodayPlan`, `useDailyAiUsage`, `useGrowth*`, orchestration helpers like `buildDashboardViewModel`.
   - Personalised hero copy changes based on CV/profile + job analysis counts. Evidence: `getPersonalisedSubtext()` in `packages/web/src/app/(dashboard)/dashboard/page.tsx` lines 202-213.
 - **Quality**: High ambition; comparable to “coach dashboards” but risks being over-orchestrated and hard to maintain.
 - **Gaps**:
@@ -526,16 +528,16 @@ const STORAGE_FORM_KEY = 'applymate:dashboard:jobs:analyze-form';
 
 ## UX Score Summary (Evidence-based, limited to reviewed surfaces)
 
-| Area | Score (1-10) | Key Finding |
-|---|---:|---|
-| Onboarding | 7 | Strong multi-path intake, but high cognitive load (many branches) (`onboarding/page.tsx`) |
-| Navigation | 6 | Alias routes (`job-analyzer`, `job-hub`, `interview-prep`) suggest evolving IA; can confuse users |
-| Error handling | 6 | Global error boundary sends to Sentry (`global-error.tsx`), but user-facing error UX varies by page |
-| Loading states | 8 | Consistent Suspense fallbacks + dashboard route-level skeleton (`dashboard/loading.tsx`) |
-| Empty states | 7 | Dashboard has personalized empty copy (e.g. “Let’s get your CV set up…”) |
-| Mobile experience | 6 | Some mobile-specific components exist (`MobileExperienceBanner`, `MobileDockFab`) but full coverage unverified |
-| Accessibility | 6 | Some aria-labels exist (cover letter editor), but overall coverage unknown without deeper scan |
-| Performance | 6 | Risk: mega client pages; some bounded stale times (e.g. 60s) but overall re-render risk needs profiling |
+| Area              | Score (1-10) | Key Finding                                                                                                    |
+| ----------------- | -----------: | -------------------------------------------------------------------------------------------------------------- |
+| Onboarding        |            7 | Strong multi-path intake, but high cognitive load (many branches) (`onboarding/page.tsx`)                      |
+| Navigation        |            6 | Alias routes (`job-analyzer`, `job-hub`, `interview-prep`) suggest evolving IA; can confuse users              |
+| Error handling    |            6 | Global error boundary sends to Sentry (`global-error.tsx`), but user-facing error UX varies by page            |
+| Loading states    |            8 | Consistent Suspense fallbacks + dashboard route-level skeleton (`dashboard/loading.tsx`)                       |
+| Empty states      |            7 | Dashboard has personalized empty copy (e.g. “Let’s get your CV set up…”)                                       |
+| Mobile experience |            6 | Some mobile-specific components exist (`MobileExperienceBanner`, `MobileDockFab`) but full coverage unverified |
+| Accessibility     |            6 | Some aria-labels exist (cover letter editor), but overall coverage unknown without deeper scan                 |
+| Performance       |            6 | Risk: mega client pages; some bounded stale times (e.g. 60s) but overall re-render risk needs profiling        |
 
 Key evidence for loading state quality:
 
@@ -596,7 +598,7 @@ Evidence:
   - `packages/web/src/app/(dashboard)/dashboard/page.tsx` is huge (thousands of lines).
   - `packages/web/src/app/(dashboard)/dashboard/cv/page.tsx` is huge (thousands of lines).
   - `packages/web/src/app/(dashboard)/dashboard/jobs/JobsAnalyzeContent.tsx` is huge (thousands of lines).
-  This is a scalability risk for the team and increases bug surface.
+    This is a scalability risk for the team and increases bug surface.
 
 - **React Query consistency**: Query keys are present and invalidation is used, but naming is inconsistent (`['cv-profile']` vs `['cv-profile', id]` vs `['cv', 'profile', id]` etc.) which can cause cache misses and stale UI. Evidence: `AddSectionModal.tsx` invalidates many variants.
 
@@ -611,6 +613,7 @@ Evidence:
 - **1,000,000 concurrent**: Requires excellent infra + observability + strict performance discipline; current mega-pages and rich animation libraries (`framer-motion`, lots of dashboard logic) will need optimization.
 
 Early breakpoints (most likely):
+
 - **Bundle / hydration cost** on dashboard and CV clinic pages (very large client components).
 - **Cache invalidation drift** due to inconsistent query keys.
 - **Workflow state persistence** reliance on `localStorage` (e.g. cover letter drafts) which can get messy across devices.
@@ -620,6 +623,7 @@ Early breakpoints (most likely):
 ## Revenue Readiness Score: 6/10
 
 What would push to 10/10:
+
 - **Clear plan gating** at the moments of maximum value (tailor, cover letter generation, export), with consistent “why upgrade” messaging.
 - **Upgrade prompts** that are contextual (not generic), tied to AI usage limit and success outcomes.
 - **Billing integration evidence** (Stripe, plan tiers, feature flags) visible in code; not confirmed in this pass.
@@ -638,4 +642,3 @@ What would push to 10/10:
    - Add clear user-facing errors (not just Sentry capture), and handle auth expiry centrally (redirect + toast + resume where you left off).
 5. **Make AI-limit behavior a first-class UX**
    - `DAILY_AI_LIMIT_REACHED_MESSAGE` exists; ensure the UI offers “save draft / continue manually / upgrade” paths mid-flow.
-

@@ -40,6 +40,8 @@ export function stripNestedIds(value: unknown): unknown {
   return value;
 }
 
-export function stableStringifySectionPayload(data: Record<string, unknown> | undefined): string {
+export function stableStringifySectionPayload(
+  data: Record<string, unknown> | undefined,
+): string {
   return stableStringify(stripNestedIds(data ?? {}));
 }

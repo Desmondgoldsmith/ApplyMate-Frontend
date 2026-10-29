@@ -70,11 +70,16 @@ function SettingsPageInner() {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45 }}
-      className={cn('mx-auto w-full space-y-6', tab === 'account' ? 'max-w-3xl' : 'max-w-2xl')}
+      className={cn(
+        'mx-auto w-full space-y-6',
+        tab === 'account' ? 'max-w-3xl' : 'max-w-2xl',
+      )}
     >
       <div>
         <h2 className="text-2xl font-extrabold text-white">Settings</h2>
-        <p className="text-sm text-white/50">Account details and dashboard tools.</p>
+        <p className="text-sm text-white/50">
+          Account details and dashboard tools.
+        </p>
       </div>
 
       <div className="flex gap-6 border-b border-white/10">
@@ -83,7 +88,9 @@ function SettingsPageInner() {
           onClick={() => setTab('features')}
           className={cn(
             '-mb-px pb-3 text-sm font-semibold transition-colors duration-200 ease-out',
-            tab === 'features' ? 'border-b-2 border-[#00C9B1] text-white' : 'text-white/45',
+            tab === 'features'
+              ? 'border-b-2 border-[#00C9B1] text-white'
+              : 'text-white/45',
           )}
         >
           Features
@@ -93,7 +100,9 @@ function SettingsPageInner() {
           onClick={() => setTab('notifications')}
           className={cn(
             '-mb-px pb-3 text-sm font-semibold transition-colors duration-200 ease-out',
-            tab === 'notifications' ? 'border-b-2 border-[#00C9B1] text-white' : 'text-white/45',
+            tab === 'notifications'
+              ? 'border-b-2 border-[#00C9B1] text-white'
+              : 'text-white/45',
           )}
         >
           Notifications
@@ -103,7 +112,9 @@ function SettingsPageInner() {
           onClick={() => setTab('account')}
           className={cn(
             '-mb-px pb-3 text-sm font-semibold transition-colors duration-200 ease-out',
-            tab === 'account' ? 'border-b-2 border-[#00C9B1] text-white' : 'text-white/45',
+            tab === 'account'
+              ? 'border-b-2 border-[#00C9B1] text-white'
+              : 'text-white/45',
           )}
         >
           Account
@@ -145,7 +156,9 @@ function AccountTab() {
   return (
     <GlowCard contentClassName="p-6 sm:p-8">
       <div className="mb-8 border-b border-white/[0.08] pb-6">
-        <h3 className="text-xl font-semibold tracking-tight text-white">Account</h3>
+        <h3 className="text-xl font-semibold tracking-tight text-white">
+          Account
+        </h3>
         <p className="mt-1.5 text-sm text-white/45">
           Manage how you appear in ApplyMate and update your sign-in details.
         </p>
@@ -158,7 +171,10 @@ function AccountTab() {
         }}
       >
         <div>
-          <label htmlFor="settings-name" className="mb-1.5 block text-xs font-medium text-white/50">
+          <label
+            htmlFor="settings-name"
+            className="mb-1.5 block text-xs font-medium text-white/50"
+          >
             Display name
           </label>
           <input
@@ -170,7 +186,10 @@ function AccountTab() {
           />
         </div>
         <div>
-          <label htmlFor="settings-email" className="mb-1.5 block text-xs font-medium text-white/50">
+          <label
+            htmlFor="settings-email"
+            className="mb-1.5 block text-xs font-medium text-white/50"
+          >
             Email
           </label>
           <input
@@ -196,10 +215,17 @@ function AccountTab() {
           </Button>
         </div>
         <div className="flex flex-col-reverse gap-3 border-t border-white/[0.08] pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <Link href="/dashboard/cv-profiles" className="text-sm font-medium text-[#00C9B1] hover:underline">
+          <Link
+            href="/dashboard/cv-profiles"
+            className="text-sm font-medium text-[#00C9B1] hover:underline"
+          >
             CV profiles & uploads →
           </Link>
-          <Button type="submit" disabled={save.isPending} className="sm:min-w-[10rem]">
+          <Button
+            type="submit"
+            disabled={save.isPending}
+            className="sm:min-w-[10rem]"
+          >
             {save.isPending ? 'Saving…' : 'Save changes'}
           </Button>
         </div>
@@ -236,11 +262,14 @@ function FeaturesTab() {
   const [local, setLocal] = useState<string[]>(DEFAULT_FEATURES);
 
   useEffect(() => {
-    setLocal((prev) => (sameFeatureList(prev, serverFeatures) ? prev : serverFeatures));
+    setLocal((prev) =>
+      sameFeatureList(prev, serverFeatures) ? prev : serverFeatures,
+    );
   }, [serverFeatures]);
 
   const updateFeat = useMutation({
-    mutationFn: (selectedFeatures: string[]) => api.users.updateFeatures(selectedFeatures),
+    mutationFn: (selectedFeatures: string[]) =>
+      api.users.updateFeatures(selectedFeatures),
     onSuccess: (data) => {
       setSelectedFeatures(data.selectedFeatures);
       void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
@@ -306,7 +335,8 @@ function FeaturesTab() {
       <div>
         <h3 className="text-[20px] font-bold text-white">Your Features</h3>
         <p className="mt-1 text-sm text-white/25">
-          Choose which tools appear in your dashboard. You can change these anytime.
+          Choose which tools appear in your dashboard. You can change these
+          anytime.
         </p>
       </div>
 
@@ -326,7 +356,9 @@ function FeaturesTab() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-[15px] font-semibold text-white">{row.title}</p>
+                    <p className="text-[15px] font-semibold text-white">
+                      {row.title}
+                    </p>
                     {'badge' in row && row.badge ? (
                       <span className="rounded-full bg-[#00C9B1]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#00C9B1]">
                         {row.badge}
@@ -335,7 +367,9 @@ function FeaturesTab() {
                   </div>
                   <p className="mt-0.5 text-[13px] text-white/55">{row.desc}</p>
                   {row.key === 'cv' ? (
-                    <p className="mt-1 text-[11px] text-white/25">Always included</p>
+                    <p className="mt-1 text-[11px] text-white/25">
+                      Always included
+                    </p>
                   ) : null}
                 </div>
                 <button
@@ -346,7 +380,9 @@ function FeaturesTab() {
                   onClick={() => toggle(row.key, !on)}
                   className={cn(
                     'relative h-7 w-12 shrink-0 rounded-full transition-colors',
-                    row.disabled ? 'cursor-not-allowed opacity-45' : 'cursor-pointer',
+                    row.disabled
+                      ? 'cursor-not-allowed opacity-45'
+                      : 'cursor-pointer',
                     on ? 'bg-[#00C9B1]' : 'bg-white/15',
                   )}
                 >
@@ -366,7 +402,8 @@ function FeaturesTab() {
       <GlowCard contentClassName="p-5 sm:p-6">
         <h4 className="text-sm font-semibold text-white">Product tour</h4>
         <p className="mt-1 text-sm text-white/45">
-          Replay the guided walkthrough of your dashboard — AI credits, jobs, CV Clinic, and Pro.
+          Replay the guided walkthrough of your dashboard — AI credits, jobs, CV
+          Clinic, and Pro.
         </p>
         <button
           type="button"

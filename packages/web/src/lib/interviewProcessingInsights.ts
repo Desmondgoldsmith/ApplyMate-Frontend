@@ -1,4 +1,7 @@
-import type { ProcessingInsights, TurnAnswerResponse } from '@/lib/interview-prep-types';
+import type {
+  ProcessingInsights,
+  TurnAnswerResponse,
+} from '@/lib/interview-prep-types';
 
 export type ProcessingInsightsDisplay = {
   headline: string;
@@ -49,12 +52,9 @@ export function resolveProcessingInsights(
   if (pi?.headline?.trim()) {
     return {
       headline: pi.headline.trim(),
-      description:
-        pi.steps?.[0]?.trim() ||
-        DEFAULT_DISPLAY.description,
+      description: pi.steps?.[0]?.trim() || DEFAULT_DISPLAY.description,
       steps:
-        pi.steps?.filter((s) => s.trim()).slice(0, 4) ??
-        DEFAULT_DISPLAY.steps,
+        pi.steps?.filter((s) => s.trim()).slice(0, 4) ?? DEFAULT_DISPLAY.steps,
       interviewerContext,
       whileYouWaitTips,
     };

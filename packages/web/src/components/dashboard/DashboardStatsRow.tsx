@@ -72,14 +72,17 @@ function valueColorClass(chip: DashboardStatChip): string {
 function statusColorClass(chip: DashboardStatChip): string {
   const s = chip.status.trim();
   if (!s) return 'text-[var(--text-muted)]';
-  if (/(steady|slow|fragile|stalled)/i.test(s)) return 'text-[var(--text-amber)]';
-  if (/(increas|strong|build|healthy|high)/i.test(s)) return 'text-[var(--text-teal)]';
+  if (/(steady|slow|fragile|stalled)/i.test(s))
+    return 'text-[var(--text-amber)]';
+  if (/(increas|strong|build|healthy|high)/i.test(s))
+    return 'text-[var(--text-teal)]';
   return 'text-[var(--text-secondary)]';
 }
 
 function StatChipStatus({ chip }: { chip: DashboardStatChip }) {
   const status = cleanAiText(chip.status.trim());
-  if (!status) return <span className="text-[var(--text-muted)]">{'\u00a0'}</span>;
+  if (!status)
+    return <span className="text-[var(--text-muted)]">{'\u00a0'}</span>;
 
   if (chip.key === 'predictive_outlook') {
     return (
@@ -92,13 +95,24 @@ function StatChipStatus({ chip }: { chip: DashboardStatChip }) {
   }
 
   return (
-    <p className={cn('w-full text-[12px] font-medium leading-snug', statusColorClass(chip))}>
+    <p
+      className={cn(
+        'w-full text-[12px] font-medium leading-snug',
+        statusColorClass(chip),
+      )}
+    >
       {status}
     </p>
   );
 }
 
-function StatChipButton({ c, gridClassName }: { c: DashboardStatChip; gridClassName?: string }) {
+function StatChipButton({
+  c,
+  gridClassName,
+}: {
+  c: DashboardStatChip;
+  gridClassName?: string;
+}) {
   return (
     <button
       type="button"
@@ -140,7 +154,10 @@ function StatChipButton({ c, gridClassName }: { c: DashboardStatChip; gridClassN
       {/* Row 2: value — fixed height for baseline alignment */}
       <div className="flex h-10 shrink-0 items-center">
         <p
-          className={cn('tabular-nums leading-none text-[24px] md:text-[24px]', valueColorClass(c))}
+          className={cn(
+            'tabular-nums leading-none text-[24px] md:text-[24px]',
+            valueColorClass(c),
+          )}
           style={{ fontWeight: 'var(--weight-bold)' }}
         >
           {c.value}
@@ -211,9 +228,15 @@ export function DashboardStatsRow({ chips, loading, className }: Props) {
         {row2.length > 0 ? (
           <div className="grid grid-cols-6 gap-2.5">
             {row2.length === 1 ? (
-              <StatChipButton key={row2[0]!.key} c={row2[0]!} gridClassName="col-span-2" />
+              <StatChipButton
+                key={row2[0]!.key}
+                c={row2[0]!}
+                gridClassName="col-span-2"
+              />
             ) : (
-              row2.map((c) => <StatChipButton key={c.key} c={c} gridClassName="col-span-2" />)
+              row2.map((c) => (
+                <StatChipButton key={c.key} c={c} gridClassName="col-span-2" />
+              ))
             )}
           </div>
         ) : null}

@@ -21,7 +21,9 @@ function GuideRow({ item }: { item: ScoreImprovementItem }) {
       <div className="flex gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[13px] font-semibold leading-snug text-white">{item.title}</p>
+            <p className="text-[13px] font-semibold leading-snug text-white">
+              {item.title}
+            </p>
             <span className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-white/45">
               <Info className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
               {scoreImprovementAxisLabel(item.axis)}
@@ -68,11 +70,17 @@ export function ScoreImprovementGuideCard({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <Sparkles className="h-4 w-4 shrink-0 text-[#00C9B1]" aria-hidden />
-          <h3 id="score-improvement-heading" className="text-sm font-semibold text-white">
+          <h3
+            id="score-improvement-heading"
+            className="text-sm font-semibold text-white"
+          >
             Your score &amp; next steps
           </h3>
         </div>
-        <Badge variant="muted" className="shrink-0 text-[10px] font-semibold uppercase tracking-wide">
+        <Badge
+          variant="muted"
+          className="shrink-0 text-[10px] font-semibold uppercase tracking-wide"
+        >
           {bandLabel}
         </Badge>
       </div>
@@ -88,8 +96,12 @@ export function ScoreImprovementGuideCard({
         ) : null}
       </div>
 
-      <p className="mt-2 text-[14px] font-medium leading-snug text-white/90">{guide.headline}</p>
-      <p className="mt-2 text-[12px] leading-relaxed text-white/48">{guide.ceilingHint}</p>
+      <p className="mt-2 text-[14px] font-medium leading-snug text-white/90">
+        {guide.headline}
+      </p>
+      <p className="mt-2 text-[12px] leading-relaxed text-white/48">
+        {guide.ceilingHint}
+      </p>
 
       {guideItems.length > 0 ? (
         <ul className="mt-4 space-y-2.5" role="list">
@@ -100,7 +112,9 @@ export function ScoreImprovementGuideCard({
       ) : null}
 
       {interviewCopy ? (
-        <p className="mt-4 text-[11px] leading-relaxed text-white/42">{interviewCopy}</p>
+        <p className="mt-4 text-[11px] leading-relaxed text-white/42">
+          {interviewCopy}
+        </p>
       ) : null}
     </section>
   );

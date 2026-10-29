@@ -16,7 +16,8 @@ export function useCvProfileRowsDisplay() {
   const listQ = useCVProfiles();
   const legacy = useCVProfile();
   const apiRows = listQ.data?.rows ?? [];
-  const showLegacyAsRow = apiRows.length === 0 && Boolean(legacy.data?.id?.trim());
+  const showLegacyAsRow =
+    apiRows.length === 0 && Boolean(legacy.data?.id?.trim());
   const legacyScore = useCVScore(showLegacyAsRow, null);
 
   const displayRows = useMemo((): CvProfileSummary[] => {
@@ -24,7 +25,8 @@ export function useCvProfileRowsDisplay() {
     const p = legacy.data;
     if (!p?.id?.trim()) return [];
     const score =
-      typeof legacyScore.data?.score === 'number' && Number.isFinite(legacyScore.data.score)
+      typeof legacyScore.data?.score === 'number' &&
+      Number.isFinite(legacyScore.data.score)
         ? legacyScore.data.score
         : null;
     return [
@@ -42,10 +44,14 @@ export function useCvProfileRowsDisplay() {
   }, [apiRows, legacy.data, legacyScore.data?.score]);
 
   const listInconsistent =
-    !listQ.isLoading && !legacy.isLoading && apiRows.length === 0 && Boolean(legacy.data?.id);
+    !listQ.isLoading &&
+    !legacy.isLoading &&
+    apiRows.length === 0 &&
+    Boolean(legacy.data?.id);
 
   /** Wait for list + legacy profile; do not block on score (score can load in the background). */
-  const isBootstrapping = listQ.isPending || (apiRows.length === 0 && legacy.isPending);
+  const isBootstrapping =
+    listQ.isPending || (apiRows.length === 0 && legacy.isPending);
 
   return {
     apiRows,

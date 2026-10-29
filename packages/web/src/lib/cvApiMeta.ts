@@ -17,18 +17,28 @@ export type CvApiSuccessContext = {
 export function readCvApiSuccessContext(raw: unknown): CvApiSuccessContext {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return {};
   const o = raw as Record<string, unknown>;
-  const requestId = typeof o.requestId === 'string' && o.requestId.trim() ? o.requestId.trim() : undefined;
+  const requestId =
+    typeof o.requestId === 'string' && o.requestId.trim()
+      ? o.requestId.trim()
+      : undefined;
   const m = o.meta;
   if (m === null || typeof m !== 'object' || Array.isArray(m)) {
     return requestId ? { requestId } : {};
   }
   const metaObj = m as Record<string, unknown>;
   const meta: CvApiResponseMeta = {};
-  if (typeof metaObj.cvRevisionId === 'string') meta.cvRevisionId = metaObj.cvRevisionId;
-  if (typeof metaObj.pendingSuggestionsCount === 'number' && Number.isFinite(metaObj.pendingSuggestionsCount)) {
+  if (typeof metaObj.cvRevisionId === 'string')
+    meta.cvRevisionId = metaObj.cvRevisionId;
+  if (
+    typeof metaObj.pendingSuggestionsCount === 'number' &&
+    Number.isFinite(metaObj.pendingSuggestionsCount)
+  ) {
     meta.pendingSuggestionsCount = metaObj.pendingSuggestionsCount;
   }
-  if (typeof metaObj.durationMs === 'number' && Number.isFinite(metaObj.durationMs)) {
+  if (
+    typeof metaObj.durationMs === 'number' &&
+    Number.isFinite(metaObj.durationMs)
+  ) {
     meta.durationMs = metaObj.durationMs;
   }
   return {

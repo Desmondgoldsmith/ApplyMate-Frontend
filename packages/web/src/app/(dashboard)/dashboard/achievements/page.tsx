@@ -10,7 +10,10 @@ import { GlowCard } from '@/components/ui/GlowCard';
 import { ListPageShimmer } from '@/components/ui/ListPageShimmer';
 import { useCvProfileRowsDisplay } from '@/hooks/useCvProfileRowsDisplay';
 import { useTodayPlan } from '@/hooks/useTodayPlan';
-import { dashboardEmptyStateFor, normalizedSectionTitle } from '@/lib/today-plan';
+import {
+  dashboardEmptyStateFor,
+  normalizedSectionTitle,
+} from '@/lib/today-plan';
 
 export default function DashboardAchievementsPage() {
   const { displayRows } = useCvProfileRowsDisplay();
@@ -42,9 +45,12 @@ export default function DashboardAchievementsPage() {
   return (
     <div className="w-full min-w-0 max-w-full space-y-5 overflow-x-hidden sm:space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">Achievements</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
+          Achievements
+        </h1>
         <p className="mt-1 max-w-2xl text-sm text-white/45">
-          Celebrate your wins, track what&apos;s almost unlocked, and share your momentum.
+          Celebrate your wins, track what&apos;s almost unlocked, and share your
+          momentum.
         </p>
       </div>
 
@@ -53,7 +59,11 @@ export default function DashboardAchievementsPage() {
       ) : todayPlan.isError ? (
         <GlowCard contentClassName="p-6">
           <p className="text-sm text-rose-200">Could not load achievements.</p>
-          <Button className="mt-4" variant="ghost" onClick={() => void todayPlan.refetch()}>
+          <Button
+            className="mt-4"
+            variant="ghost"
+            onClick={() => void todayPlan.refetch()}
+          >
             Retry
           </Button>
         </GlowCard>
@@ -78,7 +88,10 @@ export default function DashboardAchievementsPage() {
 
       <p className="text-center text-[12px] text-white/35">
         Accepted job offers live on{' '}
-        <Link href="/dashboard/career-achievements" className="text-[#00C9B1] hover:underline">
+        <Link
+          href="/dashboard/career-achievements"
+          className="text-[#00C9B1] hover:underline"
+        >
           Career Achievements
         </Link>
         .

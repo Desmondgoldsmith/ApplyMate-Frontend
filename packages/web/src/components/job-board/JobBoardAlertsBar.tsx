@@ -35,9 +35,12 @@ export function JobBoardAlertsBar({
           key={alert.id}
           className={cn(
             'inline-flex max-w-full items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[12px] leading-snug',
-            alert.tone === 'teal' && 'border-[#00C9B1]/30 bg-[#00C9B1]/10 text-white/90',
-            alert.tone === 'neutral' && 'border-white/12 bg-white/[0.04] text-white/85',
-            alert.tone === 'amber' && 'border-amber-400/30 bg-amber-500/10 text-amber-100/95',
+            alert.tone === 'teal' &&
+              'border-[#00C9B1]/30 bg-[#00C9B1]/10 text-white/90',
+            alert.tone === 'neutral' &&
+              'border-white/12 bg-white/[0.04] text-white/85',
+            alert.tone === 'amber' &&
+              'border-amber-400/30 bg-amber-500/10 text-amber-100/95',
           )}
         >
           <span className="min-w-0">{alert.message}</span>

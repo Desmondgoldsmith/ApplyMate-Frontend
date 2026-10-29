@@ -31,7 +31,10 @@ export const CoachingAdaptiveSummary = memo(function CoachingAdaptiveSummary({
       {lines.map((line) => (
         <li
           key={line.text}
-          className={cn('flex items-start gap-2 text-xs leading-snug', TONE_CLASS[line.tone])}
+          className={cn(
+            'flex items-start gap-2 text-xs leading-snug',
+            TONE_CLASS[line.tone],
+          )}
         >
           <span className="shrink-0 text-[11px]" aria-hidden>
             {TONE_ICON[line.tone]}

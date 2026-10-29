@@ -1,8 +1,13 @@
-import type { ExperienceStabilityPayload, TodayPlanPayload } from '@/lib/today-plan';
+import type {
+  ExperienceStabilityPayload,
+  TodayPlanPayload,
+} from '@/lib/today-plan';
 import { cn } from '@/lib/utils';
 
 /** Backend guarantees hero narrative may render without churning on hydration/refetch. */
-export function experienceStableForHero(st: ExperienceStabilityPayload | null | undefined): boolean {
+export function experienceStableForHero(
+  st: ExperienceStabilityPayload | null | undefined,
+): boolean {
   if (st == null) return true;
   if (st.stable === true) return true;
   if (st.stable === false) return false;
@@ -10,7 +15,9 @@ export function experienceStableForHero(st: ExperienceStabilityPayload | null | 
 }
 
 /** Phase 3: prefer `experienceState.stable` when present; else legacy `experienceStability`. */
-export function planStableForHero(plan: TodayPlanPayload | null | undefined): boolean {
+export function planStableForHero(
+  plan: TodayPlanPayload | null | undefined,
+): boolean {
   const es = plan?.experienceState;
   if (es?.stable === false) return false;
   if (es?.stable === true) return true;
@@ -19,7 +26,9 @@ export function planStableForHero(plan: TodayPlanPayload | null | undefined): bo
 
 export type ConfidenceBand = 'high' | 'med' | 'low';
 
-export function confidenceBandFromScore(value: number | null | undefined): ConfidenceBand | null {
+export function confidenceBandFromScore(
+  value: number | null | undefined,
+): ConfidenceBand | null {
   if (typeof value !== 'number' || !Number.isFinite(value)) return null;
   if (value >= 80) return 'high';
   if (value >= 55) return 'med';
@@ -48,21 +57,34 @@ export function modeSectionSpacingClass(mode: string | null): string {
   return 'gap-8';
 }
 
-export function isRecoveryVisualMode(mode: string | null, fatigueAdjusted: boolean | null): boolean {
+export function isRecoveryVisualMode(
+  mode: string | null,
+  fatigueAdjusted: boolean | null,
+): boolean {
   const m = (mode ?? '').trim().toUpperCase();
   if (m.includes('RECOVERY')) return true;
   return fatigueAdjusted === true;
 }
 
 /** Quiet reassurance tied to interruption timing — avoid stacking noisy phrases. */
-export function continuationMemoryMicrocopy(interruptionAgeHours: number | null | undefined): string | null {
-  if (typeof interruptionAgeHours !== 'number' || !Number.isFinite(interruptionAgeHours)) return null;
-  if (interruptionAgeHours >= 18 && interruptionAgeHours <= 40) return 'You paused here yesterday.';
-  if (interruptionAgeHours >= 48 && interruptionAgeHours < 96) return 'Easy to pick this back up when you’re ready.';
+export function continuationMemoryMicrocopy(
+  interruptionAgeHours: number | null | undefined,
+): string | null {
+  if (
+    typeof interruptionAgeHours !== 'number' ||
+    !Number.isFinite(interruptionAgeHours)
+  )
+    return null;
+  if (interruptionAgeHours >= 18 && interruptionAgeHours <= 40)
+    return 'You paused here yesterday.';
+  if (interruptionAgeHours >= 48 && interruptionAgeHours < 96)
+    return 'Easy to pick this back up when you’re ready.';
   return null;
 }
 
-export function continuationResumeCtaClass(resumeConfidence: number | null | undefined): string {
+export function continuationResumeCtaClass(
+  resumeConfidence: number | null | undefined,
+): string {
   const band = confidenceBandFromScore(resumeConfidence);
   const base =
     'inline-flex min-h-[44px] items-center justify-center rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors';

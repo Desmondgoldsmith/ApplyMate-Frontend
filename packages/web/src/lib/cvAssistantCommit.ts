@@ -76,7 +76,8 @@ export type CommitAssistantAcceptedPatchOptions = {
 export async function commitAssistantAcceptedPatch(
   options: CommitAssistantAcceptedPatchOptions,
 ): Promise<CvAssistantCommitResult> {
-  const { queryClient, profileId, patch, commandId, operation, onRehydrated } = options;
+  const { queryClient, profileId, patch, commandId, operation, onRehydrated } =
+    options;
   const id = profileId.trim();
   if (!id) throw new Error('commitAssistantAcceptedPatch: missing profileId');
 

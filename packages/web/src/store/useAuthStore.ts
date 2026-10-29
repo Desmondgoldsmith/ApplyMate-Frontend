@@ -38,7 +38,11 @@ type AuthState = {
   isAuthenticated: boolean;
   /** False until cookie hydrate + optional refresh restore finish on app boot. */
   authSessionReady: boolean;
-  setAuth: (user: AuthUser, accessToken: string, refreshToken?: string | null) => void;
+  setAuth: (
+    user: AuthUser,
+    accessToken: string,
+    refreshToken?: string | null,
+  ) => void;
   clearAuth: (opts?: ClearAuthOptions) => void;
   /** Restore session token from cookie after full reload (memory-only Zustand resets). */
   hydrateFromStorage: () => void;

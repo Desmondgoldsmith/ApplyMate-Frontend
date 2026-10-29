@@ -19,14 +19,30 @@ type OnboardingShellProps = {
   fillViewportHeight?: boolean;
 };
 
-function SegmentedProgressBar({ step, reducedMotion }: { step: 1 | 2 | 3; reducedMotion: boolean | null }) {
+function SegmentedProgressBar({
+  step,
+  reducedMotion,
+}: {
+  step: 1 | 2 | 3;
+  reducedMotion: boolean | null;
+}) {
   const duration = reducedMotion ? 0 : 0.4;
   return (
-    <div className="flex w-full gap-1.5" role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={3}>
+    <div
+      className="flex w-full gap-1.5"
+      role="progressbar"
+      aria-valuenow={step}
+      aria-valuemin={1}
+      aria-valuemax={3}
+    >
       {([1, 2, 3] as const).map((n) => {
         const completed = step > n;
         const active = step === n;
-        const bg = completed ? 'rgba(0,201,177,0.5)' : active ? BRAND_TEAL : 'rgba(255,255,255,0.15)';
+        const bg = completed
+          ? 'rgba(0,201,177,0.5)'
+          : active
+            ? BRAND_TEAL
+            : 'rgba(255,255,255,0.15)';
         return (
           <motion.div
             key={n}
@@ -49,17 +65,30 @@ function ApplyMateMark({ className }: { className?: string }) {
         className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgba(0,201,177,0.12)] ring-1 ring-[rgba(0,201,177,0.35)]"
         aria-hidden
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
           <path
             d="M12 3L19 7V17L12 21L5 17V7L12 3Z"
             stroke={BRAND_TEAL}
             strokeWidth="1.5"
             strokeLinejoin="round"
           />
-          <path d="M12 8V16M8 11L16 15M16 11L8 15" stroke={BRAND_TEAL} strokeWidth="1.2" strokeLinecap="round" />
+          <path
+            d="M12 8V16M8 11L16 15M16 11L8 15"
+            stroke={BRAND_TEAL}
+            strokeWidth="1.2"
+            strokeLinecap="round"
+          />
         </svg>
       </span>
-      <span className="text-[15px] font-semibold tracking-tight text-white">ApplyMate</span>
+      <span className="text-[15px] font-semibold tracking-tight text-white">
+        ApplyMate
+      </span>
     </div>
   );
 }
@@ -104,7 +133,9 @@ export function OnboardingShell({
         className={cn(
           'mx-auto w-full min-h-0',
           wide ? 'max-w-[min(100%,1320px)]' : 'max-w-[560px]',
-          fillViewportHeight ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : 'flex flex-1 flex-col justify-center',
+          fillViewportHeight
+            ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
+            : 'flex flex-1 flex-col justify-center',
         )}
       >
         {children}

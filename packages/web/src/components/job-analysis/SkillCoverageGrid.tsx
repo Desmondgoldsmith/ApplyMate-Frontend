@@ -11,7 +11,10 @@ export type SkillCoverageGridProps = {
 };
 
 /** Full posting skill inventory — Skill | On CV? | Importance. */
-export function SkillCoverageGrid({ items, className }: SkillCoverageGridProps) {
+export function SkillCoverageGrid({
+  items,
+  className,
+}: SkillCoverageGridProps) {
   const sorted = sortSkillCoverage(items);
   if (sorted.length === 0) return null;
 
@@ -39,7 +42,9 @@ export function SkillCoverageGrid({ items, className }: SkillCoverageGridProps) 
                   key={`${item.skill}-${index}`}
                   className="border-b border-white/[0.04] last:border-b-0"
                 >
-                  <td className="px-3 py-2 font-medium text-white/85">{item.skill}</td>
+                  <td className="px-3 py-2 font-medium text-white/85">
+                    {item.skill}
+                  </td>
                   <td className="px-3 py-2">
                     <SkillTierBadge tier={item.tier} />
                   </td>

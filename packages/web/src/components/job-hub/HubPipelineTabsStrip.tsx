@@ -13,7 +13,11 @@ type Props = {
   onFilterChange: (tab: HubPipelineTab) => void;
 };
 
-export function HubPipelineTabsStrip({ counts, filter, onFilterChange }: Props) {
+export function HubPipelineTabsStrip({
+  counts,
+  filter,
+  onFilterChange,
+}: Props) {
   const tabs: HubPipelineTab[] = ['all', ...HUB_PIPELINE_TABS];
 
   return (
@@ -38,7 +42,9 @@ export function HubPipelineTabsStrip({ counts, filter, onFilterChange }: Props) 
             >
               <span className="block text-[18px] font-semibold tabular-nums leading-none">
                 {n}
-                {isAccepted ? <span className="ml-0.5 text-amber-300">★</span> : null}
+                {isAccepted ? (
+                  <span className="ml-0.5 text-amber-300">★</span>
+                ) : null}
               </span>
               <span className="mt-1 block text-[9px] font-medium uppercase tracking-[0.06em] opacity-80">
                 {HUB_PIPELINE_TAB_LABELS[tab]}

@@ -19,7 +19,9 @@ export const CoachingInsightSkeleton = memo(function CoachingInsightSkeleton({
       aria-busy="true"
       aria-label="Loading coaching feedback"
     >
-      <p className="text-xs font-medium text-[var(--text-teal)]">Analyzing your answer…</p>
+      <p className="text-xs font-medium text-[var(--text-teal)]">
+        Analyzing your answer…
+      </p>
       <div className="h-4 w-4/5 animate-pulse rounded bg-white/10" />
       <div className="grid grid-cols-4 gap-1.5">
         {[1, 2, 3, 4].map((i) => (
@@ -33,7 +35,9 @@ export const CoachingInsightSkeleton = memo(function CoachingInsightSkeleton({
       </div>
       {partial ? (
         <div className="space-y-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface-2)] p-3">
-          <p className="text-[10px] text-[var(--text-muted)]">Checking structure…</p>
+          <p className="text-[10px] text-[var(--text-muted)]">
+            Checking structure…
+          </p>
           <div className="grid gap-2">
             <div className="h-8 animate-pulse rounded bg-white/10" />
             <div className="h-8 animate-pulse rounded bg-white/10" />

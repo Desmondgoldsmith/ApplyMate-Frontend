@@ -2,7 +2,10 @@
 
 import Link from 'next/link';
 
-import type { AdaptiveCoachingCategory, AdaptiveCoachingPayload } from '@/lib/today-plan';
+import type {
+  AdaptiveCoachingCategory,
+  AdaptiveCoachingPayload,
+} from '@/lib/today-plan';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -45,9 +48,15 @@ export function DashboardAdaptiveCoachingCard({ data }: Props) {
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[11px] font-medium tracking-wide text-white/38">Adaptive Coaching</p>
-          <p className="mt-2 text-[15px] font-medium leading-snug text-white/88">{headline}</p>
-          <p className="mt-2 text-[13px] leading-relaxed text-white/55">{supporting}</p>
+          <p className="text-[11px] font-medium tracking-wide text-white/38">
+            Adaptive Coaching
+          </p>
+          <p className="mt-2 text-[15px] font-medium leading-snug text-white/88">
+            {headline}
+          </p>
+          <p className="mt-2 text-[13px] leading-relaxed text-white/55">
+            {supporting}
+          </p>
         </div>
         <Link
           href={ctaHref}

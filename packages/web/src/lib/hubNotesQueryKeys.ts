@@ -11,9 +11,12 @@ export function hubNoteScopeFromJob(job: {
   jobAnalysisId?: string | null;
   hubBookmarkId?: string | null;
 }): HubNoteScope | null {
-  if (job.applicationId) return { kind: 'application', applicationId: job.applicationId };
-  if (job.jobAnalysisId) return { kind: 'job-analysis', jobAnalysisId: job.jobAnalysisId };
-  if (job.hubBookmarkId) return { kind: 'bookmark', bookmarkId: job.hubBookmarkId };
+  if (job.applicationId)
+    return { kind: 'application', applicationId: job.applicationId };
+  if (job.jobAnalysisId)
+    return { kind: 'job-analysis', jobAnalysisId: job.jobAnalysisId };
+  if (job.hubBookmarkId)
+    return { kind: 'bookmark', bookmarkId: job.hubBookmarkId };
   return null;
 }
 

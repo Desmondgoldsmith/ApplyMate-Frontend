@@ -3,13 +3,7 @@
   "name": "ApplyMate",
   "version": "0.1.0",
   "description": "AI-powered job search assistant",
-  "permissions": [
-    "storage",
-    "sidePanel",
-    "activeTab",
-    "scripting",
-    "tabs"
-  ],
+  "permissions": ["storage", "sidePanel", "activeTab", "scripting", "tabs"],
   "host_permissions": [
     "https://*/*",
     "http://localhost:3000/*",

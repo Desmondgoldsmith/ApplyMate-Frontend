@@ -30,12 +30,20 @@ describe('mergeTrackedJobs', () => {
   });
 
   it('exposes the server stage only while the card shows it', () => {
-    const [shown] = mergeTrackedJobs([], [hist({ pipelineStatus: 'applied' })], {});
+    const [shown] = mergeTrackedJobs(
+      [],
+      [hist({ pipelineStatus: 'applied' })],
+      {},
+    );
     expect(shown?.serverPipelineStage).toBe('applied');
 
-    const [overridden] = mergeTrackedJobs([], [hist({ pipelineStatus: 'applied' })], {
-      'ja-1': 'interviewing',
-    });
+    const [overridden] = mergeTrackedJobs(
+      [],
+      [hist({ pipelineStatus: 'applied' })],
+      {
+        'ja-1': 'interviewing',
+      },
+    );
     expect(overridden?.stage).toBe('interviewing');
     expect(overridden?.serverPipelineStage).toBeNull();
   });

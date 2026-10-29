@@ -13,7 +13,11 @@ import {
   shouldRetryFailedQuery,
 } from '@/lib/axios';
 
-function axiosErr(status: number, url: string, data?: Record<string, unknown>): AxiosError {
+function axiosErr(
+  status: number,
+  url: string,
+  data?: Record<string, unknown>,
+): AxiosError {
   const cfg = { url, baseURL: 'http://localhost:3000/api/' };
   return new AxiosError(
     'fail',
@@ -43,9 +47,11 @@ describe('backend Phase 0 — auth throttle & safe 5xx', () => {
   });
 
   it('getApiErrorMessage uses throttle copy for auth 429', () => {
-    expect(getApiErrorMessage(axiosErr(429, '/auth/login', { message: 'Throttled' }))).toBe(
-      AUTH_RATE_LIMIT_USER_MESSAGE,
-    );
+    expect(
+      getApiErrorMessage(
+        axiosErr(429, '/auth/login', { message: 'Throttled' }),
+      ),
+    ).toBe(AUTH_RATE_LIMIT_USER_MESSAGE);
   });
 
   it('getApiErrorMessage uses generic copy for 500/502/504 bodies', () => {
@@ -96,7 +102,10 @@ describe('backend Phase 0 — auth throttle & safe 5xx', () => {
     expect(
       getApiErrorMessage(
         axiosErr(502, '/jobs/x', {
-          error: { code: BACKEND_UNREACHABLE_ERROR_CODE, message: 'Cannot reach' },
+          error: {
+            code: BACKEND_UNREACHABLE_ERROR_CODE,
+            message: 'Cannot reach',
+          },
         }),
       ),
     ).toContain('Cannot reach');

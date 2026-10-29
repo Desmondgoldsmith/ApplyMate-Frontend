@@ -32,12 +32,14 @@ function StepCard({
       transition={{ duration: 0.6, ease }}
       className="h-full"
     >
-      <AnimatedBorderCard className="h-full" contentClassName="relative overflow-hidden p-9">
+      <AnimatedBorderCard
+        className="h-full"
+        contentClassName="relative overflow-hidden p-9"
+      >
         <div
           className="pointer-events-none absolute -right-[60px] -top-[60px] h-[160px] w-[160px] rounded-full opacity-[0.08]"
           style={{
-            background:
-              'radial-gradient(circle, #00C9B1 0%, transparent 70%)',
+            background: 'radial-gradient(circle, #00C9B1 0%, transparent 70%)',
           }}
           aria-hidden
         />
@@ -78,10 +80,7 @@ function BrowserToolbarMock() {
 
 export function HowItWorks() {
   return (
-    <section
-      id="how-it-works"
-      className="px-4 py-[120px] sm:px-6 lg:px-[8%]"
-    >
+    <section id="how-it-works" className="px-4 py-[120px] sm:px-6 lg:px-[8%]">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -113,7 +112,11 @@ export function HowItWorks() {
           description="Visit any job posting. ApplyMate instantly reads the description and shows your match score, skill gaps, and what the employer values most."
         >
           <div className="flex justify-center px-1">
-            <MatchScoreBar score={87} label="Match Score" className="max-w-[280px]" />
+            <MatchScoreBar
+              score={87}
+              label="Match Score"
+              className="max-w-[280px]"
+            />
           </div>
         </StepCard>
 

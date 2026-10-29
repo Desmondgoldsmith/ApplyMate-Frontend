@@ -6,9 +6,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { CvChatComposer } from '@/components/cv/CvChatComposer';
 import { Button } from '@/components/ui/Button';
 import { GlowCard } from '@/components/ui/GlowCard';
-import { api, type ChatConversationHistoryItem, type ChatCreateCVPayload } from '@/lib/api';
+import {
+  api,
+  type ChatConversationHistoryItem,
+  type ChatCreateCVPayload,
+} from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
-import { cvChatInputLimitErrorMessage, isCvChatInputOverLimit } from '@/lib/cvChatInputDisplay';
+import {
+  cvChatInputLimitErrorMessage,
+  isCvChatInputOverLimit,
+} from '@/lib/cvChatInputDisplay';
 import { cn } from '@/lib/utils';
 
 const OPENING =
@@ -53,7 +60,9 @@ function AssistantMessageBody({
   return (
     <>
       {content ? <p className="leading-relaxed">{content}</p> : null}
-      <p className={cn('font-medium text-[#00C9B1]', content ? 'mt-2' : '')}>{question}</p>
+      <p className={cn('font-medium text-[#00C9B1]', content ? 'mt-2' : '')}>
+        {question}
+      </p>
     </>
   );
 }
@@ -72,9 +81,15 @@ function summarizeExtracted(d: ChatCreateCVPayload): { label: string }[] {
       ? ((d as { primarySkills: unknown[] }).primarySkills?.length ?? 0)
       : 0);
   const lines: { label: string }[] = [];
-  if (exp > 0) lines.push({ label: `Found ${exp} experience ${exp === 1 ? 'entry' : 'entries'}` });
+  if (exp > 0)
+    lines.push({
+      label: `Found ${exp} experience ${exp === 1 ? 'entry' : 'entries'}`,
+    });
   if (edu > 0) lines.push({ label: 'Education detected' });
-  if (projects > 0) lines.push({ label: `${projects} project${projects === 1 ? '' : 's'} captured` });
+  if (projects > 0)
+    lines.push({
+      label: `${projects} project${projects === 1 ? '' : 's'} captured`,
+    });
   if (skills > 0) lines.push({ label: `${skills} skills identified` });
   if (lines.length === 0) lines.push({ label: 'Resume data captured' });
   return lines;
@@ -91,7 +106,10 @@ function TypingOpening({ text, onDone }: { text: string; onDone: () => void }) {
       }
       return;
     }
-    const t = window.setTimeout(() => setShown(text.slice(0, shown.length + 1)), 16);
+    const t = window.setTimeout(
+      () => setShown(text.slice(0, shown.length + 1)),
+      16,
+    );
     return () => window.clearTimeout(t);
   }, [shown, text, onDone]);
   return <AssistantMessageBody content={shown} />;
@@ -105,13 +123,19 @@ export type CVChatInterfaceProps = {
   onDataExtracted?: (extractedData: ChatCreateCVPayload) => void;
 };
 
-export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataExtracted }: CVChatInterfaceProps) {
+export function CVChatInterface({
+  onComplete,
+  onSkip,
+  selectedTemplate,
+  onDataExtracted,
+}: CVChatInterfaceProps) {
   const stored = loadStoredChatMessages();
   const [openingDone, setOpeningDone] = useState(stored.length > 0);
   const [messages, setMessages] = useState<ChatMessage[]>(stored);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [extractedData, setExtractedData] = useState<ChatCreateCVPayload | null>(null);
+  const [extractedData, setExtractedData] =
+    useState<ChatCreateCVPayload | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -133,7 +157,10 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
   }, [openingDone, messages.length]);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: 'smooth',
+    });
   }, [messages, isTyping, extractedData]);
 
   const sendMessage = useCallback(async () => {
@@ -156,7 +183,9 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
     setInput('');
     setIsTyping(true);
     try {
-      const history: ChatConversationHistoryItem[] = prior.map(({ role, content }) => ({ role, content }));
+      const history: ChatConversationHistoryItem[] = prior.map(
+        ({ role, content }) => ({ role, content }),
+      );
       const response = await api.cv.chatConversation({
         message: trimmed,
         history,
@@ -198,7 +227,9 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
         ...prev,
         {
           role: 'assistant',
-          content: getApiErrorMessage(e) || 'Sorry, I had trouble processing that. Can you try again?',
+          content:
+            getApiErrorMessage(e) ||
+            'Sorry, I had trouble processing that. Can you try again?',
         },
       ]);
     }
@@ -207,10 +238,14 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
   const onOpeningComplete = useCallback(() => setOpeningDone(true), []);
 
   return (
-    <GlowCard className="min-h-0 border border-[rgba(0,201,177,0.15)]" contentClassName="flex min-h-0 min-w-0 flex-col p-0">
+    <GlowCard
+      className="min-h-0 border border-[rgba(0,201,177,0.15)]"
+      contentClassName="flex min-h-0 min-w-0 flex-col p-0"
+    >
       <div className="border-b border-[rgba(0,201,177,0.12)] px-4 py-3">
         <p className="text-center text-[11px] leading-snug text-white/45">
-          Answer naturally or paste your full resume. Follow-ups focus on gaps only.
+          Answer naturally or paste your full resume. Follow-ups focus on gaps
+          only.
         </p>
       </div>
 
@@ -229,7 +264,13 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
 
         {openingDone
           ? messages.map((m, idx) => (
-              <div key={idx} className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
+              <div
+                key={idx}
+                className={cn(
+                  'flex',
+                  m.role === 'user' ? 'justify-end' : 'justify-start',
+                )}
+              >
                 <div
                   className={cn(
                     'max-w-[85%] px-4 py-3 text-sm text-white',
@@ -239,7 +280,10 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
                   )}
                 >
                   {m.role === 'assistant' ? (
-                    <AssistantMessageBody content={m.content} followUpQuestion={m.followUpQuestion} />
+                    <AssistantMessageBody
+                      content={m.content}
+                      followUpQuestion={m.followUpQuestion}
+                    />
                   ) : (
                     m.content
                   )}
@@ -257,7 +301,11 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
                     key={i}
                     className="h-2 w-2 rounded-full bg-[#00C9B1]"
                     animate={{ opacity: [0.35, 1, 0.35] }}
-                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.15 }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      delay: i * 0.15,
+                    }}
                   />
                 ))}
               </span>
@@ -268,7 +316,9 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
 
       {extractedData ? (
         <div className="border-t border-[rgba(0,201,177,0.12)] bg-[#0C0F0F] px-4 py-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#00C9B1]">Ready to build</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#00C9B1]">
+            Ready to build
+          </p>
           <ul className="mt-3 space-y-2 text-sm text-white/80">
             {summarizeExtracted(extractedData).map((line) => (
               <li key={line.label} className="flex items-center gap-2">
@@ -276,9 +326,17 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-[11px] text-white/35">Template: {selectedTemplate}</p>
+          <p className="mt-2 text-[11px] text-white/35">
+            Template: {selectedTemplate}
+          </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Button type="button" className="gap-1" onClick={() => onComplete({ ...extractedData, template: selectedTemplate })}>
+            <Button
+              type="button"
+              className="gap-1"
+              onClick={() =>
+                onComplete({ ...extractedData, template: selectedTemplate })
+              }
+            >
               ✨ Build my resume now →
             </Button>
             <Button
@@ -289,7 +347,11 @@ export function CVChatInterface({ onComplete, onSkip, selectedTemplate, onDataEx
                 setExtractedData(null);
                 setMessages((m) => [
                   ...m,
-                  { role: 'assistant', content: 'Sure. Tell me anything else you want on your resume.' },
+                  {
+                    role: 'assistant',
+                    content:
+                      'Sure. Tell me anything else you want on your resume.',
+                  },
                 ]);
               }}
             >

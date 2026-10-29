@@ -1,4 +1,7 @@
-import type { DashboardContinuationItemPayload, TodayPlanPayload } from '@/lib/today-plan';
+import type {
+  DashboardContinuationItemPayload,
+  TodayPlanPayload,
+} from '@/lib/today-plan';
 import { listContinuationItems } from '@/lib/today-plan';
 
 export type InterviewContinuationResumeState = {
@@ -8,7 +11,9 @@ export type InterviewContinuationResumeState = {
 
 const INTERVIEW_SESSION_HREF_RE = /\/interview\/([^/?#]+)/i;
 
-export function interviewSessionIdFromHref(href: string | null | undefined): string | null {
+export function interviewSessionIdFromHref(
+  href: string | null | undefined,
+): string | null {
   const h = (href ?? '').trim();
   if (!h) return null;
   const m = h.match(INTERVIEW_SESSION_HREF_RE);
@@ -30,12 +35,19 @@ export function shouldShowInterviewContinuationItem(
   if (item.type !== 'interview') return true;
 
   const step = normalizeStepKey(item.stepKey);
-  const evalStatus = normalizeEvalStatus(item.interviewResumeState?.evaluationStatus);
+  const evalStatus = normalizeEvalStatus(
+    item.interviewResumeState?.evaluationStatus,
+  );
 
   if (step === 'evaluation_processing' || step === 'results_ready') return true;
 
   if (evalStatus === 'completed') return false;
-  if (step === 'completed' || step === 'abandoned' || step === 'evaluation_failed') return false;
+  if (
+    step === 'completed' ||
+    step === 'abandoned' ||
+    step === 'evaluation_failed'
+  )
+    return false;
 
   return true;
 }
@@ -74,10 +86,11 @@ export function enrichInterviewContinuationItem(
       ...item,
       title: item.title.trim() || 'Interview results ready',
       description:
-        item.description.trim() ||
-        'Your scored feedback is ready to review.',
+        item.description.trim() || 'Your scored feedback is ready to review.',
       ctaLabel:
-        backendCta && backendCta.toLowerCase() !== 'continue' ? backendCta : 'View results',
+        backendCta && backendCta.toLowerCase() !== 'continue'
+          ? backendCta
+          : 'View results',
       ctaHref: resultsHref,
     };
   }

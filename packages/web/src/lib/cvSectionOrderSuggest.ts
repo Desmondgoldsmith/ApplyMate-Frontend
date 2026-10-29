@@ -62,7 +62,10 @@ export function sectionOrderBannerDismissedKey(profileId: string) {
 export function readSectionOrderBannerDismissed(profileId: string): boolean {
   if (typeof window === 'undefined') return false;
   try {
-    return window.localStorage.getItem(sectionOrderBannerDismissedKey(profileId)) === '1';
+    return (
+      window.localStorage.getItem(sectionOrderBannerDismissedKey(profileId)) ===
+      '1'
+    );
   } catch {
     return false;
   }
@@ -81,10 +84,15 @@ export function sectionDisplayLabel(row: CVSectionRecord): string {
   const tl = row.type.toLowerCase();
   if (tl.startsWith('custom_')) {
     const title = row.data?.title;
-    return typeof title === 'string' && title.trim() ? title.trim() : 'Custom section';
+    return typeof title === 'string' && title.trim()
+      ? title.trim()
+      : 'Custom section';
   }
   if (tl === 'custom') return 'Custom section';
-  return SECTION_TYPE_LABELS[tl] ?? tl.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  return (
+    SECTION_TYPE_LABELS[tl] ??
+    tl.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  );
 }
 
 export function labelForSectionId(
@@ -92,7 +100,9 @@ export function labelForSectionId(
   sections: CVSectionRecord[],
   changes: CvSectionOrderChange[],
 ): string {
-  const fromChange = changes.find((c) => c.sectionId === sectionId)?.label?.trim();
+  const fromChange = changes
+    .find((c) => c.sectionId === sectionId)
+    ?.label?.trim();
   if (fromChange) return fromChange;
   const row = sections.find((s) => s.id === sectionId);
   if (row) return sectionDisplayLabel(row);
@@ -116,7 +126,8 @@ export function splitSuggestedOrder(
 
 function parseCareerStage(v: unknown): CvCareerStage {
   const s = typeof v === 'string' ? v.trim().toLowerCase() : '';
-  if (s === 'student' || s === 'early' || s === 'mid' || s === 'senior') return s;
+  if (s === 'student' || s === 'early' || s === 'mid' || s === 'senior')
+    return s;
   return 'mid';
 }
 
@@ -136,7 +147,9 @@ function parseIndustry(v: unknown): CvSectionOrderIndustry {
 
 function parseStringArray(v: unknown): string[] {
   if (!Array.isArray(v)) return [];
-  return v.filter((x): x is string => typeof x === 'string' && x.trim().length > 0);
+  return v.filter(
+    (x): x is string => typeof x === 'string' && x.trim().length > 0,
+  );
 }
 
 function normalizeChange(raw: unknown): CvSectionOrderChange | null {
@@ -154,7 +167,9 @@ function normalizeChange(raw: unknown): CvSectionOrderChange | null {
   };
 }
 
-export function normalizeCvSectionOrderSuggestResult(raw: unknown): CvSectionOrderSuggestResult {
+export function normalizeCvSectionOrderSuggestResult(
+  raw: unknown,
+): CvSectionOrderSuggestResult {
   const o =
     raw !== null && typeof raw === 'object' && !Array.isArray(raw)
       ? (raw as Record<string, unknown>)
@@ -186,7 +201,8 @@ export function normalizeCvSectionOrderSuggestResult(raw: unknown): CvSectionOrd
       nested.alreadyOrdered === true ||
       o.alreadyOrdered === true,
     showProactiveSuggestion:
-      nested.showProactiveSuggestion === true || o.showProactiveSuggestion === true,
+      nested.showProactiveSuggestion === true ||
+      o.showProactiveSuggestion === true,
     overview:
       typeof nested.overview === 'string'
         ? nested.overview
@@ -205,10 +221,14 @@ export function changeBySectionId(
 }
 
 /** Visible section row ids in persisted order. */
-export function currentVisibleSectionOrderIds(sections: CVSectionRecord[]): string[] {
+export function currentVisibleSectionOrderIds(
+  sections: CVSectionRecord[],
+): string[] {
   return [...sections]
     .filter((s) => s.hidden !== true)
-    .sort((a, b) => (a.order !== b.order ? a.order - b.order : a.id.localeCompare(b.id)))
+    .sort((a, b) =>
+      a.order !== b.order ? a.order - b.order : a.id.localeCompare(b.id),
+    )
     .map((s) => s.id);
 }
 
@@ -225,10 +245,14 @@ export function sectionOrderMatchesSuggested(
 }
 
 /** True when visible section rows are not in canonical professional type order. */
-export function sectionsOrderIsSuboptimal(sections: CVSectionRecord[]): boolean {
+export function sectionsOrderIsSuboptimal(
+  sections: CVSectionRecord[],
+): boolean {
   const visible = [...sections]
     .filter((s) => s.hidden !== true)
-    .sort((a, b) => (a.order !== b.order ? a.order - b.order : a.id.localeCompare(b.id)));
+    .sort((a, b) =>
+      a.order !== b.order ? a.order - b.order : a.id.localeCompare(b.id),
+    );
   let lastRank = -1;
   for (const row of visible) {
     const rank = professionalSectionRank(row.type);
@@ -246,10 +270,14 @@ export function buildClientSectionOrderSuggest(
 
   const visible = [...sections]
     .filter((s) => s.hidden !== true)
-    .sort((a, b) => (a.order !== b.order ? a.order - b.order : a.id.localeCompare(b.id)));
+    .sort((a, b) =>
+      a.order !== b.order ? a.order - b.order : a.id.localeCompare(b.id),
+    );
   const hidden = [...sections]
     .filter((s) => s.hidden === true)
-    .sort((a, b) => (a.order !== b.order ? a.order - b.order : a.id.localeCompare(b.id)));
+    .sort((a, b) =>
+      a.order !== b.order ? a.order - b.order : a.id.localeCompare(b.id),
+    );
 
   const currentOrder = visible.map((s) => s.id);
   const suggestedVisible = [...visible].sort((a, b) => {
@@ -258,7 +286,10 @@ export function buildClientSectionOrderSuggest(
     if (ra !== rb) return ra - rb;
     return a.order - b.order;
   });
-  const suggestedOrder = [...suggestedVisible.map((s) => s.id), ...hidden.map((s) => s.id)];
+  const suggestedOrder = [
+    ...suggestedVisible.map((s) => s.id),
+    ...hidden.map((s) => s.id),
+  ];
 
   const changes: CvSectionOrderChange[] = [];
   suggestedVisible.forEach((row, toPos) => {

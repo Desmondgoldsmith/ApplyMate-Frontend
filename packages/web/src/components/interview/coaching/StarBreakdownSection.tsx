@@ -17,10 +17,14 @@ export const StarBreakdownSection = memo(function StarBreakdownSection({
 }) {
   if (hintOnly) {
     return (
-      <CollapsibleCoachingSection title="STAR breakdown" defaultOpen className={className}>
+      <CollapsibleCoachingSection
+        title="STAR breakdown"
+        defaultOpen
+        className={className}
+      >
         <p className="text-xs leading-relaxed text-[var(--text-secondary)]">
-          Structure your answer with STAR: Situation, Task, Action, and Result — each part should
-          say something different.
+          Structure your answer with STAR: Situation, Task, Action, and Result —
+          each part should say something different.
         </p>
       </CollapsibleCoachingSection>
     );
@@ -29,7 +33,11 @@ export const StarBreakdownSection = memo(function StarBreakdownSection({
   if (!parts?.length) return null;
 
   return (
-    <CollapsibleCoachingSection title="STAR breakdown" defaultOpen className={className}>
+    <CollapsibleCoachingSection
+      title="STAR breakdown"
+      defaultOpen
+      className={className}
+    >
       <div className="space-y-2">
         {parts.map((part) => (
           <div key={part.key}>

@@ -11,7 +11,10 @@ export default function JobsArchivePage() {
         <div className="space-y-4" aria-busy="true">
           <div className="lg:hidden space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-24 animate-pulse rounded-2xl bg-white/[0.05]" />
+              <div
+                key={i}
+                className="h-24 animate-pulse rounded-2xl bg-white/[0.05]"
+              />
             ))}
           </div>
           <div className="hidden lg:block space-y-2">

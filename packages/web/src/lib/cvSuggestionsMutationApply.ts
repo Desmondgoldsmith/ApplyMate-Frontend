@@ -1,4 +1,8 @@
-import type { CvImprovementsPayload, CvSuggestionsBulkMutationResult, CvSuggestionMutationResult } from '@/lib/api';
+import type {
+  CvImprovementsPayload,
+  CvSuggestionsBulkMutationResult,
+  CvSuggestionMutationResult,
+} from '@/lib/api';
 
 function normalizeIdSet(ids: string[] | undefined): Set<string> | null {
   if (!ids?.length) return null;
@@ -8,12 +12,18 @@ function normalizeIdSet(ids: string[] | undefined): Set<string> | null {
 
 function mergeRevisionFromCommit(
   prev: CvImprovementsPayload,
-  patch: { cvRevisionId?: string | null; structuredRevisionHash?: string | null },
+  patch: {
+    cvRevisionId?: string | null;
+    structuredRevisionHash?: string | null;
+  },
 ): Pick<CvImprovementsPayload, 'cvRevisionId' | 'structuredRevisionHash'> {
   return {
-    cvRevisionId: patch.cvRevisionId !== undefined ? patch.cvRevisionId : prev.cvRevisionId,
+    cvRevisionId:
+      patch.cvRevisionId !== undefined ? patch.cvRevisionId : prev.cvRevisionId,
     structuredRevisionHash:
-      patch.structuredRevisionHash !== undefined ? patch.structuredRevisionHash : prev.structuredRevisionHash,
+      patch.structuredRevisionHash !== undefined
+        ? patch.structuredRevisionHash
+        : prev.structuredRevisionHash,
   };
 }
 
@@ -61,7 +71,9 @@ export function applySuggestionPreviewToImprovementsCache(
   if (!prev?.improvements) return prev;
   const sid = suggestionId.trim();
   if (!sid) return prev;
-  const paths = (patch.pendingFieldPaths ?? []).map((p) => p.trim()).filter(Boolean);
+  const paths = (patch.pendingFieldPaths ?? [])
+    .map((p) => p.trim())
+    .filter(Boolean);
   const draftHash = patch.lastPreviewDraftHash?.trim();
   const previewFor = patch.lastPreviewForSuggestionId?.trim();
   const revisionHash = patch.lastPreviewCvRevisionHash?.trim();
@@ -106,7 +118,8 @@ export function applySuggestionAcceptToImprovementsCache(
   return {
     ...prev,
     improvements: nextList,
-    pendingSuggestionsCount: product.pendingSuggestionsCount ?? Math.max(0, nextList.length),
+    pendingSuggestionsCount:
+      product.pendingSuggestionsCount ?? Math.max(0, nextList.length),
     ...mergeRevisionFromCommit(prev, {
       cvRevisionId: product.cvRevisionId ?? undefined,
       structuredRevisionHash: product.structuredRevisionHash,
@@ -124,11 +137,14 @@ export function applySuggestionSelfFixToImprovementsCache(
   const rid = pointer.trim();
   const serverIds = normalizeIdSet(product.rejectedSuggestionIds);
   const remove = serverIds ?? new Set([rid]);
-  const nextList = prev.improvements.filter((it) => !remove.has((it?.id ?? '').trim()));
+  const nextList = prev.improvements.filter(
+    (it) => !remove.has((it?.id ?? '').trim()),
+  );
   return {
     ...prev,
     improvements: nextList,
-    pendingSuggestionsCount: product.pendingSuggestionsCount ?? Math.max(0, nextList.length),
+    pendingSuggestionsCount:
+      product.pendingSuggestionsCount ?? Math.max(0, nextList.length),
     ...mergeRevisionFromCommit(prev, {
       cvRevisionId: product.cvRevisionId ?? undefined,
       structuredRevisionHash: product.structuredRevisionHash,
@@ -146,11 +162,14 @@ export function applySuggestionRejectToImprovementsCache(
   const rid = rejectedPointer.trim();
   const serverIds = normalizeIdSet(product.rejectedSuggestionIds);
   const remove = serverIds ?? new Set([rid]);
-  const nextList = prev.improvements.filter((it) => !remove.has((it?.id ?? '').trim()));
+  const nextList = prev.improvements.filter(
+    (it) => !remove.has((it?.id ?? '').trim()),
+  );
   return {
     ...prev,
     improvements: nextList,
-    pendingSuggestionsCount: product.pendingSuggestionsCount ?? Math.max(0, nextList.length),
+    pendingSuggestionsCount:
+      product.pendingSuggestionsCount ?? Math.max(0, nextList.length),
     ...mergeRevisionFromCommit(prev, {
       cvRevisionId: product.cvRevisionId ?? undefined,
       structuredRevisionHash: product.structuredRevisionHash,
@@ -166,18 +185,24 @@ export function applyBulkAcceptToImprovementsCache(
   if (!prev?.improvements) return prev;
   const remove = normalizeIdSet(r.acceptedSuggestionIds);
   if (remove) {
-    const nextList = prev.improvements.filter((it) => !remove.has((it?.id ?? '').trim()));
+    const nextList = prev.improvements.filter(
+      (it) => !remove.has((it?.id ?? '').trim()),
+    );
     return {
       ...prev,
       improvements: nextList,
-      pendingSuggestionsCount: r.pendingSuggestionsCount ?? Math.max(0, nextList.length),
+      pendingSuggestionsCount:
+        r.pendingSuggestionsCount ?? Math.max(0, nextList.length),
       ...mergeRevisionFromCommit(prev, {
         cvRevisionId: r.cvRevisionId,
         structuredRevisionHash: r.structuredRevisionHash,
       }),
     };
   }
-  if (typeof r.remainingPendingCount === 'number' && r.remainingPendingCount === 0) {
+  if (
+    typeof r.remainingPendingCount === 'number' &&
+    r.remainingPendingCount === 0
+  ) {
     return {
       ...prev,
       improvements: [],
@@ -214,18 +239,24 @@ export function applyBulkRejectToImprovementsCache(
   if (!prev?.improvements) return prev;
   const remove = normalizeIdSet(r.rejectedSuggestionIds);
   if (remove) {
-    const nextList = prev.improvements.filter((it) => !remove.has((it?.id ?? '').trim()));
+    const nextList = prev.improvements.filter(
+      (it) => !remove.has((it?.id ?? '').trim()),
+    );
     return {
       ...prev,
       improvements: nextList,
-      pendingSuggestionsCount: r.pendingSuggestionsCount ?? Math.max(0, nextList.length),
+      pendingSuggestionsCount:
+        r.pendingSuggestionsCount ?? Math.max(0, nextList.length),
       ...mergeRevisionFromCommit(prev, {
         cvRevisionId: r.cvRevisionId,
         structuredRevisionHash: r.structuredRevisionHash,
       }),
     };
   }
-  if (typeof r.remainingPendingCount === 'number' && r.remainingPendingCount === 0) {
+  if (
+    typeof r.remainingPendingCount === 'number' &&
+    r.remainingPendingCount === 0
+  ) {
     return {
       ...prev,
       improvements: [],

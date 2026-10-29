@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { hubNoteScopeFromJob } from '@/lib/hubNotesQueryKeys';
-import { resolveJobKeyToScope, type JobHubMigrationJob } from '@/lib/jobHubLegacyMigration';
+import {
+  resolveJobKeyToScope,
+  type JobHubMigrationJob,
+} from '@/lib/jobHubLegacyMigration';
 
 describe('jobHubLegacyMigration', () => {
   const jobs: JobHubMigrationJob[] = [

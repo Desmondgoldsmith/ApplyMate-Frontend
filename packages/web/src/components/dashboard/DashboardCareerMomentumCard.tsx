@@ -48,8 +48,14 @@ export function DashboardCareerMomentumCard({ data, phase15Empty }: Props) {
   const opportunity = cleanAiText(data.opportunity?.trim() ?? '');
   const strengths = data.strengths ?? [];
 
-  const momentumValue = effectiveDeterministicIndexValue(data.momentumIndex, data.score);
-  const momentumTooltipText = deterministicIndexTooltipText(data.momentumIndex, TOOLTIP_CAREER_MOMENTUM_SCORE);
+  const momentumValue = effectiveDeterministicIndexValue(
+    data.momentumIndex,
+    data.score,
+  );
+  const momentumTooltipText = deterministicIndexTooltipText(
+    data.momentumIndex,
+    TOOLTIP_CAREER_MOMENTUM_SCORE,
+  );
 
   return (
     <section
@@ -66,7 +72,9 @@ export function DashboardCareerMomentumCard({ data, phase15Empty }: Props) {
       />
 
       <div className="relative space-y-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9CF5EA]/65">Search Momentum</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9CF5EA]/65">
+          Search Momentum
+        </p>
 
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between md:gap-8">
           <div className="min-w-0 flex-1 space-y-3">
@@ -118,7 +126,10 @@ export function DashboardCareerMomentumCard({ data, phase15Empty }: Props) {
                 </p>
               ) : null}
               {!headline ? (
-                <InfoHint text={momentumTooltipText} buttonAriaLabel="What is search momentum?" />
+                <InfoHint
+                  text={momentumTooltipText}
+                  buttonAriaLabel="What is search momentum?"
+                />
               ) : null}
             </div>
           ) : null}
@@ -126,7 +137,9 @@ export function DashboardCareerMomentumCard({ data, phase15Empty }: Props) {
 
         <div className="space-y-5 border-t border-white/[0.06] pt-5">
           {supporting ? (
-            <p className="text-[13px] leading-relaxed text-white/58 sm:text-[14px]">{supporting}</p>
+            <p className="text-[13px] leading-relaxed text-white/58 sm:text-[14px]">
+              {supporting}
+            </p>
           ) : data.tier === 'steady' ? (
             <p className="text-[13px] leading-relaxed text-white/58 sm:text-[14px]">
               You are keeping your search active. Good work.
@@ -140,7 +153,10 @@ export function DashboardCareerMomentumCard({ data, phase15Empty }: Props) {
               </p>
               <ul className="mt-2 list-disc space-y-2 pl-5 marker:text-[#00C9B1]/55">
                 {strengths.map((line, idx) => (
-                  <li key={`${idx}:${line}`} className="text-[13px] leading-relaxed text-white/72">
+                  <li
+                    key={`${idx}:${line}`}
+                    className="text-[13px] leading-relaxed text-white/72"
+                  >
                     {line}
                   </li>
                 ))}
@@ -153,7 +169,9 @@ export function DashboardCareerMomentumCard({ data, phase15Empty }: Props) {
               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9CF5EA]/55">
                 Where to focus next
               </p>
-              <p className="mt-2 text-[13px] leading-relaxed text-white/78 sm:text-[14px]">{opportunity}</p>
+              <p className="mt-2 text-[13px] leading-relaxed text-white/78 sm:text-[14px]">
+                {opportunity}
+              </p>
             </div>
           ) : null}
 
@@ -164,7 +182,9 @@ export function DashboardCareerMomentumCard({ data, phase15Empty }: Props) {
                   'Your momentum score appears after your first week of activity. Analyze a job or update your CV to start building it.'}
               </p>
               <Link
-                href={phase15Empty?.ctaHref?.trim() || '/dashboard/jobs/analyze'}
+                href={
+                  phase15Empty?.ctaHref?.trim() || '/dashboard/jobs/analyze'
+                }
                 className="mt-3 inline-flex min-h-[44px] items-center text-[13px] font-semibold text-[#00C9B1] hover:underline"
               >
                 {phase15Empty?.ctaLabel?.trim() || 'Analyze a job →'}

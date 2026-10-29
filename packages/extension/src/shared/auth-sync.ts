@@ -14,7 +14,9 @@ export function markWebLogout(): void {
   webLogoutAt = Date.now();
 }
 /** Read the dashboard access token from an open ApplyMate web tab. */
-export async function readAccessTokenFromDashboardTabs(): Promise<string | null> {
+export async function readAccessTokenFromDashboardTabs(): Promise<
+  string | null
+> {
   let tabs: chrome.tabs.Tab[] = [];
   try {
     tabs = await chrome.tabs.query({ url: `${WEB_APP_ORIGIN}/*` });
@@ -56,9 +58,7 @@ export async function readAccessTokenFromDashboardTabs(): Promise<string | null>
   return null;
 }
 
-export type ExtensionAuthSyncResult =
-  | { ok: true; user: User }
-  | { ok: false };
+export type ExtensionAuthSyncResult = { ok: true; user: User } | { ok: false };
 
 /**
  * Sync extension auth from the same browser session as the web app:

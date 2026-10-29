@@ -44,7 +44,10 @@ export default function DashboardLoading() {
             <Block className="h-5 w-[220px] max-w-[65%]" />
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+                <div
+                  key={i}
+                  className="rounded-2xl border border-white/10 bg-white/[0.02] p-4"
+                >
                   <Block className="h-5 w-[55%]" />
                   <div className="mt-2">
                     <Block className="h-4 w-[80%]" />
@@ -62,7 +65,10 @@ export default function DashboardLoading() {
           <div className="space-y-4 animate-pulse">
             <Block className="h-5 w-[170px]" />
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+              <div
+                key={i}
+                className="rounded-2xl border border-white/10 bg-white/[0.02] p-4"
+              >
                 <Block className="h-4 w-[70%]" />
                 <div className="mt-2">
                   <Block className="h-3.5 w-[90%]" />
@@ -75,4 +81,3 @@ export default function DashboardLoading() {
     </div>
   );
 }
-

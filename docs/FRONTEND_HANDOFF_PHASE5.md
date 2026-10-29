@@ -10,11 +10,11 @@
 
 **Phase 5 is not a new product area.** It is a **read + light-action layer** on top of flows you already have.
 
-| Yes | No |
-|-----|-----|
-| Job Hub shows pipeline / accepted / activity | New top-level “Career OS” nav required |
-| Optional “I accepted this offer” button | Replacing Job Hub kanban |
-| Optional LinkedIn verification form | Changing analyze/tailor/discovery contracts |
+| Yes                                                        | No                                            |
+| ---------------------------------------------------------- | --------------------------------------------- |
+| Job Hub shows pipeline / accepted / activity               | New top-level “Career OS” nav required        |
+| Optional “I accepted this offer” button                    | Replacing Job Hub kanban                      |
+| Optional LinkedIn verification form                        | Changing analyze/tailor/discovery contracts   |
 | Backend logs journey **automatically** on existing actions | Frontend must call journey API on every click |
 
 **Design rule:** If `ENABLE_CAREER_FLOW` is off, the app must look and behave exactly as today.
@@ -53,12 +53,12 @@ Responses use the usual envelope: `{ success: true, data: { ... } }` — use `un
 
 When the flag is on, the backend records **`JobJourneyEvent`** rows as **side effects** of actions users already take:
 
-| User action (existing UI) | Journey stage recorded |
-|---------------------------|-------------------------|
-| Job board **Apply / Maybe** on a listing | `VIEWED` |
-| Job board **Skip** | `REJECTED` |
-| **Analyze** completes (`POST /jobs/analyze`) | `ANALYZED` |
-| **Tailor** — accept a section | `TAILORED` |
+| User action (existing UI)                                   | Journey stage recorded                               |
+| ----------------------------------------------------------- | ---------------------------------------------------- |
+| Job board **Apply / Maybe** on a listing                    | `VIEWED`                                             |
+| Job board **Skip**                                          | `REJECTED`                                           |
+| **Analyze** completes (`POST /jobs/analyze`)                | `ANALYZED`                                           |
+| **Tailor** — accept a section                               | `TAILORED`                                           |
 | **Job Hub** — create application or move status to applied+ | `APPLIED`, `INTERVIEW`, `NEGOTIATING`, or `REJECTED` |
 
 So: shipping Phase 5 UI is **additive**. Existing buttons already feed the pipeline if the flag is on.
@@ -160,7 +160,7 @@ type CareerDashboard = {
   }>;
   insights: {
     strongestSkill: string | null;
-    conversionRate: number | null;       // % analyzed → applied (from events)
+    conversionRate: number | null; // % analyzed → applied (from events)
     avgMatchScoreOfAppliedJobs: number | null;
   };
 };
@@ -218,8 +218,8 @@ Backend collapses many events per `jobId` into **one** stage using priority:
 ```ts
 {
   id: string;
-  pendingApproval: boolean;  // true on submit
-  verified: boolean;           // false until approved
+  pendingApproval: boolean; // true on submit
+  verified: boolean; // false until approved
 }
 ```
 
@@ -241,12 +241,12 @@ After approve, `getUserTier()` on the server treats the user as **PAID** until r
 
 `jobId` in career APIs is a **canonical key** for one job “thread”:
 
-| Situation | Use as `jobId` |
-|-----------|----------------|
-| Row from job board | `jobListing.id` |
-| Job with saved analysis | `jobListingId` if set, else `jobAnalysis.id` |
-| Application with `jobAnalysisId` | Same as analysis listing/analysis id |
-| Application only (no analysis) | `application.id` |
+| Situation                        | Use as `jobId`                               |
+| -------------------------------- | -------------------------------------------- |
+| Row from job board               | `jobListing.id`                              |
+| Job with saved analysis          | `jobListingId` if set, else `jobAnalysis.id` |
+| Application with `jobAnalysisId` | Same as analysis listing/analysis id         |
+| Application only (no analysis)   | `application.id`                             |
 
 **`recentActivity[].metadata`** may include:
 
@@ -271,10 +271,10 @@ Use these to deep-link: Job Board card, `/dashboard/job-analyzer/[id]`, Hub appl
 
 ## 7. Badge codes
 
-| `code` | When earned |
-|--------|-------------|
-| `FIRST_JOB_ACCEPTED` | First successful `mark-accepted` |
-| `FIRST_VERIFIED_PLACEMENT` | Verification approved |
+| `code`                     | When earned                      |
+| -------------------------- | -------------------------------- |
+| `FIRST_JOB_ACCEPTED`       | First successful `mark-accepted` |
+| `FIRST_VERIFIED_PLACEMENT` | Verification approved            |
 
 **Share UI:** Use `shareText` + `shareLink` from badge object (native share or copy — no social SDK required in v1).
 
@@ -322,7 +322,10 @@ Export: `api.career` and `api.jobs.markAccepted` (or `api.jobs.markJobAccepted` 
 **React Query suggestion:**
 
 ```ts
-useQuery({ queryKey: ['career', 'dashboard'], queryFn: () => api.career.getDashboard() });
+useQuery({
+  queryKey: ['career', 'dashboard'],
+  queryFn: () => api.career.getDashboard(),
+});
 ```
 
 Invalidate after: `markAccepted`, application status change, analyze complete (optional).
@@ -350,16 +353,16 @@ Invalidate after: `markAccepted`, application status change, analyze complete (o
 
 ### Stage labels (user-facing)
 
-| `pipelineStage` | Label idea |
-|-----------------|------------|
-| VIEWED | Interested |
-| ANALYZED | Analyzed |
-| TAILORED | CV tailored |
-| APPLIED | Applied |
-| INTERVIEW | Interviewing |
-| NEGOTIATING | Offer stage |
-| ACCEPTED | Accepted |
-| REJECTED | Passed |
+| `pipelineStage` | Label idea   |
+| --------------- | ------------ |
+| VIEWED          | Interested   |
+| ANALYZED        | Analyzed     |
+| TAILORED        | CV tailored  |
+| APPLIED         | Applied      |
+| INTERVIEW       | Interviewing |
+| NEGOTIATING     | Offer stage  |
+| ACCEPTED        | Accepted     |
+| REJECTED        | Passed       |
 
 ---
 

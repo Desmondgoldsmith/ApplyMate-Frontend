@@ -31,7 +31,9 @@ export default async function JobsApplicationDeepLinkPage({
       }
     }
     const archiveSuffix = archiveQp.toString();
-    redirect(`/dashboard/jobs/archive${archiveSuffix ? `?${archiveSuffix}` : ''}`);
+    redirect(
+      `/dashboard/jobs/archive${archiveSuffix ? `?${archiveSuffix}` : ''}`,
+    );
   }
   if (id === 'analyze') {
     redirect('/dashboard/jobs/analyze');

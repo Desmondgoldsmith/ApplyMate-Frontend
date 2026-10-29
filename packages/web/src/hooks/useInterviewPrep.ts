@@ -9,14 +9,22 @@ import {
   setCachedSimulation,
   setCachedTurnResponse,
 } from '@/lib/interviewSessionCache';
-import type { AnswerSource, PrepTurnsResponse, SimulateSessionBody } from '@/lib/interview-prep-types';
+import type {
+  AnswerSource,
+  PrepTurnsResponse,
+  SimulateSessionBody,
+} from '@/lib/interview-prep-types';
 
 export const INTERVIEW_PREP_PROGRESS_KEY = queryKeys.interviewPrep.progress();
 export const INTERVIEW_PREP_QUOTA_KEY = queryKeys.interviewPrep.quota();
-export const INTERVIEW_ADAPTIVE_PROFILE_KEY = queryKeys.interviewPrep.adaptiveProfile();
-export const INTERVIEW_SKILL_PROFILE_KEY = queryKeys.interviewPrep.skillProfile();
+export const INTERVIEW_ADAPTIVE_PROFILE_KEY =
+  queryKeys.interviewPrep.adaptiveProfile();
+export const INTERVIEW_SKILL_PROFILE_KEY =
+  queryKeys.interviewPrep.skillProfile();
 
-function invalidateInterviewPrepQuota(queryClient: ReturnType<typeof useQueryClient>) {
+function invalidateInterviewPrepQuota(
+  queryClient: ReturnType<typeof useQueryClient>,
+) {
   void queryClient.invalidateQueries({ queryKey: INTERVIEW_PREP_QUOTA_KEY });
 }
 
@@ -56,7 +64,10 @@ export function useSkillProfile(enabled = true) {
   });
 }
 
-export function useEnrichedPrepSession(sessionId: string | null, enabled = true) {
+export function useEnrichedPrepSession(
+  sessionId: string | null,
+  enabled = true,
+) {
   return useQuery({
     queryKey: queryKeys.interviewPrep.session(sessionId ?? ''),
     queryFn: () => interviewPrepApi.getEnrichedSession(sessionId!),
@@ -87,7 +98,10 @@ export function useSubmitPracticeCoaching(sessionId: string) {
   });
 }
 
-export function useInterviewImprovementPlan(sessionId: string | null, enabled = true) {
+export function useInterviewImprovementPlan(
+  sessionId: string | null,
+  enabled = true,
+) {
   return useQuery({
     queryKey: queryKeys.interviewPrep.plan(sessionId ?? ''),
     queryFn: () => interviewPrepApi.getPlan(sessionId!),
@@ -139,10 +153,15 @@ export function useSubmitInterviewTurnAnswer(sessionId: string) {
 export function useCreateSimulateSession() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: SimulateSessionBody) => interviewPrepApi.simulateSession(body),
+    mutationFn: (body: SimulateSessionBody) =>
+      interviewPrepApi.simulateSession(body),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.interview.sessions() });
-      void queryClient.invalidateQueries({ queryKey: INTERVIEW_PREP_PROGRESS_KEY });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.interview.sessions(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: INTERVIEW_PREP_PROGRESS_KEY,
+      });
       invalidateInterviewPrepQuota(queryClient);
     },
   });

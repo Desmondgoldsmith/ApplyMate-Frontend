@@ -6,12 +6,12 @@
 
 ## Related docs
 
-| Doc | Purpose |
-|-----|---------|
-| `FRONTEND_BRIEF_ASSISTANT_GLOBAL_CV.md` | API shapes, operations catalog, errors |
-| `FRONTEND_BRIEF_AI_USAGE_METERING.md` | Daily cap (10/day), accept-all quota |
-| `FRONTEND_BRIEF_ASSISTANT_ACCEPT.md` | Commit endpoint envelope |
-| `BACKEND_GLOBAL_ASSISTANT_FINDINGS_FIX.md` | Findings apply + client filters |
+| Doc                                        | Purpose                                |
+| ------------------------------------------ | -------------------------------------- |
+| `FRONTEND_BRIEF_ASSISTANT_GLOBAL_CV.md`    | API shapes, operations catalog, errors |
+| `FRONTEND_BRIEF_AI_USAGE_METERING.md`      | Daily cap (10/day), accept-all quota   |
+| `FRONTEND_BRIEF_ASSISTANT_ACCEPT.md`       | Commit endpoint envelope               |
+| `BACKEND_GLOBAL_ASSISTANT_FINDINGS_FIX.md` | Findings apply + client filters        |
 
 ## Request body (assistant commands)
 
@@ -27,17 +27,17 @@ Omit `cvData` entirely. Server loads CV from profile id + DB sections.
 
 ## Frontend implementation map
 
-| Checklist | Location |
-|-----------|----------|
+| Checklist                     | Location                                                                                                               |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | A. Loading + no double-submit | `cvAssistantLoadingCopy.ts`, `CvClinicPageContent`, `CvClinicWorkspace`, `ImprovementsPanel`, `AIGlobalAssistantPanel` |
-| B. Clarification modal | `CvAssistantClarificationModal.tsx` |
-| C. Preview → accept/reject | `commitAcceptDiff`, `CvGlobalAssistantReviewPanel`, diff preview in `CVBuilder` |
-| D. Recruiter scan UI | `CvGlobalAssistantFindingsPanel.tsx` + `getRecruiterImprovementFindingsForApply` |
-| E. Suggestions apply-all | `ImprovementsPanel.tsx`, `cvAcceptAllQuota.ts` |
-| F. Scope labels | `CvAssistantScopeBadge`, operation catalog |
-| G. No client cvData | `api.ts` strips `cvData`; review from API `sectionDiffs` |
-| Unrealistic tips filter | `cvAssistantUserFacing.ts` (defense in depth) |
-| Error toasts with code | `formatApiErrorForToast` in `axios.ts` |
+| B. Clarification modal        | `CvAssistantClarificationModal.tsx`                                                                                    |
+| C. Preview → accept/reject    | `commitAcceptDiff`, `CvGlobalAssistantReviewPanel`, diff preview in `CVBuilder`                                        |
+| D. Recruiter scan UI          | `CvGlobalAssistantFindingsPanel.tsx` + `getRecruiterImprovementFindingsForApply`                                       |
+| E. Suggestions apply-all      | `ImprovementsPanel.tsx`, `cvAcceptAllQuota.ts`                                                                         |
+| F. Scope labels               | `CvAssistantScopeBadge`, operation catalog                                                                             |
+| G. No client cvData           | `api.ts` strips `cvData`; review from API `sectionDiffs`                                                               |
+| Unrealistic tips filter       | `cvAssistantUserFacing.ts` (defense in depth)                                                                          |
+| Error toasts with code        | `formatApiErrorForToast` in `axios.ts`                                                                                 |
 
 ## Daily AI (free tier)
 

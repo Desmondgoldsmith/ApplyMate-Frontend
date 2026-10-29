@@ -10,7 +10,9 @@ import {
 
 describe('cvImprovementFieldPath', () => {
   it('parses experience bullet paths', () => {
-    expect(parseCvImprovementTargetFieldPath('experience[0].bullets[1]')).toEqual({
+    expect(
+      parseCvImprovementTargetFieldPath('experience[0].bullets[1]'),
+    ).toEqual({
       sectionRoot: 'experience',
       itemIndex: 0,
     });
@@ -36,10 +38,12 @@ describe('cvImprovementFieldPath', () => {
   });
 
   it('hides Fix with AI for user_action_required', () => {
-    expect(isCvImprovementAiFixable({ resolutionType: 'user_action_required' })).toBe(
-      false,
+    expect(
+      isCvImprovementAiFixable({ resolutionType: 'user_action_required' }),
+    ).toBe(false);
+    expect(isCvImprovementAiFixable({ resolutionType: 'ai_fixable' })).toBe(
+      true,
     );
-    expect(isCvImprovementAiFixable({ resolutionType: 'ai_fixable' })).toBe(true);
     expect(isCvImprovementAiFixable({})).toBe(true);
   });
 

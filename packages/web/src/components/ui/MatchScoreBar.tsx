@@ -41,7 +41,9 @@ export function MatchScoreBar({
   const inView = useInView(ref, { once: true, margin: '-10% 0px' });
   const [displayScore, setDisplayScore] = useState(0);
   const safeScore =
-    typeof score === 'number' && Number.isFinite(score) ? Math.max(0, Math.min(100, score)) : 0;
+    typeof score === 'number' && Number.isFinite(score)
+      ? Math.max(0, Math.min(100, score))
+      : 0;
 
   const tierBarClass =
     safeScore >= 70
@@ -51,27 +53,37 @@ export function MatchScoreBar({
         : 'bg-gradient-to-r from-[#00C9B1] via-[#EF4444] to-[#f87171]';
 
   const interpretation =
-    safeScore >= 70 ? 'Strong match' : safeScore >= 40 ? 'Partial match' : 'Low match';
+    safeScore >= 70
+      ? 'Strong match'
+      : safeScore >= 40
+        ? 'Partial match'
+        : 'Low match';
   const interpretationClass =
-    safeScore >= 70 ? 'text-[#00C9B1]' : safeScore >= 40 ? 'text-[#F59E0B]' : 'text-[#EF4444]';
+    safeScore >= 70
+      ? 'text-[#00C9B1]'
+      : safeScore >= 40
+        ? 'text-[#F59E0B]'
+        : 'text-[#EF4444]';
 
   const before =
     scoreBeforeTailor != null && Number.isFinite(scoreBeforeTailor)
       ? Math.max(0, Math.min(100, scoreBeforeTailor))
       : null;
   const showImprovement =
-    Boolean(isTailored) &&
-    before !== null &&
-    Number.isFinite(before);
+    Boolean(isTailored) && before !== null && Number.isFinite(before);
 
   const compositionNote = headlineCompositionNote?.trim() ?? '';
   const formulaTooltip = scoreFormulaTooltip?.trim() ?? '';
 
   const benchmarkBlock = matchScoreBenchmark?.shortHeadline ? (
     <div className="mt-3 space-y-1">
-      <p className="text-[11px] leading-relaxed text-white/65">{matchScoreBenchmark.shortHeadline}</p>
+      <p className="text-[11px] leading-relaxed text-white/65">
+        {matchScoreBenchmark.shortHeadline}
+      </p>
       {matchScoreBenchmark.disclaimer ? (
-        <p className="text-[10px] leading-relaxed text-white/38">{matchScoreBenchmark.disclaimer}</p>
+        <p className="text-[10px] leading-relaxed text-white/38">
+          {matchScoreBenchmark.disclaimer}
+        </p>
       ) : null}
     </div>
   ) : null;
@@ -96,14 +108,22 @@ export function MatchScoreBar({
     <div ref={ref} className="min-w-0 space-y-4">
       {showImprovement && before !== null ? (
         <div className="mb-4 min-w-0 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-white/40">Score Change</p>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-white/40">
+            Score Change
+          </p>
           <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
-            <span className="shrink-0 text-xl font-bold text-white/60">{Math.round(before)}%</span>
+            <span className="shrink-0 text-xl font-bold text-white/60">
+              {Math.round(before)}%
+            </span>
             <span className="shrink-0 text-white/30">→</span>
             <span
               className={cn(
                 'shrink-0 text-2xl font-bold',
-                safeScore > before ? 'text-[#00C9B1]' : safeScore === before ? 'text-white/60' : 'text-amber-400',
+                safeScore > before
+                  ? 'text-[#00C9B1]'
+                  : safeScore === before
+                    ? 'text-white/60'
+                    : 'text-amber-400',
               )}
             >
               {Math.round(safeScore)}%
@@ -132,7 +152,9 @@ export function MatchScoreBar({
       <div className="flex min-w-0 flex-col gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/35">{label}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/35">
+              {label}
+            </p>
             {formulaTooltip ? (
               <InfoHint
                 text={formulaTooltip}
@@ -142,18 +164,25 @@ export function MatchScoreBar({
             ) : null}
           </div>
           <p className="mt-2 max-w-md text-[12px] leading-relaxed text-white/45">
-            {interpretation}. Scores reflect how your CV lines up with this role&apos;s description.
+            {interpretation}. Scores reflect how your CV lines up with this
+            role&apos;s description.
           </p>
           {compositionNote ? (
-            <p className="mt-2 max-w-md text-[11px] leading-relaxed text-white/40">{compositionNote}</p>
+            <p className="mt-2 max-w-md text-[11px] leading-relaxed text-white/40">
+              {compositionNote}
+            </p>
           ) : null}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1 sm:items-end">
           <p className="text-[22px] font-bold tabular-nums leading-none sm:text-2xl">
             <span className={interpretationClass}>{displayScore}</span>
-            <span className="ml-0.5 text-sm font-semibold text-white/50 sm:text-base">%</span>
+            <span className="ml-0.5 text-sm font-semibold text-white/50 sm:text-base">
+              %
+            </span>
           </p>
-          <p className={cn('text-[11px] font-medium', interpretationClass)}>{interpretation}</p>
+          <p className={cn('text-[11px] font-medium', interpretationClass)}>
+            {interpretation}
+          </p>
         </div>
       </div>
       <div className="h-[6px] overflow-hidden rounded-full bg-white/[0.08]">
@@ -173,25 +202,30 @@ export function MatchScoreBar({
       ) : null}
       {skills.length ? (
         <div className="mt-4">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">Gaps to address</p>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">
+            Gaps to address
+          </p>
           <div className="flex flex-wrap gap-2">
-          {skills.map((skill, index) => (
-            <div
-              key={`${skill.name}-${index}`}
-              className={
-                skill.matched
-                  ? 'inline-flex items-center gap-1.5 rounded-full border border-[#00C9B1]/25 bg-[rgba(0,201,177,0.08)] px-3 py-1.5 text-[12px] font-medium text-[#00C9B1]'
-                  : 'inline-flex items-center gap-1.5 rounded-full border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] px-3 py-1.5 text-[12px] font-medium text-[rgba(239,68,68,0.9)]'
-              }
-            >
-              {skill.matched ? (
-                <Check className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
-              ) : (
-                <X className="h-3.5 w-3.5 shrink-0 text-[#EF4444]" strokeWidth={2.5} />
-              )}
-              {skill.name}
-            </div>
-          ))}
+            {skills.map((skill, index) => (
+              <div
+                key={`${skill.name}-${index}`}
+                className={
+                  skill.matched
+                    ? 'inline-flex items-center gap-1.5 rounded-full border border-[#00C9B1]/25 bg-[rgba(0,201,177,0.08)] px-3 py-1.5 text-[12px] font-medium text-[#00C9B1]'
+                    : 'inline-flex items-center gap-1.5 rounded-full border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] px-3 py-1.5 text-[12px] font-medium text-[rgba(239,68,68,0.9)]'
+                }
+              >
+                {skill.matched ? (
+                  <Check className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+                ) : (
+                  <X
+                    className="h-3.5 w-3.5 shrink-0 text-[#EF4444]"
+                    strokeWidth={2.5}
+                  />
+                )}
+                {skill.name}
+              </div>
+            ))}
           </div>
         </div>
       ) : null}

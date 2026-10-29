@@ -13,14 +13,19 @@ export const AdaptiveSessionHints = memo(function AdaptiveSessionHints({
 }: {
   memory: Pick<
     InterviewPersonaMemory,
-    'primaryFocusArea' | 'difficultyLevel' | 'sessionAdaptation' | 'preferredDifficulty'
+    | 'primaryFocusArea'
+    | 'difficultyLevel'
+    | 'sessionAdaptation'
+    | 'preferredDifficulty'
   >;
   showAdaptiveNote?: boolean;
   className?: string;
 }) {
   const focus = memory.primaryFocusArea;
   const difficulty =
-    memory.sessionAdaptation?.difficultyLevel ?? memory.difficultyLevel ?? memory.preferredDifficulty;
+    memory.sessionAdaptation?.difficultyLevel ??
+    memory.difficultyLevel ??
+    memory.preferredDifficulty;
 
   if (!showAdaptiveNote && !focus) return null;
 

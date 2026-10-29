@@ -70,15 +70,20 @@ export function DashboardCareerAchievementsSection({
     const s = career?.summary;
     if (!s) return [] as { label: string; value: string }[];
     const chips: { label: string; value: string }[] = [];
-    if (s.totalUnlocked != null) chips.push({ label: 'Unlocked', value: String(s.totalUnlocked) });
-    if (s.rareCount != null && s.rareCount > 0) chips.push({ label: 'Rare', value: String(s.rareCount) });
-    if (s.epicCount != null && s.epicCount > 0) chips.push({ label: 'Epic', value: String(s.epicCount) });
-    if (s.legendaryCount != null && s.legendaryCount > 0) chips.push({ label: 'Legendary', value: String(s.legendaryCount) });
+    if (s.totalUnlocked != null)
+      chips.push({ label: 'Unlocked', value: String(s.totalUnlocked) });
+    if (s.rareCount != null && s.rareCount > 0)
+      chips.push({ label: 'Rare', value: String(s.rareCount) });
+    if (s.epicCount != null && s.epicCount > 0)
+      chips.push({ label: 'Epic', value: String(s.epicCount) });
+    if (s.legendaryCount != null && s.legendaryCount > 0)
+      chips.push({ label: 'Legendary', value: String(s.legendaryCount) });
     return chips;
   }, [career?.summary]);
 
   const legacyLine = career?.legacyBadgeSummaryLine?.trim() ?? '';
-  const viewAllHref = (career?.viewAllHref?.trim() || '/dashboard/career-achievements') as string;
+  const viewAllHref = (career?.viewAllHref?.trim() ||
+    '/dashboard/career-achievements') as string;
 
   const xp = career?.experiencePoints;
   const xpPct = useMemo(() => {
@@ -88,28 +93,36 @@ export function DashboardCareerAchievementsSection({
   }, [xp]);
 
   const showLevel =
-    hasCareerBundle && (career?.level?.number != null || Boolean(career?.level?.title?.trim()));
+    hasCareerBundle &&
+    (career?.level?.number != null || Boolean(career?.level?.title?.trim()));
   const showAlmost = hasCareerBundle && milestones.length > 0;
   const showXp =
     hasCareerBundle &&
     xp != null &&
-    ((xp.current != null && xp.current >= 0) || (xp.nextLevelAt != null && xp.nextLevelAt > 0));
+    ((xp.current != null && xp.current >= 0) ||
+      (xp.nextLevelAt != null && xp.nextLevelAt > 0));
   const showSummaryRow = summaryChips.length > 0 || Boolean(legacyLine);
 
   const winKeys = useMemo(() => wins.map((w, i) => winKey(w, i)), [wins]);
   const [sparkleIds, setSparkleIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !digestVersion || winKeys.length === 0) return;
+    if (typeof window === 'undefined' || !digestVersion || winKeys.length === 0)
+      return;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      const parsed = raw ? (JSON.parse(raw) as { digest: string; ids: string[] }) : null;
+      const parsed = raw
+        ? (JSON.parse(raw) as { digest: string; ids: string[] })
+        : null;
       const sameDigest = parsed?.digest === digestVersion;
       const known = new Set(sameDigest ? (parsed?.ids ?? []) : []);
       const fresh = winKeys.filter((k) => !known.has(k));
       if (fresh.length > 0) setSparkleIds(new Set(fresh));
       const merged = new Set([...known, ...winKeys]);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ digest: digestVersion, ids: [...merged] }));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ digest: digestVersion, ids: [...merged] }),
+      );
     } catch {
       /* ignore */
     }
@@ -123,7 +136,11 @@ export function DashboardCareerAchievementsSection({
 
   const list = achievements ?? [];
   const showEmptyBlock =
-    wins.length === 0 && !showAlmost && !showLevel && !showXp && !showSummaryRow;
+    wins.length === 0 &&
+    !showAlmost &&
+    !showLevel &&
+    !showXp &&
+    !showSummaryRow;
 
   return (
     <section className="rounded-3xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-5 shadow-[0_24px_56px_-36px_rgba(0,201,177,0.12)] ring-1 ring-white/[0.06] sm:p-6">
@@ -137,7 +154,9 @@ export function DashboardCareerAchievementsSection({
           </h2>
           {showLevel && career ? (
             <p className="mt-2 text-[18px] font-semibold text-[#00C9B1]">
-              {career.level?.number != null ? <>Level {career.level.number} </> : null}
+              {career.level?.number != null ? (
+                <>Level {career.level.number} </>
+              ) : null}
               {career.level?.title?.trim() ?? ''}
             </p>
           ) : null}
@@ -154,13 +173,17 @@ export function DashboardCareerAchievementsSection({
                 </span>
               ))}
               {legacyLine && !summaryChips.length ? (
-                <p className="text-[13px] leading-relaxed text-white/55">{legacyLine}</p>
+                <p className="text-[13px] leading-relaxed text-white/55">
+                  {legacyLine}
+                </p>
               ) : null}
             </div>
           ) : null}
 
           {legacyLine && summaryChips.length > 0 ? (
-            <p className="mt-2 text-[12px] leading-relaxed text-white/45">{legacyLine}</p>
+            <p className="mt-2 text-[12px] leading-relaxed text-white/45">
+              {legacyLine}
+            </p>
           ) : null}
         </div>
       </div>
@@ -199,7 +222,9 @@ export function DashboardCareerAchievementsSection({
         <>
           {wins.length > 0 ? (
             <div className="mt-6">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40">Recent wins</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40">
+                Recent wins
+              </p>
               <ul className="mt-3 space-y-2.5">
                 {wins.map((w, i) => {
                   const k = winKey(w, i);
@@ -216,11 +241,18 @@ export function DashboardCareerAchievementsSection({
                           'motion-reduce:transform-none motion-reduce:shadow-none scale-[1.02] shadow-[0_0_24px_-8px_rgba(0,201,177,0.45)]',
                       )}
                     >
-                      <p className="text-[13px] font-semibold leading-snug text-white/95">{title}</p>
+                      <p className="text-[13px] font-semibold leading-snug text-white/95">
+                        {title}
+                      </p>
                       {desc ? (
-                        <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-white/48">{desc}</p>
+                        <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-white/48">
+                          {desc}
+                        </p>
                       ) : null}
-                      {w.rarity && (w.rarity === 'rare' || w.rarity === 'epic' || w.rarity === 'legendary') ? (
+                      {w.rarity &&
+                      (w.rarity === 'rare' ||
+                        w.rarity === 'epic' ||
+                        w.rarity === 'legendary') ? (
                         <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-amber-200/80">
                           {w.rarity}
                         </p>
@@ -234,12 +266,16 @@ export function DashboardCareerAchievementsSection({
 
           {showAlmost ? (
             <div className="mt-6">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40">Almost unlocked</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40">
+                Almost unlocked
+              </p>
               <ul className="mt-3 space-y-3">
                 {milestones.map((m, i) => {
                   const pct = Math.min(
                     100,
-                    Math.round((m.progressCurrent / Math.max(1, m.progressTarget)) * 100),
+                    Math.round(
+                      (m.progressCurrent / Math.max(1, m.progressTarget)) * 100,
+                    ),
                   );
                   const mk = m.key?.trim() || `m-${i}-${m.title}`;
                   return (
@@ -247,20 +283,28 @@ export function DashboardCareerAchievementsSection({
                       key={mk}
                       className={cn(
                         'rounded-xl border p-3.5',
-                        m.rarity ? rarityStyles(m.rarity) : 'border-white/[0.08] bg-white/[0.03]',
+                        m.rarity
+                          ? rarityStyles(m.rarity)
+                          : 'border-white/[0.08] bg-white/[0.03]',
                       )}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <p className="text-[13px] font-semibold text-white/90">{m.title?.trim() || 'Milestone'}</p>
+                        <p className="text-[13px] font-semibold text-white/90">
+                          {m.title?.trim() || 'Milestone'}
+                        </p>
                         <span className="shrink-0 tabular-nums text-[11px] text-white/45">
                           {m.progressCurrent}/{m.progressTarget}
                         </span>
                       </div>
                       {m.description?.trim() ? (
-                        <p className="mt-1 text-[11px] text-white/45">{m.description.trim()}</p>
+                        <p className="mt-1 text-[11px] text-white/45">
+                          {m.description.trim()}
+                        </p>
                       ) : null}
                       {m.remaining != null && m.remaining > 0 ? (
-                        <p className="mt-1 text-[10px] text-white/35">{m.remaining} to go</p>
+                        <p className="mt-1 text-[10px] text-white/35">
+                          {m.remaining} to go
+                        </p>
                       ) : null}
                       <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/[0.08]">
                         <div

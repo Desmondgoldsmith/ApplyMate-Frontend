@@ -46,14 +46,20 @@ export default defineConfig([
       'react-hooks/refs': 'off',
       'react-hooks/preserve-manual-memoization': 'off',
       'react-hooks/globals': 'off',
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_' },
+      ],
     },
   },
   {
     ...eslint.configs.recommended,
     files: extAndSharedFiles,
   },
-  ...tseslint.configs.recommended.map((c) => ({ ...c, files: extAndSharedFiles })),
+  ...tseslint.configs.recommended.map((c) => ({
+    ...c,
+    files: extAndSharedFiles,
+  })),
   {
     files: extAndSharedFiles,
     languageOptions: {
@@ -63,7 +69,10 @@ export default defineConfig([
       },
     },
     rules: {
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_' },
+      ],
     },
   },
   eslintConfigPrettier,

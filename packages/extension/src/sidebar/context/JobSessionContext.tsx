@@ -80,7 +80,10 @@ function sessionToUi(session: ExtensionJobSession | null): {
       jobStatus: session.check.status,
       companyLogoUrl: session.check.companyLogoUrl ?? null,
     };
-  } else if (session.score?.jobAnalysisId && (session.score.persisted || session.jobAnalysisId)) {
+  } else if (
+    session.score?.jobAnalysisId &&
+    (session.score.persisted || session.jobAnalysisId)
+  ) {
     saveState = {
       status: 'saved',
       jobId: session.score.jobAnalysisId,
@@ -106,11 +109,15 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
   const [jobAnalysisId, setJobAnalysisId] = useState<string | null>(null);
   const [checkResult, setCheckResult] = useState<CheckResponse | null>(null);
   const [saveState, setSaveState] = useState<SaveState>({ status: 'idle' });
-  const [scoreState, setScoreState] = useState<ScoreUiState>({ status: 'idle' });
+  const [scoreState, setScoreState] = useState<ScoreUiState>({
+    status: 'idle',
+  });
   const [coverLetterState, setCoverLetterState] = useState<CoverLetterUiState>({
     status: 'idle',
   });
-  const [busyOperation, setBusyOperation] = useState<'scoring' | 'coverLetter' | null>(null);
+  const [busyOperation, setBusyOperation] = useState<
+    'scoring' | 'coverLetter' | null
+  >(null);
   const [selectedCvId, setSelectedCvIdState] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<CvProfile[]>([]);
   const profilesRef = useRef(profiles);
@@ -122,9 +129,9 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
   const [dashboardUrl, setDashboardUrl] = useState<string | null>(null);
   const [aiUsage, setAiUsage] = useState<AiUsageSnapshot | null>(null);
   const focusedSessionUrlRef = useRef<string | null>(null);
-  const silentHydrateTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined,
-  );
+  const silentHydrateTimerRef = useRef<
+    ReturnType<typeof setTimeout> | undefined
+  >(undefined);
 
   const resetAnalysisUi = useCallback(() => {
     setScoreState({ status: 'idle' });
@@ -139,7 +146,11 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
   const syncPinnedFromOtherTab = useCallback(
     (activeUrl: string, jobUrl: string | null | undefined) => {
       setPinnedFromOtherTab(
-        Boolean(activeUrl?.trim() && jobUrl?.trim() && !jobUrlsMatch(activeUrl, jobUrl)),
+        Boolean(
+          activeUrl?.trim() &&
+          jobUrl?.trim() &&
+          !jobUrlsMatch(activeUrl, jobUrl),
+        ),
       );
     },
     [],
@@ -150,96 +161,109 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
       session: ExtensionJobSession | null,
       inFlight?: 'scoring' | 'coverLetter' | null,
     ) => {
-    const ui = sessionToUi(session);
+      const ui = sessionToUi(session);
 
-    setCurrentJob(() => ui.job);
-    setJobAnalysisId(
-      session?.jobAnalysisId ??
-        session?.check?.jobId ??
-        session?.score?.jobAnalysisId ??
-        null,
-    );
-    setCheckResult(session?.check ?? null);
-    setSaveState((prev) => {
-      const next = ui.saveState;
-      if (!session) return next;
-      if (
-        prev.status === 'saved' &&
-        next.status === 'idle' &&
-        session.jobAnalysisId &&
-        prev.jobId === session.jobAnalysisId
-      ) {
-        return prev;
-      }
-      return next;
-    });
-    setScoreState((prev) => {
-      if (!session) return inFlight === 'scoring' ? { status: 'loading' } : { status: 'idle' };
+      setCurrentJob(() => ui.job);
+      setJobAnalysisId(
+        session?.jobAnalysisId ??
+          session?.check?.jobId ??
+          session?.score?.jobAnalysisId ??
+          null,
+      );
+      setCheckResult(session?.check ?? null);
+      setSaveState((prev) => {
+        const next = ui.saveState;
+        if (!session) return next;
+        if (
+          prev.status === 'saved' &&
+          next.status === 'idle' &&
+          session.jobAnalysisId &&
+          prev.jobId === session.jobAnalysisId
+        ) {
+          return prev;
+        }
+        return next;
+      });
+      setScoreState((prev) => {
+        if (!session)
+          return inFlight === 'scoring'
+            ? { status: 'loading' }
+            : { status: 'idle' };
 
-      if (inFlight === 'scoring' && !session.score) {
-        return { status: 'loading' };
-      }
+        if (inFlight === 'scoring' && !session.score) {
+          return { status: 'loading' };
+        }
 
-      if (!session.score && !session.check?.hasAnalysis) {
+        if (!session.score && !session.check?.hasAnalysis) {
+          if (prev.status === 'loading') return prev;
+          return { status: 'idle' };
+        }
+
+        if (
+          !isAlignedExtensionScore(session.score) &&
+          session.check?.hasAnalysis
+        ) {
+          if (inFlight === 'scoring') return { status: 'loading' };
+          return { status: 'idle' };
+        }
+
+        if (
+          prev.status === 'done' &&
+          isRichScore(prev.result) &&
+          ui.scoreState.status === 'done' &&
+          ui.scoreState.result &&
+          !isRichScore(ui.scoreState.result)
+        ) {
+          return prev;
+        }
+        return ui.scoreState;
+      });
+      setCoverLetterState((prev) => {
+        if (!session) {
+          return inFlight === 'coverLetter'
+            ? { status: 'loading' }
+            : { status: 'idle' };
+        }
+        if (
+          inFlight === 'coverLetter' &&
+          !session.coverLetter?.coverLetter?.trim()
+        ) {
+          return { status: 'loading' };
+        }
+        if (session.coverLetter?.coverLetter?.trim()) {
+          return { status: 'done', result: session.coverLetter };
+        }
         if (prev.status === 'loading') return prev;
         return { status: 'idle' };
-      }
-
-      if (!isAlignedExtensionScore(session.score) && session.check?.hasAnalysis) {
-        if (inFlight === 'scoring') return { status: 'loading' };
-        return { status: 'idle' };
-      }
-
-      if (
-        prev.status === 'done' &&
-        isRichScore(prev.result) &&
-        ui.scoreState.status === 'done' &&
-        ui.scoreState.result &&
-        !isRichScore(ui.scoreState.result)
-      ) {
-        return prev;
-      }
-      return ui.scoreState;
-    });
-    setCoverLetterState((prev) => {
+      });
+      setBusyOperation(inFlight ?? null);
       if (!session) {
-        return inFlight === 'coverLetter' ? { status: 'loading' } : { status: 'idle' };
-      }
-      if (inFlight === 'coverLetter' && !session.coverLetter?.coverLetter?.trim()) {
-        return { status: 'loading' };
-      }
-      if (session.coverLetter?.coverLetter?.trim()) {
-        return { status: 'done', result: session.coverLetter };
-      }
-      if (prev.status === 'loading') return prev;
-      return { status: 'idle' };
-    });
-    setBusyOperation(inFlight ?? null);
-    if (!session) {
-      const defaultProfile =
-        profilesRef.current.find((p) => p.isDefault) ?? profilesRef.current[0];
-      setSelectedCvIdState(defaultProfile?.id ?? null);
-    } else if (session.selectedCvId) {
-      setSelectedCvIdState(session.selectedCvId);
-    } else {
-      const serverCvId =
-        session?.score?.selectedCvProfileId?.trim() ||
-        session?.check?.selectedCvProfileId?.trim();
-      if (serverCvId) {
-        setSelectedCvIdState(serverCvId);
-      } else {
         const defaultProfile =
-          profilesRef.current.find((p) => p.isDefault) ?? profilesRef.current[0];
+          profilesRef.current.find((p) => p.isDefault) ??
+          profilesRef.current[0];
         setSelectedCvIdState(defaultProfile?.id ?? null);
+      } else if (session.selectedCvId) {
+        setSelectedCvIdState(session.selectedCvId);
+      } else {
+        const serverCvId =
+          session?.score?.selectedCvProfileId?.trim() ||
+          session?.check?.selectedCvProfileId?.trim();
+        if (serverCvId) {
+          setSelectedCvIdState(serverCvId);
+        } else {
+          const defaultProfile =
+            profilesRef.current.find((p) => p.isDefault) ??
+            profilesRef.current[0];
+          setSelectedCvIdState(defaultProfile?.id ?? null);
+        }
       }
-    }
-    setDashboardUrl(
-      session?.score?.dashboardUrl ??
-        session?.check?.dashboardUrl ??
-        session?.coverLetter?.dashboardUrl ??
-        null,
-    );
-  },
+      setDashboardUrl(
+        session?.score?.dashboardUrl ??
+          session?.check?.dashboardUrl ??
+          session?.coverLetter?.dashboardUrl ??
+          null,
+      );
+    },
     [],
   );
 
@@ -255,7 +279,10 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
         applySession(response?.session ?? null, response?.inFlight ?? null);
 
         if (response?.session?.extractedJob) {
-          const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+          const [tab] = await chrome.tabs.query({
+            active: true,
+            currentWindow: true,
+          });
           const activeUrl = tab?.url ?? '';
           const jobUrl = response.session.extractedJob.sourceUrl;
           syncPinnedFromOtherTab(activeUrl, jobUrl);
@@ -290,7 +317,9 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
   const refreshJob = useCallback(async () => {
     setJobLoading(true);
     try {
-      await chrome.runtime.sendMessage({ action: 'probeActiveJob' } satisfies MessageAction);
+      await chrome.runtime.sendMessage({
+        action: 'probeActiveJob',
+      } satisfies MessageAction);
       await hydrateSessionCore(true);
     } catch {
       await hydrateSessionCore(true);
@@ -306,7 +335,9 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
         action: 'reloadActiveTabForJob',
       } satisfies MessageAction);
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      await chrome.runtime.sendMessage({ action: 'probeActiveJob' } satisfies MessageAction);
+      await chrome.runtime.sendMessage({
+        action: 'probeActiveJob',
+      } satisfies MessageAction);
       await hydrateSession();
     } catch {
       await hydrateSession();
@@ -322,12 +353,19 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
         const response = (await chrome.runtime.sendMessage({
           action: 'importJobFromUrl',
           url,
-        } satisfies MessageAction)) as { success?: boolean; error?: string } | undefined;
+        } satisfies MessageAction)) as
+          | { success?: boolean; error?: string }
+          | undefined;
         if (!response?.success) {
-          return { ok: false, error: response?.error ?? 'Enter a valid job page URL.' };
+          return {
+            ok: false,
+            error: response?.error ?? 'Enter a valid job page URL.',
+          };
         }
         await new Promise((resolve) => setTimeout(resolve, 2500));
-        await chrome.runtime.sendMessage({ action: 'probeActiveJob' } satisfies MessageAction);
+        await chrome.runtime.sendMessage({
+          action: 'probeActiveJob',
+        } satisfies MessageAction);
         await hydrateSession();
         return { ok: true };
       } catch {
@@ -341,7 +379,9 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
 
   const clearJob = useCallback(async () => {
     try {
-      await chrome.runtime.sendMessage({ action: 'clearJob' } satisfies MessageAction);
+      await chrome.runtime.sendMessage({
+        action: 'clearJob',
+      } satisfies MessageAction);
     } catch {
       /* ignore */
     }
@@ -394,8 +434,12 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void hydrateSessionCore(false);
-    void chrome.runtime.sendMessage({ action: 'getCvProfiles' } satisfies MessageAction);
-    void chrome.runtime.sendMessage({ action: 'getAiUsage' } satisfies MessageAction);
+    void chrome.runtime.sendMessage({
+      action: 'getCvProfiles',
+    } satisfies MessageAction);
+    void chrome.runtime.sendMessage({
+      action: 'getAiUsage',
+    } satisfies MessageAction);
   }, [hydrateSessionCore]);
 
   useEffect(() => {
@@ -416,7 +460,9 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
       }
       if (message.action === 'sidebarOpened') {
         void hydrateSession({ silent: true });
-        void chrome.runtime.sendMessage({ action: 'probeActiveJob' } satisfies MessageAction);
+        void chrome.runtime.sendMessage({
+          action: 'probeActiveJob',
+        } satisfies MessageAction);
         return;
       }
       if (message.action === 'pendingNewJob' && 'job' in message) {
@@ -435,7 +481,8 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
         resetAnalysisUi();
         setPinnedFromOtherTab(false);
         setSelectedCvIdState(() => {
-          const defaultProfile = profiles.find((p) => p.isDefault) ?? profiles[0];
+          const defaultProfile =
+            profiles.find((p) => p.isDefault) ?? profiles[0];
           return defaultProfile?.id ?? null;
         });
         return;
@@ -448,11 +495,14 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
           return;
         }
         applySession(message.session);
-        void chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
-          const jobUrl =
-            message.session.extractedJob?.sourceUrl ?? message.session.pageUrl;
-          syncPinnedFromOtherTab(tab?.url ?? '', jobUrl);
-        });
+        void chrome.tabs
+          .query({ active: true, currentWindow: true })
+          .then(([tab]) => {
+            const jobUrl =
+              message.session.extractedJob?.sourceUrl ??
+              message.session.pageUrl;
+            syncPinnedFromOtherTab(tab?.url ?? '', jobUrl);
+          });
         return;
       }
       if (message.action === 'jobExtracted' && 'job' in message) {
@@ -473,9 +523,11 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
           }
           return nextJob;
         });
-        void chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
-          syncPinnedFromOtherTab(tab?.url ?? '', nextJob.sourceUrl);
-        });
+        void chrome.tabs
+          .query({ active: true, currentWindow: true })
+          .then(([tab]) => {
+            syncPinnedFromOtherTab(tab?.url ?? '', nextJob.sourceUrl);
+          });
         return;
       }
       if (message.action === 'jobCheckResult' && 'result' in message) {
@@ -575,7 +627,13 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
 
     chrome.runtime.onMessage.addListener(onMessage);
     return () => chrome.runtime.onMessage.removeListener(onMessage);
-  }, [applySession, hydrateSession, profiles, resetAnalysisUi, syncPinnedFromOtherTab]);
+  }, [
+    applySession,
+    hydrateSession,
+    profiles,
+    resetAnalysisUi,
+    syncPinnedFromOtherTab,
+  ]);
 
   const value = useMemo(
     () => ({
@@ -629,7 +687,9 @@ export function JobSessionProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <JobSessionContext.Provider value={value}>{children}</JobSessionContext.Provider>
+    <JobSessionContext.Provider value={value}>
+      {children}
+    </JobSessionContext.Provider>
   );
 }
 

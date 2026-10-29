@@ -11,7 +11,9 @@ export function useDuplicateCVProfile() {
     mutationFn: (id: string) => api.cv.duplicateCvProfile(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.analytics.root(),
+      });
     },
   });
 }

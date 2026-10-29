@@ -92,7 +92,9 @@ export function RecruiterScanReportPanel({
   if (!open || !session || !report) return null;
 
   const verdict = VERDICT_META[report.firstImpression.verdict];
-  const readingOrder = [...report.readingPath].sort((a, b) => a.readOrder - b.readOrder);
+  const readingOrder = [...report.readingPath].sort(
+    (a, b) => a.readOrder - b.readOrder,
+  );
 
   const applyAll = () => {
     if (!onApplyFindings || applyLines.length === 0) return;
@@ -135,7 +137,9 @@ export function RecruiterScanReportPanel({
               <div className="min-w-0">
                 <div className="mb-1.5 flex flex-wrap items-center gap-2">
                   <ScanEye className="h-4 w-4 shrink-0 text-[#00C9B1]" />
-                  <p className="text-sm font-semibold text-white/90">Recruiter Scan</p>
+                  <p className="text-sm font-semibold text-white/90">
+                    Recruiter Scan
+                  </p>
                   <span
                     className={cn(
                       'inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold',
@@ -175,11 +179,12 @@ export function RecruiterScanReportPanel({
                 First 6 seconds
               </p>
               <p className="rounded-lg border border-orange-400/20 bg-orange-500/[0.06] px-3 py-2 font-mono text-[11px] leading-relaxed text-white/80">
-                {report.firstImpression.sixSecondSnapshot || 'No snapshot returned.'}
+                {report.firstImpression.sixSecondSnapshot ||
+                  'No snapshot returned.'}
               </p>
               <p className="mt-2 text-[10px] text-white/40">
-                Orange glow on your resume preview shows where attention landed (hover sections for
-                notes).
+                Orange glow on your resume preview shows where attention landed
+                (hover sections for notes).
               </p>
             </div>
 
@@ -190,7 +195,10 @@ export function RecruiterScanReportPanel({
                 </p>
                 <ol className="space-y-1.5">
                   {readingOrder.map((entry) => {
-                    const previewKey = recruiterScanRowIdToPreviewKey(entry.sectionId, sections);
+                    const previewKey = recruiterScanRowIdToPreviewKey(
+                      entry.sectionId,
+                      sections,
+                    );
                     return (
                       <li key={`${entry.sectionId}-${entry.readOrder}`}>
                         <button
@@ -275,16 +283,22 @@ export function RecruiterScanReportPanel({
                   </div>
                   {report.whatStandsOut.highlights.length > 0 ? (
                     <div>
-                      <p className="mb-2 text-[11px] font-semibold text-white/50">Highlights</p>
+                      <p className="mb-2 text-[11px] font-semibold text-white/50">
+                        Highlights
+                      </p>
                       <ul className="space-y-2">
                         {report.whatStandsOut.highlights.map((h, i) => (
                           <li
                             key={`highlight-${i}`}
                             className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2"
                           >
-                            <p className="text-xs font-medium text-white/85">{h.text}</p>
+                            <p className="text-xs font-medium text-white/85">
+                              {h.text}
+                            </p>
                             {h.why ? (
-                              <p className="mt-1 text-[11px] text-white/50">{h.why}</p>
+                              <p className="mt-1 text-[11px] text-white/50">
+                                {h.why}
+                              </p>
                             ) : null}
                           </li>
                         ))}
@@ -299,7 +313,8 @@ export function RecruiterScanReportPanel({
                   {report.whatCouldBeStronger.concerns.length > 0 ? (
                     <ul className="space-y-2">
                       {report.whatCouldBeStronger.concerns.map((c, i) => {
-                        const sev = SEVERITY_META[c.severity] ?? SEVERITY_META.moderate;
+                        const sev =
+                          SEVERITY_META[c.severity] ?? SEVERITY_META.moderate;
                         return (
                           <li
                             key={`concern-${i}`}
@@ -315,16 +330,22 @@ export function RecruiterScanReportPanel({
                                 {sev.label}
                               </span>
                             </div>
-                            <p className="text-xs leading-relaxed text-white/85">{c.text}</p>
+                            <p className="text-xs leading-relaxed text-white/85">
+                              {c.text}
+                            </p>
                             {c.fix ? (
-                              <p className="mt-1.5 text-[11px] text-[#00C9B1]/90">Fix: {c.fix}</p>
+                              <p className="mt-1.5 text-[11px] text-[#00C9B1]/90">
+                                Fix: {c.fix}
+                              </p>
                             ) : null}
                           </li>
                         );
                       })}
                     </ul>
                   ) : (
-                    <p className="text-xs text-white/55">No major concerns flagged.</p>
+                    <p className="text-xs text-white/55">
+                      No major concerns flagged.
+                    </p>
                   )}
                   {report.whatCouldBeStronger.actions.length > 0 ? (
                     <div>
@@ -373,7 +394,12 @@ export function RecruiterScanReportPanel({
               Done
             </Button>
             {onApplyFindings && applyLines.length > 0 ? (
-              <Button type="button" className="gap-1.5 text-xs" disabled={busy} onClick={applyAll}>
+              <Button
+                type="button"
+                className="gap-1.5 text-xs"
+                disabled={busy}
+                onClick={applyAll}
+              >
                 {busy ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (

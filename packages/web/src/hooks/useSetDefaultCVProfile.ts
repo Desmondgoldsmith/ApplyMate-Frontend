@@ -11,8 +11,12 @@ export function useSetDefaultCVProfile() {
     mutationFn: (id: string) => api.cv.setDefaultCvProfile(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profileDefault() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.analytics.root(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.profileDefault(),
+      });
     },
   });
 }

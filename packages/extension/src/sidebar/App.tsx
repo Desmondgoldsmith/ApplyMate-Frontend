@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { isExtensionContextValid, safeRuntimeSendMessage } from '@/shared/extension-runtime';
+import {
+  isExtensionContextValid,
+  safeRuntimeSendMessage,
+} from '@/shared/extension-runtime';
 import type { GetAuthStateResponse, MessageAction, User } from '@/shared/types';
 
 import { AuthView } from './components/AuthView';
@@ -12,16 +15,19 @@ export function App() {
   const [status, setStatus] = useState<AppStatus>('loading');
   const [user, setUser] = useState<User | null>(null);
 
-  const applyAuth = useCallback((response: GetAuthStateResponse | undefined) => {
-    if (response?.isAuthenticated && response.user) {
-      setUser(response.user);
-      setStatus('authenticated');
-      return true;
-    }
-    setUser(null);
-    setStatus('unauthenticated');
-    return false;
-  }, []);
+  const applyAuth = useCallback(
+    (response: GetAuthStateResponse | undefined) => {
+      if (response?.isAuthenticated && response.user) {
+        setUser(response.user);
+        setStatus('authenticated');
+        return true;
+      }
+      setUser(null);
+      setStatus('unauthenticated');
+      return false;
+    },
+    [],
+  );
 
   const refreshAuth = useCallback(async () => {
     if (!isExtensionContextValid()) {
@@ -35,7 +41,9 @@ export function App() {
       } satisfies MessageAction)) as GetAuthStateResponse | undefined;
 
       if (applyAuth(cached)) {
-        void safeRuntimeSendMessage({ action: 'syncAuth' } satisfies MessageAction)
+        void safeRuntimeSendMessage({
+          action: 'syncAuth',
+        } satisfies MessageAction)
           .then((synced) => {
             const response = synced as GetAuthStateResponse | undefined;
             if (response?.isAuthenticated && response.user) {

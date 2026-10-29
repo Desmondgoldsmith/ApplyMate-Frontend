@@ -16,7 +16,8 @@ describe('cvAcceptAllQuota', () => {
       pendingReusePreview: 0,
       canAcceptWithAiToday: 5,
       acceptAllCountsAsOneAiUse: true,
-      message: 'Apply all uses 1 of your 1 remaining AI action(s) today for 5 suggestion(s) needing generation.',
+      message:
+        'Apply all uses 1 of your 1 remaining AI action(s) today for 5 suggestion(s) needing generation.',
     });
     expect(quota?.acceptAllCountsAsOneAiUse).toBe(true);
     expect(quota?.message).toContain('1 remaining');

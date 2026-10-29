@@ -125,7 +125,8 @@ describe('normalizeTodayPlan Phase 1 fields', () => {
                 confidenceTier: 'high',
               },
               reasonShort: 'This thread has gone quiet.',
-              reasonDetailed: 'A short follow-up now can restart the conversation.',
+              reasonDetailed:
+                'A short follow-up now can restart the conversation.',
               recommendationId: 'p1',
               generationReason: 'stalled_follow_up',
               priorityState: 'ready_now',
@@ -197,7 +198,9 @@ describe('normalizeTodayPlan Phase 1 fields', () => {
     expect(plan.dashboardHeader?.momentumType).toBe('progress');
     expect(plan.dashboardHeader?.dashboardMode).toBe('execution_focus');
     expect(plan.dashboardHeader?.recommendedSections).toContain('today_plan');
-    expect(plan.dashboardHeader?.actionContext?.suggestedAction).toBe('Send follow-up');
+    expect(plan.dashboardHeader?.actionContext?.suggestedAction).toBe(
+      'Send follow-up',
+    );
     expect(plan.dashboardHeader?.actionContext?.applicationId).toBe('app1');
     expect(plan.dashboardHeader?.actionContext?.surfaceOwnership).toBe('hero');
     const item = plan.unifiedPriorities.items[0];
@@ -227,8 +230,13 @@ describe('normalizeTodayPlan Phase 1 fields', () => {
     expect(item?.qualitySignals?.estimatedUserEffort).toBe('low');
     expect(item?.reasonShort).toContain('quiet');
     expect(plan.unifiedPriorities.summary.suppressionFamilyCount).toBe(1);
-    expect(plan.unifiedPriorities.summary.workflowOrchestration[0]?.entityId).toBe('app-xyz');
-    expect(plan.unifiedPriorities.summary.workflowOrchestration[0]?.primaryWorkflowState).toBe('followup');
+    expect(
+      plan.unifiedPriorities.summary.workflowOrchestration[0]?.entityId,
+    ).toBe('app-xyz');
+    expect(
+      plan.unifiedPriorities.summary.workflowOrchestration[0]
+        ?.primaryWorkflowState,
+    ).toBe('followup');
     expect(unifiedPriorityDedupeKey(plan.unifiedPriorities.items[0]!)).toBe(
       'workflow_entity::application:app-xyz',
     );
@@ -260,7 +268,11 @@ describe('normalizeTodayPlan Phase 1 fields', () => {
   });
 
   it('normalizes deprecated cv clinic deep-links', () => {
-    expect(normalizeTodayPlanRoute('/dashboard/cv-clinic')).toBe('/dashboard/cv');
-    expect(normalizeTodayPlanRoute('/dashboard/cv-clinic?profileId=cv1')).toBe('/dashboard/cv?profileId=cv1');
+    expect(normalizeTodayPlanRoute('/dashboard/cv-clinic')).toBe(
+      '/dashboard/cv',
+    );
+    expect(normalizeTodayPlanRoute('/dashboard/cv-clinic?profileId=cv1')).toBe(
+      '/dashboard/cv?profileId=cv1',
+    );
   });
 });

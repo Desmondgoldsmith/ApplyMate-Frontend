@@ -26,9 +26,15 @@ export function useUpdateApplicationStatus() {
     }) => api.applications.updateStatus(id, status, { expectedStatus }),
     onSuccess: (app, { id }) => {
       queryClient.setQueryData(queryKeys.applications.detail(id), app);
-      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.detail(id) });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.applications.root(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.applications.detail(id),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.history(),
+      });
       invalidateNotificationList(queryClient);
       scheduleUnreadNotificationCountInvalidate(queryClient);
       invalidateGrowthQueries(queryClient);
@@ -40,9 +46,12 @@ export function useUpdateApplicationStatus() {
 export function useUpdateApplicationNotes() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, notes }: { id: string; notes: string }) => api.applications.updateNotes(id, notes),
+    mutationFn: ({ id, notes }: { id: string; notes: string }) =>
+      api.applications.updateNotes(id, notes),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.applications.root(),
+      });
       invalidateNotificationList(queryClient);
       scheduleUnreadNotificationCountInvalidate(queryClient);
       invalidateTodayPlanQueries(queryClient);

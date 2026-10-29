@@ -7,7 +7,11 @@ import { useLayoutEffect } from 'react';
  * Imperative Lenis (not ReactLenis) so autoRaf + wheel smoothing are reliable.
  * Respects prefers-reduced-motion (native scroll only).
  */
-export function SmoothScrollProvider({ children }: { children: React.ReactNode }) {
+export function SmoothScrollProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   useLayoutEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       return;

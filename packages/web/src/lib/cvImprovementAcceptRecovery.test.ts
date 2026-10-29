@@ -15,7 +15,11 @@ describe('cvImprovementAcceptRecovery', () => {
     ).toBe(true);
     expect(
       shouldRecoverCvImprovementAcceptPreviewSync(
-        { response: { data: { error: { code: 'IMPROVEMENT_DRAFT_FIELD_MISMATCH' } } } },
+        {
+          response: {
+            data: { error: { code: 'IMPROVEMENT_DRAFT_FIELD_MISMATCH' } },
+          },
+        },
         'IMPROVEMENT_DRAFT_FIELD_MISMATCH',
       ),
     ).toBe(true);
@@ -29,7 +33,9 @@ describe('cvImprovementAcceptRecovery', () => {
 
   it('maps field mismatch to user-friendly copy', () => {
     expect(
-      cvImprovementAcceptPreviewSyncUserMessage('IMPROVEMENT_DRAFT_FIELD_MISMATCH'),
+      cvImprovementAcceptPreviewSyncUserMessage(
+        'IMPROVEMENT_DRAFT_FIELD_MISMATCH',
+      ),
     ).toContain('Fix with AI');
   });
 });

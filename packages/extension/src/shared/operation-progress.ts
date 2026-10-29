@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 
 /** Cycle through friendly loading phrases while an async operation runs. */
-export function useProgressPhrases(active: boolean, phrases: readonly string[], intervalMs = 3500): string {
+export function useProgressPhrases(
+  active: boolean,
+  phrases: readonly string[],
+  intervalMs = 3500,
+): string {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {

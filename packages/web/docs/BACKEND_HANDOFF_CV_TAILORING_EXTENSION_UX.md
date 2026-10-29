@@ -8,16 +8,16 @@
 
 ## Summary
 
-| # | Issue | Owner | Backend action needed? |
-|---|--------|--------|----------------------|
-| 1 | Extension cover letter → **Download PDF** (not Regenerate) | Frontend | No |
-| 2 | Extension cover letter **disappears** when leaving job page | Frontend (+ optional API) | Optional — persist + rehydrate |
-| 3 | **Section order** banner inconsistent (tailor / clinic / onboarding) | Frontend | No |
-| 4 | Tailoring changes — **duplicate / repeated** skills text | Backend + Frontend | **Yes** — payload shape |
-| 5 | Tailoring changes — **experience bullets** run together | Backend + Frontend | **Yes** — structured JSON |
-| 6 | **New skills appear only after** tailoring starts | Backend | **Yes** — upfront plan |
-| 7 | **Keyword match** vs **skills match** show same terms | Backend | **Yes** — separate signals |
-| 8 | **Seniority alignment** 50% when levels match; vague copy | Backend | **Yes** — score + detail |
+| #   | Issue                                                                | Owner                     | Backend action needed?         |
+| --- | -------------------------------------------------------------------- | ------------------------- | ------------------------------ |
+| 1   | Extension cover letter → **Download PDF** (not Regenerate)           | Frontend                  | No                             |
+| 2   | Extension cover letter **disappears** when leaving job page          | Frontend (+ optional API) | Optional — persist + rehydrate |
+| 3   | **Section order** banner inconsistent (tailor / clinic / onboarding) | Frontend                  | No                             |
+| 4   | Tailoring changes — **duplicate / repeated** skills text             | Backend + Frontend        | **Yes** — payload shape        |
+| 5   | Tailoring changes — **experience bullets** run together              | Backend + Frontend        | **Yes** — structured JSON      |
+| 6   | **New skills appear only after** tailoring starts                    | Backend                   | **Yes** — upfront plan         |
+| 7   | **Keyword match** vs **skills match** show same terms                | Backend                   | **Yes** — separate signals     |
+| 8   | **Seniority alignment** 50% when levels match; vague copy            | Backend                   | **Yes** — score + detail       |
 
 ---
 
@@ -67,11 +67,11 @@ Or flat list:
 
 ### Rules for `changedFields`
 
-| Do | Don't |
-|----|--------|
-| Machine paths: `categories[1].skills`, `skills` | Full sentences: `"Reflected selected skills in skills: …"` |
-| Short labels if needed: `"Content Skills group"` | Duplicate entire `after` body in `changedFields` |
-| One entry per real field change | Repeat the same summary under multiple keys |
+| Do                                               | Don't                                                      |
+| ------------------------------------------------ | ---------------------------------------------------------- |
+| Machine paths: `categories[1].skills`, `skills`  | Full sentences: `"Reflected selected skills in skills: …"` |
+| Short labels if needed: `"Content Skills group"` | Duplicate entire `after` body in `changedFields`           |
+| One entry per real field change                  | Repeat the same summary under multiple keys                |
 
 Optional additive field (recommended):
 
@@ -106,10 +106,7 @@ Example from UI: `…API integrationVersion Control: Git… • Optimized … �
     {
       "title": "Frontend Developer",
       "company": "Dummy Group",
-      "bullets": [
-        "Optimized …",
-        "Eliminated …"
-      ]
+      "bullets": ["Optimized …", "Eliminated …"]
     }
   ]
 }
@@ -146,11 +143,11 @@ User expects **all job-description gaps** (skills/terms not on the CV) **before*
 
 ### Backend requirements
 
-| Endpoint | Change |
-|----------|--------|
-| `POST /jobs/analyze` | Stable `missingSkills[]` + optional `plannedTailorSections[]` |
+| Endpoint                | Change                                                                                             |
+| ----------------------- | -------------------------------------------------------------------------------------------------- |
+| `POST /jobs/analyze`    | Stable `missingSkills[]` + optional `plannedTailorSections[]`                                      |
 | `POST /cv/tailor-draft` | Return **full** `drafts[]` upfront (all pending sections). Do not add new draft entries on accept. |
-| Accept section | Update `status` + persist CV only — **no new surprise sections** unless user re-runs tailor |
+| Accept section          | Update `status` + persist CV only — **no new surprise sections** unless user re-runs tailor        |
 
 If the model genuinely finds new gaps while tailoring, attach them to **`analysis.missingSkills`** on the mutation response — do not silently inject new pending draft cards without user opting in.
 
@@ -171,9 +168,9 @@ In **CV Score → ATS simulation (job-aware)**, **Keyword match** and **Hard ski
 
 ### Intended distinction (product)
 
-| Metric | Meaning | Data source |
-|--------|---------|-------------|
-| **Keyword match** | Lexical overlap — exact/near-exact terms from JD (tools, certs, phrases) found in CV text | `simulation.keywords.{required,preferred,niceToHave}` |
+| Metric                | Meaning                                                                                           | Data source                                                         |
+| --------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| **Keyword match**     | Lexical overlap — exact/near-exact terms from JD (tools, certs, phrases) found in CV text         | `simulation.keywords.{required,preferred,niceToHave}`               |
 | **Hard skills match** | Canonical skill ontology — normalized skills (React → JavaScript ecosystem), not every JD keyword | `simulation.hardSkillMatches[]` with `term`, `canonical`, `matched` |
 
 They **may correlate** but must not be copies of the same list/score.
@@ -191,11 +188,22 @@ They **may correlate** but must not be copies of the same list/score.
 {
   "simulation": {
     "dimensions": {
-      "keywordMatch": { "score0to100": 62, "weight": 0.2, "contribution": 12.4 },
-      "hardSkillMatch": { "score0to100": 48, "weight": 0.25, "contribution": 12 }
+      "keywordMatch": {
+        "score0to100": 62,
+        "weight": 0.2,
+        "contribution": 12.4
+      },
+      "hardSkillMatch": {
+        "score0to100": 48,
+        "weight": 0.25,
+        "contribution": 12
+      }
     },
     "keywords": {
-      "required": { "present": ["Agile", "Scrum", "CI/CD"], "missing": ["Kubernetes", "Terraform"] }
+      "required": {
+        "present": ["Agile", "Scrum", "CI/CD"],
+        "missing": ["Kubernetes", "Terraform"]
+      }
     },
     "hardSkillMatches": [
       { "term": "React", "canonical": "react", "matched": true },
@@ -239,23 +247,23 @@ Add to ATS simulation (or job-match breakdown):
 
 ```typescript
 seniorityAlignment: {
-  score0to100: number;           // 0–100
+  score0to100: number; // 0–100
   jobLevel: 'junior' | 'mid' | 'senior' | 'staff' | 'unknown';
   cvLevel: 'junior' | 'mid' | 'senior' | 'staff' | 'unknown';
-  jobTitleNormalized: string;    // e.g. "Mid-level DevOps Engineer"
-  cvTitleNormalized: string;     // e.g. "Mid-level Frontend Engineer"
-  detail: string;                // one sentence, human-readable
+  jobTitleNormalized: string; // e.g. "Mid-level DevOps Engineer"
+  cvTitleNormalized: string; // e.g. "Mid-level Frontend Engineer"
+  detail: string; // one sentence, human-readable
 }
 ```
 
 **Scoring guidance:**
 
-| Case | Score direction |
-|------|-----------------|
-| Same level + same discipline | High (85–100) |
-| Same level + different discipline (DevOps vs Frontend) | Moderate (55–75), not 50 by default |
-| Level mismatch (mid CV vs senior role) | Lower (20–50) |
-| Unknown level | Omit score or return `null` with explanation |
+| Case                                                   | Score direction                              |
+| ------------------------------------------------------ | -------------------------------------------- |
+| Same level + same discipline                           | High (85–100)                                |
+| Same level + different discipline (DevOps vs Frontend) | Moderate (55–75), not 50 by default          |
+| Level mismatch (mid CV vs senior role)                 | Lower (20–50)                                |
+| Unknown level                                          | Omit score or return `null` with explanation |
 
 **Copy rules:**
 
@@ -289,11 +297,11 @@ Cover letter generated in the extension **vanishes** when the user navigates awa
 
 ### Optional backend help
 
-| Endpoint | Addition |
-|----------|----------|
-| `GET /extension/jobs/check` | `hasCoverLetter: boolean` |
+| Endpoint                             | Addition                                                |
+| ------------------------------------ | ------------------------------------------------------- |
+| `GET /extension/jobs/check`          | `hasCoverLetter: boolean`                               |
 | `GET /jobs/generated/:jobAnalysisId` | Return saved cover letter text (already exists for web) |
-| `POST /extension/cover-letter` | Already persists — confirm `jobAnalysisId` linkage |
+| `POST /extension/cover-letter`       | Already persists — confirm `jobAnalysisId` linkage      |
 
 Extension will re-fetch on hydrate when `hasCoverLetter === true`. **Not blocking** if session storage is fixed on frontend.
 
@@ -301,23 +309,23 @@ Extension will re-fetch on hydrate when `hasCoverLetter === true`. **Not blockin
 
 ## Issues 1 & 3 — Frontend only (no backend work)
 
-| # | Fix (frontend after backend for 4–8) |
-|---|--------------------------------------|
-| 1 | Replace **Regenerate** with **Download PDF** using same PDF helper pattern as web (`downloadCoverLetterPdf`) |
-| 3 | Unify **CvSectionOrderProactiveBanner** placement: clinic uses in-flow banner; tailor/onboarding use `CvClinicWorkspace` overlay — align layout/styling across `CvClinicPageContent`, `CvClinicWorkspace`, onboarding |
+| #   | Fix (frontend after backend for 4–8)                                                                                                                                                                                  |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Replace **Regenerate** with **Download PDF** using same PDF helper pattern as web (`downloadCoverLetterPdf`)                                                                                                          |
+| 3   | Unify **CvSectionOrderProactiveBanner** placement: clinic uses in-flow banner; tailor/onboarding use `CvClinicWorkspace` overlay — align layout/styling across `CvClinicPageContent`, `CvClinicWorkspace`, onboarding |
 
 ---
 
 ## API touchpoints (checklist)
 
-| Endpoint | Issues |
-|----------|--------|
-| `POST /cv/tailor-draft` | 4, 5, 6 |
-| `POST /cv/tailor-draft/:id/accept-section` | 4, 5, 6 |
-| `GET /jobs/:id` → `breakdown.ats.simulation` | 7, 8 |
-| `GET /cv/profiles/:id/score` (job-aware) | 7, 8 |
-| `scoreImprovement` on job analysis | 8 (copy) |
-| `GET /extension/jobs/check` | 2 (optional) |
+| Endpoint                                     | Issues       |
+| -------------------------------------------- | ------------ |
+| `POST /cv/tailor-draft`                      | 4, 5, 6      |
+| `POST /cv/tailor-draft/:id/accept-section`   | 4, 5, 6      |
+| `GET /jobs/:id` → `breakdown.ats.simulation` | 7, 8         |
+| `GET /cv/profiles/:id/score` (job-aware)     | 7, 8         |
+| `scoreImprovement` on job analysis           | 8 (copy)     |
+| `GET /extension/jobs/check`                  | 2 (optional) |
 
 ---
 

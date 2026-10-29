@@ -4,7 +4,10 @@ import { ChevronDown, Loader2, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 
 import { formatUiCopy } from '@/lib/formatUiCopy';
-import { parseExplainerBlocks, renderExplainerBlocks } from '@/lib/parseExplainerBody';
+import {
+  parseExplainerBlocks,
+  renderExplainerBlocks,
+} from '@/lib/parseExplainerBody';
 import type { CvSectionScoreExplainer } from '@/lib/cvSectionScoreExplainer';
 import { cn } from '@/lib/utils';
 
@@ -61,9 +64,18 @@ export function CvScoreSectionExplainer({
             compact ? 'text-[10px]' : 'text-[11px]',
           )}
         >
-          <ExplainerBlock title="What this means" body={explainer.whatItMeans} />
-          <ExplainerBlock title="Why this score" body={explainer.whyThisScore} />
-          <ExplainerBlock title="How to improve" body={explainer.howToImprove} />
+          <ExplainerBlock
+            title="What this means"
+            body={explainer.whatItMeans}
+          />
+          <ExplainerBlock
+            title="Why this score"
+            body={explainer.whyThisScore}
+          />
+          <ExplainerBlock
+            title="How to improve"
+            body={explainer.howToImprove}
+          />
 
           {canAct ? (
             <div className="flex flex-col gap-1.5 pt-1 sm:flex-row sm:flex-wrap">
@@ -109,7 +121,9 @@ function ExplainerBlock({ title, body }: { title: string; body: string }) {
 
   return (
     <div>
-      <p className="font-semibold uppercase tracking-[0.06em] text-white/35">{title}</p>
+      <p className="font-semibold uppercase tracking-[0.06em] text-white/35">
+        {title}
+      </p>
       <div className="mt-1">
         {blocks.length > 0 ? renderExplainerBlocks(blocks) : null}
       </div>

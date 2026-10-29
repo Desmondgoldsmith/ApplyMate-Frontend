@@ -95,13 +95,17 @@ const FIXED_PREVIEW_KEYS = new Set([
 ]);
 
 function parseVerdict(raw: unknown): CvRecruiterScanVerdict {
-  const v = String(raw ?? '').trim().toLowerCase();
+  const v = String(raw ?? '')
+    .trim()
+    .toLowerCase();
   if (v === 'strong' || v === 'mixed' || v === 'weak') return v;
   return 'mixed';
 }
 
 function parseSeverity(raw: unknown): CvRecruiterScanConcernSeverity {
-  const s = String(raw ?? '').trim().toLowerCase();
+  const s = String(raw ?? '')
+    .trim()
+    .toLowerCase();
   if (s === 'minor' || s === 'moderate' || s === 'critical') return s;
   return 'moderate';
 }
@@ -118,11 +122,27 @@ function parseReadingPath(raw: unknown): CvRecruiterScanReadingPathEntry[] {
       sectionId,
       sectionType: String(o.sectionType ?? o.section_type ?? '').trim(),
       label: String(o.label ?? '').trim() || 'Section',
-      readOrder: typeof o.readOrder === 'number' ? o.readOrder : typeof o.read_order === 'number' ? o.read_order : out.length + 1,
-      attentionScore: typeof o.attentionScore === 'number' ? o.attentionScore : typeof o.attention_score === 'number' ? o.attention_score : 50,
-      dwellMs: typeof o.dwellMs === 'number' ? o.dwellMs : typeof o.dwell_ms === 'number' ? o.dwell_ms : 0,
+      readOrder:
+        typeof o.readOrder === 'number'
+          ? o.readOrder
+          : typeof o.read_order === 'number'
+            ? o.read_order
+            : out.length + 1,
+      attentionScore:
+        typeof o.attentionScore === 'number'
+          ? o.attentionScore
+          : typeof o.attention_score === 'number'
+            ? o.attention_score
+            : 50,
+      dwellMs:
+        typeof o.dwellMs === 'number'
+          ? o.dwellMs
+          : typeof o.dwell_ms === 'number'
+            ? o.dwell_ms
+            : 0,
       note: String(o.note ?? '').trim(),
-      focalPoint: String(o.focalPoint ?? o.focal_point ?? '').trim() || undefined,
+      focalPoint:
+        String(o.focalPoint ?? o.focal_point ?? '').trim() || undefined,
     });
   }
   return out.sort((a, b) => a.readOrder - b.readOrder);
@@ -133,23 +153,33 @@ function parseStringArray(raw: unknown): string[] {
   return raw.map((x) => String(x ?? '').trim()).filter(Boolean);
 }
 
-export function normalizeCvRecruiterScanReport(raw: unknown): CvRecruiterScanReport | null {
+export function normalizeCvRecruiterScanReport(
+  raw: unknown,
+): CvRecruiterScanReport | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const r = raw as Record<string, unknown>;
   const fi = r.firstImpression ?? r.first_impression;
   const fiObj =
-    fi && typeof fi === 'object' && !Array.isArray(fi) ? (fi as Record<string, unknown>) : {};
+    fi && typeof fi === 'object' && !Array.isArray(fi)
+      ? (fi as Record<string, unknown>)
+      : {};
   const wso = r.whatStandsOut ?? r.what_stands_out;
   const wsoObj =
-    wso && typeof wso === 'object' && !Array.isArray(wso) ? (wso as Record<string, unknown>) : {};
+    wso && typeof wso === 'object' && !Array.isArray(wso)
+      ? (wso as Record<string, unknown>)
+      : {};
   const wcs = r.whatCouldBeStronger ?? r.what_could_be_stronger;
   const wcsObj =
-    wcs && typeof wcs === 'object' && !Array.isArray(wcs) ? (wcs as Record<string, unknown>) : {};
+    wcs && typeof wcs === 'object' && !Array.isArray(wcs)
+      ? (wcs as Record<string, unknown>)
+      : {};
 
   const takeaways = parseStringArray(wsoObj.takeaways).slice(0, 3);
   while (takeaways.length < 3) takeaways.push('');
 
-  const highlightsRaw = Array.isArray(wsoObj.highlights) ? wsoObj.highlights : [];
+  const highlightsRaw = Array.isArray(wsoObj.highlights)
+    ? wsoObj.highlights
+    : [];
   const highlights: CvRecruiterScanHighlight[] = [];
   for (const h of highlightsRaw) {
     if (!h || typeof h !== 'object' || Array.isArray(h)) continue;
@@ -158,7 +188,8 @@ export function normalizeCvRecruiterScanReport(raw: unknown): CvRecruiterScanRep
     if (!text) continue;
     highlights.push({
       text,
-      sectionType: String(o.sectionType ?? o.section_type ?? '').trim() || undefined,
+      sectionType:
+        String(o.sectionType ?? o.section_type ?? '').trim() || undefined,
       sectionId: String(o.sectionId ?? o.section_id ?? '').trim() || undefined,
       why: String(o.why ?? '').trim() || undefined,
     });
@@ -174,7 +205,8 @@ export function normalizeCvRecruiterScanReport(raw: unknown): CvRecruiterScanRep
     concerns.push({
       text,
       severity: parseSeverity(o.severity),
-      sectionType: String(o.sectionType ?? o.section_type ?? '').trim() || undefined,
+      sectionType:
+        String(o.sectionType ?? o.section_type ?? '').trim() || undefined,
       sectionId: String(o.sectionId ?? o.section_id ?? '').trim() || undefined,
       fix: String(o.fix ?? '').trim() || undefined,
     });
@@ -185,7 +217,9 @@ export function normalizeCvRecruiterScanReport(raw: unknown): CvRecruiterScanRep
       verdict: parseVerdict(fiObj.verdict),
       headline: String(fiObj.headline ?? '').trim() || 'First impression',
       narrative: String(fiObj.narrative ?? '').trim(),
-      sixSecondSnapshot: String(fiObj.sixSecondSnapshot ?? fiObj.six_second_snapshot ?? '').trim(),
+      sixSecondSnapshot: String(
+        fiObj.sixSecondSnapshot ?? fiObj.six_second_snapshot ?? '',
+      ).trim(),
     },
     readingPath: parseReadingPath(r.readingPath ?? r.reading_path),
     whatStandsOut: { takeaways, highlights },
@@ -196,7 +230,9 @@ export function normalizeCvRecruiterScanReport(raw: unknown): CvRecruiterScanRep
   };
 }
 
-export function normalizeCvRecruiterScanResponse(raw: unknown): CvRecruiterScanResponse {
+export function normalizeCvRecruiterScanResponse(
+  raw: unknown,
+): CvRecruiterScanResponse {
   const body =
     raw !== null && typeof raw === 'object' && !Array.isArray(raw)
       ? (raw as Record<string, unknown>)
@@ -205,7 +241,9 @@ export function normalizeCvRecruiterScanResponse(raw: unknown): CvRecruiterScanR
   if (body.type === 'clarify') {
     return {
       type: 'clarify',
-      question: String(body.question ?? 'Which role should I simulate the recruiter for?'),
+      question: String(
+        body.question ?? 'Which role should I simulate the recruiter for?',
+      ),
       commandId: String(body.commandId ?? body.command_id ?? ''),
       scanId: String(body.scanId ?? body.scan_id ?? '').trim() || undefined,
     };
@@ -224,13 +262,22 @@ export function normalizeCvRecruiterScanResponse(raw: unknown): CvRecruiterScanR
 
   return {
     type: 'result',
-    scope: String(body.scope ?? '').trim() === 'findings' ? 'findings' : 'recruiter_scan',
+    scope:
+      String(body.scope ?? '').trim() === 'findings'
+        ? 'findings'
+        : 'recruiter_scan',
     commandId: String(body.commandId ?? body.command_id ?? ''),
     scanId: String(body.scanId ?? body.scan_id ?? '').trim() || undefined,
     report,
-    positiveFindings: parseStringArray(body.positiveFindings ?? body.positive_findings),
-    improvementFindings: parseStringArray(body.improvementFindings ?? body.improvement_findings),
-    actionableFindings: parseStringArray(body.actionableFindings ?? body.actionable_findings),
+    positiveFindings: parseStringArray(
+      body.positiveFindings ?? body.positive_findings,
+    ),
+    improvementFindings: parseStringArray(
+      body.improvementFindings ?? body.improvement_findings,
+    ),
+    actionableFindings: parseStringArray(
+      body.actionableFindings ?? body.actionable_findings,
+    ),
     findings: parseStringArray(body.findings),
     diffSummary: diffSummary || undefined,
   };
@@ -238,7 +285,9 @@ export function normalizeCvRecruiterScanResponse(raw: unknown): CvRecruiterScanR
 
 /** Build session from global assistant findings response when `report` is present. */
 export function recruiterScanSessionFromFindings(
-  res: CvGlobalAssistantFindingsResult & { report?: CvRecruiterScanReport | null },
+  res: CvGlobalAssistantFindingsResult & {
+    report?: CvRecruiterScanReport | null;
+  },
 ): CvRecruiterScanSession | null {
   if (!res.report) return null;
   return {
@@ -278,7 +327,10 @@ export function buildRecruiterScanHeatmapByPreviewKey(
 ): Record<string, CvRecruiterScanReadingPathEntry> {
   const map: Record<string, CvRecruiterScanReadingPathEntry> = {};
   for (const entry of report.readingPath) {
-    const previewKey = recruiterScanRowIdToPreviewKey(entry.sectionId, sections);
+    const previewKey = recruiterScanRowIdToPreviewKey(
+      entry.sectionId,
+      sections,
+    );
     map[previewKey] = { ...entry, label: entry.label || previewKey };
   }
   return map;
@@ -297,7 +349,9 @@ export function recruiterScanHeatmapStyle(
   };
 }
 
-export function getRecruiterApplyFindingsFromSession(session: CvRecruiterScanSession): string[] {
+export function getRecruiterApplyFindingsFromSession(
+  session: CvRecruiterScanSession,
+): string[] {
   const fromReport = session.report.whatCouldBeStronger.actions.filter(Boolean);
   if (fromReport.length > 0) return fromReport;
   const legacy: CvGlobalAssistantFindingsResult = {
@@ -315,9 +369,12 @@ export function getRecruiterApplyFindingsFromSession(session: CvRecruiterScanSes
   return getRecruiterImprovementFindingsForApply(legacy);
 }
 
-export function buildRecruiterScanShareSnippet(session: CvRecruiterScanSession): string {
+export function buildRecruiterScanShareSnippet(
+  session: CvRecruiterScanSession,
+): string {
   const { verdict, headline } = session.report.firstImpression;
-  const takeaway = session.report.whatStandsOut.takeaways.find((t) => t.trim()) ?? '';
+  const takeaway =
+    session.report.whatStandsOut.takeaways.find((t) => t.trim()) ?? '';
   const concern = session.report.whatCouldBeStronger.concerns[0]?.text ?? '';
   const lines = [
     `Recruiter Scan on ApplyMate (${verdict}): ${headline}`,

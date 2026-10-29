@@ -1,12 +1,20 @@
 import axios from 'axios';
 
-import { axiosClient, getApiErrorCode, getApiErrorMessage, throwIfApiFailureResponse } from '@/lib/axios';
+import {
+  axiosClient,
+  getApiErrorCode,
+  getApiErrorMessage,
+  throwIfApiFailureResponse,
+} from '@/lib/axios';
 import {
   TranscriptionFailedError,
   transcriptionErrorMessage,
   transcriptionFailedFromUnknown,
 } from '@/lib/interviewTranscriptionErrors';
-import { clientBrowserLabel, detectBrowser } from '@/lib/interviewRecordingStrategy';
+import {
+  clientBrowserLabel,
+  detectBrowser,
+} from '@/lib/interviewRecordingStrategy';
 import { decodeInterviewSpeechBase64 } from '@/lib/interviewVoicePlayback';
 
 export type TurnAudioTranscriptionSource = 'whisper' | 'browser' | 'fallback';
@@ -58,13 +66,16 @@ export type RecordingStrategyResponse = {
 function unwrapVoiceData<T>(raw: unknown): T {
   if (raw !== null && typeof raw === 'object' && !Array.isArray(raw)) {
     const o = raw as Record<string, unknown>;
-    if (o.success === false) throw new Error(String(o.error ?? 'Request failed'));
+    if (o.success === false)
+      throw new Error(String(o.error ?? 'Request failed'));
     if ('data' in o && o.data !== undefined) return o.data as T;
   }
   return raw as T;
 }
 
-function unwrapSpeechEnvelope(raw: unknown): SynthesizeInterviewerSpeechResponse {
+function unwrapSpeechEnvelope(
+  raw: unknown,
+): SynthesizeInterviewerSpeechResponse {
   if (raw !== null && typeof raw === 'object' && !Array.isArray(raw)) {
     const o = raw as Record<string, unknown>;
     if (o.success === false) {
@@ -79,7 +90,9 @@ function unwrapSpeechEnvelope(raw: unknown): SynthesizeInterviewerSpeechResponse
   return { data: raw as InterviewerSpeechResult, requestId: null };
 }
 
-function isRetryableTranscriptionHttpStatus(status: number | undefined): boolean {
+function isRetryableTranscriptionHttpStatus(
+  status: number | undefined,
+): boolean {
   if (status === undefined) return true;
   return status === 408 || status === 429 || status >= 500;
 }
@@ -108,10 +121,14 @@ export const interviewVoiceApi = {
           ? 'wav'
           : 'webm';
     form.append('file', file, `answer.${ext}`);
-    form.append('browserFallbackTranscript', (browserFallbackTranscript ?? '').trim());
+    form.append(
+      'browserFallbackTranscript',
+      (browserFallbackTranscript ?? '').trim(),
+    );
     const browser = meta?.clientBrowser ?? clientBrowserLabel();
     form.append('clientBrowser', browser);
-    if (meta?.recordingStrategy) form.append('recordingStrategy', meta.recordingStrategy);
+    if (meta?.recordingStrategy)
+      form.append('recordingStrategy', meta.recordingStrategy);
 
     try {
       const res = await axiosClient.post<unknown>(
@@ -158,7 +175,10 @@ export const interviewVoiceApi = {
     } catch (err) {
       if (err instanceof TranscriptionFailedError) throw err;
       const code = getApiErrorCode(err);
-      if (code === 'TRANSCRIPTION_FAILED' || (axios.isAxiosError(err) && err.response?.status === 400)) {
+      if (
+        code === 'TRANSCRIPTION_FAILED' ||
+        (axios.isAxiosError(err) && err.response?.status === 400)
+      ) {
         throw transcriptionFailedFromUnknown(err);
       }
       throw err;
@@ -186,8 +206,13 @@ export const interviewVoiceApi = {
       } catch (err) {
         lastError = err;
         if (err instanceof TranscriptionFailedError) throw err;
-        const status = axios.isAxiosError(err) ? err.response?.status : undefined;
-        if (!isRetryableTranscriptionHttpStatus(status) || attempt >= maxRetries) {
+        const status = axios.isAxiosError(err)
+          ? err.response?.status
+          : undefined;
+        if (
+          !isRetryableTranscriptionHttpStatus(status) ||
+          attempt >= maxRetries
+        ) {
           throw err;
         }
       }
@@ -207,11 +232,14 @@ export const interviewVoiceApi = {
       speakingSpeed?: number;
     },
   ): Promise<SynthesizeInterviewerSpeechResponse> => {
-    const res = await axiosClient.post<unknown>(`/interviews/${sessionId}/speech`, {
-      text: body.text.trim(),
-      interviewPersona: body.interviewPersona,
-      speakingSpeed: body.speakingSpeed,
-    });
+    const res = await axiosClient.post<unknown>(
+      `/interviews/${sessionId}/speech`,
+      {
+        text: body.text.trim(),
+        interviewPersona: body.interviewPersona,
+        speakingSpeed: body.speakingSpeed,
+      },
+    );
     throwIfApiFailureResponse(res.data, res.status);
     return unwrapSpeechEnvelope(res.data);
   },
@@ -225,7 +253,10 @@ export const interviewVoiceApi = {
       speakingSpeed?: number;
     },
   ): Promise<InterviewerSpeechResult> => {
-    const { data } = await interviewVoiceApi.synthesizeInterviewerSpeech(sessionId, body);
+    const { data } = await interviewVoiceApi.synthesizeInterviewerSpeech(
+      sessionId,
+      body,
+    );
     return data;
   },
 

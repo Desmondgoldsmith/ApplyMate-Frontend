@@ -38,25 +38,47 @@ export const RealityScorePanel = memo(function RealityScorePanel({
 
   return (
     <section
-      className={cn('rounded-2xl border border-violet-400/25 bg-violet-500/5 p-4 sm:p-5', className)}
+      className={cn(
+        'rounded-2xl border border-violet-400/25 bg-violet-500/5 p-4 sm:p-5',
+        className,
+      )}
       aria-labelledby="reality-score-heading"
     >
-      <h3 id="reality-score-heading" className="text-sm font-semibold text-white">
+      <h3
+        id="reality-score-heading"
+        className="text-sm font-semibold text-white"
+      >
         Interview reality score
       </h3>
-      <p className="mt-1 text-3xl font-black text-violet-200">{Math.round(overall)}</p>
+      <p className="mt-1 text-3xl font-black text-violet-200">
+        {Math.round(overall)}
+      </p>
       <ul className="mt-4 space-y-2">
-        <Row label="Confidence under pressure" value={realityScore.confidenceUnderPressure} />
-        <Row label="Clarity under interruption" value={realityScore.clarityUnderInterruption} />
-        <Row label="Behavioral strength" value={realityScore.behavioralStrength} />
-        <Row label="Communication under time pressure" value={realityScore.communicationUnderTimePressure} />
+        <Row
+          label="Confidence under pressure"
+          value={realityScore.confidenceUnderPressure}
+        />
+        <Row
+          label="Clarity under interruption"
+          value={realityScore.clarityUnderInterruption}
+        />
+        <Row
+          label="Behavioral strength"
+          value={realityScore.behavioralStrength}
+        />
+        <Row
+          label="Communication under time pressure"
+          value={realityScore.communicationUnderTimePressure}
+        />
       </ul>
     </section>
   );
 });
 
 function averageDefined(values: Array<number | undefined>): number | null {
-  const nums = values.filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
+  const nums = values.filter(
+    (v): v is number => typeof v === 'number' && Number.isFinite(v),
+  );
   if (nums.length === 0) return null;
   return nums.reduce((a, b) => a + b, 0) / nums.length;
 }

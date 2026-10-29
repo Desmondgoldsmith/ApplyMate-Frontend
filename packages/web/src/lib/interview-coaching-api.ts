@@ -11,14 +11,18 @@ import type {
 function unwrapCoachingData<T>(raw: unknown): T {
   if (raw !== null && typeof raw === 'object' && !Array.isArray(raw)) {
     const o = raw as Record<string, unknown>;
-    if (o.success === false) throw new Error(String(o.error ?? 'Request failed'));
+    if (o.success === false)
+      throw new Error(String(o.error ?? 'Request failed'));
     if ('data' in o && o.data !== undefined) return o.data as T;
   }
   return raw as T;
 }
 
 export const interviewCoachingApi = {
-  getPreCoaching: async (sessionId: string, turnId: string): Promise<PreCoachingResponse> => {
+  getPreCoaching: async (
+    sessionId: string,
+    turnId: string,
+  ): Promise<PreCoachingResponse> => {
     try {
       return await interviewPrepApi.getTurnPreCoaching(sessionId, turnId);
     } catch {

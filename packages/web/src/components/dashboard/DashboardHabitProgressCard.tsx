@@ -12,29 +12,34 @@ type Props = {
 
 export function DashboardHabitProgressCard({ data }: Props) {
   const score =
-    typeof data.consistencyScore === 'number' && Number.isFinite(data.consistencyScore)
+    typeof data.consistencyScore === 'number' &&
+    Number.isFinite(data.consistencyScore)
       ? Math.max(0, Math.min(100, Math.round(data.consistencyScore)))
       : null;
 
   const streakLabel =
-    typeof data.currentStreakDays === 'number' && Number.isFinite(data.currentStreakDays)
+    typeof data.currentStreakDays === 'number' &&
+    Number.isFinite(data.currentStreakDays)
       ? `${Math.max(0, Math.round(data.currentStreakDays))}-Day Streak 🔥`
       : null;
 
   const encouragementRaw = data.encouragement?.trim() ?? '';
 
   const weekDays =
-    typeof data.activeDaysThisWeek === 'number' && Number.isFinite(data.activeDaysThisWeek)
+    typeof data.activeDaysThisWeek === 'number' &&
+    Number.isFinite(data.activeDaysThisWeek)
       ? Math.max(0, Math.round(data.activeDaysThisWeek))
       : null;
 
   const monthDays =
-    typeof data.activeDaysThisMonth === 'number' && Number.isFinite(data.activeDaysThisMonth)
+    typeof data.activeDaysThisMonth === 'number' &&
+    Number.isFinite(data.activeDaysThisMonth)
       ? Math.max(0, Math.round(data.activeDaysThisMonth))
       : null;
 
   const longest =
-    typeof data.longestStreakDays === 'number' && Number.isFinite(data.longestStreakDays)
+    typeof data.longestStreakDays === 'number' &&
+    Number.isFinite(data.longestStreakDays)
       ? Math.max(0, Math.round(data.longestStreakDays))
       : null;
 
@@ -48,27 +53,41 @@ export function DashboardHabitProgressCard({ data }: Props) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
-            <p className="text-[11px] font-medium tracking-wide text-white/38">Daily streak</p>
-            <InfoHint text={TOOLTIP_DAILY_STREAK} buttonAriaLabel="About daily streak" />
+            <p className="text-[11px] font-medium tracking-wide text-white/38">
+              Daily streak
+            </p>
+            <InfoHint
+              text={TOOLTIP_DAILY_STREAK}
+              buttonAriaLabel="About daily streak"
+            />
           </div>
           {streakLabel ? (
-            <p className="mt-2 text-[17px] font-semibold leading-snug text-white/92">{streakLabel}</p>
+            <p className="mt-2 text-[17px] font-semibold leading-snug text-white/92">
+              {streakLabel}
+            </p>
           ) : null}
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[13px] text-white/55">
             {weekDays != null ? (
               <span>
-                Active days this week: <span className="tabular-nums font-medium text-white/75">{weekDays}</span>
+                Active days this week:{' '}
+                <span className="tabular-nums font-medium text-white/75">
+                  {weekDays}
+                </span>
               </span>
             ) : null}
             {monthDays != null ? (
               <span>
-                Active days this month: <span className="tabular-nums font-medium text-white/75">{monthDays}</span>
+                Active days this month:{' '}
+                <span className="tabular-nums font-medium text-white/75">
+                  {monthDays}
+                </span>
               </span>
             ) : null}
           </div>
           {longest != null ? (
             <p className="mt-2 text-[12px] text-white/42">
-              Longest streak: <span className="tabular-nums text-white/55">{longest}</span> days
+              Longest streak:{' '}
+              <span className="tabular-nums text-white/55">{longest}</span> days
             </p>
           ) : null}
         </div>
@@ -90,7 +109,12 @@ export function DashboardHabitProgressCard({ data }: Props) {
       ) : null}
 
       {encouragement ? (
-        <p className={cn('mt-4 text-[13px] leading-relaxed text-white/65', score != null ? '' : 'mt-5')}>
+        <p
+          className={cn(
+            'mt-4 text-[13px] leading-relaxed text-white/65',
+            score != null ? '' : 'mt-5',
+          )}
+        >
           {sanitizeDashboardDisplayText(encouragement)}
         </p>
       ) : null}

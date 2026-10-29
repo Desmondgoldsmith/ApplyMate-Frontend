@@ -85,21 +85,29 @@ const HABIT_BAND_LABEL: Record<
   elite: 'Elite',
 };
 
-export function tierWordFromMomentum(tier: CareerMomentumPayload['tier']): string {
+export function tierWordFromMomentum(
+  tier: CareerMomentumPayload['tier'],
+): string {
   if (!tier) return '—';
   return tier.charAt(0).toUpperCase() + tier.slice(1);
 }
 
-export function deepDiveCareerMomentumSummary(data: CareerMomentumPayload): string {
+export function deepDiveCareerMomentumSummary(
+  data: CareerMomentumPayload,
+): string {
   const v = effectiveDeterministicIndexValue(data.momentumIndex, data.score);
   const scorePart = v != null ? `${v}/100` : '—';
   return `Search Momentum · ${scorePart} · ${tierWordFromMomentum(data.tier)}`;
 }
 
-export function deepDivePredictiveSummary(data: PredictiveOutlookPayload): string {
+export function deepDivePredictiveSummary(
+  data: PredictiveOutlookPayload,
+): string {
   const band = data.interviewOutlook?.value;
   const bandLabel = band ? formatSemanticOutlookBand(band) : '—';
-  const hint = cleanAiText(data.supporting?.trim() || data.headline?.trim() || 'Outlook');
+  const hint = cleanAiText(
+    data.supporting?.trim() || data.headline?.trim() || 'Outlook',
+  );
   const shortHint = hint.length > 48 ? `${hint.slice(0, 48).trimEnd()}…` : hint;
   return `Where your search is heading · ${bandLabel} · ${shortHint}`;
 }
@@ -109,7 +117,9 @@ export function deepDiveGoalSummary(alignment: GoalAlignmentPayload): string {
     typeof alignment.score === 'number' && Number.isFinite(alignment.score)
       ? Math.max(0, Math.min(100, Math.round(alignment.score)))
       : null;
-  return score != null ? `Jobs matching your goals · ${score}/100` : 'Jobs matching your goals';
+  return score != null
+    ? `Jobs matching your goals · ${score}/100`
+    : 'Jobs matching your goals';
 }
 
 export function deepDiveHabitSummary(data: HabitProgressPayload): string {

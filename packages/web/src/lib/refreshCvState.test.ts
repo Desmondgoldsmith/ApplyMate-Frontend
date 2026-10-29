@@ -36,8 +36,14 @@ describe('refreshCvState', () => {
       exact: true,
     });
     expect(invalidateQueries).toHaveBeenCalledTimes(2);
-    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: queryKeys.cv.score('abc'), exact: true });
-    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: queryKeys.cv.profiles(), exact: true });
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: queryKeys.cv.score('abc'),
+      exact: true,
+    });
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: queryKeys.cv.profiles(),
+      exact: true,
+    });
   });
 
   it('refetches suggestions with canonical key', async () => {

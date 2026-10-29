@@ -64,7 +64,10 @@ function mergeWeaknessTags(
   for (const t of sessionTags ?? []) {
     if (t?.tag) {
       const prev = byTag.get(t.tag);
-      byTag.set(t.tag, prev ? { ...prev, count: Math.max(prev.count, t.count) } : t);
+      byTag.set(
+        t.tag,
+        prev ? { ...prev, count: Math.max(prev.count, t.count) } : t,
+      );
     }
   }
   for (const cat of categories ?? []) {
@@ -93,7 +96,10 @@ export function useInterviewPersonaMemory(options: {
 
   const profileQ = useAdaptiveProfile(enabled);
   const progressQ = useInterviewPrepProgress(enabled);
-  const enrichedQ = useEnrichedPrepSession(sessionId, Boolean(sessionId) && enabled);
+  const enrichedQ = useEnrichedPrepSession(
+    sessionId,
+    Boolean(sessionId) && enabled,
+  );
 
   const memory = useMemo((): InterviewPersonaMemory => {
     const profile = profileQ.data;
@@ -118,16 +124,22 @@ export function useInterviewPersonaMemory(options: {
     ].filter((t, i, arr) => t && arr.indexOf(t) === i);
 
     const difficultyLevel: DifficultyLevel =
-      adaptation?.difficultyLevel ?? profile?.recommendedDifficulty ?? 'adaptive';
+      adaptation?.difficultyLevel ??
+      profile?.recommendedDifficulty ??
+      'adaptive';
 
     const preferredDifficulty: PreferredDifficultyBand =
       profile?.preferredDifficulty ??
-      (difficultyLevel === 'easy' || difficultyLevel === 'hard' ? difficultyLevel : 'balanced');
+      (difficultyLevel === 'easy' || difficultyLevel === 'hard'
+        ? difficultyLevel
+        : 'balanced');
 
     const primaryFocusArea =
       coachingTips[0] ??
       (weaknessTags[0] ? weaknessLabel(weaknessTags[0].tag) : null) ??
-      (profile?.weakestCategories?.[0] ? formatFocusAreaLabel(profile.weakestCategories[0]) : null);
+      (profile?.weakestCategories?.[0]
+        ? formatFocusAreaLabel(profile.weakestCategories[0])
+        : null);
 
     const strongestSkillArea =
       strengthTags[0] != null
@@ -143,7 +155,8 @@ export function useInterviewPersonaMemory(options: {
 
     const toneProfile = resolveInterviewerToneProfile({
       averageAnswerScore: profile?.averageAnswerScore,
-      improvementTrendScore: profile?.improvementTrendScore ?? progress?.trend.improvementVelocity,
+      improvementTrendScore:
+        profile?.improvementTrendScore ?? progress?.trend.improvementVelocity,
       recommendedDifficulty: profile?.recommendedDifficulty,
       sessionDifficulty: difficultyLevel,
     });
@@ -187,9 +200,12 @@ export function resolveTurnCoaching(
 ): TurnCoaching | null {
   if (coaching?.tip?.trim()) {
     return {
-      message: coaching.message?.trim() || 'Nice work — here is how to sharpen the next answer.',
+      message:
+        coaching.message?.trim() ||
+        'Nice work — here is how to sharpen the next answer.',
       tip: coaching.tip.trim(),
-      focusArea: coaching.focusArea?.trim() || memory.primaryFocusArea || 'general',
+      focusArea:
+        coaching.focusArea?.trim() || memory.primaryFocusArea || 'general',
     };
   }
   if (!memory.coachingTips.length && !memory.primaryFocusArea) return null;

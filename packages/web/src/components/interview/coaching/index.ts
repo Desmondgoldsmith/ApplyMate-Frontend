@@ -9,7 +9,10 @@ export { PostCoachingPanel } from '@/components/interview/coaching/PostCoachingP
 export { SnapshotCoachingPanel } from '@/components/interview/coaching/SnapshotCoachingPanel';
 export { ShapedCoachingPanel } from '@/components/interview/coaching/ShapedCoachingPanel';
 export { CollapsibleCoachingSection } from '@/components/interview/coaching/CollapsibleCoachingSection';
-export { CoachingSetupControls, CoachingStickyToggle } from '@/components/interview/coaching/CoachingControls';
+export {
+  CoachingSetupControls,
+  CoachingStickyToggle,
+} from '@/components/interview/coaching/CoachingControls';
 export { PreCoachingPanel } from '@/components/interview/coaching/PreCoachingPanel';
 export { SampleAnswerPreview } from '@/components/interview/coaching/SampleAnswerPreview';
 export { TurnCoachingSection } from '@/components/interview/coaching/TurnCoachingSection';

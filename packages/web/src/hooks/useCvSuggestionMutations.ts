@@ -21,7 +21,8 @@ export function useCvSuggestionMutations() {
       profileId: string | null | undefined,
       kind: CvSuggestionMutationReconcileKind,
       options?: import('@/lib/cvSuggestionMutationReconcile').CvSuggestionMutationReconcileOptions,
-    ) => reconcileAfterCvSuggestionMutation(queryClient, profileId, kind, options),
+    ) =>
+      reconcileAfterCvSuggestionMutation(queryClient, profileId, kind, options),
     [queryClient],
   );
 

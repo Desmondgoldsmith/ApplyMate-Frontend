@@ -44,33 +44,32 @@ describe('LoginPage', () => {
     useAuthStore.getState().clearAuth({ skipBroadcast: true });
   });
 
-  it(
-    'on success, sets session and navigates to dashboard',
-    async () => {
-      const user = userEvent.setup();
-      login.mockResolvedValueOnce({
-        accessToken: 'token-ok',
-        user: {
-          id: '1',
-          email: 'u@x.com',
-          onboardingCompleted: true,
-          selectedFeatures: ['cv'],
-          primaryGoal: null,
-        },
-      });
+  it('on success, sets session and navigates to dashboard', async () => {
+    const user = userEvent.setup();
+    login.mockResolvedValueOnce({
+      accessToken: 'token-ok',
+      user: {
+        id: '1',
+        email: 'u@x.com',
+        onboardingCompleted: true,
+        selectedFeatures: ['cv'],
+        primaryGoal: null,
+      },
+    });
 
-      render(<LoginPage />);
+    render(<LoginPage />);
 
-      await user.type(await screen.findByPlaceholderText('Email'), 'u@x.com');
-      await user.type(screen.getByPlaceholderText('Password'), 'secret12');
-      await user.click(screen.getByRole('button', { name: /^sign in$/i }));
+    await user.type(await screen.findByPlaceholderText('Email'), 'u@x.com');
+    await user.type(screen.getByPlaceholderText('Password'), 'secret12');
+    await user.click(screen.getByRole('button', { name: /^sign in$/i }));
 
-      expect(login).toHaveBeenCalledWith({ email: 'u@x.com', password: 'secret12' });
-      expect(useAuthStore.getState().accessToken).toBe('token-ok');
-      expect(push).toHaveBeenCalledWith('/dashboard');
-    },
-    15_000,
-  );
+    expect(login).toHaveBeenCalledWith({
+      email: 'u@x.com',
+      password: 'secret12',
+    });
+    expect(useAuthStore.getState().accessToken).toBe('token-ok');
+    expect(push).toHaveBeenCalledWith('/dashboard');
+  }, 15_000);
 
   it('on failure, does not navigate away', async () => {
     const user = userEvent.setup();

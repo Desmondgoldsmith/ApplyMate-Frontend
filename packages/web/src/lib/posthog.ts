@@ -8,8 +8,7 @@ let initialized = false;
 
 function posthogHost(): string {
   return (
-    process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim() ||
-    'https://us.i.posthog.com'
+    process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim() || 'https://us.i.posthog.com'
   );
 }
 

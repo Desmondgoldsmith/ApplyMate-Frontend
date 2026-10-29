@@ -11,9 +11,15 @@ export function useDeleteCVProfile() {
     mutationFn: (id: string) => api.cv.deleteCvProfileById(id),
     onSuccess: (_data, id) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profileDefault() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profile(id) });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.analytics.root(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.profileDefault(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.profile(id),
+      });
     },
   });
 }

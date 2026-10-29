@@ -23,7 +23,13 @@ describe('cvDate', () => {
   });
 
   it('splits stored range strings for picker seeds', () => {
-    expect(splitCvStoredRange('2018 - 2020')).toEqual({ start: '2018', end: '2020' });
-    expect(splitCvStoredRange('2018-06')).toEqual({ start: '2018-06', end: '' });
+    expect(splitCvStoredRange('2018 - 2020')).toEqual({
+      start: '2018',
+      end: '2020',
+    });
+    expect(splitCvStoredRange('2018-06')).toEqual({
+      start: '2018-06',
+      end: '',
+    });
   });
 });

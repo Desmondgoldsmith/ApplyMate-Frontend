@@ -7,6 +7,9 @@ export default async function CvProfileAliasPage({
 }) {
   const { id } = await params;
   const profileId = typeof id === 'string' ? id.trim() : '';
-  redirect(profileId ? `/dashboard/cv-profiles?profileId=${encodeURIComponent(profileId)}` : '/dashboard/cv-profiles');
+  redirect(
+    profileId
+      ? `/dashboard/cv-profiles?profileId=${encodeURIComponent(profileId)}`
+      : '/dashboard/cv-profiles',
+  );
 }
-

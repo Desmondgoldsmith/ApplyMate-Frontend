@@ -9,7 +9,11 @@ import { Button } from '@/components/ui/Button';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
-import { api, type CvRevisionRestoreResult, type CvRevisionSummary } from '@/lib/api';
+import {
+  api,
+  type CvRevisionRestoreResult,
+  type CvRevisionSummary,
+} from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
 import {
   CV_VERSION_NOT_AVAILABLE_MESSAGE,
@@ -53,7 +57,9 @@ export function CvVersionHistoryModal({
   const queryClient = useQueryClient();
   const toast = useToast();
   const id = profileId?.trim() ?? '';
-  const [confirmTarget, setConfirmTarget] = useState<CvRevisionSummary | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<CvRevisionSummary | null>(
+    null,
+  );
 
   const revisionsQ = useQuery({
     queryKey: queryKeys.cv.revisions(id),
@@ -81,8 +87,14 @@ export function CvVersionHistoryModal({
         /** Prefix match also refreshes the include-hidden section lists for this CV. */
         queryClient.refetchQueries({ queryKey: queryKeys.cv.sections(id) }),
       ]);
-      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profileDefault(), exact: true });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.revisions(id), exact: true });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.profileDefault(),
+        exact: true,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.revisions(id),
+        exact: true,
+      });
       clearUndoHistory();
       onRestored?.(result);
       toast.success(CV_VERSION_RESTORED_MESSAGE);
@@ -91,7 +103,10 @@ export function CvVersionHistoryModal({
     } catch (e) {
       if (isNotFoundError(e)) {
         toast.error(`${CV_VERSION_NOT_AVAILABLE_MESSAGE}.`);
-        void queryClient.invalidateQueries({ queryKey: queryKeys.cv.revisions(id), exact: true });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.cv.revisions(id),
+          exact: true,
+        });
       } else {
         toast.error(getApiErrorMessage(e));
       }
@@ -104,7 +119,11 @@ export function CvVersionHistoryModal({
 
   let body: ReactNode;
   if (!id || (revisionsQ.isError && isNotFoundError(revisionsQ.error))) {
-    body = <p className="py-6 text-center text-sm text-white/55">{CV_VERSION_NOT_AVAILABLE_MESSAGE}</p>;
+    body = (
+      <p className="py-6 text-center text-sm text-white/55">
+        {CV_VERSION_NOT_AVAILABLE_MESSAGE}
+      </p>
+    );
   } else if (revisionsQ.isPending) {
     body = (
       <div className="flex items-center justify-center gap-2 py-8 text-sm text-white/55">
@@ -115,14 +134,25 @@ export function CvVersionHistoryModal({
   } else if (revisionsQ.isError) {
     body = (
       <div className="space-y-3 py-4 text-center">
-        <p className="text-sm text-rose-300">{getApiErrorMessage(revisionsQ.error)}</p>
-        <Button type="button" variant="ghost" className="border border-white/10 text-xs" onClick={() => void revisionsQ.refetch()}>
+        <p className="text-sm text-rose-300">
+          {getApiErrorMessage(revisionsQ.error)}
+        </p>
+        <Button
+          type="button"
+          variant="ghost"
+          className="border border-white/10 text-xs"
+          onClick={() => void revisionsQ.refetch()}
+        >
           Try again
         </Button>
       </div>
     );
   } else if (revisions.length === 0) {
-    body = <p className="py-6 text-center text-sm leading-relaxed text-white/55">{CV_VERSIONS_EMPTY_MESSAGE}</p>;
+    body = (
+      <p className="py-6 text-center text-sm leading-relaxed text-white/55">
+        {CV_VERSIONS_EMPTY_MESSAGE}
+      </p>
+    );
   } else {
     body = (
       <ul className="divide-y divide-white/[0.06]" aria-label="Saved versions">
@@ -130,8 +160,13 @@ export function CvVersionHistoryModal({
           <li key={rev.id} className="flex items-center gap-3 py-3">
             <History className="h-4 w-4 shrink-0 text-[#00C9B1]" aria-hidden />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-white/90">{cvRevisionReasonLabel(rev.reason)}</p>
-              <p className="text-xs text-white/45" title={formatFullDate(rev.createdAt)}>
+              <p className="text-sm font-medium text-white/90">
+                {cvRevisionReasonLabel(rev.reason)}
+              </p>
+              <p
+                className="text-xs text-white/45"
+                title={formatFullDate(rev.createdAt)}
+              >
                 {formatRelativeEdited(rev.createdAt)}
                 {rev.sectionCount > 0
                   ? ` · ${rev.sectionCount} section${rev.sectionCount === 1 ? '' : 's'}`

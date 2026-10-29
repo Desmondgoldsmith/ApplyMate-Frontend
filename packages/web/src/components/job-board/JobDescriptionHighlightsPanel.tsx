@@ -65,7 +65,9 @@ export function JobDescriptionHighlightsPanel({
             className="border-t border-white/[0.08] pt-5 first:border-t-0 first:pt-0"
           >
             {section.title?.trim() ? (
-              <h3 className="text-sm font-semibold text-white">{section.title}</h3>
+              <h3 className="text-sm font-semibold text-white">
+                {section.title}
+              </h3>
             ) : null}
             {section.format === 'bullets' ? (
               <ul
@@ -90,7 +92,10 @@ export function JobDescriptionHighlightsPanel({
                   !section.title?.trim() && 'mt-0',
                 )}
               >
-                <HighlightedText text={section.body ?? ''} highlights={highlights} />
+                <HighlightedText
+                  text={section.body ?? ''}
+                  highlights={highlights}
+                />
               </p>
             )}
           </section>
@@ -100,14 +105,21 @@ export function JobDescriptionHighlightsPanel({
   }
 
   if (!plain) {
-    return <p className={cn('text-sm text-white/45', className)}>No description on file.</p>;
+    return (
+      <p className={cn('text-sm text-white/45', className)}>
+        No description on file.
+      </p>
+    );
   }
 
   return (
     <div className={cn('text-sm leading-[1.65] text-white/80', className)}>
       {plain.split(/\n{2,}/).map((paragraph) => (
         <p key={paragraph.slice(0, 60)} className="mt-4 first:mt-0">
-          <HighlightedText text={paragraph.replace(/\n/g, ' ').trim()} highlights={highlights} />
+          <HighlightedText
+            text={paragraph.replace(/\n/g, ' ').trim()}
+            highlights={highlights}
+          />
         </p>
       ))}
     </div>

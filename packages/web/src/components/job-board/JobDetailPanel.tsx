@@ -1,7 +1,14 @@
 'use client';
 
 import { queryKeys } from '@/lib/queryKeys';
-import { Bookmark, ExternalLink, Loader2, Plug, Share2, Sparkles } from 'lucide-react';
+import {
+  Bookmark,
+  ExternalLink,
+  Loader2,
+  Plug,
+  Share2,
+  Sparkles,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -18,8 +25,14 @@ import {
   jobBoardQuotaFitBlockedReason,
   useJobBoardAiMatch,
 } from '@/hooks/useJobBoardAiMatch';
-import { buildJobMetadataParts, splitJobDescriptionSections } from '@/lib/jobBoardDisplay';
-import { buildCvCorpusForMatch, computeCvJobMatchPreview } from '@/lib/jobBoardMatchPreview';
+import {
+  buildJobMetadataParts,
+  splitJobDescriptionSections,
+} from '@/lib/jobBoardDisplay';
+import {
+  buildCvCorpusForMatch,
+  computeCvJobMatchPreview,
+} from '@/lib/jobBoardMatchPreview';
 import { api, type CVProfile, type CVSectionRecord } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -40,7 +53,9 @@ function ExpandableBlock({
 
   return (
     <section className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-5">
-      <h3 className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">{title}</h3>
+      <h3 className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">
+        {title}
+      </h3>
       <div className="mt-2 text-[13px] leading-[1.7] text-white/65">
         <p className="whitespace-pre-wrap">{shown}</p>
         {long && !open ? (
@@ -65,10 +80,15 @@ function RequirementsBlock({ text }: { text: string }) {
   if (lines.length === 0) return null;
   return (
     <section className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-5">
-      <h3 className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">Requirements</h3>
+      <h3 className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">
+        Requirements
+      </h3>
       <ul className="mt-3 list-disc space-y-2 pl-5 text-[13px] leading-relaxed text-white/65">
         {lines.map((line, i) => (
-          <li key={`${i}-${line.slice(0, 80)}`} className="marker:text-[#00C9B1]/80">
+          <li
+            key={`${i}-${line.slice(0, 80)}`}
+            className="marker:text-[#00C9B1]/80"
+          >
             {line}
           </li>
         ))}
@@ -86,19 +106,40 @@ function computeHeuristicPreview(
 ): { value: number; caption: 'Match preview' } {
   const jobBlob = `${job.title ?? ''}\n${job.description ?? ''}`;
   if (!cvProfileId?.trim()) {
-    const preview = computeCvJobMatchPreview('', job.title ?? '', job.description ?? '');
+    const preview = computeCvJobMatchPreview(
+      '',
+      job.title ?? '',
+      job.description ?? '',
+    );
     return { value: preview, caption: 'Match preview' };
   }
   if (!profileReady || !profile) {
-    const preview = computeCvJobMatchPreview('', job.title ?? '', job.description ?? '');
+    const preview = computeCvJobMatchPreview(
+      '',
+      job.title ?? '',
+      job.description ?? '',
+    );
     return { value: preview, caption: 'Match preview' };
   }
-  const corpus = buildCvCorpusForMatch(profile, Array.isArray(sections) ? sections : []);
-  const preview = computeCvJobMatchPreview(corpus || ' ', job.title ?? '', jobBlob);
+  const corpus = buildCvCorpusForMatch(
+    profile,
+    Array.isArray(sections) ? sections : [],
+  );
+  const preview = computeCvJobMatchPreview(
+    corpus || ' ',
+    job.title ?? '',
+    jobBlob,
+  );
   return { value: preview, caption: 'Match preview' };
 }
 
-export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfileId?: string | null }) {
+export function JobDetailPanel({
+  jobId,
+  cvProfileId,
+}: {
+  jobId: string;
+  cvProfileId?: string | null;
+}) {
   const router = useRouter();
   const toast = useToast();
   const bookmark = useBookmarkJob();
@@ -140,7 +181,9 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
     const aiPack = aiMatch.data ?? aiMatch.savedAnalysisOverQuota;
     const ai = aiPack?.analysis;
     const matchSource = aiPack?.matchSource;
-    const hydratedOnlyBecauseOverQuota = Boolean(!aiMatch.data && aiMatch.savedAnalysisOverQuota);
+    const hydratedOnlyBecauseOverQuota = Boolean(
+      !aiMatch.data && aiMatch.savedAnalysisOverQuota,
+    );
     if (ai && Number.isFinite(ai.matchScore)) {
       const tailored = Boolean(ai.isTailored);
       const baseTailored =
@@ -174,7 +217,11 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
       };
     }
 
-    const disabledReason = jobBoardAiMatchDisabledReason(aiUsage, cvProfileId, jd);
+    const disabledReason = jobBoardAiMatchDisabledReason(
+      aiUsage,
+      cvProfileId,
+      jd,
+    );
     const willRunAi = !disabledReason;
     const heuristic = computeHeuristicPreview(
       job,
@@ -188,7 +235,8 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
       return {
         ...heuristic,
         isPreview: true,
-        footnote: 'Pausing briefly so skimming the list does not use extra AI runs…',
+        footnote:
+          'Pausing briefly so skimming the list does not use extra AI runs…',
         gaugeLoading: false,
         analysisId: null,
         isTailoredSaved: false,
@@ -211,7 +259,8 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
       return {
         ...heuristic,
         isPreview: true,
-        footnote: 'Could not load AI match score. You can still open Tailor — Analyze job will run there.',
+        footnote:
+          'Could not load AI match score. You can still open Tailor — Analyze job will run there.',
         gaugeLoading: false,
         analysisId: null,
         isTailoredSaved: false,
@@ -254,7 +303,10 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
           isTailoredSaved: false,
         };
       }
-      if (typeof aiMatch.quotaFitScore === 'number' && Number.isFinite(aiMatch.quotaFitScore)) {
+      if (
+        typeof aiMatch.quotaFitScore === 'number' &&
+        Number.isFinite(aiMatch.quotaFitScore)
+      ) {
         return {
           value: Math.max(0, Math.min(100, Math.round(aiMatch.quotaFitScore))),
           caption: 'Fit estimate' as const,
@@ -271,7 +323,8 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
           ...heuristic,
           caption: 'Fit estimate' as const,
           isPreview: true,
-          footnote: 'Could not load the non-AI fit estimate. The keyword preview above is unofficial.',
+          footnote:
+            'Could not load the non-AI fit estimate. The keyword preview above is unofficial.',
           gaugeLoading: false,
           analysisId: null,
           isTailoredSaved: false,
@@ -293,7 +346,8 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
       return {
         ...heuristic,
         isPreview: true,
-        footnote: 'Job text is short — add more description in the listing source for a reliable AI score.',
+        footnote:
+          'Job text is short — add more description in the listing source for a reliable AI score.',
         gaugeLoading: false,
         analysisId: null,
         isTailoredSaved: false,
@@ -304,7 +358,8 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
       return {
         ...heuristic,
         isPreview: true,
-        footnote: 'Choose a CV profile in the job board filters to run the AI match score.',
+        footnote:
+          'Choose a CV profile in the job board filters to run the AI match score.',
         gaugeLoading: false,
         analysisId: null,
         isTailoredSaved: false,
@@ -349,8 +404,12 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
   const tailorAwaitingAi = useMemo(() => {
     if (hasSavedJobAnalysis) return false;
     if (tailorBlockedByQuota) return false;
-    if (jobBoardAiMatchDisabledReason(aiUsage, cvProfileId, jd) !== null) return false;
-    return (aiMatch.isDebouncing || aiMatch.isFetching) && !(scoreDisplay.analysisId ?? '').trim();
+    if (jobBoardAiMatchDisabledReason(aiUsage, cvProfileId, jd) !== null)
+      return false;
+    return (
+      (aiMatch.isDebouncing || aiMatch.isFetching) &&
+      !(scoreDisplay.analysisId ?? '').trim()
+    );
   }, [
     hasSavedJobAnalysis,
     aiUsage,
@@ -380,11 +439,15 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
     }
     return {
       label: 'View job fit & CV tools',
-      detail: 'Opens your saved analysis: match score, gaps, and options to continue tailoring if you want.',
+      detail:
+        'Opens your saved analysis: match score, gaps, and options to continue tailoring if you want.',
     };
   }, [scoreDisplay.analysisId, scoreDisplay.isTailoredSaved]);
 
-  const sectionsParsed = useMemo(() => splitJobDescriptionSections(detail.data?.description ?? ''), [detail.data?.description]);
+  const sectionsParsed = useMemo(
+    () => splitJobDescriptionSections(detail.data?.description ?? ''),
+    [detail.data?.description],
+  );
 
   const metadataLine = useMemo(() => {
     if (!detail.data) return '';
@@ -396,7 +459,9 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
     if (!job?.url && !job?.title) return;
     const text = `${job.title} — ${job.company}`;
     if (navigator.share && job.url) {
-      void navigator.share({ title: job.title, text, url: job.url }).catch(() => undefined);
+      void navigator
+        .share({ title: job.title, text, url: job.url })
+        .catch(() => undefined);
       return;
     }
     if (job.url) {
@@ -458,7 +523,11 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
               <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/[0.12] bg-white/[0.08]">
                 {job.logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={job.logoUrl} alt="" className="h-full w-full object-cover" />
+                  <img
+                    src={job.logoUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
                 ) : (
                   <span className="text-[15px] font-semibold text-white/70">
                     {job.company?.trim()?.charAt(0).toUpperCase() || '?'}
@@ -469,9 +538,13 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
                 <h2 className="line-clamp-2 text-[18px] font-bold leading-snug tracking-tight text-white sm:text-[20px] lg:line-clamp-none lg:break-words">
                   {job.title}
                 </h2>
-                <p className="mt-1 text-[15px] font-medium text-white/60">{job.company}</p>
+                <p className="mt-1 text-[15px] font-medium text-white/60">
+                  {job.company}
+                </p>
                 {metadataLine ? (
-                  <p className="mt-2 text-[13px] font-medium text-white/40">{metadataLine}</p>
+                  <p className="mt-2 text-[13px] font-medium text-white/40">
+                    {metadataLine}
+                  </p>
                 ) : null}
               </div>
             </div>
@@ -479,12 +552,21 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
 
           <div className="flex w-full flex-col items-center [grid-area:score] border-t border-white/[0.06] pt-5 lg:border-0 lg:pt-0">
             {scoreDisplay.gaugeLoading ? (
-              <div className="flex w-[116px] flex-col items-center py-2" aria-busy="true" aria-label="Loading AI match score">
+              <div
+                className="flex w-[116px] flex-col items-center py-2"
+                aria-busy="true"
+                aria-label="Loading AI match score"
+              >
                 <Loader2 className="h-10 w-10 animate-spin text-[#00C9B1]" />
-                <p className="mt-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-white/45">AI match score</p>
+                <p className="mt-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-white/45">
+                  AI match score
+                </p>
               </div>
             ) : (
-              <MatchScoreGauge score={scoreDisplay.value} caption={scoreDisplay.caption} />
+              <MatchScoreGauge
+                score={scoreDisplay.value}
+                caption={scoreDisplay.caption}
+              />
             )}
           </div>
 
@@ -494,7 +576,12 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
                 type="button"
                 variant="ghost"
                 disabled={bookmark.isPending}
-                onClick={() => bookmark.mutate({ id: job.id, bookmarked: job.isBookmarked ?? false })}
+                onClick={() =>
+                  bookmark.mutate({
+                    id: job.id,
+                    bookmarked: job.isBookmarked ?? false,
+                  })
+                }
                 className={cn(
                   'h-11 min-h-[44px] min-w-0 gap-2 rounded-lg border px-4 text-[13px] font-semibold sm:shrink-0',
                   job.isBookmarked
@@ -503,7 +590,10 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
                 )}
               >
                 <Bookmark
-                  className={cn('h-4 w-4 shrink-0', job.isBookmarked ? 'fill-current' : '')}
+                  className={cn(
+                    'h-4 w-4 shrink-0',
+                    job.isBookmarked ? 'fill-current' : '',
+                  )}
                   strokeWidth={2}
                   aria-hidden
                 />
@@ -514,7 +604,9 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
                   type="button"
                   variant="ghost"
                   className="h-11 min-h-[44px] gap-2 border-0 bg-transparent px-3 text-[13px] font-medium text-white/45 hover:bg-white/[0.04] hover:text-white/80"
-                  onClick={() => window.open(job.url, '_blank', 'noopener,noreferrer')}
+                  onClick={() =>
+                    window.open(job.url, '_blank', 'noopener,noreferrer')
+                  }
                 >
                   <ExternalLink className="h-4 w-4 shrink-0" />
                   View original
@@ -535,15 +627,21 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
                 variant="ghost"
                 className="h-11 min-h-[44px] min-w-0 gap-2 border-0 bg-transparent px-3 text-[13px] font-medium text-white/45 hover:bg-white/[0.04] hover:text-white/80"
                 onClick={() =>
-                  toast.success('Browser extension coming soon — it will auto-fill and submit this application for you.')
+                  toast.success(
+                    'Browser extension coming soon — it will auto-fill and submit this application for you.',
+                  )
                 }
               >
                 <Plug className="h-4 w-4 shrink-0" aria-hidden />
-                <span className="max-w-[10rem] truncate sm:max-w-none">Apply with extension</span>
+                <span className="max-w-[10rem] truncate sm:max-w-none">
+                  Apply with extension
+                </span>
               </Button>
             </div>
             {scoreDisplay.footnote ? (
-              <p className="text-[11px] leading-relaxed text-white/45 lg:max-w-none">{scoreDisplay.footnote}</p>
+              <p className="text-[11px] leading-relaxed text-white/45 lg:max-w-none">
+                {scoreDisplay.footnote}
+              </p>
             ) : null}
             <Button
               type="button"
@@ -591,11 +689,18 @@ export function JobDetailPanel({ jobId, cvProfileId }: { jobId: string; cvProfil
       <div className="space-y-4">
         {sectionsParsed.requirements ? (
           <>
-            <ExpandableBlock title="About the position" body={sectionsParsed.about} />
+            <ExpandableBlock
+              title="About the position"
+              body={sectionsParsed.about}
+            />
             <RequirementsBlock text={sectionsParsed.requirements} />
           </>
         ) : (
-          <ExpandableBlock title="Job description" body={job.description || 'No description available.'} maxChars={560} />
+          <ExpandableBlock
+            title="Job description"
+            body={job.description || 'No description available.'}
+            maxChars={560}
+          />
         )}
       </div>
     </div>

@@ -4,7 +4,11 @@ import { Archive, BookmarkMinus, MoreVertical, Trash2 } from 'lucide-react';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { archivePayloadForTrackedJob, canRemoveTrackedJobFromHub, type TrackedJob } from './jobHubMerge';
+import {
+  archivePayloadForTrackedJob,
+  canRemoveTrackedJobFromHub,
+  type TrackedJob,
+} from './jobHubMerge';
 import { cn } from '@/lib/utils';
 
 const MENU_W = 240;
@@ -30,7 +34,9 @@ export function JobHubRowMenu({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const btnId = useId();
-  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(
+    null,
+  );
 
   const canAct = canRemoveTrackedJobFromHub(job);
   const payload = archivePayloadForTrackedJob(job);
@@ -125,7 +131,10 @@ export function JobHubRowMenu({
                     onRequestArchive(job);
                   }}
                 >
-                  <Archive className="h-4 w-4 shrink-0 text-[#00C9B1]" aria-hidden />
+                  <Archive
+                    className="h-4 w-4 shrink-0 text-[#00C9B1]"
+                    aria-hidden
+                  />
                   <span className="leading-snug">Archive job</span>
                 </button>
                 <button
@@ -138,7 +147,10 @@ export function JobHubRowMenu({
                     onRequestRemoveFromPipeline(job);
                   }}
                 >
-                  <Trash2 className="h-4 w-4 shrink-0 text-rose-300/90" aria-hidden />
+                  <Trash2
+                    className="h-4 w-4 shrink-0 text-rose-300/90"
+                    aria-hidden
+                  />
                   <span className="leading-snug">Remove from pipeline</span>
                 </button>
               </>
@@ -154,7 +166,10 @@ export function JobHubRowMenu({
                   onRequestUnbookmark(job);
                 }}
               >
-                <BookmarkMinus className="h-4 w-4 shrink-0 text-white/50" aria-hidden />
+                <BookmarkMinus
+                  className="h-4 w-4 shrink-0 text-white/50"
+                  aria-hidden
+                />
                 <span className="leading-snug">Remove bookmark</span>
               </button>
             ) : null}

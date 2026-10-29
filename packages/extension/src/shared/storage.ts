@@ -10,7 +10,10 @@ export async function getToken(): Promise<string | null> {
   return typeof token === 'string' && token.trim() ? token : null;
 }
 
-export async function setToken(token: string, expiresAt?: string): Promise<void> {
+export async function setToken(
+  token: string,
+  expiresAt?: string,
+): Promise<void> {
   const payload: Record<string, string> = { [TOKEN_KEY]: token };
   if (expiresAt?.trim()) {
     payload[EXPIRES_AT_KEY] = expiresAt.trim();
@@ -19,7 +22,11 @@ export async function setToken(token: string, expiresAt?: string): Promise<void>
 }
 
 export async function clearToken(): Promise<void> {
-  await chrome.storage.session.remove([TOKEN_KEY, EXPIRES_AT_KEY, USER_CACHE_KEY]);
+  await chrome.storage.session.remove([
+    TOKEN_KEY,
+    EXPIRES_AT_KEY,
+    USER_CACHE_KEY,
+  ]);
 }
 
 /** Clear draggable icon position saved in local storage. */
@@ -46,7 +53,10 @@ export async function setCachedUser(user: User): Promise<void> {
 
 const ICON_POS_KEY = 'iconPosition';
 
-export async function getIconPosition(): Promise<{ x: number; y: number } | null> {
+export async function getIconPosition(): Promise<{
+  x: number;
+  y: number;
+} | null> {
   const result = await chrome.storage.local.get(ICON_POS_KEY);
   const pos = result[ICON_POS_KEY];
   if (

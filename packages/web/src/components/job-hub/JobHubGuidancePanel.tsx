@@ -37,7 +37,8 @@ function TaskRow({
 }) {
   const done = isGuidanceTaskDone(task);
   const blocked = task.state === 'blocked';
-  const canToggle = Boolean(onToggle) && isGuidanceTaskUserToggleable(task) && !blocked;
+  const canToggle =
+    Boolean(onToggle) && isGuidanceTaskUserToggleable(task) && !blocked;
 
   return (
     <button
@@ -88,7 +89,9 @@ function TaskRow({
           {task.label}
         </span>
         {task.scheduledLabel?.trim() ? (
-          <span className="mt-0.5 block text-[10px] text-[#00C9B1]/75">{task.scheduledLabel.trim()}</span>
+          <span className="mt-0.5 block text-[10px] text-[#00C9B1]/75">
+            {task.scheduledLabel.trim()}
+          </span>
         ) : null}
       </span>
     </button>
@@ -107,7 +110,10 @@ export function JobHubGuidancePanel({
 
   const tasks = guidance.tasks;
   const selectedTask = useMemo(() => {
-    const id = selectedTaskId ?? tasks.find((t) => !isGuidanceTaskDone(t))?.id ?? tasks[0]?.id;
+    const id =
+      selectedTaskId ??
+      tasks.find((t) => !isGuidanceTaskDone(t))?.id ??
+      tasks[0]?.id;
     return tasks.find((t) => t.id === id) ?? tasks[0] ?? null;
   }, [selectedTaskId, tasks]);
 
@@ -144,7 +150,10 @@ export function JobHubGuidancePanel({
         aria-expanded={expanded}
         onClick={() => setExpanded((v) => !v)}
       >
-        <Lightbulb className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]/90" aria-hidden />
+        <Lightbulb
+          className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]/90"
+          aria-hidden
+        />
         <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-white/75">
           <span className="text-[#00C9B1]/90">{guidance.title}</span>
           <span className="text-white/35"> · </span>
@@ -166,7 +175,9 @@ export function JobHubGuidancePanel({
           aria-label={`${guidance.phaseLabel} guidance`}
         >
           <div className="flex items-center justify-between border-b border-white/[0.08] px-3 py-2">
-            <p className="text-[12px] font-semibold text-white/88">{guidance.headline}</p>
+            <p className="text-[12px] font-semibold text-white/88">
+              {guidance.headline}
+            </p>
             <button
               type="button"
               className="rounded-md p-1 text-white/40 hover:bg-white/[0.06] hover:text-white/70"
@@ -178,7 +189,9 @@ export function JobHubGuidancePanel({
           </div>
           <div className="app-scrollbar max-h-[min(48vh,300px)] overflow-y-auto overscroll-contain p-3 pb-10">
             {guidance.summary?.trim() ? (
-              <p className="mb-2 text-[11px] leading-relaxed text-white/48">{guidance.summary.trim()}</p>
+              <p className="mb-2 text-[11px] leading-relaxed text-white/48">
+                {guidance.summary.trim()}
+              </p>
             ) : null}
             <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
               <ul className="space-y-1" role="list">
@@ -202,7 +215,9 @@ export function JobHubGuidancePanel({
 
               {selectedTask ? (
                 <div className="rounded-lg border border-white/[0.08] bg-[#080a0a]/80 p-3">
-                  <p className="text-[12px] font-semibold text-white/90">{selectedTask.label}</p>
+                  <p className="text-[12px] font-semibold text-white/90">
+                    {selectedTask.label}
+                  </p>
                   {selectedTask.supporting?.trim() ? (
                     <p className="mt-1.5 text-[11px] leading-relaxed text-white/52">
                       {selectedTask.supporting.trim()}
@@ -235,22 +250,31 @@ export function JobHubGuidancePanel({
                           asChild
                           className="h-7 bg-[#00C9B1] px-2.5 text-[10px] font-semibold text-[#080A0A] hover:bg-[#00C9B1]"
                         >
-                          <Link href={selectedTask.ctaHref}>{selectedTask.ctaLabel}</Link>
+                          <Link href={selectedTask.ctaHref}>
+                            {selectedTask.ctaLabel}
+                          </Link>
                         </Button>
                       )
                     ) : null}
-                    {selectedTask.secondaryCtaHref && selectedTask.secondaryCtaLabel ? (
+                    {selectedTask.secondaryCtaHref &&
+                    selectedTask.secondaryCtaLabel ? (
                       onNavigate ? (
                         <Button
                           type="button"
                           variant="ghost"
                           className="h-7 border border-white/12 px-2.5 text-[10px]"
-                          onClick={() => handleCta(selectedTask.secondaryCtaHref!)}
+                          onClick={() =>
+                            handleCta(selectedTask.secondaryCtaHref!)
+                          }
                         >
                           {selectedTask.secondaryCtaLabel}
                         </Button>
                       ) : (
-                        <Button asChild variant="ghost" className="h-7 border border-white/12 px-2.5 text-[10px]">
+                        <Button
+                          asChild
+                          variant="ghost"
+                          className="h-7 border border-white/12 px-2.5 text-[10px]"
+                        >
                           <Link href={selectedTask.secondaryCtaHref}>
                             {selectedTask.secondaryCtaLabel}
                           </Link>

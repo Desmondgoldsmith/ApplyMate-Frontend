@@ -38,8 +38,9 @@ export function AtsRiskPanel({
             ATS risk
           </h4>
           <p className="mt-1 text-[12px] leading-relaxed text-white/55">
-            You likely have these skills, but the exact phrase is missing from your CV text.
-            Add the wording below if you want to pass a literal applicant tracking scan.
+            You likely have these skills, but the exact phrase is missing from
+            your CV text. Add the wording below if you want to pass a literal
+            applicant tracking scan.
           </p>
           <ul className="mt-2.5 flex flex-wrap gap-1.5" role="list">
             {visible.map((item, index) => (
@@ -51,7 +52,9 @@ export function AtsRiskPanel({
               </li>
             ))}
             {rest > 0 ? (
-              <li className="self-center text-[10px] text-white/35">+{rest} more</li>
+              <li className="self-center text-[10px] text-white/35">
+                +{rest} more
+              </li>
             ) : null}
           </ul>
         </div>

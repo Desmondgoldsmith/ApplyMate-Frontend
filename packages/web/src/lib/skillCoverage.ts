@@ -17,7 +17,9 @@ export type SkillCoverageItem = {
   orGroupId?: string;
 };
 
-export type TailorChecklistSkill = NonNullable<JobAnalysis['missingSkills']>[number];
+export type TailorChecklistSkill = NonNullable<
+  JobAnalysis['missingSkills']
+>[number];
 
 export type GapAdviceType = 'add_skill' | 'use_in_bullets' | 'soft_context';
 
@@ -36,37 +38,48 @@ const TIER_RANK: Record<SkillRequirementTier, number> = {
   mentioned: 2,
 };
 
-export function parseSkillRequirementTier(raw: unknown): SkillRequirementTier | undefined {
+export function parseSkillRequirementTier(
+  raw: unknown,
+): SkillRequirementTier | undefined {
   if (typeof raw !== 'string') return undefined;
   const t = raw.trim().toLowerCase();
   if (t === 'required' || t === 'preferred' || t === 'mentioned') return t;
   return undefined;
 }
 
-export function skillTierLabel(tier: SkillRequirementTier | undefined): string | null {
+export function skillTierLabel(
+  tier: SkillRequirementTier | undefined,
+): string | null {
   if (!tier) return null;
   if (tier === 'required') return 'Required';
   if (tier === 'preferred') return 'Preferred';
   return 'Mentioned';
 }
 
-export function parseRequirementKind(raw: unknown): RequirementKind | undefined {
+export function parseRequirementKind(
+  raw: unknown,
+): RequirementKind | undefined {
   if (typeof raw !== 'string') return undefined;
   const k = raw.trim().toLowerCase();
   if (k === 'tool' || k === 'phrase') return k;
   return undefined;
 }
 
-export function requirementKindLabel(kind: RequirementKind | undefined): string | null {
+export function requirementKindLabel(
+  kind: RequirementKind | undefined,
+): string | null {
   if (kind === 'tool') return 'Tool';
   if (kind === 'phrase') return 'Phrase';
   return null;
 }
 
-export function sortMissingSkills(skills: TailorChecklistSkill[]): TailorChecklistSkill[] {
+export function sortMissingSkills(
+  skills: TailorChecklistSkill[],
+): TailorChecklistSkill[] {
   return [...skills].sort((a, b) => {
     const byImportance =
-      (IMPORTANCE_RANK[a.importance] ?? 3) - (IMPORTANCE_RANK[b.importance] ?? 3);
+      (IMPORTANCE_RANK[a.importance] ?? 3) -
+      (IMPORTANCE_RANK[b.importance] ?? 3);
     if (byImportance !== 0) return byImportance;
     const tierA = a.tier ? (TIER_RANK[a.tier] ?? 2) : 0;
     const tierB = b.tier ? (TIER_RANK[b.tier] ?? 2) : 0;
@@ -74,18 +87,23 @@ export function sortMissingSkills(skills: TailorChecklistSkill[]): TailorCheckli
   });
 }
 
-export function sortSkillCoverage(items: SkillCoverageItem[]): SkillCoverageItem[] {
+export function sortSkillCoverage(
+  items: SkillCoverageItem[],
+): SkillCoverageItem[] {
   return [...items].sort((a, b) => {
     const statusRank = (status: string) => (status === 'missing' ? 0 : 1);
     const byStatus = statusRank(a.status) - statusRank(b.status);
     if (byStatus !== 0) return byStatus;
     return (
-      (IMPORTANCE_RANK[a.importance] ?? 3) - (IMPORTANCE_RANK[b.importance] ?? 3)
+      (IMPORTANCE_RANK[a.importance] ?? 3) -
+      (IMPORTANCE_RANK[b.importance] ?? 3)
     );
   });
 }
 
-export function parseSkillCoverageFromUnknown(raw: unknown): SkillCoverageItem[] | undefined {
+export function parseSkillCoverageFromUnknown(
+  raw: unknown,
+): SkillCoverageItem[] | undefined {
   if (!Array.isArray(raw) || raw.length === 0) return undefined;
   const items: SkillCoverageItem[] = [];
   for (const item of raw) {
@@ -112,7 +130,9 @@ export function parseSkillCoverageFromUnknown(raw: unknown): SkillCoverageItem[]
       typeof foundLiterallyRaw === 'boolean' ? foundLiterallyRaw : undefined;
     const keywordOnlyRaw = o.keywordOnly ?? o.keyword_only;
     const keywordOnly = keywordOnlyRaw === true ? true : undefined;
-    const requirementKind = parseRequirementKind(o.requirementKind ?? o.requirement_kind ?? o.kind);
+    const requirementKind = parseRequirementKind(
+      o.requirementKind ?? o.requirement_kind ?? o.kind,
+    );
     const orGroupIdRaw = o.orGroupId ?? o.or_group_id;
     const orGroupId =
       typeof orGroupIdRaw === 'string' && orGroupIdRaw.trim()
@@ -184,22 +204,27 @@ export function getActionableMissingSkills(
 ): TailorChecklistSkill[] {
   const fromApi = dedupeMissingSkills(analysis.missingSkills);
   const filtered = fromApi.filter((skill) => {
-    const adviceType = (skill as TailorChecklistSkill & { gapAdviceType?: GapAdviceType })
-      .gapAdviceType;
+    const adviceType = (
+      skill as TailorChecklistSkill & { gapAdviceType?: GapAdviceType }
+    ).gapAdviceType;
     if (adviceType) return ADD_SKILL_ADVICE.has(adviceType);
     return true;
   });
   if (filtered.length > 0) {
     const keywordOnly = keywordOnlySkillSet(analysis.skillCoverage);
     return sortMissingSkills(
-      filtered.filter((skill) => !keywordOnly.has(skill.name.trim().toLowerCase())),
+      filtered.filter(
+        (skill) => !keywordOnly.has(skill.name.trim().toLowerCase()),
+      ),
     );
   }
   return [];
 }
 
 /** Tailor checklist — full server `missingSkills` (tools + phrases, up to 40). */
-export function getTailorChecklistSkills(analysis: JobAnalysis): TailorChecklistSkill[] {
+export function getTailorChecklistSkills(
+  analysis: JobAnalysis,
+): TailorChecklistSkill[] {
   const fromApi = dedupeMissingSkills(analysis.missingSkills);
   if (fromApi.length > 0) {
     return sortMissingSkills(fromApi.slice(0, 40));
@@ -209,7 +234,9 @@ export function getTailorChecklistSkills(analysis: JobAnalysis): TailorChecklist
 }
 
 /** Gap chips for analysis UI — `missingSkills` is the single source of truth. */
-export function getGapDisplaySkills(analysis: JobAnalysis): TailorChecklistSkill[] {
+export function getGapDisplaySkills(
+  analysis: JobAnalysis,
+): TailorChecklistSkill[] {
   return getTailorChecklistSkills(analysis);
 }
 
@@ -227,8 +254,13 @@ export function keywordOnlySkillSet(
 
 /** Legacy helper — backend now keeps tool vs phrase pools separate on each factor row. */
 export function applyKeywordOnlyToFactorsBreakdown<
-  T extends { factors: Array<{ key: string; found?: string[]; missing?: string[] }> },
->(breakdown: T | null | undefined, _skillCoverage: JobAnalysis['skillCoverage']): T | null {
+  T extends {
+    factors: Array<{ key: string; found?: string[]; missing?: string[] }>;
+  },
+>(
+  breakdown: T | null | undefined,
+  _skillCoverage: JobAnalysis['skillCoverage'],
+): T | null {
   return breakdown ?? null;
 }
 

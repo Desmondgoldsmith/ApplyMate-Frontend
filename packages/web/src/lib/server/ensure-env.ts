@@ -47,11 +47,7 @@ export function normalizeNextAuthUrl(): void {
   try {
     const url = new URL(raw);
     const path = url.pathname.replace(/\/$/, '') || '';
-    if (
-      path === '' ||
-      path === '/' ||
-      path === '/api/nextauth'
-    ) {
+    if (path === '' || path === '/' || path === '/api/nextauth') {
       url.pathname = NEXTAUTH_API_BASE_PATH;
       process.env.NEXTAUTH_URL = `${url.origin}${NEXTAUTH_API_BASE_PATH}`;
     }

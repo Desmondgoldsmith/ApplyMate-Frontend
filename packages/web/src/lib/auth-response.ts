@@ -131,9 +131,11 @@ function pickUser(obj: UnknownRecord, depth = 0): NormalizedUser | undefined {
  * Maps common backend shapes (camelCase, snake_case, nested `data`) to what the app expects.
  */
 /** Same shape as login — refresh rotates both tokens and may return user. */
-export function normalizeRefreshResponse(
-  data: unknown,
-): { accessToken: string; refreshToken?: string; user: NormalizedUser } {
+export function normalizeRefreshResponse(data: unknown): {
+  accessToken: string;
+  refreshToken?: string;
+  user: NormalizedUser;
+} {
   return normalizeAuthResponse(data);
 }
 

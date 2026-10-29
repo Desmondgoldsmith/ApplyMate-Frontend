@@ -1,7 +1,12 @@
 function unwrapApiDataEnvelope(raw: unknown): Record<string, unknown> {
   if (raw === null || typeof raw !== 'object') return {};
   const o = raw as Record<string, unknown>;
-  if (o.success === true && o.data != null && typeof o.data === 'object' && !Array.isArray(o.data)) {
+  if (
+    o.success === true &&
+    o.data != null &&
+    typeof o.data === 'object' &&
+    !Array.isArray(o.data)
+  ) {
     return o.data as Record<string, unknown>;
   }
   return o;
@@ -82,11 +87,14 @@ function parseStage(raw: unknown): JobJourneyStage {
     'ACCEPTED',
     'REJECTED',
   ];
-  return allowed.includes(s as JobJourneyStage) ? (s as JobJourneyStage) : 'VIEWED';
+  return allowed.includes(s as JobJourneyStage)
+    ? (s as JobJourneyStage)
+    : 'VIEWED';
 }
 
 function parsePipelineJob(raw: unknown): CareerPipelineJob | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const jobId = String(o.jobId ?? o.job_id ?? '').trim();
   if (!jobId) return null;
@@ -111,12 +119,15 @@ function parsePipelineJob(raw: unknown): CareerPipelineJob | null {
     company: typeof o.company === 'string' ? o.company : null,
     title: typeof o.title === 'string' ? o.title : null,
     matchScore: score != null && Number.isFinite(score) ? score : null,
-    lastEventAt: String(o.lastEventAt ?? o.last_event_at ?? new Date().toISOString()),
+    lastEventAt: String(
+      o.lastEventAt ?? o.last_event_at ?? new Date().toISOString(),
+    ),
   };
 }
 
 export function parseBadge(raw: unknown): CareerBadge | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const code = String(o.code ?? '').trim();
   if (!code) return null;
@@ -154,7 +165,9 @@ export function normalizeCareerDashboard(raw: unknown): CareerDashboard {
       : [];
   const badgesRaw = Array.isArray(body.badges) ? body.badges : [];
   const insightsRaw =
-    body.insights !== null && typeof body.insights === 'object' && !Array.isArray(body.insights)
+    body.insights !== null &&
+    typeof body.insights === 'object' &&
+    !Array.isArray(body.insights)
       ? (body.insights as Record<string, unknown>)
       : {};
 
@@ -166,19 +179,26 @@ export function normalizeCareerDashboard(raw: unknown): CareerDashboard {
       .map(parsePipelineJob)
       .filter((x): x is CareerPipelineJob => x !== null),
     recentActivity: activity
-      .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
+      .filter(
+        (x): x is Record<string, unknown> =>
+          x !== null && typeof x === 'object' && !Array.isArray(x),
+      )
       .map((o) => ({
         id: String(o.id ?? ''),
         jobId: String(o.jobId ?? o.job_id ?? ''),
         stage: parseStage(o.stage),
         createdAt: String(o.createdAt ?? o.created_at ?? ''),
         metadata:
-          o.metadata !== null && typeof o.metadata === 'object' && !Array.isArray(o.metadata)
+          o.metadata !== null &&
+          typeof o.metadata === 'object' &&
+          !Array.isArray(o.metadata)
             ? (o.metadata as Record<string, unknown>)
             : null,
       }))
       .filter((e) => e.id && e.jobId),
-    badges: badgesRaw.map(parseBadge).filter((x): x is CareerBadge => x !== null),
+    badges: badgesRaw
+      .map(parseBadge)
+      .filter((x): x is CareerBadge => x !== null),
     insights: {
       strongestSkill:
         typeof insightsRaw.strongestSkill === 'string'
@@ -208,15 +228,20 @@ export function parseMarkAcceptedResult(raw: unknown): MarkJobAcceptedResult {
   return { stage: 'ACCEPTED', badge };
 }
 
-export function parseVerificationSubmitResult(raw: unknown): VerificationSubmitResult {
+export function parseVerificationSubmitResult(
+  raw: unknown,
+): VerificationSubmitResult {
   const body = unwrapApiDataEnvelope(raw);
   const premiumRaw = body.premiumActiveUntil ?? body.premium_active_until;
   return {
     id: String(body.id ?? ''),
-    pendingApproval: body.pendingApproval === true || body.pending_approval === true,
+    pendingApproval:
+      body.pendingApproval === true || body.pending_approval === true,
     verified: body.verified === true,
     premiumActiveUntil:
-      typeof premiumRaw === 'string' && premiumRaw.trim() ? premiumRaw.trim() : null,
+      typeof premiumRaw === 'string' && premiumRaw.trim()
+        ? premiumRaw.trim()
+        : null,
   };
 }
 

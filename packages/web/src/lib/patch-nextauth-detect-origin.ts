@@ -16,8 +16,12 @@ export function patchNextAuthDetectOrigin(): void {
 
   try {
     const requireMod = createRequire(path.join(process.cwd(), 'package.json'));
-    const nextAuthRoot = path.dirname(requireMod.resolve('next-auth/package.json'));
-    const mod = requireMod(path.join(nextAuthRoot, 'utils', 'detect-origin.js')) as {
+    const nextAuthRoot = path.dirname(
+      requireMod.resolve('next-auth/package.json'),
+    );
+    const mod = requireMod(
+      path.join(nextAuthRoot, 'utils', 'detect-origin.js'),
+    ) as {
       detectOrigin: (host?: string, protocol?: string) => string;
     };
 

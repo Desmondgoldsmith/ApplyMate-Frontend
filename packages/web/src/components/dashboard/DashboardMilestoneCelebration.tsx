@@ -14,10 +14,7 @@ type Props = {
 };
 
 function milestoneDedupeKey(source: string): string {
-  return source
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, ' ');
+  return source.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
 function storageKeyForPayload(dedupeSource: string, timeZone: string): string {
@@ -36,7 +33,9 @@ export function DashboardMilestoneCelebration({ data, timeZone }: Props) {
     if (typeof window === 'undefined') return false;
     if (!dedupeSource.trim()) return false;
     try {
-      return !window.localStorage.getItem(storageKeyForPayload(dedupeSource, timeZone));
+      return !window.localStorage.getItem(
+        storageKeyForPayload(dedupeSource, timeZone),
+      );
     } catch {
       return true;
     }
@@ -45,7 +44,10 @@ export function DashboardMilestoneCelebration({ data, timeZone }: Props) {
   useEffect(() => {
     if (!show || !dedupeSource.trim()) return;
     try {
-      window.localStorage.setItem(storageKeyForPayload(dedupeSource, timeZone), '1');
+      window.localStorage.setItem(
+        storageKeyForPayload(dedupeSource, timeZone),
+        '1',
+      );
     } catch {
       // ignore
     }
@@ -68,9 +70,20 @@ export function DashboardMilestoneCelebration({ data, timeZone }: Props) {
           </span>
         ) : null}
         <div className="min-w-0">
-          {title ? <p className="text-[15px] font-semibold leading-snug text-white/95">{title}</p> : null}
+          {title ? (
+            <p className="text-[15px] font-semibold leading-snug text-white/95">
+              {title}
+            </p>
+          ) : null}
           {message ? (
-            <p className={cn('text-[13px] leading-relaxed text-white/60', title ? 'mt-1' : '')}>{message}</p>
+            <p
+              className={cn(
+                'text-[13px] leading-relaxed text-white/60',
+                title ? 'mt-1' : '',
+              )}
+            >
+              {message}
+            </p>
           ) : null}
         </div>
       </div>

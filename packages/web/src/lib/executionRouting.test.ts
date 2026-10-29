@@ -27,7 +27,9 @@ describe('resolveExecutionDestination', () => {
       },
       safeFallback: '/dashboard/jobs',
     });
-    expect(out.href).toBe('/dashboard/jobs?applicationId=app-11&focus=followup');
+    expect(out.href).toBe(
+      '/dashboard/jobs?applicationId=app-11&focus=followup',
+    );
     expect(out.reason).toBe('deepLink');
   });
 

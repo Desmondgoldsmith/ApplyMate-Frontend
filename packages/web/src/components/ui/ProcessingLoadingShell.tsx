@@ -29,7 +29,9 @@ export const ProcessingLoadingShell = memo(function ProcessingLoadingShell({
         className="mb-4 h-10 w-10 shrink-0 animate-spin text-[var(--text-teal)]"
         aria-hidden
       />
-      <p className="text-base font-semibold text-[var(--text-primary)]">{title}</p>
+      <p className="text-base font-semibold text-[var(--text-primary)]">
+        {title}
+      </p>
       <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted)]">
         {description}
       </p>
@@ -88,7 +90,10 @@ export const ProcessingLoadingShell = memo(function ProcessingLoadingShell({
 
   return (
     <div
-      className={cn('flex flex-col items-center px-2 py-4 text-center', className)}
+      className={cn(
+        'flex flex-col items-center px-2 py-4 text-center',
+        className,
+      )}
       role="status"
       aria-live="polite"
       aria-busy="true"

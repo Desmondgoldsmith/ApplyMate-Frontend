@@ -40,7 +40,8 @@ export function pageHasJobPostingSignals(doc: Document = document): boolean {
     '';
   if (text.length < 350) return false;
 
-  const keywordHits = text.match(new RegExp(JOB_SIGNAL_PATTERN.source, 'gi'))?.length ?? 0;
+  const keywordHits =
+    text.match(new RegExp(JOB_SIGNAL_PATTERN.source, 'gi'))?.length ?? 0;
   if (keywordHits < 2) return false;
 
   const titleEl =
@@ -59,11 +60,16 @@ export function pageHasJobPostingSignals(doc: Document = document): boolean {
 }
 
 /** @deprecated alias */
-export function pageHasSingleJobPostingSignals(doc: Document = document): boolean {
+export function pageHasSingleJobPostingSignals(
+  doc: Document = document,
+): boolean {
   return pageHasJobPostingSignals(doc);
 }
 
-export function shouldMonitorPageForJob(url: string, doc: Document = document): boolean {
+export function shouldMonitorPageForJob(
+  url: string,
+  doc: Document = document,
+): boolean {
   if (isApplyMateAppUrl(url)) return false;
   if (isExcludedNonJobSiteUrl(url)) return false;
   if (isKnownJobBoardUrl(url) || urlLooksLikeJobListing(url)) return true;
@@ -80,6 +86,7 @@ export function shouldShowFloatingJobIcon(
   if (hasExtractedJob) return true;
   if (isKnownJobBoardUrl(url)) return true;
   if (pageHasJobPostingSignals(doc)) return true;
-  if (urlLooksLikeJobListing(url) && (doc.body?.innerText.length ?? 0) >= 500) return true;
+  if (urlLooksLikeJobListing(url) && (doc.body?.innerText.length ?? 0) >= 500)
+    return true;
   return false;
 }

@@ -8,13 +8,19 @@ import {
 
 describe('jobApplyUrlPick', () => {
   it('accepts https employer URLs', () => {
-    expect(isValidExternalApplyUrl('https://careers.example.com/jobs/1')).toBe(true);
+    expect(isValidExternalApplyUrl('https://careers.example.com/jobs/1')).toBe(
+      true,
+    );
   });
 
   it('rejects localhost and in-app paths', () => {
     expect(isValidExternalApplyUrl('http://localhost/jobs/1')).toBe(false);
-    expect(isValidExternalApplyUrl('https://applymate.app/dashboard/jobs')).toBe(false);
-    expect(isValidExternalApplyUrl('https://example.com/dashboard/jobs')).toBe(false);
+    expect(
+      isValidExternalApplyUrl('https://applymate.app/dashboard/jobs'),
+    ).toBe(false);
+    expect(isValidExternalApplyUrl('https://example.com/dashboard/jobs')).toBe(
+      false,
+    );
   });
 
   it('picks applyUrl with backend key priority', () => {

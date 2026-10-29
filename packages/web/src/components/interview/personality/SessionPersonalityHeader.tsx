@@ -26,7 +26,9 @@ export const SessionPersonalityHeader = memo(function SessionPersonalityHeader({
 }) {
   const modeLabel =
     sessionModeLabel ??
-    (prepMode && prepMode !== 'standard' ? PREP_MODE_LABELS[prepMode] : 'Mock interview');
+    (prepMode && prepMode !== 'standard'
+      ? PREP_MODE_LABELS[prepMode]
+      : 'Mock interview');
   const showMockPill = prepMode && prepMode !== 'standard';
 
   return (
@@ -46,12 +48,18 @@ export const SessionPersonalityHeader = memo(function SessionPersonalityHeader({
         compact
       />
       <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
-        <span className="ip-status-pill ip-status-pill-teal">{persona.roleLabel} active</span>
+        <span className="ip-status-pill ip-status-pill-teal">
+          {persona.roleLabel} active
+        </span>
         {adaptiveOn ? (
-          <span className="ip-status-pill ip-status-pill-teal">Adaptive mode on</span>
+          <span className="ip-status-pill ip-status-pill-teal">
+            Adaptive mode on
+          </span>
         ) : null}
         {showMockPill ? (
-          <span className="ip-status-pill ip-status-pill-muted">{modeLabel}</span>
+          <span className="ip-status-pill ip-status-pill-muted">
+            {modeLabel}
+          </span>
         ) : null}
       </div>
     </header>

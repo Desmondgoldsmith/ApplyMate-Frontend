@@ -8,12 +8,32 @@ export type LiveCoachingChip = {
 
 const ELEMENT_LABELS: Record<string, LiveCoachingChip> = {
   too_short: { id: 'too_short', label: 'Too short', tone: 'caution' },
-  missing_structure: { id: 'missing_structure', label: 'Missing structure', tone: 'caution' },
-  missing_impact: { id: 'missing_impact', label: 'Add impact', tone: 'caution' },
-  missing_action: { id: 'missing_action', label: 'Add what you did', tone: 'caution' },
-  missing_example: { id: 'missing_example', label: 'Add example', tone: 'caution' },
+  missing_structure: {
+    id: 'missing_structure',
+    label: 'Missing structure',
+    tone: 'caution',
+  },
+  missing_impact: {
+    id: 'missing_impact',
+    label: 'Add impact',
+    tone: 'caution',
+  },
+  missing_action: {
+    id: 'missing_action',
+    label: 'Add what you did',
+    tone: 'caution',
+  },
+  missing_example: {
+    id: 'missing_example',
+    label: 'Add example',
+    tone: 'caution',
+  },
   good_pace: { id: 'good_pace', label: 'Good pace', tone: 'positive' },
-  good_structure: { id: 'good_structure', label: 'Good structure', tone: 'positive' },
+  good_structure: {
+    id: 'good_structure',
+    label: 'Good structure',
+    tone: 'positive',
+  },
 };
 
 export function liveCoachingChips(
@@ -52,7 +72,10 @@ export function liveCoachingChips(
     push(ELEMENT_LABELS.good_structure);
   }
 
-  if (live.missingElements?.includes('missing_example') || live.verbosityRisk >= 60) {
+  if (
+    live.missingElements?.includes('missing_example') ||
+    live.verbosityRisk >= 60
+  ) {
     push(ELEMENT_LABELS.missing_example);
   }
 

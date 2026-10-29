@@ -126,7 +126,13 @@ export const queryKeys = {
       includeHidden: boolean,
       focusFeedMaxItems: number | 'default',
     ) =>
-      ['today-plan', cvProfileId, timezone, includeHidden, focusFeedMaxItems] as const,
+      [
+        'today-plan',
+        cvProfileId,
+        timezone,
+        includeHidden,
+        focusFeedMaxItems,
+      ] as const,
   },
 
   dashboardFocus: {
@@ -137,20 +143,47 @@ export const queryKeys = {
 
   dashboardQuietApplications: {
     root: () => ['dashboard-quiet-applications'] as const,
-    key: (cvProfileId: string, timezone: string, focusFeedMaxItems: number | 'default') =>
-      ['dashboard-quiet-applications', cvProfileId, timezone, focusFeedMaxItems] as const,
+    key: (
+      cvProfileId: string,
+      timezone: string,
+      focusFeedMaxItems: number | 'default',
+    ) =>
+      [
+        'dashboard-quiet-applications',
+        cvProfileId,
+        timezone,
+        focusFeedMaxItems,
+      ] as const,
   },
 
   dashboardInterviewPrep: {
     root: () => ['dashboard-interview-prep'] as const,
-    key: (cvProfileId: string, timezone: string, focusFeedMaxItems: number | 'default') =>
-      ['dashboard-interview-prep', cvProfileId, timezone, focusFeedMaxItems] as const,
+    key: (
+      cvProfileId: string,
+      timezone: string,
+      focusFeedMaxItems: number | 'default',
+    ) =>
+      [
+        'dashboard-interview-prep',
+        cvProfileId,
+        timezone,
+        focusFeedMaxItems,
+      ] as const,
   },
 
   dashboardFollowUpJobs: {
     root: () => ['dashboard-follow-up-jobs'] as const,
-    key: (cvProfileId: string, timezone: string, focusFeedMaxItems: number | 'default') =>
-      ['dashboard-follow-up-jobs', cvProfileId, timezone, focusFeedMaxItems] as const,
+    key: (
+      cvProfileId: string,
+      timezone: string,
+      focusFeedMaxItems: number | 'default',
+    ) =>
+      [
+        'dashboard-follow-up-jobs',
+        cvProfileId,
+        timezone,
+        focusFeedMaxItems,
+      ] as const,
   },
 
   weeklyStallSummary: {
@@ -184,7 +217,8 @@ export const queryKeys = {
     skillProfile: () => ['interview-prep', 'skill-profile'] as const,
     session: (sessionId: string) =>
       ['interview-prep', 'session', sessionId] as const,
-    turns: (sessionId: string) => ['interview-prep', 'turns', sessionId] as const,
+    turns: (sessionId: string) =>
+      ['interview-prep', 'turns', sessionId] as const,
     plan: (sessionId: string) => ['interview-prep', 'plan', sessionId] as const,
     simulationState: (sessionId: string) =>
       ['interview-prep', 'simulation-state', sessionId] as const,

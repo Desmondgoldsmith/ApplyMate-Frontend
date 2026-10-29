@@ -4,10 +4,10 @@
 
 ## Two assistants (separate UIs)
 
-| Surface | Endpoint | Scope |
-|---------|----------|--------|
-| Per-section | `POST …/assistant/command` + `targetSection` | **This section** |
-| Global | `POST …/assistant/global/command` | **Entire CV** or **Findings only** |
+| Surface     | Endpoint                                     | Scope                              |
+| ----------- | -------------------------------------------- | ---------------------------------- |
+| Per-section | `POST …/assistant/command` + `targetSection` | **This section**                   |
+| Global      | `POST …/assistant/global/command`            | **Entire CV** or **Findings only** |
 
 ## Recruiter scan → apply fixes
 

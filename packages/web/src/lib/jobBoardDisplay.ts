@@ -29,7 +29,9 @@ const SALARY_PATTERNS: RegExp[] = [
 ];
 
 /** Prefer API `salary`; otherwise scan description for common salary strings. */
-export function extractSalaryDisplay(job: Pick<JobListingDto, 'salary' | 'description'>): string | undefined {
+export function extractSalaryDisplay(
+  job: Pick<JobListingDto, 'salary' | 'description'>,
+): string | undefined {
   const s = job.salary?.trim();
   if (s) return s;
   const desc = job.description ?? '';
@@ -46,14 +48,25 @@ function titleHintsRemote(title: string): boolean {
 }
 
 /** Short label for metadata row: `Remote`, `Hybrid`, `On-site`, or trimmed location. */
-export function inferWorkStyleLabel(job: Pick<JobListingDto, 'workMode' | 'location' | 'title' | 'description'>): string {
+export function inferWorkStyleLabel(
+  job: Pick<JobListingDto, 'workMode' | 'location' | 'title' | 'description'>,
+): string {
   const wm = (job.workMode ?? '').trim().toLowerCase();
   if (wm.includes('remote') || wm === 'remote') return 'Remote';
   if (wm.includes('hybrid')) return 'Hybrid';
-  if (wm.includes('onsite') || wm.includes('on-site') || wm.includes('in office')) return 'On-site';
+  if (
+    wm.includes('onsite') ||
+    wm.includes('on-site') ||
+    wm.includes('in office')
+  )
+    return 'On-site';
   const loc = (job.location ?? '').trim();
   const desc = (job.description ?? '').toLowerCase();
-  if (titleHintsRemote(job.title ?? '') || /\bfully\s+remote\b/i.test(desc) || /\b100%\s*remote\b/i.test(desc)) {
+  if (
+    titleHintsRemote(job.title ?? '') ||
+    /\bfully\s+remote\b/i.test(desc) ||
+    /\b100%\s*remote\b/i.test(desc)
+  ) {
     return 'Remote';
   }
   if (/\bhybrid\b/i.test(desc)) return 'Hybrid';
@@ -69,7 +82,9 @@ export type JobDescriptionSections = {
 /**
  * Split long JD into “about” vs “requirements” when headings exist; otherwise first block vs rest.
  */
-export function splitJobDescriptionSections(description: string): JobDescriptionSections {
+export function splitJobDescriptionSections(
+  description: string,
+): JobDescriptionSections {
   const text = (description ?? '').trim();
   if (!text) return { about: '', requirements: null };
 
@@ -84,7 +99,10 @@ export function splitJobDescriptionSections(description: string): JobDescription
 
   const paras = text.split(/\n{2,}/);
   if (paras.length >= 2) {
-    return { about: paras[0]!.trim(), requirements: paras.slice(1).join('\n\n').trim() || null };
+    return {
+      about: paras[0]!.trim(),
+      requirements: paras.slice(1).join('\n\n').trim() || null,
+    };
   }
 
   return { about: text, requirements: null };

@@ -30,7 +30,9 @@ export function LocationEligibilityCallout({
         strokeWidth={2}
         aria-hidden
       />
-      <p className="text-[13px] leading-relaxed text-sky-50/90">{eligibility.message}</p>
+      <p className="text-[13px] leading-relaxed text-sky-50/90">
+        {eligibility.message}
+      </p>
     </div>
   );
 }

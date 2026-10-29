@@ -15,9 +15,13 @@ export function useRestoreOriginalTemplate(profileId: string | null) {
     },
     onSuccess: () => {
       const id = profileId?.trim() ?? '';
-      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profile(id) });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.profile(id),
+      });
       void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profileDefault() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.profileDefault(),
+      });
     },
   });
 }

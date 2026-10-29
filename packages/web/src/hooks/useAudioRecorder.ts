@@ -144,7 +144,8 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}) {
       releaseStream();
       setIsCapturing(false);
       setRecordingState('failed');
-      const msg = err instanceof Error ? err.message : 'Microphone access failed';
+      const msg =
+        err instanceof Error ? err.message : 'Microphone access failed';
       setError(msg);
       return false;
     }
@@ -166,11 +167,15 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}) {
           ok: false,
           error: 'EMPTY_RECORDING',
           fallbackToSTT: true,
-          message: 'Recording was too short — try speaking longer or type your answer.',
+          message:
+            'Recording was too short — try speaking longer or type your answer.',
         };
       }
       setRecordingState('idle');
-      return { ok: true, blob: new Blob(chunks, { type: mimeTypeRef.current }) };
+      return {
+        ok: true,
+        blob: new Blob(chunks, { type: mimeTypeRef.current }),
+      };
     }
 
     setRecordingState('finalizing');
@@ -216,7 +221,8 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}) {
             ok: false,
             error: 'EMPTY_RECORDING',
             fallbackToSTT: true,
-            message: 'Recording was too short — try speaking longer or type your answer.',
+            message:
+              'Recording was too short — try speaking longer or type your answer.',
           });
           return;
         }
@@ -236,10 +242,14 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}) {
               ok: false,
               error: 'EMPTY_RECORDING',
               fallbackToSTT: true,
-              message: 'Recording was too short — try speaking longer or type your answer.',
+              message:
+                'Recording was too short — try speaking longer or type your answer.',
             });
           } else {
-            finish({ ok: true, blob: new Blob(chunks, { type: mimeTypeRef.current }) });
+            finish({
+              ok: true,
+              blob: new Blob(chunks, { type: mimeTypeRef.current }),
+            });
           }
           return;
         }
@@ -250,7 +260,8 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}) {
             ok: false,
             error: 'STOP_FAILED',
             fallbackToSTT: true,
-            message: 'Could not finish recording. Try again or type your answer.',
+            message:
+              'Could not finish recording. Try again or type your answer.',
           });
         }
       }, finalizeDelay);

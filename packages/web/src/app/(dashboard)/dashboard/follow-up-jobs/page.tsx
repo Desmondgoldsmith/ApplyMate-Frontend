@@ -37,8 +37,14 @@ export default function FollowUpJobsPage() {
   if (followUpQuery.isError) {
     return (
       <GlowCard contentClassName="p-6">
-        <p className="text-sm text-rose-200">Could not load your follow-up queue.</p>
-        <Button className="mt-4" variant="ghost" onClick={() => void followUpQuery.refetch()}>
+        <p className="text-sm text-rose-200">
+          Could not load your follow-up queue.
+        </p>
+        <Button
+          className="mt-4"
+          variant="ghost"
+          onClick={() => void followUpQuery.refetch()}
+        >
           Retry
         </Button>
       </GlowCard>

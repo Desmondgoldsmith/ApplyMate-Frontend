@@ -4,7 +4,10 @@
  */
 const CANDIDATE_PLACEHOLDER_RE = /\[(?:candidate name|your name)\]/gi;
 
-export function substituteCoverLetterCandidateName(text: string, candidateDisplayName: string): string {
+export function substituteCoverLetterCandidateName(
+  text: string,
+  candidateDisplayName: string,
+): string {
   const name = candidateDisplayName.trim();
   if (!name || /^there$/i.test(name)) return text;
   return text.replace(CANDIDATE_PLACEHOLDER_RE, name);

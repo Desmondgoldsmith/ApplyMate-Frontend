@@ -40,7 +40,8 @@ function normaliseJobType(raw: string | null): string | null {
   const lower = value.toLowerCase();
   if (/(full[\s-]?time|fulltime)/i.test(lower)) return 'Full-time';
   if (/(part[\s-]?time|parttime)/i.test(lower)) return 'Part-time';
-  if (/(contractor|contract[\s-]?role|^contract$)/i.test(lower)) return 'Contract';
+  if (/(contractor|contract[\s-]?role|^contract$)/i.test(lower))
+    return 'Contract';
   if (/(internship|^intern$)/i.test(lower)) return 'Internship';
   return value;
 }
@@ -59,7 +60,9 @@ export function isValidLinkedInTitle(text: string | null | undefined): boolean {
 /** @deprecated alias */
 export const isValidLinkedInJobTitle = isValidLinkedInTitle;
 
-export function getLinkedInActiveJobId(doc: Document = document): string | null {
+export function getLinkedInActiveJobId(
+  doc: Document = document,
+): string | null {
   try {
     const params = new URLSearchParams(doc.defaultView?.location.search ?? '');
     const fromQuery = params.get('currentJobId') ?? params.get('jobId');
@@ -68,7 +71,9 @@ export function getLinkedInActiveJobId(doc: Document = document): string | null 
     /* skip */
   }
 
-  const pathMatch = (doc.defaultView?.location.pathname ?? '').match(/\/jobs\/view\/(\d+)/i);
+  const pathMatch = (doc.defaultView?.location.pathname ?? '').match(
+    /\/jobs\/view\/(\d+)/i,
+  );
   if (pathMatch?.[1]) return pathMatch[1];
 
   const selectedCard = getLinkedInSelectedListCard(doc);
@@ -83,7 +88,9 @@ export function getLinkedInActiveJobId(doc: Document = document): string | null 
   return null;
 }
 
-export function getLinkedInSelectedListCard(doc: Document = document): Element | null {
+export function getLinkedInSelectedListCard(
+  doc: Document = document,
+): Element | null {
   const selectors = [
     '.job-card-container--selected[data-job-id]',
     '[data-job-id][aria-selected="true"]',
@@ -114,10 +121,16 @@ export function getLinkedInJobCardById(
     doc.querySelector(`[data-occludable-job-id="${jobId}"]`) ??
     doc.querySelector(`[data-entity-urn*="${jobId}"]`);
   if (!direct) return null;
-  return direct.closest('.jobs-search-results-list__list-item, li, [class*="list-item"]') ?? direct;
+  return (
+    direct.closest(
+      '.jobs-search-results-list__list-item, li, [class*="list-item"]',
+    ) ?? direct
+  );
 }
 
-export function getLinkedInDetailPane(doc: Document = document): Element | null {
+export function getLinkedInDetailPane(
+  doc: Document = document,
+): Element | null {
   for (const selector of DETAIL_PANE_SELECTORS) {
     try {
       const el = doc.querySelector(selector);
@@ -170,7 +183,9 @@ export function detailPaneHasContent(pane: Element): boolean {
     }
   }
 
-  const allButtons = Array.from(pane.querySelectorAll('button, a[role="button"]'));
+  const allButtons = Array.from(
+    pane.querySelectorAll('button, a[role="button"]'),
+  );
   const hasApplyButton = allButtons.some((btn) => {
     const text = (btn.textContent ?? '').toLowerCase().trim();
     return (
@@ -286,7 +301,10 @@ function isUsableLogoImg(img: HTMLImageElement): boolean {
   return /^https?:\/\//i.test(src);
 }
 
-export function extractLinkedInLogo(jobId: string, doc: Document = document): string | null {
+export function extractLinkedInLogo(
+  jobId: string,
+  doc: Document = document,
+): string | null {
   const listCardSelectors = [
     `[data-job-id="${jobId}"] img`,
     `[data-occludable-job-id="${jobId}"] img`,
@@ -414,12 +432,18 @@ export function extractFromLinkedIn(): ExtractedJob | null {
   for (const el of Array.from(insightEls)) {
     const text = normalizeText((el as HTMLElement).innerText).toLowerCase();
     if (!jobType) {
-      if (text.includes('full-time') || text.includes('full time')) jobType = 'Full-time';
-      else if (text.includes('part-time') || text.includes('part time')) jobType = 'Part-time';
+      if (text.includes('full-time') || text.includes('full time'))
+        jobType = 'Full-time';
+      else if (text.includes('part-time') || text.includes('part time'))
+        jobType = 'Part-time';
       else if (text.includes('contract')) jobType = 'Contract';
-      else if (text.includes('internship') || text.includes('intern')) jobType = 'Internship';
+      else if (text.includes('internship') || text.includes('intern'))
+        jobType = 'Internship';
     }
-    if (!experienceLevel && /entry level|mid-senior level|director|executive/i.test(text)) {
+    if (
+      !experienceLevel &&
+      /entry level|mid-senior level|director|executive/i.test(text)
+    ) {
       experienceLevel = mapLinkedInExperience(text);
     }
   }
@@ -435,7 +459,11 @@ export function extractFromLinkedIn(): ExtractedJob | null {
   const salary = normalizeText(salaryEl?.innerText) || null;
 
   const confidence: ExtractedJob['confidence'] =
-    title && company && description ? 'high' : title && company ? 'medium' : 'low';
+    title && company && description
+      ? 'high'
+      : title && company
+        ? 'medium'
+        : 'low';
 
   return {
     title,
@@ -450,7 +478,9 @@ export function extractFromLinkedIn(): ExtractedJob | null {
     sourceSite: 'linkedin.com',
     confidence,
     extractedBy: 'site-extractor',
-    ...(logoCandidateUrl ? { logoCandidateUrl, logoSource: 'site-extractor' as const } : {}),
+    ...(logoCandidateUrl
+      ? { logoCandidateUrl, logoSource: 'site-extractor' as const }
+      : {}),
   };
 }
 
@@ -488,10 +518,15 @@ export async function waitForLinkedInDetailPane(
   await attempt();
 }
 
-export function isLinkedInJobsPage(url: string = window.location.href): boolean {
+export function isLinkedInJobsPage(
+  url: string = window.location.href,
+): boolean {
   try {
     const parsed = new URL(url);
-    return parsed.hostname.includes('linkedin.com') && parsed.pathname.includes('/jobs');
+    return (
+      parsed.hostname.includes('linkedin.com') &&
+      parsed.pathname.includes('/jobs')
+    );
   } catch {
     return false;
   }

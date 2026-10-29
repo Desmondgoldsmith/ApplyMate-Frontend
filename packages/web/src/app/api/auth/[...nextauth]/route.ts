@@ -18,7 +18,9 @@ const handler = NextAuth(getAuthOptions());
 type RouteContext = { params: Promise<{ nextauth: string[] }> };
 
 /** NextAuth catch-all treats `/api/auth/google/*` as action `google` → 404. Delegate explicitly. */
-async function maybeHandleGoogleOAuthRoute(req: NextRequest): Promise<Response | null> {
+async function maybeHandleGoogleOAuthRoute(
+  req: NextRequest,
+): Promise<Response | null> {
   const pathname = new URL(req.url).pathname.replace(/\/$/, '');
   if (pathname === '/api/auth/google/finish') {
     const { GET: finishGet } = await import('../google/finish/route');

@@ -107,4 +107,3 @@ These changes are additive (existing renders won’t crash if you don’t update
 
 Safe fallback routes are always one of:
 `/dashboard/job-board`, `/dashboard/job-analyzer`, `/dashboard/job-hub`, `/dashboard/cv-profiles`, `/dashboard/interviews`.
-

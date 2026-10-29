@@ -26,7 +26,14 @@ import { cn } from '@/lib/utils';
 
 function MessageCircleIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg
+      className={className}
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
       <path
         d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"
         stroke="currentColor"
@@ -40,7 +47,14 @@ function MessageCircleIcon({ className }: { className?: string }) {
 
 function LinkedInIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg
+      className={className}
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
       <path
         d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 1 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"
         stroke="currentColor"
@@ -48,7 +62,12 @@ function LinkedInIcon({ className }: { className?: string }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <path d="M2 9h4v12H2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      <path
+        d="M2 9h4v12H2z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
       <circle cx="4" cy="4" r="2" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   );
@@ -56,8 +75,23 @@ function LinkedInIcon({ className }: { className?: string }) {
 
 function VideoSocialIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect x="3" y="5" width="18" height="14" rx="3" stroke="currentColor" strokeWidth="1.5" />
+    <svg
+      className={className}
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <rect
+        x="3"
+        y="5"
+        width="18"
+        height="14"
+        rx="3"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
       <path d="M10 9.5V14.5L15 12L10 9.5Z" fill="currentColor" />
     </svg>
   );
@@ -73,7 +107,11 @@ const REFERRAL_OPTIONS: ReadonlyArray<{
   { value: 'Twitter / X', label: 'Twitter / X', Icon: Sparkles },
   { value: 'Friend or colleague', label: 'Friend or colleague', Icon: Users },
   { value: 'Product Hunt', label: 'Product Hunt', Icon: VideoSocialIcon },
-  { value: 'Blog or article', label: 'Blog or article', Icon: MessageCircleIcon },
+  {
+    value: 'Blog or article',
+    label: 'Blog or article',
+    Icon: MessageCircleIcon,
+  },
   { value: 'Other', label: 'Other', Icon: MoreHorizontal },
 ];
 
@@ -184,14 +222,18 @@ export function OnboardingDiscovery({
   const referralTimerRef = useRef<number | null>(null);
 
   const greeting =
-    firstName.trim().length > 0 ? `Welcome, ${firstName.trim()}.` : 'Welcome to ApplyMate.';
+    firstName.trim().length > 0
+      ? `Welcome, ${firstName.trim()}.`
+      : 'Welcome to ApplyMate.';
 
   const focusValid = focusHired;
   const timelineValid = jobSearchUrgency !== null;
-  const roleChips = useMemo(() => parseRolesFromText(targetRolesText), [targetRolesText]);
+  const roleChips = useMemo(
+    () => parseRolesFromText(targetRolesText),
+    [targetRolesText],
+  );
   const pendingRole = roleInput.trim();
-  const rolesValid =
-    roleChips.length >= 1 || pendingRole.length >= 2;
+  const rolesValid = roleChips.length >= 1 || pendingRole.length >= 2;
   const referralValid =
     referralSource.trim().length > 0 &&
     (referralSource !== 'Other' || referralOther.trim().length > 0);
@@ -299,7 +341,13 @@ export function OnboardingDiscovery({
       });
     }, 500);
     return () => clearReferralTimer();
-  }, [clearReferralTimer, discoveryStep, onNext, referralOther, referralSource]);
+  }, [
+    clearReferralTimer,
+    discoveryStep,
+    onNext,
+    referralOther,
+    referralSource,
+  ]);
 
   const stepMotionProps = reducedMotion
     ? { initial: false, animate: { opacity: 1, x: 0 } }
@@ -338,14 +386,16 @@ export function OnboardingDiscovery({
               <motion.div
                 className="mx-auto mb-3 flex h-8 w-8 items-center justify-center text-[#00C9B1]"
                 animate={reducedMotion ? undefined : { y: [0, -4, 0] }}
-                transition={reducedMotion ? undefined : { duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                transition={
+                  reducedMotion
+                    ? undefined
+                    : { duration: 3, repeat: Infinity, ease: 'easeInOut' }
+                }
                 aria-hidden
               >
                 <Sparkles className="h-8 w-8" strokeWidth={1.5} />
               </motion.div>
-              <h1 className={ONBOARDING_TITLE_CLASS}>
-                {greeting}
-              </h1>
+              <h1 className={ONBOARDING_TITLE_CLASS}>{greeting}</h1>
               <p className={ONBOARDING_SUBTITLE_CLASS}>
                 We tailor ApplyMate to your goals in about two minutes.
               </p>
@@ -405,19 +455,25 @@ export function OnboardingDiscovery({
                 />
                 <UrgencyCard
                   label="In the next few months"
-                  description={"I'm preparing and want to be ready when the right role appears."}
+                  description={
+                    "I'm preparing and want to be ready when the right role appears."
+                  }
                   selected={jobSearchUrgency === 'few_months'}
                   onClick={() => handleUrgencyPick('few_months')}
                 />
                 <UrgencyCard
                   label={"I'm exploring for now"}
-                  description={"I'm learning what's out there and building my profile."}
+                  description={
+                    "I'm learning what's out there and building my profile."
+                  }
                   selected={jobSearchUrgency === 'exploring'}
                   onClick={() => handleUrgencyPick('exploring')}
                 />
               </div>
               {showTapHint ? (
-                <p className="mt-3 text-[11px] text-[rgba(255,255,255,0.35)]">Tap an option to continue</p>
+                <p className="mt-3 text-[11px] text-[rgba(255,255,255,0.35)]">
+                  Tap an option to continue
+                </p>
               ) : (
                 <p className="mt-3 text-[11px] text-transparent">.</p>
               )}
@@ -432,7 +488,8 @@ export function OnboardingDiscovery({
                 What role or position are you targeting?
               </h1>
               <p className={ONBOARDING_SUBTITLE_CLASS}>
-                Add one or more job titles. We use this to personalise matches and suggestions later.
+                Add one or more job titles. We use this to personalise matches
+                and suggestions later.
               </p>
               <div className="mb-2 flex justify-center">
                 <InfoHint text="Target roles guide job matching, priority suggestions, and resume wording hints." />
@@ -460,8 +517,13 @@ export function OnboardingDiscovery({
                     Add
                   </button>
                 </div>
-                <p id="onb-role-hint" className="mt-2 text-left text-[12px] text-[rgba(255,255,255,0.45)]">
-                  Type a job title and tap <span className="font-medium text-white/70">Add</span>, or pick one below.
+                <p
+                  id="onb-role-hint"
+                  className="mt-2 text-left text-[12px] text-[rgba(255,255,255,0.45)]"
+                >
+                  Type a job title and tap{' '}
+                  <span className="font-medium text-white/70">Add</span>, or
+                  pick one below.
                 </p>
                 {roleChips.length > 0 ? (
                   <div className="mt-3 flex flex-wrap justify-center gap-2">
@@ -483,7 +545,9 @@ export function OnboardingDiscovery({
                     ))}
                   </div>
                 ) : null}
-                <p className="mt-4 text-[12px] text-[rgba(255,255,255,0.35)]">Popular roles. Tap to add.</p>
+                <p className="mt-4 text-[12px] text-[rgba(255,255,255,0.35)]">
+                  Popular roles. Tap to add.
+                </p>
                 <div className="mt-2 flex flex-wrap justify-center gap-2">
                   {SUGGESTED_ROLES.map((r) => (
                     <button
@@ -526,7 +590,9 @@ export function OnboardingDiscovery({
                       )}
                     >
                       <Icon className="h-5 w-5 text-[#00C9B1]" />
-                      <span className="text-center text-[14px] font-medium text-white">{label}</span>
+                      <span className="text-center text-[14px] font-medium text-white">
+                        {label}
+                      </span>
                     </button>
                   );
                 })}
@@ -619,7 +685,9 @@ function OutcomeCard({
             </span>
           ) : null}
         </div>
-        <p className="mt-1 text-[13px] leading-snug text-[rgba(255,255,255,0.5)]">{description}</p>
+        <p className="mt-1 text-[13px] leading-snug text-[rgba(255,255,255,0.5)]">
+          {description}
+        </p>
       </div>
       {!disabled ? <SelectionRing selected={selected} /> : null}
     </motion.button>
@@ -631,7 +699,9 @@ function SelectionRing({ selected }: { selected: boolean }) {
     <span
       className={cn(
         'pointer-events-none absolute right-4 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border transition-all duration-200',
-        selected ? 'border-[#00C9B1] bg-[#00C9B1]' : 'border-[rgba(255,255,255,0.15)] bg-transparent',
+        selected
+          ? 'border-[#00C9B1] bg-[#00C9B1]'
+          : 'border-[rgba(255,255,255,0.15)] bg-transparent',
       )}
       aria-hidden
     >
@@ -641,7 +711,9 @@ function SelectionRing({ selected }: { selected: boolean }) {
         transition={{ duration: 0.2 }}
         className="flex items-center justify-center"
       >
-        {selected ? <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} /> : null}
+        {selected ? (
+          <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
+        ) : null}
       </motion.span>
     </span>
   );
@@ -680,7 +752,9 @@ function UrgencyCard({
       </div>
       <div className="min-w-0">
         <p className="text-[15px] font-semibold text-white">{label}</p>
-        <p className="mt-1 text-[13px] text-[rgba(255,255,255,0.5)]">{description}</p>
+        <p className="mt-1 text-[13px] text-[rgba(255,255,255,0.5)]">
+          {description}
+        </p>
       </div>
       <SelectionRing selected={selected} />
     </motion.button>

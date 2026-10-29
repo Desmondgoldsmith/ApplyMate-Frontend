@@ -9,7 +9,10 @@ import {
   type TurnCoachingUiState,
 } from '@/lib/interviewCoachingSnapshot';
 import { turnAnswerResponseFromPractice } from '@/lib/interviewCoachingFeedback';
-import type { CoachingIntensity, PracticeCoachingResponse } from '@/lib/interview-prep-types';
+import type {
+  CoachingIntensity,
+  PracticeCoachingResponse,
+} from '@/lib/interview-prep-types';
 import { cn } from '@/lib/utils';
 
 export const PracticeCoachingPanel = memo(function PracticeCoachingPanel({

@@ -28,7 +28,8 @@ export const CV_TAILOR_ONE_AI_USE_NOTE =
   'Uses 1 daily AI action for the whole tailor (not per section).';
 
 /** Appended in CV flows when surfacing quota errors (links to `#pricing` elsewhere). */
-export const AI_QUOTA_UPGRADE_HINT = 'Upgrade your plan for higher daily limits — open Plans from the dashboard.';
+export const AI_QUOTA_UPGRADE_HINT =
+  'Upgrade your plan for higher daily limits — open Plans from the dashboard.';
 
 /** Map `/users/me` into badge / guard state. */
 export function mapMeToDailyAiUsage(
@@ -49,7 +50,8 @@ export function mapMeToDailyAiUsage(
   }
 
   /** PAID: API sends `aiDailyLimit` and `aiUsesRemaining` as `null`. */
-  const paid = me != null && me.aiDailyLimit === null && me.aiUsesRemaining === null;
+  const paid =
+    me != null && me.aiDailyLimit === null && me.aiUsesRemaining === null;
 
   if (paid) {
     return {
@@ -67,9 +69,13 @@ export function mapMeToDailyAiUsage(
     typeof me?.aiDailyLimit === 'number' && Number.isFinite(me.aiDailyLimit)
       ? me.aiDailyLimit
       : 10;
-  const used = typeof me?.aiUsesToday === 'number' && Number.isFinite(me.aiUsesToday) ? me.aiUsesToday : 0;
+  const used =
+    typeof me?.aiUsesToday === 'number' && Number.isFinite(me.aiUsesToday)
+      ? me.aiUsesToday
+      : 0;
   const remaining =
-    typeof me?.aiUsesRemaining === 'number' && Number.isFinite(me.aiUsesRemaining)
+    typeof me?.aiUsesRemaining === 'number' &&
+    Number.isFinite(me.aiUsesRemaining)
       ? me.aiUsesRemaining
       : Math.max(0, limit - used);
 
@@ -130,27 +136,33 @@ export function applyCvAiUsageToAuthCache(
   );
 }
 
-export function extractCvAiUsageFromResponse(raw: unknown): CvAiUsageMeta | null {
+export function extractCvAiUsageFromResponse(
+  raw: unknown,
+): CvAiUsageMeta | null {
   if (!raw || typeof raw !== 'object') return null;
   const o = raw as Record<string, unknown>;
   const meta = o.meta;
   const data = o.data;
   const from =
     meta && typeof meta === 'object' && !Array.isArray(meta)
-      ? (meta as Record<string, unknown>).aiUsage ??
-        (meta as Record<string, unknown>).ai_usage
+      ? ((meta as Record<string, unknown>).aiUsage ??
+        (meta as Record<string, unknown>).ai_usage)
       : null;
   const fromData =
     data && typeof data === 'object' && !Array.isArray(data)
-      ? (data as Record<string, unknown>).aiUsage ??
-        (data as Record<string, unknown>).ai_usage
+      ? ((data as Record<string, unknown>).aiUsage ??
+        (data as Record<string, unknown>).ai_usage)
       : null;
   const usage = (from ?? fromData) as Record<string, unknown> | null;
   if (!usage || typeof usage !== 'object') return null;
   const used = Number(usage.used);
   const limit = Number(usage.limit);
   const remaining = Number(usage.remaining);
-  if (!Number.isFinite(used) || !Number.isFinite(limit) || !Number.isFinite(remaining)) {
+  if (
+    !Number.isFinite(used) ||
+    !Number.isFinite(limit) ||
+    !Number.isFinite(remaining)
+  ) {
     return null;
   }
   const resetsAt =

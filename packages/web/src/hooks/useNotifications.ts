@@ -11,7 +11,8 @@ import { queryKeys } from '@/lib/queryKeys';
 
 /** List vs unread-count must not share a prefix — see invalidateNotificationList(). */
 export const NOTIFICATION_LIST_KEY = queryKeys.notifications.list();
-export const NOTIFICATION_UNREAD_COUNT_KEY = queryKeys.notifications.unreadCount();
+export const NOTIFICATION_UNREAD_COUNT_KEY =
+  queryKeys.notifications.unreadCount();
 
 const UNREAD_STALE_MS = 5 * 60_000;
 const UNREAD_INVALIDATE_DEBOUNCE_MS = 5_000;
@@ -44,8 +45,11 @@ function pauseUnreadFetch(ms: number) {
 
 function rateLimitPauseMs(error: unknown): number | null {
   if (!axios.isAxiosError(error)) return null;
-  const nested = (error.response?.data as { error?: { retryAfterSeconds?: number } } | undefined)
-    ?.error;
+  const nested = (
+    error.response?.data as
+      | { error?: { retryAfterSeconds?: number } }
+      | undefined
+  )?.error;
   const sec = nested?.retryAfterSeconds;
   if (typeof sec === 'number' && sec > 0) return sec * 1000;
   if (error.response?.status === 429) return DEFAULT_RATE_LIMIT_PAUSE_MS;
@@ -55,11 +59,15 @@ function rateLimitPauseMs(error: unknown): number | null {
 /** Live session — badge polling is unnecessary and competes with interview APIs. */
 export function isLiveInterviewSessionPath(pathname: string): boolean {
   const path = pathname.split('?')[0] ?? pathname;
-  return /^\/dashboard\/interview\/[^/]+/.test(path) && !path.endsWith('/history');
+  return (
+    /^\/dashboard\/interview\/[^/]+/.test(path) && !path.endsWith('/history')
+  );
 }
 
 /** Coalesce mutation-driven unread refetches. */
-export function scheduleUnreadNotificationCountInvalidate(queryClient: QueryClient) {
+export function scheduleUnreadNotificationCountInvalidate(
+  queryClient: QueryClient,
+) {
   if (unreadInvalidateTimer != null) clearTimeout(unreadInvalidateTimer);
   unreadInvalidateTimer = setTimeout(() => {
     unreadInvalidateTimer = null;

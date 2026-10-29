@@ -3,7 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
 
-import { commitAcceptedStructuredDraft, rehydrateCvBuilderAfterStructuredPersist } from './cvStructuredDraftCommit';
+import {
+  commitAcceptedStructuredDraft,
+  rehydrateCvBuilderAfterStructuredPersist,
+} from './cvStructuredDraftCommit';
 
 function makeQueryClient() {
   return {
@@ -49,7 +52,10 @@ describe('commitAcceptedStructuredDraft', () => {
     expect(onRehydrated).toHaveBeenCalledTimes(1);
 
     expect(qc.invalidateQueries).toHaveBeenCalledTimes(1);
-    expect(qc.invalidateQueries).toHaveBeenCalledWith({ queryKey: queryKeys.cv.score(id), exact: true });
+    expect(qc.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: queryKeys.cv.score(id),
+      exact: true,
+    });
   });
 
   it('rehydrateCvBuilderAfterStructuredPersist omits mutation', async () => {

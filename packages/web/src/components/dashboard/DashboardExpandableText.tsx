@@ -22,11 +22,15 @@ export function DashboardExpandableText({
 
   const needsToggle = trimmed.length > maxChars;
   const display =
-    needsToggle && !expanded ? `${trimmed.slice(0, maxChars).trimEnd()}…` : trimmed;
+    needsToggle && !expanded
+      ? `${trimmed.slice(0, maxChars).trimEnd()}…`
+      : trimmed;
 
   return (
     <div className="min-w-0">
-      <p className={cn('text-[12px] font-medium leading-snug', className)}>{display}</p>
+      <p className={cn('text-[12px] font-medium leading-snug', className)}>
+        {display}
+      </p>
       {needsToggle ? (
         <button
           type="button"

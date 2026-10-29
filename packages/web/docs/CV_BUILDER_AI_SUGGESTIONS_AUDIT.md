@@ -3,13 +3,13 @@
 **Date:** 2026-06-18  
 **Scope:** Frontend-only audit (no code changes). Diagnoses five active bugs before fixes.
 
-| # | Bug |
-|---|-----|
-| 1 | Accept returns `IMPROVEMENT_STALE_INDEX` |
-| 2 | Accept succeeds but editor text not replaced |
-| 3 | Accepting one suggestion clears entire suggestions UI |
-| 4 | AI suggestions change more than requested (scope creep) |
-| 5 | Undo/redo (Ctrl+Z / Ctrl+Y) not working |
+| #   | Bug                                                     |
+| --- | ------------------------------------------------------- |
+| 1   | Accept returns `IMPROVEMENT_STALE_INDEX`                |
+| 2   | Accept succeeds but editor text not replaced            |
+| 3   | Accepting one suggestion clears entire suggestions UI   |
+| 4   | AI suggestions change more than requested (scope creep) |
+| 5   | Undo/redo (Ctrl+Z / Ctrl+Y) not working                 |
 
 ---
 
@@ -82,13 +82,13 @@ export type CVBuilderData = {
 
 **Other state layers:**
 
-| Layer | Location | Role |
-|-------|----------|------|
-| React Query | `queryKeys.cv.profile(id)`, `queryKeys.cv.sections(id)`, `cvSuggestionsQueryKey(id)` | Server profile, sections, suggestions |
-| Parent snapshot | `CvClinicPageContent` → `cvDataSnapshot` via `onDataSnapshotChange` | Copy of builder `data` for suggestion filtering |
-| Diff preview map | `diffPreviews` + `activeDiffPreviewKey` in `CvClinicPageContent` | Apply-with-AI before/after + `draftHash` |
-| Auth | `useAuthStore` (Zustand) | User only — not CV content |
-| Undo stack | `useCvUndoRedo` refs inside `CVBuilder` | Past/future snapshots of `CVBuilderData` |
+| Layer            | Location                                                                             | Role                                            |
+| ---------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------- |
+| React Query      | `queryKeys.cv.profile(id)`, `queryKeys.cv.sections(id)`, `cvSuggestionsQueryKey(id)` | Server profile, sections, suggestions           |
+| Parent snapshot  | `CvClinicPageContent` → `cvDataSnapshot` via `onDataSnapshotChange`                  | Copy of builder `data` for suggestion filtering |
+| Diff preview map | `diffPreviews` + `activeDiffPreviewKey` in `CvClinicPageContent`                     | Apply-with-AI before/after + `draftHash`        |
+| Auth             | `useAuthStore` (Zustand)                                                             | User only — not CV content                      |
+| Undo stack       | `useCvUndoRedo` refs inside `CVBuilder`                                              | Past/future snapshots of `CVBuilderData`        |
 
 ---
 
@@ -121,9 +121,9 @@ autosaveTimerRef.current = window.setTimeout(() => {
 **Hooks in `CvClinicPageContent`:**
 
 ```tsx
-const { data: detail } = useCVProfileById(targetId);  // GET /cv/profiles/:id
+const { data: detail } = useCVProfileById(targetId); // GET /cv/profiles/:id
 const sectionsQuery = useQuery({
-  queryFn: () => api.cv.getSections(true, targetId),  // GET /cv/profiles/:id/sections?includeHidden=true
+  queryFn: () => api.cv.getSections(true, targetId), // GET /cv/profiles/:id/sections?includeHidden=true
 });
 const initialData = useMemo(
   () => transformSectionsToCVBuilderData(profile, sections, { email, name }),
@@ -134,7 +134,11 @@ const initialData = useMemo(
 **Passed to builder:**
 
 ```tsx
-<CVBuilder initialData={initialData} existingSections={sections} serverHydrateNonce={cvServerHydrateNonce} />
+<CVBuilder
+  initialData={initialData}
+  existingSections={sections}
+  serverHydrateNonce={cvServerHydrateNonce}
+/>
 ```
 
 **Hydration inside `CVBuilder`:** when `serverHydrateNonce` bumps, `applyServerHydrateFromInitialData` replaces local `data` from `initialData` ref and **resets undo stack**.
@@ -143,13 +147,13 @@ const initialData = useMemo(
 
 ### 5. Multiple sources of truth
 
-| Source | Read when | Written when |
-|--------|-----------|--------------|
-| `CVBuilder` `data` state | All editing & preview | `update()`, server hydrate, undo/redo, `externalPatch`, some `useEffect` merges |
-| React Query profile + sections | Build `initialData`, hydrate | Autosave response, accept flows (`syncCvBuilderFromServer`), assistant commit |
-| React Query suggestions | `useCVImprovements` → `improvementList` | Apply/accept/reject mutations, cache patches, invalidation refetch |
-| `diffPreviews` map | Diff overlay, accept payload (`draftHash`, `changedFields`) | Apply-with-AI, stale retry |
-| `cvDataSnapshot` | Suggestion inventory / unrealistic filter | Every `data` change from builder |
+| Source                         | Read when                                                   | Written when                                                                    |
+| ------------------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `CVBuilder` `data` state       | All editing & preview                                       | `update()`, server hydrate, undo/redo, `externalPatch`, some `useEffect` merges |
+| React Query profile + sections | Build `initialData`, hydrate                                | Autosave response, accept flows (`syncCvBuilderFromServer`), assistant commit   |
+| React Query suggestions        | `useCVImprovements` → `improvementList`                     | Apply/accept/reject mutations, cache patches, invalidation refetch              |
+| `diffPreviews` map             | Diff overlay, accept payload (`draftHash`, `changedFields`) | Apply-with-AI, stale retry                                                      |
+| `cvDataSnapshot`               | Suggestion inventory / unrealistic filter                   | Every `data` change from builder                                                |
 
 **Conflict risk:** Autosave can persist user edits while a diff is open; accept then sends `draftHash` from apply time — stale if CV changed in between (Bug 1).
 
@@ -192,7 +196,13 @@ Rendered in `ImprovementsPanel` via `CvClinicTripleRightPanel`.
 ```tsx
 export type CVImprovementItem = {
   id?: string;
-  status?: 'pending' | 'applying' | 'accepted' | 'rejected' | 'failed' | 'in_progress';
+  status?:
+    | 'pending'
+    | 'applying'
+    | 'accepted'
+    | 'rejected'
+    | 'failed'
+    | 'in_progress';
   resolvedAt?: string;
   resolution?: 'accepted' | 'rejected' | 'already_applied';
   section?: string;
@@ -216,13 +226,13 @@ Normalizer maps many API aliases (`items`, `improvements`, `suggestions`, `feedb
 
 ### 8. `draftHash` lifecycle
 
-| Step | Location |
-|------|----------|
-| **Received** | `POST /cv/improvements/:id/apply` → `CvApplyImprovementResult.draftHash` |
-| **Stored** | `cvOpenParamsFromApplyResult` → `diffPreviews[key].draftHash` via `mergeDiffPreviewOpen` |
-| **Sent on accept** | `commitAcceptDiff` → `api.cv.acceptImprovement(pointer, profileId, { draftHash: diffPreview.draftHash, acceptedFields })` |
-| **Updated after partial accept** | `result.draftHash ?? freshNext.draftHash` written back into `diffPreviews[opKey]` |
-| **Updated after stale retry** | Fresh apply response `fresh.draftHash` |
+| Step                             | Location                                                                                                                  |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Received**                     | `POST /cv/improvements/:id/apply` → `CvApplyImprovementResult.draftHash`                                                  |
+| **Stored**                       | `cvOpenParamsFromApplyResult` → `diffPreviews[key].draftHash` via `mergeDiffPreviewOpen`                                  |
+| **Sent on accept**               | `commitAcceptDiff` → `api.cv.acceptImprovement(pointer, profileId, { draftHash: diffPreview.draftHash, acceptedFields })` |
+| **Updated after partial accept** | `result.draftHash ?? freshNext.draftHash` written back into `diffPreviews[opKey]`                                         |
+| **Updated after stale retry**    | Fresh apply response `fresh.draftHash`                                                                                    |
 
 **Not stored globally** — only on the active diff preview entry. If user accepts a different suggestion without re-applying, old hash may still be in that preview object.
 
@@ -253,20 +263,22 @@ onDiffPreview?.(cvOpenParamsFromApplyResult(result, stableId));
 **File:** `CVDocumentPreview.tsx` — function `sectionBox`
 
 ```tsx
-{sectionChangedFields!.map((cf, i) => (
-  <div key={i} className="...">
-    <CvAiPatchDiffView
-      title={formatDiffTitle(cf.fieldLabel ?? cf.fieldPath ?? '')}
-      before={beforeDisplay}  // red strikethrough styling inside CvAiPatchDiffView
-      after={afterDisplay}    // green suggested text
-      compact
-    />
-    <CvDiffActionPair
-      onAccept={() => onAccept?.(fieldCallbackIndex)}
-      onReject={() => onReject?.(fieldCallbackIndex)}
-    />
-  </div>
-))}
+{
+  sectionChangedFields!.map((cf, i) => (
+    <div key={i} className="...">
+      <CvAiPatchDiffView
+        title={formatDiffTitle(cf.fieldLabel ?? cf.fieldPath ?? '')}
+        before={beforeDisplay} // red strikethrough styling inside CvAiPatchDiffView
+        after={afterDisplay} // green suggested text
+        compact
+      />
+      <CvDiffActionPair
+        onAccept={() => onAccept?.(fieldCallbackIndex)}
+        onReject={() => onReject?.(fieldCallbackIndex)}
+      />
+    </div>
+  ));
+}
 ```
 
 **Data:** `diffChangedFields` from apply response; `diffSection` mapped via `cvDiffPreviewBuilderSection` (e.g. API `contact` → builder `personal`).
@@ -356,9 +368,9 @@ reconcileAfterMutation(targetId, 'structuralAccept');
 **Last frontend steps after success:**
 
 ```tsx
-await syncCvBuilderFromServer();  // refreshCvState profile+sections, then bumpHydrateNonce
+await syncCvBuilderFromServer(); // refreshCvState profile+sections, then bumpHydrateNonce
 if (result.sectionsSynced) {
-  bumpCvServerHydrateNonce();     // second bump
+  bumpCvServerHydrateNonce(); // second bump
 }
 ```
 
@@ -366,7 +378,10 @@ if (result.sectionsSynced) {
 
 ```tsx
 // useCvBuilderHydration.ts
-await refreshCvState(profileId, { refreshProfile: true, refreshSections: true });
+await refreshCvState(profileId, {
+  refreshProfile: true,
+  refreshSections: true,
+});
 bumpHydrateNonce();
 ```
 
@@ -400,7 +415,8 @@ const nextImprovements = prev.improvements.filter((item) => {
     acceptedKey.length > 0 &&
     Array.isArray(item?.pendingFieldPaths) &&
     item.pendingFieldPaths.some((p) => p.trim() === acceptedKey)
-  ) return false;  // ← removes ANY suggestion sharing that field path
+  )
+    return false; // ← removes ANY suggestion sharing that field path
   return true;
 });
 ```
@@ -422,7 +438,10 @@ if (wasAcceptAll) {
 **C. `reconcileAfterMutation` always invalidates suggestions:**
 
 ```tsx
-void queryClient.invalidateQueries({ queryKey: cvSuggestionsQueryKey(id), exact: true });
+void queryClient.invalidateQueries({
+  queryKey: cvSuggestionsQueryKey(id),
+  exact: true,
+});
 ```
 
 If refetch returns empty (`needsScoring`, rescore in flight, backend null suggestions), UI clears.
@@ -430,7 +449,9 @@ If refetch returns empty (`needsScoring`, rescore in flight, backend null sugges
 **D. Partial accept path invalidates without merging:**
 
 ```tsx
-void queryClient.invalidateQueries({ queryKey: cvSuggestionsQueryKey(targetId) });
+void queryClient.invalidateQueries({
+  queryKey: cvSuggestionsQueryKey(targetId),
+});
 ```
 
 **E. No unconditional `setImprovements([])`** in accept handler — empty list comes from refetch or over-aggressive filter, not explicit clear.
@@ -441,11 +462,11 @@ void queryClient.invalidateQueries({ queryKey: cvSuggestionsQueryKey(targetId) }
 
 **From `commitAcceptDiff` success paths:**
 
-| Call | File |
-|------|------|
-| `reconcileAfterMutation(targetId, 'structuralAccept')` | invalidates `cv.score`, `cvSuggestionsQueryKey`, `cv.profiles` |
-| `queryClient.invalidateQueries({ queryKey: cvSuggestionsQueryKey(targetId) })` | partial accept branch |
-| `scheduleSectionResyncIfBackgroundTasks` → `refetchCvProfileAndSectionsAfterBackgroundWork` | profile/sections refetch + hydrate nonce |
+| Call                                                                                        | File                                                           |
+| ------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `reconcileAfterMutation(targetId, 'structuralAccept')`                                      | invalidates `cv.score`, `cvSuggestionsQueryKey`, `cv.profiles` |
+| `queryClient.invalidateQueries({ queryKey: cvSuggestionsQueryKey(targetId) })`              | partial accept branch                                          |
+| `scheduleSectionResyncIfBackgroundTasks` → `refetchCvProfileAndSectionsAfterBackgroundWork` | profile/sections refetch + hydrate nonce                       |
 
 **Yes — invalidation can refetch empty** if backend returns `suggestions: []` or null during `needsScoring` / `scoreStatus: refreshing` (frontend normalizer keeps array from response; empty array clears UI).
 
@@ -455,13 +476,13 @@ void queryClient.invalidateQueries({ queryKey: cvSuggestionsQueryKey(targetId) }
 
 ### 17. Sequence of state updates
 
-1. `acceptImprovement` API success  
-2. Patch suggestions cache (local)  
-3. `closeDiffPreviewForKey`  
-4. `syncCvBuilderFromServer()` → React Query refetch profile + sections  
-5. `bumpCvServerHydrateNonce()` → `CVBuilder` `applyServerHydrateFromInitialData` → **`setData` from refetched `initialData`**  
-6. Optional second bump if `sectionsSynced`  
-7. Autosave fingerprint reset on hydrate  
+1. `acceptImprovement` API success
+2. Patch suggestions cache (local)
+3. `closeDiffPreviewForKey`
+4. `syncCvBuilderFromServer()` → React Query refetch profile + sections
+5. `bumpCvServerHydrateNonce()` → `CVBuilder` `applyServerHydrateFromInitialData` → **`setData` from refetched `initialData`**
+6. Optional second bump if `sectionsSynced`
+7. Autosave fingerprint reset on hydrate
 
 **No step applies `result.appliedChangedFields` or structured diff directly to `data`.**
 
@@ -533,11 +554,11 @@ Undo/redo is implemented. Sidebar fields use native browser undo in inputs. Cust
 
 ### 24. Input types
 
-| UI region | Element |
-|-----------|---------|
-| Preview (WYSIWYG) | `InlineField` — **contentEditable** `<span>` |
+| UI region         | Element                                         |
+| ----------------- | ----------------------------------------------- |
+| Preview (WYSIWYG) | `InlineField` — **contentEditable** `<span>`    |
 | Sidebar accordion | `<input>`, `<textarea>`, `BuilderRichTextField` |
-| Diff overlay | Read-only diff text + buttons |
+| Diff overlay      | Read-only diff text + buttons                   |
 
 **Ctrl+Z in contentEditable:** intercepted by custom handler (capture) unless browser handles first. **Ctrl+Z in sidebar textarea:** handler **returns early** — browser native undo only, **not** connected to custom stack.
 
@@ -545,13 +566,13 @@ Undo/redo is implemented. Sidebar fields use native browser undo in inputs. Cust
 
 ### 25. Why undo/redo may still fail (Bug 5)
 
-1. **Dual undo systems** — sidebar vs preview not unified  
-2. **contentEditable + custom stack** — blur/commit timing; `flushCvInlineEdits` added on undo  
-3. **Server hydrate resets stack** after accept/autosave refetch  
-4. **`update()` bypass paths** — effects call `setData` without snapshot  
-5. **Coalescing** — one undo step per 450ms burst (expected) but user may expect per-field  
-6. **Keyboard handler skips TEXTAREA** in left panel — toolbar undo should still work via `undoRedoControlsRef`  
-7. **`dataRevision`** added to resync `InlineField` after undo — if not triggered, preview shows old DOM  
+1. **Dual undo systems** — sidebar vs preview not unified
+2. **contentEditable + custom stack** — blur/commit timing; `flushCvInlineEdits` added on undo
+3. **Server hydrate resets stack** after accept/autosave refetch
+4. **`update()` bypass paths** — effects call `setData` without snapshot
+5. **Coalescing** — one undo step per 450ms burst (expected) but user may expect per-field
+6. **Keyboard handler skips TEXTAREA** in left panel — toolbar undo should still work via `undoRedoControlsRef`
+7. **`dataRevision`** added to resync `InlineField` after undo — if not triggered, preview shows old DOM
 
 ---
 
@@ -592,9 +613,9 @@ POST /cv/profiles/:id/assistant/global/command
 
 ### 27. Scoped vs full CV
 
-- **Improvements apply:** Backend loads CV server-side; frontend sends pointer only  
-- **Section assistant:** Scoped by `targetSection` string  
-- **Global assistant:** Full-CV operations via `operation` key (`add_metrics`, etc.)  
+- **Improvements apply:** Backend loads CV server-side; frontend sends pointer only
+- **Section assistant:** Scoped by `targetSection` string
+- **Global assistant:** Full-CV operations via `operation` key (`add_metrics`, etc.)
 
 Frontend does not attach full structured CV to improvement apply.
 
@@ -602,13 +623,13 @@ Frontend does not attach full structured CV to improvement apply.
 
 ### 28. Filtering extra suggestions
 
-**Display queue:** `filterPendingSuggestionsForDisplay` — status `pending` only  
+**Display queue:** `filterPendingSuggestionsForDisplay` — status `pending` only
 
-**Unrealistic filter:** `filterUnrealisticCvSuggestions(pending, inventory)` — drops suggestions that reference missing sections/fields  
+**Unrealistic filter:** `filterUnrealisticCvSuggestions(pending, inventory)` — drops suggestions that reference missing sections/fields
 
-**Apply preview:** Shows **all** `result.changedFields` from backend — **no client filter** to single requested field  
+**Apply preview:** Shows **all** `result.changedFields` from backend — **no client filter** to single requested field
 
-**Diff accept:** User can accept per-field via `changeIndex`; accepting one field does not prevent other fields in same suggestion from appearing in preview until accepted or rejected  
+**Diff accept:** User can accept per-field via `changeIndex`; accepting one field does not prevent other fields in same suggestion from appearing in preview until accepted or rejected
 
 ---
 
@@ -639,12 +660,12 @@ setCvImprovementDiffActionsPending(true);
 
 ### 31. `draftHash` refresh after accept
 
-| Outcome | Hash update |
-|---------|-------------|
-| Partial accept | `setDiffPreviews` updates `draftHash: result.draftHash ?? freshNext.draftHash` |
-| Full accept | Preview closed — hash discarded |
-| Stale retry | Fresh apply sets `fresh.draftHash` on preview |
-| Success + closed preview | **No global hash** — next accept requires new Apply with AI |
+| Outcome                  | Hash update                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| Partial accept           | `setDiffPreviews` updates `draftHash: result.draftHash ?? freshNext.draftHash` |
+| Full accept              | Preview closed — hash discarded                                                |
+| Stale retry              | Fresh apply sets `fresh.draftHash` on preview                                  |
+| Success + closed preview | **No global hash** — next accept requires new Apply with AI                    |
 
 **If user accepts without re-applying after unrelated edits, stale hash risk remains on any still-open preview.**
 
@@ -652,29 +673,29 @@ setCvImprovementDiffActionsPending(true);
 
 ## Bug → Root Cause Summary (Frontend)
 
-| Bug | Primary frontend causes |
-|-----|-------------------------|
-| **1 STALE_INDEX** | Stale `draftHash` / pointer after autosave or queue revision; retry logic exists but race persists |
-| **2 Text not replaced** | No local apply from accept response; hydrate depends on refetch timing + `sectionsSynced` |
+| Bug                        | Primary frontend causes                                                                                        |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **1 STALE_INDEX**          | Stale `draftHash` / pointer after autosave or queue revision; retry logic exists but race persists             |
+| **2 Text not replaced**    | No local apply from accept response; hydrate depends on refetch timing + `sectionsSynced`                      |
 | **3 All suggestions gone** | Over-broad cache filter on `pendingFieldPaths`; invalidation refetch during rescore; optimistic `wasAcceptAll` |
-| **4 Scope creep** | Apply shows all backend `changedFields`; no frontend scope filter; backend materialization |
-| **5 Undo/redo** | Split native vs custom undo; hydrate resets stack; contentEditable vs INPUT handling; setData bypass paths |
+| **4 Scope creep**          | Apply shows all backend `changedFields`; no frontend scope filter; backend materialization                     |
+| **5 Undo/redo**            | Split native vs custom undo; hydrate resets stack; contentEditable vs INPUT handling; setData bypass paths     |
 
 ---
 
 ## Key files index
 
-| Area | Path |
-|------|------|
-| Page | `packages/web/src/app/(dashboard)/dashboard/cv/page.tsx` |
-| Clinic shell | `packages/web/src/components/cv/clinic/CvClinicPageContent.tsx` |
-| Builder | `packages/web/src/components/cv/CVBuilder.tsx` |
-| Preview / diff UI | `packages/web/src/components/cv/CVDocumentPreview.tsx` |
-| Inline edit | `packages/web/src/components/cv/InlineField.tsx` |
-| Suggestions panel | `packages/web/src/components/cv/ImprovementsPanel.tsx` |
-| Accept API | `packages/web/src/lib/api.ts` (`acceptImprovement`, `applyImprovement`, `getSuggestions`) |
-| Cache merge | `packages/web/src/lib/cvSuggestionsMutationApply.ts` |
-| Invalidation | `packages/web/src/lib/cvSuggestionMutationReconcile.ts` |
-| Autosave | `packages/web/src/hooks/useCVAutosave.ts` |
-| Undo | `packages/web/src/hooks/useCvUndoRedo.ts`, `packages/web/src/lib/cvUndoRedo.ts` |
-| Hydrate | `packages/web/src/hooks/useCvBuilderHydration.ts` |
+| Area              | Path                                                                                      |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| Page              | `packages/web/src/app/(dashboard)/dashboard/cv/page.tsx`                                  |
+| Clinic shell      | `packages/web/src/components/cv/clinic/CvClinicPageContent.tsx`                           |
+| Builder           | `packages/web/src/components/cv/CVBuilder.tsx`                                            |
+| Preview / diff UI | `packages/web/src/components/cv/CVDocumentPreview.tsx`                                    |
+| Inline edit       | `packages/web/src/components/cv/InlineField.tsx`                                          |
+| Suggestions panel | `packages/web/src/components/cv/ImprovementsPanel.tsx`                                    |
+| Accept API        | `packages/web/src/lib/api.ts` (`acceptImprovement`, `applyImprovement`, `getSuggestions`) |
+| Cache merge       | `packages/web/src/lib/cvSuggestionsMutationApply.ts`                                      |
+| Invalidation      | `packages/web/src/lib/cvSuggestionMutationReconcile.ts`                                   |
+| Autosave          | `packages/web/src/hooks/useCVAutosave.ts`                                                 |
+| Undo              | `packages/web/src/hooks/useCvUndoRedo.ts`, `packages/web/src/lib/cvUndoRedo.ts`           |
+| Hydrate           | `packages/web/src/hooks/useCvBuilderHydration.ts`                                         |

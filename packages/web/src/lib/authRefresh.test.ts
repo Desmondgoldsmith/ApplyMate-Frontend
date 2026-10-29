@@ -27,18 +27,24 @@ describe('decodeJwtExp', () => {
 
 describe('isRefreshTokenReuseError', () => {
   it('detects REFRESH_TOKEN_REUSE_DETECTED code', () => {
-    const err = new AxiosError('Unauthorized', 'ERR_BAD_REQUEST', undefined, undefined, {
-      status: 401,
-      statusText: 'Unauthorized',
-      headers: {},
-      config: {} as never,
-      data: {
-        error: {
-          code: 'REFRESH_TOKEN_REUSE_DETECTED',
-          message: 'Session expired. Please sign in again.',
+    const err = new AxiosError(
+      'Unauthorized',
+      'ERR_BAD_REQUEST',
+      undefined,
+      undefined,
+      {
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: {},
+        config: {} as never,
+        data: {
+          error: {
+            code: 'REFRESH_TOKEN_REUSE_DETECTED',
+            message: 'Session expired. Please sign in again.',
+          },
         },
       },
-    });
+    );
     expect(isRefreshTokenReuseError(err)).toBe(true);
   });
 });

@@ -56,7 +56,9 @@ export const SimulationPanel = memo(function SimulationPanel({
         </div>
       ) : null}
       {pressureLabel ? (
-        <p className="text-center text-[11px] font-semibold text-amber-200/90">{pressureLabel}</p>
+        <p className="text-center text-[11px] font-semibold text-amber-200/90">
+          {pressureLabel}
+        </p>
       ) : null}
     </>
   );

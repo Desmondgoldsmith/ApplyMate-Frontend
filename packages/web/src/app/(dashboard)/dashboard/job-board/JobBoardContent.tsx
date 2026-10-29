@@ -196,7 +196,9 @@ export default function JobBoardContent() {
       setSelectedLocation(nextLoc);
       void api.users
         .updateMe({ uiPrefs: { jobSearchLocation: nextLoc } })
-        .then(() => queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() }))
+        .then(() =>
+          queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() }),
+        )
         .catch(() => {
           toast.error(
             'Location saved locally but could not sync to your account.',
@@ -629,436 +631,439 @@ export default function JobBoardContent() {
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#00C9B1]">
           Discover roles
         </p>
-        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Job board</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+          Job board
+        </h1>
         <p className="max-w-2xl text-sm leading-relaxed text-white/50">
-          Browse openings matched to your CV and location. Save roles to your hub or analyze a listing in one click.
+          Browse openings matched to your CV and location. Save roles to your
+          hub or analyze a listing in one click.
         </p>
       </header>
 
       <div className="min-w-0 space-y-4">
-      <div
-        className="min-w-0 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0C0F0F] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
-        data-tour="job-board-filters"
-      >
-        <button
-          type="button"
-          onClick={() => setFiltersCollapsed((v) => !v)}
-          title={collapsedSummaryTitle}
-          className="flex w-full min-w-0 items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-[0.08em] text-white/65 hover:bg-white/[0.03]"
-        >
-          <span className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden normal-case tracking-normal">
-            <span className="shrink-0">Search & Filters</span>
-            <InfoHint text="Default results use your selected CV and location. Use Search when you want keyword overrides." />
-            {collapsedLocationHint || collapsedCvLabel ? (
-              <span className="min-w-0 truncate text-white/45">
-                {collapsedLocationHint ? ` · ${collapsedLocationHint}` : ''}
-                {collapsedCvLabel ? ` · ${collapsedCvLabel}` : ''}
-              </span>
-            ) : null}
-          </span>
-          <ChevronDown
-            className={
-              filtersCollapsed
-                ? 'h-4 w-4 shrink-0 -rotate-90'
-                : 'h-4 w-4 shrink-0'
-            }
-          />
-        </button>
-        {!filtersCollapsed ? (
-          <div className="mt-2 min-w-0 overflow-hidden">
-            <JobBoardFilters
-              filters={appliedFilters}
-              locationInput={locationInput}
-              locationInputRef={locationInputRef}
-              onLocationInputChange={setLocationInput}
-              locationDisabled={appliedFilters.remoteFirst}
-              locationDisabledTitle="Searching globally for remote roles"
-              qInput={qInput}
-              onQInputChange={setQInput}
-              onImmediateFilterChange={patchImmediateFilter}
-              remoteFirst={appliedFilters.remoteFirst}
-              onRemoteFirstChange={setRemoteFirst}
-              profiles={profiles}
-              selectedProfileId={selectedProfileId}
-              onProfileChange={(id) => {
-                setSelectedProfileId(id);
-                setAppliedFilters((prev) => ({ ...prev, page: 1 }));
-              }}
-              onApplySearch={applySearch}
-              isFetching={jobs.isFetching}
-              onResetFilters={resetNonLocationFilters}
-            />
-          </div>
-        ) : null}
-      </div>
-
-      <JobBoardAlertsBar alerts={boardAlerts} />
-
-      <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0C0F0F] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] max-lg:min-h-[min(78dvh,640px)] lg:h-[calc(100dvh-9.5rem)] lg:max-h-[calc(100dvh-9.5rem)] lg:flex-row lg:items-stretch">
         <div
-          data-tour="job-board-listings"
-          className="flex min-h-[280px] w-full min-w-0 shrink-0 flex-col overflow-hidden border-b border-white/[0.06] max-lg:flex-1 max-lg:min-h-0 lg:min-h-0 lg:w-[min(52%,520px)] lg:max-w-[520px] lg:border-b-0 lg:border-r lg:border-white/[0.06]"
+          className="min-w-0 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0C0F0F] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
+          data-tour="job-board-filters"
         >
-          <div className="shrink-0 space-y-2 px-3 pt-3">
-            {false &&
-            !dismissedFreshnessBanner &&
-            freshness != null &&
-            ((freshness?.newSinceLastVisitCount ?? 0) > 0 ||
-              (freshness?.updatedSinceLastVisitCount ?? 0) > 0) ? (
-              <div className="mb-2 flex items-start gap-2 rounded-xl border border-[#00C9B1]/25 bg-[#00C9B1]/10 px-3 py-2.5 text-sm text-white/90">
-                <p className="min-w-0 flex-1 leading-snug">
-                  {(freshness?.newSinceLastVisitCount ?? 0) > 0
-                    ? `${freshness?.newSinceLastVisitCount} new jobs since your last visit`
-                    : `${freshness?.updatedSinceLastVisitCount} jobs updated since your last visit`}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setDismissedFreshnessBanner(true)}
-                  className="shrink-0 rounded-md p-1 text-white/50 transition hover:bg-white/10 hover:text-white/80"
-                  aria-label="Dismiss"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : null}
-            {false &&
-            !dismissedSearchContextBanner &&
-            searchContextBanner &&
-            !appliedFilters.remoteFirst ? (
-              <div className="flex items-start gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-3 py-2.5 text-sm text-white/85">
-                <p className="min-w-0 flex-1 leading-snug">
-                  {searchContextBanner}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFiltersCollapsed(false);
-                    window.setTimeout(
-                      () => locationInputRef.current?.focus(),
-                      80,
-                    );
-                  }}
-                  className="shrink-0 rounded-md border border-[#00C9B1]/35 bg-[#00C9B1]/10 px-2 py-1 text-xs font-semibold text-[#7ef4e6] hover:bg-[#00C9B1]/15"
-                >
-                  Change
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDismissedSearchContextBanner(true)}
-                  className="shrink-0 rounded-md p-1 text-white/50 transition hover:bg-white/10 hover:text-white/80"
-                  aria-label="Dismiss"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : null}
-            {false && !dismissedRemoteFirstBanner && remoteFirstResponse ? (
-              <div className="flex items-start gap-2 rounded-xl border border-[#00C9B1]/25 bg-[#00C9B1]/10 px-3 py-2.5 text-sm text-white/90">
-                <p className="min-w-0 flex-1 leading-snug">
-                  Showing international remote roles - apply from anywhere
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setDismissedRemoteFirstBanner(true)}
-                  className="shrink-0 rounded-md p-1 text-white/50 transition hover:bg-white/10 hover:text-white/80"
-                  aria-label="Dismiss"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : null}
-            {false && !dismissedLocationFallbackBanner && locationFallback ? (
-              <div className="flex items-start gap-2 rounded-xl border border-amber-400/25 bg-amber-500/[0.08] px-3 py-2.5 text-sm text-amber-100/95">
-                <p className="min-w-0 flex-1 leading-snug">
-                  No jobs found in {locationLabel}. Showing remote roles
-                  instead.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setDismissedLocationFallbackBanner(true)}
-                  className="shrink-0 rounded-md p-1 text-amber-200/60 transition hover:bg-amber-500/15 hover:text-amber-100"
-                  aria-label="Dismiss"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : null}
-            {!appliedFilters.remoteFirst && !hasLocationContext ? (
-              <div className="rounded-xl border border-white/12 bg-white/[0.03] px-3 py-2.5 text-sm text-white/85">
-                <p className="leading-snug">
-                  Set your location to get stronger local matches.
-                </p>
-                <div className="mt-2">
+          <button
+            type="button"
+            onClick={() => setFiltersCollapsed((v) => !v)}
+            title={collapsedSummaryTitle}
+            className="flex w-full min-w-0 items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-[0.08em] text-white/65 hover:bg-white/[0.03]"
+          >
+            <span className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden normal-case tracking-normal">
+              <span className="shrink-0">Search & Filters</span>
+              <InfoHint text="Default results use your selected CV and location. Use Search when you want keyword overrides." />
+              {collapsedLocationHint || collapsedCvLabel ? (
+                <span className="min-w-0 truncate text-white/45">
+                  {collapsedLocationHint ? ` · ${collapsedLocationHint}` : ''}
+                  {collapsedCvLabel ? ` · ${collapsedCvLabel}` : ''}
+                </span>
+              ) : null}
+            </span>
+            <ChevronDown
+              className={
+                filtersCollapsed
+                  ? 'h-4 w-4 shrink-0 -rotate-90'
+                  : 'h-4 w-4 shrink-0'
+              }
+            />
+          </button>
+          {!filtersCollapsed ? (
+            <div className="mt-2 min-w-0 overflow-hidden">
+              <JobBoardFilters
+                filters={appliedFilters}
+                locationInput={locationInput}
+                locationInputRef={locationInputRef}
+                onLocationInputChange={setLocationInput}
+                locationDisabled={appliedFilters.remoteFirst}
+                locationDisabledTitle="Searching globally for remote roles"
+                qInput={qInput}
+                onQInputChange={setQInput}
+                onImmediateFilterChange={patchImmediateFilter}
+                remoteFirst={appliedFilters.remoteFirst}
+                onRemoteFirstChange={setRemoteFirst}
+                profiles={profiles}
+                selectedProfileId={selectedProfileId}
+                onProfileChange={(id) => {
+                  setSelectedProfileId(id);
+                  setAppliedFilters((prev) => ({ ...prev, page: 1 }));
+                }}
+                onApplySearch={applySearch}
+                isFetching={jobs.isFetching}
+                onResetFilters={resetNonLocationFilters}
+              />
+            </div>
+          ) : null}
+        </div>
+
+        <JobBoardAlertsBar alerts={boardAlerts} />
+
+        <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0C0F0F] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] max-lg:min-h-[min(78dvh,640px)] lg:h-[calc(100dvh-9.5rem)] lg:max-h-[calc(100dvh-9.5rem)] lg:flex-row lg:items-stretch">
+          <div
+            data-tour="job-board-listings"
+            className="flex min-h-[280px] w-full min-w-0 shrink-0 flex-col overflow-hidden border-b border-white/[0.06] max-lg:flex-1 max-lg:min-h-0 lg:min-h-0 lg:w-[min(52%,520px)] lg:max-w-[520px] lg:border-b-0 lg:border-r lg:border-white/[0.06]"
+          >
+            <div className="shrink-0 space-y-2 px-3 pt-3">
+              {false &&
+              !dismissedFreshnessBanner &&
+              freshness != null &&
+              ((freshness?.newSinceLastVisitCount ?? 0) > 0 ||
+                (freshness?.updatedSinceLastVisitCount ?? 0) > 0) ? (
+                <div className="mb-2 flex items-start gap-2 rounded-xl border border-[#00C9B1]/25 bg-[#00C9B1]/10 px-3 py-2.5 text-sm text-white/90">
+                  <p className="min-w-0 flex-1 leading-snug">
+                    {(freshness?.newSinceLastVisitCount ?? 0) > 0
+                      ? `${freshness?.newSinceLastVisitCount} new jobs since your last visit`
+                      : `${freshness?.updatedSinceLastVisitCount} jobs updated since your last visit`}
+                  </p>
                   <button
                     type="button"
-                    className="rounded-lg border border-[#00C9B1]/35 bg-[#00C9B1]/10 px-2.5 py-1 text-xs font-semibold text-[#7ef4e6] hover:bg-[#00C9B1]/15"
-                    onClick={() => {
-                      setFiltersCollapsed(false);
-                      toast.info(
-                        'Add your location in Search & Filters, then click Search.',
-                      );
-                    }}
+                    onClick={() => setDismissedFreshnessBanner(true)}
+                    className="shrink-0 rounded-md p-1 text-white/50 transition hover:bg-white/10 hover:text-white/80"
+                    aria-label="Dismiss"
                   >
-                    Set location
+                    <X className="h-4 w-4" />
                   </button>
                 </div>
-              </div>
-            ) : null}
-            {false && shouldShowLowQualityBanner ? (
-              <div className="rounded-xl border border-amber-400/25 bg-amber-500/[0.08] px-3 py-2.5 text-sm text-amber-100/95">
-                <p className="leading-snug">
-                  Results are currently low quality. Try one of these:
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {qualityState!.suggestedActions.slice(0, 3).map((a) => (
-                    <button
-                      key={`${a.type}:${a.route}`}
-                      type="button"
-                      className="rounded-lg border border-amber-300/35 bg-amber-400/10 px-2 py-1 text-xs font-semibold text-amber-100 hover:bg-amber-400/15"
-                      onClick={() => handleSuggestedAction(a)}
-                    >
-                      {a.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-            {items.length > 0 ? (
-              <div className="flex items-center justify-between gap-2 px-0.5 pb-1">
-                <p className="text-[11px] text-white/40">
-                  Ranked by fit
-                  {hiddenLowMatchCount > 0 && hideLowMatch
-                    ? ` · ${hiddenLowMatchCount} low-match hidden`
-                    : ''}
-                </p>
-                <label className="inline-flex cursor-pointer items-center gap-2 text-[11px] text-white/55">
-                  <input
-                    type="checkbox"
-                    checked={hideLowMatch}
-                    onChange={(e) => setHideLowMatch(e.target.checked)}
-                    className="rounded border-white/20"
-                  />
-                  Hide low match
-                </label>
-              </div>
-            ) : null}
-          </div>
-          <div
-            className="relative app-scrollbar min-h-0 flex-1 flex-col divide-y divide-white/[0.05] overflow-y-auto overscroll-contain p-3 pb-24 pr-2 pt-0 lg:pb-3"
-            aria-busy={showListRefetchOverlay}
-          >
-            {showListRefetchOverlay ? (
-              <div
-                className="pointer-events-none absolute inset-0 z-[1] flex items-start justify-center bg-[#0C0F0F]/60 pt-10"
-                aria-hidden
-              >
-                <Loader2 className="h-9 w-9 animate-spin text-[#00C9B1]" />
-              </div>
-            ) : null}
-            {showJobListSkeleton ? (
-              <>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-28 animate-pulse rounded-2xl bg-white/[0.04]"
-                  />
-                ))}
-              </>
-            ) : jobs.isError ? (
-              <div className="rounded-2xl border border-rose-400/20 bg-rose-500/[0.08] p-4">
-                <p className="text-sm font-semibold text-rose-200">
-                  Could not load job listings.
-                </p>
-                <Button
-                  type="button"
-                  className="mt-3"
-                  onClick={() => jobs.refetch()}
-                >
-                  Retry
-                </Button>
-              </div>
-            ) : displayItems.length === 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 text-center">
-                <Search className="mx-auto h-10 w-10 text-[#00C9B1]" />
-                <p className="mt-2 text-sm font-semibold text-white">
-                  {userCommittedSearch
-                    ? `Nothing matched your search for “${appliedFilters.q.trim()}”. Try different keywords or clear the search and click Search again.`
-                    : hideLowMatch && items.length > 0
-                      ? 'Only low-match roles are visible with current filters. Show low-match jobs to see them.'
-                      : appliedFilters.remoteFirst
-                        ? 'No remote roles found matching your CV right now.'
-                        : 'No jobs found for these filters.'}
-                </p>
-                {hideLowMatch && items.length > 0 ? (
-                  <Button
+              ) : null}
+              {false &&
+              !dismissedSearchContextBanner &&
+              searchContextBanner &&
+              !appliedFilters.remoteFirst ? (
+                <div className="flex items-start gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-3 py-2.5 text-sm text-white/85">
+                  <p className="min-w-0 flex-1 leading-snug">
+                    {searchContextBanner}
+                  </p>
+                  <button
                     type="button"
-                    className="mt-3"
-                    onClick={() => setHideLowMatch(false)}
+                    onClick={() => {
+                      setFiltersCollapsed(false);
+                      window.setTimeout(
+                        () => locationInputRef.current?.focus(),
+                        80,
+                      );
+                    }}
+                    className="shrink-0 rounded-md border border-[#00C9B1]/35 bg-[#00C9B1]/10 px-2 py-1 text-xs font-semibold text-[#7ef4e6] hover:bg-[#00C9B1]/15"
                   >
-                    Show low-match jobs
-                  </Button>
-                ) : null}
-                {qualityState?.suggestedActions?.length ? (
-                  <div className="mt-4 flex flex-wrap justify-center gap-2">
-                    {qualityState.suggestedActions.slice(0, 3).map((a) => (
-                      <Button
+                    Change
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDismissedSearchContextBanner(true)}
+                    className="shrink-0 rounded-md p-1 text-white/50 transition hover:bg-white/10 hover:text-white/80"
+                    aria-label="Dismiss"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : null}
+              {false && !dismissedRemoteFirstBanner && remoteFirstResponse ? (
+                <div className="flex items-start gap-2 rounded-xl border border-[#00C9B1]/25 bg-[#00C9B1]/10 px-3 py-2.5 text-sm text-white/90">
+                  <p className="min-w-0 flex-1 leading-snug">
+                    Showing international remote roles - apply from anywhere
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setDismissedRemoteFirstBanner(true)}
+                    className="shrink-0 rounded-md p-1 text-white/50 transition hover:bg-white/10 hover:text-white/80"
+                    aria-label="Dismiss"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : null}
+              {false && !dismissedLocationFallbackBanner && locationFallback ? (
+                <div className="flex items-start gap-2 rounded-xl border border-amber-400/25 bg-amber-500/[0.08] px-3 py-2.5 text-sm text-amber-100/95">
+                  <p className="min-w-0 flex-1 leading-snug">
+                    No jobs found in {locationLabel}. Showing remote roles
+                    instead.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setDismissedLocationFallbackBanner(true)}
+                    className="shrink-0 rounded-md p-1 text-amber-200/60 transition hover:bg-amber-500/15 hover:text-amber-100"
+                    aria-label="Dismiss"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : null}
+              {!appliedFilters.remoteFirst && !hasLocationContext ? (
+                <div className="rounded-xl border border-white/12 bg-white/[0.03] px-3 py-2.5 text-sm text-white/85">
+                  <p className="leading-snug">
+                    Set your location to get stronger local matches.
+                  </p>
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      className="rounded-lg border border-[#00C9B1]/35 bg-[#00C9B1]/10 px-2.5 py-1 text-xs font-semibold text-[#7ef4e6] hover:bg-[#00C9B1]/15"
+                      onClick={() => {
+                        setFiltersCollapsed(false);
+                        toast.info(
+                          'Add your location in Search & Filters, then click Search.',
+                        );
+                      }}
+                    >
+                      Set location
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+              {false && shouldShowLowQualityBanner ? (
+                <div className="rounded-xl border border-amber-400/25 bg-amber-500/[0.08] px-3 py-2.5 text-sm text-amber-100/95">
+                  <p className="leading-snug">
+                    Results are currently low quality. Try one of these:
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {qualityState!.suggestedActions.slice(0, 3).map((a) => (
+                      <button
                         key={`${a.type}:${a.route}`}
                         type="button"
-                        variant="ghost"
-                        className="border border-white/15 text-xs"
+                        className="rounded-lg border border-amber-300/35 bg-amber-400/10 px-2 py-1 text-xs font-semibold text-amber-100 hover:bg-amber-400/15"
                         onClick={() => handleSuggestedAction(a)}
                       >
                         {a.label}
-                      </Button>
+                      </button>
                     ))}
                   </div>
-                ) : null}
+                </div>
+              ) : null}
+              {items.length > 0 ? (
+                <div className="flex items-center justify-between gap-2 px-0.5 pb-1">
+                  <p className="text-[11px] text-white/40">
+                    Ranked by fit
+                    {hiddenLowMatchCount > 0 && hideLowMatch
+                      ? ` · ${hiddenLowMatchCount} low-match hidden`
+                      : ''}
+                  </p>
+                  <label className="inline-flex cursor-pointer items-center gap-2 text-[11px] text-white/55">
+                    <input
+                      type="checkbox"
+                      checked={hideLowMatch}
+                      onChange={(e) => setHideLowMatch(e.target.checked)}
+                      className="rounded border-white/20"
+                    />
+                    Hide low match
+                  </label>
+                </div>
+              ) : null}
+            </div>
+            <div
+              className="relative app-scrollbar min-h-0 flex-1 flex-col divide-y divide-white/[0.05] overflow-y-auto overscroll-contain p-3 pb-24 pr-2 pt-0 lg:pb-3"
+              aria-busy={showListRefetchOverlay}
+            >
+              {showListRefetchOverlay ? (
+                <div
+                  className="pointer-events-none absolute inset-0 z-[1] flex items-start justify-center bg-[#0C0F0F]/60 pt-10"
+                  aria-hidden
+                >
+                  <Loader2 className="h-9 w-9 animate-spin text-[#00C9B1]" />
+                </div>
+              ) : null}
+              {showJobListSkeleton ? (
+                <>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-28 animate-pulse rounded-2xl bg-white/[0.04]"
+                    />
+                  ))}
+                </>
+              ) : jobs.isError ? (
+                <div className="rounded-2xl border border-rose-400/20 bg-rose-500/[0.08] p-4">
+                  <p className="text-sm font-semibold text-rose-200">
+                    Could not load job listings.
+                  </p>
+                  <Button
+                    type="button"
+                    className="mt-3"
+                    onClick={() => jobs.refetch()}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              ) : displayItems.length === 0 ? (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 text-center">
+                  <Search className="mx-auto h-10 w-10 text-[#00C9B1]" />
+                  <p className="mt-2 text-sm font-semibold text-white">
+                    {userCommittedSearch
+                      ? `Nothing matched your search for “${appliedFilters.q.trim()}”. Try different keywords or clear the search and click Search again.`
+                      : hideLowMatch && items.length > 0
+                        ? 'Only low-match roles are visible with current filters. Show low-match jobs to see them.'
+                        : appliedFilters.remoteFirst
+                          ? 'No remote roles found matching your CV right now.'
+                          : 'No jobs found for these filters.'}
+                  </p>
+                  {hideLowMatch && items.length > 0 ? (
+                    <Button
+                      type="button"
+                      className="mt-3"
+                      onClick={() => setHideLowMatch(false)}
+                    >
+                      Show low-match jobs
+                    </Button>
+                  ) : null}
+                  {qualityState?.suggestedActions?.length ? (
+                    <div className="mt-4 flex flex-wrap justify-center gap-2">
+                      {qualityState.suggestedActions.slice(0, 3).map((a) => (
+                        <Button
+                          key={`${a.type}:${a.route}`}
+                          type="button"
+                          variant="ghost"
+                          className="border border-white/15 text-xs"
+                          onClick={() => handleSuggestedAction(a)}
+                        >
+                          {a.label}
+                        </Button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                displayItems.map((job) => (
+                  <JobListingCard
+                    key={job.id}
+                    job={job}
+                    active={job.id === activeJobId}
+                    onPrefetch={prefetchListing}
+                    onClick={() => {
+                      setActiveJobId(job.id);
+                      if (isMaxLg) setMobileDetailOpen(true);
+                    }}
+                  />
+                ))
+              )}
+            </div>
+
+            {showPagination ? (
+              <div className="flex shrink-0 flex-col gap-2 border-t border-white/5 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-center text-[11px] text-white/45 sm:text-left">
+                  {rangeStart}-{rangeEnd} of {total}
+                  {totalPages > 1 ? (
+                    <span className="text-white/35">
+                      {' '}
+                      · Page {appliedFilters.page} of {totalPages}
+                    </span>
+                  ) : null}
+                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="border border-white/10 px-2"
+                    disabled={appliedFilters.page <= 1 || jobs.isFetching}
+                    onClick={() =>
+                      setAppliedFilters((prev) => ({
+                        ...prev,
+                        page: Math.max(1, prev.page - 1),
+                      }))
+                    }
+                    aria-label="Previous page"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="border border-white/10 px-2"
+                    disabled={
+                      appliedFilters.page >= totalPages || jobs.isFetching
+                    }
+                    onClick={() =>
+                      setAppliedFilters((prev) => ({
+                        ...prev,
+                        page: Math.min(totalPages, prev.page + 1),
+                      }))
+                    }
+                    aria-label="Next page"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            ) : (
-              displayItems.map((job) => (
-                <JobListingCard
-                  key={job.id}
-                  job={job}
-                  active={job.id === activeJobId}
-                  onPrefetch={prefetchListing}
-                  onClick={() => {
-                    setActiveJobId(job.id);
-                    if (isMaxLg) setMobileDetailOpen(true);
-                  }}
-                />
-              ))
-            )}
+            ) : null}
           </div>
 
-          {showPagination ? (
-            <div className="flex shrink-0 flex-col gap-2 border-t border-white/5 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-center text-[11px] text-white/45 sm:text-left">
-                {rangeStart}-{rangeEnd} of {total}
-                {totalPages > 1 ? (
-                  <span className="text-white/35">
-                    {' '}
-                    · Page {appliedFilters.page} of {totalPages}
-                  </span>
-                ) : null}
-              </p>
-              <div className="flex items-center justify-center gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="border border-white/10 px-2"
-                  disabled={appliedFilters.page <= 1 || jobs.isFetching}
-                  onClick={() =>
-                    setAppliedFilters((prev) => ({
-                      ...prev,
-                      page: Math.max(1, prev.page - 1),
-                    }))
-                  }
-                  aria-label="Previous page"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="border border-white/10 px-2"
-                  disabled={
-                    appliedFilters.page >= totalPages || jobs.isFetching
-                  }
-                  onClick={() =>
-                    setAppliedFilters((prev) => ({
-                      ...prev,
-                      page: Math.min(totalPages, prev.page + 1),
-                    }))
-                  }
-                  aria-label="Next page"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+          <div
+            data-tour="job-board-detail"
+            className="hidden min-h-[280px] min-w-0 flex-1 flex-col overflow-hidden lg:flex lg:min-h-0"
+          >
+            {activeJobId ? (
+              <div className="app-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
+                <JobDetailPanel
+                  jobId={activeJobId}
+                  cvProfileId={cvProfileIdForDiscover}
+                />
               </div>
-            </div>
-          ) : null}
+            ) : (
+              <div className="flex min-h-[280px] flex-col items-center justify-center p-6 text-center lg:min-h-0 lg:flex-1">
+                <Search className="h-10 w-10 text-[#00C9B1]" />
+                <p className="mt-3 text-sm font-semibold text-white">
+                  Select a job to see details
+                </p>
+                <p className="mt-1 text-xs text-white/50">
+                  Choose any listing from the left panel.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div
-          data-tour="job-board-detail"
-          className="hidden min-h-[280px] min-w-0 flex-1 flex-col overflow-hidden lg:flex lg:min-h-0"
-        >
-          {activeJobId ? (
-            <div className="app-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
-              <JobDetailPanel
-                jobId={activeJobId}
-                cvProfileId={cvProfileIdForDiscover}
-              />
-            </div>
-          ) : (
-            <div className="flex min-h-[280px] flex-col items-center justify-center p-6 text-center lg:min-h-0 lg:flex-1">
-              <Search className="h-10 w-10 text-[#00C9B1]" />
-              <p className="mt-3 text-sm font-semibold text-white">
-                Select a job to see details
-              </p>
-              <p className="mt-1 text-xs text-white/50">
-                Choose any listing from the left panel.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {isMaxLg ? (
-        <AnimatePresence initial={false}>
-          {mobileDetailOpen && activeJobId ? (
-            <>
-              <motion.div
-                key="job-board-detail-backdrop"
-                role="presentation"
-                aria-hidden
-                className="fixed inset-0 z-[45] bg-black/50"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.22 }}
-                onClick={() => setMobileDetailOpen(false)}
-              />
-              <motion.div
-                key={activeJobId}
-                role="dialog"
-                aria-modal
-                aria-label="Job details"
-                className="fixed inset-x-0 bottom-0 z-[50] flex h-[min(92dvh,780px)] max-h-[min(92dvh,780px)] min-h-0 flex-col overflow-hidden rounded-t-[1.25rem] border border-[#00C9B1]/50 bg-[#060a0a] pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-6px_28px_-12px_rgba(0,201,177,0.45)]"
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
-                transition={{ duration: 0.44, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/[0.06] px-3 py-2">
-                  <button
-                    type="button"
-                    onClick={() => setMobileDetailOpen(false)}
-                    className="inline-flex min-h-[44px] items-center gap-1.5 text-[13px] font-semibold text-[#00C9B1] transition-colors duration-150 hover:brightness-125"
-                  >
-                    <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden />
-                    Back to list
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMobileDetailOpen(false)}
-                    className="rounded-lg border border-white/12 p-2 text-white/45 transition-colors hover:border-[#00C9B1]/40 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]"
-                    aria-label="Close job details"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                <div className="app-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y [webkit-overflow-scrolling:touch] px-3 pb-24 pt-1 lg:pb-4">
-                  <JobDetailPanel
-                    jobId={activeJobId}
-                    cvProfileId={cvProfileIdForDiscover}
-                  />
-                </div>
-              </motion.div>
-            </>
-          ) : null}
-        </AnimatePresence>
-      ) : null}
+        {isMaxLg ? (
+          <AnimatePresence initial={false}>
+            {mobileDetailOpen && activeJobId ? (
+              <>
+                <motion.div
+                  key="job-board-detail-backdrop"
+                  role="presentation"
+                  aria-hidden
+                  className="fixed inset-0 z-[45] bg-black/50"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.22 }}
+                  onClick={() => setMobileDetailOpen(false)}
+                />
+                <motion.div
+                  key={activeJobId}
+                  role="dialog"
+                  aria-modal
+                  aria-label="Job details"
+                  className="fixed inset-x-0 bottom-0 z-[50] flex h-[min(92dvh,780px)] max-h-[min(92dvh,780px)] min-h-0 flex-col overflow-hidden rounded-t-[1.25rem] border border-[#00C9B1]/50 bg-[#060a0a] pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-6px_28px_-12px_rgba(0,201,177,0.45)]"
+                  initial={{ y: '100%' }}
+                  animate={{ y: 0 }}
+                  exit={{ y: '100%' }}
+                  transition={{ duration: 0.44, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/[0.06] px-3 py-2">
+                    <button
+                      type="button"
+                      onClick={() => setMobileDetailOpen(false)}
+                      className="inline-flex min-h-[44px] items-center gap-1.5 text-[13px] font-semibold text-[#00C9B1] transition-colors duration-150 hover:brightness-125"
+                    >
+                      <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden />
+                      Back to list
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMobileDetailOpen(false)}
+                      className="rounded-lg border border-white/12 p-2 text-white/45 transition-colors hover:border-[#00C9B1]/40 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]"
+                      aria-label="Close job details"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                  <div className="app-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y [webkit-overflow-scrolling:touch] px-3 pb-24 pt-1 lg:pb-4">
+                    <JobDetailPanel
+                      jobId={activeJobId}
+                      cvProfileId={cvProfileIdForDiscover}
+                    />
+                  </div>
+                </motion.div>
+              </>
+            ) : null}
+          </AnimatePresence>
+        ) : null}
       </div>
     </div>
   );

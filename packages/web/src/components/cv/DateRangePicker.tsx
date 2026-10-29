@@ -3,7 +3,11 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
-import { inferPickerGranularity, parseMonthFromCvDate, parseYearFromCvDate } from '@/lib/cvDate';
+import {
+  inferPickerGranularity,
+  parseMonthFromCvDate,
+  parseYearFromCvDate,
+} from '@/lib/cvDate';
 
 type DateRangePickerProps = {
   start: string;
@@ -15,10 +19,25 @@ type DateRangePickerProps = {
   defaultGranularity?: 'year' | 'month';
 };
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
 
 function yearWindowAnchor(...years: Array<number | null>): number {
-  const valid = years.filter((y): y is number => y != null && Number.isFinite(y));
+  const valid = years.filter(
+    (y): y is number => y != null && Number.isFinite(y),
+  );
   if (valid.length > 0) return Math.max(...valid) - 3;
   return new Date().getFullYear() - 3;
 }
@@ -32,8 +51,8 @@ export function DateRangePicker({
   defaultGranularity,
 }: DateRangePickerProps) {
   const [tab, setTab] = useState<'from' | 'to'>('from');
-  const [granularity, setGranularity] = useState<'year' | 'month'>(() =>
-    defaultGranularity ?? inferPickerGranularity(start, end),
+  const [granularity, setGranularity] = useState<'year' | 'month'>(
+    () => defaultGranularity ?? inferPickerGranularity(start, end),
   );
   const [draftStart, setDraftStart] = useState(start);
   const [draftEnd, setDraftEnd] = useState(end);
@@ -45,7 +64,9 @@ export function DateRangePicker({
   const [yearWindowStart, setYearWindowStart] = useState(() =>
     yearWindowAnchor(startYear, endYear),
   );
-  const [pickYear, setPickYear] = useState(startYear ?? new Date().getFullYear());
+  const [pickYear, setPickYear] = useState(
+    startYear ?? new Date().getFullYear(),
+  );
   const [pickMonth, setPickMonth] = useState(startMonth ?? 1);
 
   useEffect(() => {
@@ -158,11 +179,17 @@ export function DateRangePicker({
           </button>
         </div>
       ) : (
-        <div className="mb-2 rounded-lg bg-white/5 p-1 text-center text-sm text-[#00C9B1]">Date</div>
+        <div className="mb-2 rounded-lg bg-white/5 p-1 text-center text-sm text-[#00C9B1]">
+          Date
+        </div>
       )}
 
       <p className="mb-2 text-center text-[11px] text-white/40">
-        {mode === 'range' && tab === 'to' ? 'Select end' : mode === 'range' ? 'Select start' : 'Select date'}
+        {mode === 'range' && tab === 'to'
+          ? 'Select end'
+          : mode === 'range'
+            ? 'Select start'
+            : 'Select date'}
         {' · '}
         <span className="text-white/70">{preview}</span>
       </p>
@@ -176,7 +203,9 @@ export function DateRangePicker({
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <span className="text-[10px] font-medium uppercase tracking-wider text-white/35">Years</span>
+        <span className="text-[10px] font-medium uppercase tracking-wider text-white/35">
+          Years
+        </span>
         <button
           type="button"
           onClick={() => setYearWindowStart((y) => y + 12)}
@@ -190,7 +219,9 @@ export function DateRangePicker({
       <div className="mb-3 grid grid-cols-4 gap-1.5 sm:grid-cols-6">
         {years.map((y) => {
           const active =
-            (tab === 'from' && draftStart && parseYearFromCvDate(draftStart) === y) ||
+            (tab === 'from' &&
+              draftStart &&
+              parseYearFromCvDate(draftStart) === y) ||
             (tab === 'to' && draftEnd && parseYearFromCvDate(draftEnd) === y) ||
             pickYear === y;
           return (
@@ -251,7 +282,11 @@ export function DateRangePicker({
         >
           Clear
         </button>
-        {mode === 'range' && granularity === 'year' && tab === 'to' && draftStart && !draftEnd ? (
+        {mode === 'range' &&
+        granularity === 'year' &&
+        tab === 'to' &&
+        draftStart &&
+        !draftEnd ? (
           <button
             type="button"
             className="flex-1 rounded-lg bg-[#00C9B1] py-2 text-xs font-semibold text-[#080A0A]"

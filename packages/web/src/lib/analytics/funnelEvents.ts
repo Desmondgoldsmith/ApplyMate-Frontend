@@ -62,8 +62,6 @@ export function trackUpgradePrompted(
  * Call when paid upgrade succeeds (Stripe checkout webhook / success page).
  * Backend does not emit this yet — client is the source of truth today.
  */
-export function trackUpgradeCompleted(
-  context?: Record<string, unknown>,
-): void {
+export function trackUpgradeCompleted(context?: Record<string, unknown>): void {
   trackConversionFunnelEvent('upgrade_completed', context);
 }

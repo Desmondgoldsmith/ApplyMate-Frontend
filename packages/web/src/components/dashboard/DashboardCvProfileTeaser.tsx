@@ -17,8 +17,11 @@ type DashboardCvProfileTeaserProps = {
   onNewCv: () => void;
 };
 
-export function DashboardCvProfileTeaser({ onNewCv }: DashboardCvProfileTeaserProps) {
-  const { displayRows, listInconsistent, isBootstrapping } = useCvProfileRowsDisplay();
+export function DashboardCvProfileTeaser({
+  onNewCv,
+}: DashboardCvProfileTeaserProps) {
+  const { displayRows, listInconsistent, isBootstrapping } =
+    useCvProfileRowsDisplay();
   const totalCount = displayRows.length;
   const featured = useMemo(
     () => displayRows.find((p) => p.isDefault) ?? displayRows[0] ?? null,
@@ -31,7 +34,9 @@ export function DashboardCvProfileTeaser({ onNewCv }: DashboardCvProfileTeaserPr
   return (
     <section>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[15px] font-semibold text-white/90">Resume Clinic</h2>
+        <h2 className="text-[15px] font-semibold text-white/90">
+          Resume Clinic
+        </h2>
         <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
@@ -58,9 +63,16 @@ export function DashboardCvProfileTeaser({ onNewCv }: DashboardCvProfileTeaserPr
           <Skeleton height={120} borderRadius={14} />
         ) : !featured ? (
           <div className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] px-6 py-10 text-center">
-            <FileText className="mx-auto h-8 w-8 text-[#00C9B1]" strokeWidth={1.5} />
-            <p className="mt-2 text-[15px] font-semibold text-white">No CV yet</p>
-            <p className="mt-1 text-[13px] font-medium text-white/50">Create a CV to get started</p>
+            <FileText
+              className="mx-auto h-8 w-8 text-[#00C9B1]"
+              strokeWidth={1.5}
+            />
+            <p className="mt-2 text-[15px] font-semibold text-white">
+              No CV yet
+            </p>
+            <p className="mt-1 text-[13px] font-medium text-white/50">
+              Create a CV to get started
+            </p>
             <Button type="button" className="mt-5" onClick={onNewCv}>
               Create CV
             </Button>
@@ -69,9 +81,12 @@ export function DashboardCvProfileTeaser({ onNewCv }: DashboardCvProfileTeaserPr
           <>
             {listInconsistent ? (
               <p className="mb-3 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-[11px] font-medium text-amber-100/90">
-                Profile list API returned no rows; showing your primary CV. If this persists, check{' '}
-                <code className="rounded bg-black/30 px-1">NEXT_PUBLIC_API_URL</code> and auth — then fix the list
-                endpoint on the server.
+                Profile list API returned no rows; showing your primary CV. If
+                this persists, check{' '}
+                <code className="rounded bg-black/30 px-1">
+                  NEXT_PUBLIC_API_URL
+                </code>{' '}
+                and auth — then fix the list endpoint on the server.
               </p>
             ) : null}
             <div className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-4 transition-[border-color,background-color] duration-150 hover:border-white/[0.12] hover:bg-white/[0.045] sm:p-5">
@@ -80,14 +95,20 @@ export function DashboardCvProfileTeaser({ onNewCv }: DashboardCvProfileTeaserPr
                   <Star
                     className={cn(
                       'mt-0.5 h-4 w-4 shrink-0',
-                      featured.isDefault ? 'fill-[#00C9B1] text-[#00C9B1]' : 'text-white/25',
+                      featured.isDefault
+                        ? 'fill-[#00C9B1] text-[#00C9B1]'
+                        : 'text-white/25',
                     )}
                     aria-hidden
                   />
                   <div className="min-w-0">
-                    <p className="truncate text-[15px] font-semibold text-white">{featured.name}</p>
+                    <p className="truncate text-[15px] font-semibold text-white">
+                      {featured.name}
+                    </p>
                     {featured.headline?.trim() ? (
-                      <p className="mt-1 line-clamp-2 text-[13px] font-medium text-white/50">{featured.headline}</p>
+                      <p className="mt-1 line-clamp-2 text-[13px] font-medium text-white/50">
+                        {featured.headline}
+                      </p>
                     ) : null}
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {featured.isDefault ? (
@@ -114,7 +135,9 @@ export function DashboardCvProfileTeaser({ onNewCv }: DashboardCvProfileTeaserPr
                         stroke={2.5}
                         unit="score"
                         label={
-                          scoreNum != null ? `CV score ${scoreNum} out of 100` : 'CV score not available'
+                          scoreNum != null
+                            ? `CV score ${scoreNum} out of 100`
+                            : 'CV score not available'
                         }
                       />
                       <InfoHint

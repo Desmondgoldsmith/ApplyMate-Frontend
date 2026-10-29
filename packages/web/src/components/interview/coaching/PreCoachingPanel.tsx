@@ -3,7 +3,10 @@
 import { memo } from 'react';
 import { Lightbulb } from 'lucide-react';
 
-import type { CoachingLoadStatus, PreCoachingResponse } from '@/lib/interview-coaching-types';
+import type {
+  CoachingLoadStatus,
+  PreCoachingResponse,
+} from '@/lib/interview-coaching-types';
 import type { CoachingSuggestedStructure } from '@/lib/interview-coaching-types';
 import { cn } from '@/lib/utils';
 
@@ -53,12 +56,17 @@ export const PreCoachingPanel = memo(function PreCoachingPanel({
       aria-label="Guidance before you answer"
     >
       <div className="flex items-center gap-2">
-        <Lightbulb className="h-4 w-4 shrink-0 text-[var(--text-teal)]" aria-hidden />
+        <Lightbulb
+          className="h-4 w-4 shrink-0 text-[var(--text-teal)]"
+          aria-hidden
+        />
         <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-teal)]">
           Before you answer
         </p>
         {data?.cacheHit ? (
-          <span className="ml-auto text-[9px] text-[var(--text-muted)]">Cached</span>
+          <span className="ml-auto text-[9px] text-[var(--text-muted)]">
+            Cached
+          </span>
         ) : null}
       </div>
 
@@ -85,7 +93,9 @@ export const PreCoachingPanel = memo(function PreCoachingPanel({
             <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
               What the interviewer wants
             </p>
-            <p className="mt-1 leading-relaxed text-[var(--text-primary)]">{data.intent}</p>
+            <p className="mt-1 leading-relaxed text-[var(--text-primary)]">
+              {data.intent}
+            </p>
             {data.interviewerExpectation.length > 0 ? (
               <ul className="mt-1.5 list-inside list-disc space-y-0.5 text-xs text-[var(--text-secondary)]">
                 {data.interviewerExpectation.map((line) => (

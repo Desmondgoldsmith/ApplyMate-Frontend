@@ -22,7 +22,10 @@ function parseTailorStatus(raw: unknown): TailorStatus {
   return 'none';
 }
 
-function parseTailorCtaMode(raw: unknown, fallback: TailorCtaMode): TailorCtaMode {
+function parseTailorCtaMode(
+  raw: unknown,
+  fallback: TailorCtaMode,
+): TailorCtaMode {
   if (typeof raw !== 'string') return fallback;
   const s = raw.trim().toLowerCase();
   if (s === 'start' || s === 'continue' || s === 'view') return s;
@@ -41,7 +44,9 @@ export function parseTailorUiFields(
   body: Record<string, unknown>,
   hasTailorDraft?: boolean,
 ): Partial<TailorUiState> {
-  const tailorStatus = parseTailorStatus(body.tailorStatus ?? body.tailor_status);
+  const tailorStatus = parseTailorStatus(
+    body.tailorStatus ?? body.tailor_status,
+  );
   const isTailoredRaw = body.isTailored === true || body.is_tailored === true;
   const tailorDraftIdRaw =
     (typeof body.tailorDraftId === 'string' && body.tailorDraftId.trim()) ||
@@ -70,14 +75,18 @@ export function parseTailorUiFields(
 
   const tailorCtaLabelRaw =
     (typeof body.tailorCtaLabel === 'string' && body.tailorCtaLabel.trim()) ||
-    (typeof body.tailor_cta_label === 'string' && body.tailor_cta_label.trim()) ||
+    (typeof body.tailor_cta_label === 'string' &&
+      body.tailor_cta_label.trim()) ||
     '';
 
-  const tailorEditorOpenableRaw = body.tailorEditorOpenable ?? body.tailor_editor_openable;
+  const tailorEditorOpenableRaw =
+    body.tailorEditorOpenable ?? body.tailor_editor_openable;
   const tailorEditorOpenable =
     typeof tailorEditorOpenableRaw === 'boolean'
       ? tailorEditorOpenableRaw
-      : isTailorComplete || hasTailorDraft === true || Boolean(tailorDraftIdRaw);
+      : isTailorComplete ||
+        hasTailorDraft === true ||
+        Boolean(tailorDraftIdRaw);
 
   return {
     tailorStatus: resolvedStatus,

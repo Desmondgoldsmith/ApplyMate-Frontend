@@ -5,7 +5,10 @@ import { queryKeys } from '@/lib/queryKeys';
 export type ApplyTailorMutationRefs = {
   tailorBaselineScoreRef: { current: number | null };
   setScoreBeforeTailor: (score: number | null) => void;
-  mergeJobAnalysisForApply: (prev: JobAnalysis | null, incoming: JobAnalysis) => JobAnalysis;
+  mergeJobAnalysisForApply: (
+    prev: JobAnalysis | null,
+    incoming: JobAnalysis,
+  ) => JobAnalysis;
 };
 
 /** Sync job analysis caches after tailor accept so Hub/analyzer do not show stale factors. */
@@ -21,7 +24,9 @@ export function commitTailorJobAnalysis(
   void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
   void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
   if (jobId) {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analysis(jobId) });
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.jobs.analysis(jobId),
+    });
   }
 }
 

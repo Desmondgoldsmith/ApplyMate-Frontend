@@ -16,9 +16,13 @@ function invalidateReminderSideEffects(
   queryClient: ReturnType<typeof useQueryClient>,
   jobAnalysisId?: string | null,
 ) {
-  void queryClient.invalidateQueries({ queryKey: queryKeys.hub.remindersRoot() });
+  void queryClient.invalidateQueries({
+    queryKey: queryKeys.hub.remindersRoot(),
+  });
   if (jobAnalysisId) {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analysis(jobAnalysisId) });
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.jobs.analysis(jobAnalysisId),
+    });
   }
   void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
   void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
@@ -54,7 +58,11 @@ export function useHubReminders(scope: HubReminderScope) {
   const pending = (query.data ?? []).filter((r) => r.status === 'pending');
 
   const createReminder = useMutation({
-    mutationFn: (payload: { remindAt: string; title?: string; note?: string }) => {
+    mutationFn: (payload: {
+      remindAt: string;
+      title?: string;
+      note?: string;
+    }) => {
       if (scope.jobAnalysisId) {
         return api.jobs.createHubReminder({
           jobAnalysisId: scope.jobAnalysisId,
@@ -134,7 +142,9 @@ export function useHubReminders(scope: HubReminderScope) {
             ? {
                 ...row,
                 ...(args.status !== undefined ? { status: args.status } : {}),
-                ...(args.remindAt !== undefined ? { remindAt: args.remindAt } : {}),
+                ...(args.remindAt !== undefined
+                  ? { remindAt: args.remindAt }
+                  : {}),
                 ...(args.title !== undefined ? { title: args.title } : {}),
                 ...(args.note !== undefined ? { note: args.note } : {}),
                 updatedAt: new Date().toISOString(),

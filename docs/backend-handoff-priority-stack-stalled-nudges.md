@@ -3,7 +3,7 @@
 **Audience:** Backend / platform team  
 **Goal:** Power a **unified “what to do today”** experience, **rule-based stalled-job signals**, and **credible re-engagement** (email/push) so the product feels **smarter and more helpful** without relying on opaque LLM calls for core logic.
 
-**Product north star (one sentence):** After login, the user should see **one prioritized list** of *new opportunities*, *pipeline items that need attention*, and *due follow-ups* — with **explainable** reasons and **suggested next actions**.
+**Product north star (one sentence):** After login, the user should see **one prioritized list** of _new opportunities_, _pipeline items that need attention_, and _due follow-ups_ — with **explainable** reasons and **suggested next actions**.
 
 ---
 
@@ -18,18 +18,18 @@
 
 ## 2. Pillar A — Stalled-job intelligence (rules, not magic)
 
-**User-facing idea:** “This job hasn’t moved in *N* days” + a **short reason** + **1–3 suggested actions** (e.g. set follow-up reminder, draft follow-up email context, move stage, flag “waiting on employer”).
+**User-facing idea:** “This job hasn’t moved in _N_ days” + a **short reason** + **1–3 suggested actions** (e.g. set follow-up reminder, draft follow-up email context, move stage, flag “waiting on employer”).
 
 ### 2.1 Suggested server-side outputs (per tracked entity)
 
 Attach to entities you already expose to the hub pipeline (at minimum **Application**, **JobAnalysis**, **HubBookmark** as relevant):
 
-| Field | Purpose |
-|--------|---------|
-| `stalled` | boolean |
-| `stallSince` | ISO timestamp — first day we consider “no meaningful movement” (define rule set below) |
-| `stallReasonCodes` | string[] — machine-readable (see §2.3) |
-| `suggestedActions` | discriminated union or enum list — **deterministic** CTAs the client can route |
+| Field              | Purpose                                                                                |
+| ------------------ | -------------------------------------------------------------------------------------- |
+| `stalled`          | boolean                                                                                |
+| `stallSince`       | ISO timestamp — first day we consider “no meaningful movement” (define rule set below) |
+| `stallReasonCodes` | string[] — machine-readable (see §2.3)                                                 |
+| `suggestedActions` | discriminated union or enum list — **deterministic** CTAs the client can route         |
 
 ### 2.2 Example rules (initial set — product can tune thresholds)
 
@@ -56,9 +56,9 @@ Document that the web app calls existing endpoints (`GET /api/dashboard/today-pl
 
 **Option 2 — Single aggregate endpoint (recommended for consistency + notifications parity):**
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| `GET` | `/api/dashboard/next-moves` | Single ranked feed for “today” |
+| Method | Path                        | Purpose                        |
+| ------ | --------------------------- | ------------------------------ |
+| `GET`  | `/api/dashboard/next-moves` | Single ranked feed for “today” |
 
 **Suggested response shape (illustrative — refine with OpenAPI):**
 
@@ -132,4 +132,4 @@ Real **apply acceleration** (extension/autofill) is mostly client + partner work
 
 ---
 
-*This handoff is intentionally **rules-first** and **explainable**. LLM features can layer on later; they should not block the MVP.*
+_This handoff is intentionally **rules-first** and **explainable**. LLM features can layer on later; they should not block the MVP._

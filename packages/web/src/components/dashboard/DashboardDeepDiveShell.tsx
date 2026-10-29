@@ -25,7 +25,10 @@ export function DashboardDeepDiveShell({ summary, anchorId, children }: Props) {
       >
         <span className="text-[13px] font-medium text-white/85">{summary}</span>
         <ChevronDown
-          className={cn('h-4 w-4 shrink-0 text-white/45 transition-transform', open && 'rotate-180')}
+          className={cn(
+            'h-4 w-4 shrink-0 text-white/45 transition-transform',
+            open && 'rotate-180',
+          )}
           aria-hidden
         />
       </button>

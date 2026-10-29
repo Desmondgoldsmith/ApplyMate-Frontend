@@ -28,7 +28,12 @@ export function CvCreationModalHeader({
   className,
 }: CvCreationModalHeaderProps) {
   return (
-    <div className={cn('shrink-0 border-b border-white/[0.06] px-1 pb-4 pt-1', className)}>
+    <div
+      className={cn(
+        'shrink-0 border-b border-white/[0.06] px-1 pb-4 pt-1',
+        className,
+      )}
+    >
       <div className="flex min-h-9 items-center justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-center">
           {onBack ? (
@@ -59,9 +64,15 @@ export function CvCreationModalHeader({
         )}
       </div>
       {title ? (
-        <h2 className="mt-3 text-lg font-bold leading-snug text-white">{title}</h2>
+        <h2 className="mt-3 text-lg font-bold leading-snug text-white">
+          {title}
+        </h2>
       ) : null}
-      {subtitle ? <p className="mt-1.5 text-[13px] leading-relaxed text-white/55">{subtitle}</p> : null}
+      {subtitle ? (
+        <p className="mt-1.5 text-[13px] leading-relaxed text-white/55">
+          {subtitle}
+        </p>
+      ) : null}
     </div>
   );
 }

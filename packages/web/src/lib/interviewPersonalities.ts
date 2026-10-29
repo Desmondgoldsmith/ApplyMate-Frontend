@@ -2,12 +2,21 @@ import type { InterviewPersonality } from '@/lib/api';
 
 export type AvatarPersonalityId = InterviewPersonality | 'jordan';
 
-const PERSONALITY_KEYS = new Set<AvatarPersonalityId>(['alex', 'sarah', 'marcus', 'zoe', 'jordan']);
+const PERSONALITY_KEYS = new Set<AvatarPersonalityId>([
+  'alex',
+  'sarah',
+  'marcus',
+  'zoe',
+  'jordan',
+]);
 
 /** Maps API values (any casing) to a valid personality id; defaults to alex. */
-export function normalizeInterviewPersonalityId(raw: unknown): InterviewPersonality {
+export function normalizeInterviewPersonalityId(
+  raw: unknown,
+): InterviewPersonality {
   const s = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
-  if (PERSONALITY_KEYS.has(s as InterviewPersonality)) return s as InterviewPersonality;
+  if (PERSONALITY_KEYS.has(s as InterviewPersonality))
+    return s as InterviewPersonality;
   return 'alex';
 }
 
@@ -46,14 +55,18 @@ export const PERSONALITIES: Record<InterviewPersonality, PersonalityConfig> = {
     greetingMessage:
       "Hi! I'm Desmond Goldsmith, and I'm really looking forward to learning more about you today. There are no trick questions here — just a conversation. Ready to get started?",
     postInterviewThankYou:
-      "Thank you so much for your time today — you did really well. Your personalised feedback is usually ready in about thirty seconds to a minute and a half. You can stay on this screen, or check back anytime from your interview history.",
+      'Thank you so much for your time today — you did really well. Your personalised feedback is usually ready in about thirty seconds to a minute and a half. You can stay on this screen, or check back anytime from your interview history.',
     transitionPhrases: [
       "That's really helpful, thank you.",
       'I appreciate you sharing that.',
       "Great, let's keep going.",
       'Thank you for that answer.',
     ],
-    encouragementPhrases: ["You're doing great.", 'That was a strong answer.', 'I like how you framed that.'],
+    encouragementPhrases: [
+      "You're doing great.",
+      'That was a strong answer.',
+      'I like how you framed that.',
+    ],
   },
   sarah: {
     id: 'sarah',
@@ -70,9 +83,18 @@ export const PERSONALITIES: Record<InterviewPersonality, PersonalityConfig> = {
     greetingMessage:
       "Good day. I'm Amara Osei, and I'll be conducting your interview today. We'll work through several structured questions. Please use specific examples where possible. Shall we begin?",
     postInterviewThankYou:
-      "Thank you for completing the interview. Your scored results and feedback are typically available within about thirty seconds to a minute and a half. You may remain here while they load, or return later via interview history.",
-    transitionPhrases: ['Understood. Moving on.', 'Thank you. Next question.', "Noted. Let's continue.", 'Alright, next.'],
-    encouragementPhrases: ['That was well-structured.', 'Good use of a specific example.', 'Clear and concise.'],
+      'Thank you for completing the interview. Your scored results and feedback are typically available within about thirty seconds to a minute and a half. You may remain here while they load, or return later via interview history.',
+    transitionPhrases: [
+      'Understood. Moving on.',
+      'Thank you. Next question.',
+      "Noted. Let's continue.",
+      'Alright, next.',
+    ],
+    encouragementPhrases: [
+      'That was well-structured.',
+      'Good use of a specific example.',
+      'Clear and concise.',
+    ],
   },
   marcus: {
     id: 'marcus',
@@ -90,7 +112,12 @@ export const PERSONALITIES: Record<InterviewPersonality, PersonalityConfig> = {
       "I'm Isaac Kumi. I'll be direct with you — I ask tough questions because that's what the real interview will be like. The goal is to prepare you properly. Ready?",
     postInterviewThankYou:
       "Thanks — we're done. Your results are usually back in about thirty seconds to a minute and a half. Hang tight here, or grab them later from interview history.",
-    transitionPhrases: ['Okay. Next question.', 'Alright. Moving forward.', "Fine. Let's continue.", 'Next.'],
+    transitionPhrases: [
+      'Okay. Next question.',
+      'Alright. Moving forward.',
+      "Fine. Let's continue.",
+      'Next.',
+    ],
     encouragementPhrases: [
       "That's the right approach.",
       "Good — that's what I wanted to hear.",
@@ -112,9 +139,18 @@ export const PERSONALITIES: Record<InterviewPersonality, PersonalityConfig> = {
     greetingMessage:
       "Hi — I'm Priya Sharma. Walk me through your reasoning step by step on each question. I care about how you think, not just the final answer. Ready?",
     postInterviewThankYou:
-      "Hey, thank you — that was great. Your results should land in roughly thirty seconds to a minute and a half. You can chill here while they load, or pop back in from interview history whenever works for you.",
-    transitionPhrases: ['Love it! Next one.', 'Cool, okay next.', 'Awesome. So...', 'Got it! Moving on.'],
-    encouragementPhrases: ["Oh that's a great example!", 'I love how you handled that.', 'Yes! Exactly.'],
+      'Hey, thank you — that was great. Your results should land in roughly thirty seconds to a minute and a half. You can chill here while they load, or pop back in from interview history whenever works for you.',
+    transitionPhrases: [
+      'Love it! Next one.',
+      'Cool, okay next.',
+      'Awesome. So...',
+      'Got it! Moving on.',
+    ],
+    encouragementPhrases: [
+      "Oh that's a great example!",
+      'I love how you handled that.',
+      'Yes! Exactly.',
+    ],
   },
 };
 
@@ -139,7 +175,9 @@ export const JORDAN_PERSONALITY: PersonalityConfig = {
   encouragementPhrases: [],
 };
 
-export function personalityConfigForAvatar(id: AvatarPersonalityId): PersonalityConfig {
+export function personalityConfigForAvatar(
+  id: AvatarPersonalityId,
+): PersonalityConfig {
   if (id === 'jordan') return JORDAN_PERSONALITY;
   return PERSONALITIES[id];
 }

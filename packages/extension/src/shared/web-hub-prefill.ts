@@ -64,7 +64,10 @@ export async function openWebAppTabWithHubPrefill(
   chrome.tabs.onUpdated.addListener(listener);
 }
 
-function injectAnalyzerPrefill(tabId: number, payload: AnalyzerPrefillPayload): void {
+function injectAnalyzerPrefill(
+  tabId: number,
+  payload: AnalyzerPrefillPayload,
+): void {
   const description = payload.description?.trim();
   if (!description) return;
 
@@ -87,7 +90,8 @@ function injectAnalyzerPrefill(tabId: number, payload: AnalyzerPrefillPayload): 
           );
           localStorage.setItem(lsKeys.jd, data.description);
           if (data.title.trim()) localStorage.setItem(lsKeys.title, data.title);
-          if (data.company.trim()) localStorage.setItem(lsKeys.company, data.company);
+          if (data.company.trim())
+            localStorage.setItem(lsKeys.company, data.company);
         } catch {
           /* ignore quota / private mode */
         }

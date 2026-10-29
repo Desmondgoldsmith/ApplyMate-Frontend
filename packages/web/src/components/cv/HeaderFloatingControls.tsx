@@ -10,7 +10,10 @@ import {
   useCVEdit,
 } from '@/components/cv/CVEditContext';
 import { useToast } from '@/components/ui/Toast';
-import { compressImageFileToCvDataUrl, CV_PHOTO_TOO_LARGE_USER_MESSAGE } from '@/lib/cvPhotoCompress';
+import {
+  compressImageFileToCvDataUrl,
+  CV_PHOTO_TOO_LARGE_USER_MESSAGE,
+} from '@/lib/cvPhotoCompress';
 import { cn } from '@/lib/utils';
 
 function ToggleRow({
@@ -49,7 +52,11 @@ function ToggleRow({
   );
 }
 
-export function HeaderFloatingControls({ toolbarAlign = 'center' }: { toolbarAlign?: 'center' | 'end' }) {
+export function HeaderFloatingControls({
+  toolbarAlign = 'center',
+}: {
+  toolbarAlign?: 'center' | 'end';
+}) {
   const ctx = useCVEdit();
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -106,7 +113,8 @@ export function HeaderFloatingControls({ toolbarAlign = 'center' }: { toolbarAli
         });
         set({ showPhoto: true });
       } catch (e) {
-        const msg = e instanceof Error ? e.message : CV_PHOTO_TOO_LARGE_USER_MESSAGE;
+        const msg =
+          e instanceof Error ? e.message : CV_PHOTO_TOO_LARGE_USER_MESSAGE;
         toast.error(msg);
       }
     })();
@@ -172,38 +180,82 @@ export function HeaderFloatingControls({ toolbarAlign = 'center' }: { toolbarAli
               transition={{ duration: 0.15 }}
               className={cn(
                 'absolute top-full z-50 mt-2 w-[min(18rem,calc(100vw-2rem))] max-h-[400px] overflow-y-auto overscroll-contain rounded-xl border border-white/[0.12] bg-[#141818] p-3 shadow-2xl',
-                toolbarAlign === 'end' ? 'right-0 left-auto' : 'left-1/2 -translate-x-1/2',
+                toolbarAlign === 'end'
+                  ? 'right-0 left-auto'
+                  : 'left-1/2 -translate-x-1/2',
               )}
               onClick={(e) => e.stopPropagation()}
             >
-              <ToggleRow label="Name" on={hp.showTitle} onToggle={() => set({ showTitle: !hp.showTitle })} />
+              <ToggleRow
+                label="Name"
+                on={hp.showTitle}
+                onToggle={() => set({ showTitle: !hp.showTitle })}
+              />
               <ToggleRow
                 label="Title / Headline"
                 on={hp.showHeadline}
                 onToggle={() => set({ showHeadline: !hp.showHeadline })}
               />
-              <ToggleRow label="Phone" on={hp.showPhone} onToggle={() => set({ showPhone: !hp.showPhone })} />
-              <ToggleRow label="LinkedIn" on={hp.showLinkedIn} onToggle={() => set({ showLinkedIn: !hp.showLinkedIn })} />
-              <ToggleRow label="GitHub" on={hp.showGithub} onToggle={() => set({ showGithub: !hp.showGithub })} />
+              <ToggleRow
+                label="Phone"
+                on={hp.showPhone}
+                onToggle={() => set({ showPhone: !hp.showPhone })}
+              />
+              <ToggleRow
+                label="LinkedIn"
+                on={hp.showLinkedIn}
+                onToggle={() => set({ showLinkedIn: !hp.showLinkedIn })}
+              />
+              <ToggleRow
+                label="GitHub"
+                on={hp.showGithub}
+                onToggle={() => set({ showGithub: !hp.showGithub })}
+              />
               <ToggleRow
                 label="Website"
                 on={hp.showWebsiteToggle}
-                onToggle={() => set({ showWebsiteToggle: !hp.showWebsiteToggle })}
+                onToggle={() =>
+                  set({ showWebsiteToggle: !hp.showWebsiteToggle })
+                }
               />
               <ToggleRow
                 label="Portfolio"
                 on={hp.showPortfolioToggle}
-                onToggle={() => set({ showPortfolioToggle: !hp.showPortfolioToggle })}
+                onToggle={() =>
+                  set({ showPortfolioToggle: !hp.showPortfolioToggle })
+                }
               />
-              <ToggleRow label="Email" on={hp.showEmail} onToggle={() => set({ showEmail: !hp.showEmail })} />
-              <ToggleRow label="Location" on={hp.showLocation} onToggle={() => set({ showLocation: !hp.showLocation })} />
-              <ToggleRow label="Nationality" on={hp.nationality} onToggle={() => set({ nationality: !hp.nationality })} />
-              <ToggleRow label="Date of Birth" on={hp.dateOfBirth} onToggle={() => set({ dateOfBirth: !hp.dateOfBirth })} />
+              <ToggleRow
+                label="Email"
+                on={hp.showEmail}
+                onToggle={() => set({ showEmail: !hp.showEmail })}
+              />
+              <ToggleRow
+                label="Location"
+                on={hp.showLocation}
+                onToggle={() => set({ showLocation: !hp.showLocation })}
+              />
+              <ToggleRow
+                label="Nationality"
+                on={hp.nationality}
+                onToggle={() => set({ nationality: !hp.nationality })}
+              />
+              <ToggleRow
+                label="Date of Birth"
+                on={hp.dateOfBirth}
+                onToggle={() => set({ dateOfBirth: !hp.dateOfBirth })}
+              />
               {photoUploadEnabled ? (
                 <>
-                  <ToggleRow label="Photo" on={hp.showPhoto} onToggle={() => set({ showPhoto: !hp.showPhoto })} />
+                  <ToggleRow
+                    label="Photo"
+                    on={hp.showPhoto}
+                    onToggle={() => set({ showPhoto: !hp.showPhoto })}
+                  />
                   <div className="my-2 border-t border-white/10" />
-                  <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-white/35">Photo style</p>
+                  <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-white/35">
+                    Photo style
+                  </p>
                   <div className="flex gap-1">
                     {(['circle', 'square', 'avatar'] as const).map((s) => (
                       <button
@@ -223,8 +275,16 @@ export function HeaderFloatingControls({ toolbarAlign = 'center' }: { toolbarAli
                   </div>
                 </>
               ) : null}
-              <ToggleRow label="Uppercase name" on={hp.uppercaseName} onToggle={() => set({ uppercaseName: !hp.uppercaseName })} />
-              <ToggleRow label="Extra field" on={hp.extraField} onToggle={() => set({ extraField: !hp.extraField })} />
+              <ToggleRow
+                label="Uppercase name"
+                on={hp.uppercaseName}
+                onToggle={() => set({ uppercaseName: !hp.uppercaseName })}
+              />
+              <ToggleRow
+                label="Extra field"
+                on={hp.extraField}
+                onToggle={() => set({ extraField: !hp.extraField })}
+              />
             </motion.div>
           ) : null}
         </AnimatePresence>

@@ -15,7 +15,10 @@ export function Skeleton({
 }: SkeletonProps) {
   return (
     <div
-      className={cn('animate-[shimmer_1.5s_ease-in-out_infinite] bg-[length:200%_100%]', className)}
+      className={cn(
+        'animate-[shimmer_1.5s_ease-in-out_infinite] bg-[length:200%_100%]',
+        className,
+      )}
       style={{
         width,
         height,
@@ -26,4 +29,3 @@ export function Skeleton({
     />
   );
 }
-

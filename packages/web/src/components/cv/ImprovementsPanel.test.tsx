@@ -31,25 +31,27 @@ vi.mock('@/components/ui/Toast', () => ({
   }),
 }));
 
-const { applyImprovement, rejectSuggestion, selfFixSuggestion } = vi.hoisted(() => ({
-  applyImprovement: vi.fn().mockResolvedValue({
-    success: true,
-    pointer: 'imp-1',
-    improvementId: 'imp-1',
-    section: 'summary',
-    before: {},
-    after: {},
-    changedFields: [],
-    draftHash: null,
-    message: '',
+const { applyImprovement, rejectSuggestion, selfFixSuggestion } = vi.hoisted(
+  () => ({
+    applyImprovement: vi.fn().mockResolvedValue({
+      success: true,
+      pointer: 'imp-1',
+      improvementId: 'imp-1',
+      section: 'summary',
+      before: {},
+      after: {},
+      changedFields: [],
+      draftHash: null,
+      message: '',
+    }),
+    rejectSuggestion: vi
+      .fn()
+      .mockResolvedValue({ pendingSuggestionsCount: 0, cvRevisionId: null }),
+    selfFixSuggestion: vi
+      .fn()
+      .mockResolvedValue({ pendingSuggestionsCount: 1, cvRevisionId: null }),
   }),
-  rejectSuggestion: vi
-    .fn()
-    .mockResolvedValue({ pendingSuggestionsCount: 0, cvRevisionId: null }),
-  selfFixSuggestion: vi
-    .fn()
-    .mockResolvedValue({ pendingSuggestionsCount: 1, cvRevisionId: null }),
-}));
+);
 
 vi.mock('@/lib/api', () => ({
   api: {
@@ -535,4 +537,3 @@ describe('ImprovementsPanel', () => {
     expect(data?.improvements ?? []).toHaveLength(0);
   });
 });
-

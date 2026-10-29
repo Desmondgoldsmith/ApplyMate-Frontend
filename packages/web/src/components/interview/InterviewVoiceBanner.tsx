@@ -56,11 +56,18 @@ export function InterviewVoiceBanner({
         ) : null}
       </div>
       {'requestId' in issue && issue.requestId ? (
-        <p className="mt-1 text-xs text-amber-200/70">Reference: {issue.requestId}</p>
+        <p className="mt-1 text-xs text-amber-200/70">
+          Reference: {issue.requestId}
+        </p>
       ) : null}
       <div className="mt-3 flex flex-wrap gap-2">
         {onRetryPremium ? (
-          <Button type="button" variant="ghost" className="text-xs" onClick={onRetryPremium}>
+          <Button
+            type="button"
+            variant="ghost"
+            className="text-xs"
+            onClick={onRetryPremium}
+          >
             Retry premium voice
           </Button>
         ) : null}

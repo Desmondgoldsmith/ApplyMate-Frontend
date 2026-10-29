@@ -32,8 +32,7 @@ export function WeeklyStallSummaryPanel({
   emptyStateCopy,
   sectionTitle,
 }: PanelProps) {
-  const heading =
-    sectionTitle?.trim() || 'Jobs to Revisit';
+  const heading = sectionTitle?.trim() || 'Jobs to Revisit';
   if (isLoading) {
     return (
       <div className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-5 sm:p-6">
@@ -50,7 +49,8 @@ export function WeeklyStallSummaryPanel({
     return (
       <div className="rounded-[14px] border border-rose-500/25 bg-rose-500/[0.06] p-5 sm:p-6">
         <p className="text-[13px] font-medium text-rose-100/90">
-          Could not load your pipeline summary. Other dashboard content is unchanged.
+          Could not load your pipeline summary. Other dashboard content is
+          unchanged.
         </p>
         <button
           type="button"
@@ -71,8 +71,12 @@ export function WeeklyStallSummaryPanel({
           <div className="flex min-w-0 items-center gap-2.5">
             <Compass className="h-5 w-5 shrink-0 text-[#00C9B1]" aria-hidden />
             <div className="min-w-0">
-              <h2 className="text-[16px] font-semibold text-white">{heading}</h2>
-              <p className="mt-1 text-[11px] font-medium text-white/35">Updating your follow-ups.</p>
+              <h2 className="text-[16px] font-semibold text-white">
+                {heading}
+              </h2>
+              <p className="mt-1 text-[11px] font-medium text-white/35">
+                Updating your follow-ups.
+              </p>
             </div>
           </div>
           <button
@@ -94,7 +98,10 @@ export function WeeklyStallSummaryPanel({
 
   const refreshed =
     data.generatedAt && !Number.isNaN(Date.parse(data.generatedAt))
-      ? new Date(data.generatedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+      ? new Date(data.generatedAt).toLocaleTimeString(undefined, {
+          hour: 'numeric',
+          minute: '2-digit',
+        })
       : null;
 
   const shellHeader = (
@@ -132,7 +139,10 @@ export function WeeklyStallSummaryPanel({
         disabled={isFetching}
         className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 text-[13px] font-medium text-[#00C9B1] transition-opacity hover:underline disabled:opacity-60 sm:min-h-0"
       >
-        <RotateCw className={cn('h-3.5 w-3.5', isFetching && 'animate-spin')} aria-hidden />
+        <RotateCw
+          className={cn('h-3.5 w-3.5', isFetching && 'animate-spin')}
+          aria-hidden
+        />
         Refresh
       </button>
     </div>
@@ -159,7 +169,9 @@ export function WeeklyStallSummaryPanel({
       <div className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-5 sm:p-6">
         {shellHeader}
         <p className="text-[14px] font-semibold text-white">{copy.title}</p>
-        <p className="mt-2 text-[13px] font-medium leading-relaxed text-white/45">{copy.body}</p>
+        <p className="mt-2 text-[13px] font-medium leading-relaxed text-white/45">
+          {copy.body}
+        </p>
         <Link
           href="/dashboard/settings?tab=notifications"
           className="mt-4 inline-flex min-h-[44px] items-center text-[13px] font-medium text-[#00C9B1] hover:underline sm:min-h-0"
@@ -183,14 +195,21 @@ export function WeeklyStallSummaryPanel({
   }
 
   const moreCount = Math.max(0, data.totalCount - data.items.length);
-  const showMoreTarget = data.showMoreHref?.startsWith('/') ? data.showMoreHref : '/dashboard/next-moves';
-  const revisitCtaLabel = (stage: string | null | undefined, ctaHint: WeeklyStallSummaryPayload['items'][number]['ctaHint']) => {
+  const showMoreTarget = data.showMoreHref?.startsWith('/')
+    ? data.showMoreHref
+    : '/dashboard/next-moves';
+  const revisitCtaLabel = (
+    stage: string | null | undefined,
+    ctaHint: WeeklyStallSummaryPayload['items'][number]['ctaHint'],
+  ) => {
     const s = (stage ?? '').trim().toLowerCase();
     if (s.includes('interview')) return 'Prep interview';
-    if (s.includes('offer') || s.includes('negotiat')) return 'Review recruiter activity';
+    if (s.includes('offer') || s.includes('negotiat'))
+      return 'Review recruiter activity';
     if (s.includes('applied') || s.includes('application')) return 'Follow up';
     if (s.includes('tailor')) return 'Tailor CV';
-    if (s.includes('screen') || s.includes('assessment')) return 'Continue applying';
+    if (s.includes('screen') || s.includes('assessment'))
+      return 'Continue applying';
     return ctaHint === 'OPEN_JOB_ANALYZE' ? 'Continue applying' : 'Follow up';
   };
 
@@ -198,22 +217,31 @@ export function WeeklyStallSummaryPanel({
     <div className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-5 sm:p-6">
       {shellHeader}
       <p className="mb-4 text-[13px] font-medium text-white/45">
-        These applications haven&apos;t moved in a while. One action each could change that.
+        These applications haven&apos;t moved in a while. One action each could
+        change that.
       </p>
       <ul className="space-y-2">
         {data.items.map((it) => {
           const href = weeklyStallItemHref(it) ?? '/dashboard/jobs';
           const company = it.company.trim() || 'Company';
           const stageSuffix =
-            it.kind === 'bookmark' && it.stage?.trim() ? ` · ${it.stage.trim()}` : '';
+            it.kind === 'bookmark' && it.stage?.trim()
+              ? ` · ${it.stage.trim()}`
+              : '';
           const shellClass = cn(
             'flex cursor-pointer items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 transition-[border-color,background-color] duration-150 hover:border-white/[0.12] hover:bg-white/[0.05]',
           );
           const inner = (
             <>
-              <CompanyLogo company={company} logoUrl={it.companyLogoUrl} size="md" />
+              <CompanyLogo
+                company={company}
+                logoUrl={it.companyLogoUrl}
+                size="md"
+              />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-semibold text-white">{it.title}</p>
+                <p className="truncate text-[13px] font-semibold text-white">
+                  {it.title}
+                </p>
                 <p className="truncate text-[11px] font-medium text-white/40">
                   {company}
                   {stageSuffix}

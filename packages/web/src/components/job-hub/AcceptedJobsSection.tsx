@@ -39,7 +39,10 @@ export function AcceptedJobsSection({
   if (variant === 'rail') {
     return (
       <section
-        className={cn('rounded-2xl border border-amber-400/20 bg-amber-500/[0.04] p-3', className)}
+        className={cn(
+          'rounded-2xl border border-amber-400/20 bg-amber-500/[0.04] p-3',
+          className,
+        )}
       >
         <div className="mb-2 flex items-center gap-2">
           <Trophy className="h-4 w-4 text-amber-300" aria-hidden />
@@ -56,8 +59,12 @@ export function AcceptedJobsSection({
                 className="w-full rounded-lg border border-white/[0.08] bg-[#0C0F0F]/80 px-3 py-2 text-left transition hover:border-amber-400/25"
                 onClick={() => onOpenJob(job.jobId)}
               >
-                <p className="truncate text-[13px] font-medium text-white">{job.title}</p>
-                <p className="truncate text-[11px] text-white/45">{job.company}</p>
+                <p className="truncate text-[13px] font-medium text-white">
+                  {job.title}
+                </p>
+                <p className="truncate text-[11px] text-white/45">
+                  {job.company}
+                </p>
               </button>
               <Button
                 type="button"
@@ -76,11 +83,18 @@ export function AcceptedJobsSection({
   }
 
   return (
-    <section className={cn('rounded-2xl border border-amber-400/20 bg-amber-500/[0.04] p-4 sm:p-5', className)}>
+    <section
+      className={cn(
+        'rounded-2xl border border-amber-400/20 bg-amber-500/[0.04] p-4 sm:p-5',
+        className,
+      )}
+    >
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Trophy className="h-5 w-5 text-amber-300" aria-hidden />
-          <h2 className="text-[15px] font-semibold text-white">Accepted offers</h2>
+          <h2 className="text-[15px] font-semibold text-white">
+            Accepted offers
+          </h2>
           <span className="rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-100">
             {countLabel}
           </span>
@@ -105,7 +119,9 @@ export function AcceptedJobsSection({
               className="w-full text-left"
               onClick={() => onOpenJob(job.jobId)}
             >
-              <p className="text-[14px] font-semibold text-white">{job.title}</p>
+              <p className="text-[14px] font-semibold text-white">
+                {job.title}
+              </p>
               <p className="mt-0.5 text-[13px] text-white/50">{job.company}</p>
               {job.acceptedAt ? (
                 <p className="mt-2 text-[11px] text-white/40">

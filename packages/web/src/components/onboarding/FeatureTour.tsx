@@ -95,8 +95,7 @@ function repositionMobileTourPopover(
   element: Element | null | undefined,
   wrap?: HTMLElement | null,
 ): void {
-  const pop =
-    wrap ?? document.getElementById('driver-popover-content');
+  const pop = wrap ?? document.getElementById('driver-popover-content');
   if (!(pop instanceof HTMLElement)) return;
   const placement = applyMobileTourPopoverPosition(pop, element);
   pop.classList.toggle('applymate-tour-popover--above', placement === 'above');
@@ -157,10 +156,8 @@ function collectSteps(
         return;
       }
 
-      const target = resolveTourHighlightTarget(
-        element,
-        selector,
-      ) ??
+      const target =
+        resolveTourHighlightTarget(element, selector) ??
         (document.querySelector(selector) as HTMLElement | null);
 
       if (!target || isDriverDummyElement(target)) return;
@@ -269,7 +266,8 @@ export function FeatureTour() {
       setTourRestartNonce((n) => n + 1);
     };
     window.addEventListener('applymate:tour-restart', onRestart);
-    return () => window.removeEventListener('applymate:tour-restart', onRestart);
+    return () =>
+      window.removeEventListener('applymate:tour-restart', onRestart);
   }, []);
 
   useEffect(() => {
@@ -453,8 +451,7 @@ export function FeatureTour() {
         ...s,
         popover: {
           ...s.popover,
-          nextBtnText:
-            i === lastIdx ? "Got it — let's go! 🚀" : 'Next →',
+          nextBtnText: i === lastIdx ? "Got it — let's go! 🚀" : 'Next →',
           onNextClick: (
             _el: Element | undefined,
             _step: DriveStep,
@@ -551,8 +548,11 @@ export function FeatureTour() {
       const narrow = isNarrowViewport();
       const defs = stepsForTour(tourId, narrow);
       const minSteps = tourId === 'dashboard' ? (narrow ? 3 : 2) : 1;
-      const steps = collectSteps(defs, narrow, beginTourChrome, () =>
-        driverRef.current,
+      const steps = collectSteps(
+        defs,
+        narrow,
+        beginTourChrome,
+        () => driverRef.current,
       );
 
       if (steps.length >= minSteps) {

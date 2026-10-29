@@ -5,11 +5,18 @@ import { Mic } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
-export type SimulationCardMode = 'hr_simulation' | 'senior_interviewer_simulation';
+export type SimulationCardMode =
+  | 'hr_simulation'
+  | 'senior_interviewer_simulation';
 
 const COPY: Record<
   SimulationCardMode,
-  { title: string; subtitle: string; difficulty: 'Medium' | 'Hard'; stressHint: string }
+  {
+    title: string;
+    subtitle: string;
+    difficulty: 'Medium' | 'Hard';
+    stressHint: string;
+  }
 > = {
   hr_simulation: {
     title: 'HR interview',
@@ -58,9 +65,15 @@ export const SimulationModeCard = memo(function SimulationModeCard({
           <Mic className="h-5 w-5" />
         </span>
 
-        <h3 className="mt-3 text-[15px] font-semibold text-[var(--text-primary)]">{meta.title}</h3>
-        <p className="mt-1 text-[13px] leading-relaxed text-[var(--text-secondary)]">{meta.subtitle}</p>
-        <p className="mt-1 text-xs text-[var(--text-muted)]">{meta.stressHint}</p>
+        <h3 className="mt-3 text-[15px] font-semibold text-[var(--text-primary)]">
+          {meta.title}
+        </h3>
+        <p className="mt-1 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+          {meta.subtitle}
+        </p>
+        <p className="mt-1 text-xs text-[var(--text-muted)]">
+          {meta.stressHint}
+        </p>
 
         <span className="mt-4 inline-block text-xs font-medium text-[var(--text-teal)]">
           Start simulation →

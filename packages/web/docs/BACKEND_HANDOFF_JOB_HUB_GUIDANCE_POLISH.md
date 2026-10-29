@@ -15,16 +15,16 @@ Backend now owns verified task completion, correct CTAs, follow-up copy, and ste
 
 ## Backend implementation (confirmed)
 
-| Area | Status |
-|------|--------|
-| `pipelineStepper` + `guidance` on detail GETs | ✅ |
-| `PATCH /applications/:id/guidance` | ✅ |
-| `PATCH /jobs/job-hub/guidance` | ✅ |
-| `userToggleable` + `autoCompleted` on tasks | ✅ |
-| Stage PATCH returns refreshed stepper + guidance | ✅ |
-| Email template generate returns refreshed `guidance` | ✅ |
-| Correct CTAs (cover tab, hiring manager, follow-ups) | ✅ |
-| Follow-up schedule from `appliedAt` (+7/+14/+21 days) | ✅ |
+| Area                                                  | Status |
+| ----------------------------------------------------- | ------ |
+| `pipelineStepper` + `guidance` on detail GETs         | ✅     |
+| `PATCH /applications/:id/guidance`                    | ✅     |
+| `PATCH /jobs/job-hub/guidance`                        | ✅     |
+| `userToggleable` + `autoCompleted` on tasks           | ✅     |
+| Stage PATCH returns refreshed stepper + guidance      | ✅     |
+| Email template generate returns refreshed `guidance`  | ✅     |
+| Correct CTAs (cover tab, hiring manager, follow-ups)  | ✅     |
+| Follow-up schedule from `appliedAt` (+7/+14/+21 days) | ✅     |
 
 See backend team notes in the original kanban handoff for payload shapes, phase task lists, and `applicationAssist` transitional field.
 
@@ -32,15 +32,15 @@ See backend team notes in the original kanban handoff for payload shapes, phase 
 
 ## Frontend integration (2026-06-10)
 
-| Behavior | Implementation |
-|----------|----------------|
-| Render stepper + guidance | `JobHubDetailPanel`, parsers in `jobHubGuidance.ts` |
-| Manual task PATCH | `usePatchJobHubGuidance` → updates application/job cache |
-| Stage change enrichment | `useUpdateApplicationStatus` + `patchJobPipeline` merge cache |
-| Email draft → checklist refresh | `generateEmailTemplate` parses `guidance`; panel updates local + cache |
-| Verified tasks locked | `isGuidanceTaskUserToggleable()` respects `userToggleable` / `autoCompleted` |
-| CTA fallbacks | `resolveGuidanceTaskActions()` only when backend href/tab is wrong or missing |
-| Copy fallbacks | `GUIDANCE_TASK_SUPPORTING_FALLBACKS` for 2nd/3rd follow-ups if `supporting` empty |
+| Behavior                        | Implementation                                                                    |
+| ------------------------------- | --------------------------------------------------------------------------------- |
+| Render stepper + guidance       | `JobHubDetailPanel`, parsers in `jobHubGuidance.ts`                               |
+| Manual task PATCH               | `usePatchJobHubGuidance` → updates application/job cache                          |
+| Stage change enrichment         | `useUpdateApplicationStatus` + `patchJobPipeline` merge cache                     |
+| Email draft → checklist refresh | `generateEmailTemplate` parses `guidance`; panel updates local + cache            |
+| Verified tasks locked           | `isGuidanceTaskUserToggleable()` respects `userToggleable` / `autoCompleted`      |
+| CTA fallbacks                   | `resolveGuidanceTaskActions()` only when backend href/tab is wrong or missing     |
+| Copy fallbacks                  | `GUIDANCE_TASK_SUPPORTING_FALLBACKS` for 2nd/3rd follow-ups if `supporting` empty |
 
 ---
 

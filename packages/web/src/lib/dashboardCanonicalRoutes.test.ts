@@ -23,9 +23,9 @@ describe('dashboardCanonicalRoutes', () => {
   });
 
   it('redirects job-hub followUps to follow-up page', () => {
-    expect(buildJobHubAliasRedirect(new URLSearchParams({ followUps: '1' }))).toBe(
-      '/dashboard/follow-up-jobs',
-    );
+    expect(
+      buildJobHubAliasRedirect(new URLSearchParams({ followUps: '1' })),
+    ).toBe('/dashboard/follow-up-jobs');
   });
 
   it('redirects legacy /dashboard/interviews to interview-prep list', () => {
@@ -36,12 +36,16 @@ describe('dashboardCanonicalRoutes', () => {
   });
 
   it('normalizes legacy alias hrefs for in-app use', () => {
-    expect(normalizeDashboardRoute('/dashboard/job-hub?jobAnalysisId=x&focus=analysis')).toBe(
-      '/dashboard/jobs?jobId=x&focus=analysis',
+    expect(
+      normalizeDashboardRoute(
+        '/dashboard/job-hub?jobAnalysisId=x&focus=analysis',
+      ),
+    ).toBe('/dashboard/jobs?jobId=x&focus=analysis');
+    expect(normalizeDashboardRoute('/dashboard/interviews')).toBe(
+      '/dashboard/interview-prep',
     );
-    expect(normalizeDashboardRoute('/dashboard/interviews')).toBe('/dashboard/interview-prep');
-    expect(normalizeDashboardRoute('/dashboard/interview-prep?jobAnalysisId=y')).toBe(
-      '/dashboard/interview-prep?jobAnalysisId=y',
-    );
+    expect(
+      normalizeDashboardRoute('/dashboard/interview-prep?jobAnalysisId=y'),
+    ).toBe('/dashboard/interview-prep?jobAnalysisId=y');
   });
 });

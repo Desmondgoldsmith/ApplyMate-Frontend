@@ -41,8 +41,13 @@ export default function DashboardContinuationPage() {
   return (
     <div className="mx-auto min-w-0 max-w-2xl">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <h1 className="text-xl font-semibold text-white/90">Continue where you left off</h1>
-        <Link href="/dashboard" className="text-[13px] font-medium text-[#00C9B1] hover:underline">
+        <h1 className="text-xl font-semibold text-white/90">
+          Continue where you left off
+        </h1>
+        <Link
+          href="/dashboard"
+          className="text-[13px] font-medium text-[#00C9B1] hover:underline"
+        >
           ← Dashboard
         </Link>
       </div>
@@ -51,13 +56,17 @@ export default function DashboardContinuationPage() {
       </p>
 
       {rows.length === 0 ? (
-        <p className="text-[13px] text-white/45">You&apos;re all caught up — nothing to resume right now.</p>
+        <p className="text-[13px] text-white/45">
+          You&apos;re all caught up — nothing to resume right now.
+        </p>
       ) : (
         <ul className="space-y-3">
           {rows.map((item) => {
             const last =
               item.lastActiveLabel?.trim() ||
-              (item.lastActiveAt?.trim() ? formatRelativeEdited(item.lastActiveAt) : null);
+              (item.lastActiveAt?.trim()
+                ? formatRelativeEdited(item.lastActiveAt)
+                : null);
             return (
               <li
                 key={item.id}
@@ -65,12 +74,16 @@ export default function DashboardContinuationPage() {
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-[14px] font-semibold text-white/90">{item.title}</p>
+                    <p className="text-[14px] font-semibold text-white/90">
+                      {item.title}
+                    </p>
                     <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/55">
                       {continuationTypeLabel(item.type)}
                     </span>
                   </div>
-                  {last ? <p className="mt-1 text-[12px] text-white/40">{last}</p> : null}
+                  {last ? (
+                    <p className="mt-1 text-[12px] text-white/40">{last}</p>
+                  ) : null}
                 </div>
                 <Link
                   href={item.ctaHref}

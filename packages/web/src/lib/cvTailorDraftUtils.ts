@@ -1,4 +1,8 @@
-import type { CvTailorDraft, CvTailorDraftEntry, CvTailorDraftSectionStatus } from '@/lib/api';
+import type {
+  CvTailorDraft,
+  CvTailorDraftEntry,
+  CvTailorDraftSectionStatus,
+} from '@/lib/api';
 
 export function patchTailorDraftEntry(
   draft: CvTailorDraft,
@@ -7,6 +11,8 @@ export function patchTailorDraftEntry(
 ): CvTailorDraft {
   return {
     ...draft,
-    drafts: draft.drafts.map((d) => (d.sectionId === sectionId ? { ...d, ...patch } : d)),
+    drafts: draft.drafts.map((d) =>
+      d.sectionId === sectionId ? { ...d, ...patch } : d,
+    ),
   };
 }

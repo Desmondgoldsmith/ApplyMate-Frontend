@@ -20,14 +20,14 @@
 
 ### Top risks (product + engineering)
 
-| ID | Risk | Severity | Notes |
-|----|------|----------|--------|
-| R1 | **Bearer token in `localStorage` + mirrored cookie** | **P0** | XSS or malicious extension can exfiltrate token; cookie is not `httpOnly`. See Security. |
-| R2 | **No automated tests in `packages/web`** (no `*.test` / `*.spec` found) | **P0** | Regressions in auth refresh, CV partial accept, dashboard cache are manual-only. |
-| R3 | **Large “god” surfaces** (`CVBuilder`, `api.ts`) | **P1** | Hard to reason about correctness at scale; merge conflicts and subtle state bugs. |
-| R4 | **Dashboard load = multiple parallel queries** | **P1** | Waterfall/N+1 risk; today-plan uses `staleTime: 0` + `refetchOnMount: 'always'` — fresh but chatty. |
-| R5 | **CV improvement apply response parsing** | **P1** | If backend returns `changedFields` in non-object shapes, UI can show “AI suggested change” with empty diff body (investigation noted in code: `applyImprovement` only maps object rows). |
-| R6 | **Multi-tab auth** | **P2** | Token cleared in one tab on 401; other tabs may hold stale Zustand until navigation. |
+| ID  | Risk                                                                    | Severity | Notes                                                                                                                                                                                    |
+| --- | ----------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | **Bearer token in `localStorage` + mirrored cookie**                    | **P0**   | XSS or malicious extension can exfiltrate token; cookie is not `httpOnly`. See Security.                                                                                                 |
+| R2  | **No automated tests in `packages/web`** (no `*.test` / `*.spec` found) | **P0**   | Regressions in auth refresh, CV partial accept, dashboard cache are manual-only.                                                                                                         |
+| R3  | **Large “god” surfaces** (`CVBuilder`, `api.ts`)                        | **P1**   | Hard to reason about correctness at scale; merge conflicts and subtle state bugs.                                                                                                        |
+| R4  | **Dashboard load = multiple parallel queries**                          | **P1**   | Waterfall/N+1 risk; today-plan uses `staleTime: 0` + `refetchOnMount: 'always'` — fresh but chatty.                                                                                      |
+| R5  | **CV improvement apply response parsing**                               | **P1**   | If backend returns `changedFields` in non-object shapes, UI can show “AI suggested change” with empty diff body (investigation noted in code: `applyImprovement` only maps object rows). |
+| R6  | **Multi-tab auth**                                                      | **P2**   | Token cleared in one tab on 401; other tabs may hold stale Zustand until navigation.                                                                                                     |
 
 ### Priority backlog (suggested)
 
@@ -41,14 +41,14 @@
 
 ### Framework & routing
 
-| Layer | Implementation | Evidence |
-|--------|----------------|----------|
-| Framework | Next.js App Router | `packages/web/src/app/**` |
-| Public landing | `/` → `LandingPage` | `packages/web/src/app/page.tsx` |
-| Auth | `/login`, `/register` | `packages/web/src/app/(auth)/**` |
-| Onboarding | `/onboarding` | `packages/web/src/app/(onboarding)/onboarding/page.tsx` |
-| Dashboard | `/dashboard/*` | `packages/web/src/app/(dashboard)/dashboard/**` |
-| Middleware | Cookie/header gate | `packages/web/middleware.ts` |
+| Layer          | Implementation        | Evidence                                                |
+| -------------- | --------------------- | ------------------------------------------------------- |
+| Framework      | Next.js App Router    | `packages/web/src/app/**`                               |
+| Public landing | `/` → `LandingPage`   | `packages/web/src/app/page.tsx`                         |
+| Auth           | `/login`, `/register` | `packages/web/src/app/(auth)/**`                        |
+| Onboarding     | `/onboarding`         | `packages/web/src/app/(onboarding)/onboarding/page.tsx` |
+| Dashboard      | `/dashboard/*`        | `packages/web/src/app/(dashboard)/dashboard/**`         |
+| Middleware     | Cookie/header gate    | `packages/web/middleware.ts`                            |
 
 ```mermaid
 flowchart LR
@@ -71,12 +71,12 @@ flowchart LR
 
 ### State management
 
-| Concern | Tool | Notes |
-|---------|------|--------|
-| Server cache | TanStack Query | Defaults: `staleTime: 60s`, `retry: 2`, `refetchOnWindowFocus: true` (`packages/web/src/app/providers.tsx`) |
-| Auth session | Zustand | `packages/web/src/store/useAuthStore.ts` |
-| UI chrome | `useUIStore` (per `FRONTEND_DASHBOARD_ARCHITECTURE.md`) | Sidebar collapse, job focus, etc. |
-| Ephemeral UI | Toast store | `ToastViewport` in providers |
+| Concern      | Tool                                                    | Notes                                                                                                       |
+| ------------ | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Server cache | TanStack Query                                          | Defaults: `staleTime: 60s`, `retry: 2`, `refetchOnWindowFocus: true` (`packages/web/src/app/providers.tsx`) |
+| Auth session | Zustand                                                 | `packages/web/src/store/useAuthStore.ts`                                                                    |
+| UI chrome    | `useUIStore` (per `FRONTEND_DASHBOARD_ARCHITECTURE.md`) | Sidebar collapse, job focus, etc.                                                                           |
+| Ephemeral UI | Toast store                                             | `ToastViewport` in providers                                                                                |
 
 ### Data layer
 
@@ -86,21 +86,21 @@ flowchart LR
 
 ### Auth storage (observed)
 
-| Artifact | Location | Purpose |
-|----------|----------|---------|
-| Access token | `localStorage` key `applymate_token` | Bearer for API |
-| Cookie | `applymate_token=...; path=/` | Middleware route protection |
-| Hydration | `hydrateFromStorage` on layout | Restores token into Zustand after full reload (`packages/web/src/app/providers.tsx`) |
+| Artifact     | Location                             | Purpose                                                                              |
+| ------------ | ------------------------------------ | ------------------------------------------------------------------------------------ |
+| Access token | `localStorage` key `applymate_token` | Bearer for API                                                                       |
+| Cookie       | `applymate_token=...; path=/`        | Middleware route protection                                                          |
+| Hydration    | `hydrateFromStorage` on layout       | Restores token into Zustand after full reload (`packages/web/src/app/providers.tsx`) |
 
 **Refresh:** `api.auth.refresh` exists in `api.ts`; **verify** whether login flows and interceptors perform proactive refresh vs reactive 401 redirect (interceptor currently redirects to `/login` on 401 — see Security).
 
 ### Environments & build
 
-| Item | Location |
-|------|----------|
-| API URL | `NEXT_PUBLIC_API_URL` → `API_BASE_URL` (`axios.ts`) |
-| Sentry | `withSentryConfig` in `packages/web/next.config.ts` |
-| Monorepo shared code | `transpilePackages: ["@applymate/shared"]` |
+| Item                 | Location                                            |
+| -------------------- | --------------------------------------------------- |
+| API URL              | `NEXT_PUBLIC_API_URL` → `API_BASE_URL` (`axios.ts`) |
+| Sentry               | `withSentryConfig` in `packages/web/next.config.ts` |
+| Monorepo shared code | `transpilePackages: ["@applymate/shared"]`          |
 
 ### Deploy (frontend-specific)
 
@@ -115,22 +115,22 @@ Legend: **Observed** = implemented in repo. **Gap** = missing or needs verificat
 
 ### 1) Onboarding
 
-| Step | Screen / route | API calls (typical) | Cache / keys | Errors / empty | Analytics |
-|------|----------------|---------------------|--------------|----------------|-----------|
-| Enter | `/onboarding` | `GET /onboarding/status` via `useOnboardingStatus` pattern (per internal doc) | Query key patterns in `useOnboarding` | Redirect to `/dashboard` if completed | **Gap:** confirm PostHog events for step completion |
-| Upload / progress | Wizard steps | `POST /onboarding`, `POST /cv/parse` (upload) | Invalidate user/onboarding queries on save | Toast on failure | **Gap:** funnel map |
-| Resume | Same | Status drives `router.replace` | Local wizard storage cleared on `clearAuth` (`useAuthStore`) | — | — |
+| Step              | Screen / route | API calls (typical)                                                           | Cache / keys                                                 | Errors / empty                        | Analytics                                           |
+| ----------------- | -------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------- | --------------------------------------------------- |
+| Enter             | `/onboarding`  | `GET /onboarding/status` via `useOnboardingStatus` pattern (per internal doc) | Query key patterns in `useOnboarding`                        | Redirect to `/dashboard` if completed | **Gap:** confirm PostHog events for step completion |
+| Upload / progress | Wizard steps   | `POST /onboarding`, `POST /cv/parse` (upload)                                 | Invalidate user/onboarding queries on save                   | Toast on failure                      | **Gap:** funnel map                                 |
+| Resume            | Same           | Status drives `router.replace`                                                | Local wizard storage cleared on `clearAuth` (`useAuthStore`) | —                                     | —                                                   |
 
 **Persistence:** Backend owns canonical progress; client also uses `clearStoredWizard` on logout.
 
 ### 2) Auth: register, login, logout, session
 
-| Flow | Route | API | Storage | Notes |
-|------|-------|-----|---------|-------|
-| Register | `/register` | `POST /auth/register` then login | `setAuth` → LS + cookie | Per `FRONTEND_DASHBOARD_ARCHITECTURE.md` |
-| Login | `/login` | `POST /auth/login` | same | Middleware allows `/dashboard` |
-| Logout | Sidebar / actions | `POST /auth/logout` + `clearAuth` | Clears LS, cookie, wizard storage | |
-| Session expiry | Any | 401 response | Interceptor clears storage + `window.location.href = '/login'` | **Observed:** full page navigation, not silent refresh |
+| Flow           | Route             | API                               | Storage                                                        | Notes                                                  |
+| -------------- | ----------------- | --------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------ |
+| Register       | `/register`       | `POST /auth/register` then login  | `setAuth` → LS + cookie                                        | Per `FRONTEND_DASHBOARD_ARCHITECTURE.md`               |
+| Login          | `/login`          | `POST /auth/login`                | same                                                           | Middleware allows `/dashboard`                         |
+| Logout         | Sidebar / actions | `POST /auth/logout` + `clearAuth` | Clears LS, cookie, wizard storage                              |                                                        |
+| Session expiry | Any               | 401 response                      | Interceptor clears storage + `window.location.href = '/login'` | **Observed:** full page navigation, not silent refresh |
 
 **Multi-tab:** No `storage` event sync found in sampled files — **Gap** for coordinated logout across tabs.
 
@@ -138,12 +138,12 @@ Legend: **Observed** = implemented in repo. **Gap** = missing or needs verificat
 
 ### 3) Dashboard: today-plan, priorities, mission, continuation, weekly stall, mark-seen, prefetch
 
-| Concern | Implementation | Cache key | Refresh strategy |
-|---------|----------------|-----------|------------------|
-| Today plan | `useTodayPlan` | `[TODAY_PLAN_QUERY_ROOT, cvProfileId, tz]` from `todayPlanQueryKey` | `staleTime: 0`, `refetchOnMount: 'always'`, `refetchOnWindowFocus: true` |
-| Weekly stall | `useWeeklyStallSummary` | Separate root (see `invalidateTodayPlanQueries`) | Invalidated with today-plan family |
-| Mark seen | `useDashboardSeen` mutation | `api.dashboard.markSeen()` | Should invalidate today-plan — **verify** callers |
-| Prefetch next actions | `TodayPlanPanel` | `api.dashboard.prefetchNextActions` | Bundles cached via `cacheNextActionPrefetchBundle` (`jobHubPrefill`) |
+| Concern               | Implementation              | Cache key                                                           | Refresh strategy                                                         |
+| --------------------- | --------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Today plan            | `useTodayPlan`              | `[TODAY_PLAN_QUERY_ROOT, cvProfileId, tz]` from `todayPlanQueryKey` | `staleTime: 0`, `refetchOnMount: 'always'`, `refetchOnWindowFocus: true` |
+| Weekly stall          | `useWeeklyStallSummary`     | Separate root (see `invalidateTodayPlanQueries`)                    | Invalidated with today-plan family                                       |
+| Mark seen             | `useDashboardSeen` mutation | `api.dashboard.markSeen()`                                          | Should invalidate today-plan — **verify** callers                        |
+| Prefetch next actions | `TodayPlanPanel`            | `api.dashboard.prefetchNextActions`                                 | Bundles cached via `cacheNextActionPrefetchBundle` (`jobHubPrefill`)     |
 
 **UI surfaces:** `TodayPlanPanel`, `WeeklyStallSummaryPanel`, growth cards on `dashboard/page.tsx`.
 
@@ -153,45 +153,45 @@ Legend: **Observed** = implemented in repo. **Gap** = missing or needs verificat
 
 ### 4) Growth (Batch 4)
 
-| Endpoint | Hook | Query key | Client behavior |
-|----------|------|-----------|-----------------|
-| `GET /growth/daily-direction` | `useGrowthDailyDirection` | `['growth','daily-direction']` | `staleTime: 60s` |
-| `GET /growth/progress` | `useGrowthProgress` | `['growth','progress', window]` | Window switcher on dashboard |
-| `GET /growth/momentum-nudges` | `useGrowthMomentumNudges` | `['growth','momentum-nudges']` | Top nudges |
-| `GET /growth/achievements` | `useGrowthAchievements` | `['growth','achievements']` | Share-safe payloads |
-| `GET /growth/immediate-feedback` | `useConsumeImmediateGrowthFeedback` | sessionStorage dedupe by feedback id | Toast |
-| `POST /growth/events` | `useTrackGrowthEvent` + `api.growth.trackEvent` | — | **Observed:** failure-swallowed in API layer to avoid crashing flows |
+| Endpoint                         | Hook                                            | Query key                            | Client behavior                                                      |
+| -------------------------------- | ----------------------------------------------- | ------------------------------------ | -------------------------------------------------------------------- |
+| `GET /growth/daily-direction`    | `useGrowthDailyDirection`                       | `['growth','daily-direction']`       | `staleTime: 60s`                                                     |
+| `GET /growth/progress`           | `useGrowthProgress`                             | `['growth','progress', window]`      | Window switcher on dashboard                                         |
+| `GET /growth/momentum-nudges`    | `useGrowthMomentumNudges`                       | `['growth','momentum-nudges']`       | Top nudges                                                           |
+| `GET /growth/achievements`       | `useGrowthAchievements`                         | `['growth','achievements']`          | Share-safe payloads                                                  |
+| `GET /growth/immediate-feedback` | `useConsumeImmediateGrowthFeedback`             | sessionStorage dedupe by feedback id | Toast                                                                |
+| `POST /growth/events`            | `useTrackGrowthEvent` + `api.growth.trackEvent` | —                                    | **Observed:** failure-swallowed in API layer to avoid crashing flows |
 
 **Evidence:** `packages/web/src/hooks/useGrowth.ts`, `packages/web/src/lib/api.ts` (`growth` namespace).
 
 ### 5) Job board / discovery
 
-| Surface | Route | Hooks (examples) | Notes |
-|---------|-------|------------------|-------|
-| Job board | `/dashboard/job-board` | `useJobDiscovery`, `useJobBoardAiMatch`, bookmarks | Filters + feed — **Gap:** full network trace per filter change |
-| Analyze entry | Links to `/dashboard/jobs/analyze` | Prefill via `prefillJobAnalyzerInStorage` | Used from `TodayPlanPanel` |
+| Surface       | Route                              | Hooks (examples)                                   | Notes                                                          |
+| ------------- | ---------------------------------- | -------------------------------------------------- | -------------------------------------------------------------- |
+| Job board     | `/dashboard/job-board`             | `useJobDiscovery`, `useJobBoardAiMatch`, bookmarks | Filters + feed — **Gap:** full network trace per filter change |
+| Analyze entry | Links to `/dashboard/jobs/analyze` | Prefill via `prefillJobAnalyzerInStorage`          | Used from `TodayPlanPanel`                                     |
 
 **Caching:** Per-hook `staleTime` varies — audit each hook file under `packages/web/src/hooks/useJobDiscovery.ts`, `useHubBookmarks.ts`, etc.
 
 ### 6) Job Hub: pipeline, notes, reminders, deep links
 
-| Concern | Location | APIs (from `api.ts` grep) |
-|---------|----------|---------------------------|
-| Hub UI | `packages/web/src/app/(dashboard)/dashboard/jobs/*` | Applications, bookmarks, notes, reminders |
-| Deep links | `?jobId=`, `?applicationId=`, etc. | `JobsContent`, `JobHub` components |
-| Reminders | Create/list/delete | `/applications/:id/reminders` |
+| Concern    | Location                                            | APIs (from `api.ts` grep)                 |
+| ---------- | --------------------------------------------------- | ----------------------------------------- |
+| Hub UI     | `packages/web/src/app/(dashboard)/dashboard/jobs/*` | Applications, bookmarks, notes, reminders |
+| Deep links | `?jobId=`, `?applicationId=`, etc.                  | `JobsContent`, `JobHub` components        |
+| Reminders  | Create/list/delete                                  | `/applications/:id/reminders`             |
 
 **Trust note:** Duplicate reminder emails were a **backend** scheduler issue per prior handoff; UI should avoid double-toast if API idempotent — **verify** mutation success handlers.
 
 ### 7) CV builder: profiles, sections, autosave
 
-| Concern | Implementation |
-|---------|----------------|
-| Profiles list | `useCVProfiles`, `useCVProfileById` |
-| Sections | `useCVSections`, `useUpdateCVSection` — PATCH section rows |
-| Score | `useCVScore`, `useRunCvDetailedScore` |
-| Improvements list | `useCVImprovements` — key `['cv','improvements', profileId\|\|'default']`, `staleTime: 60s` |
-| Large editor | `CVBuilder` — local `useState` for `data`, merge from `initialData` on section identity changes |
+| Concern           | Implementation                                                                                  |
+| ----------------- | ----------------------------------------------------------------------------------------------- |
+| Profiles list     | `useCVProfiles`, `useCVProfileById`                                                             |
+| Sections          | `useCVSections`, `useUpdateCVSection` — PATCH section rows                                      |
+| Score             | `useCVScore`, `useRunCvDetailedScore`                                                           |
+| Improvements list | `useCVImprovements` — key `['cv','improvements', profileId\|\|'default']`, `staleTime: 60s`     |
+| Large editor      | `CVBuilder` — local `useState` for `data`, merge from `initialData` on section identity changes |
 
 **Autosave / debounce:** Implemented inside `CVBuilder` / section update hooks — **Gap:** document exact debounce ms and conflict strategy (optimistic vs server wins).
 
@@ -228,48 +228,48 @@ Legend: **Observed** = implemented in repo. **Gap** = missing or needs verificat
 
 ### 12) Notifications / toasts / email deep links
 
-| Surface | Implementation |
-|---------|----------------|
-| Toasts | `ToastViewport`, `useToast` |
-| Notification prefs | `NotificationsTab` — includes `dailyGrowthDigest` |
-| Email deep links | **Gap:** not systematically traced; depends on backend email templates |
+| Surface            | Implementation                                                         |
+| ------------------ | ---------------------------------------------------------------------- |
+| Toasts             | `ToastViewport`, `useToast`                                            |
+| Notification prefs | `NotificationsTab` — includes `dailyGrowthDigest`                      |
+| Email deep links   | **Gap:** not systematically traced; depends on backend email templates |
 
 ---
 
 ## API contract compliance checklist
 
-| Requirement | Status | Evidence / gap |
-|-------------|--------|----------------|
-| Partial CV: use `fieldPath` not labels | **Intended OK** | Accept/reject uses `fieldPath` from `changedFields`; labels for display only |
-| Pointer: prefer `improvementId` from apply | **Intended OK** | `ImprovementsPanel` sets pointer from `result.improvementId`; sequential re-apply uses response id |
-| 409 / 404 structured recovery | **Partial** | `cv/page.tsx` handles `IMPROVEMENT_STALE_DRAFT`, `INVALID_FIELD_SELECTION`, `STALE_INDEX` with refresh/retry |
-| Dashboard continuation vs unified priorities | **Partially client-filtered** | `TodayPlanPanel` uses backend IDs/routes; diagnostics rely on backend `consistency` object when present |
-| Growth events dedupe keys | **Partial** | `suggested_task_started` sends `dedupeKey` from `unifiedPriorityDedupeKey` (`TodayPlanPanel`) |
+| Requirement                                  | Status                        | Evidence / gap                                                                                               |
+| -------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Partial CV: use `fieldPath` not labels       | **Intended OK**               | Accept/reject uses `fieldPath` from `changedFields`; labels for display only                                 |
+| Pointer: prefer `improvementId` from apply   | **Intended OK**               | `ImprovementsPanel` sets pointer from `result.improvementId`; sequential re-apply uses response id           |
+| 409 / 404 structured recovery                | **Partial**                   | `cv/page.tsx` handles `IMPROVEMENT_STALE_DRAFT`, `INVALID_FIELD_SELECTION`, `STALE_INDEX` with refresh/retry |
+| Dashboard continuation vs unified priorities | **Partially client-filtered** | `TodayPlanPanel` uses backend IDs/routes; diagnostics rely on backend `consistency` object when present      |
+| Growth events dedupe keys                    | **Partial**                   | `suggested_task_started` sends `dedupeKey` from `unifiedPriorityDedupeKey` (`TodayPlanPanel`)                |
 
 ---
 
 ## Trust & correctness QA matrix
 
-| Scenario | Expected | Observed / gap |
-|----------|----------|----------------|
-| Mark job applied → no “apply now” for same entity | Dashboard hides invalid priorities | `invalidByLiveState` + `appliedApplicationIds` in `TodayPlanPanel` — **verify** against all backend priority kinds |
-| Full accept improvement → suggestion not immediately reappearing | List refresh + resolved filter | `mergeCvImprovementsForDisplay` filters `resolved`; cache update on accept — **backend may regenerate** new suggestion (documented as product behavior) |
-| 3+ sequential partial accepts | No stale pointer | Client re-applies after partial; **monitor** for backend edge cases |
-| Reminder fires once | Single notification | **Backend** idempotency; UI should not duplicate toast on retry — **verify** |
-| Growth `trackEvent` 500 | No crash | **Observed:** try/catch in `api.growth.trackEvent` |
+| Scenario                                                         | Expected                           | Observed / gap                                                                                                                                          |
+| ---------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mark job applied → no “apply now” for same entity                | Dashboard hides invalid priorities | `invalidByLiveState` + `appliedApplicationIds` in `TodayPlanPanel` — **verify** against all backend priority kinds                                      |
+| Full accept improvement → suggestion not immediately reappearing | List refresh + resolved filter     | `mergeCvImprovementsForDisplay` filters `resolved`; cache update on accept — **backend may regenerate** new suggestion (documented as product behavior) |
+| 3+ sequential partial accepts                                    | No stale pointer                   | Client re-applies after partial; **monitor** for backend edge cases                                                                                     |
+| Reminder fires once                                              | Single notification                | **Backend** idempotency; UI should not duplicate toast on retry — **verify**                                                                            |
+| Growth `trackEvent` 500                                          | No crash                           | **Observed:** try/catch in `api.growth.trackEvent`                                                                                                      |
 
 ---
 
 ## Performance & UX at scale
 
-| Topic | Assessment |
-|-------|------------|
+| Topic                   | Assessment                                                                                                            |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | Bundle / code splitting | **Gap:** no systematic route-level `dynamic()` audit in this pass; `next.config` focuses on Sentry + shared transpile |
-| List virtualization | **Gap:** job lists and improvement lists appear to render full lists — risk for power users |
-| React Query defaults | Global `staleTime: 60s` **except** today-plan (`0`) — aggressive freshness, more network |
-| Waterfalls | Dashboard page composes many hooks — profile + plan + growth + history; **measure** in browser Performance tab |
-| Prefetch | Today plan prefetches next-action bundle — **good** |
-| Skeletons | Used in dashboard tiles and panels |
+| List virtualization     | **Gap:** job lists and improvement lists appear to render full lists — risk for power users                           |
+| React Query defaults    | Global `staleTime: 60s` **except** today-plan (`0`) — aggressive freshness, more network                              |
+| Waterfalls              | Dashboard page composes many hooks — profile + plan + growth + history; **measure** in browser Performance tab        |
+| Prefetch                | Today plan prefetches next-action bundle — **good**                                                                   |
+| Skeletons               | Used in dashboard tiles and panels                                                                                    |
 
 **Can we support thousands of concurrent users without degrading UX?**
 
@@ -279,43 +279,43 @@ Legend: **Observed** = implemented in repo. **Gap** = missing or needs verificat
 
 ## Security & privacy (client)
 
-| Topic | Finding |
-|-------|---------|
-| Token storage | **High risk:** Bearer in `localStorage` + non-httpOnly cookie mirror — XSS impact is session theft |
-| `withCredentials: true` | Cookie-based CSRF surface if backend uses session cookies — **confirm** backend CSRF strategy |
-| XSS | User job descriptions, CV text rendered — audit rich text components; prefer sanitization for any HTML |
-| Logging | **Gap:** grep for `console.log` with tokens in production builds; Sentry PII scrubbing policy not verified in repo |
-| CSP | **Gap:** headers not defined in sampled `next.config` — rely on hosting layer |
+| Topic                   | Finding                                                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Token storage           | **High risk:** Bearer in `localStorage` + non-httpOnly cookie mirror — XSS impact is session theft                 |
+| `withCredentials: true` | Cookie-based CSRF surface if backend uses session cookies — **confirm** backend CSRF strategy                      |
+| XSS                     | User job descriptions, CV text rendered — audit rich text components; prefer sanitization for any HTML             |
+| Logging                 | **Gap:** grep for `console.log` with tokens in production builds; Sentry PII scrubbing policy not verified in repo |
+| CSP                     | **Gap:** headers not defined in sampled `next.config` — rely on hosting layer                                      |
 
 ---
 
 ## Accessibility & quality
 
-| Area | Status |
-|------|--------|
-| Modals | **Gap:** full keyboard trap audit not done |
+| Area           | Status                                                                               |
+| -------------- | ------------------------------------------------------------------------------------ |
+| Modals         | **Gap:** full keyboard trap audit not done                                           |
 | Priority cards | `TodayPlanPanel` uses links/buttons — **verify** `aria-label` on badge-only controls |
-| CV preview | Complex nested controls — **high risk** for focus management |
+| CV preview     | Complex nested controls — **high risk** for focus management                         |
 
 ---
 
 ## Observability
 
-| Tool | Config | Gap |
-|------|--------|-----|
-| Sentry | `withSentryConfig` | Sampling, PII rules — confirm in Sentry project settings |
-| PostHog | `@/lib/posthog` imported in providers | Event catalog not exported as single doc |
-| Analytics | `trackFunnelEvent` (`actionFunnel`) | Map all events to funnel definitions |
+| Tool      | Config                                | Gap                                                      |
+| --------- | ------------------------------------- | -------------------------------------------------------- |
+| Sentry    | `withSentryConfig`                    | Sampling, PII rules — confirm in Sentry project settings |
+| PostHog   | `@/lib/posthog` imported in providers | Event catalog not exported as single doc                 |
+| Analytics | `trackFunnelEvent` (`actionFunnel`)   | Map all events to funnel definitions                     |
 
 ---
 
 ## Code health
 
-| Smell | Example | Recommendation |
-|-------|---------|----------------|
-| God modules | `api.ts`, `CVBuilder.tsx` | Split by domain; code generation for API types |
-| Duplication | CV page vs onboarding clinic for diff logic | Shared hook `useCvImprovementDiffSession` |
-| Tests | **None found** under `packages/web` | Add Playwright for auth + dashboard; Vitest for parsers |
+| Smell       | Example                                     | Recommendation                                          |
+| ----------- | ------------------------------------------- | ------------------------------------------------------- |
+| God modules | `api.ts`, `CVBuilder.tsx`                   | Split by domain; code generation for API types          |
+| Duplication | CV page vs onboarding clinic for diff logic | Shared hook `useCvImprovementDiffSession`               |
+| Tests       | **None found** under `packages/web`         | Add Playwright for auth + dashboard; Vitest for parsers |
 
 **Type safety:** TypeScript in strict mode — **verify** `tsconfig`; API types largely hand-written in `api.ts`.
 
@@ -329,38 +329,38 @@ The frontend is **feature-complete for core loops** (auth, dashboard, jobs, CV, 
 
 ## Appendix A — Red / yellow / green scorecard
 
-| Area | Grade | Comment |
-|------|-------|---------|
-| Onboarding | 🟡 | Works; needs tests + analytics map |
-| Auth | 🟡 | Clear flows; token storage is red-flag |
-| Dashboard | 🟡 | Strong; today-plan very fresh → noisy |
-| Jobs / Hub | 🟡 | Broad surface; needs journey tests |
-| CV / Clinic | 🟡 | Complex; parser edge cases |
-| AI surfaces | 🟡 | Patch merge works; clarify flow brittle |
-| Performance | 🟡 | No virtualization audit |
-| Security | 🔴 | localStorage bearer |
-| A11y | 🟡 | Not systematically verified |
-| Tests | 🔴 | Missing |
+| Area        | Grade | Comment                                 |
+| ----------- | ----- | --------------------------------------- |
+| Onboarding  | 🟡    | Works; needs tests + analytics map      |
+| Auth        | 🟡    | Clear flows; token storage is red-flag  |
+| Dashboard   | 🟡    | Strong; today-plan very fresh → noisy   |
+| Jobs / Hub  | 🟡    | Broad surface; needs journey tests      |
+| CV / Clinic | 🟡    | Complex; parser edge cases              |
+| AI surfaces | 🟡    | Patch merge works; clarify flow brittle |
+| Performance | 🟡    | No virtualization audit                 |
+| Security    | 🔴    | localStorage bearer                     |
+| A11y        | 🟡    | Not systematically verified             |
+| Tests       | 🔴    | Missing                                 |
 
 ---
 
 ## Appendix B — Key file index (quick navigation)
 
-| Path | Purpose |
-|------|---------|
-| `packages/web/middleware.ts` | Route auth gate |
-| `packages/web/src/lib/axios.ts` | HTTP client, 401 handling |
-| `packages/web/src/lib/api.ts` | All API methods |
-| `packages/web/src/app/providers.tsx` | React Query + auth hydrate |
-| `packages/web/src/store/useAuthStore.ts` | Token + user |
-| `packages/web/src/lib/today-plan.ts` | Today plan types + query helpers |
-| `packages/web/src/hooks/useTodayPlan.ts` | Today plan query behavior |
-| `packages/web/src/hooks/useGrowth.ts` | Growth queries + feedback |
+| Path                                                       | Purpose                                 |
+| ---------------------------------------------------------- | --------------------------------------- |
+| `packages/web/middleware.ts`                               | Route auth gate                         |
+| `packages/web/src/lib/axios.ts`                            | HTTP client, 401 handling               |
+| `packages/web/src/lib/api.ts`                              | All API methods                         |
+| `packages/web/src/app/providers.tsx`                       | React Query + auth hydrate              |
+| `packages/web/src/store/useAuthStore.ts`                   | Token + user                            |
+| `packages/web/src/lib/today-plan.ts`                       | Today plan types + query helpers        |
+| `packages/web/src/hooks/useTodayPlan.ts`                   | Today plan query behavior               |
+| `packages/web/src/hooks/useGrowth.ts`                      | Growth queries + feedback               |
 | `packages/web/src/components/dashboard/TodayPlanPanel.tsx` | Priorities UI + prefetch + growth click |
-| `packages/web/src/app/(dashboard)/dashboard/page.tsx` | Dashboard composition |
-| `packages/web/src/app/(dashboard)/dashboard/cv/page.tsx` | CV clinic / diff / accept |
-| `packages/web/src/components/cv/CVBuilder.tsx` | Editor + spell + merge |
-| `packages/web/next.config.ts` | Sentry |
+| `packages/web/src/app/(dashboard)/dashboard/page.tsx`      | Dashboard composition                   |
+| `packages/web/src/app/(dashboard)/dashboard/cv/page.tsx`   | CV clinic / diff / accept               |
+| `packages/web/src/components/cv/CVBuilder.tsx`             | Editor + spell + merge                  |
+| `packages/web/next.config.ts`                              | Sentry                                  |
 
 ---
 
@@ -370,4 +370,4 @@ If the team wants a **shorter engineering brief** separate from this audit, add 
 
 ---
 
-*End of report.*
+_End of report._

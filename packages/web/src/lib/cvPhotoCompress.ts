@@ -41,11 +41,18 @@ function loadImageFromDataUrl(dataUrl: string): Promise<HTMLImageElement> {
   });
 }
 
-function scaleToMaxEdge(width: number, height: number, maxEdge: number): { w: number; h: number } {
+function scaleToMaxEdge(
+  width: number,
+  height: number,
+  maxEdge: number,
+): { w: number; h: number } {
   const m = Math.max(width, height);
   if (m <= maxEdge) return { w: width, h: height };
   const s = maxEdge / m;
-  return { w: Math.max(1, Math.round(width * s)), h: Math.max(1, Math.round(height * s)) };
+  return {
+    w: Math.max(1, Math.round(width * s)),
+    h: Math.max(1, Math.round(height * s)),
+  };
 }
 
 function encodeWithCanvasDraw(
@@ -77,7 +84,10 @@ function encodeWithCanvasDraw(
     draw(ctx, tw, th);
 
     let dataUrl = canvas.toDataURL('image/jpeg', quality);
-    while (dataUrl.length > CV_PHOTO_MAX_BASE64_CHARS && quality > JPEG_QUALITY_FLOOR + 1e-6) {
+    while (
+      dataUrl.length > CV_PHOTO_MAX_BASE64_CHARS &&
+      quality > JPEG_QUALITY_FLOOR + 1e-6
+    ) {
       quality = Math.max(JPEG_QUALITY_FLOOR, quality - JPEG_QUALITY_STEP);
       dataUrl = canvas.toDataURL('image/jpeg', quality);
     }
@@ -95,7 +105,9 @@ function encodeWithCanvasDraw(
 /**
  * Produces a `data:image/jpeg;base64,...` URL, typically well under 1MB for a headshot.
  */
-export async function compressImageFileToCvDataUrl(file: File): Promise<string> {
+export async function compressImageFileToCvDataUrl(
+  file: File,
+): Promise<string> {
   if (!file.type.startsWith('image/')) {
     throw new Error('Please choose an image file.');
   }
@@ -108,7 +120,9 @@ export async function compressImageFileToCvDataUrl(file: File): Promise<string> 
     try {
       img = await loadImageForCanvas(file);
     } catch (e) {
-      throw e instanceof Error ? e : new Error('Could not read this image. Try JPG or PNG.');
+      throw e instanceof Error
+        ? e
+        : new Error('Could not read this image. Try JPG or PNG.');
     }
   }
 
@@ -132,7 +146,9 @@ export async function compressImageFileToCvDataUrl(file: File): Promise<string> 
  * Re-encode a pasted `data:image/...` that exceeds {@link CV_PHOTO_MAX_BASE64_CHARS}.
  * Smaller data URLs are returned unchanged (no extra JPEG round-trip).
  */
-export async function compressOversizedDataImageUrl(dataUrl: string): Promise<string> {
+export async function compressOversizedDataImageUrl(
+  dataUrl: string,
+): Promise<string> {
   const trimmed = dataUrl.trim();
   if (!trimmed.startsWith('data:image/')) {
     throw new Error('Not an image data URL.');
@@ -141,9 +157,13 @@ export async function compressOversizedDataImageUrl(dataUrl: string): Promise<st
     return trimmed;
   }
   const img = await loadImageFromDataUrl(trimmed);
-  return encodeWithCanvasDraw(img.naturalWidth, img.naturalHeight, (ctx, tw, th) => {
-    ctx.drawImage(img, 0, 0, tw, th);
-  });
+  return encodeWithCanvasDraw(
+    img.naturalWidth,
+    img.naturalHeight,
+    (ctx, tw, th) => {
+      ctx.drawImage(img, 0, 0, tw, th);
+    },
+  );
 }
 
 const MAX_PLAIN_URL_CHARS = 8000;

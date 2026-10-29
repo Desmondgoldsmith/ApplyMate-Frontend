@@ -15,18 +15,28 @@ export type DashboardMidSectionKey =
   | 'today_plan'
   | 'follow_up_intelligence';
 
-export function isConfidenceMeaningfulForPriority(confidence: number | null | undefined): boolean {
+export function isConfidenceMeaningfulForPriority(
+  confidence: number | null | undefined,
+): boolean {
   if (confidence == null || !Number.isFinite(confidence)) return true;
   return confidence >= PRIORITY_CONFIDENCE_MIN;
 }
 
-export function isPriorityCardActionable(plan: TodayPlanPayload | null | undefined, rawId: string): boolean {
+export function isPriorityCardActionable(
+  plan: TodayPlanPayload | null | undefined,
+  rawId: string,
+): boolean {
   const id = normalizeDashboardCardId(rawId);
   switch (id) {
     case 'strategic_recommendation': {
       const sr = plan?.strategicRecommendation;
       if (!sr) return false;
-      if (!sr.headline?.trim() || !sr.supporting?.trim() || !sr.ctaLabel?.trim() || !sr.ctaHref?.trim()) {
+      if (
+        !sr.headline?.trim() ||
+        !sr.supporting?.trim() ||
+        !sr.ctaLabel?.trim() ||
+        !sr.ctaHref?.trim()
+      ) {
         return false;
       }
       return isConfidenceMeaningfulForPriority(sr.confidence);
@@ -34,7 +44,12 @@ export function isPriorityCardActionable(plan: TodayPlanPayload | null | undefin
     case 'opportunity_detection': {
       const od = plan?.opportunityDetection;
       if (!od) return false;
-      if (!od.headline?.trim() || !od.supporting?.trim() || !od.ctaLabel?.trim() || !od.ctaHref?.trim()) {
+      if (
+        !od.headline?.trim() ||
+        !od.supporting?.trim() ||
+        !od.ctaLabel?.trim() ||
+        !od.ctaHref?.trim()
+      ) {
         return false;
       }
       return isConfidenceMeaningfulForPriority(od.confidence);
@@ -51,7 +66,9 @@ export function isPriorityCardActionable(plan: TodayPlanPayload | null | undefin
           Boolean(first.supporting?.trim());
         const hasCta = Boolean(first.ctaHref?.trim());
         if (hasPreview && hasCta) {
-          return isConfidenceMeaningfulForPriority(first.confidence ?? fu?.confidence);
+          return isConfidenceMeaningfulForPriority(
+            first.confidence ?? fu?.confidence,
+          );
         }
       }
       if (!fu) return false;
@@ -84,7 +101,9 @@ export function selectActionablePriorityCardIds(
   return out;
 }
 
-export function computeDashboardPriorityUrgent(plan: TodayPlanPayload | null | undefined): boolean {
+export function computeDashboardPriorityUrgent(
+  plan: TodayPlanPayload | null | undefined,
+): boolean {
   const meta = plan?.priorityIntelligence;
   if (!meta) return false;
   if (meta.promoteToTop === true) return true;
@@ -112,7 +131,9 @@ export function buildDashboardSectionOrder(args: {
       ...(showPriorityIntelligence ? (['priority_intelligence'] as const) : []),
       ...(showContinuation ? (['continuation'] as const) : []),
       'today_plan',
-      ...(showFollowUpIntelligence ? (['follow_up_intelligence'] as const) : []),
+      ...(showFollowUpIntelligence
+        ? (['follow_up_intelligence'] as const)
+        : []),
     ];
   }
 

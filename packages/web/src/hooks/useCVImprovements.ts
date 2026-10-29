@@ -2,7 +2,11 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import { api, type CVImprovementItem, type CvImprovementsPayload } from '@/lib/api';
+import {
+  api,
+  type CVImprovementItem,
+  type CvImprovementsPayload,
+} from '@/lib/api';
 import { cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
 
 /** Older cache entries may still be a bare array before refetch. */

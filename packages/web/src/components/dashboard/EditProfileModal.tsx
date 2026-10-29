@@ -18,7 +18,12 @@ type EditProfileModalProps = {
   email?: string;
 };
 
-export function EditProfileModal({ open, onOpenChange, initialName, email }: EditProfileModalProps) {
+export function EditProfileModal({
+  open,
+  onOpenChange,
+  initialName,
+  email,
+}: EditProfileModalProps) {
   const [name, setName] = useState(initialName ?? '');
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -59,7 +64,10 @@ export function EditProfileModal({ open, onOpenChange, initialName, email }: Edi
         }}
       >
         <div>
-          <label htmlFor="edit-profile-name" className="mb-1.5 block text-xs font-medium text-white/50">
+          <label
+            htmlFor="edit-profile-name"
+            className="mb-1.5 block text-xs font-medium text-white/50"
+          >
             Name
           </label>
           <input
@@ -71,7 +79,10 @@ export function EditProfileModal({ open, onOpenChange, initialName, email }: Edi
           />
         </div>
         <div>
-          <label htmlFor="edit-profile-email" className="mb-1.5 block text-xs font-medium text-white/50">
+          <label
+            htmlFor="edit-profile-email"
+            className="mb-1.5 block text-xs font-medium text-white/50"
+          >
             Email
           </label>
           <input
@@ -83,7 +94,12 @@ export function EditProfileModal({ open, onOpenChange, initialName, email }: Edi
           />
         </div>
         <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="ghost" disabled={save.isPending} onClick={() => onOpenChange(false)}>
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={save.isPending}
+            onClick={() => onOpenChange(false)}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={save.isPending}>

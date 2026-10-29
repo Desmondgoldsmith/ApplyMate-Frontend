@@ -4,10 +4,7 @@ import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api, type HubNoteEntry } from '@/lib/api';
-import {
-  hubNotesQueryKey,
-  type HubNoteScope,
-} from '@/lib/hubNotesQueryKeys';
+import { hubNotesQueryKey, type HubNoteScope } from '@/lib/hubNotesQueryKeys';
 import { invalidateTodayPlanQueries } from '@/lib/today-plan';
 
 function fetchHubNotes(scope: HubNoteScope): Promise<HubNoteEntry[]> {
@@ -21,7 +18,10 @@ function fetchHubNotes(scope: HubNoteScope): Promise<HubNoteEntry[]> {
   }
 }
 
-function createHubNote(scope: HubNoteScope, body: string): Promise<HubNoteEntry> {
+function createHubNote(
+  scope: HubNoteScope,
+  body: string,
+): Promise<HubNoteEntry> {
   switch (scope.kind) {
     case 'application':
       return api.applications.createNote(scope.applicationId, body);
@@ -43,7 +43,11 @@ function updateHubNote(
     case 'job-analysis':
       return api.jobs.updateNote(scope.jobAnalysisId, noteId, body);
     case 'bookmark':
-      return api.jobDiscovery.updateBookmarkNote(scope.bookmarkId, noteId, body);
+      return api.jobDiscovery.updateBookmarkNote(
+        scope.bookmarkId,
+        noteId,
+        body,
+      );
   }
 }
 
@@ -69,10 +73,14 @@ function invalidateNoteSideEffects(
 ) {
   void queryClient.invalidateQueries({ queryKey: hubNotesQueryKey(scope) });
   void queryClient.invalidateQueries({ queryKey: queryKeys.hub.notesRoot() });
-  void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
+  void queryClient.invalidateQueries({
+    queryKey: queryKeys.applications.root(),
+  });
   void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
   if (jobAnalysisId) {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analysis(jobAnalysisId) });
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.jobs.analysis(jobAnalysisId),
+    });
   }
   invalidateTodayPlanQueries(queryClient);
 }
@@ -82,7 +90,9 @@ export function useHubNotes(
   opts?: { jobAnalysisId?: string | null },
 ) {
   const queryClient = useQueryClient();
-  const queryKey = scope ? hubNotesQueryKey(scope) : queryKeys.hub.notesDisabled();
+  const queryKey = scope
+    ? hubNotesQueryKey(scope)
+    : queryKeys.hub.notesDisabled();
 
   const query = useQuery({
     queryKey,
@@ -123,7 +133,8 @@ export function useHubNotes(
       }
     },
     onSettled: () => {
-      if (scope) invalidateNoteSideEffects(queryClient, scope, opts?.jobAnalysisId);
+      if (scope)
+        invalidateNoteSideEffects(queryClient, scope, opts?.jobAnalysisId);
     },
   });
 
@@ -155,7 +166,8 @@ export function useHubNotes(
       }
     },
     onSettled: () => {
-      if (scope) invalidateNoteSideEffects(queryClient, scope, opts?.jobAnalysisId);
+      if (scope)
+        invalidateNoteSideEffects(queryClient, scope, opts?.jobAnalysisId);
     },
   });
 
@@ -176,7 +188,8 @@ export function useHubNotes(
       }
     },
     onSettled: () => {
-      if (scope) invalidateNoteSideEffects(queryClient, scope, opts?.jobAnalysisId);
+      if (scope)
+        invalidateNoteSideEffects(queryClient, scope, opts?.jobAnalysisId);
     },
   });
 

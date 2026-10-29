@@ -13,9 +13,9 @@ describe('toPreviewRichTextHtml', () => {
   });
 
   it('extracts visible text from anchor HTML for emptiness checks', () => {
-    expect(richTextPlainText('<a href="https://github.com/user/repo">Portfolio</a>')).toBe(
-      'Portfolio',
-    );
+    expect(
+      richTextPlainText('<a href="https://github.com/user/repo">Portfolio</a>'),
+    ).toBe('Portfolio');
     expect(richTextPlainText('<a href="https://example.com"></a>')).toBe('');
   });
 

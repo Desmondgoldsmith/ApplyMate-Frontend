@@ -38,7 +38,10 @@ export function todayPlanQueryKey(params: {
   return queryKeys.todayPlan.key(cv, tz, includeHidden, ffm ?? 'default');
 }
 
-export function dashboardFocusQueryKey(params: { cvProfileId?: string | null; timezone: string }) {
+export function dashboardFocusQueryKey(params: {
+  cvProfileId?: string | null;
+  timezone: string;
+}) {
   const cv = (params.cvProfileId ?? '').trim() || 'default';
   const tz = (params.timezone ?? 'UTC').trim() || 'UTC';
   return queryKeys.dashboardFocus.key(cv, tz);
@@ -97,11 +100,21 @@ export function dashboardQuietApplicationsQueryKey(params: {
 
 export function invalidateTodayPlanQueries(queryClient: QueryClient): void {
   void queryClient.invalidateQueries({ queryKey: queryKeys.todayPlan.root() });
-  void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardFocus.root() });
-  void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardQuietApplications.root() });
-  void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardInterviewPrep.root() });
-  void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardFollowUpJobs.root() });
-  void queryClient.invalidateQueries({ queryKey: queryKeys.weeklyStallSummary.root() });
+  void queryClient.invalidateQueries({
+    queryKey: queryKeys.dashboardFocus.root(),
+  });
+  void queryClient.invalidateQueries({
+    queryKey: queryKeys.dashboardQuietApplications.root(),
+  });
+  void queryClient.invalidateQueries({
+    queryKey: queryKeys.dashboardInterviewPrep.root(),
+  });
+  void queryClient.invalidateQueries({
+    queryKey: queryKeys.dashboardFollowUpJobs.root(),
+  });
+  void queryClient.invalidateQueries({
+    queryKey: queryKeys.weeklyStallSummary.root(),
+  });
 }
 
 /** CTA from `GET /dashboard/today-plan` (backend-driven). */
@@ -168,7 +181,12 @@ export type UnifiedPriorityIds = {
 };
 
 /** Backend Phase 2A: calm momentum line + template family (styling only). */
-export type MomentumType = 'progress' | 'continuation' | 'quick_win' | 'recovery' | 'confidence';
+export type MomentumType =
+  | 'progress'
+  | 'continuation'
+  | 'quick_win'
+  | 'recovery'
+  | 'confidence';
 
 export type DashboardHeaderPayload = {
   momentumMessage: string | null;
@@ -194,7 +212,13 @@ export type DashboardHeaderPayload = {
     applicationId: string | null;
     cvProfileId: string | null;
     recommendationId: string | null;
-    executionMode: 'inline_modal' | 'direct_editor' | 'checklist' | 'generator' | 'continue_flow' | null;
+    executionMode:
+      | 'inline_modal'
+      | 'direct_editor'
+      | 'checklist'
+      | 'generator'
+      | 'continue_flow'
+      | null;
     canonicalRoute: string | null;
     fallbackRoute: string | null;
     resolutionState: 'resolved' | 'degraded' | 'missing_context' | null;
@@ -303,7 +327,14 @@ export type DashboardExperienceActionSurface = {
   id: string | null;
   category: string;
   /** Backend-owned calm hierarchy token. */
-  visualPriority: 'hero' | 'primary' | 'secondary' | 'quiet' | 'background' | string | null;
+  visualPriority:
+    | 'hero'
+    | 'primary'
+    | 'secondary'
+    | 'quiet'
+    | 'background'
+    | string
+    | null;
   recommendationId: string | null;
   /** Backend-provided explicit navigation route for this action surface. */
   actionRoute: string | null;
@@ -323,7 +354,14 @@ export type DashboardExperienceInformationalSurface = {
   /** Stable surface id from orchestration (e.g. `exp-pipeline-snapshot`). */
   id: string | null;
   category: string;
-  visualPriority: 'hero' | 'primary' | 'secondary' | 'quiet' | 'background' | string | null;
+  visualPriority:
+    | 'hero'
+    | 'primary'
+    | 'secondary'
+    | 'quiet'
+    | 'background'
+    | string
+    | null;
   insightCategory: string | null;
   headline: string | null;
   body: string | null;
@@ -563,7 +601,13 @@ export type UnifiedPriorityItem = {
     nextImmediateAction: string | null;
     estimatedMinutes: number | null;
     emotionalBenefit: string | null;
-    executionMode: 'inline_modal' | 'direct_editor' | 'checklist' | 'generator' | 'continue_flow' | null;
+    executionMode:
+      | 'inline_modal'
+      | 'direct_editor'
+      | 'checklist'
+      | 'generator'
+      | 'continue_flow'
+      | null;
     deepLink: string | null;
     canExecuteInline: boolean;
     preparedDraft: string | null;
@@ -690,7 +734,11 @@ export type DailyMissionPayload = {
   primaryPriorityId: string | null;
   isMeaningful: boolean;
   estimatedMinutes: number | null;
-  hiddenReasonIfNone: 'no_meaningful_action' | 'all_done' | 'insufficient_data' | null;
+  hiddenReasonIfNone:
+    | 'no_meaningful_action'
+    | 'all_done'
+    | 'insufficient_data'
+    | null;
   impactLabel: string | null;
   completionRewardCopy: string | null;
   progressContext: string | null;
@@ -704,7 +752,12 @@ export type ContinuationStatePayload = {
   taskDisplayTitle: string | null;
   resolvedRoute: string | null;
   routeValidated: boolean | null;
-  routeValidationReason: 'ok' | 'missing_job' | 'missing_application' | 'inaccessible' | null;
+  routeValidationReason:
+    | 'ok'
+    | 'missing_job'
+    | 'missing_application'
+    | 'inaccessible'
+    | null;
   taskLabelQuality: 'specific' | 'heuristic' | null;
   taskRationaleShort: string | null;
   remainingSteps: number | null;
@@ -758,7 +811,13 @@ export type DashboardCommandBarPayload = {
 /** Phase 17A — one unfinished execution session in the continuation queue. */
 export type DashboardContinuationItemPayload = {
   id: string;
-  type: 'cv' | 'analysis' | 'application' | 'interview' | 'cover_letter' | 'follow_up';
+  type:
+    | 'cv'
+    | 'analysis'
+    | 'application'
+    | 'interview'
+    | 'cover_letter'
+    | 'follow_up';
   title: string;
   subtitle?: string | null;
   description: string;
@@ -951,7 +1010,9 @@ export type DashboardEmptyStatePayload = {
 };
 
 /** Keys are lower_snake_case section ids (e.g. `career_momentum`, `predictive_outlook`). */
-export type DashboardEmptyStatesPayload = Readonly<Record<string, DashboardEmptyStatePayload>>;
+export type DashboardEmptyStatesPayload = Readonly<
+  Record<string, DashboardEmptyStatePayload>
+>;
 
 export type TodayPlanPayload = {
   generatedAt: string;
@@ -1274,7 +1335,11 @@ export type AdaptiveCoachingPayload = {
 };
 
 /** Phase 9: Consistency / streak snapshot (backend-authored; optional). */
-export type HabitStreakStatusBand = 'starting' | 'building' | 'strong' | 'elite';
+export type HabitStreakStatusBand =
+  | 'starting'
+  | 'building'
+  | 'strong'
+  | 'elite';
 
 export type HabitProgressPayload = {
   currentStreakDays: number | null;
@@ -1295,7 +1360,11 @@ export type TodayPlanAchievementCategory =
   | 'streak'
   | 'milestone';
 
-export type TodayPlanAchievementRarity = 'common' | 'rare' | 'epic' | 'legendary';
+export type TodayPlanAchievementRarity =
+  | 'common'
+  | 'rare'
+  | 'epic'
+  | 'legendary';
 
 /** Phase 9: Earned badge row from today-plan (backend-authored). */
 export type TodayPlanAchievementPayload = {
@@ -1314,7 +1383,11 @@ export type MilestoneCelebrationPayload = {
   icon: string | null;
 };
 
-export type StrategicRecommendationImpact = 'low' | 'medium' | 'high' | 'very_high';
+export type StrategicRecommendationImpact =
+  | 'low'
+  | 'medium'
+  | 'high'
+  | 'very_high';
 
 export type StrategicRecommendationCategory =
   | 'apply'
@@ -1419,9 +1492,18 @@ export type CareerAchievementsPayload = {
   legacyBadgeSummaryLine: string | null;
 };
 
-export type CareerGoalRemotePreference = 'remote' | 'hybrid' | 'onsite' | 'flexible';
+export type CareerGoalRemotePreference =
+  | 'remote'
+  | 'hybrid'
+  | 'onsite'
+  | 'flexible';
 
-export type CareerGoalSeniority = 'mid' | 'senior' | 'staff' | 'principal' | 'executive';
+export type CareerGoalSeniority =
+  | 'mid'
+  | 'senior'
+  | 'staff'
+  | 'principal'
+  | 'executive';
 
 /** Phase 11: Normalized career targets from profile + onboarding + prefs (backend-authored). */
 export type CareerGoalProfilePayload = {
@@ -1448,7 +1530,11 @@ export type GoalAlignmentPayload = {
   ctaHref?: string | null;
 };
 
-export type GoalStrategicCoachingTimeHorizon = 'today' | 'this_week' | 'this_month' | 'quarter';
+export type GoalStrategicCoachingTimeHorizon =
+  | 'today'
+  | 'this_week'
+  | 'this_month'
+  | 'quarter';
 
 /** Phase 12: Goal-based coaching primary card (backend-authored). */
 export type GoalStrategicCoachingPayload = {
@@ -1509,7 +1595,11 @@ export type CareerMomentumPayload = {
   confidence: number | null;
 };
 
-export type WeeklyBriefingTone = 'encouraging' | 'focused' | 'urgent' | 'celebratory';
+export type WeeklyBriefingTone =
+  | 'encouraging'
+  | 'focused'
+  | 'urgent'
+  | 'celebratory';
 
 /** Phase 5E: Rolling weekly executive briefing (backend-authored). */
 export type WeeklyBriefingPayload = {
@@ -1522,7 +1612,11 @@ export type WeeklyBriefingPayload = {
   tone: WeeklyBriefingTone | null;
 };
 
-export type PredictivePipelineHealth = 'fragile' | 'building' | 'healthy' | 'strong';
+export type PredictivePipelineHealth =
+  | 'fragile'
+  | 'building'
+  | 'healthy'
+  | 'strong';
 
 /** Phase 6A: Semantic outlook bands from deterministic backend rules (not LLM probabilities). */
 export type PredictiveOutlookPayload = {
@@ -1649,7 +1743,12 @@ export type DashboardSurfaceOwnership =
   | 'revisit'
   | 'onboarding';
 
-export type DashboardMode = 'onboarding' | 'active_search' | 'execution_focus' | 'recovery' | 'low_activity';
+export type DashboardMode =
+  | 'onboarding'
+  | 'active_search'
+  | 'execution_focus'
+  | 'recovery'
+  | 'low_activity';
 
 export type DashboardSectionKey =
   | 'hero'
@@ -1681,7 +1780,10 @@ export type DashboardSectionPayload = {
   sectionLabel: string | null;
 };
 
-export type SectionPayloadsPayload = Partial<Record<DashboardSectionKey, DashboardSectionPayload>> & Record<string, unknown>;
+export type SectionPayloadsPayload = Partial<
+  Record<DashboardSectionKey, DashboardSectionPayload>
+> &
+  Record<string, unknown>;
 
 function unwrapEnvelope(raw: unknown): Record<string, unknown> {
   let cur: unknown = raw;
@@ -1705,7 +1807,10 @@ function unwrapEnvelope(raw: unknown): Record<string, unknown> {
   return {};
 }
 
-function pickStr(o: Record<string, unknown>, ...keys: string[]): string | undefined {
+function pickStr(
+  o: Record<string, unknown>,
+  ...keys: string[]
+): string | undefined {
   for (const k of keys) {
     const v = o[k];
     if (typeof v === 'string' && v.trim()) return v.trim();
@@ -1714,7 +1819,10 @@ function pickStr(o: Record<string, unknown>, ...keys: string[]): string | undefi
 }
 
 /** Wire JSON sometimes sends numeric ids; coerce to a stable non-empty string. */
-function pickWireStringLike(o: Record<string, unknown>, ...keys: string[]): string | undefined {
+function pickWireStringLike(
+  o: Record<string, unknown>,
+  ...keys: string[]
+): string | undefined {
   for (const k of keys) {
     const v = o[k];
     if (typeof v === 'string' && v.trim()) return v.trim();
@@ -1736,7 +1844,11 @@ function pickCta(raw: unknown): TodayPlanCta {
   const label = String(pickStr(o, 'label') ?? 'Open');
   const href = pickStr(o, 'href', 'path');
   let action: Record<string, unknown> = {};
-  if (o.action !== null && typeof o.action === 'object' && !Array.isArray(o.action)) {
+  if (
+    o.action !== null &&
+    typeof o.action === 'object' &&
+    !Array.isArray(o.action)
+  ) {
     action = o.action as Record<string, unknown>;
   } else {
     const skip = new Set(['label', 'href', 'path']);
@@ -1748,7 +1860,8 @@ function pickCta(raw: unknown): TodayPlanCta {
 }
 
 function pickItem(raw: unknown): TodayPlanItem | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const id = pickStr(o, 'id') ?? '';
   if (!id) return null;
@@ -1757,12 +1870,17 @@ function pickItem(raw: unknown): TodayPlanItem | null {
   const recommendationSourceRaw = String(
     pickStr(o, 'recommendationSource', 'recommendation_source') ?? '',
   ).toLowerCase();
-  const locationStrategyRaw = String(pickStr(o, 'locationStrategy', 'location_strategy') ?? '').toLowerCase();
+  const locationStrategyRaw = String(
+    pickStr(o, 'locationStrategy', 'location_strategy') ?? '',
+  ).toLowerCase();
   const normalizedLocationStrategy: 'local' | 'remote_fallback' | null =
-    locationStrategyRaw === 'local' || locationStrategyRaw === 'remote_fallback' ? locationStrategyRaw : null;
+    locationStrategyRaw === 'local' || locationStrategyRaw === 'remote_fallback'
+      ? locationStrategyRaw
+      : null;
   const recommendationSource: 'local' | 'remote_fallback' | null =
     normalizedLocationStrategy ??
-    (recommendationSourceRaw === 'local' || recommendationSourceRaw === 'remote_fallback'
+    (recommendationSourceRaw === 'local' ||
+    recommendationSourceRaw === 'remote_fallback'
       ? recommendationSourceRaw
       : null);
   return {
@@ -1773,7 +1891,10 @@ function pickItem(raw: unknown): TodayPlanItem | null {
     reasonCodes: pickStrArray(o.reasonCodes ?? o.reason_codes),
     statusLabel: pickStrOrNull(o, 'statusLabel', 'status_label'),
     tagLabel: pickStrOrNull(o, 'tagLabel', 'tag_label'),
-    priority: typeof o.priority === 'number' && Number.isFinite(o.priority) ? o.priority : undefined,
+    priority:
+      typeof o.priority === 'number' && Number.isFinite(o.priority)
+        ? o.priority
+        : undefined,
     confidence:
       typeof o.confidence === 'number' && Number.isFinite(o.confidence)
         ? o.confidence
@@ -1796,7 +1917,8 @@ function pickItem(raw: unknown): TodayPlanItem | null {
     postedAgeHours:
       typeof o.postedAgeHours === 'number' && Number.isFinite(o.postedAgeHours)
         ? o.postedAgeHours
-        : typeof o.posted_age_hours === 'number' && Number.isFinite(o.posted_age_hours)
+        : typeof o.posted_age_hours === 'number' &&
+            Number.isFinite(o.posted_age_hours)
           ? o.posted_age_hours
           : null,
     recommendationSource,
@@ -1828,7 +1950,10 @@ function pickNum(o: Record<string, unknown>, ...keys: string[]): number {
   return 0;
 }
 
-function pickNumOrNull(o: Record<string, unknown>, ...keys: string[]): number | null {
+function pickNumOrNull(
+  o: Record<string, unknown>,
+  ...keys: string[]
+): number | null {
   for (const k of keys) {
     const v = o[k];
     if (typeof v === 'number' && Number.isFinite(v)) return v;
@@ -1836,16 +1961,24 @@ function pickNumOrNull(o: Record<string, unknown>, ...keys: string[]): number | 
   return null;
 }
 
-function pickNonNegIntOrNull(o: Record<string, unknown>, ...keys: string[]): number | null {
+function pickNonNegIntOrNull(
+  o: Record<string, unknown>,
+  ...keys: string[]
+): number | null {
   for (const k of keys) {
     const v = o[k];
-    if (typeof v === 'number' && Number.isFinite(v)) return Math.max(0, Math.round(v));
-    if (typeof v === 'string' && v.trim() && Number.isFinite(Number(v))) return Math.max(0, Math.round(Number(v)));
+    if (typeof v === 'number' && Number.isFinite(v))
+      return Math.max(0, Math.round(v));
+    if (typeof v === 'string' && v.trim() && Number.isFinite(Number(v)))
+      return Math.max(0, Math.round(Number(v)));
   }
   return null;
 }
 
-function pickBoolOrNull(o: Record<string, unknown>, ...keys: string[]): boolean | null {
+function pickBoolOrNull(
+  o: Record<string, unknown>,
+  ...keys: string[]
+): boolean | null {
   for (const k of keys) {
     const v = o[k];
     if (v === true) return true;
@@ -1854,7 +1987,10 @@ function pickBoolOrNull(o: Record<string, unknown>, ...keys: string[]): boolean 
   return null;
 }
 
-function pickOptionalScore(o: Record<string, unknown>, ...keys: string[]): number | null {
+function pickOptionalScore(
+  o: Record<string, unknown>,
+  ...keys: string[]
+): number | null {
   for (const k of keys) {
     const v = o[k];
     if (typeof v === 'number' && Number.isFinite(v)) {
@@ -1867,13 +2003,18 @@ function pickOptionalScore(o: Record<string, unknown>, ...keys: string[]): numbe
 function pickImpactLevel(
   o: Record<string, unknown>,
 ): 'low' | 'medium' | 'high' | null {
-  const s = String(pickStr(o, 'expectedImpactLevel', 'expected_impact_level') ?? '')
+  const s = String(
+    pickStr(o, 'expectedImpactLevel', 'expected_impact_level') ?? '',
+  )
     .trim()
     .toLowerCase();
   return s === 'low' || s === 'medium' || s === 'high' ? s : null;
 }
 
-function pickStrOrNull(o: Record<string, unknown>, ...keys: string[]): string | null {
+function pickStrOrNull(
+  o: Record<string, unknown>,
+  ...keys: string[]
+): string | null {
   return pickStr(o, ...keys) ?? null;
 }
 
@@ -1894,7 +2035,13 @@ function pickPriorityState(o: Record<string, unknown>): PriorityState | null {
   return VALID_PRIORITY_STATES.has(s) ? (s as PriorityState) : null;
 }
 
-const VALID_MOMENTUM_TYPES = new Set<string>(['progress', 'continuation', 'quick_win', 'recovery', 'confidence']);
+const VALID_MOMENTUM_TYPES = new Set<string>([
+  'progress',
+  'continuation',
+  'quick_win',
+  'recovery',
+  'confidence',
+]);
 const VALID_DASHBOARD_MODES = new Set<string>([
   'onboarding',
   'active_search',
@@ -1902,7 +2049,14 @@ const VALID_DASHBOARD_MODES = new Set<string>([
   'recovery',
   'low_activity',
 ]);
-const VALID_SURFACE_OWNERSHIP = new Set<string>(['hero', 'continuation', 'priority_queue', 'nudge', 'revisit', 'onboarding']);
+const VALID_SURFACE_OWNERSHIP = new Set<string>([
+  'hero',
+  'continuation',
+  'priority_queue',
+  'nudge',
+  'revisit',
+  'onboarding',
+]);
 const VALID_RECOMMENDED_SECTIONS = new Set<string>([
   'hero',
   'today_plan',
@@ -1940,7 +2094,9 @@ function pickSurfaceOwnership(v: unknown): DashboardSurfaceOwnership | null {
   const s = String(v ?? '')
     .trim()
     .toLowerCase();
-  return VALID_SURFACE_OWNERSHIP.has(s) ? (s as DashboardSurfaceOwnership) : null;
+  return VALID_SURFACE_OWNERSHIP.has(s)
+    ? (s as DashboardSurfaceOwnership)
+    : null;
 }
 
 function pickRecommendedSections(v: unknown): DashboardSectionKey[] {
@@ -1982,7 +2138,8 @@ function pickCommandBarSource(raw: unknown): DashboardCommandBarSource | null {
 }
 
 function pickConfidencePct(raw: unknown): number | null {
-  if (typeof raw === 'number' && Number.isFinite(raw)) return Math.min(100, Math.max(0, Math.round(raw)));
+  if (typeof raw === 'number' && Number.isFinite(raw))
+    return Math.min(100, Math.max(0, Math.round(raw)));
   if (typeof raw === 'string' && raw.trim() && Number.isFinite(Number(raw))) {
     return Math.min(100, Math.max(0, Math.round(Number(raw))));
   }
@@ -1994,8 +2151,10 @@ function clampScore0to100(n: number): number {
 }
 
 function pickScore0to100(raw: unknown): number | null {
-  if (typeof raw === 'number' && Number.isFinite(raw)) return clampScore0to100(raw);
-  if (typeof raw === 'string' && raw.trim() && Number.isFinite(Number(raw))) return clampScore0to100(Number(raw));
+  if (typeof raw === 'number' && Number.isFinite(raw))
+    return clampScore0to100(raw);
+  if (typeof raw === 'string' && raw.trim() && Number.isFinite(Number(raw)))
+    return clampScore0to100(Number(raw));
   return null;
 }
 
@@ -2004,9 +2163,23 @@ function inferScore0to100(o: Record<string, unknown>): number | null {
   const direct = pickScore0to100(o.score);
   if (direct != null) return direct;
   const pct =
-    pickScore0to100(o.percent ?? o.percentage ?? o.probability ?? o.scoreValue ?? o.score_value) ?? null;
+    pickScore0to100(
+      o.percent ??
+        o.percentage ??
+        o.probability ??
+        o.scoreValue ??
+        o.score_value,
+    ) ?? null;
   if (pct != null) return pct;
-  const valueStr = pickStr(o, 'value', 'displayValue', 'display_value', 'primaryValue', 'primary_value') ?? '';
+  const valueStr =
+    pickStr(
+      o,
+      'value',
+      'displayValue',
+      'display_value',
+      'primaryValue',
+      'primary_value',
+    ) ?? '';
   const m = valueStr.trim().match(/^(\d+)\s*\/\s*100$/i);
   if (m) return clampScore0to100(Number(m[1]));
   const p = valueStr.trim().match(/^(\d+)\s*%$/);
@@ -2017,15 +2190,19 @@ function inferScore0to100(o: Record<string, unknown>): number | null {
 }
 
 function pickNonNegativeInt(raw: unknown): number | null {
-  if (typeof raw === 'number' && Number.isFinite(raw)) return Math.max(0, Math.round(raw));
+  if (typeof raw === 'number' && Number.isFinite(raw))
+    return Math.max(0, Math.round(raw));
   if (typeof raw === 'string' && raw.trim() && Number.isFinite(Number(raw))) {
     return Math.max(0, Math.round(Number(raw)));
   }
   return null;
 }
 
-function pickCareerMomentumVital(raw: unknown): DashboardCareerMomentumVitalPayload | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+function pickCareerMomentumVital(
+  raw: unknown,
+): DashboardCareerMomentumVitalPayload | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const score = inferScore0to100(o);
   if (score === null) return null;
@@ -2037,12 +2214,15 @@ function pickCareerMomentumVital(raw: unknown): DashboardCareerMomentumVitalPayl
   if (statusTier?.trim()) out.status = statusTier.trim();
   const trendRaw = o.trend;
   if (trendRaw !== undefined && trendRaw !== null) {
-    if (typeof trendRaw === 'number' && Number.isFinite(trendRaw)) out.trend = trendRaw;
+    if (typeof trendRaw === 'number' && Number.isFinite(trendRaw))
+      out.trend = trendRaw;
   }
   return out;
 }
 
-function pickInterviewOutlookVital(raw: unknown): DashboardInterviewOutlookVitalPayload | null {
+function pickInterviewOutlookVital(
+  raw: unknown,
+): DashboardInterviewOutlookVitalPayload | null {
   const outlook = pickSemanticOutlook(raw);
   if (!outlook) return null;
   const label = outlook.label?.trim() || 'Interview outlook';
@@ -2061,16 +2241,16 @@ function pickInterviewOutlookVital(raw: unknown): DashboardInterviewOutlookVital
   };
 }
 
-function pickBestMatchVital(raw: unknown): DashboardBestMatchVitalPayload | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+function pickBestMatchVital(
+  raw: unknown,
+): DashboardBestMatchVitalPayload | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const hasAnalyzedJobs =
     o.hasAnalyzedJobs === true || o.has_analyzed_jobs === true;
   const scoreRaw = o.score;
-  const score =
-    scoreRaw === null
-      ? null
-      : inferScore0to100(o);
+  const score = scoreRaw === null ? null : inferScore0to100(o);
   if (score === null && !hasAnalyzedJobs) {
     const label = String(pickStr(o, 'label') ?? '').trim();
     const emptyStateMessage =
@@ -2098,10 +2278,15 @@ function pickBestMatchVital(raw: unknown): DashboardBestMatchVitalPayload | null
   };
 }
 
-function pickActiveApplicationsVital(raw: unknown): DashboardActiveApplicationsVitalPayload | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+function pickActiveApplicationsVital(
+  raw: unknown,
+): DashboardActiveApplicationsVitalPayload | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
-  let count = pickNonNegativeInt(o.count ?? o.numericValue ?? o.numeric_value ?? o.applicationsInProgress);
+  let count = pickNonNegativeInt(
+    o.count ?? o.numericValue ?? o.numeric_value ?? o.applicationsInProgress,
+  );
   if (count === null) {
     const vs = pickStr(o, 'value', 'displayValue', 'display_value') ?? '';
     const m = vs.trim().match(/^(\d+)$/);
@@ -2118,7 +2303,8 @@ function pickActiveApplicationsVital(raw: unknown): DashboardActiveApplicationsV
 }
 
 function pickStreakVital(raw: unknown): DashboardStreakVitalPayload | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const daysRaw = o.days ?? o.currentStreakDays ?? o.current_streak_days;
   const days = pickNonNegativeInt(daysRaw);
@@ -2133,14 +2319,28 @@ function pickStreakVital(raw: unknown): DashboardStreakVitalPayload | null {
 }
 
 function pickDashboardVitals(raw: unknown): DashboardVitalsPayload | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
-  const careerMomentum = pickCareerMomentumVital(o.careerMomentum ?? o.career_momentum);
-  const interviewOutlook = pickInterviewOutlookVital(o.interviewOutlook ?? o.interview_outlook);
+  const careerMomentum = pickCareerMomentumVital(
+    o.careerMomentum ?? o.career_momentum,
+  );
+  const interviewOutlook = pickInterviewOutlookVital(
+    o.interviewOutlook ?? o.interview_outlook,
+  );
   const bestMatch = pickBestMatchVital(o.bestMatch ?? o.best_match);
-  const activeApplications = pickActiveApplicationsVital(o.activeApplications ?? o.active_applications);
+  const activeApplications = pickActiveApplicationsVital(
+    o.activeApplications ?? o.active_applications,
+  );
   const streak = pickStreakVital(o.streak);
-  if (!careerMomentum && !interviewOutlook && !bestMatch && !activeApplications && !streak) return null;
+  if (
+    !careerMomentum &&
+    !interviewOutlook &&
+    !bestMatch &&
+    !activeApplications &&
+    !streak
+  )
+    return null;
   const out: DashboardVitalsPayload = {};
   if (careerMomentum) out.careerMomentum = careerMomentum;
   if (interviewOutlook) out.interviewOutlook = interviewOutlook;
@@ -2178,13 +2378,25 @@ function pickDashboardFocusItem(el: unknown): DashboardFocusItemPayload | null {
   const priority =
     typeof priorityRaw === 'number' && Number.isFinite(priorityRaw)
       ? priorityRaw
-      : typeof priorityRaw === 'string' && priorityRaw.trim() && Number.isFinite(Number(priorityRaw))
+      : typeof priorityRaw === 'string' &&
+          priorityRaw.trim() &&
+          Number.isFinite(Number(priorityRaw))
         ? Number(priorityRaw)
         : NaN;
-  if (!id || !type || !urgency || !title || !ctaLabel || !ctaHref || !Number.isFinite(priority)) return null;
+  if (
+    !id ||
+    !type ||
+    !urgency ||
+    !title ||
+    !ctaLabel ||
+    !ctaHref ||
+    !Number.isFinite(priority)
+  )
+    return null;
   const estimatedMinutesRaw = o.estimatedMinutes ?? o.estimated_minutes;
   const estimatedMinutes =
-    typeof estimatedMinutesRaw === 'number' && Number.isFinite(estimatedMinutesRaw)
+    typeof estimatedMinutesRaw === 'number' &&
+    Number.isFinite(estimatedMinutesRaw)
       ? Math.max(0, Math.round(estimatedMinutesRaw))
       : typeof estimatedMinutesRaw === 'string' &&
           estimatedMinutesRaw.trim() &&
@@ -2195,11 +2407,17 @@ function pickDashboardFocusItem(el: unknown): DashboardFocusItemPayload | null {
   const dueInDays =
     typeof dueRaw === 'number' && Number.isFinite(dueRaw)
       ? Math.round(dueRaw)
-      : typeof dueRaw === 'string' && dueRaw.trim() && Number.isFinite(Number(dueRaw))
+      : typeof dueRaw === 'string' &&
+          dueRaw.trim() &&
+          Number.isFinite(Number(dueRaw))
         ? Math.round(Number(dueRaw))
         : undefined;
 
-  const jobAnalysisIdFocus = pickStrOrNull(o, 'jobAnalysisId', 'job_analysis_id');
+  const jobAnalysisIdFocus = pickStrOrNull(
+    o,
+    'jobAnalysisId',
+    'job_analysis_id',
+  );
   const row: DashboardFocusItemPayload = {
     id,
     type,
@@ -2218,7 +2436,11 @@ function pickDashboardFocusItem(el: unknown): DashboardFocusItemPayload | null {
   if (estimatedMinutes !== undefined) row.estimatedMinutes = estimatedMinutes;
   if (dueInDays !== undefined) row.dueInDays = dueInDays;
   const lastActivityAt = pickStrOrNull(o, 'lastActivityAt', 'last_activity_at');
-  const lastActivityLabel = pickStrOrNull(o, 'lastActivityLabel', 'last_activity_label');
+  const lastActivityLabel = pickStrOrNull(
+    o,
+    'lastActivityLabel',
+    'last_activity_label',
+  );
   if (lastActivityAt) row.lastActivityAt = lastActivityAt;
   if (lastActivityLabel) row.lastActivityLabel = lastActivityLabel;
   const hrefNorm = normalizeTodayPlanRoute(row.ctaHref);
@@ -2226,13 +2448,19 @@ function pickDashboardFocusItem(el: unknown): DashboardFocusItemPayload | null {
   return row;
 }
 
-function pickStaleApplicationItem(el: unknown): DashboardStaleApplicationItemPayload | null {
+function pickStaleApplicationItem(
+  el: unknown,
+): DashboardStaleApplicationItemPayload | null {
   if (el === null || typeof el !== 'object' || Array.isArray(el)) return null;
   const o = el as Record<string, unknown>;
   const id = String(pickStr(o, 'id') ?? '').trim();
-  const applicationId = String(pickStr(o, 'applicationId', 'application_id') ?? '').trim();
+  const applicationId = String(
+    pickStr(o, 'applicationId', 'application_id') ?? '',
+  ).trim();
   const jobTitle = String(pickStr(o, 'jobTitle', 'job_title') ?? '').trim();
-  const company = String(pickStr(o, 'company', 'companyName', 'company_name') ?? '').trim();
+  const company = String(
+    pickStr(o, 'company', 'companyName', 'company_name') ?? '',
+  ).trim();
   const lastActivityAt = String(
     pickStr(o, 'lastActivityAt', 'last_activity_at') ?? '',
   ).trim();
@@ -2240,21 +2468,27 @@ function pickStaleApplicationItem(el: unknown): DashboardStaleApplicationItemPay
     pickStr(o, 'lastActivityLabel', 'last_activity_label') ?? '',
   ).trim();
   const headline = String(pickStr(o, 'headline', 'title') ?? '').trim();
-  const supporting = String(pickStr(o, 'supporting', 'description', 'body') ?? '').trim();
+  const supporting = String(
+    pickStr(o, 'supporting', 'description', 'body') ?? '',
+  ).trim();
   const ctaLabel = String(pickStr(o, 'ctaLabel', 'cta_label') ?? '').trim();
   const ctaHrefRaw = String(pickStr(o, 'ctaHref', 'cta_href') ?? '').trim();
   const priorityRaw = o.priority;
   const priority =
     typeof priorityRaw === 'number' && Number.isFinite(priorityRaw)
       ? priorityRaw
-      : typeof priorityRaw === 'string' && priorityRaw.trim() && Number.isFinite(Number(priorityRaw))
+      : typeof priorityRaw === 'string' &&
+          priorityRaw.trim() &&
+          Number.isFinite(Number(priorityRaw))
         ? Number(priorityRaw)
         : NaN;
   const daysRaw = o.daysSinceActivity ?? o.days_since_activity;
   const daysSinceActivity =
     typeof daysRaw === 'number' && Number.isFinite(daysRaw)
       ? Math.max(0, Math.round(daysRaw))
-      : typeof daysRaw === 'string' && daysRaw.trim() && Number.isFinite(Number(daysRaw))
+      : typeof daysRaw === 'string' &&
+          daysRaw.trim() &&
+          Number.isFinite(Number(daysRaw))
         ? Math.max(0, Math.round(Number(daysRaw)))
         : NaN;
   if (
@@ -2274,8 +2508,16 @@ function pickStaleApplicationItem(el: unknown): DashboardStaleApplicationItemPay
     return null;
   }
   const ctaHref = normalizeTodayPlanRoute(ctaHrefRaw) ?? ctaHrefRaw;
-  const secondaryCtaLabel = pickStrOrNull(o, 'secondaryCtaLabel', 'secondary_cta_label');
-  const secondaryCtaHrefRaw = pickStrOrNull(o, 'secondaryCtaHref', 'secondary_cta_href');
+  const secondaryCtaLabel = pickStrOrNull(
+    o,
+    'secondaryCtaLabel',
+    'secondary_cta_label',
+  );
+  const secondaryCtaHrefRaw = pickStrOrNull(
+    o,
+    'secondaryCtaHref',
+    'secondary_cta_href',
+  );
   const secondaryCtaHref = secondaryCtaHrefRaw
     ? (normalizeTodayPlanRoute(secondaryCtaHrefRaw) ?? secondaryCtaHrefRaw)
     : null;
@@ -2312,7 +2554,9 @@ function pickStaleApplicationItem(el: unknown): DashboardStaleApplicationItemPay
   };
 }
 
-function pickStaleApplicationItems(raw: unknown): DashboardStaleApplicationItemPayload[] | null {
+function pickStaleApplicationItems(
+  raw: unknown,
+): DashboardStaleApplicationItemPayload[] | null {
   if (!Array.isArray(raw)) return null;
   const out: DashboardStaleApplicationItemPayload[] = [];
   for (const el of raw) {
@@ -2325,23 +2569,35 @@ function pickStaleApplicationItems(raw: unknown): DashboardStaleApplicationItemP
 export function pickStaleApplicationNotice(
   raw: unknown,
 ): StaleApplicationNoticePayload | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   if (o.show !== true) return null;
   const daysRaw = o.daysSinceActivity ?? o.days_since_activity;
   const daysSinceActivity =
     typeof daysRaw === 'number' && Number.isFinite(daysRaw)
       ? Math.max(0, Math.round(daysRaw))
-      : typeof daysRaw === 'string' && daysRaw.trim() && Number.isFinite(Number(daysRaw))
+      : typeof daysRaw === 'string' &&
+          daysRaw.trim() &&
+          Number.isFinite(Number(daysRaw))
         ? Math.max(0, Math.round(Number(daysRaw)))
         : NaN;
   const headline = String(pickStr(o, 'headline') ?? '').trim();
-  const supporting = String(pickStr(o, 'supporting', 'body', 'message') ?? '').trim();
+  const supporting = String(
+    pickStr(o, 'supporting', 'body', 'message') ?? '',
+  ).trim();
   const primaryCtaLabel = String(
-    pickStr(o, 'primaryCtaLabel', 'primary_cta_label', 'ctaLabel', 'cta_label') ?? '',
+    pickStr(
+      o,
+      'primaryCtaLabel',
+      'primary_cta_label',
+      'ctaLabel',
+      'cta_label',
+    ) ?? '',
   ).trim();
   const primaryCtaHrefRaw = String(
-    pickStr(o, 'primaryCtaHref', 'primary_cta_href', 'ctaHref', 'cta_href') ?? '',
+    pickStr(o, 'primaryCtaHref', 'primary_cta_href', 'ctaHref', 'cta_href') ??
+      '',
   ).trim();
   if (
     !Number.isFinite(daysSinceActivity) ||
@@ -2352,9 +2608,18 @@ export function pickStaleApplicationNotice(
   ) {
     return null;
   }
-  const primaryCtaHref = normalizeTodayPlanRoute(primaryCtaHrefRaw) ?? primaryCtaHrefRaw;
-  const secondaryCtaLabel = pickStrOrNull(o, 'secondaryCtaLabel', 'secondary_cta_label');
-  const secondaryCtaHrefRaw = pickStrOrNull(o, 'secondaryCtaHref', 'secondary_cta_href');
+  const primaryCtaHref =
+    normalizeTodayPlanRoute(primaryCtaHrefRaw) ?? primaryCtaHrefRaw;
+  const secondaryCtaLabel = pickStrOrNull(
+    o,
+    'secondaryCtaLabel',
+    'secondary_cta_label',
+  );
+  const secondaryCtaHrefRaw = pickStrOrNull(
+    o,
+    'secondaryCtaHref',
+    'secondary_cta_href',
+  );
   const secondaryCtaHref = secondaryCtaHrefRaw
     ? (normalizeTodayPlanRoute(secondaryCtaHrefRaw) ?? secondaryCtaHrefRaw)
     : null;
@@ -2370,7 +2635,9 @@ export function pickStaleApplicationNotice(
   };
 }
 
-function pickDashboardFocusItems(raw: unknown): DashboardFocusItemPayload[] | null {
+function pickDashboardFocusItems(
+  raw: unknown,
+): DashboardFocusItemPayload[] | null {
   if (!Array.isArray(raw)) return null;
   const out: DashboardFocusItemPayload[] = [];
   for (const el of raw) {
@@ -2380,8 +2647,11 @@ function pickDashboardFocusItems(raw: unknown): DashboardFocusItemPayload[] | nu
   return out;
 }
 
-function pickDashboardEmptyStates(raw: unknown): DashboardEmptyStatesPayload | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+function pickDashboardEmptyStates(
+  raw: unknown,
+): DashboardEmptyStatesPayload | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const out: Record<string, DashboardEmptyStatePayload> = {};
   for (const [k0, v] of Object.entries(o)) {
@@ -2400,24 +2670,37 @@ function pickDashboardEmptyStates(raw: unknown): DashboardEmptyStatesPayload | n
 }
 
 function pickCommandBar(raw: unknown): DashboardCommandBarPayload | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const message = String(pickStr(o, 'message') ?? '').trim();
   const ctaLabel = String(pickStr(o, 'ctaLabel', 'cta_label') ?? '').trim();
   const ctaHref = String(pickStr(o, 'ctaHref', 'cta_href') ?? '').trim();
   const confidence = pickConfidencePct(o.confidence);
   const source = pickCommandBarSource(o.source);
-  if (!message || !ctaLabel || !ctaHref || confidence === null || source === null) return null;
+  if (
+    !message ||
+    !ctaLabel ||
+    !ctaHref ||
+    confidence === null ||
+    source === null
+  )
+    return null;
   return { message, ctaLabel, ctaHref, confidence, source };
 }
 
-function pickContinuationItem(raw: unknown): DashboardContinuationItemPayload | null {
+function pickContinuationItem(
+  raw: unknown,
+): DashboardContinuationItemPayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
 
-  const id = String(pickStr(o, 'id') ?? 'continuation').trim() || 'continuation';
-  const typeRaw = String(pickStr(o, 'type') ?? '').trim().toLowerCase();
+  const id =
+    String(pickStr(o, 'id') ?? 'continuation').trim() || 'continuation';
+  const typeRaw = String(pickStr(o, 'type') ?? '')
+    .trim()
+    .toLowerCase();
   const type =
     typeRaw === 'cv' ||
     typeRaw === 'analysis' ||
@@ -2429,28 +2712,50 @@ function pickContinuationItem(raw: unknown): DashboardContinuationItemPayload | 
       : null;
   const title = String(pickStr(o, 'title', 'headline') ?? '').trim();
   const subtitle = pickStr(o, 'subtitle', 'sub_title') ?? null;
-  const description = String(pickStr(o, 'description', 'rationale', 'body') ?? '').trim();
+  const description = String(
+    pickStr(o, 'description', 'rationale', 'body') ?? '',
+  ).trim();
 
   const ctaRaw =
-    (o.cta !== null && typeof o.cta === 'object' && !Array.isArray(o.cta) ? (o.cta as Record<string, unknown>) : null) ??
-    null;
-  const ctaLabel = String(pickStr(o, 'ctaLabel', 'cta_label') ?? (ctaRaw ? pickStr(ctaRaw, 'label') : null) ?? '').trim();
-  const ctaHref = String(pickStr(o, 'ctaHref', 'cta_href') ?? (ctaRaw ? pickStr(ctaRaw, 'href', 'path') : null) ?? '').trim();
+    (o.cta !== null && typeof o.cta === 'object' && !Array.isArray(o.cta)
+      ? (o.cta as Record<string, unknown>)
+      : null) ?? null;
+  const ctaLabel = String(
+    pickStr(o, 'ctaLabel', 'cta_label') ??
+      (ctaRaw ? pickStr(ctaRaw, 'label') : null) ??
+      '',
+  ).trim();
+  const ctaHref = String(
+    pickStr(o, 'ctaHref', 'cta_href') ??
+      (ctaRaw ? pickStr(ctaRaw, 'href', 'path') : null) ??
+      '',
+  ).trim();
 
   if (!type || !title || !description || !ctaLabel || !ctaHref) return null;
 
   const confidence = pickConfidencePct(o.confidence);
   const estimatedMinutes = (() => {
-    const v = o.estimatedMinutes ?? o.estimated_minutes ?? (ctaRaw ? (ctaRaw.estimatedMinutes ?? ctaRaw.estimated_minutes) : undefined);
-    if (typeof v === 'number' && Number.isFinite(v)) return Math.max(0, Math.round(v));
-    if (typeof v === 'string' && v.trim() && Number.isFinite(Number(v))) return Math.max(0, Math.round(Number(v)));
+    const v =
+      o.estimatedMinutes ??
+      o.estimated_minutes ??
+      (ctaRaw
+        ? (ctaRaw.estimatedMinutes ?? ctaRaw.estimated_minutes)
+        : undefined);
+    if (typeof v === 'number' && Number.isFinite(v))
+      return Math.max(0, Math.round(v));
+    if (typeof v === 'string' && v.trim() && Number.isFinite(Number(v)))
+      return Math.max(0, Math.round(Number(v)));
     return null;
   })();
 
   const resumeStateRaw = o.resumeState ?? o.resume_state;
   const interviewResumeState = (() => {
     if (type !== 'interview') return null;
-    if (resumeStateRaw === null || typeof resumeStateRaw !== 'object' || Array.isArray(resumeStateRaw)) {
+    if (
+      resumeStateRaw === null ||
+      typeof resumeStateRaw !== 'object' ||
+      Array.isArray(resumeStateRaw)
+    ) {
       return null;
     }
     const rs = resumeStateRaw as Record<string, unknown>;
@@ -2461,10 +2766,17 @@ function pickContinuationItem(raw: unknown): DashboardContinuationItemPayload | 
         : null;
     const evaluationStatus =
       pickStrOrNull(rs, 'evaluationStatus', 'evaluation_status') ??
-      (snap ? pickStrOrNull(snap, 'evaluationStatus', 'evaluation_status') : null);
+      (snap
+        ? pickStrOrNull(snap, 'evaluationStatus', 'evaluation_status')
+        : null);
     const resultsPath =
-      pickStrOrNull(rs, 'resultsPath', 'results_path', 'resultsRoute', 'results_route') ??
-      (snap ? pickStrOrNull(snap, 'resultsPath', 'results_path') : null);
+      pickStrOrNull(
+        rs,
+        'resultsPath',
+        'results_path',
+        'resultsRoute',
+        'results_route',
+      ) ?? (snap ? pickStrOrNull(snap, 'resultsPath', 'results_path') : null);
     if (!evaluationStatus && !resultsPath) return null;
     return { evaluationStatus, resultsPath };
   })();
@@ -2486,7 +2798,9 @@ function pickContinuationItem(raw: unknown): DashboardContinuationItemPayload | 
   };
 }
 
-function pickContinuationItemsArray(raw: unknown): DashboardContinuationItemPayload[] {
+function pickContinuationItemsArray(
+  raw: unknown,
+): DashboardContinuationItemPayload[] {
   if (!Array.isArray(raw)) return [];
   const out: DashboardContinuationItemPayload[] = [];
   for (const el of raw) {
@@ -2500,15 +2814,19 @@ function pickContinuationBundle(body: Record<string, unknown>): {
   continuationItems: DashboardContinuationItemPayload[] | null;
   continuationCount: number | null;
 } {
-  const fromArray = pickContinuationItemsArray(body.continuationItems ?? body.continuation_items);
-  const single = pickContinuationItem(body.continuationItem ?? body.continuation_item);
+  const fromArray = pickContinuationItemsArray(
+    body.continuationItems ?? body.continuation_items,
+  );
+  const single = pickContinuationItem(
+    body.continuationItem ?? body.continuation_item,
+  );
   const merged = fromArray.length > 0 ? fromArray : single ? [single] : null;
 
   const countRaw = body.continuationCount ?? body.continuation_count;
   const continuationCount =
     typeof countRaw === 'number' && Number.isFinite(countRaw)
       ? Math.max(0, Math.round(countRaw))
-      : merged?.length ?? null;
+      : (merged?.length ?? null);
 
   return {
     continuationItems: merged,
@@ -2516,11 +2834,16 @@ function pickContinuationBundle(body: Record<string, unknown>): {
   };
 }
 
-function pickInterviewPreparationCard(raw: unknown): InterviewPreparationCardPayload | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+function pickInterviewPreparationCard(
+  raw: unknown,
+): InterviewPreparationCardPayload | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const headline = String(pickStr(o, 'headline', 'title') ?? '').trim();
-  const supporting = String(pickStr(o, 'supporting', 'subtitle', 'description', 'body') ?? '').trim();
+  const supporting = String(
+    pickStr(o, 'supporting', 'subtitle', 'description', 'body') ?? '',
+  ).trim();
   const ctaLabel = String(pickStr(o, 'ctaLabel', 'cta_label') ?? '').trim();
   const ctaHref = String(pickStr(o, 'ctaHref', 'cta_href') ?? '').trim();
   if (!headline || !ctaLabel || !ctaHref) return null;
@@ -2533,11 +2856,19 @@ function pickInterviewPreparationCard(raw: unknown): InterviewPreparationCardPay
     jobAnalysisId: pickStrOrNull(o, 'jobAnalysisId', 'job_analysis_id'),
     company: pickStrOrNull(o, 'company', 'companyName', 'company_name'),
     companyLogoUrl: pickCompanyLogoUrl(o),
-    roleTitle: pickStrOrNull(o, 'roleTitle', 'role_title', 'jobTitle', 'job_title'),
+    roleTitle: pickStrOrNull(
+      o,
+      'roleTitle',
+      'role_title',
+      'jobTitle',
+      'job_title',
+    ),
   };
 }
 
-function pickInterviewPreparationCards(raw: unknown): InterviewPreparationCardPayload[] | null {
+function pickInterviewPreparationCards(
+  raw: unknown,
+): InterviewPreparationCardPayload[] | null {
   if (raw === undefined) return null;
   if (!Array.isArray(raw)) return null;
   const out: InterviewPreparationCardPayload[] = [];
@@ -2549,20 +2880,30 @@ function pickInterviewPreparationCards(raw: unknown): InterviewPreparationCardPa
 }
 
 function pickDaysUntilInterview(o: Record<string, unknown>): number | null {
-  const keys = ['daysUntilInterview', 'days_until_interview', 'daysToInterview', 'days_to_interview'];
+  const keys = [
+    'daysUntilInterview',
+    'days_until_interview',
+    'daysToInterview',
+    'days_to_interview',
+  ];
   for (const k of keys) {
     const v = o[k];
-    if (typeof v === 'number' && Number.isFinite(v)) return Math.max(0, Math.round(v));
-    if (typeof v === 'string' && v.trim() && Number.isFinite(Number(v))) return Math.max(0, Math.round(Number(v)));
+    if (typeof v === 'number' && Number.isFinite(v))
+      return Math.max(0, Math.round(v));
+    if (typeof v === 'string' && v.trim() && Number.isFinite(Number(v)))
+      return Math.max(0, Math.round(Number(v)));
   }
   return null;
 }
 
 function pickUpcomingInterviewCard(raw: unknown): UpcomingInterviewItem | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
 
-  let jobAnalysisId = String(pickWireStringLike(o, 'jobAnalysisId', 'job_analysis_id') ?? '').trim();
+  let jobAnalysisId = String(
+    pickWireStringLike(o, 'jobAnalysisId', 'job_analysis_id') ?? '',
+  ).trim();
   /**
    * Some payloads placed the analysis UUID only on `id`. Backend now duplicates it on `jobAnalysisId`;
    * keep this fallback so cached / transitional responses still normalize.
@@ -2572,31 +2913,53 @@ function pickUpcomingInterviewCard(raw: unknown): UpcomingInterviewItem | null {
   }
   if (!jobAnalysisId) {
     jobAnalysisId = String(
-      pickWireStringLike(o, 'analysisId', 'analysis_id', 'canonicalJobId', 'canonical_job_id') ?? '',
+      pickWireStringLike(
+        o,
+        'analysisId',
+        'analysis_id',
+        'canonicalJobId',
+        'canonical_job_id',
+      ) ?? '',
     ).trim();
   }
   /** Only rows with analysis are listed on the wire; keep guard for partial caches. */
   if (!jobAnalysisId) return null;
 
   const company =
-    pickStrOrNull(o, 'company') ?? pickStrOrNull(o, 'companyName', 'company_name');
+    pickStrOrNull(o, 'company') ??
+    pickStrOrNull(o, 'companyName', 'company_name');
   const jobTitle =
-    pickStrOrNull(o, 'jobTitle', 'job_title') ?? pickStrOrNull(o, 'roleTitle', 'role_title');
+    pickStrOrNull(o, 'jobTitle', 'job_title') ??
+    pickStrOrNull(o, 'roleTitle', 'role_title');
 
   let headline = String(pickStr(o, 'headline', 'title') ?? '').trim();
-  let supporting = String(pickStr(o, 'supporting', 'subtitle', 'description') ?? '').trim();
+  let supporting = String(
+    pickStr(o, 'supporting', 'subtitle', 'description') ?? '',
+  ).trim();
 
-  let ctaLabel = String(pickWireStringLike(o, 'ctaLabel', 'cta_label') ?? '').trim();
-  let ctaHref = String(pickStr(o, 'ctaHref', 'cta_href', 'href', 'url', 'link') ?? '').trim();
+  let ctaLabel = String(
+    pickWireStringLike(o, 'ctaLabel', 'cta_label') ?? '',
+  ).trim();
+  let ctaHref = String(
+    pickStr(o, 'ctaHref', 'cta_href', 'href', 'url', 'link') ?? '',
+  ).trim();
 
   const nestedCta = o.cta ?? o.ctaDetails ?? o.cta_details;
-  if (nestedCta !== null && typeof nestedCta === 'object' && !Array.isArray(nestedCta)) {
+  if (
+    nestedCta !== null &&
+    typeof nestedCta === 'object' &&
+    !Array.isArray(nestedCta)
+  ) {
     const c = nestedCta as Record<string, unknown>;
     if (!ctaLabel) {
-      ctaLabel = String(pickWireStringLike(c, 'ctaLabel', 'cta_label', 'label') ?? '').trim();
+      ctaLabel = String(
+        pickWireStringLike(c, 'ctaLabel', 'cta_label', 'label') ?? '',
+      ).trim();
     }
     if (!ctaHref) {
-      ctaHref = String(pickStr(c, 'ctaHref', 'cta_href', 'href', 'url', 'link') ?? '').trim();
+      ctaHref = String(
+        pickStr(c, 'ctaHref', 'cta_href', 'href', 'url', 'link') ?? '',
+      ).trim();
     }
   }
 
@@ -2612,7 +2975,12 @@ function pickUpcomingInterviewCard(raw: unknown): UpcomingInterviewItem | null {
 
   if (!ctaLabel || !ctaHref) return null;
 
-  const stageRaw = pickStrOrNull(o, 'stage', 'interviewStage', 'interview_stage');
+  const stageRaw = pickStrOrNull(
+    o,
+    'stage',
+    'interviewStage',
+    'interview_stage',
+  );
   const stageNorm = String(stageRaw ?? '')
     .trim()
     .toLowerCase();
@@ -2628,7 +2996,8 @@ function pickUpcomingInterviewCard(raw: unknown): UpcomingInterviewItem | null {
   if (!supporting) {
     if (isAppliedPrep && jobTitle && company) {
       supporting = `You applied for ${jobTitle} at ${company}. Practice now while you wait to hear back.`;
-    } else if (jobTitle && company) supporting = `Prepare for your ${jobTitle} interview at ${company}.`;
+    } else if (jobTitle && company)
+      supporting = `Prepare for your ${jobTitle} interview at ${company}.`;
     else if (jobTitle) supporting = `Prepare for your ${jobTitle} interview.`;
     else if (company) supporting = `Prepare for your interview at ${company}.`;
     else supporting = 'Prepare for your upcoming interview.';
@@ -2636,11 +3005,27 @@ function pickUpcomingInterviewCard(raw: unknown): UpcomingInterviewItem | null {
 
   const interviewDate =
     pickStrOrNull(o, 'interviewDate', 'interview_date') ??
-    pickStrOrNull(o, 'scheduledInterviewAt', 'scheduled_interview_at', 'scheduledAt', 'scheduled_at');
+    pickStrOrNull(
+      o,
+      'scheduledInterviewAt',
+      'scheduled_interview_at',
+      'scheduledAt',
+      'scheduled_at',
+    );
 
   const lastUpdatedAt =
-    pickStrOrNull(o, 'lastUpdatedAt', 'last_updated_at', 'updatedAt', 'updated_at') ?? null;
-  const lastUpdatedLabel = pickStrOrNull(o, 'lastUpdatedLabel', 'last_updated_label');
+    pickStrOrNull(
+      o,
+      'lastUpdatedAt',
+      'last_updated_at',
+      'updatedAt',
+      'updated_at',
+    ) ?? null;
+  const lastUpdatedLabel = pickStrOrNull(
+    o,
+    'lastUpdatedLabel',
+    'last_updated_label',
+  );
 
   const id = String(pickWireStringLike(o, 'id') ?? '').trim() || jobAnalysisId;
 
@@ -2686,11 +3071,15 @@ function resolveWireUpcomingInterviews(body: Record<string, unknown>): unknown {
   };
 
   const payload =
-    body.payload !== null && typeof body.payload === 'object' && !Array.isArray(body.payload)
+    body.payload !== null &&
+    typeof body.payload === 'object' &&
+    !Array.isArray(body.payload)
       ? (body.payload as Record<string, unknown>)
       : null;
   const result =
-    body.result !== null && typeof body.result === 'object' && !Array.isArray(body.result)
+    body.result !== null &&
+    typeof body.result === 'object' &&
+    !Array.isArray(body.result)
       ? (body.result as Record<string, unknown>)
       : null;
 
@@ -2706,7 +3095,8 @@ function resolveWireUpcomingInterviews(body: Record<string, unknown>): unknown {
     if (list !== undefined) return list;
   }
 
-  const dash = body.dashboard ?? body.dashboardSnapshot ?? body.dashboard_snapshot;
+  const dash =
+    body.dashboard ?? body.dashboardSnapshot ?? body.dashboard_snapshot;
   if (dash !== null && typeof dash === 'object' && !Array.isArray(dash)) {
     const d = dash as Record<string, unknown>;
     const nested = d.upcomingInterviews ?? d.upcoming_interviews;
@@ -2812,7 +3202,9 @@ function deriveUpcomingInterviewsFromFocusItems(
   return out;
 }
 
-function deriveUpcomingInterviewsFromUnifiedItems(items: UnifiedPriorityItem[]): UpcomingInterviewItem[] {
+function deriveUpcomingInterviewsFromUnifiedItems(
+  items: UnifiedPriorityItem[],
+): UpcomingInterviewItem[] {
   const seenJa = new Set<string>();
   const out: UpcomingInterviewItem[] = [];
   for (const it of items) {
@@ -2825,8 +3217,12 @@ function deriveUpcomingInterviewsFromUnifiedItems(items: UnifiedPriorityItem[]):
       String(it.executionContext?.canonicalJobId ?? '').trim();
     if (!ja || seenJa.has(ja)) continue;
 
-    const ws = String(it.workflowState ?? '').trim().toLowerCase();
-    const kindLower = String(it.kind ?? '').trim().toLowerCase();
+    const ws = String(it.workflowState ?? '')
+      .trim()
+      .toLowerCase();
+    const kindLower = String(it.kind ?? '')
+      .trim()
+      .toLowerCase();
     const hasPrepCtx = Boolean(it.interviewPrepContext?.jobAnalysisId?.trim());
     const interviewLane =
       hasPrepCtx ||
@@ -2843,8 +3239,10 @@ function deriveUpcomingInterviewsFromUnifiedItems(items: UnifiedPriorityItem[]):
     const jobTitle = it.roleTitle ?? it.interviewPrepContext?.jobTitle ?? null;
     const isAppliedPrep = ws === 'applied' || ws === 'applied_prep';
     let headline = it.title.trim();
-    if (!headline && isAppliedPrep && company) headline = `Get interview-ready · ${company}`;
-    else if (!headline && jobTitle && company) headline = `${jobTitle} at ${company}`;
+    if (!headline && isAppliedPrep && company)
+      headline = `Get interview-ready · ${company}`;
+    else if (!headline && jobTitle && company)
+      headline = `${jobTitle} at ${company}`;
     else if (!headline) headline = 'Interview preparation';
     const supporting =
       (it.subtitle && it.subtitle.trim()) ||
@@ -2855,9 +3253,11 @@ function deriveUpcomingInterviewsFromUnifiedItems(items: UnifiedPriorityItem[]):
           : 'Prepare for your upcoming interview.');
 
     const confidence =
-      typeof it.confidenceScore === 'number' && Number.isFinite(it.confidenceScore)
+      typeof it.confidenceScore === 'number' &&
+      Number.isFinite(it.confidenceScore)
         ? Math.round(Math.max(0, Math.min(100, it.confidenceScore)))
-        : typeof it.explain?.confidence === 'number' && Number.isFinite(it.explain.confidence)
+        : typeof it.explain?.confidence === 'number' &&
+            Number.isFinite(it.explain.confidence)
           ? Math.round(Math.max(0, Math.min(100, it.explain.confidence)))
           : null;
 
@@ -2871,7 +3271,9 @@ function deriveUpcomingInterviewsFromUnifiedItems(items: UnifiedPriorityItem[]):
       supporting,
       company,
       jobTitle,
-      stage: isAppliedPrep ? 'applied_prep' : (it.workflowState ?? 'interviewing'),
+      stage: isAppliedPrep
+        ? 'applied_prep'
+        : (it.workflowState ?? 'interviewing'),
       interviewDate: null,
       daysUntilInterview: null,
       confidence,
@@ -2889,7 +3291,8 @@ function mergeUpcomingInterviewsFromWireAndFocus(
   unifiedItems: UnifiedPriorityItem[],
 ): UpcomingInterviewItem[] {
   const fromWire = pickUpcomingInterviews(wire);
-  if (fromWire.length > 0) return fromWire.slice(0, UPCOMING_INTERVIEWS_SECTION_MAX);
+  if (fromWire.length > 0)
+    return fromWire.slice(0, UPCOMING_INTERVIEWS_SECTION_MAX);
   const fromFocus = deriveUpcomingInterviewsFromFocusItems(focusItems);
   if (fromFocus.length > 0) return fromFocus;
   return deriveUpcomingInterviewsFromUnifiedItems(unifiedItems);
@@ -2903,10 +3306,14 @@ export function dashboardEmptyStateFor(
   const m = plan?.dashboardEmptyStates;
   if (!m) return undefined;
   const row = m[sectionKey.trim().toLowerCase()];
-  return row && typeof row.message === 'string' && row.message.trim() ? row : undefined;
+  return row && typeof row.message === 'string' && row.message.trim()
+    ? row
+    : undefined;
 }
 
-function pickNormalizedSectionTitles(raw: unknown): NormalizedSectionTitlesPayload | null {
+function pickNormalizedSectionTitles(
+  raw: unknown,
+): NormalizedSectionTitlesPayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
@@ -2932,7 +3339,9 @@ export function normalizedSectionTitle(
 }
 
 /** Continuation queue for UI (API order; snapshot may cap length vs {@link TodayPlanPayload.continuationCount}). */
-export function listContinuationItems(plan: TodayPlanPayload | null | undefined): DashboardContinuationItemPayload[] {
+export function listContinuationItems(
+  plan: TodayPlanPayload | null | undefined,
+): DashboardContinuationItemPayload[] {
   return plan?.continuationItems?.length ? plan.continuationItems : [];
 }
 
@@ -2956,14 +3365,18 @@ function pickSectionPayloads(raw: unknown): SectionPayloadsPayload | null {
   const o = raw as Record<string, unknown>;
   const out: Record<string, DashboardSectionPayload> = {};
   for (const [k0, v] of Object.entries(o)) {
-    const k = String(k0 ?? '').trim().toLowerCase();
+    const k = String(k0 ?? '')
+      .trim()
+      .toLowerCase();
     if (!k) continue;
     if (v === null || typeof v !== 'object' || Array.isArray(v)) continue;
     const row = v as Record<string, unknown>;
     const title = pickStr(row, 'title') ?? null;
     const body = pickStr(row, 'body') ?? null;
-    const emptyStateCopy = pickStr(row, 'emptyStateCopy', 'empty_state_copy') ?? null;
-    const sectionLabel = pickStr(row, 'sectionLabel', 'section_label', 'label') ?? null;
+    const emptyStateCopy =
+      pickStr(row, 'emptyStateCopy', 'empty_state_copy') ?? null;
+    const sectionLabel =
+      pickStr(row, 'sectionLabel', 'section_label', 'label') ?? null;
     if (!title && !body && !emptyStateCopy && !sectionLabel) continue;
     out[k] = { title, body, emptyStateCopy, sectionLabel };
   }
@@ -2975,17 +3388,24 @@ function pickWorkflowState(o: Record<string, unknown>): WorkflowState | null {
   return s ? (s.toLowerCase() as WorkflowState) : null;
 }
 
-function pickWorkflowOrchestrationFeed(raw: unknown): WorkflowOrchestrationFeedRow[] {
+function pickWorkflowOrchestrationFeed(
+  raw: unknown,
+): WorkflowOrchestrationFeedRow[] {
   if (!Array.isArray(raw)) return [];
   const out: WorkflowOrchestrationFeedRow[] = [];
   for (const el of raw) {
     if (el === null || typeof el !== 'object' || Array.isArray(el)) continue;
     const row = el as Record<string, unknown>;
     const cluster =
-      pickStrOrNull(row, 'recommendationClusterId', 'recommendation_cluster_id') ??
-      pickStrOrNull(row, 'recommendedClusterId', 'recommended_cluster_id');
+      pickStrOrNull(
+        row,
+        'recommendationClusterId',
+        'recommendation_cluster_id',
+      ) ?? pickStrOrNull(row, 'recommendedClusterId', 'recommended_cluster_id');
     const primaryWs = (() => {
-      const a = String(pickStr(row, 'primaryWorkflowState', 'primary_workflow_state') ?? '').trim();
+      const a = String(
+        pickStr(row, 'primaryWorkflowState', 'primary_workflow_state') ?? '',
+      ).trim();
       if (a) return a.toLowerCase() as WorkflowState;
       return pickWorkflowState(row);
     })();
@@ -2994,16 +3414,27 @@ function pickWorkflowOrchestrationFeed(raw: unknown): WorkflowOrchestrationFeedR
       entityId: pickStrOrNull(row, 'entityId', 'entity_id'),
       recommendationClusterId: cluster,
       primaryWorkflowState: primaryWs,
-      owningRecommendationId: pickStrOrNull(row, 'owningRecommendationId', 'owning_recommendation_id'),
-      primarySurfaceOwner: pickStrOrNull(row, 'primarySurfaceOwner', 'primary_surface_owner'),
+      owningRecommendationId: pickStrOrNull(
+        row,
+        'owningRecommendationId',
+        'owning_recommendation_id',
+      ),
+      primarySurfaceOwner: pickStrOrNull(
+        row,
+        'primarySurfaceOwner',
+        'primary_surface_owner',
+      ),
     });
   }
   return out;
 }
 
-function pickSurfaceEligibility(raw: Record<string, unknown>): Record<string, unknown> | null {
+function pickSurfaceEligibility(
+  raw: Record<string, unknown>,
+): Record<string, unknown> | null {
   const v = raw.surfaceEligibility ?? raw.surface_eligibility;
-  if (v !== null && typeof v === 'object' && !Array.isArray(v)) return v as Record<string, unknown>;
+  if (v !== null && typeof v === 'object' && !Array.isArray(v))
+    return v as Record<string, unknown>;
   return null;
 }
 
@@ -3011,7 +3442,10 @@ function pickCanonicalRecommendationRow(
   el: unknown,
   withSurface: true,
 ): OrchestratedRecommendation | null;
-function pickCanonicalRecommendationRow(el: unknown, withSurface: false): CanonicalRecommendation | null;
+function pickCanonicalRecommendationRow(
+  el: unknown,
+  withSurface: false,
+): CanonicalRecommendation | null;
 function pickCanonicalRecommendationRow(
   el: unknown,
   withSurface: boolean,
@@ -3019,35 +3453,70 @@ function pickCanonicalRecommendationRow(
   if (el === null || typeof el !== 'object' || Array.isArray(el)) return null;
   const row = el as Record<string, unknown>;
   const base: CanonicalRecommendation = {
-    recommendationId: pickStrOrNull(row, 'recommendationId', 'recommendation_id'),
-    workflowEntityId: pickStrOrNull(row, 'workflowEntityId', 'workflow_entity_id'),
-    workflowEntityType: pickStrOrNull(row, 'workflowEntityType', 'workflow_entity_type'),
+    recommendationId: pickStrOrNull(
+      row,
+      'recommendationId',
+      'recommendation_id',
+    ),
+    workflowEntityId: pickStrOrNull(
+      row,
+      'workflowEntityId',
+      'workflow_entity_id',
+    ),
+    workflowEntityType: pickStrOrNull(
+      row,
+      'workflowEntityType',
+      'workflow_entity_type',
+    ),
     workflowState: pickWorkflowState(row),
     workflowStage: pickStrOrNull(row, 'workflowStage', 'workflow_stage'),
-    recommendationFamily: pickStrOrNull(row, 'recommendationFamily', 'recommendation_family'),
-    recommendationIntent: pickStrOrNull(row, 'recommendationIntent', 'recommendation_intent'),
-    canonicalActionLabel: pickStrOrNull(row, 'canonicalActionLabel', 'canonical_action_label'),
+    recommendationFamily: pickStrOrNull(
+      row,
+      'recommendationFamily',
+      'recommendation_family',
+    ),
+    recommendationIntent: pickStrOrNull(
+      row,
+      'recommendationIntent',
+      'recommendation_intent',
+    ),
+    canonicalActionLabel: pickStrOrNull(
+      row,
+      'canonicalActionLabel',
+      'canonical_action_label',
+    ),
     canonicalRoute: pickStrOrNull(row, 'canonicalRoute', 'canonical_route'),
     fallbackRoute: pickStrOrNull(row, 'fallbackRoute', 'fallback_route'),
-    actionSemantics: pickStrOrNull(row, 'actionSemantics', 'action_semantics') as ActionSemantics | null,
+    actionSemantics: pickStrOrNull(
+      row,
+      'actionSemantics',
+      'action_semantics',
+    ) as ActionSemantics | null,
     priorityScore:
-      typeof row.priorityScore === 'number' && Number.isFinite(row.priorityScore)
+      typeof row.priorityScore === 'number' &&
+      Number.isFinite(row.priorityScore)
         ? row.priorityScore
-        : typeof row.priority_score === 'number' && Number.isFinite(row.priority_score)
+        : typeof row.priority_score === 'number' &&
+            Number.isFinite(row.priority_score)
           ? row.priority_score
           : null,
     urgency: pickStrOrNull(row, 'urgency'),
     surfaceEligibility: pickSurfaceEligibility(row),
   };
   if (!withSurface) return base;
-  const assignedRaw = String(pickStr(row, 'assignedSurface', 'assigned_surface') ?? '')
+  const assignedRaw = String(
+    pickStr(row, 'assignedSurface', 'assigned_surface') ?? '',
+  )
     .trim()
     .toLowerCase();
-  const assignedSurface: AssignedSurface | null = assignedRaw ? (assignedRaw as AssignedSurface) : null;
+  const assignedSurface: AssignedSurface | null = assignedRaw
+    ? (assignedRaw as AssignedSurface)
+    : null;
   const surfaceRank =
     typeof row.surfaceRank === 'number' && Number.isFinite(row.surfaceRank)
       ? row.surfaceRank
-      : typeof row.surface_rank === 'number' && Number.isFinite(row.surface_rank)
+      : typeof row.surface_rank === 'number' &&
+          Number.isFinite(row.surface_rank)
         ? row.surface_rank
         : null;
   const out: OrchestratedRecommendation = {
@@ -3068,7 +3537,9 @@ function pickRecommendationGraph(raw: unknown): CanonicalRecommendation[] {
   return out;
 }
 
-function pickOrchestratedRecommendations(raw: unknown): OrchestratedRecommendation[] {
+function pickOrchestratedRecommendations(
+  raw: unknown,
+): OrchestratedRecommendation[] {
   if (!Array.isArray(raw)) return [];
   const out: OrchestratedRecommendation[] = [];
   for (const el of raw) {
@@ -3079,35 +3550,63 @@ function pickOrchestratedRecommendations(raw: unknown): OrchestratedRecommendati
 }
 
 function pickContinuationHint(raw: unknown): ContinuationHintPayload | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   return {
-    workflowEntityId: pickStrOrNull(o, 'workflowEntityId', 'workflow_entity_id'),
+    workflowEntityId: pickStrOrNull(
+      o,
+      'workflowEntityId',
+      'workflow_entity_id',
+    ),
     recommendationId: pickStrOrNull(o, 'recommendationId', 'recommendation_id'),
     canonicalRoute: pickStrOrNull(o, 'canonicalRoute', 'canonical_route'),
     narrativeRole: pickStrOrNull(o, 'narrativeRole', 'narrative_role'),
   };
 }
 
-function pickExperienceHierarchy(raw: Record<string, unknown>): ExperienceSurfaceHierarchy | null {
+function pickExperienceHierarchy(
+  raw: Record<string, unknown>,
+): ExperienceSurfaceHierarchy | null {
   return {
-    visualImportance: pickStrOrNull(raw, 'visualImportance', 'visual_importance'),
+    visualImportance: pickStrOrNull(
+      raw,
+      'visualImportance',
+      'visual_importance',
+    ),
     urgency: pickStrOrNull(raw, 'urgency'),
     emotionalTone: pickStrOrNull(raw, 'emotionalTone', 'emotional_tone'),
     actionIntensity: pickStrOrNull(raw, 'actionIntensity', 'action_intensity'),
   };
 }
 
-function pickDashboardExperienceSurface(el: unknown): DashboardExperienceSurface | null {
+function pickDashboardExperienceSurface(
+  el: unknown,
+): DashboardExperienceSurface | null {
   if (el === null || typeof el !== 'object' || Array.isArray(el)) return null;
   const o = el as Record<string, unknown>;
-  const fc = pickOptionalScore(o, 'freshnessConfidence', 'freshness_confidence');
-  const cc = pickOptionalScore(o, 'continuityConfidence', 'continuity_confidence');
-  const sc = pickOptionalScore(o, 'stabilityConfidence', 'stability_confidence');
+  const fc = pickOptionalScore(
+    o,
+    'freshnessConfidence',
+    'freshness_confidence',
+  );
+  const cc = pickOptionalScore(
+    o,
+    'continuityConfidence',
+    'continuity_confidence',
+  );
+  const sc = pickOptionalScore(
+    o,
+    'stabilityConfidence',
+    'stability_confidence',
+  );
   const visualPriority = pickStrOrNull(o, 'visualPriority', 'visual_priority');
-  const confidenceRaw = o.confidence ?? o.surfaceConfidence ?? o.surface_confidence;
+  const confidenceRaw =
+    o.confidence ?? o.surfaceConfidence ?? o.surface_confidence;
   const confidence =
-    confidenceRaw !== null && typeof confidenceRaw === 'object' && !Array.isArray(confidenceRaw)
+    confidenceRaw !== null &&
+    typeof confidenceRaw === 'object' &&
+    !Array.isArray(confidenceRaw)
       ? (() => {
           const c = confidenceRaw as Record<string, unknown>;
           return {
@@ -3116,31 +3615,73 @@ function pickDashboardExperienceSurface(el: unknown): DashboardExperienceSurface
               'recommendationConfidence',
               'recommendation_confidence',
             ),
-            routingConfidence: pickOptionalScore(c, 'routingConfidence', 'routing_confidence'),
-            workflowConfidence: pickOptionalScore(c, 'workflowConfidence', 'workflow_confidence'),
-            continuityConfidence: pickOptionalScore(c, 'continuityConfidence', 'continuity_confidence'),
+            routingConfidence: pickOptionalScore(
+              c,
+              'routingConfidence',
+              'routing_confidence',
+            ),
+            workflowConfidence: pickOptionalScore(
+              c,
+              'workflowConfidence',
+              'workflow_confidence',
+            ),
+            continuityConfidence: pickOptionalScore(
+              c,
+              'continuityConfidence',
+              'continuity_confidence',
+            ),
           } satisfies SurfaceConfidencePayload;
         })()
       : null;
 
-  const continuationContextRaw = o.continuationContext ?? o.continuation_context;
+  const continuationContextRaw =
+    o.continuationContext ?? o.continuation_context;
   const continuationContext =
-    continuationContextRaw !== null && typeof continuationContextRaw === 'object' && !Array.isArray(continuationContextRaw)
+    continuationContextRaw !== null &&
+    typeof continuationContextRaw === 'object' &&
+    !Array.isArray(continuationContextRaw)
       ? (() => {
           const c = continuationContextRaw as Record<string, unknown>;
           const idxRaw = c.exactStepIndex ?? c.exact_step_index;
           const totalRaw = c.totalSteps ?? c.total_steps;
           return {
             taskLabel: pickStrOrNull(c, 'taskLabel', 'task_label'),
-            detailedSummary: pickStrOrNull(c, 'detailedSummary', 'detailed_summary'),
-            exactStepLabel: pickStrOrNull(c, 'exactStepLabel', 'exact_step_label'),
+            detailedSummary: pickStrOrNull(
+              c,
+              'detailedSummary',
+              'detailed_summary',
+            ),
+            exactStepLabel: pickStrOrNull(
+              c,
+              'exactStepLabel',
+              'exact_step_label',
+            ),
             exactStepIndex:
-              typeof idxRaw === 'number' && Number.isFinite(idxRaw) ? Math.max(0, Math.round(idxRaw)) : null,
+              typeof idxRaw === 'number' && Number.isFinite(idxRaw)
+                ? Math.max(0, Math.round(idxRaw))
+                : null,
             totalSteps:
-              typeof totalRaw === 'number' && Number.isFinite(totalRaw) ? Math.max(0, Math.round(totalRaw)) : null,
-            completionPercent: pickOptionalScore(c, 'completionPercent', 'completion_percent'),
-            roleTitle: pickStrOrNull(c, 'roleTitle', 'role_title', 'jobTitle', 'job_title'),
-            companyName: pickStrOrNull(c, 'companyName', 'company_name', 'company'),
+              typeof totalRaw === 'number' && Number.isFinite(totalRaw)
+                ? Math.max(0, Math.round(totalRaw))
+                : null,
+            completionPercent: pickOptionalScore(
+              c,
+              'completionPercent',
+              'completion_percent',
+            ),
+            roleTitle: pickStrOrNull(
+              c,
+              'roleTitle',
+              'role_title',
+              'jobTitle',
+              'job_title',
+            ),
+            companyName: pickStrOrNull(
+              c,
+              'companyName',
+              'company_name',
+              'company',
+            ),
           } satisfies ContinuationContextPayload;
         })()
       : null;
@@ -3174,12 +3715,24 @@ function pickDashboardExperienceSurface(el: unknown): DashboardExperienceSurface
       id: pickStrOrNull(o, 'id', 'surfaceId', 'surface_id'),
       category: String(pickStr(o, 'category') ?? '').trim() || 'action',
       visualPriority,
-      recommendationId: pickStrOrNull(o, 'recommendationId', 'recommendation_id'),
+      recommendationId: pickStrOrNull(
+        o,
+        'recommendationId',
+        'recommendation_id',
+      ),
       actionRoute: pickStrOrNull(o, 'actionRoute', 'action_route'),
       narrativeTitle: pickStrOrNull(o, 'narrativeTitle', 'narrative_title'),
-      narrativeSubtitle: pickStrOrNull(o, 'narrativeSubtitle', 'narrative_subtitle'),
+      narrativeSubtitle: pickStrOrNull(
+        o,
+        'narrativeSubtitle',
+        'narrative_subtitle',
+      ),
       hierarchy: hier,
-      orchestratorSurface: pickStrOrNull(o, 'orchestratorSurface', 'orchestrator_surface'),
+      orchestratorSurface: pickStrOrNull(
+        o,
+        'orchestratorSurface',
+        'orchestrator_surface',
+      ),
       continuationContext,
       freshnessConfidence: fc,
       continuityConfidence: cc,
@@ -3190,8 +3743,11 @@ function pickDashboardExperienceSurface(el: unknown): DashboardExperienceSurface
   return null;
 }
 
-function pickDashboardExperience(raw: unknown): DashboardExperiencePayload | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+function pickDashboardExperience(
+  raw: unknown,
+): DashboardExperiencePayload | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const surfacesRaw = o.surfaces ?? o.Surfaces;
   const surfaces: DashboardExperienceSurface[] = [];
@@ -3212,7 +3768,11 @@ function pickDashboardExperience(raw: unknown): DashboardExperiencePayload | nul
     narrativeTone: null,
     fatigueAdjusted: null,
   };
-  if (narrativeRaw !== null && typeof narrativeRaw === 'object' && !Array.isArray(narrativeRaw)) {
+  if (
+    narrativeRaw !== null &&
+    typeof narrativeRaw === 'object' &&
+    !Array.isArray(narrativeRaw)
+  ) {
     const n = narrativeRaw as Record<string, unknown>;
     const heroRaw = n.hero ?? n.Hero;
     const hero =
@@ -3220,10 +3780,26 @@ function pickDashboardExperience(raw: unknown): DashboardExperiencePayload | nul
         ? (() => {
             const h = heroRaw as Record<string, unknown>;
             return {
-              primaryStatement: pickStrOrNull(h, 'primaryStatement', 'primary_statement'),
-              supportingReason: pickStrOrNull(h, 'supportingReason', 'supporting_reason'),
-              emotionalTone: pickStrOrNull(h, 'emotionalTone', 'emotional_tone'),
-              expectedOutcome: pickStrOrNull(h, 'expectedOutcome', 'expected_outcome'),
+              primaryStatement: pickStrOrNull(
+                h,
+                'primaryStatement',
+                'primary_statement',
+              ),
+              supportingReason: pickStrOrNull(
+                h,
+                'supportingReason',
+                'supporting_reason',
+              ),
+              emotionalTone: pickStrOrNull(
+                h,
+                'emotionalTone',
+                'emotional_tone',
+              ),
+              expectedOutcome: pickStrOrNull(
+                h,
+                'expectedOutcome',
+                'expected_outcome',
+              ),
             } satisfies HeroNarrativePayload;
           })()
         : null;
@@ -3243,8 +3819,12 @@ function pickDashboardExperience(raw: unknown): DashboardExperiencePayload | nul
             : null,
     };
   }
-  const visibleRecs = pickOrchestratedRecommendations(o.visibleRecommendations ?? o.visible_recommendations);
-  let visibleRecommendationIds = pickStrArray(o.visibleRecommendationIds ?? o.visible_recommendation_ids);
+  const visibleRecs = pickOrchestratedRecommendations(
+    o.visibleRecommendations ?? o.visible_recommendations,
+  );
+  let visibleRecommendationIds = pickStrArray(
+    o.visibleRecommendationIds ?? o.visible_recommendation_ids,
+  );
   if (visibleRecommendationIds.length === 0 && visibleRecs.length > 0) {
     visibleRecommendationIds = visibleRecs
       .map((r) => (r.recommendationId ?? '').trim())
@@ -3255,13 +3835,21 @@ function pickDashboardExperience(raw: unknown): DashboardExperiencePayload | nul
   );
   const pipelineRaw = o.pipelineSnapshot ?? o.pipeline_snapshot;
   let pipelineSnapshot: ExperiencePipelineSnapshot | null = null;
-  if (pipelineRaw !== null && typeof pipelineRaw === 'object' && !Array.isArray(pipelineRaw)) {
+  if (
+    pipelineRaw !== null &&
+    typeof pipelineRaw === 'object' &&
+    !Array.isArray(pipelineRaw)
+  ) {
     const p = pipelineRaw as Record<string, unknown>;
     const snap: ExperiencePipelineSnapshot = {
       interviewing: pickNumOrNull(p, 'interviewing'),
       waiting: pickNumOrNull(p, 'waiting'),
       followUpNeeded: pickNumOrNull(p, 'followUpNeeded', 'follow_up_needed'),
-      newMatchesSinceVisit: pickNumOrNull(p, 'newMatchesSinceVisit', 'new_matches_since_visit'),
+      newMatchesSinceVisit: pickNumOrNull(
+        p,
+        'newMatchesSinceVisit',
+        'new_matches_since_visit',
+      ),
     };
     // Copy through any extra numeric metrics (e.g. interviewsUpcoming7d, stalledApplied, etc.)
     for (const [k, v] of Object.entries(p)) {
@@ -3272,9 +3860,13 @@ function pickDashboardExperience(raw: unknown): DashboardExperiencePayload | nul
     pipelineSnapshot = snap;
   }
   const version =
-    typeof o.version === 'number' && Number.isFinite(o.version) ? Math.max(0, Math.floor(o.version)) : 0;
+    typeof o.version === 'number' && Number.isFinite(o.version)
+      ? Math.max(0, Math.floor(o.version))
+      : 0;
   const fatigue =
-    o.fatigue !== null && typeof o.fatigue === 'object' && !Array.isArray(o.fatigue)
+    o.fatigue !== null &&
+    typeof o.fatigue === 'object' &&
+    !Array.isArray(o.fatigue)
       ? (o.fatigue as Record<string, unknown>)
       : null;
 
@@ -3298,11 +3890,18 @@ function pickDashboardExperience(raw: unknown): DashboardExperiencePayload | nul
   };
 }
 
-function pickDashboardNarrative(raw: unknown): DashboardNarrativePayload | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+function pickDashboardNarrative(
+  raw: unknown,
+): DashboardNarrativePayload | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   return {
-    heroRecommendationId: pickStrOrNull(o, 'heroRecommendationId', 'hero_recommendation_id'),
+    heroRecommendationId: pickStrOrNull(
+      o,
+      'heroRecommendationId',
+      'hero_recommendation_id',
+    ),
     continuationRecommendationId: pickStrOrNull(
       o,
       'continuationRecommendationId',
@@ -3323,12 +3922,16 @@ function pickResumeTarget(raw: unknown): ResumeTargetPayload | null {
   const o = raw as Record<string, unknown>;
   const resumeStateRaw = o.resumeState ?? o.resume_state;
   const resumeState =
-    resumeStateRaw !== null && typeof resumeStateRaw === 'object' && !Array.isArray(resumeStateRaw)
+    resumeStateRaw !== null &&
+    typeof resumeStateRaw === 'object' &&
+    !Array.isArray(resumeStateRaw)
       ? (() => {
           const rs = resumeStateRaw as Record<string, unknown>;
           const snapRaw = rs.snapshot ?? rs.state_snapshot;
           const snap =
-            snapRaw !== null && typeof snapRaw === 'object' && !Array.isArray(snapRaw)
+            snapRaw !== null &&
+            typeof snapRaw === 'object' &&
+            !Array.isArray(snapRaw)
               ? (snapRaw as Record<string, unknown>)
               : null;
           return {
@@ -3349,37 +3952,81 @@ function pickResumeTarget(raw: unknown): ResumeTargetPayload | null {
   const conf = pickOptionalScore(o, 'resumeConfidence', 'resume_confidence');
   const pct = pickOptionalScore(o, 'percentComplete', 'percent_complete');
   const estMinRaw =
-    typeof o.estimatedRemainingMinutes === 'number' && Number.isFinite(o.estimatedRemainingMinutes)
+    typeof o.estimatedRemainingMinutes === 'number' &&
+    Number.isFinite(o.estimatedRemainingMinutes)
       ? o.estimatedRemainingMinutes
-      : typeof o.estimated_remaining_minutes === 'number' && Number.isFinite(o.estimated_remaining_minutes)
+      : typeof o.estimated_remaining_minutes === 'number' &&
+          Number.isFinite(o.estimated_remaining_minutes)
         ? o.estimated_remaining_minutes
         : null;
-  const continuationContextRaw = o.continuationContext ?? o.continuation_context;
+  const continuationContextRaw =
+    o.continuationContext ?? o.continuation_context;
   const continuationContext =
-    continuationContextRaw !== null && typeof continuationContextRaw === 'object' && !Array.isArray(continuationContextRaw)
+    continuationContextRaw !== null &&
+    typeof continuationContextRaw === 'object' &&
+    !Array.isArray(continuationContextRaw)
       ? (() => {
           const c = continuationContextRaw as Record<string, unknown>;
           const idxRaw = c.exactStepIndex ?? c.exact_step_index;
           const totalRaw = c.totalSteps ?? c.total_steps;
           return {
             taskLabel: pickStrOrNull(c, 'taskLabel', 'task_label'),
-            detailedSummary: pickStrOrNull(c, 'detailedSummary', 'detailed_summary'),
-            exactStepLabel: pickStrOrNull(c, 'exactStepLabel', 'exact_step_label'),
+            detailedSummary: pickStrOrNull(
+              c,
+              'detailedSummary',
+              'detailed_summary',
+            ),
+            exactStepLabel: pickStrOrNull(
+              c,
+              'exactStepLabel',
+              'exact_step_label',
+            ),
             exactStepIndex:
-              typeof idxRaw === 'number' && Number.isFinite(idxRaw) ? Math.max(0, Math.round(idxRaw)) : null,
+              typeof idxRaw === 'number' && Number.isFinite(idxRaw)
+                ? Math.max(0, Math.round(idxRaw))
+                : null,
             totalSteps:
-              typeof totalRaw === 'number' && Number.isFinite(totalRaw) ? Math.max(0, Math.round(totalRaw)) : null,
-            completionPercent: pickOptionalScore(c, 'completionPercent', 'completion_percent'),
-            roleTitle: pickStrOrNull(c, 'roleTitle', 'role_title', 'jobTitle', 'job_title'),
-            companyName: pickStrOrNull(c, 'companyName', 'company_name', 'company'),
+              typeof totalRaw === 'number' && Number.isFinite(totalRaw)
+                ? Math.max(0, Math.round(totalRaw))
+                : null,
+            completionPercent: pickOptionalScore(
+              c,
+              'completionPercent',
+              'completion_percent',
+            ),
+            roleTitle: pickStrOrNull(
+              c,
+              'roleTitle',
+              'role_title',
+              'jobTitle',
+              'job_title',
+            ),
+            companyName: pickStrOrNull(
+              c,
+              'companyName',
+              'company_name',
+              'company',
+            ),
           } satisfies ContinuationContextPayload;
         })()
       : null;
   return {
     title: pickStrOrNull(o, 'title'),
-    continuationSource: pickStrOrNull(o, 'continuationSource', 'continuation_source'),
-    workflowEntityId: pickStrOrNull(o, 'workflowEntityId', 'workflow_entity_id'),
-    workflowEntityType: pickStrOrNull(o, 'workflowEntityType', 'workflow_entity_type'),
+    continuationSource: pickStrOrNull(
+      o,
+      'continuationSource',
+      'continuation_source',
+    ),
+    workflowEntityId: pickStrOrNull(
+      o,
+      'workflowEntityId',
+      'workflow_entity_id',
+    ),
+    workflowEntityType: pickStrOrNull(
+      o,
+      'workflowEntityType',
+      'workflow_entity_type',
+    ),
     executionType: pickStrOrNull(o, 'executionType', 'execution_type'),
     resumeTarget: pickStrOrNull(o, 'resumeTarget', 'resume_target'),
     resumeComponent: pickStrOrNull(o, 'resumeComponent', 'resume_component'),
@@ -3387,25 +4034,42 @@ function pickResumeTarget(raw: unknown): ResumeTargetPayload | null {
     resumeIntent: pickStrOrNull(o, 'resumeIntent', 'resume_intent'),
     resumeConfidence: conf,
     estimatedRemainingMinutes:
-      typeof estMinRaw === 'number' && Number.isFinite(estMinRaw) ? Math.max(0, Math.round(estMinRaw)) : null,
+      typeof estMinRaw === 'number' && Number.isFinite(estMinRaw)
+        ? Math.max(0, Math.round(estMinRaw))
+        : null,
     percentComplete: pct,
-    hydrationConsistencyKey: pickStrOrNull(o, 'hydrationConsistencyKey', 'hydration_consistency_key'),
+    hydrationConsistencyKey: pickStrOrNull(
+      o,
+      'hydrationConsistencyKey',
+      'hydration_consistency_key',
+    ),
     continuationContext,
   };
 }
 
-function pickExperienceStability(raw: unknown): ExperienceStabilityPayload | null {
+function pickExperienceStability(
+  raw: unknown,
+): ExperienceStabilityPayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
-  const experienceReady = o.experienceReady === true || o.experience_ready === true;
+  const experienceReady =
+    o.experienceReady === true || o.experience_ready === true;
   const stableRaw = o.stable ?? o.experience_stable;
   const stable = stableRaw === true ? true : stableRaw === false ? false : null;
   return {
     stable,
     experienceReady,
-    stableHeroCandidateId: pickStrOrNull(o, 'stableHeroCandidateId', 'stable_hero_candidate_id'),
-    hydrationConsistencyKey: pickStrOrNull(o, 'hydrationConsistencyKey', 'hydration_consistency_key'),
+    stableHeroCandidateId: pickStrOrNull(
+      o,
+      'stableHeroCandidateId',
+      'stable_hero_candidate_id',
+    ),
+    hydrationConsistencyKey: pickStrOrNull(
+      o,
+      'hydrationConsistencyKey',
+      'hydration_consistency_key',
+    ),
   };
 }
 
@@ -3417,7 +4081,9 @@ function pickAssistantState(raw: unknown): AssistantStatePayload | null {
   const daysInArc =
     typeof daysRaw === 'number' && Number.isFinite(daysRaw)
       ? Math.max(0, Math.round(daysRaw))
-      : typeof daysRaw === 'string' && daysRaw.trim() && Number.isFinite(Number(daysRaw))
+      : typeof daysRaw === 'string' &&
+          daysRaw.trim() &&
+          Number.isFinite(Number(daysRaw))
         ? Math.max(0, Math.round(Number(daysRaw)))
         : null;
   return {
@@ -3436,7 +4102,8 @@ function pickBehaviorSignals(raw: unknown): Record<string, number> | null {
   const out: Record<string, number> = {};
   for (const [k, v] of Object.entries(o)) {
     if (typeof v === 'number' && Number.isFinite(v)) out[k] = v;
-    else if (typeof v === 'string' && v.trim() && Number.isFinite(Number(v))) out[k] = Number(v);
+    else if (typeof v === 'string' && v.trim() && Number.isFinite(Number(v)))
+      out[k] = Number(v);
   }
   return Object.keys(out).length > 0 ? out : null;
 }
@@ -3464,7 +4131,13 @@ function pickHeroStability(raw: unknown): HeroStabilityPayload | null {
   return {
     stable,
     heroCommitId: pickStrOrNull(o, 'heroCommitId', 'hero_commit_id'),
-    heroStableUntilIso: pickStrOrNull(o, 'heroStableUntilIso', 'hero_stable_until_iso', 'heroStableUntil', 'hero_stable_until'),
+    heroStableUntilIso: pickStrOrNull(
+      o,
+      'heroStableUntilIso',
+      'hero_stable_until_iso',
+      'heroStableUntil',
+      'hero_stable_until',
+    ),
     heroReason: pickStrOrNull(o, 'heroReason', 'hero_reason'),
   };
 }
@@ -3479,23 +4152,40 @@ function pickExperienceState(raw: unknown): ExperienceStatePayload | null {
     stable,
     committedAt: pickStrOrNull(o, 'committedAt', 'committed_at'),
     narrativeArc: pickStrOrNull(o, 'narrativeArc', 'narrative_arc'),
-    narrativeFocusLabel: pickStrOrNull(o, 'narrativeFocusLabel', 'narrative_focus_label'),
+    narrativeFocusLabel: pickStrOrNull(
+      o,
+      'narrativeFocusLabel',
+      'narrative_focus_label',
+    ),
   };
 }
 
-function pickAssistantNarrative(raw: unknown): AssistantNarrativePayload | null {
+function pickAssistantNarrative(
+  raw: unknown,
+): AssistantNarrativePayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
   const headline = pickStrOrNull(o, 'headline');
   const supporting = pickStrOrNull(o, 'supporting');
   const ctaLabel = pickStrOrNull(o, 'ctaLabel', 'cta_label');
-  const ctaHref = pickStrOrNull(o, 'ctaHref', 'cta_href', 'href', 'route', 'path');
+  const ctaHref = pickStrOrNull(
+    o,
+    'ctaHref',
+    'cta_href',
+    'href',
+    'route',
+    'path',
+  );
   const ctaValidated = pickBoolOrNull(o, 'ctaValidated', 'cta_validated');
   const ctaSource = pickStrOrNull(o, 'ctaSource', 'cta_source');
   const microcopy = pickStrOrNull(o, 'microcopy');
   const tone = pickStrOrNull(o, 'tone');
-  const suppressGuidanceCard = pickBoolOrNull(o, 'suppressGuidanceCard', 'suppress_guidance_card');
+  const suppressGuidanceCard = pickBoolOrNull(
+    o,
+    'suppressGuidanceCard',
+    'suppress_guidance_card',
+  );
   if (
     !headline &&
     !supporting &&
@@ -3521,7 +4211,9 @@ function pickAssistantNarrative(raw: unknown): AssistantNarrativePayload | null 
   };
 }
 
-function pickOpportunityDetection(raw: unknown): OpportunityDetectionPayload | null {
+function pickOpportunityDetection(
+  raw: unknown,
+): OpportunityDetectionPayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
@@ -3529,10 +4221,19 @@ function pickOpportunityDetection(raw: unknown): OpportunityDetectionPayload | n
   const headline = pickStrOrNull(o, 'headline');
   const supporting = pickStrOrNull(o, 'supporting');
   const ctaLabel = pickStrOrNull(o, 'ctaLabel', 'cta_label', 'label');
-  const ctaHref = pickStrOrNull(o, 'ctaHref', 'cta_href', 'href', 'route', 'path');
+  const ctaHref = pickStrOrNull(
+    o,
+    'ctaHref',
+    'cta_href',
+    'href',
+    'route',
+    'path',
+  );
   const reasonRaw = pickStrOrNull(o, 'reason', 'rationale');
   const reason = (() => {
-    const r = String(reasonRaw ?? '').trim().toLowerCase();
+    const r = String(reasonRaw ?? '')
+      .trim()
+      .toLowerCase();
     if (!r) return null;
     const allowed = new Set<string>([
       'high_match_not_applied',
@@ -3543,9 +4244,21 @@ function pickOpportunityDetection(raw: unknown): OpportunityDetectionPayload | n
     ]);
     return allowed.has(r) ? (r as OpportunityDetectionReason) : null;
   })();
-  const confidence = pickOptionalScore(o, 'confidence', 'confidenceScore', 'confidence_score');
+  const confidence = pickOptionalScore(
+    o,
+    'confidence',
+    'confidenceScore',
+    'confidence_score',
+  );
 
-  if (!headline && !supporting && !ctaLabel && !ctaHref && !reason && confidence == null) {
+  if (
+    !headline &&
+    !supporting &&
+    !ctaLabel &&
+    !ctaHref &&
+    !reason &&
+    confidence == null
+  ) {
     return null;
   }
   return {
@@ -3558,7 +4271,9 @@ function pickOpportunityDetection(raw: unknown): OpportunityDetectionPayload | n
   };
 }
 
-function pickFollowUpIntelligence(raw: unknown): FollowUpIntelligencePayload | null {
+function pickFollowUpIntelligence(
+  raw: unknown,
+): FollowUpIntelligencePayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
@@ -3566,10 +4281,19 @@ function pickFollowUpIntelligence(raw: unknown): FollowUpIntelligencePayload | n
   const headline = pickStrOrNull(o, 'headline');
   const supporting = pickStrOrNull(o, 'supporting');
   const ctaLabel = pickStrOrNull(o, 'ctaLabel', 'cta_label', 'label');
-  const ctaHref = pickStrOrNull(o, 'ctaHref', 'cta_href', 'href', 'route', 'path');
+  const ctaHref = pickStrOrNull(
+    o,
+    'ctaHref',
+    'cta_href',
+    'href',
+    'route',
+    'path',
+  );
   const reasonRaw = pickStrOrNull(o, 'reason', 'rationale');
   const reason = (() => {
-    const r = String(reasonRaw ?? '').trim().toLowerCase();
+    const r = String(reasonRaw ?? '')
+      .trim()
+      .toLowerCase();
     if (!r) return null;
     const allowed = new Set<string>([
       'ideal_followup_window',
@@ -3579,7 +4303,12 @@ function pickFollowUpIntelligence(raw: unknown): FollowUpIntelligencePayload | n
     ]);
     return allowed.has(r) ? (r as FollowUpIntelligenceReason) : null;
   })();
-  const confidence = pickOptionalScore(o, 'confidence', 'confidenceScore', 'confidence_score');
+  const confidence = pickOptionalScore(
+    o,
+    'confidence',
+    'confidenceScore',
+    'confidence_score',
+  );
 
   const companyName = pickStrOrNull(
     o,
@@ -3610,7 +4339,11 @@ function pickFollowUpIntelligence(raw: unknown): FollowUpIntelligencePayload | n
   let daysSinceApplication: number | null = null;
   if (typeof daysRaw === 'number' && Number.isFinite(daysRaw)) {
     daysSinceApplication = Math.max(0, Math.round(daysRaw));
-  } else if (typeof daysRaw === 'string' && daysRaw.trim() && Number.isFinite(Number(daysRaw))) {
+  } else if (
+    typeof daysRaw === 'string' &&
+    daysRaw.trim() &&
+    Number.isFinite(Number(daysRaw))
+  ) {
     daysSinceApplication = Math.max(0, Math.round(Number(daysRaw)));
   }
 
@@ -3642,7 +4375,9 @@ function pickFollowUpIntelligence(raw: unknown): FollowUpIntelligencePayload | n
   };
 }
 
-function pickFollowUpJobSource(raw: string | null | undefined): FollowUpJobSource | null {
+function pickFollowUpJobSource(
+  raw: string | null | undefined,
+): FollowUpJobSource | null {
   const s = String(raw ?? '')
     .trim()
     .toLowerCase();
@@ -3655,16 +4390,30 @@ function pickFollowUpJobRow(raw: unknown): FollowUpJobRowPayload | null {
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
   const id = String(pickStrOrNull(o, 'id', 'jobId', 'job_id') ?? '').trim();
-  const ctaHref = pickStrOrNull(o, 'ctaHref', 'cta_href', 'href', 'route', 'path');
+  const ctaHref = pickStrOrNull(
+    o,
+    'ctaHref',
+    'cta_href',
+    'href',
+    'route',
+    'path',
+  );
   const ctaLabel = pickStrOrNull(o, 'ctaLabel', 'cta_label', 'label');
   if (!id && !ctaHref?.trim()) return null;
 
   const daysRaw =
-    o.daysSinceApplication ?? o.days_since_application ?? o.daysSince ?? o.days_since;
+    o.daysSinceApplication ??
+    o.days_since_application ??
+    o.daysSince ??
+    o.days_since;
   let daysSinceApplication: number | null = null;
   if (typeof daysRaw === 'number' && Number.isFinite(daysRaw)) {
     daysSinceApplication = Math.max(0, Math.round(daysRaw));
-  } else if (typeof daysRaw === 'string' && daysRaw.trim() && Number.isFinite(Number(daysRaw))) {
+  } else if (
+    typeof daysRaw === 'string' &&
+    daysRaw.trim() &&
+    Number.isFinite(Number(daysRaw))
+  ) {
     daysSinceApplication = Math.max(0, Math.round(Number(daysRaw)));
   }
 
@@ -3676,13 +4425,30 @@ function pickFollowUpJobRow(raw: unknown): FollowUpJobRowPayload | null {
     supporting: pickStrOrNull(o, 'supporting', 'supporting_copy', 'body'),
     ctaLabel,
     ctaHref,
-    confidence: pickOptionalScore(o, 'confidence', 'confidenceScore', 'confidence_score'),
+    confidence: pickOptionalScore(
+      o,
+      'confidence',
+      'confidenceScore',
+      'confidence_score',
+    ),
     daysSinceApplication,
     reason: pickStrOrNull(o, 'reason', 'rationale'),
     applicationId: pickStrOrNull(o, 'applicationId', 'application_id'),
     jobAnalysisId: pickStrOrNull(o, 'jobAnalysisId', 'job_analysis_id'),
-    jobListingId: pickStrOrNull(o, 'jobListingId', 'job_listing_id', 'listingId', 'listing_id'),
-    bookmarkId: pickStrOrNull(o, 'bookmarkId', 'bookmark_id', 'hubBookmarkId', 'hub_bookmark_id'),
+    jobListingId: pickStrOrNull(
+      o,
+      'jobListingId',
+      'job_listing_id',
+      'listingId',
+      'listing_id',
+    ),
+    bookmarkId: pickStrOrNull(
+      o,
+      'bookmarkId',
+      'bookmark_id',
+      'hubBookmarkId',
+      'hub_bookmark_id',
+    ),
     companyName: pickStrOrNull(
       o,
       'companyName',
@@ -3692,7 +4458,15 @@ function pickFollowUpJobRow(raw: unknown): FollowUpJobRowPayload | null {
       'employer_name',
     ),
     companyLogoUrl: pickCompanyLogoUrl(o),
-    jobTitle: pickStrOrNull(o, 'jobTitle', 'job_title', 'roleTitle', 'role_title', 'positionTitle', 'position_title'),
+    jobTitle: pickStrOrNull(
+      o,
+      'jobTitle',
+      'job_title',
+      'roleTitle',
+      'role_title',
+      'positionTitle',
+      'position_title',
+    ),
   };
 }
 
@@ -3708,14 +4482,20 @@ function pickFollowUpJobsArray(raw: unknown): FollowUpJobRowPayload[] {
   return out;
 }
 
-function pickFollowUpJobsTotalCount(body: Record<string, unknown>): number | null {
+function pickFollowUpJobsTotalCount(
+  body: Record<string, unknown>,
+): number | null {
   const raw = body.followUpJobsTotalCount ?? body.follow_up_jobs_total_count;
-  if (typeof raw === 'number' && Number.isFinite(raw)) return Math.max(0, Math.round(raw));
-  if (typeof raw === 'string' && raw.trim() && Number.isFinite(Number(raw))) return Math.max(0, Math.round(Number(raw)));
+  if (typeof raw === 'number' && Number.isFinite(raw))
+    return Math.max(0, Math.round(raw));
+  if (typeof raw === 'string' && raw.trim() && Number.isFinite(Number(raw)))
+    return Math.max(0, Math.round(Number(raw)));
   return null;
 }
 
-function pickFollowUpJobsViewAllHref(body: Record<string, unknown>): string | null {
+function pickFollowUpJobsViewAllHref(
+  body: Record<string, unknown>,
+): string | null {
   const raw = body.followUpJobsViewAllHref ?? body.follow_up_jobs_view_all_href;
   if (typeof raw !== 'string') return null;
   const s = raw.trim();
@@ -3730,19 +4510,32 @@ function pickAdaptiveCoaching(raw: unknown): AdaptiveCoachingPayload | null {
   const headline = pickStrOrNull(o, 'headline', 'title');
   const supporting = pickStrOrNull(o, 'supporting', 'supporting_copy', 'body');
   const ctaLabel = pickStrOrNull(o, 'ctaLabel', 'cta_label', 'label');
-  const ctaHref = pickStrOrNull(o, 'ctaHref', 'cta_href', 'href', 'route', 'path');
+  const ctaHref = pickStrOrNull(
+    o,
+    'ctaHref',
+    'cta_href',
+    'href',
+    'route',
+    'path',
+  );
 
   const priorityRaw = o.priority ?? o.priority_tier;
   let priority: number | null = null;
   if (typeof priorityRaw === 'number' && Number.isFinite(priorityRaw)) {
     priority = Math.round(priorityRaw);
-  } else if (typeof priorityRaw === 'string' && priorityRaw.trim() && Number.isFinite(Number(priorityRaw))) {
+  } else if (
+    typeof priorityRaw === 'string' &&
+    priorityRaw.trim() &&
+    Number.isFinite(Number(priorityRaw))
+  ) {
     priority = Math.round(Number(priorityRaw));
   }
 
   const categoryRaw = pickStrOrNull(o, 'category', 'coaching_category');
   const category = (() => {
-    const c = String(categoryRaw ?? '').trim().toLowerCase();
+    const c = String(categoryRaw ?? '')
+      .trim()
+      .toLowerCase();
     if (!c) return null;
     const allowed = new Set<string>([
       'interview_momentum',
@@ -3757,7 +4550,15 @@ function pickAdaptiveCoaching(raw: unknown): AdaptiveCoachingPayload | null {
 
   const reasonStr = pickStr(o, 'reason', 'reason_code') ?? null;
 
-  if (!headline && !supporting && !ctaLabel && !ctaHref && priority == null && category == null && !reasonStr) {
+  if (
+    !headline &&
+    !supporting &&
+    !ctaLabel &&
+    !ctaHref &&
+    priority == null &&
+    category == null &&
+    !reasonStr
+  ) {
     return null;
   }
   return {
@@ -3771,14 +4572,24 @@ function pickAdaptiveCoaching(raw: unknown): AdaptiveCoachingPayload | null {
   };
 }
 
-function pickStrategicRecommendationRationale(raw: unknown): StrategicRecommendationRationalePayload | null {
+function pickStrategicRecommendationRationale(
+  raw: unknown,
+): StrategicRecommendationRationalePayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
 
   const matchScore = pickOptionalScore(o, 'matchScore', 'match_score');
-  const daysUntilInterview = pickNonNegIntOrNull(o, 'daysUntilInterview', 'days_until_interview');
-  const daysSinceLastActivity = pickNonNegIntOrNull(o, 'daysSinceLastActivity', 'days_since_last_activity');
+  const daysUntilInterview = pickNonNegIntOrNull(
+    o,
+    'daysUntilInterview',
+    'days_until_interview',
+  );
+  const daysSinceLastActivity = pickNonNegIntOrNull(
+    o,
+    'daysSinceLastActivity',
+    'days_since_last_activity',
+  );
   const cvScore = pickOptionalScore(o, 'cvScore', 'cv_score');
   const applicationsInProgress = pickNonNegIntOrNull(
     o,
@@ -3804,21 +4615,47 @@ function pickStrategicRecommendationRationale(raw: unknown): StrategicRecommenda
   };
 }
 
-function pickStrategicRecommendation(raw: unknown): StrategicRecommendationPayload | null {
+function pickStrategicRecommendation(
+  raw: unknown,
+): StrategicRecommendationPayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
 
   const headline = pickStrOrNull(o, 'headline', 'title');
   const supporting = pickStrOrNull(o, 'supporting', 'supporting_copy', 'body');
-  const reasoning = pickStrOrNull(o, 'reasoning', 'rationale_explanation', 'explanation');
+  const reasoning = pickStrOrNull(
+    o,
+    'reasoning',
+    'rationale_explanation',
+    'explanation',
+  );
   const ctaLabel = pickStrOrNull(o, 'ctaLabel', 'cta_label', 'label');
-  const ctaHref = pickStrOrNull(o, 'ctaHref', 'cta_href', 'href', 'route', 'path');
-  const confidence = pickOptionalScore(o, 'confidence', 'confidenceScore', 'confidence_score');
+  const ctaHref = pickStrOrNull(
+    o,
+    'ctaHref',
+    'cta_href',
+    'href',
+    'route',
+    'path',
+  );
+  const confidence = pickOptionalScore(
+    o,
+    'confidence',
+    'confidenceScore',
+    'confidence_score',
+  );
 
-  const impactRaw = pickStrOrNull(o, 'expectedImpact', 'expected_impact', 'impact');
+  const impactRaw = pickStrOrNull(
+    o,
+    'expectedImpact',
+    'expected_impact',
+    'impact',
+  );
   const expectedImpact = (() => {
-    const s = String(impactRaw ?? '').trim().toLowerCase();
+    const s = String(impactRaw ?? '')
+      .trim()
+      .toLowerCase();
     if (!s) return null;
     const map: Record<string, StrategicRecommendationImpact> = {
       low: 'low',
@@ -3833,7 +4670,9 @@ function pickStrategicRecommendation(raw: unknown): StrategicRecommendationPaylo
 
   const categoryRaw = pickStrOrNull(o, 'category', 'recommendation_category');
   const category = (() => {
-    const c = String(categoryRaw ?? '').trim().toLowerCase();
+    const c = String(categoryRaw ?? '')
+      .trim()
+      .toLowerCase();
     if (!c) return null;
     const allowed = new Set<string>([
       'apply',
@@ -3849,7 +4688,16 @@ function pickStrategicRecommendation(raw: unknown): StrategicRecommendationPaylo
     o.rationale ?? o.rationale_metrics ?? o.decision_rationale,
   );
 
-  if (!headline && !supporting && !reasoning && !ctaLabel && !ctaHref && confidence == null && !expectedImpact && !category) {
+  if (
+    !headline &&
+    !supporting &&
+    !reasoning &&
+    !ctaLabel &&
+    !ctaHref &&
+    confidence == null &&
+    !expectedImpact &&
+    !category
+  ) {
     return null;
   }
   return {
@@ -3865,12 +4713,17 @@ function pickStrategicRecommendation(raw: unknown): StrategicRecommendationPaylo
   };
 }
 
-function pickStringArrayFromRecord(o: Record<string, unknown>, ...keys: string[]): string[] {
+function pickStringArrayFromRecord(
+  o: Record<string, unknown>,
+  ...keys: string[]
+): string[] {
   for (const k of keys) {
     const v = o[k];
     if (!Array.isArray(v)) continue;
     return v
-      .filter((el): el is string => typeof el === 'string' && el.trim().length > 0)
+      .filter(
+        (el): el is string => typeof el === 'string' && el.trim().length > 0,
+      )
       .map((s) => s.trim());
   }
   return [];
@@ -3881,15 +4734,38 @@ function pickCareerGoalProfile(raw: unknown): CareerGoalProfilePayload | null {
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
 
-  const targetRoles = pickStringArrayFromRecord(o, 'targetRoles', 'target_roles');
-  const preferredCompanies = pickStringArrayFromRecord(o, 'preferredCompanies', 'preferred_companies');
-  const preferredIndustries = pickStringArrayFromRecord(o, 'preferredIndustries', 'preferred_industries');
-  const targetLocations = pickStringArrayFromRecord(o, 'targetLocations', 'target_locations');
-  const technologies = pickStringArrayFromRecord(o, 'technologies', 'tech', 'technology_stack');
+  const targetRoles = pickStringArrayFromRecord(
+    o,
+    'targetRoles',
+    'target_roles',
+  );
+  const preferredCompanies = pickStringArrayFromRecord(
+    o,
+    'preferredCompanies',
+    'preferred_companies',
+  );
+  const preferredIndustries = pickStringArrayFromRecord(
+    o,
+    'preferredIndustries',
+    'preferred_industries',
+  );
+  const targetLocations = pickStringArrayFromRecord(
+    o,
+    'targetLocations',
+    'target_locations',
+  );
+  const technologies = pickStringArrayFromRecord(
+    o,
+    'technologies',
+    'tech',
+    'technology_stack',
+  );
 
   const remoteRaw = pickStrOrNull(o, 'remotePreference', 'remote_preference');
   const remotePreference = (() => {
-    const s = String(remoteRaw ?? '').trim().toLowerCase();
+    const s = String(remoteRaw ?? '')
+      .trim()
+      .toLowerCase();
     if (!s) return null;
     const allowed = new Set<string>(['remote', 'hybrid', 'onsite', 'flexible']);
     return allowed.has(s) ? (s as CareerGoalRemotePreference) : null;
@@ -3900,13 +4776,26 @@ function pickCareerGoalProfile(raw: unknown): CareerGoalProfilePayload | null {
 
   const seniorityRaw = pickStrOrNull(o, 'seniorityGoal', 'seniority_goal');
   const seniorityGoal = (() => {
-    const s = String(seniorityRaw ?? '').trim().toLowerCase();
+    const s = String(seniorityRaw ?? '')
+      .trim()
+      .toLowerCase();
     if (!s) return null;
-    const allowed = new Set<string>(['mid', 'senior', 'staff', 'principal', 'executive']);
+    const allowed = new Set<string>([
+      'mid',
+      'senior',
+      'staff',
+      'principal',
+      'executive',
+    ]);
     return allowed.has(s) ? (s as CareerGoalSeniority) : null;
   })();
 
-  const timelineGoal = pickStrOrNull(o, 'timelineGoal', 'timeline_goal', 'job_search_timeline');
+  const timelineGoal = pickStrOrNull(
+    o,
+    'timelineGoal',
+    'timeline_goal',
+    'job_search_timeline',
+  );
 
   const hasAny =
     targetRoles.length > 0 ||
@@ -3940,16 +4829,31 @@ function pickGoalAlignment(raw: unknown): GoalAlignmentPayload | null {
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
 
-  const score = pickOptionalScore(o, 'score', 'alignmentScore', 'alignment_score');
+  const score = pickOptionalScore(
+    o,
+    'score',
+    'alignmentScore',
+    'alignment_score',
+  );
   const headline = pickStrOrNull(o, 'headline', 'title');
   const supporting = pickStrOrNull(o, 'supporting', 'supporting_copy', 'body');
-  const strongestSignals = pickStringArrayFromRecord(o, 'strongestSignals', 'strongest_signals');
+  const strongestSignals = pickStringArrayFromRecord(
+    o,
+    'strongestSignals',
+    'strongest_signals',
+  );
   const gapSignals = pickStringArrayFromRecord(o, 'gapSignals', 'gap_signals');
 
   const ctaLabel = pickStrOrNull(o, 'ctaLabel', 'cta_label');
   const ctaHref = pickStrOrNull(o, 'ctaHref', 'cta_href');
 
-  if (score == null && !headline && !supporting && strongestSignals.length === 0 && gapSignals.length === 0) {
+  if (
+    score == null &&
+    !headline &&
+    !supporting &&
+    strongestSignals.length === 0 &&
+    gapSignals.length === 0
+  ) {
     return null;
   }
   return {
@@ -3963,22 +4867,43 @@ function pickGoalAlignment(raw: unknown): GoalAlignmentPayload | null {
   };
 }
 
-function pickGoalStrategicCoaching(raw: unknown): GoalStrategicCoachingPayload | null {
+function pickGoalStrategicCoaching(
+  raw: unknown,
+): GoalStrategicCoachingPayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
 
   const headline = pickStrOrNull(o, 'headline', 'title');
   const supporting = pickStrOrNull(o, 'supporting', 'supporting_copy', 'body');
-  const recommendation = pickStrOrNull(o, 'recommendation', 'recommended_action');
+  const recommendation = pickStrOrNull(
+    o,
+    'recommendation',
+    'recommended_action',
+  );
   const reasoning = pickStrOrNull(o, 'reasoning', 'rationale');
   const ctaLabel = pickStrOrNull(o, 'ctaLabel', 'cta_label', 'label');
-  const ctaHref = pickStrOrNull(o, 'ctaHref', 'cta_href', 'href', 'route', 'path');
-  const confidence = pickOptionalScore(o, 'confidence', 'confidenceScore', 'confidence_score');
+  const ctaHref = pickStrOrNull(
+    o,
+    'ctaHref',
+    'cta_href',
+    'href',
+    'route',
+    'path',
+  );
+  const confidence = pickOptionalScore(
+    o,
+    'confidence',
+    'confidenceScore',
+    'confidence_score',
+  );
 
   const horizonRaw = pickStrOrNull(o, 'timeHorizon', 'time_horizon', 'horizon');
   const timeHorizon = (() => {
-    const s = String(horizonRaw ?? '').trim().toLowerCase().replace(/-/g, '_');
+    const s = String(horizonRaw ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/-/g, '_');
     if (!s) return null;
     const map: Record<string, GoalStrategicCoachingTimeHorizon> = {
       today: 'today',
@@ -3991,7 +4916,16 @@ function pickGoalStrategicCoaching(raw: unknown): GoalStrategicCoachingPayload |
     return map[s] ?? null;
   })();
 
-  if (!headline && !supporting && !recommendation && !reasoning && !ctaLabel && !ctaHref && confidence == null && !timeHorizon) {
+  if (
+    !headline &&
+    !supporting &&
+    !recommendation &&
+    !reasoning &&
+    !ctaLabel &&
+    !ctaHref &&
+    confidence == null &&
+    !timeHorizon
+  ) {
     return null;
   }
   return {
@@ -4006,7 +4940,9 @@ function pickGoalStrategicCoaching(raw: unknown): GoalStrategicCoachingPayload |
   };
 }
 
-function pickPriorityIntelligenceMeta(raw: unknown): PriorityIntelligenceMetaPayload | null {
+function pickPriorityIntelligenceMeta(
+  raw: unknown,
+): PriorityIntelligenceMetaPayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
@@ -4020,15 +4956,33 @@ function pickPriorityIntelligenceMeta(raw: unknown): PriorityIntelligenceMetaPay
   return { urgencyLevel, promoteToTop };
 }
 
-function pickDashboardLayoutConfig(raw: unknown): DashboardLayoutConfigPayload | null {
+function pickDashboardLayoutConfig(
+  raw: unknown,
+): DashboardLayoutConfigPayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
 
-  const priorityCards = pickStringArrayFromRecord(o, 'priorityCards', 'priority_cards');
-  const secondaryCards = pickStringArrayFromRecord(o, 'secondaryCards', 'secondary_cards');
-  const hiddenCards = pickStringArrayFromRecord(o, 'hiddenCards', 'hidden_cards');
-  const collapsibleCards = pickStringArrayFromRecord(o, 'collapsibleCards', 'collapsible_cards');
+  const priorityCards = pickStringArrayFromRecord(
+    o,
+    'priorityCards',
+    'priority_cards',
+  );
+  const secondaryCards = pickStringArrayFromRecord(
+    o,
+    'secondaryCards',
+    'secondary_cards',
+  );
+  const hiddenCards = pickStringArrayFromRecord(
+    o,
+    'hiddenCards',
+    'hidden_cards',
+  );
+  const collapsibleCards = pickStringArrayFromRecord(
+    o,
+    'collapsibleCards',
+    'collapsible_cards',
+  );
 
   const mergeRaw =
     o.mergeLandscapeIntoPipeline ??
@@ -4037,13 +4991,17 @@ function pickDashboardLayoutConfig(raw: unknown): DashboardLayoutConfigPayload |
     o.merge_landscape_into_search_at_a_glance;
 
   let mergeLandscapeIntoPipeline: boolean | null = null;
-  if (mergeRaw === true || mergeRaw === 'true') mergeLandscapeIntoPipeline = true;
-  else if (mergeRaw === false || mergeRaw === 'false') mergeLandscapeIntoPipeline = false;
+  if (mergeRaw === true || mergeRaw === 'true')
+    mergeLandscapeIntoPipeline = true;
+  else if (mergeRaw === false || mergeRaw === 'false')
+    mergeLandscapeIntoPipeline = false;
 
   const suppressRaw = o.suppressInsightGuidance ?? o.suppress_insight_guidance;
   let suppressInsightGuidance: boolean | null = null;
-  if (suppressRaw === true || suppressRaw === 'true') suppressInsightGuidance = true;
-  else if (suppressRaw === false || suppressRaw === 'false') suppressInsightGuidance = false;
+  if (suppressRaw === true || suppressRaw === 'true')
+    suppressInsightGuidance = true;
+  else if (suppressRaw === false || suppressRaw === 'false')
+    suppressInsightGuidance = false;
 
   return {
     priorityCards,
@@ -4060,18 +5018,45 @@ function pickHabitProgress(raw: unknown): HabitProgressPayload | null {
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
 
-  const currentStreakDays = pickNonNegIntOrNull(o, 'currentStreakDays', 'current_streak_days');
-  const longestStreakDays = pickNonNegIntOrNull(o, 'longestStreakDays', 'longest_streak_days');
-  const activeDaysThisWeek = pickNonNegIntOrNull(o, 'activeDaysThisWeek', 'active_days_this_week');
-  const activeDaysThisMonth = pickNonNegIntOrNull(o, 'activeDaysThisMonth', 'active_days_this_month');
-  const consistencyScore = pickOptionalScore(o, 'consistencyScore', 'consistency_score');
+  const currentStreakDays = pickNonNegIntOrNull(
+    o,
+    'currentStreakDays',
+    'current_streak_days',
+  );
+  const longestStreakDays = pickNonNegIntOrNull(
+    o,
+    'longestStreakDays',
+    'longest_streak_days',
+  );
+  const activeDaysThisWeek = pickNonNegIntOrNull(
+    o,
+    'activeDaysThisWeek',
+    'active_days_this_week',
+  );
+  const activeDaysThisMonth = pickNonNegIntOrNull(
+    o,
+    'activeDaysThisMonth',
+    'active_days_this_month',
+  );
+  const consistencyScore = pickOptionalScore(
+    o,
+    'consistencyScore',
+    'consistency_score',
+  );
   const encouragement = pickStrOrNull(o, 'encouragement', 'encouragement_copy');
 
   const streakRaw = pickStrOrNull(o, 'streakStatus', 'streak_status');
   const streakStatus = (() => {
-    const s = String(streakRaw ?? '').trim().toLowerCase();
+    const s = String(streakRaw ?? '')
+      .trim()
+      .toLowerCase();
     if (!s) return null;
-    const allowed = new Set<string>(['starting', 'building', 'strong', 'elite']);
+    const allowed = new Set<string>([
+      'starting',
+      'building',
+      'strong',
+      'elite',
+    ]);
     return allowed.has(s) ? (s as HabitStreakStatusBand) : null;
   })();
 
@@ -4104,25 +5089,44 @@ function pickRecommendedMove(raw: unknown): RecommendedMovePayload | null {
   const headline = pickStrOrNull(o, 'headline', 'title');
   const supporting = pickStrOrNull(o, 'supporting', 'body', 'message');
   const ctaLabel = pickStrOrNull(o, 'ctaLabel', 'cta_label', 'label');
-  const ctaHref = pickStrOrNull(o, 'ctaHref', 'cta_href', 'href', 'route', 'path');
+  const ctaHref = pickStrOrNull(
+    o,
+    'ctaHref',
+    'cta_href',
+    'href',
+    'route',
+    'path',
+  );
   const source = pickStrOrNull(o, 'source');
   const category = pickStrOrNull(o, 'category');
   const sigRaw = o.confidence ?? o.actionSignal ?? o.action_signal ?? o.signal;
   let confidence: number | null = null;
   if (typeof sigRaw === 'number' && Number.isFinite(sigRaw)) {
     confidence = Math.min(100, Math.max(0, Math.round(sigRaw)));
-  } else if (typeof sigRaw === 'string' && sigRaw.trim() && Number.isFinite(Number(sigRaw))) {
+  } else if (
+    typeof sigRaw === 'string' &&
+    sigRaw.trim() &&
+    Number.isFinite(Number(sigRaw))
+  ) {
     confidence = Math.min(100, Math.max(0, Math.round(Number(sigRaw))));
   }
   const prRaw = o.priority;
   let priority: number | null = null;
   if (typeof prRaw === 'number' && Number.isFinite(prRaw)) {
     priority = Math.min(100, Math.max(0, Math.round(prRaw)));
-  } else if (typeof prRaw === 'string' && prRaw.trim() && Number.isFinite(Number(prRaw))) {
+  } else if (
+    typeof prRaw === 'string' &&
+    prRaw.trim() &&
+    Number.isFinite(Number(prRaw))
+  ) {
     priority = Math.min(100, Math.max(0, Math.round(Number(prRaw))));
   }
   if (!headline?.trim() || !ctaLabel?.trim() || !ctaHref?.trim()) return null;
-  const relevantActivityAt = pickStrOrNull(o, 'relevantActivityAt', 'relevant_activity_at');
+  const relevantActivityAt = pickStrOrNull(
+    o,
+    'relevantActivityAt',
+    'relevant_activity_at',
+  );
   const relevantActivityLabel = pickStrOrNull(
     o,
     'relevantActivityLabel',
@@ -4142,7 +5146,9 @@ function pickRecommendedMove(raw: unknown): RecommendedMovePayload | null {
   };
 }
 
-function pickCareerAchievementRarity(raw: unknown): TodayPlanAchievementRarity | null {
+function pickCareerAchievementRarity(
+  raw: unknown,
+): TodayPlanAchievementRarity | null {
   const r = String(raw ?? '')
     .trim()
     .toLowerCase();
@@ -4152,60 +5158,125 @@ function pickCareerAchievementRarity(raw: unknown): TodayPlanAchievementRarity |
 }
 
 /** Recent win row: full achievement shape, or legacy win-shaped objects. */
-function pickCareerRecentWinAchievement(raw: unknown): TodayPlanAchievementPayload | null {
+function pickCareerRecentWinAchievement(
+  raw: unknown,
+): TodayPlanAchievementPayload | null {
   const row = pickTodayPlanAchievementItem(raw);
   if (row?.title?.trim()) return row;
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const title = pickStrOrNull(o, 'title', 'headline', 'name', 'label');
   if (!title?.trim()) return null;
   return {
     key: pickStrOrNull(o, 'key', 'id'),
     title,
-    description: pickStrOrNull(o, 'description', 'subtitle', 'supporting', 'body'),
-    earnedAt: pickStrOrNull(o, 'earnedAt', 'earned_at', 'unlockedAt', 'unlocked_at'),
+    description: pickStrOrNull(
+      o,
+      'description',
+      'subtitle',
+      'supporting',
+      'body',
+    ),
+    earnedAt: pickStrOrNull(
+      o,
+      'earnedAt',
+      'earned_at',
+      'unlockedAt',
+      'unlocked_at',
+    ),
     category: null,
     rarity: pickCareerAchievementRarity(o.rarity ?? o.tier),
   };
 }
 
-function pickCareerAchievementsLevel(o: Record<string, unknown>): CareerAchievementsLevelPayload | null {
+function pickCareerAchievementsLevel(
+  o: Record<string, unknown>,
+): CareerAchievementsLevelPayload | null {
   const nested = o.level;
-  if (nested !== null && nested !== undefined && typeof nested === 'object' && !Array.isArray(nested)) {
+  if (
+    nested !== null &&
+    nested !== undefined &&
+    typeof nested === 'object' &&
+    !Array.isArray(nested)
+  ) {
     const L = nested as Record<string, unknown>;
     const numRaw = L.number ?? L.level;
     let number: number | null = null;
-    if (typeof numRaw === 'number' && Number.isFinite(numRaw)) number = Math.max(0, Math.round(numRaw));
-    else if (typeof numRaw === 'string' && numRaw.trim() && Number.isFinite(Number(numRaw)))
+    if (typeof numRaw === 'number' && Number.isFinite(numRaw))
+      number = Math.max(0, Math.round(numRaw));
+    else if (
+      typeof numRaw === 'string' &&
+      numRaw.trim() &&
+      Number.isFinite(Number(numRaw))
+    )
       number = Math.max(0, Math.round(Number(numRaw)));
     const title = pickStrOrNull(L, 'title', 'name', 'label');
-    if (number != null || title?.trim()) return { number, title: title?.trim() ?? null };
+    if (number != null || title?.trim())
+      return { number, title: title?.trim() ?? null };
   }
   if (typeof nested === 'number' && Number.isFinite(nested)) {
     return {
       number: Math.max(0, Math.round(nested)),
-      title: pickStrOrNull(o, 'levelTitle', 'level_title', 'rankTitle', 'rank_title'),
+      title: pickStrOrNull(
+        o,
+        'levelTitle',
+        'level_title',
+        'rankTitle',
+        'rank_title',
+      ),
     };
   }
-  if (typeof nested === 'string' && nested.trim() && Number.isFinite(Number(nested))) {
+  if (
+    typeof nested === 'string' &&
+    nested.trim() &&
+    Number.isFinite(Number(nested))
+  ) {
     return {
       number: Math.max(0, Math.round(Number(nested))),
-      title: pickStrOrNull(o, 'levelTitle', 'level_title', 'rankTitle', 'rank_title'),
+      title: pickStrOrNull(
+        o,
+        'levelTitle',
+        'level_title',
+        'rankTitle',
+        'rank_title',
+      ),
     };
   }
-  const onlyTitle = pickStrOrNull(o, 'levelTitle', 'level_title', 'rankTitle', 'rank_title');
+  const onlyTitle = pickStrOrNull(
+    o,
+    'levelTitle',
+    'level_title',
+    'rankTitle',
+    'rank_title',
+  );
   if (onlyTitle?.trim()) return { number: null, title: onlyTitle.trim() };
   return null;
 }
 
-function pickCareerAchievementsSummary(o: Record<string, unknown>): CareerAchievementsSummaryPayload | null {
+function pickCareerAchievementsSummary(
+  o: Record<string, unknown>,
+): CareerAchievementsSummaryPayload | null {
   const raw = o.summary;
-  if (raw !== null && raw !== undefined && typeof raw === 'object' && !Array.isArray(raw)) {
+  if (
+    raw !== null &&
+    raw !== undefined &&
+    typeof raw === 'object' &&
+    !Array.isArray(raw)
+  ) {
     const s = raw as Record<string, unknown>;
-    const totalUnlocked = pickNonNegIntOrNull(s, 'totalUnlocked', 'total_unlocked');
+    const totalUnlocked = pickNonNegIntOrNull(
+      s,
+      'totalUnlocked',
+      'total_unlocked',
+    );
     const rareCount = pickNonNegIntOrNull(s, 'rareCount', 'rare_count');
     const epicCount = pickNonNegIntOrNull(s, 'epicCount', 'epic_count');
-    const legendaryCount = pickNonNegIntOrNull(s, 'legendaryCount', 'legendary_count');
+    const legendaryCount = pickNonNegIntOrNull(
+      s,
+      'legendaryCount',
+      'legendary_count',
+    );
     if (
       totalUnlocked != null ||
       rareCount != null ||
@@ -4215,8 +5286,18 @@ function pickCareerAchievementsSummary(o: Record<string, unknown>): CareerAchiev
       return { totalUnlocked, rareCount, epicCount, legendaryCount };
     }
   }
-  const unlockedBadgeCount = pickNonNegIntOrNull(o, 'unlockedBadgeCount', 'unlocked_badge_count', 'badgesUnlocked');
-  const rareBadgeCount = pickNonNegIntOrNull(o, 'rareBadgeCount', 'rare_badge_count', 'rareCount');
+  const unlockedBadgeCount = pickNonNegIntOrNull(
+    o,
+    'unlockedBadgeCount',
+    'unlocked_badge_count',
+    'badgesUnlocked',
+  );
+  const rareBadgeCount = pickNonNegIntOrNull(
+    o,
+    'rareBadgeCount',
+    'rare_badge_count',
+    'rareCount',
+  );
   if (unlockedBadgeCount != null || rareBadgeCount != null) {
     return {
       totalUnlocked: unlockedBadgeCount,
@@ -4228,44 +5309,94 @@ function pickCareerAchievementsSummary(o: Record<string, unknown>): CareerAchiev
   return null;
 }
 
-function pickCareerExperiencePoints(o: Record<string, unknown>): CareerAchievementsExperiencePointsPayload | null {
+function pickCareerExperiencePoints(
+  o: Record<string, unknown>,
+): CareerAchievementsExperiencePointsPayload | null {
   const raw = o.experiencePoints ?? o.experience_points;
-  if (raw === null || raw === undefined || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (
+    raw === null ||
+    raw === undefined ||
+    typeof raw !== 'object' ||
+    Array.isArray(raw)
+  )
+    return null;
   const e = raw as Record<string, unknown>;
   const current = pickNonNegIntOrNull(e, 'current', 'xp', 'value');
   const nextRaw = e.nextLevelAt ?? e.next_level_at ?? e.target;
   let nextLevelAt: number | null = null;
-  if (typeof nextRaw === 'number' && Number.isFinite(nextRaw)) nextLevelAt = Math.max(0, Math.round(nextRaw));
-  else if (typeof nextRaw === 'string' && nextRaw.trim() && Number.isFinite(Number(nextRaw)))
+  if (typeof nextRaw === 'number' && Number.isFinite(nextRaw))
+    nextLevelAt = Math.max(0, Math.round(nextRaw));
+  else if (
+    typeof nextRaw === 'string' &&
+    nextRaw.trim() &&
+    Number.isFinite(Number(nextRaw))
+  )
     nextLevelAt = Math.max(0, Math.round(Number(nextRaw)));
   if (current != null || nextLevelAt != null) return { current, nextLevelAt };
   return null;
 }
 
-function pickCareerAlmostUnlockedItem(raw: unknown): CareerAchievementAlmostPayload | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+function pickCareerAlmostUnlockedItem(
+  raw: unknown,
+): CareerAchievementAlmostPayload | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const title = pickStrOrNull(o, 'title', 'headline', 'name', 'label');
   if (!title?.trim()) return null;
   const key = pickStrOrNull(o, 'key', 'id');
-  const description = pickStrOrNull(o, 'description', 'subtitle', 'supporting', 'body');
-  const curRaw = o.progressCurrent ?? o.progress_current ?? o.current ?? o.progress ?? o.value ?? o.completed;
-  const tgtRaw = o.progressTarget ?? o.progress_target ?? o.target ?? o.goal ?? o.required ?? o.total;
+  const description = pickStrOrNull(
+    o,
+    'description',
+    'subtitle',
+    'supporting',
+    'body',
+  );
+  const curRaw =
+    o.progressCurrent ??
+    o.progress_current ??
+    o.current ??
+    o.progress ??
+    o.value ??
+    o.completed;
+  const tgtRaw =
+    o.progressTarget ??
+    o.progress_target ??
+    o.target ??
+    o.goal ??
+    o.required ??
+    o.total;
   let progressCurrent = 0;
   let progressTarget = 0;
-  if (typeof curRaw === 'number' && Number.isFinite(curRaw)) progressCurrent = Math.max(0, Math.round(curRaw));
-  else if (typeof curRaw === 'string' && curRaw.trim() && Number.isFinite(Number(curRaw)))
+  if (typeof curRaw === 'number' && Number.isFinite(curRaw))
+    progressCurrent = Math.max(0, Math.round(curRaw));
+  else if (
+    typeof curRaw === 'string' &&
+    curRaw.trim() &&
+    Number.isFinite(Number(curRaw))
+  )
     progressCurrent = Math.max(0, Math.round(Number(curRaw)));
-  if (typeof tgtRaw === 'number' && Number.isFinite(tgtRaw)) progressTarget = Math.max(1, Math.round(tgtRaw));
-  else if (typeof tgtRaw === 'string' && tgtRaw.trim() && Number.isFinite(Number(tgtRaw)))
+  if (typeof tgtRaw === 'number' && Number.isFinite(tgtRaw))
+    progressTarget = Math.max(1, Math.round(tgtRaw));
+  else if (
+    typeof tgtRaw === 'string' &&
+    tgtRaw.trim() &&
+    Number.isFinite(Number(tgtRaw))
+  )
     progressTarget = Math.max(1, Math.round(Number(tgtRaw)));
   if (progressTarget < 1) return null;
   const remRaw = o.remaining;
   let remaining: number | null = null;
-  if (typeof remRaw === 'number' && Number.isFinite(remRaw)) remaining = Math.max(0, Math.round(remRaw));
-  else if (typeof remRaw === 'string' && remRaw.trim() && Number.isFinite(Number(remRaw)))
+  if (typeof remRaw === 'number' && Number.isFinite(remRaw))
+    remaining = Math.max(0, Math.round(remRaw));
+  else if (
+    typeof remRaw === 'string' &&
+    remRaw.trim() &&
+    Number.isFinite(Number(remRaw))
+  )
     remaining = Math.max(0, Math.round(Number(remRaw)));
-  else if (progressTarget > progressCurrent) remaining = progressTarget - progressCurrent;
+  else if (progressTarget > progressCurrent)
+    remaining = progressTarget - progressCurrent;
   return {
     key,
     title,
@@ -4277,7 +5408,9 @@ function pickCareerAlmostUnlockedItem(raw: unknown): CareerAchievementAlmostPayl
   };
 }
 
-function pickCareerAchievements(raw: unknown): CareerAchievementsPayload | null {
+function pickCareerAchievements(
+  raw: unknown,
+): CareerAchievementsPayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
@@ -4291,7 +5424,11 @@ function pickCareerAchievements(raw: unknown): CareerAchievementsPayload | null 
     }
   }
 
-  const mileRaw = o.almostUnlocked ?? o.almost_unlocked ?? o.upcomingMilestones ?? o.upcoming_milestones;
+  const mileRaw =
+    o.almostUnlocked ??
+    o.almost_unlocked ??
+    o.upcomingMilestones ??
+    o.upcoming_milestones;
   const almostUnlocked: CareerAchievementAlmostPayload[] = [];
   if (Array.isArray(mileRaw)) {
     for (const el of mileRaw) {
@@ -4332,8 +5469,11 @@ function pickCareerAchievements(raw: unknown): CareerAchievementsPayload | null 
   };
 }
 
-function pickTodayPlanAchievementItem(raw: unknown): TodayPlanAchievementPayload | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+function pickTodayPlanAchievementItem(
+  raw: unknown,
+): TodayPlanAchievementPayload | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
 
   const key = pickStrOrNull(o, 'key', 'id');
@@ -4343,7 +5483,9 @@ function pickTodayPlanAchievementItem(raw: unknown): TodayPlanAchievementPayload
 
   const categoryRaw = pickStrOrNull(o, 'category');
   const category = (() => {
-    const c = String(categoryRaw ?? '').trim().toLowerCase();
+    const c = String(categoryRaw ?? '')
+      .trim()
+      .toLowerCase();
     if (!c) return null;
     const allowed = new Set<string>([
       'analysis',
@@ -4358,13 +5500,22 @@ function pickTodayPlanAchievementItem(raw: unknown): TodayPlanAchievementPayload
 
   const rarityRaw = pickStrOrNull(o, 'rarity');
   const rarity = (() => {
-    const r = String(rarityRaw ?? '').trim().toLowerCase();
+    const r = String(rarityRaw ?? '')
+      .trim()
+      .toLowerCase();
     if (!r) return null;
     const allowed = new Set<string>(['common', 'rare', 'epic', 'legendary']);
     return allowed.has(r) ? (r as TodayPlanAchievementRarity) : null;
   })();
 
-  if (!key && !title && !description && !earnedAt && category == null && rarity == null) {
+  if (
+    !key &&
+    !title &&
+    !description &&
+    !earnedAt &&
+    category == null &&
+    rarity == null
+  ) {
     return null;
   }
   return {
@@ -4377,7 +5528,9 @@ function pickTodayPlanAchievementItem(raw: unknown): TodayPlanAchievementPayload
   };
 }
 
-function pickTodayPlanAchievementsFromBody(body: Record<string, unknown>): TodayPlanAchievementPayload[] | null {
+function pickTodayPlanAchievementsFromBody(
+  body: Record<string, unknown>,
+): TodayPlanAchievementPayload[] | null {
   const raw = body.achievements ?? body.habit_achievements;
   if (raw === undefined) return null;
   if (raw === null) return null;
@@ -4390,7 +5543,9 @@ function pickTodayPlanAchievementsFromBody(body: Record<string, unknown>): Today
   return out;
 }
 
-function pickMilestoneCelebration(raw: unknown): MilestoneCelebrationPayload | null {
+function pickMilestoneCelebration(
+  raw: unknown,
+): MilestoneCelebrationPayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
@@ -4415,11 +5570,25 @@ function pickStrategicCoaching(raw: unknown): StrategicCoachingPayload | null {
   const headline = pickStrOrNull(o, 'headline');
   const supporting = pickStrOrNull(o, 'supporting');
   const ctaLabel = pickStrOrNull(o, 'ctaLabel', 'cta_label', 'label');
-  const ctaHref = pickStrOrNull(o, 'ctaHref', 'cta_href', 'href', 'route', 'path');
-  const confidence = pickOptionalScore(o, 'confidence', 'confidenceScore', 'confidence_score');
+  const ctaHref = pickStrOrNull(
+    o,
+    'ctaHref',
+    'cta_href',
+    'href',
+    'route',
+    'path',
+  );
+  const confidence = pickOptionalScore(
+    o,
+    'confidence',
+    'confidenceScore',
+    'confidence_score',
+  );
   const reasonRaw = pickStrOrNull(o, 'reason', 'rationale');
   const reason = (() => {
-    const r = String(reasonRaw ?? '').trim().toLowerCase();
+    const r = String(reasonRaw ?? '')
+      .trim()
+      .toLowerCase();
     if (!r) return null;
     const allowed = new Set<string>([
       'interview_focus',
@@ -4432,7 +5601,14 @@ function pickStrategicCoaching(raw: unknown): StrategicCoachingPayload | null {
     return allowed.has(r) ? (r as StrategicCoachingReason) : null;
   })();
 
-  if (!headline && !supporting && !ctaLabel && !ctaHref && confidence == null && reason == null) {
+  if (
+    !headline &&
+    !supporting &&
+    !ctaLabel &&
+    !ctaHref &&
+    confidence == null &&
+    reason == null
+  ) {
     return null;
   }
   return {
@@ -4445,7 +5621,9 @@ function pickStrategicCoaching(raw: unknown): StrategicCoachingPayload | null {
   };
 }
 
-function pickDeterministicIndexScore(raw: unknown): DeterministicIndexScorePayload | null {
+function pickDeterministicIndexScore(
+  raw: unknown,
+): DeterministicIndexScorePayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
@@ -4486,18 +5664,42 @@ function pickCareerMomentum(raw: unknown): CareerMomentumPayload | null {
   const o = raw as Record<string, unknown>;
 
   const score = pickOptionalScore(o, 'score', 'momentum_score');
-  const momentumIndex = pickDeterministicIndexScore(o.momentumIndex ?? o.momentum_index);
+  const momentumIndex = pickDeterministicIndexScore(
+    o.momentumIndex ?? o.momentum_index,
+  );
   const tierRaw = pickStrOrNull(o, 'tier', 'momentum_tier');
   const tier = (() => {
-    const t = String(tierRaw ?? '').trim().toLowerCase();
-    const allowed = new Set<string>(['building', 'steady', 'strong', 'surging']);
+    const t = String(tierRaw ?? '')
+      .trim()
+      .toLowerCase();
+    const allowed = new Set<string>([
+      'building',
+      'steady',
+      'strong',
+      'surging',
+    ]);
     return allowed.has(t) ? (t as CareerMomentumTier) : null;
   })();
   const headline = pickStrOrNull(o, 'headline', 'title');
-  const supporting = pickStrOrNull(o, 'supporting', 'supporting_copy', 'narrative');
+  const supporting = pickStrOrNull(
+    o,
+    'supporting',
+    'supporting_copy',
+    'narrative',
+  );
   const strengths = pickStrArray(o.strengths ?? o.strength_items);
-  const opportunity = pickStrOrNull(o, 'opportunity', 'biggest_opportunity', 'opportunity_line');
-  const confidence = pickOptionalScore(o, 'confidence', 'confidenceScore', 'confidence_score');
+  const opportunity = pickStrOrNull(
+    o,
+    'opportunity',
+    'biggest_opportunity',
+    'opportunity_line',
+  );
+  const confidence = pickOptionalScore(
+    o,
+    'confidence',
+    'confidenceScore',
+    'confidence_score',
+  );
 
   if (
     score == null &&
@@ -4529,17 +5731,39 @@ function pickWeeklyBriefing(raw: unknown): WeeklyBriefingPayload | null {
   const o = raw as Record<string, unknown>;
 
   const headline = pickStrOrNull(o, 'headline', 'title');
-  const summary = pickStrOrNull(o, 'summary', 'brief_summary', 'weekly_summary');
+  const summary = pickStrOrNull(
+    o,
+    'summary',
+    'brief_summary',
+    'weekly_summary',
+  );
   const wins = pickStrArray(o.wins ?? o.win_lines);
   const needsAttention = pickStrArray(
     o.needsAttention ?? o.needs_attention ?? o.needs_attention_items ?? o.risks,
   );
-  const recommendedFocus = pickStrOrNull(o, 'recommendedFocus', 'recommended_focus', 'focus');
-  const confidence = pickOptionalScore(o, 'confidence', 'confidenceScore', 'confidence_score');
+  const recommendedFocus = pickStrOrNull(
+    o,
+    'recommendedFocus',
+    'recommended_focus',
+    'focus',
+  );
+  const confidence = pickOptionalScore(
+    o,
+    'confidence',
+    'confidenceScore',
+    'confidence_score',
+  );
   const toneRaw = pickStrOrNull(o, 'tone', 'briefing_tone');
   const tone = (() => {
-    const t = String(toneRaw ?? '').trim().toLowerCase();
-    const allowed = new Set<string>(['encouraging', 'focused', 'urgent', 'celebratory']);
+    const t = String(toneRaw ?? '')
+      .trim()
+      .toLowerCase();
+    const allowed = new Set<string>([
+      'encouraging',
+      'focused',
+      'urgent',
+      'celebratory',
+    ]);
     return allowed.has(t) ? (t as WeeklyBriefingTone) : null;
   })();
 
@@ -4594,7 +5818,9 @@ function pickTimelineOutlookFields(o: Record<string, unknown>): {
   timelineOutlook: TimelineOutlookBand | null;
   timelineOutlookLabel: string | null;
 } {
-  const bandRaw = String(pickStr(o, 'timelineOutlook', 'timeline_outlook') ?? '')
+  const bandRaw = String(
+    pickStr(o, 'timelineOutlook', 'timeline_outlook') ?? '',
+  )
     .trim()
     .toLowerCase();
   const timelineOutlook = isTimelineOutlookBand(bandRaw) ? bandRaw : null;
@@ -4611,19 +5837,39 @@ function pickPredictiveOutlook(raw: unknown): PredictiveOutlookPayload | null {
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
 
-  const interviewOutlook = pickSemanticOutlook(o.interviewOutlook ?? o.interview_outlook);
+  const interviewOutlook = pickSemanticOutlook(
+    o.interviewOutlook ?? o.interview_outlook,
+  );
   const offerOutlook = pickSemanticOutlook(o.offerOutlook ?? o.offer_outlook);
-  const { timelineOutlook, timelineOutlookLabel } = pickTimelineOutlookFields(o);
+  const { timelineOutlook, timelineOutlookLabel } =
+    pickTimelineOutlookFields(o);
 
-  const pipelineRaw = pickStrOrNull(o, 'pipelineHealth', 'pipeline_health', 'funnel_health');
+  const pipelineRaw = pickStrOrNull(
+    o,
+    'pipelineHealth',
+    'pipeline_health',
+    'funnel_health',
+  );
   const pipelineHealth = (() => {
-    const t = String(pipelineRaw ?? '').trim().toLowerCase();
-    const allowed = new Set<string>(['fragile', 'building', 'healthy', 'strong']);
+    const t = String(pipelineRaw ?? '')
+      .trim()
+      .toLowerCase();
+    const allowed = new Set<string>([
+      'fragile',
+      'building',
+      'healthy',
+      'strong',
+    ]);
     return allowed.has(t) ? (t as PredictivePipelineHealth) : null;
   })();
   const headline = pickStrOrNull(o, 'headline', 'title');
   const supporting = pickStrOrNull(o, 'supporting', 'supporting_copy', 'body');
-  const confidence = pickOptionalScore(o, 'confidence', 'confidenceScore', 'confidence_score');
+  const confidence = pickOptionalScore(
+    o,
+    'confidence',
+    'confidenceScore',
+    'confidence_score',
+  );
 
   const hasTimeline =
     timelineOutlook != null || Boolean(timelineOutlookLabel?.trim());
@@ -4651,14 +5897,18 @@ function pickPredictiveOutlook(raw: unknown): PredictiveOutlookPayload | null {
   };
 }
 
-function pickStrategicWeeklyCoaching(raw: unknown): StrategicWeeklyCoachingPayload | null {
+function pickStrategicWeeklyCoaching(
+  raw: unknown,
+): StrategicWeeklyCoachingPayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
 
   const reasonRaw = pickStrOrNull(o, 'reason', 'coaching_reason');
   const reason = (() => {
-    const r = String(reasonRaw ?? '').trim().toLowerCase();
+    const r = String(reasonRaw ?? '')
+      .trim()
+      .toLowerCase();
     const allowed = new Set<string>([
       'analysis_paralysis',
       'low_application_volume',
@@ -4672,16 +5922,40 @@ function pickStrategicWeeklyCoaching(raw: unknown): StrategicWeeklyCoachingPaylo
   })();
   const headline = pickStrOrNull(o, 'headline', 'title');
   const supporting = pickStrOrNull(o, 'supporting', 'supporting_copy', 'body');
-  const recommendedAction = pickStrOrNull(o, 'recommendedAction', 'recommended_action', 'cta_line');
-  const confidence = pickOptionalScore(o, 'confidence', 'confidenceScore', 'confidence_score');
+  const recommendedAction = pickStrOrNull(
+    o,
+    'recommendedAction',
+    'recommended_action',
+    'cta_line',
+  );
+  const confidence = pickOptionalScore(
+    o,
+    'confidence',
+    'confidenceScore',
+    'confidence_score',
+  );
   const toneRaw = pickStrOrNull(o, 'tone', 'coaching_tone');
   const tone = (() => {
-    const t = String(toneRaw ?? '').trim().toLowerCase();
-    const allowed = new Set<string>(['encouraging', 'focused', 'urgent', 'celebratory']);
+    const t = String(toneRaw ?? '')
+      .trim()
+      .toLowerCase();
+    const allowed = new Set<string>([
+      'encouraging',
+      'focused',
+      'urgent',
+      'celebratory',
+    ]);
     return allowed.has(t) ? (t as StrategicWeeklyCoachingTone) : null;
   })();
 
-  if (!headline && !supporting && !recommendedAction && confidence == null && tone == null && reason == null) {
+  if (
+    !headline &&
+    !supporting &&
+    !recommendedAction &&
+    confidence == null &&
+    tone == null &&
+    reason == null
+  ) {
     return null;
   }
   return {
@@ -4704,12 +5978,22 @@ function pickEmotionalSummary(raw: unknown): EmotionalSummaryPayload | null {
   return { tone, message };
 }
 
-function pickAssistantReasoning(raw: unknown): AssistantReasoningPayload | null {
+function pickAssistantReasoning(
+  raw: unknown,
+): AssistantReasoningPayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
-  const primaryFocusReason = pickStrOrNull(o, 'primaryFocusReason', 'primary_focus_reason');
-  const continuityReason = pickStrOrNull(o, 'continuityReason', 'continuity_reason');
+  const primaryFocusReason = pickStrOrNull(
+    o,
+    'primaryFocusReason',
+    'primary_focus_reason',
+  );
+  const continuityReason = pickStrOrNull(
+    o,
+    'continuityReason',
+    'continuity_reason',
+  );
   const pacingReason = pickStrOrNull(o, 'pacingReason', 'pacing_reason');
   if (!primaryFocusReason && !continuityReason && !pacingReason) return null;
   return { primaryFocusReason, continuityReason, pacingReason };
@@ -4735,7 +6019,8 @@ function pickHumanizedLabels(raw: unknown): HumanizedLabelsPayload | null {
   const momentum = pickStrOrNull(o, 'momentum');
   const fatigue = pickStrOrNull(o, 'fatigue');
   const confidence = pickStrOrNull(o, 'confidence');
-  if (!narrativeArc && !strategicMode && !momentum && !fatigue && !confidence) return null;
+  if (!narrativeArc && !strategicMode && !momentum && !fatigue && !confidence)
+    return null;
   return { narrativeArc, strategicMode, momentum, fatigue, confidence };
 }
 
@@ -4746,7 +6031,8 @@ function pickPersonalInsights(raw: unknown): PersonalInsightsPayload | null {
   const headline = pickStr(o, 'headline') ?? null;
   const supporting = pickStr(o, 'supporting') ?? null;
   const whyItMatters = pickStr(o, 'whyItMatters', 'why_it_matters') ?? null;
-  const nextBestAction = pickStr(o, 'nextBestAction', 'next_best_action') ?? null;
+  const nextBestAction =
+    pickStr(o, 'nextBestAction', 'next_best_action') ?? null;
   if (!headline && !supporting && !whyItMatters && !nextBestAction) return null;
   return { headline, supporting, whyItMatters, nextBestAction };
 }
@@ -4755,13 +6041,17 @@ function pickAssistantVoice(raw: unknown): AssistantVoicePayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
-  const emotionalSummary = pickStr(o, 'emotionalSummary', 'emotional_summary') ?? null;
-  const narrativeProgression = pickStr(o, 'narrativeProgression', 'narrative_progression') ?? null;
+  const emotionalSummary =
+    pickStr(o, 'emotionalSummary', 'emotional_summary') ?? null;
+  const narrativeProgression =
+    pickStr(o, 'narrativeProgression', 'narrative_progression') ?? null;
   if (!emotionalSummary && !narrativeProgression) return null;
   return { emotionalSummary, narrativeProgression };
 }
 
-function pickPersonalizationContext(raw: unknown): PersonalizationContextPayload | null {
+function pickPersonalizationContext(
+  raw: unknown,
+): PersonalizationContextPayload | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
@@ -4771,10 +6061,16 @@ function pickPersonalizationContext(raw: unknown): PersonalizationContextPayload
       : typeof o.primary_insight_active === 'boolean'
         ? o.primary_insight_active
         : null;
-  const strongestLeverage = pickStr(o, 'strongestLeverage', 'strongest_leverage') ?? null;
-  const quantified = o.quantifiedOpportunities ?? o.quantified_opportunities ?? null;
-  const personalInsights = pickPersonalInsights(o.personalInsights ?? o.personal_insights);
-  const assistantVoice = pickAssistantVoice(o.assistantVoice ?? o.assistant_voice);
+  const strongestLeverage =
+    pickStr(o, 'strongestLeverage', 'strongest_leverage') ?? null;
+  const quantified =
+    o.quantifiedOpportunities ?? o.quantified_opportunities ?? null;
+  const personalInsights = pickPersonalInsights(
+    o.personalInsights ?? o.personal_insights,
+  );
+  const assistantVoice = pickAssistantVoice(
+    o.assistantVoice ?? o.assistant_voice,
+  );
   return {
     primaryInsightActive,
     strongestLeverage,
@@ -4784,7 +6080,9 @@ function pickPersonalizationContext(raw: unknown): PersonalizationContextPayload
   };
 }
 
-function pickDashboardHeader(body: Record<string, unknown>): DashboardHeaderPayload | null {
+function pickDashboardHeader(
+  body: Record<string, unknown>,
+): DashboardHeaderPayload | null {
   const raw = body.dashboardHeader ?? body.dashboard_header;
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'object' || Array.isArray(raw)) return null;
@@ -4793,11 +6091,17 @@ function pickDashboardHeader(body: Record<string, unknown>): DashboardHeaderPayl
   const msg = msgRaw?.trim() ? msgRaw.trim() : null;
   const momentumType = pickMomentumType(o.momentumType ?? o.momentum_type);
   const dashboardMode = pickDashboardMode(o.dashboardMode ?? o.dashboard_mode);
-  const recommendedSections = pickRecommendedSections(o.recommendedSections ?? o.recommended_sections);
+  const recommendedSections = pickRecommendedSections(
+    o.recommendedSections ?? o.recommended_sections,
+  );
   const actionContextRaw =
-    o.actionContext !== null && typeof o.actionContext === 'object' && !Array.isArray(o.actionContext)
+    o.actionContext !== null &&
+    typeof o.actionContext === 'object' &&
+    !Array.isArray(o.actionContext)
       ? (o.actionContext as Record<string, unknown>)
-      : o.action_context !== null && typeof o.action_context === 'object' && !Array.isArray(o.action_context)
+      : o.action_context !== null &&
+          typeof o.action_context === 'object' &&
+          !Array.isArray(o.action_context)
         ? (o.action_context as Record<string, unknown>)
         : null;
   const actionContext = actionContextRaw
@@ -4812,8 +6116,12 @@ function pickDashboardHeader(body: Record<string, unknown>): DashboardHeaderPayl
                 !Array.isArray(actionContextRaw.execution_payload)
               ? (actionContextRaw.execution_payload as Record<string, unknown>)
               : null;
-        const t = String(pickStr(actionContextRaw, 'type') ?? '').trim().toLowerCase();
-        const validType: NonNullable<DashboardHeaderPayload['actionContext']>['type'] | null =
+        const t = String(pickStr(actionContextRaw, 'type') ?? '')
+          .trim()
+          .toLowerCase();
+        const validType:
+          | NonNullable<DashboardHeaderPayload['actionContext']>['type']
+          | null =
           t === 'stalled_application' ||
           t === 'unfinished_application' ||
           t === 'interview_followup' ||
@@ -4825,40 +6133,92 @@ function pickDashboardHeader(body: Record<string, unknown>): DashboardHeaderPayl
         if (!validType) return null;
         return {
           type: validType,
-          companyName: pickStrOrNull(actionContextRaw, 'companyName', 'company_name'),
+          companyName: pickStrOrNull(
+            actionContextRaw,
+            'companyName',
+            'company_name',
+          ),
           roleTitle: pickStrOrNull(actionContextRaw, 'roleTitle', 'role_title'),
           daysSinceActivity:
-            typeof actionContextRaw.daysSinceActivity === 'number' && Number.isFinite(actionContextRaw.daysSinceActivity)
+            typeof actionContextRaw.daysSinceActivity === 'number' &&
+            Number.isFinite(actionContextRaw.daysSinceActivity)
               ? actionContextRaw.daysSinceActivity
               : typeof actionContextRaw.days_since_activity === 'number' &&
                   Number.isFinite(actionContextRaw.days_since_activity)
                 ? actionContextRaw.days_since_activity
                 : null,
-          expectedOutcome: pickStrOrNull(actionContextRaw, 'expectedOutcome', 'expected_outcome'),
-          suggestedAction: pickStrOrNull(actionContextRaw, 'suggestedAction', 'suggested_action'),
+          expectedOutcome: pickStrOrNull(
+            actionContextRaw,
+            'expectedOutcome',
+            'expected_outcome',
+          ),
+          suggestedAction: pickStrOrNull(
+            actionContextRaw,
+            'suggestedAction',
+            'suggested_action',
+          ),
           estimatedMinutes:
-            typeof actionContextRaw.estimatedMinutes === 'number' && Number.isFinite(actionContextRaw.estimatedMinutes)
+            typeof actionContextRaw.estimatedMinutes === 'number' &&
+            Number.isFinite(actionContextRaw.estimatedMinutes)
               ? actionContextRaw.estimatedMinutes
               : typeof actionContextRaw.estimated_minutes === 'number' &&
                   Number.isFinite(actionContextRaw.estimated_minutes)
                 ? actionContextRaw.estimated_minutes
                 : null,
           deepLink: pickStrOrNull(actionContextRaw, 'deepLink', 'deep_link'),
-          canonicalJobId: pickStrOrNull(actionContextRaw, 'canonicalJobId', 'canonical_job_id'),
-          applicationId: pickStrOrNull(actionContextRaw, 'applicationId', 'application_id'),
-          cvProfileId: pickStrOrNull(actionContextRaw, 'cvProfileId', 'cv_profile_id'),
-          recommendationId: pickStrOrNull(actionContextRaw, 'recommendationId', 'recommendation_id'),
-          canonicalRoute: pickStrOrNull(actionContextRaw, 'canonicalRoute', 'canonical_route'),
-          fallbackRoute: pickStrOrNull(actionContextRaw, 'fallbackRoute', 'fallback_route'),
+          canonicalJobId: pickStrOrNull(
+            actionContextRaw,
+            'canonicalJobId',
+            'canonical_job_id',
+          ),
+          applicationId: pickStrOrNull(
+            actionContextRaw,
+            'applicationId',
+            'application_id',
+          ),
+          cvProfileId: pickStrOrNull(
+            actionContextRaw,
+            'cvProfileId',
+            'cv_profile_id',
+          ),
+          recommendationId: pickStrOrNull(
+            actionContextRaw,
+            'recommendationId',
+            'recommendation_id',
+          ),
+          canonicalRoute: pickStrOrNull(
+            actionContextRaw,
+            'canonicalRoute',
+            'canonical_route',
+          ),
+          fallbackRoute: pickStrOrNull(
+            actionContextRaw,
+            'fallbackRoute',
+            'fallback_route',
+          ),
           resolutionState: (() => {
-            const s = String(pickStr(actionContextRaw, 'resolutionState', 'resolution_state') ?? '')
+            const s = String(
+              pickStr(
+                actionContextRaw,
+                'resolutionState',
+                'resolution_state',
+              ) ?? '',
+            )
               .trim()
               .toLowerCase();
-            return s === 'resolved' || s === 'degraded' || s === 'missing_context' ? s : null;
+            return s === 'resolved' ||
+              s === 'degraded' ||
+              s === 'missing_context'
+              ? s
+              : null;
           })(),
-          surfaceOwnership: pickSurfaceOwnership(actionContextRaw.surfaceOwnership ?? actionContextRaw.surface_ownership),
+          surfaceOwnership: pickSurfaceOwnership(
+            actionContextRaw.surfaceOwnership ??
+              actionContextRaw.surface_ownership,
+          ),
           displayPriority:
-            typeof actionContextRaw.displayPriority === 'number' && Number.isFinite(actionContextRaw.displayPriority)
+            typeof actionContextRaw.displayPriority === 'number' &&
+            Number.isFinite(actionContextRaw.displayPriority)
               ? actionContextRaw.displayPriority
               : typeof actionContextRaw.display_priority === 'number' &&
                   Number.isFinite(actionContextRaw.display_priority)
@@ -4869,25 +6229,64 @@ function pickDashboardHeader(body: Record<string, unknown>): DashboardHeaderPayl
             'recommendationClusterId',
             'recommendation_cluster_id',
           ),
-          suppressedBy: pickSurfaceOwnership(actionContextRaw.suppressedBy ?? actionContextRaw.suppressed_by),
-          suppressionReason: pickStrOrNull(actionContextRaw, 'suppressionReason', 'suppression_reason'),
+          suppressedBy: pickSurfaceOwnership(
+            actionContextRaw.suppressedBy ?? actionContextRaw.suppressed_by,
+          ),
+          suppressionReason: pickStrOrNull(
+            actionContextRaw,
+            'suppressionReason',
+            'suppression_reason',
+          ),
           executionPayload: actionExecutionRaw
             ? {
-                canonicalRoute: pickStrOrNull(actionExecutionRaw, 'canonicalRoute', 'canonical_route'),
-                fallbackRoute: pickStrOrNull(actionExecutionRaw, 'fallbackRoute', 'fallback_route'),
+                canonicalRoute: pickStrOrNull(
+                  actionExecutionRaw,
+                  'canonicalRoute',
+                  'canonical_route',
+                ),
+                fallbackRoute: pickStrOrNull(
+                  actionExecutionRaw,
+                  'fallbackRoute',
+                  'fallback_route',
+                ),
                 resolutionState: (() => {
-                  const s = String(pickStr(actionExecutionRaw, 'resolutionState', 'resolution_state') ?? '')
+                  const s = String(
+                    pickStr(
+                      actionExecutionRaw,
+                      'resolutionState',
+                      'resolution_state',
+                    ) ?? '',
+                  )
                     .trim()
                     .toLowerCase();
-                  return s === 'resolved' || s === 'degraded' || s === 'missing_context' ? s : null;
+                  return s === 'resolved' ||
+                    s === 'degraded' ||
+                    s === 'missing_context'
+                    ? s
+                    : null;
                 })(),
-                applicationId: pickStrOrNull(actionExecutionRaw, 'applicationId', 'application_id'),
-                canonicalJobId: pickStrOrNull(actionExecutionRaw, 'canonicalJobId', 'canonical_job_id'),
-                cvProfileId: pickStrOrNull(actionExecutionRaw, 'cvProfileId', 'cv_profile_id'),
+                applicationId: pickStrOrNull(
+                  actionExecutionRaw,
+                  'applicationId',
+                  'application_id',
+                ),
+                canonicalJobId: pickStrOrNull(
+                  actionExecutionRaw,
+                  'canonicalJobId',
+                  'canonical_job_id',
+                ),
+                cvProfileId: pickStrOrNull(
+                  actionExecutionRaw,
+                  'cvProfileId',
+                  'cv_profile_id',
+                ),
               }
             : null,
           executionMode: (() => {
-            const mode = String(pickStr(actionContextRaw, 'executionMode', 'execution_mode') ?? '')
+            const mode = String(
+              pickStr(actionContextRaw, 'executionMode', 'execution_mode') ??
+                '',
+            )
               .trim()
               .toLowerCase();
             const ok =
@@ -4896,12 +6295,22 @@ function pickDashboardHeader(body: Record<string, unknown>): DashboardHeaderPayl
               mode === 'checklist' ||
               mode === 'generator' ||
               mode === 'continue_flow';
-            return ok ? (mode as NonNullable<DashboardHeaderPayload['actionContext']>['executionMode']) : null;
+            return ok
+              ? (mode as NonNullable<
+                  DashboardHeaderPayload['actionContext']
+                >['executionMode'])
+              : null;
           })(),
         } as NonNullable<DashboardHeaderPayload['actionContext']>;
       })()
     : null;
-  if (!msg && momentumType === null && !actionContext && dashboardMode === null && recommendedSections.length === 0) {
+  if (
+    !msg &&
+    momentumType === null &&
+    !actionContext &&
+    dashboardMode === null &&
+    recommendedSections.length === 0
+  ) {
     return null;
   }
   return {
@@ -4914,7 +6323,8 @@ function pickDashboardHeader(body: Record<string, unknown>): DashboardHeaderPayl
 }
 
 function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const id = pickStr(o, 'id') ?? '';
   if (!id) return null;
@@ -4924,7 +6334,9 @@ function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
       ? (idsRaw as Record<string, unknown>)
       : {};
 
-  const urgencyRaw = String(pickStr(o, 'urgencyBucket', 'urgency_bucket') ?? 'soon')
+  const urgencyRaw = String(
+    pickStr(o, 'urgencyBucket', 'urgency_bucket') ?? 'soon',
+  )
     .trim()
     .toLowerCase();
   const urgencyBucket: UnifiedPriorityUrgencyBucket =
@@ -4934,12 +6346,17 @@ function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
   const recommendationSourceRaw = String(
     pickStr(o, 'recommendationSource', 'recommendation_source') ?? '',
   ).toLowerCase();
-  const locationStrategyRaw = String(pickStr(o, 'locationStrategy', 'location_strategy') ?? '').toLowerCase();
+  const locationStrategyRaw = String(
+    pickStr(o, 'locationStrategy', 'location_strategy') ?? '',
+  ).toLowerCase();
   const normalizedLocationStrategy: 'local' | 'remote_fallback' | null =
-    locationStrategyRaw === 'local' || locationStrategyRaw === 'remote_fallback' ? locationStrategyRaw : null;
+    locationStrategyRaw === 'local' || locationStrategyRaw === 'remote_fallback'
+      ? locationStrategyRaw
+      : null;
   const recommendationSource: 'local' | 'remote_fallback' | null =
     normalizedLocationStrategy ??
-    (recommendationSourceRaw === 'local' || recommendationSourceRaw === 'remote_fallback'
+    (recommendationSourceRaw === 'local' ||
+    recommendationSourceRaw === 'remote_fallback'
       ? recommendationSourceRaw
       : null);
   const cta = pickCta(
@@ -4955,43 +6372,67 @@ function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
         : { label: 'Open', action: { ...idsObj } }),
   );
   const compactRaw =
-    o.compactDisplay !== null && typeof o.compactDisplay === 'object' && !Array.isArray(o.compactDisplay)
+    o.compactDisplay !== null &&
+    typeof o.compactDisplay === 'object' &&
+    !Array.isArray(o.compactDisplay)
       ? (o.compactDisplay as Record<string, unknown>)
-      : o.compact_display !== null && typeof o.compact_display === 'object' && !Array.isArray(o.compact_display)
+      : o.compact_display !== null &&
+          typeof o.compact_display === 'object' &&
+          !Array.isArray(o.compact_display)
         ? (o.compact_display as Record<string, unknown>)
         : null;
   const explainRaw =
-    o.explain !== null && typeof o.explain === 'object' && !Array.isArray(o.explain)
+    o.explain !== null &&
+    typeof o.explain === 'object' &&
+    !Array.isArray(o.explain)
       ? (o.explain as Record<string, unknown>)
       : null;
   const applyAssistRaw =
-    o.applyAssist !== null && typeof o.applyAssist === 'object' && !Array.isArray(o.applyAssist)
+    o.applyAssist !== null &&
+    typeof o.applyAssist === 'object' &&
+    !Array.isArray(o.applyAssist)
       ? (o.applyAssist as Record<string, unknown>)
-      : o.apply_assist !== null && typeof o.apply_assist === 'object' && !Array.isArray(o.apply_assist)
+      : o.apply_assist !== null &&
+          typeof o.apply_assist === 'object' &&
+          !Array.isArray(o.apply_assist)
         ? (o.apply_assist as Record<string, unknown>)
         : null;
   const journeyRaw =
-    o.journey !== null && typeof o.journey === 'object' && !Array.isArray(o.journey)
+    o.journey !== null &&
+    typeof o.journey === 'object' &&
+    !Array.isArray(o.journey)
       ? (o.journey as Record<string, unknown>)
       : null;
   const prefillRaw =
-    o.prefill !== null && typeof o.prefill === 'object' && !Array.isArray(o.prefill)
+    o.prefill !== null &&
+    typeof o.prefill === 'object' &&
+    !Array.isArray(o.prefill)
       ? (o.prefill as Record<string, unknown>)
       : null;
   const resumeRaw =
-    o.resumeState !== null && typeof o.resumeState === 'object' && !Array.isArray(o.resumeState)
+    o.resumeState !== null &&
+    typeof o.resumeState === 'object' &&
+    !Array.isArray(o.resumeState)
       ? (o.resumeState as Record<string, unknown>)
-      : o.resume_state !== null && typeof o.resume_state === 'object' && !Array.isArray(o.resume_state)
+      : o.resume_state !== null &&
+          typeof o.resume_state === 'object' &&
+          !Array.isArray(o.resume_state)
         ? (o.resume_state as Record<string, unknown>)
         : null;
   const snapshotRaw =
-    o.stateSnapshot !== null && typeof o.stateSnapshot === 'object' && !Array.isArray(o.stateSnapshot)
+    o.stateSnapshot !== null &&
+    typeof o.stateSnapshot === 'object' &&
+    !Array.isArray(o.stateSnapshot)
       ? (o.stateSnapshot as Record<string, unknown>)
-      : o.state_snapshot !== null && typeof o.state_snapshot === 'object' && !Array.isArray(o.state_snapshot)
+      : o.state_snapshot !== null &&
+          typeof o.state_snapshot === 'object' &&
+          !Array.isArray(o.state_snapshot)
         ? (o.state_snapshot as Record<string, unknown>)
         : null;
   const nextActionPreviewRaw =
-    o.nextActionPreview !== null && typeof o.nextActionPreview === 'object' && !Array.isArray(o.nextActionPreview)
+    o.nextActionPreview !== null &&
+    typeof o.nextActionPreview === 'object' &&
+    !Array.isArray(o.nextActionPreview)
       ? (o.nextActionPreview as Record<string, unknown>)
       : o.next_action_preview !== null &&
           typeof o.next_action_preview === 'object' &&
@@ -4999,7 +6440,9 @@ function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
         ? (o.next_action_preview as Record<string, unknown>)
         : null;
   const outcomeFramingRaw =
-    o.outcomeFraming !== null && typeof o.outcomeFraming === 'object' && !Array.isArray(o.outcomeFraming)
+    o.outcomeFraming !== null &&
+    typeof o.outcomeFraming === 'object' &&
+    !Array.isArray(o.outcomeFraming)
       ? (o.outcomeFraming as Record<string, unknown>)
       : o.outcome_framing !== null &&
           typeof o.outcome_framing === 'object' &&
@@ -5017,31 +6460,51 @@ function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
         ? (o.interview_prep_context as Record<string, unknown>)
         : null;
   const executionContextRaw =
-    o.executionPayload !== null && typeof o.executionPayload === 'object' && !Array.isArray(o.executionPayload)
+    o.executionPayload !== null &&
+    typeof o.executionPayload === 'object' &&
+    !Array.isArray(o.executionPayload)
       ? (o.executionPayload as Record<string, unknown>)
-      : o.execution_payload !== null && typeof o.execution_payload === 'object' && !Array.isArray(o.execution_payload)
+      : o.execution_payload !== null &&
+          typeof o.execution_payload === 'object' &&
+          !Array.isArray(o.execution_payload)
         ? (o.execution_payload as Record<string, unknown>)
-        : o.executionContext !== null && typeof o.executionContext === 'object' && !Array.isArray(o.executionContext)
+        : o.executionContext !== null &&
+            typeof o.executionContext === 'object' &&
+            !Array.isArray(o.executionContext)
           ? (o.executionContext as Record<string, unknown>)
-          : o.execution_context !== null && typeof o.execution_context === 'object' && !Array.isArray(o.execution_context)
+          : o.execution_context !== null &&
+              typeof o.execution_context === 'object' &&
+              !Array.isArray(o.execution_context)
             ? (o.execution_context as Record<string, unknown>)
             : null;
   const followUpContextRaw =
-    o.followUpContext !== null && typeof o.followUpContext === 'object' && !Array.isArray(o.followUpContext)
+    o.followUpContext !== null &&
+    typeof o.followUpContext === 'object' &&
+    !Array.isArray(o.followUpContext)
       ? (o.followUpContext as Record<string, unknown>)
-      : o.follow_up_context !== null && typeof o.follow_up_context === 'object' && !Array.isArray(o.follow_up_context)
+      : o.follow_up_context !== null &&
+          typeof o.follow_up_context === 'object' &&
+          !Array.isArray(o.follow_up_context)
         ? (o.follow_up_context as Record<string, unknown>)
         : null;
   const cvFixContextRaw =
-    o.cvFixContext !== null && typeof o.cvFixContext === 'object' && !Array.isArray(o.cvFixContext)
+    o.cvFixContext !== null &&
+    typeof o.cvFixContext === 'object' &&
+    !Array.isArray(o.cvFixContext)
       ? (o.cvFixContext as Record<string, unknown>)
-      : o.cv_fix_context !== null && typeof o.cv_fix_context === 'object' && !Array.isArray(o.cv_fix_context)
+      : o.cv_fix_context !== null &&
+          typeof o.cv_fix_context === 'object' &&
+          !Array.isArray(o.cv_fix_context)
         ? (o.cv_fix_context as Record<string, unknown>)
         : null;
   const qualitySignalsRaw =
-    o.qualitySignals !== null && typeof o.qualitySignals === 'object' && !Array.isArray(o.qualitySignals)
+    o.qualitySignals !== null &&
+    typeof o.qualitySignals === 'object' &&
+    !Array.isArray(o.qualitySignals)
       ? (o.qualitySignals as Record<string, unknown>)
-      : o.quality_signals !== null && typeof o.quality_signals === 'object' && !Array.isArray(o.quality_signals)
+      : o.quality_signals !== null &&
+          typeof o.quality_signals === 'object' &&
+          !Array.isArray(o.quality_signals)
         ? (o.quality_signals as Record<string, unknown>)
         : null;
 
@@ -5057,9 +6520,15 @@ function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
     whyNowShort: pickStrOrNull(o, 'whyNowShort', 'why_now_short'),
     compactDisplay: compactRaw
       ? {
-          primaryLine: String(pickStr(compactRaw, 'primaryLine', 'primary_line') ?? ''),
-          actionLabel: String(pickStr(compactRaw, 'actionLabel', 'action_label') ?? 'Open'),
-          actionType: String(pickStr(compactRaw, 'actionType', 'action_type') ?? ''),
+          primaryLine: String(
+            pickStr(compactRaw, 'primaryLine', 'primary_line') ?? '',
+          ),
+          actionLabel: String(
+            pickStr(compactRaw, 'actionLabel', 'action_label') ?? 'Open',
+          ),
+          actionType: String(
+            pickStr(compactRaw, 'actionType', 'action_type') ?? '',
+          ),
         }
       : null,
     explain: explainRaw
@@ -5067,7 +6536,8 @@ function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
           short: String(pickStr(explainRaw, 'short') ?? ''),
           factors: pickStrArray(explainRaw.factors),
           confidence:
-            typeof explainRaw.confidence === 'number' && Number.isFinite(explainRaw.confidence)
+            typeof explainRaw.confidence === 'number' &&
+            Number.isFinite(explainRaw.confidence)
               ? explainRaw.confidence
               : null,
         }
@@ -5079,35 +6549,62 @@ function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
             'estimatedStepsRemaining',
             'estimated_steps_remaining',
           );
-          const stepsDirect = applyAssistRaw.estimatedSteps ?? applyAssistRaw.estimated_steps;
+          const stepsDirect =
+            applyAssistRaw.estimatedSteps ?? applyAssistRaw.estimated_steps;
           const estimatedSteps =
-            typeof stepsDirect === 'number' && Number.isFinite(stepsDirect) ? stepsDirect : stepsRemaining;
+            typeof stepsDirect === 'number' && Number.isFinite(stepsDirect)
+              ? stepsDirect
+              : stepsRemaining;
           const readyRaw = String(
             pickStr(applyAssistRaw, 'readyState', 'ready_state') ?? '',
           ).trim();
           return {
-            suggestedNextStep: String(pickStr(applyAssistRaw, 'suggestedNextStep', 'suggested_next_step') ?? ''),
+            suggestedNextStep: String(
+              pickStr(
+                applyAssistRaw,
+                'suggestedNextStep',
+                'suggested_next_step',
+              ) ?? '',
+            ),
             estimatedSteps,
             estimatedStepsRemaining: stepsRemaining,
             estimatedMinutesToApply: (() => {
-              const v = applyAssistRaw.estimatedMinutesToApply ?? applyAssistRaw.estimated_minutes_to_apply;
+              const v =
+                applyAssistRaw.estimatedMinutesToApply ??
+                applyAssistRaw.estimated_minutes_to_apply;
               return typeof v === 'number' && Number.isFinite(v) ? v : null;
             })(),
-            blockerSeverity:
-              (() => {
-                const s = String(pickStr(applyAssistRaw, 'blockerSeverity', 'blocker_severity') ?? '').toLowerCase();
-                return s === 'none' || s === 'low' || s === 'high' ? s : null;
-              })(),
+            blockerSeverity: (() => {
+              const s = String(
+                pickStr(
+                  applyAssistRaw,
+                  'blockerSeverity',
+                  'blocker_severity',
+                ) ?? '',
+              ).toLowerCase();
+              return s === 'none' || s === 'low' || s === 'high' ? s : null;
+            })(),
             fastPathEligible:
-              applyAssistRaw.fastPathEligible === true || applyAssistRaw.fast_path_eligible === true,
-            fastPathRoute: pickStrOrNull(applyAssistRaw, 'fastPathRoute', 'fast_path_route'),
-            noEditsNeeded: applyAssistRaw.noEditsNeeded === true || applyAssistRaw.no_edits_needed === true,
+              applyAssistRaw.fastPathEligible === true ||
+              applyAssistRaw.fast_path_eligible === true,
+            fastPathRoute: pickStrOrNull(
+              applyAssistRaw,
+              'fastPathRoute',
+              'fast_path_route',
+            ),
+            noEditsNeeded:
+              applyAssistRaw.noEditsNeeded === true ||
+              applyAssistRaw.no_edits_needed === true,
             primaryActionLabel: pickStrOrNull(
               applyAssistRaw,
               'primaryActionLabel',
               'primary_action_label',
             ),
-            frictionScore: pickOptionalScore(applyAssistRaw, 'frictionScore', 'friction_score'),
+            frictionScore: pickOptionalScore(
+              applyAssistRaw,
+              'frictionScore',
+              'friction_score',
+            ),
             completionLikelihood: pickOptionalScore(
               applyAssistRaw,
               'completionLikelihood',
@@ -5120,27 +6617,60 @@ function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
       : null,
     prefill: prefillRaw
       ? {
-          selectedCvId: pickStrOrNull(prefillRaw, 'selectedCvId', 'selected_cv_id'),
-          tailoredCvDraftId: pickStrOrNull(prefillRaw, 'tailoredCvDraftId', 'tailored_cv_draft_id'),
-          coverLetterDraftId: pickStrOrNull(prefillRaw, 'coverLetterDraftId', 'cover_letter_draft_id'),
-          sourceContext: pickStrOrNull(prefillRaw, 'sourceContext', 'source_context'),
+          selectedCvId: pickStrOrNull(
+            prefillRaw,
+            'selectedCvId',
+            'selected_cv_id',
+          ),
+          tailoredCvDraftId: pickStrOrNull(
+            prefillRaw,
+            'tailoredCvDraftId',
+            'tailored_cv_draft_id',
+          ),
+          coverLetterDraftId: pickStrOrNull(
+            prefillRaw,
+            'coverLetterDraftId',
+            'cover_letter_draft_id',
+          ),
+          sourceContext: pickStrOrNull(
+            prefillRaw,
+            'sourceContext',
+            'source_context',
+          ),
         }
       : null,
     resumeState: resumeRaw
       ? {
           entityIds: pickStrArray(resumeRaw.entityIds ?? resumeRaw.entity_ids),
           workingStep: pickStrOrNull(resumeRaw, 'workingStep', 'working_step'),
-          filtersContext: pickStrOrNull(resumeRaw, 'filtersContext', 'filters_context'),
-          lastUpdatedAt: pickStrOrNull(resumeRaw, 'lastUpdatedAt', 'last_updated_at'),
+          filtersContext: pickStrOrNull(
+            resumeRaw,
+            'filtersContext',
+            'filters_context',
+          ),
+          lastUpdatedAt: pickStrOrNull(
+            resumeRaw,
+            'lastUpdatedAt',
+            'last_updated_at',
+          ),
           ttlMinutes: pickNum(resumeRaw, 'ttlMinutes', 'ttl_minutes'),
         }
       : null,
     stateSnapshot: snapshotRaw
       ? {
-          sourceState: pickStrOrNull(snapshotRaw, 'sourceState', 'source_state'),
-          sourceUpdatedAt: pickStrOrNull(snapshotRaw, 'sourceUpdatedAt', 'source_updated_at'),
+          sourceState: pickStrOrNull(
+            snapshotRaw,
+            'sourceState',
+            'source_state',
+          ),
+          sourceUpdatedAt: pickStrOrNull(
+            snapshotRaw,
+            'sourceUpdatedAt',
+            'source_updated_at',
+          ),
           computedAt: pickStrOrNull(snapshotRaw, 'computedAt', 'computed_at'),
-          staleRisk: snapshotRaw.staleRisk === true || snapshotRaw.stale_risk === true,
+          staleRisk:
+            snapshotRaw.staleRisk === true || snapshotRaw.stale_risk === true,
         }
       : null,
     microcopy: pickStrOrNull(o, 'microcopy'),
@@ -5161,19 +6691,34 @@ function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
       : null,
     outcomeFraming: outcomeFramingRaw
       ? {
-          primaryBenefit: pickStrOrNull(outcomeFramingRaw, 'primaryBenefit', 'primary_benefit'),
-          secondaryBenefit: pickStrOrNull(outcomeFramingRaw, 'secondaryBenefit', 'secondary_benefit'),
+          primaryBenefit: pickStrOrNull(
+            outcomeFramingRaw,
+            'primaryBenefit',
+            'primary_benefit',
+          ),
+          secondaryBenefit: pickStrOrNull(
+            outcomeFramingRaw,
+            'secondaryBenefit',
+            'secondary_benefit',
+          ),
         }
       : null,
     journey: journeyRaw
       ? {
-          nextRoute: String(pickStr(journeyRaw, 'nextRoute', 'next_route') ?? ''),
+          nextRoute: String(
+            pickStr(journeyRaw, 'nextRoute', 'next_route') ?? '',
+          ),
           returnRoute: pickStrOrNull(journeyRaw, 'returnRoute', 'return_route'),
-          contextToken: pickStrOrNull(journeyRaw, 'contextToken', 'context_token'),
+          contextToken: pickStrOrNull(
+            journeyRaw,
+            'contextToken',
+            'context_token',
+          ),
         }
       : null,
     ctaHint: actionType ?? null,
-    isNewSinceLastVisit: o.isNewSinceLastVisit === true || o.is_new_since_last_visit === true,
+    isNewSinceLastVisit:
+      o.isNewSinceLastVisit === true || o.is_new_since_last_visit === true,
     firstSeenAt: pickStrOrNull(o, 'firstSeenAt', 'first_seen_at'),
     lastSeenAt: pickStrOrNull(o, 'lastSeenAt', 'last_seen_at'),
     locationStrategy: recommendationSource,
@@ -5181,7 +6726,8 @@ function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
     postedAgeHours:
       typeof o.postedAgeHours === 'number' && Number.isFinite(o.postedAgeHours)
         ? o.postedAgeHours
-        : typeof o.posted_age_hours === 'number' && Number.isFinite(o.posted_age_hours)
+        : typeof o.posted_age_hours === 'number' &&
+            Number.isFinite(o.posted_age_hours)
           ? o.posted_age_hours
           : null,
     recommendationSource,
@@ -5190,47 +6736,102 @@ function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
       pickStrOrNull(o, 'locationLabel', 'location_label'),
     fallbackReason: pickStrOrNull(o, 'fallbackReason', 'fallback_reason'),
     dedupeGroupKey: pickStrOrNull(o, 'dedupeGroupKey', 'dedupe_group_key'),
-    recommendationFamilyId: pickStrOrNull(o, 'recommendationFamilyId', 'recommendation_family_id'),
-    confidenceScore: pickOptionalScore(o, 'confidenceScore', 'confidence_score'),
+    recommendationFamilyId: pickStrOrNull(
+      o,
+      'recommendationFamilyId',
+      'recommendation_family_id',
+    ),
+    confidenceScore: pickOptionalScore(
+      o,
+      'confidenceScore',
+      'confidence_score',
+    ),
     confidenceReason: pickStrOrNull(o, 'confidenceReason', 'confidence_reason'),
     estimatedOutcome: pickStrOrNull(o, 'estimatedOutcome', 'estimated_outcome'),
     expectedImpactLevel: pickImpactLevel(o),
-    suppressionReason: pickStrOrNull(o, 'suppressionReason', 'suppression_reason'),
-    surfaceOwnership: pickSurfaceOwnership(o.surfaceOwnership ?? o.surface_ownership),
+    suppressionReason: pickStrOrNull(
+      o,
+      'suppressionReason',
+      'suppression_reason',
+    ),
+    surfaceOwnership: pickSurfaceOwnership(
+      o.surfaceOwnership ?? o.surface_ownership,
+    ),
     displayPriority:
-      typeof o.displayPriority === 'number' && Number.isFinite(o.displayPriority)
+      typeof o.displayPriority === 'number' &&
+      Number.isFinite(o.displayPriority)
         ? o.displayPriority
-        : typeof o.display_priority === 'number' && Number.isFinite(o.display_priority)
+        : typeof o.display_priority === 'number' &&
+            Number.isFinite(o.display_priority)
           ? o.display_priority
           : null,
-    recommendationClusterId: pickStrOrNull(o, 'recommendationClusterId', 'recommendation_cluster_id'),
+    recommendationClusterId: pickStrOrNull(
+      o,
+      'recommendationClusterId',
+      'recommendation_cluster_id',
+    ),
     suppressedBy: pickSurfaceOwnership(o.suppressedBy ?? o.suppressed_by),
     workflowState: pickWorkflowState(o),
-    workflowEntityKey: pickStrOrNull(o, 'workflowEntityKey', 'workflow_entity_key'),
-    workflowEntityId: pickStrOrNull(o, 'workflowEntityId', 'workflow_entity_id'),
+    workflowEntityKey: pickStrOrNull(
+      o,
+      'workflowEntityKey',
+      'workflow_entity_key',
+    ),
+    workflowEntityId: pickStrOrNull(
+      o,
+      'workflowEntityId',
+      'workflow_entity_id',
+    ),
     roleTitle: pickStrOrNull(o, 'roleTitle', 'role_title'),
     roleCompany: pickStrOrNull(o, 'roleCompany', 'role_company'),
     roleLabel: pickStrOrNull(o, 'roleLabel', 'role_label'),
     interviewPrepContext: interviewPrepRaw
       ? {
-          jobAnalysisId: pickStrOrNull(interviewPrepRaw, 'jobAnalysisId', 'job_analysis_id'),
+          jobAnalysisId: pickStrOrNull(
+            interviewPrepRaw,
+            'jobAnalysisId',
+            'job_analysis_id',
+          ),
           jobTitle: pickStrOrNull(interviewPrepRaw, 'jobTitle', 'job_title'),
           company: pickStrOrNull(interviewPrepRaw, 'company'),
-          cvProfileId: pickStrOrNull(interviewPrepRaw, 'cvProfileId', 'cv_profile_id'),
+          cvProfileId: pickStrOrNull(
+            interviewPrepRaw,
+            'cvProfileId',
+            'cv_profile_id',
+          ),
           preferredCvProfileId: pickStrOrNull(
             interviewPrepRaw,
             'preferredCvProfileId',
             'preferred_cv_profile_id',
           ),
-          analyzedCvProfileId: pickStrOrNull(interviewPrepRaw, 'analyzedCvProfileId', 'analyzed_cv_profile_id'),
-          tailoringCvProfileId: pickStrOrNull(interviewPrepRaw, 'tailoringCvProfileId', 'tailoring_cv_profile_id'),
-          likelyTopics: pickStrArray(interviewPrepRaw.likelyTopics ?? interviewPrepRaw.likely_topics),
-          likelyQuestions: pickStrArray(interviewPrepRaw.likelyQuestions ?? interviewPrepRaw.likely_questions),
-          preparationChecklist: pickStrArray(
-            interviewPrepRaw.preparationChecklist ?? interviewPrepRaw.preparation_checklist,
+          analyzedCvProfileId: pickStrOrNull(
+            interviewPrepRaw,
+            'analyzedCvProfileId',
+            'analyzed_cv_profile_id',
           ),
-          missingSignals: pickStrArray(interviewPrepRaw.missingSignals ?? interviewPrepRaw.missing_signals),
-          suggestedStories: pickStrArray(interviewPrepRaw.suggestedStories ?? interviewPrepRaw.suggested_stories),
+          tailoringCvProfileId: pickStrOrNull(
+            interviewPrepRaw,
+            'tailoringCvProfileId',
+            'tailoring_cv_profile_id',
+          ),
+          likelyTopics: pickStrArray(
+            interviewPrepRaw.likelyTopics ?? interviewPrepRaw.likely_topics,
+          ),
+          likelyQuestions: pickStrArray(
+            interviewPrepRaw.likelyQuestions ??
+              interviewPrepRaw.likely_questions,
+          ),
+          preparationChecklist: pickStrArray(
+            interviewPrepRaw.preparationChecklist ??
+              interviewPrepRaw.preparation_checklist,
+          ),
+          missingSignals: pickStrArray(
+            interviewPrepRaw.missingSignals ?? interviewPrepRaw.missing_signals,
+          ),
+          suggestedStories: pickStrArray(
+            interviewPrepRaw.suggestedStories ??
+              interviewPrepRaw.suggested_stories,
+          ),
           estimatedPrepMinutes:
             typeof interviewPrepRaw.estimatedPrepMinutes === 'number' &&
             Number.isFinite(interviewPrepRaw.estimatedPrepMinutes)
@@ -5240,17 +6841,27 @@ function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
                 ? interviewPrepRaw.estimated_prep_minutes
                 : null,
           hydrationReady:
-            interviewPrepRaw.hydrationReady === true || interviewPrepRaw.hydration_ready === true
+            interviewPrepRaw.hydrationReady === true ||
+            interviewPrepRaw.hydration_ready === true
               ? true
-              : interviewPrepRaw.hydrationReady === false || interviewPrepRaw.hydration_ready === false
+              : interviewPrepRaw.hydrationReady === false ||
+                  interviewPrepRaw.hydration_ready === false
                 ? false
                 : null,
-          selectedCvProfileId: pickStrOrNull(interviewPrepRaw, 'selectedCvProfileId', 'selected_cv_profile_id'),
+          selectedCvProfileId: pickStrOrNull(
+            interviewPrepRaw,
+            'selectedCvProfileId',
+            'selected_cv_profile_id',
+          ),
         }
       : null,
     executionContext: executionContextRaw
       ? {
-          nextImmediateAction: pickStrOrNull(executionContextRaw, 'nextImmediateAction', 'next_immediate_action'),
+          nextImmediateAction: pickStrOrNull(
+            executionContextRaw,
+            'nextImmediateAction',
+            'next_immediate_action',
+          ),
           estimatedMinutes:
             typeof executionContextRaw.estimatedMinutes === 'number' &&
             Number.isFinite(executionContextRaw.estimatedMinutes)
@@ -5259,9 +6870,16 @@ function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
                   Number.isFinite(executionContextRaw.estimated_minutes)
                 ? executionContextRaw.estimated_minutes
                 : null,
-          emotionalBenefit: pickStrOrNull(executionContextRaw, 'emotionalBenefit', 'emotional_benefit'),
+          emotionalBenefit: pickStrOrNull(
+            executionContextRaw,
+            'emotionalBenefit',
+            'emotional_benefit',
+          ),
           executionMode: (() => {
-            const mode = String(pickStr(executionContextRaw, 'executionMode', 'execution_mode') ?? '')
+            const mode = String(
+              pickStr(executionContextRaw, 'executionMode', 'execution_mode') ??
+                '',
+            )
               .trim()
               .toLowerCase();
             return mode === 'inline_modal' ||
@@ -5274,55 +6892,151 @@ function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
           })(),
           deepLink: pickStrOrNull(executionContextRaw, 'deepLink', 'deep_link'),
           canExecuteInline:
-            executionContextRaw.canExecuteInline === true || executionContextRaw.can_execute_inline === true,
-          preparedDraft: pickStrOrNull(executionContextRaw, 'preparedDraft', 'prepared_draft'),
+            executionContextRaw.canExecuteInline === true ||
+            executionContextRaw.can_execute_inline === true,
+          preparedDraft: pickStrOrNull(
+            executionContextRaw,
+            'preparedDraft',
+            'prepared_draft',
+          ),
           suggestedTone: (() => {
-            const v = String(pickStr(executionContextRaw, 'suggestedTone', 'suggested_tone') ?? '').toLowerCase();
-            return v === 'confident' || v === 'professional' || v === 'warm' || v === 'concise' ? v : null;
+            const v = String(
+              pickStr(executionContextRaw, 'suggestedTone', 'suggested_tone') ??
+                '',
+            ).toLowerCase();
+            return v === 'confident' ||
+              v === 'professional' ||
+              v === 'warm' ||
+              v === 'concise'
+              ? v
+              : null;
           })(),
           estimatedSuccessLikelihood:
-            typeof executionContextRaw.estimatedSuccessLikelihood === 'number' &&
+            typeof executionContextRaw.estimatedSuccessLikelihood ===
+              'number' &&
             Number.isFinite(executionContextRaw.estimatedSuccessLikelihood)
               ? executionContextRaw.estimatedSuccessLikelihood
-              : typeof executionContextRaw.estimated_success_likelihood === 'number' &&
-                  Number.isFinite(executionContextRaw.estimated_success_likelihood)
+              : typeof executionContextRaw.estimated_success_likelihood ===
+                    'number' &&
+                  Number.isFinite(
+                    executionContextRaw.estimated_success_likelihood,
+                  )
                 ? executionContextRaw.estimated_success_likelihood
                 : null,
           preparationChecklist: pickStrArray(
-            executionContextRaw.preparationChecklist ?? executionContextRaw.preparation_checklist,
+            executionContextRaw.preparationChecklist ??
+              executionContextRaw.preparation_checklist,
           ),
           suggestedTalkingPoints: pickStrArray(
-            executionContextRaw.suggestedTalkingPoints ?? executionContextRaw.suggested_talking_points,
+            executionContextRaw.suggestedTalkingPoints ??
+              executionContextRaw.suggested_talking_points,
           ),
-          quickActions: pickStrArray(executionContextRaw.quickActions ?? executionContextRaw.quick_actions),
-          fallbackAction: pickStrOrNull(executionContextRaw, 'fallbackAction', 'fallback_action'),
-          canonicalJobId: pickStrOrNull(executionContextRaw, 'canonicalJobId', 'canonical_job_id'),
-          applicationId: pickStrOrNull(executionContextRaw, 'applicationId', 'application_id'),
-          cvProfileId: pickStrOrNull(executionContextRaw, 'cvProfileId', 'cv_profile_id'),
-          recommendationId: pickStrOrNull(executionContextRaw, 'recommendationId', 'recommendation_id'),
-          executionType: pickStrOrNull(executionContextRaw, 'executionType', 'execution_type'),
-          canonicalRoute: pickStrOrNull(executionContextRaw, 'canonicalRoute', 'canonical_route'),
-          fallbackRoute: pickStrOrNull(executionContextRaw, 'fallbackRoute', 'fallback_route'),
+          quickActions: pickStrArray(
+            executionContextRaw.quickActions ??
+              executionContextRaw.quick_actions,
+          ),
+          fallbackAction: pickStrOrNull(
+            executionContextRaw,
+            'fallbackAction',
+            'fallback_action',
+          ),
+          canonicalJobId: pickStrOrNull(
+            executionContextRaw,
+            'canonicalJobId',
+            'canonical_job_id',
+          ),
+          applicationId: pickStrOrNull(
+            executionContextRaw,
+            'applicationId',
+            'application_id',
+          ),
+          cvProfileId: pickStrOrNull(
+            executionContextRaw,
+            'cvProfileId',
+            'cv_profile_id',
+          ),
+          recommendationId: pickStrOrNull(
+            executionContextRaw,
+            'recommendationId',
+            'recommendation_id',
+          ),
+          executionType: pickStrOrNull(
+            executionContextRaw,
+            'executionType',
+            'execution_type',
+          ),
+          canonicalRoute: pickStrOrNull(
+            executionContextRaw,
+            'canonicalRoute',
+            'canonical_route',
+          ),
+          fallbackRoute: pickStrOrNull(
+            executionContextRaw,
+            'fallbackRoute',
+            'fallback_route',
+          ),
           resolutionState: (() => {
-            const s = String(pickStr(executionContextRaw, 'resolutionState', 'resolution_state') ?? '')
+            const s = String(
+              pickStr(
+                executionContextRaw,
+                'resolutionState',
+                'resolution_state',
+              ) ?? '',
+            )
               .trim()
               .toLowerCase();
-            return s === 'resolved' || s === 'degraded' || s === 'missing_context' ? s : null;
+            return s === 'resolved' ||
+              s === 'degraded' ||
+              s === 'missing_context'
+              ? s
+              : null;
           })(),
         }
       : null,
     executionPayload: executionContextRaw
       ? {
-          executionId: pickStrOrNull(executionContextRaw, 'executionId', 'execution_id'),
-          executionType: pickStrOrNull(executionContextRaw, 'executionType', 'execution_type'),
-          canonicalRoute: pickStrOrNull(executionContextRaw, 'canonicalRoute', 'canonical_route'),
-          fallbackRoute: pickStrOrNull(executionContextRaw, 'fallbackRoute', 'fallback_route'),
-          entityType: pickStrOrNull(executionContextRaw, 'entityType', 'entity_type'),
+          executionId: pickStrOrNull(
+            executionContextRaw,
+            'executionId',
+            'execution_id',
+          ),
+          executionType: pickStrOrNull(
+            executionContextRaw,
+            'executionType',
+            'execution_type',
+          ),
+          canonicalRoute: pickStrOrNull(
+            executionContextRaw,
+            'canonicalRoute',
+            'canonical_route',
+          ),
+          fallbackRoute: pickStrOrNull(
+            executionContextRaw,
+            'fallbackRoute',
+            'fallback_route',
+          ),
+          entityType: pickStrOrNull(
+            executionContextRaw,
+            'entityType',
+            'entity_type',
+          ),
           entityId: pickStrOrNull(executionContextRaw, 'entityId', 'entity_id'),
-          applicationId: pickStrOrNull(executionContextRaw, 'applicationId', 'application_id'),
+          applicationId: pickStrOrNull(
+            executionContextRaw,
+            'applicationId',
+            'application_id',
+          ),
           jobId: pickStrOrNull(executionContextRaw, 'jobId', 'job_id'),
-          jobAnalysisId: pickStrOrNull(executionContextRaw, 'jobAnalysisId', 'job_analysis_id'),
-          cvProfileId: pickStrOrNull(executionContextRaw, 'cvProfileId', 'cv_profile_id'),
+          jobAnalysisId: pickStrOrNull(
+            executionContextRaw,
+            'jobAnalysisId',
+            'job_analysis_id',
+          ),
+          cvProfileId: pickStrOrNull(
+            executionContextRaw,
+            'cvProfileId',
+            'cv_profile_id',
+          ),
           preferredCvProfileId: pickStrOrNull(
             executionContextRaw,
             'preferredCvProfileId',
@@ -5338,16 +7052,34 @@ function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
             'analyzedCvProfileId',
             'analyzed_cv_profile_id',
           ),
-          recommendationState: pickStrOrNull(executionContextRaw, 'recommendationState', 'recommendation_state'),
+          recommendationState: pickStrOrNull(
+            executionContextRaw,
+            'recommendationState',
+            'recommendation_state',
+          ),
           resolutionState: (() => {
-            const s = String(pickStr(executionContextRaw, 'resolutionState', 'resolution_state') ?? '')
+            const s = String(
+              pickStr(
+                executionContextRaw,
+                'resolutionState',
+                'resolution_state',
+              ) ?? '',
+            )
               .trim()
               .toLowerCase();
-            return s === 'resolved' || s === 'degraded' || s === 'missing_context' ? s : null;
+            return s === 'resolved' ||
+              s === 'degraded' ||
+              s === 'missing_context'
+              ? s
+              : null;
           })(),
         }
       : null,
-    recommendationState: pickStrOrNull(o, 'recommendationState', 'recommendation_state'),
+    recommendationState: pickStrOrNull(
+      o,
+      'recommendationState',
+      'recommendation_state',
+    ),
     followUpContext: followUpContextRaw
       ? {
           suggested: followUpContextRaw.suggested === true,
@@ -5355,24 +7087,44 @@ function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
             typeof followUpContextRaw.daysSinceLastActivity === 'number' &&
             Number.isFinite(followUpContextRaw.daysSinceLastActivity)
               ? followUpContextRaw.daysSinceLastActivity
-              : typeof followUpContextRaw.days_since_last_activity === 'number' &&
+              : typeof followUpContextRaw.days_since_last_activity ===
+                    'number' &&
                   Number.isFinite(followUpContextRaw.days_since_last_activity)
                 ? followUpContextRaw.days_since_last_activity
                 : null,
           confidence:
-            typeof followUpContextRaw.confidence === 'number' && Number.isFinite(followUpContextRaw.confidence)
+            typeof followUpContextRaw.confidence === 'number' &&
+            Number.isFinite(followUpContextRaw.confidence)
               ? followUpContextRaw.confidence
               : null,
           recommendedChannel: (() => {
             const v = String(
-              pickStr(followUpContextRaw, 'recommendedChannel', 'recommended_channel') ?? '',
+              pickStr(
+                followUpContextRaw,
+                'recommendedChannel',
+                'recommended_channel',
+              ) ?? '',
             ).toLowerCase();
-            return v === 'email' || v === 'in_app' || v === 'manual_note' ? v : null;
+            return v === 'email' || v === 'in_app' || v === 'manual_note'
+              ? v
+              : null;
           })(),
-          draftMessage: pickStrOrNull(followUpContextRaw, 'draftMessage', 'draft_message'),
+          draftMessage: pickStrOrNull(
+            followUpContextRaw,
+            'draftMessage',
+            'draft_message',
+          ),
           suggestedTone: (() => {
-            const v = String(pickStr(followUpContextRaw, 'suggestedTone', 'suggested_tone') ?? '').toLowerCase();
-            return v === 'confident' || v === 'professional' || v === 'warm' || v === 'concise' ? v : null;
+            const v = String(
+              pickStr(followUpContextRaw, 'suggestedTone', 'suggested_tone') ??
+                '',
+            ).toLowerCase();
+            return v === 'confident' ||
+              v === 'professional' ||
+              v === 'warm' ||
+              v === 'concise'
+              ? v
+              : null;
           })(),
           recoveryLikelihood:
             typeof followUpContextRaw.recoveryLikelihood === 'number' &&
@@ -5387,55 +7139,96 @@ function pickUnifiedPriorityItem(raw: unknown): UnifiedPriorityItem | null {
             'recommendedSendWindow',
             'recommended_send_window',
           ),
-          rationaleShort: pickStrOrNull(followUpContextRaw, 'rationaleShort', 'rationale_short'),
+          rationaleShort: pickStrOrNull(
+            followUpContextRaw,
+            'rationaleShort',
+            'rationale_short',
+          ),
         }
       : null,
     cvFixContext: cvFixContextRaw
       ? {
-          affectedSection: pickStrOrNull(cvFixContextRaw, 'affectedSection', 'affected_section'),
-          suggestedPatch: pickStrOrNull(cvFixContextRaw, 'suggestedPatch', 'suggested_patch'),
-          expectedImpact: pickStrOrNull(cvFixContextRaw, 'expectedImpact', 'expected_impact'),
-          confidenceReason: pickStrOrNull(cvFixContextRaw, 'confidenceReason', 'confidence_reason'),
+          affectedSection: pickStrOrNull(
+            cvFixContextRaw,
+            'affectedSection',
+            'affected_section',
+          ),
+          suggestedPatch: pickStrOrNull(
+            cvFixContextRaw,
+            'suggestedPatch',
+            'suggested_patch',
+          ),
+          expectedImpact: pickStrOrNull(
+            cvFixContextRaw,
+            'expectedImpact',
+            'expected_impact',
+          ),
+          confidenceReason: pickStrOrNull(
+            cvFixContextRaw,
+            'confidenceReason',
+            'confidence_reason',
+          ),
         }
       : null,
     qualitySignals: qualitySignalsRaw
       ? {
           urgency: (() => {
-            const v = String(pickStr(qualitySignalsRaw, 'urgency') ?? '').toLowerCase();
+            const v = String(
+              pickStr(qualitySignalsRaw, 'urgency') ?? '',
+            ).toLowerCase();
             return v === 'low' || v === 'medium' || v === 'high' ? v : null;
           })(),
           reversibility: (() => {
-            const v = String(pickStr(qualitySignalsRaw, 'reversibility') ?? '').toLowerCase();
+            const v = String(
+              pickStr(qualitySignalsRaw, 'reversibility') ?? '',
+            ).toLowerCase();
             return v === 'easy' || v === 'moderate' || v === 'hard' ? v : null;
           })(),
           momentumImpact: (() => {
-            const v = String(pickStr(qualitySignalsRaw, 'momentumImpact', 'momentum_impact') ?? '').toLowerCase();
+            const v = String(
+              pickStr(qualitySignalsRaw, 'momentumImpact', 'momentum_impact') ??
+                '',
+            ).toLowerCase();
             return v === 'low' || v === 'medium' || v === 'high' ? v : null;
           })(),
           estimatedUserEffort: (() => {
             const v = String(
-              pickStr(qualitySignalsRaw, 'estimatedUserEffort', 'estimated_user_effort') ?? '',
+              pickStr(
+                qualitySignalsRaw,
+                'estimatedUserEffort',
+                'estimated_user_effort',
+              ) ?? '',
             ).toLowerCase();
             return v === 'low' || v === 'medium' || v === 'high' ? v : null;
           })(),
           confidenceTier: (() => {
-            const v = String(pickStr(qualitySignalsRaw, 'confidenceTier', 'confidence_tier') ?? '').toLowerCase();
+            const v = String(
+              pickStr(qualitySignalsRaw, 'confidenceTier', 'confidence_tier') ??
+                '',
+            ).toLowerCase();
             return v === 'low' || v === 'medium' || v === 'high' ? v : null;
           })(),
         }
       : null,
     reasonShort: pickStrOrNull(o, 'reasonShort', 'reason_short'),
     reasonDetailed: pickStrOrNull(o, 'reasonDetailed', 'reason_detailed'),
-    recommendationId: pickStrOrNull(o, 'recommendationId', 'recommendation_id') ?? id,
+    recommendationId:
+      pickStrOrNull(o, 'recommendationId', 'recommendation_id') ?? id,
     generationReason: pickStrOrNull(o, 'generationReason', 'generation_reason'),
     priorityState: pickPriorityState(o),
-    actionReassurance: pickStrOrNull(o, 'actionReassurance', 'action_reassurance'),
+    actionReassurance: pickStrOrNull(
+      o,
+      'actionReassurance',
+      'action_reassurance',
+    ),
     ids: {
       applicationId: pickStr(idsObj, 'applicationId', 'application_id') ?? null,
-      jobAnalysisId: pickStr(idsObj, 'jobAnalysisId', 'job_analysis_id') ?? null,
+      jobAnalysisId:
+        pickStr(idsObj, 'jobAnalysisId', 'job_analysis_id') ?? null,
       bookmarkId: pickStr(idsObj, 'bookmarkId', 'bookmark_id') ?? null,
       jobListingId: pickStr(idsObj, 'jobListingId', 'job_listing_id') ?? null,
-      hubReminderId: pickStr(idsObj, 'hubReminderId', 'hub_reminder_id') ?? null,
+      hubReminderId:
+        pickStr(idsObj, 'hubReminderId', 'hub_reminder_id') ?? null,
       jobId: pickStr(idsObj, 'jobId', 'job_id') ?? null,
       cvProfileId: pickStr(idsObj, 'cvProfileId', 'cv_profile_id') ?? null,
     },
@@ -5453,14 +7246,28 @@ function pickUnifiedPriorityItems(v: unknown): UnifiedPriorityItem[] {
   return out;
 }
 
-function normalizeSinceLastVisitObject(raw: Record<string, unknown>): SinceLastVisitPayload {
+function normalizeSinceLastVisitObject(
+  raw: Record<string, unknown>,
+): SinceLastVisitPayload {
   return {
     lastSeenAt: pickStr(raw, 'lastSeenAt', 'last_seen_at') ?? null,
     newJobsCount: pickNum(raw, 'newJobsCount', 'new_jobs_count'),
-    newHighMatchCount: pickNum(raw, 'newHighMatchCount', 'new_high_match_count'),
+    newHighMatchCount: pickNum(
+      raw,
+      'newHighMatchCount',
+      'new_high_match_count',
+    ),
     newStalledCount: pickNum(raw, 'newStalledCount', 'new_stalled_count'),
-    statusChangedCount: pickNum(raw, 'statusChangedCount', 'status_changed_count'),
-    newRecommendationsCount: pickNum(raw, 'newRecommendationsCount', 'new_recommendations_count'),
+    statusChangedCount: pickNum(
+      raw,
+      'statusChangedCount',
+      'status_changed_count',
+    ),
+    newRecommendationsCount: pickNum(
+      raw,
+      'newRecommendationsCount',
+      'new_recommendations_count',
+    ),
   };
 }
 
@@ -5469,7 +7276,9 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
   const upcomingInterviewsWire = resolveWireUpcomingInterviews(body);
   const focusItemsRawEarly = body.focusItems ?? body.focus_items;
   const focusItemsEarly =
-    focusItemsRawEarly === undefined ? null : pickDashboardFocusItems(focusItemsRawEarly);
+    focusItemsRawEarly === undefined
+      ? null
+      : pickDashboardFocusItems(focusItemsRawEarly);
   const unifiedItemsEarly = (() => {
     const up =
       body.unifiedPriorities !== null &&
@@ -5481,7 +7290,9 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
             !Array.isArray(body.unified_priorities)
           ? (body.unified_priorities as Record<string, unknown>)
           : null;
-    return up && up.items !== undefined ? pickUnifiedPriorityItems(up.items) : [];
+    return up && up.items !== undefined
+      ? pickUnifiedPriorityItems(up.items)
+      : [];
   })();
   const upcomingInterviewsMerged = mergeUpcomingInterviewsFromWireAndFocus(
     upcomingInterviewsWire,
@@ -5490,7 +7301,9 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
   );
   const nextRaw = body.nextStep ?? body.next_step;
   const unifiedRaw =
-    body.unifiedPriorities !== null && typeof body.unifiedPriorities === 'object' && !Array.isArray(body.unifiedPriorities)
+    body.unifiedPriorities !== null &&
+    typeof body.unifiedPriorities === 'object' &&
+    !Array.isArray(body.unifiedPriorities)
       ? (body.unifiedPriorities as Record<string, unknown>)
       : body.unified_priorities !== null &&
           typeof body.unified_priorities === 'object' &&
@@ -5498,7 +7311,9 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
         ? (body.unified_priorities as Record<string, unknown>)
         : {};
   const slvRaw =
-    body.sinceLastVisit !== null && typeof body.sinceLastVisit === 'object' && !Array.isArray(body.sinceLastVisit)
+    body.sinceLastVisit !== null &&
+    typeof body.sinceLastVisit === 'object' &&
+    !Array.isArray(body.sinceLastVisit)
       ? (body.sinceLastVisit as Record<string, unknown>)
       : body.since_last_visit !== null &&
           typeof body.since_last_visit === 'object' &&
@@ -5506,13 +7321,19 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
         ? (body.since_last_visit as Record<string, unknown>)
         : {};
   const progressRaw =
-    body.progress !== null && typeof body.progress === 'object' && !Array.isArray(body.progress)
+    body.progress !== null &&
+    typeof body.progress === 'object' &&
+    !Array.isArray(body.progress)
       ? (body.progress as Record<string, unknown>)
       : {};
   const missionRaw =
-    body.dailyMission !== null && typeof body.dailyMission === 'object' && !Array.isArray(body.dailyMission)
+    body.dailyMission !== null &&
+    typeof body.dailyMission === 'object' &&
+    !Array.isArray(body.dailyMission)
       ? (body.dailyMission as Record<string, unknown>)
-      : body.daily_mission !== null && typeof body.daily_mission === 'object' && !Array.isArray(body.daily_mission)
+      : body.daily_mission !== null &&
+          typeof body.daily_mission === 'object' &&
+          !Array.isArray(body.daily_mission)
         ? (body.daily_mission as Record<string, unknown>)
         : {};
   const continuationRaw =
@@ -5536,7 +7357,9 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
         ? (continuationRaw.consistency_state as Record<string, unknown>)
         : null;
   const reentryRaw =
-    body.reentrySummary !== null && typeof body.reentrySummary === 'object' && !Array.isArray(body.reentrySummary)
+    body.reentrySummary !== null &&
+    typeof body.reentrySummary === 'object' &&
+    !Array.isArray(body.reentrySummary)
       ? (body.reentrySummary as Record<string, unknown>)
       : body.reentry_summary !== null &&
           typeof body.reentry_summary === 'object' &&
@@ -5554,7 +7377,9 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
         ? (unifiedRaw.recommendation_quality as Record<string, unknown>)
         : null;
   const unifiedSummaryRaw =
-    unifiedRaw.summary !== null && typeof unifiedRaw.summary === 'object' && !Array.isArray(unifiedRaw.summary)
+    unifiedRaw.summary !== null &&
+    typeof unifiedRaw.summary === 'object' &&
+    !Array.isArray(unifiedRaw.summary)
       ? (unifiedRaw.summary as Record<string, unknown>)
       : unifiedRaw.unified_summary !== null &&
           typeof unifiedRaw.unified_summary === 'object' &&
@@ -5563,87 +7388,165 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
         : unifiedRaw;
 
   return {
-    generatedAt: String(pickStr(body, 'generatedAt', 'generated_at') ?? new Date().toISOString()),
-    digestVersion: String(pickStr(body, 'digestVersion', 'digest_version') ?? ''),
-    experienceSessionId: pickStr(body, 'experienceSessionId', 'experience_session_id') ?? null,
+    generatedAt: String(
+      pickStr(body, 'generatedAt', 'generated_at') ?? new Date().toISOString(),
+    ),
+    digestVersion: String(
+      pickStr(body, 'digestVersion', 'digest_version') ?? '',
+    ),
+    experienceSessionId:
+      pickStr(body, 'experienceSessionId', 'experience_session_id') ?? null,
     experienceRevision: (() => {
       const v = body.experienceRevision ?? body.experience_revision;
-      if (typeof v === 'number' && Number.isFinite(v)) return Math.max(0, Math.round(v));
-      if (typeof v === 'string' && v.trim() && Number.isFinite(Number(v))) return Math.max(0, Math.round(Number(v)));
+      if (typeof v === 'number' && Number.isFinite(v))
+        return Math.max(0, Math.round(v));
+      if (typeof v === 'string' && v.trim() && Number.isFinite(Number(v)))
+        return Math.max(0, Math.round(Number(v)));
       return null;
     })(),
-    activeExecutionSession: body.activeExecutionSession === true || body.active_execution_session === true,
+    activeExecutionSession:
+      body.activeExecutionSession === true ||
+      body.active_execution_session === true,
     workflowProgress: (() => {
       const raw =
-        body.workflowProgress !== null && typeof body.workflowProgress === 'object' && !Array.isArray(body.workflowProgress)
+        body.workflowProgress !== null &&
+        typeof body.workflowProgress === 'object' &&
+        !Array.isArray(body.workflowProgress)
           ? (body.workflowProgress as Record<string, unknown>)
-          : body.workflow_progress !== null && typeof body.workflow_progress === 'object' && !Array.isArray(body.workflow_progress)
+          : body.workflow_progress !== null &&
+              typeof body.workflow_progress === 'object' &&
+              !Array.isArray(body.workflow_progress)
             ? (body.workflow_progress as Record<string, unknown>)
             : null;
       if (!raw) return null;
       const pctRaw = raw.percentComplete ?? raw.percent_complete;
-      const estRaw = raw.estimatedRemainingMinutes ?? raw.estimated_remaining_minutes;
+      const estRaw =
+        raw.estimatedRemainingMinutes ?? raw.estimated_remaining_minutes;
       return {
         sessionId: pickStr(raw, 'sessionId', 'session_id') ?? null,
-        workflowEntityId: pickStr(raw, 'workflowEntityId', 'workflow_entity_id') ?? null,
-        workflowEntityType: pickStr(raw, 'workflowEntityType', 'workflow_entity_type') ?? null,
+        workflowEntityId:
+          pickStr(raw, 'workflowEntityId', 'workflow_entity_id') ?? null,
+        workflowEntityType:
+          pickStr(raw, 'workflowEntityType', 'workflow_entity_type') ?? null,
         executionType: pickStr(raw, 'executionType', 'execution_type') ?? null,
         stepKey: pickStr(raw, 'stepKey', 'step_key') ?? null,
         percentComplete:
           typeof pctRaw === 'number' && Number.isFinite(pctRaw)
             ? Math.max(0, Math.min(100, Math.round(pctRaw)))
-            : typeof pctRaw === 'string' && pctRaw.trim() && Number.isFinite(Number(pctRaw))
+            : typeof pctRaw === 'string' &&
+                pctRaw.trim() &&
+                Number.isFinite(Number(pctRaw))
               ? Math.max(0, Math.min(100, Math.round(Number(pctRaw))))
               : null,
         estimatedRemainingMinutes:
           typeof estRaw === 'number' && Number.isFinite(estRaw)
             ? Math.max(0, Math.round(estRaw))
-            : typeof estRaw === 'string' && estRaw.trim() && Number.isFinite(Number(estRaw))
+            : typeof estRaw === 'string' &&
+                estRaw.trim() &&
+                Number.isFinite(Number(estRaw))
               ? Math.max(0, Math.round(Number(estRaw)))
               : null,
         lastActiveAt: pickStr(raw, 'lastActiveAt', 'last_active_at') ?? null,
-        lastMeaningfulAction: (raw.lastMeaningfulAction ?? raw.last_meaningful_action) ?? null,
+        lastMeaningfulAction:
+          raw.lastMeaningfulAction ?? raw.last_meaningful_action ?? null,
       } satisfies WorkflowProgressPayload;
     })(),
-    assistantState: pickAssistantState(body.assistantState ?? body.assistant_state),
+    assistantState: pickAssistantState(
+      body.assistantState ?? body.assistant_state,
+    ),
     memorySummary: pickStr(body, 'memorySummary', 'memory_summary') ?? null,
     assistantTone: pickStr(body, 'assistantTone', 'assistant_tone') ?? null,
-    assistantNarrative: pickAssistantNarrative(body.assistantNarrative ?? body.assistant_narrative),
-    opportunityDetection: pickOpportunityDetection(body.opportunityDetection ?? body.opportunity_detection),
-    followUpIntelligence: pickFollowUpIntelligence(body.followUpIntelligence ?? body.follow_up_intelligence),
-    followUpJobs: pickFollowUpJobsArray(body.followUpJobs ?? body.follow_up_jobs),
+    assistantNarrative: pickAssistantNarrative(
+      body.assistantNarrative ?? body.assistant_narrative,
+    ),
+    opportunityDetection: pickOpportunityDetection(
+      body.opportunityDetection ?? body.opportunity_detection,
+    ),
+    followUpIntelligence: pickFollowUpIntelligence(
+      body.followUpIntelligence ?? body.follow_up_intelligence,
+    ),
+    followUpJobs: pickFollowUpJobsArray(
+      body.followUpJobs ?? body.follow_up_jobs,
+    ),
     followUpJobsTotalCount: pickFollowUpJobsTotalCount(body),
     followUpJobsViewAllHref: pickFollowUpJobsViewAllHref(body),
-    adaptiveCoaching: pickAdaptiveCoaching(body.adaptiveCoaching ?? body.adaptive_coaching),
-    strategicRecommendation: pickStrategicRecommendation(body.strategicRecommendation ?? body.strategic_recommendation),
-    recommendedMove: pickRecommendedMove(body.recommendedMove ?? body.recommended_move),
-    careerGoalProfile: pickCareerGoalProfile(body.careerGoalProfile ?? body.career_goal_profile),
+    adaptiveCoaching: pickAdaptiveCoaching(
+      body.adaptiveCoaching ?? body.adaptive_coaching,
+    ),
+    strategicRecommendation: pickStrategicRecommendation(
+      body.strategicRecommendation ?? body.strategic_recommendation,
+    ),
+    recommendedMove: pickRecommendedMove(
+      body.recommendedMove ?? body.recommended_move,
+    ),
+    careerGoalProfile: pickCareerGoalProfile(
+      body.careerGoalProfile ?? body.career_goal_profile,
+    ),
     goalAlignment: pickGoalAlignment(body.goalAlignment ?? body.goal_alignment),
-    goalStrategicCoaching: pickGoalStrategicCoaching(body.goalStrategicCoaching ?? body.goal_strategic_coaching),
-    strategicCoaching: pickStrategicCoaching(body.strategicCoaching ?? body.strategic_coaching),
-    careerMomentum: pickCareerMomentum(body.careerMomentum ?? body.career_momentum),
-    weeklyBriefing: pickWeeklyBriefing(body.weeklyBriefing ?? body.weekly_briefing),
-    predictiveOutlook: pickPredictiveOutlook(body.predictiveOutlook ?? body.predictive_outlook),
+    goalStrategicCoaching: pickGoalStrategicCoaching(
+      body.goalStrategicCoaching ?? body.goal_strategic_coaching,
+    ),
+    strategicCoaching: pickStrategicCoaching(
+      body.strategicCoaching ?? body.strategic_coaching,
+    ),
+    careerMomentum: pickCareerMomentum(
+      body.careerMomentum ?? body.career_momentum,
+    ),
+    weeklyBriefing: pickWeeklyBriefing(
+      body.weeklyBriefing ?? body.weekly_briefing,
+    ),
+    predictiveOutlook: pickPredictiveOutlook(
+      body.predictiveOutlook ?? body.predictive_outlook,
+    ),
     strategicWeeklyCoaching: pickStrategicWeeklyCoaching(
       body.strategicWeeklyCoaching ?? body.strategic_weekly_coaching,
     ),
-    emotionalSummary: pickEmotionalSummary(body.emotionalSummary ?? body.emotional_summary),
-    dailyNarrativeSummary: pickStr(body, 'dailyNarrativeSummary', 'daily_narrative_summary') ?? null,
-    narrativeProgression: pickStr(body, 'narrativeProgression', 'narrative_progression') ?? null,
-    assistantReasoning: pickAssistantReasoning(body.assistantReasoning ?? body.assistant_reasoning),
-    assistantGuidance: pickAssistantGuidance(body.assistantGuidance ?? body.assistant_guidance),
-    humanizedLabels: pickHumanizedLabels(body.humanizedLabels ?? body.humanized_labels),
+    emotionalSummary: pickEmotionalSummary(
+      body.emotionalSummary ?? body.emotional_summary,
+    ),
+    dailyNarrativeSummary:
+      pickStr(body, 'dailyNarrativeSummary', 'daily_narrative_summary') ?? null,
+    narrativeProgression:
+      pickStr(body, 'narrativeProgression', 'narrative_progression') ?? null,
+    assistantReasoning: pickAssistantReasoning(
+      body.assistantReasoning ?? body.assistant_reasoning,
+    ),
+    assistantGuidance: pickAssistantGuidance(
+      body.assistantGuidance ?? body.assistant_guidance,
+    ),
+    humanizedLabels: pickHumanizedLabels(
+      body.humanizedLabels ?? body.humanized_labels,
+    ),
     personalizationContext: pickPersonalizationContext(
       body.personalizationContext ?? body.personalization_context,
     ),
-    personalizedHeadline: pickStr(body, 'personalizedHeadline', 'personalized_headline') ?? null,
-    personalizedSupporting: pickStr(body, 'personalizedSupporting', 'personalized_supporting') ?? null,
-    personalizedWhyItMatters: pickStr(body, 'personalizedWhyItMatters', 'personalized_why_it_matters') ?? null,
-    personalizedNextBestAction: pickStr(body, 'personalizedNextBestAction', 'personalized_next_best_action') ?? null,
-    behaviorSignals: pickBehaviorSignals(body.behaviorSignals ?? body.behavior_signals),
-    adaptiveReasoning: pickAdaptiveReasoning(body.adaptiveReasoning ?? body.adaptive_reasoning),
+    personalizedHeadline:
+      pickStr(body, 'personalizedHeadline', 'personalized_headline') ?? null,
+    personalizedSupporting:
+      pickStr(body, 'personalizedSupporting', 'personalized_supporting') ??
+      null,
+    personalizedWhyItMatters:
+      pickStr(
+        body,
+        'personalizedWhyItMatters',
+        'personalized_why_it_matters',
+      ) ?? null,
+    personalizedNextBestAction:
+      pickStr(
+        body,
+        'personalizedNextBestAction',
+        'personalized_next_best_action',
+      ) ?? null,
+    behaviorSignals: pickBehaviorSignals(
+      body.behaviorSignals ?? body.behavior_signals,
+    ),
+    adaptiveReasoning: pickAdaptiveReasoning(
+      body.adaptiveReasoning ?? body.adaptive_reasoning,
+    ),
     heroStability: pickHeroStability(body.heroStability ?? body.hero_stability),
-    experienceState: pickExperienceState(body.experienceState ?? body.experience_state),
+    experienceState: pickExperienceState(
+      body.experienceState ?? body.experience_state,
+    ),
     dashboardNarrativeInput:
       body.dashboardNarrativeInput !== null &&
       typeof body.dashboardNarrativeInput === 'object' &&
@@ -5665,15 +7568,29 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
       body.recentAnalysesContinuations ?? body.recent_analyses_continuations,
     ),
     freshness:
-      body.freshness !== null && typeof body.freshness === 'object' && !Array.isArray(body.freshness)
+      body.freshness !== null &&
+      typeof body.freshness === 'object' &&
+      !Array.isArray(body.freshness)
         ? (body.freshness as Record<string, unknown>)
         : null,
     unifiedPriorities: {
       items: unifiedItemsEarly,
       summary: {
-        highPriorityCount: pickNum(unifiedSummaryRaw, 'highPriorityCount', 'high_priority_count'),
-        followUpDueCount: pickNum(unifiedSummaryRaw, 'followUpDueCount', 'follow_up_due_count'),
-        newOpportunitiesCount: pickNum(unifiedSummaryRaw, 'newOpportunitiesCount', 'new_opportunities_count'),
+        highPriorityCount: pickNum(
+          unifiedSummaryRaw,
+          'highPriorityCount',
+          'high_priority_count',
+        ),
+        followUpDueCount: pickNum(
+          unifiedSummaryRaw,
+          'followUpDueCount',
+          'follow_up_due_count',
+        ),
+        newOpportunitiesCount: pickNum(
+          unifiedSummaryRaw,
+          'newOpportunitiesCount',
+          'new_opportunities_count',
+        ),
         currentRecommendationsCount: pickNum(
           unifiedSummaryRaw,
           'currentRecommendationsCount',
@@ -5699,60 +7616,120 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
           'remoteFallbackRecommendationsCount',
           'remote_fallback_recommendations_count',
         ),
-        dedupeDroppedCount: pickNum(unifiedSummaryRaw, 'dedupeDroppedCount', 'dedupe_dropped_count'),
+        dedupeDroppedCount: pickNum(
+          unifiedSummaryRaw,
+          'dedupeDroppedCount',
+          'dedupe_dropped_count',
+        ),
         suppressionFamilyCount: pickNum(
           unifiedSummaryRaw,
           'suppressionFamilyCount',
           'suppression_family_count',
         ),
         workflowOrchestration: pickWorkflowOrchestrationFeed(
-          unifiedSummaryRaw.workflowOrchestration ?? unifiedSummaryRaw.workflow_orchestration,
+          unifiedSummaryRaw.workflowOrchestration ??
+            unifiedSummaryRaw.workflow_orchestration,
         ),
         recommendationQuality: rqRaw
           ? {
-              localQualifiedCount: pickNum(rqRaw, 'localQualifiedCount', 'local_qualified_count'),
+              localQualifiedCount: pickNum(
+                rqRaw,
+                'localQualifiedCount',
+                'local_qualified_count',
+              ),
               localRejectedLowQualityCount: pickNum(
                 rqRaw,
                 'localRejectedLowQualityCount',
                 'local_rejected_low_quality_count',
               ),
-              remotePromotedCount: pickNum(rqRaw, 'remotePromotedCount', 'remote_promoted_count'),
+              remotePromotedCount: pickNum(
+                rqRaw,
+                'remotePromotedCount',
+                'remote_promoted_count',
+              ),
               thresholdUsed: pickNum(rqRaw, 'thresholdUsed', 'threshold_used'),
             }
           : null,
-        quietDashboardHint: pickStr(unifiedSummaryRaw, 'quietDashboardHint', 'quiet_dashboard_hint') ?? null,
+        quietDashboardHint:
+          pickStr(
+            unifiedSummaryRaw,
+            'quietDashboardHint',
+            'quiet_dashboard_hint',
+          ) ?? null,
       },
     },
     sinceLastVisit: {
       ...normalizeSinceLastVisitObject(slvRaw),
     },
     progress: {
-      actionsCompletedToday: pickNum(progressRaw, 'actionsCompletedToday', 'actions_completed_today'),
-      actionsCompletedWeek: pickNum(progressRaw, 'actionsCompletedWeek', 'actions_completed_week'),
-      applicationsSubmittedWeek: pickNum(progressRaw, 'applicationsSubmittedWeek', 'applications_submitted_week'),
-      followUpsSentWeek: pickNum(progressRaw, 'followUpsSentWeek', 'follow_ups_sent_week'),
-      pipelineAdvancedWeek: pickNum(progressRaw, 'pipelineAdvancedWeek', 'pipeline_advanced_week'),
+      actionsCompletedToday: pickNum(
+        progressRaw,
+        'actionsCompletedToday',
+        'actions_completed_today',
+      ),
+      actionsCompletedWeek: pickNum(
+        progressRaw,
+        'actionsCompletedWeek',
+        'actions_completed_week',
+      ),
+      applicationsSubmittedWeek: pickNum(
+        progressRaw,
+        'applicationsSubmittedWeek',
+        'applications_submitted_week',
+      ),
+      followUpsSentWeek: pickNum(
+        progressRaw,
+        'followUpsSentWeek',
+        'follow_ups_sent_week',
+      ),
+      pipelineAdvancedWeek: pickNum(
+        progressRaw,
+        'pipelineAdvancedWeek',
+        'pipeline_advanced_week',
+      ),
     },
     dailyMission: {
-      targetActionsToday: pickNum(missionRaw, 'targetActionsToday', 'target_actions_today'),
-      actionsRemainingToday: pickNum(missionRaw, 'actionsRemainingToday', 'actions_remaining_today'),
+      targetActionsToday: pickNum(
+        missionRaw,
+        'targetActionsToday',
+        'target_actions_today',
+      ),
+      actionsRemainingToday: pickNum(
+        missionRaw,
+        'actionsRemainingToday',
+        'actions_remaining_today',
+      ),
       recommendedPriorityIds: pickStrArray(
-        missionRaw.recommendedPriorityIds ?? missionRaw.recommended_priority_ids,
+        missionRaw.recommendedPriorityIds ??
+          missionRaw.recommended_priority_ids,
       ),
       primaryPriorityId:
         pickStr(missionRaw, 'primaryPriorityId', 'primary_priority_id') ??
-        pickStrArray(missionRaw.recommendedPriorityIds ?? missionRaw.recommended_priority_ids)[0] ??
+        pickStrArray(
+          missionRaw.recommendedPriorityIds ??
+            missionRaw.recommended_priority_ids,
+        )[0] ??
         null,
-      isMeaningful: missionRaw.isMeaningful === true || missionRaw.is_meaningful === true,
+      isMeaningful:
+        missionRaw.isMeaningful === true || missionRaw.is_meaningful === true,
       estimatedMinutes:
-        typeof missionRaw.estimatedMinutes === 'number' && Number.isFinite(missionRaw.estimatedMinutes)
+        typeof missionRaw.estimatedMinutes === 'number' &&
+        Number.isFinite(missionRaw.estimatedMinutes)
           ? missionRaw.estimatedMinutes
-          : typeof missionRaw.estimated_minutes === 'number' && Number.isFinite(missionRaw.estimated_minutes)
+          : typeof missionRaw.estimated_minutes === 'number' &&
+              Number.isFinite(missionRaw.estimated_minutes)
             ? missionRaw.estimated_minutes
             : null,
       hiddenReasonIfNone: (() => {
-        const s = String(pickStr(missionRaw, 'hiddenReasonIfNone', 'hidden_reason_if_none') ?? '').toLowerCase();
-        return s === 'no_meaningful_action' || s === 'all_done' || s === 'insufficient_data' ? s : null;
+        const s = String(
+          pickStr(missionRaw, 'hiddenReasonIfNone', 'hidden_reason_if_none') ??
+            '',
+        ).toLowerCase();
+        return s === 'no_meaningful_action' ||
+          s === 'all_done' ||
+          s === 'insufficient_data'
+          ? s
+          : null;
       })(),
       impactLabel: pickStrOrNull(missionRaw, 'impactLabel', 'impact_label'),
       completionRewardCopy: pickStrOrNull(
@@ -5760,15 +7737,36 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
         'completionRewardCopy',
         'completion_reward_copy',
       ),
-      progressContext: pickStrOrNull(missionRaw, 'progressContext', 'progress_context'),
+      progressContext: pickStrOrNull(
+        missionRaw,
+        'progressContext',
+        'progress_context',
+      ),
     },
     continuationState: {
-      hasNew: continuationRaw.hasNew === true || continuationRaw.has_new === true,
+      hasNew:
+        continuationRaw.hasNew === true || continuationRaw.has_new === true,
       message: pickStrOrNull(continuationRaw, 'message'),
-      suggestedPriorityId: pickStrOrNull(continuationRaw, 'suggestedPriorityId', 'suggested_priority_id'),
-      specificTaskLabel: pickStrOrNull(continuationRaw, 'specificTaskLabel', 'specific_task_label'),
-      taskDisplayTitle: pickStrOrNull(continuationRaw, 'taskDisplayTitle', 'task_display_title'),
-      resolvedRoute: pickStrOrNull(continuationRaw, 'resolvedRoute', 'resolved_route'),
+      suggestedPriorityId: pickStrOrNull(
+        continuationRaw,
+        'suggestedPriorityId',
+        'suggested_priority_id',
+      ),
+      specificTaskLabel: pickStrOrNull(
+        continuationRaw,
+        'specificTaskLabel',
+        'specific_task_label',
+      ),
+      taskDisplayTitle: pickStrOrNull(
+        continuationRaw,
+        'taskDisplayTitle',
+        'task_display_title',
+      ),
+      resolvedRoute: pickStrOrNull(
+        continuationRaw,
+        'resolvedRoute',
+        'resolved_route',
+      ),
       routeValidated:
         typeof continuationRaw.routeValidated === 'boolean'
           ? continuationRaw.routeValidated
@@ -5777,21 +7775,37 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
             : null,
       routeValidationReason: (() => {
         const s = String(
-          pickStr(continuationRaw, 'routeValidationReason', 'route_validation_reason') ?? '',
+          pickStr(
+            continuationRaw,
+            'routeValidationReason',
+            'route_validation_reason',
+          ) ?? '',
         ).toLowerCase();
-        return s === 'ok' || s === 'missing_job' || s === 'missing_application' || s === 'inaccessible'
+        return s === 'ok' ||
+          s === 'missing_job' ||
+          s === 'missing_application' ||
+          s === 'inaccessible'
           ? s
           : null;
       })(),
       taskLabelQuality: (() => {
-        const s = String(pickStr(continuationRaw, 'taskLabelQuality', 'task_label_quality') ?? '').toLowerCase();
+        const s = String(
+          pickStr(continuationRaw, 'taskLabelQuality', 'task_label_quality') ??
+            '',
+        ).toLowerCase();
         return s === 'specific' || s === 'heuristic' ? s : null;
       })(),
-      taskRationaleShort: pickStrOrNull(continuationRaw, 'taskRationaleShort', 'task_rationale_short'),
+      taskRationaleShort: pickStrOrNull(
+        continuationRaw,
+        'taskRationaleShort',
+        'task_rationale_short',
+      ),
       consistency: continuationConsistencyRaw
         ? {
             source: (() => {
-              const s = String(pickStr(continuationConsistencyRaw, 'source') ?? '').toLowerCase();
+              const s = String(
+                pickStr(continuationConsistencyRaw, 'source') ?? '',
+              ).toLowerCase();
               return s === 'unified_priority' || s === 'none' ? s : null;
             })(),
             selectedPriorityId: pickStrOrNull(
@@ -5799,7 +7813,11 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
               'selectedPriorityId',
               'selected_priority_id',
             ),
-            selectedRoute: pickStrOrNull(continuationConsistencyRaw, 'selectedRoute', 'selected_route'),
+            selectedRoute: pickStrOrNull(
+              continuationConsistencyRaw,
+              'selectedRoute',
+              'selected_route',
+            ),
             idFoundInUnified:
               continuationConsistencyRaw.idFoundInUnified === true ||
               continuationConsistencyRaw.id_found_in_unified === true,
@@ -5808,9 +7826,17 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
               continuationConsistencyRaw.route_matched_unified === true,
             mismatchReason: (() => {
               const s = String(
-                pickStr(continuationConsistencyRaw, 'mismatchReason', 'mismatch_reason') ?? '',
+                pickStr(
+                  continuationConsistencyRaw,
+                  'mismatchReason',
+                  'mismatch_reason',
+                ) ?? '',
               ).toLowerCase();
-              return s === 'no_unified_items' || s === 'id_missing' || s === 'route_mismatch' ? s : null;
+              return s === 'no_unified_items' ||
+                s === 'id_missing' ||
+                s === 'route_mismatch'
+                ? s
+                : null;
             })(),
           }
         : null,
@@ -5822,11 +7848,17 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
               Number.isFinite(continuationRaw.estimated_minutes_left)
             ? continuationRaw.estimated_minutes_left
             : null,
-      urgencyLabel: pickStrOrNull(continuationRaw, 'urgencyLabel', 'urgency_label'),
+      urgencyLabel: pickStrOrNull(
+        continuationRaw,
+        'urgencyLabel',
+        'urgency_label',
+      ),
       remainingSteps:
-        typeof continuationRaw.remainingSteps === 'number' && Number.isFinite(continuationRaw.remainingSteps)
+        typeof continuationRaw.remainingSteps === 'number' &&
+        Number.isFinite(continuationRaw.remainingSteps)
           ? continuationRaw.remainingSteps
-          : typeof continuationRaw.remaining_steps === 'number' && Number.isFinite(continuationRaw.remaining_steps)
+          : typeof continuationRaw.remaining_steps === 'number' &&
+              Number.isFinite(continuationRaw.remaining_steps)
             ? continuationRaw.remaining_steps
             : null,
       interruptionAgeHours:
@@ -5838,18 +7870,29 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
             ? continuationRaw.interruption_age_hours
             : null,
       resumeConfidence:
-        typeof continuationRaw.resumeConfidence === 'number' && Number.isFinite(continuationRaw.resumeConfidence)
-          ? Math.max(0, Math.min(100, Math.round(continuationRaw.resumeConfidence)))
+        typeof continuationRaw.resumeConfidence === 'number' &&
+        Number.isFinite(continuationRaw.resumeConfidence)
+          ? Math.max(
+              0,
+              Math.min(100, Math.round(continuationRaw.resumeConfidence)),
+            )
           : typeof continuationRaw.resume_confidence === 'number' &&
               Number.isFinite(continuationRaw.resume_confidence)
-            ? Math.max(0, Math.min(100, Math.round(continuationRaw.resume_confidence)))
+            ? Math.max(
+                0,
+                Math.min(100, Math.round(continuationRaw.resume_confidence)),
+              )
             : null,
       lastMeaningfulAction: (() => {
         const raw =
-          continuationRaw.lastMeaningfulAction ?? continuationRaw.last_meaningful_action;
-        if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+          continuationRaw.lastMeaningfulAction ??
+          continuationRaw.last_meaningful_action;
+        if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+          return null;
         const r = raw as Record<string, unknown>;
-        const priorityId = String(pickStr(r, 'priorityId', 'priority_id') ?? '').trim();
+        const priorityId = String(
+          pickStr(r, 'priorityId', 'priority_id') ?? '',
+        ).trim();
         if (!priorityId) return null;
         return {
           priorityId,
@@ -5860,27 +7903,43 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
       })(),
     },
     reentrySummary: {
-      newStrongMatchesCount: pickNum(reentryRaw, 'newStrongMatchesCount', 'new_strong_matches_count'),
-      nearCompletionCount: pickNum(reentryRaw, 'nearCompletionCount', 'near_completion_count'),
+      newStrongMatchesCount: pickNum(
+        reentryRaw,
+        'newStrongMatchesCount',
+        'new_strong_matches_count',
+      ),
+      nearCompletionCount: pickNum(
+        reentryRaw,
+        'nearCompletionCount',
+        'near_completion_count',
+      ),
       stalledButRecoverableCount: pickNum(
         reentryRaw,
         'stalledButRecoverableCount',
         'stalled_but_recoverable_count',
       ),
-      topReasonsToReturn: pickStrArray(reentryRaw.topReasonsToReturn ?? reentryRaw.top_reasons_to_return),
+      topReasonsToReturn: pickStrArray(
+        reentryRaw.topReasonsToReturn ?? reentryRaw.top_reasons_to_return,
+      ),
     },
     dashboardMode: pickDashboardMode(
       body.dashboardMode ??
         body.dashboard_mode ??
-        ((body.dashboardHeader as Record<string, unknown> | undefined)?.dashboardMode ?? null),
+        (body.dashboardHeader as Record<string, unknown> | undefined)
+          ?.dashboardMode ??
+        null,
     ),
     recommendedSections: (() => {
-      const bodySections = pickRecommendedSections(body.recommendedSections ?? body.recommended_sections);
+      const bodySections = pickRecommendedSections(
+        body.recommendedSections ?? body.recommended_sections,
+      );
       if (bodySections.length > 0) return bodySections;
       const header = pickDashboardHeader(body);
       return header?.recommendedSections ?? [];
     })(),
-    sectionPayloads: pickSectionPayloads(body.sectionPayloads ?? body.section_payloads),
+    sectionPayloads: pickSectionPayloads(
+      body.sectionPayloads ?? body.section_payloads,
+    ),
     normalizedSectionTitles: pickNormalizedSectionTitles(
       body.normalizedSectionTitles ?? body.normalized_section_titles,
     ),
@@ -5889,23 +7948,43 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
       if (typeof v === 'number' && Number.isFinite(v)) return v;
       return 0;
     })(),
-    recommendationGraph: pickRecommendationGraph(body.recommendationGraph ?? body.recommendation_graph),
+    recommendationGraph: pickRecommendationGraph(
+      body.recommendationGraph ?? body.recommendation_graph,
+    ),
     orchestratedRecommendations: pickOrchestratedRecommendations(
       body.orchestratedRecommendations ?? body.orchestrated_recommendations,
     ),
-    continuationHint: pickContinuationHint(body.continuationHint ?? body.continuation_hint),
-    dashboardNarrative: pickDashboardNarrative(body.dashboardNarrative ?? body.dashboard_narrative),
-    dashboardExperience: pickDashboardExperience(body.dashboardExperience ?? body.dashboard_experience),
+    continuationHint: pickContinuationHint(
+      body.continuationHint ?? body.continuation_hint,
+    ),
+    dashboardNarrative: pickDashboardNarrative(
+      body.dashboardNarrative ?? body.dashboard_narrative,
+    ),
+    dashboardExperience: pickDashboardExperience(
+      body.dashboardExperience ?? body.dashboard_experience,
+    ),
     resumeTarget: pickResumeTarget(body.resumeTarget ?? body.resume_target),
     habitProgress: pickHabitProgress(body.habitProgress ?? body.habit_progress),
     achievements: pickTodayPlanAchievementsFromBody(body),
-    careerAchievements: pickCareerAchievements(body.careerAchievements ?? body.career_achievements),
-    milestoneCelebration: pickMilestoneCelebration(body.milestoneCelebration ?? body.milestone_celebration),
-    experienceStability: pickExperienceStability(body.experienceStability ?? body.experience_stability),
-    dashboardLayoutConfig: pickDashboardLayoutConfig(body.dashboardLayoutConfig ?? body.dashboard_layout_config),
-    priorityIntelligence: pickPriorityIntelligenceMeta(body.priorityIntelligence ?? body.priority_intelligence),
+    careerAchievements: pickCareerAchievements(
+      body.careerAchievements ?? body.career_achievements,
+    ),
+    milestoneCelebration: pickMilestoneCelebration(
+      body.milestoneCelebration ?? body.milestone_celebration,
+    ),
+    experienceStability: pickExperienceStability(
+      body.experienceStability ?? body.experience_stability,
+    ),
+    dashboardLayoutConfig: pickDashboardLayoutConfig(
+      body.dashboardLayoutConfig ?? body.dashboard_layout_config,
+    ),
+    priorityIntelligence: pickPriorityIntelligenceMeta(
+      body.priorityIntelligence ?? body.priority_intelligence,
+    ),
     commandBar: pickCommandBar(body.commandBar ?? body.command_bar),
-    dashboardVitals: pickDashboardVitals(body.dashboardVitals ?? body.dashboard_vitals),
+    dashboardVitals: pickDashboardVitals(
+      body.dashboardVitals ?? body.dashboard_vitals,
+    ),
     ...pickContinuationBundle(body),
     ...(() => {
       const interviewPreparationCards = pickInterviewPreparationCards(
@@ -5924,14 +8003,19 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
     })(),
     upcomingInterviews: upcomingInterviewsMerged,
     upcomingInterviewCount: (() => {
-      const countRaw = body.upcomingInterviewCount ?? body.upcoming_interview_count;
-      if (typeof countRaw === 'number' && Number.isFinite(countRaw)) return Math.max(0, Math.round(countRaw));
-      return upcomingInterviewsMerged.length > 0 ? upcomingInterviewsMerged.length : null;
+      const countRaw =
+        body.upcomingInterviewCount ?? body.upcoming_interview_count;
+      if (typeof countRaw === 'number' && Number.isFinite(countRaw))
+        return Math.max(0, Math.round(countRaw));
+      return upcomingInterviewsMerged.length > 0
+        ? upcomingInterviewsMerged.length
+        : null;
     })(),
     focusItems: focusItemsEarly,
     focusItemsTotalCount: (() => {
       const raw = body.focusItemsTotalCount ?? body.focus_items_total_count;
-      if (typeof raw === 'number' && Number.isFinite(raw)) return Math.max(0, Math.round(raw));
+      if (typeof raw === 'number' && Number.isFinite(raw))
+        return Math.max(0, Math.round(raw));
       return focusItemsEarly?.length ? focusItemsEarly.length : null;
     })(),
     staleApplicationItems: pickStaleApplicationItems(
@@ -5939,8 +8023,10 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
     ),
     staleApplicationItemsTotalCount: (() => {
       const raw =
-        body.staleApplicationItemsTotalCount ?? body.stale_application_items_total_count;
-      if (typeof raw === 'number' && Number.isFinite(raw)) return Math.max(0, Math.round(raw));
+        body.staleApplicationItemsTotalCount ??
+        body.stale_application_items_total_count;
+      if (typeof raw === 'number' && Number.isFinite(raw))
+        return Math.max(0, Math.round(raw));
       const items = pickStaleApplicationItems(
         body.staleApplicationItems ?? body.stale_application_items,
       );
@@ -5952,7 +8038,9 @@ export function normalizeTodayPlan(raw: unknown): TodayPlanPayload {
         'staleApplicationItemsViewAllHref',
         'stale_application_items_view_all_href',
       ) ?? null,
-    dashboardEmptyStates: pickDashboardEmptyStates(body.dashboardEmptyStates ?? body.dashboard_empty_states),
+    dashboardEmptyStates: pickDashboardEmptyStates(
+      body.dashboardEmptyStates ?? body.dashboard_empty_states,
+    ),
   };
 }
 
@@ -5976,9 +8064,13 @@ export function normalizeDashboardInterviewPrep(
   raw: unknown,
 ): DashboardInterviewPrepResponsePayload {
   const body = unwrapEnvelope(raw);
-  const generatedAt = String(pickStr(body, 'generatedAt', 'generated_at') ?? '').trim();
+  const generatedAt = String(
+    pickStr(body, 'generatedAt', 'generated_at') ?? '',
+  ).trim();
   const upcomingWire = resolveWireUpcomingInterviews(body);
-  const focusItems = pickDashboardFocusItems(body.focusItems ?? body.focus_items);
+  const focusItems = pickDashboardFocusItems(
+    body.focusItems ?? body.focus_items,
+  );
   const unifiedRaw =
     body.unifiedPriorities !== null &&
     typeof body.unifiedPriorities === 'object' &&
@@ -6002,7 +8094,8 @@ export function normalizeDashboardInterviewPrep(
     pickInterviewPreparationCards(
       body.interviewPreparationCards ?? body.interview_preparation_cards,
     ) ?? [];
-  const upcomingCountRaw = body.upcomingInterviewCount ?? body.upcoming_interview_count;
+  const upcomingCountRaw =
+    body.upcomingInterviewCount ?? body.upcoming_interview_count;
   const upcomingInterviewCount =
     typeof upcomingCountRaw === 'number' && Number.isFinite(upcomingCountRaw)
       ? Math.max(0, Math.round(upcomingCountRaw))
@@ -6010,7 +8103,8 @@ export function normalizeDashboardInterviewPrep(
         ? upcomingInterviews.length
         : null;
   const prepTotalRaw =
-    body.interviewPreparationCardsTotalCount ?? body.interview_preparation_cards_total_count;
+    body.interviewPreparationCardsTotalCount ??
+    body.interview_preparation_cards_total_count;
   const interviewPreparationCardsTotalCount =
     typeof prepTotalRaw === 'number' && Number.isFinite(prepTotalRaw)
       ? Math.max(0, Math.round(prepTotalRaw))
@@ -6037,8 +8131,12 @@ export function normalizeDashboardFollowUpJobs(
   raw: unknown,
 ): DashboardFollowUpJobsResponsePayload {
   const body = unwrapEnvelope(raw);
-  const generatedAt = String(pickStr(body, 'generatedAt', 'generated_at') ?? '').trim();
-  const followUpJobs = pickFollowUpJobsArray(body.followUpJobs ?? body.follow_up_jobs);
+  const generatedAt = String(
+    pickStr(body, 'generatedAt', 'generated_at') ?? '',
+  ).trim();
+  const followUpJobs = pickFollowUpJobsArray(
+    body.followUpJobs ?? body.follow_up_jobs,
+  );
   return {
     generatedAt: generatedAt || new Date().toISOString(),
     followUpJobs,
@@ -6050,11 +8148,16 @@ export function normalizeDashboardQuietApplications(
   raw: unknown,
 ): DashboardQuietApplicationsResponsePayload {
   const body = unwrapEnvelope(raw);
-  const generatedAt = String(pickStr(body, 'generatedAt', 'generated_at') ?? '').trim();
+  const generatedAt = String(
+    pickStr(body, 'generatedAt', 'generated_at') ?? '',
+  ).trim();
   const items =
-    pickStaleApplicationItems(body.staleApplicationItems ?? body.stale_application_items) ?? [];
+    pickStaleApplicationItems(
+      body.staleApplicationItems ?? body.stale_application_items,
+    ) ?? [];
   const totalRaw =
-    body.staleApplicationItemsTotalCount ?? body.stale_application_items_total_count;
+    body.staleApplicationItemsTotalCount ??
+    body.stale_application_items_total_count;
   const staleApplicationItemsTotalCount =
     typeof totalRaw === 'number' && Number.isFinite(totalRaw)
       ? Math.max(0, Math.round(totalRaw))
@@ -6077,13 +8180,20 @@ export type DashboardFocusResponsePayload = {
   dashboardVitals: DashboardVitalsPayload | null;
 };
 
-export function normalizeDashboardFocus(raw: unknown): DashboardFocusResponsePayload {
+export function normalizeDashboardFocus(
+  raw: unknown,
+): DashboardFocusResponsePayload {
   const body = unwrapEnvelope(raw);
-  const generatedAt = String(pickStr(body, 'generatedAt', 'generated_at') ?? '').trim();
+  const generatedAt = String(
+    pickStr(body, 'generatedAt', 'generated_at') ?? '',
+  ).trim();
   const focusRaw = body.focusItems ?? body.focus_items;
-  const focusItems = focusRaw === undefined ? null : pickDashboardFocusItems(focusRaw);
+  const focusItems =
+    focusRaw === undefined ? null : pickDashboardFocusItems(focusRaw);
   const bundle = pickContinuationBundle(body);
-  const dashboardVitals = pickDashboardVitals(body.dashboardVitals ?? body.dashboard_vitals);
+  const dashboardVitals = pickDashboardVitals(
+    body.dashboardVitals ?? body.dashboard_vitals,
+  );
   return {
     generatedAt: generatedAt || new Date().toISOString(),
     focusItems,
@@ -6096,7 +8206,9 @@ export function normalizeDashboardFocus(raw: unknown): DashboardFocusResponsePay
 export function normalizeSinceLastVisit(raw: unknown): SinceLastVisitPayload {
   const body = unwrapEnvelope(raw);
   const slv =
-    body.sinceLastVisit !== null && typeof body.sinceLastVisit === 'object' && !Array.isArray(body.sinceLastVisit)
+    body.sinceLastVisit !== null &&
+    typeof body.sinceLastVisit === 'object' &&
+    !Array.isArray(body.sinceLastVisit)
       ? (body.sinceLastVisit as Record<string, unknown>)
       : body.since_last_visit !== null &&
           typeof body.since_last_visit === 'object' &&
@@ -6106,7 +8218,10 @@ export function normalizeSinceLastVisit(raw: unknown): SinceLastVisitPayload {
   return normalizeSinceLastVisitObject(slv);
 }
 
-function strField(obj: Record<string, unknown>, ...keys: string[]): string | undefined {
+function strField(
+  obj: Record<string, unknown>,
+  ...keys: string[]
+): string | undefined {
   for (const k of keys) {
     const v = obj[k];
     if (typeof v === 'string' && v.trim()) return v.trim();
@@ -6132,16 +8247,22 @@ export function isDiscoveryPlanContext(ctx?: TodayPlanLinkContext): boolean {
 }
 
 /** “Finish apply” / pipeline nudges — should land in Job Hub, never re-open Analyzer. */
-export function isAnalyzedNotAppliedContext(ctx?: TodayPlanLinkContext): boolean {
+export function isAnalyzedNotAppliedContext(
+  ctx?: TodayPlanLinkContext,
+): boolean {
   return upperCodes(ctx).some((u) => {
     if (u.includes('ANALYZED_NOT_APPLIED')) return true;
-    if (u.includes('ANALYZED') && u.includes('NOT') && u.includes('APPLIED')) return true;
+    if (u.includes('ANALYZED') && u.includes('NOT') && u.includes('APPLIED'))
+      return true;
     return false;
   });
 }
 
 /** Server `cta.href` sometimes points at Analyze for hub/discovery intents — ignore those when we can route better. */
-function shouldPreferComputedHrefOverServer(serverHref: string, ctx?: TodayPlanLinkContext): boolean {
+function shouldPreferComputedHrefOverServer(
+  serverHref: string,
+  ctx?: TodayPlanLinkContext,
+): boolean {
   const h = serverHref.toLowerCase();
   if (!h.includes('analyze')) return false;
   if (isAnalyzedNotAppliedContext(ctx)) return true;
@@ -6163,7 +8284,13 @@ function normalizeActionType(raw: string): string {
 
 function hubQueryFromAction(rec: Record<string, unknown>): string | null {
   const applicationId = strField(rec, 'applicationId', 'application_id');
-  const jobAnalysisId = strField(rec, 'jobAnalysisId', 'job_analysis_id', 'canonicalJobId', 'canonical_job_id');
+  const jobAnalysisId = strField(
+    rec,
+    'jobAnalysisId',
+    'job_analysis_id',
+    'canonicalJobId',
+    'canonical_job_id',
+  );
   const bookmarkId = strField(rec, 'bookmarkId', 'bookmark_id');
   const jobListingId = strField(rec, 'jobListingId', 'job_listing_id');
   const params = new URLSearchParams();
@@ -6181,12 +8308,20 @@ function hubQueryFromAction(rec: Record<string, unknown>): string | null {
  * Prefer `action` over `cta.href` when href points at Analyze but reason codes imply Hub or Job Board.
  * @see backend handoff: OPEN_DISCOVERY, OPEN_JOB_ANALYZE, OPEN_JOB_HUB, OPEN_TAILOR, OPEN_CV_CLINIC
  */
-export function resolveTodayPlanHref(cta: TodayPlanCta, ctx?: TodayPlanLinkContext): string | null {
+export function resolveTodayPlanHref(
+  cta: TodayPlanCta,
+  ctx?: TodayPlanLinkContext,
+): string | null {
   const computed = resolveTodayPlanHrefFromAction(cta, ctx);
   const h = cta.href?.trim();
   if (h?.startsWith('/')) {
     if (shouldPreferComputedHrefOverServer(h, ctx)) {
-      return normalizeTodayPlanRoute(computed ?? (isDiscoveryPlanContext(ctx) ? '/dashboard/job-board' : '/dashboard/jobs'));
+      return normalizeTodayPlanRoute(
+        computed ??
+          (isDiscoveryPlanContext(ctx)
+            ? '/dashboard/job-board'
+            : '/dashboard/jobs'),
+      );
     }
     return normalizeTodayPlanRoute(h);
   }
@@ -6197,10 +8332,10 @@ export function resolveTodayPlanHref(cta: TodayPlanCta, ctx?: TodayPlanLinkConte
  * Guard against stale/deprecated internal routes while preserving query params.
  * Keeps routing additive and avoids broken pages from older deep links.
  */
-export function normalizeTodayPlanRoute(href: string | null | undefined): string | null {
-  const raw = (href ?? '')
-    .trim()
-    .replace(/^['"]+|['"]+$/g, '');
+export function normalizeTodayPlanRoute(
+  href: string | null | undefined,
+): string | null {
+  const raw = (href ?? '').trim().replace(/^['"]+|['"]+$/g, '');
   if (!raw) return null;
   if (!raw.startsWith('/')) return raw;
   try {
@@ -6220,7 +8355,13 @@ function normalizeHrefPathAndStableQuery(href: string): string {
   try {
     const u = new URL(trimmed, 'https://applymate.invalid');
     const path = u.pathname.replace(/\/$/, '') || '/';
-    const keys = ['profileId', 'jobId', 'jobListingId', 'applicationId', 'bookmarkId'];
+    const keys = [
+      'profileId',
+      'jobId',
+      'jobListingId',
+      'applicationId',
+      'bookmarkId',
+    ];
     const parts = [path.toLowerCase()];
     for (const k of keys) {
       const v = u.searchParams.get(k);
@@ -6269,8 +8410,13 @@ export function unifiedPriorityDedupeKey(item: UnifiedPriorityItem): string {
  * Collapses duplicate "open Job Board / discovery" unified rows that share the same generic board entry
  * (no specific listing) — e.g. two cards titled "Review jobs matched to your CV".
  */
-export function discoveryJobBoardCanonicalDedupeKey(item: UnifiedPriorityItem): string | null {
-  const ctx: TodayPlanLinkContext = { source: null, reasonCodes: item.reasonCodes };
+export function discoveryJobBoardCanonicalDedupeKey(
+  item: UnifiedPriorityItem,
+): string | null {
+  const ctx: TodayPlanLinkContext = {
+    source: null,
+    reasonCodes: item.reasonCodes,
+  };
   const raw = resolveTodayPlanHref(item.cta, ctx) ?? '';
   let path = '';
   let jobListingId: string | null = null;
@@ -6290,27 +8436,52 @@ export function discoveryJobBoardCanonicalDedupeKey(item: UnifiedPriorityItem): 
     (t.includes('job') && t.includes('discover'));
   const discoveryish =
     isDiscoveryPlanContext(ctx) ||
-    (item.reasonCodes ?? []).some((c) => c.toUpperCase().includes('DISCOVERY')) ||
-    String(item.kind ?? '').toLowerCase().includes('discover');
+    (item.reasonCodes ?? []).some((c) =>
+      c.toUpperCase().includes('DISCOVERY'),
+    ) ||
+    String(item.kind ?? '')
+      .toLowerCase()
+      .includes('discover');
 
   if (!discoveryish && !looksLikeReviewMatches) return null;
 
   return 'canonical:job-board:discovery-generic';
 }
 
-function resolveTodayPlanHrefFromAction(cta: TodayPlanCta, ctx?: TodayPlanLinkContext): string | null {
+function resolveTodayPlanHrefFromAction(
+  cta: TodayPlanCta,
+  ctx?: TodayPlanLinkContext,
+): string | null {
   const a = cta.action;
   if (!a || typeof a !== 'object') return null;
   const rec = a as Record<string, unknown>;
-  const type = normalizeActionType(strField(rec, 'type', 'actionType', 'kind') ?? '');
+  const type = normalizeActionType(
+    strField(rec, 'type', 'actionType', 'kind') ?? '',
+  );
 
   const jobAnalysisId = strField(rec, 'jobAnalysisId', 'job_analysis_id');
   const jobListingId = strField(rec, 'jobListingId', 'job_listing_id');
   const cvProfileId = strField(rec, 'cvProfileId', 'cv_profile_id');
-  const interviewPrepJobAnalysisId = strField(rec, 'interviewPrepJobAnalysisId', 'interview_prep_job_analysis_id');
-  const interviewPrepJobTitle = strField(rec, 'interviewPrepJobTitle', 'interview_prep_job_title');
-  const interviewPrepCompany = strField(rec, 'interviewPrepCompany', 'interview_prep_company');
-  const interviewPrepCvProfileId = strField(rec, 'interviewPrepCvProfileId', 'interview_prep_cv_profile_id');
+  const interviewPrepJobAnalysisId = strField(
+    rec,
+    'interviewPrepJobAnalysisId',
+    'interview_prep_job_analysis_id',
+  );
+  const interviewPrepJobTitle = strField(
+    rec,
+    'interviewPrepJobTitle',
+    'interview_prep_job_title',
+  );
+  const interviewPrepCompany = strField(
+    rec,
+    'interviewPrepCompany',
+    'interview_prep_company',
+  );
+  const interviewPrepCvProfileId = strField(
+    rec,
+    'interviewPrepCvProfileId',
+    'interview_prep_cv_profile_id',
+  );
   const interviewPrepPreferredCvProfileId = strField(
     rec,
     'interviewPrepPreferredCvProfileId',
@@ -6336,7 +8507,9 @@ function resolveTodayPlanHrefFromAction(cta: TodayPlanCta, ctx?: TodayPlanLinkCo
   const analyzedNotApplied = isAnalyzedNotAppliedContext(ctx);
 
   if (type === 'OPEN_DISCOVERY') {
-    return jobListingId ? jobBoardHrefWithListing(jobListingId) : '/dashboard/job-board';
+    return jobListingId
+      ? jobBoardHrefWithListing(jobListingId)
+      : '/dashboard/job-board';
   }
 
   if (type === 'OPEN_JOB_ANALYZE') {
@@ -6366,12 +8539,16 @@ function resolveTodayPlanHrefFromAction(cta: TodayPlanCta, ctx?: TodayPlanLinkCo
 
   if (type === 'OPEN_TAILOR') {
     if (!jobAnalysisId) return '/dashboard/jobs/analyze';
-    const jl = jobListingId ? `&jobListingId=${encodeURIComponent(jobListingId)}` : '';
+    const jl = jobListingId
+      ? `&jobListingId=${encodeURIComponent(jobListingId)}`
+      : '';
     return `/dashboard/jobs/analyze?jobId=${encodeURIComponent(jobAnalysisId)}&openTailor=1${jl}`;
   }
 
   if (type === 'OPEN_CV_CLINIC') {
-    return cvProfileId ? `/dashboard/cv?profileId=${encodeURIComponent(cvProfileId)}` : '/dashboard/cv';
+    return cvProfileId
+      ? `/dashboard/cv?profileId=${encodeURIComponent(cvProfileId)}`
+      : '/dashboard/cv';
   }
   if (type === 'OPEN_INTERVIEW_PREP' || type === 'OPEN_INTERVIEW') {
     const qp = new URLSearchParams();
@@ -6381,9 +8558,12 @@ function resolveTodayPlanHrefFromAction(cta: TodayPlanCta, ctx?: TodayPlanLinkCo
     if (interviewPrepJobTitle) qp.set('jobTitle', interviewPrepJobTitle);
     if (interviewPrepCompany) qp.set('company', interviewPrepCompany);
     if (cvId) qp.set('cvProfileId', cvId);
-    if (interviewPrepPreferredCvProfileId) qp.set('preferredCvProfileId', interviewPrepPreferredCvProfileId);
-    if (interviewPrepAnalyzedCvProfileId) qp.set('analyzedCvProfileId', interviewPrepAnalyzedCvProfileId);
-    if (interviewPrepTailoringCvProfileId) qp.set('tailoringCvProfileId', interviewPrepTailoringCvProfileId);
+    if (interviewPrepPreferredCvProfileId)
+      qp.set('preferredCvProfileId', interviewPrepPreferredCvProfileId);
+    if (interviewPrepAnalyzedCvProfileId)
+      qp.set('analyzedCvProfileId', interviewPrepAnalyzedCvProfileId);
+    if (interviewPrepTailoringCvProfileId)
+      qp.set('tailoringCvProfileId', interviewPrepTailoringCvProfileId);
     return `/dashboard/interview${qp.toString() ? `?${qp.toString()}` : ''}`;
   }
 
@@ -6408,11 +8588,18 @@ function resolveTodayPlanHrefFromAction(cta: TodayPlanCta, ctx?: TodayPlanLinkCo
   }
   if (type.includes('ANALYZE') && !type.includes('HUB')) {
     if (discovery && jobListingId) return jobBoardHrefWithListing(jobListingId);
-    if (jobListingId) return `/dashboard/jobs/analyze?jobListingId=${encodeURIComponent(jobListingId)}`;
+    if (jobListingId)
+      return `/dashboard/jobs/analyze?jobListingId=${encodeURIComponent(jobListingId)}`;
     return '/dashboard/jobs/analyze';
   }
-  if (type.includes('CV') || type.includes('CLINIC') || type.includes('RESUME')) {
-    return cvProfileId ? `/dashboard/cv?profileId=${encodeURIComponent(cvProfileId)}` : '/dashboard/cv';
+  if (
+    type.includes('CV') ||
+    type.includes('CLINIC') ||
+    type.includes('RESUME')
+  ) {
+    return cvProfileId
+      ? `/dashboard/cv?profileId=${encodeURIComponent(cvProfileId)}`
+      : '/dashboard/cv';
   }
   if (type.includes('INTERVIEW')) {
     const qp = new URLSearchParams();
@@ -6424,7 +8611,11 @@ function resolveTodayPlanHrefFromAction(cta: TodayPlanCta, ctx?: TodayPlanLinkCo
     if (cvId) qp.set('cvProfileId', cvId);
     return `/dashboard/interview${qp.toString() ? `?${qp.toString()}` : ''}`;
   }
-  if (type.includes('HUB') || type.includes('TRACKER') || type.includes('PIPELINE')) {
+  if (
+    type.includes('HUB') ||
+    type.includes('TRACKER') ||
+    type.includes('PIPELINE')
+  ) {
     const q = hubQueryFromAction(rec);
     return q ? `/dashboard/jobs${q}` : '/dashboard/jobs';
   }
@@ -6453,7 +8644,10 @@ const APPLIED_OR_LATER_STATES = new Set([
   'ghosted',
 ]);
 
-export function isAppliedOrLaterState(state: string | null | undefined, isApplied?: boolean): boolean {
+export function isAppliedOrLaterState(
+  state: string | null | undefined,
+  isApplied?: boolean,
+): boolean {
   if (isApplied === true) return true;
   const normalized = String(state ?? '')
     .trim()
@@ -6463,14 +8657,26 @@ export function isAppliedOrLaterState(state: string | null | undefined, isApplie
 }
 
 function isApplyLikePriority(item: UnifiedPriorityItem): boolean {
-  const kind = String(item.kind ?? '').trim().toLowerCase();
-  if (kind === 'apply' || kind === 'analyze' || kind === 'bookmark_review' || kind === 'discovery') {
+  const kind = String(item.kind ?? '')
+    .trim()
+    .toLowerCase();
+  if (
+    kind === 'apply' ||
+    kind === 'analyze' ||
+    kind === 'bookmark_review' ||
+    kind === 'discovery'
+  ) {
     return true;
   }
-  const actionType = String(item.compactDisplay?.actionType ?? item.ctaHint ?? '')
+  const actionType = String(
+    item.compactDisplay?.actionType ?? item.ctaHint ?? '',
+  )
     .trim()
     .toUpperCase();
-  if (actionType.includes('OPEN_JOB_ANALYZE') || actionType.includes('OPEN_DISCOVERY')) {
+  if (
+    actionType.includes('OPEN_JOB_ANALYZE') ||
+    actionType.includes('OPEN_DISCOVERY')
+  ) {
     return true;
   }
   return false;

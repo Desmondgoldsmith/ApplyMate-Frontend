@@ -15,7 +15,10 @@ export const LiveCoachingOverlay = memo(function LiveCoachingOverlay({
   bufferLength: number;
   className?: string;
 }) {
-  const chips = useMemo(() => liveCoachingChips(live, bufferLength), [bufferLength, live]);
+  const chips = useMemo(
+    () => liveCoachingChips(live, bufferLength),
+    [bufferLength, live],
+  );
 
   const hint = live?.hint?.trim();
   if (!hint && chips.length === 0) return null;
@@ -51,7 +54,9 @@ export const LiveCoachingOverlay = memo(function LiveCoachingOverlay({
         </div>
       ) : null}
       {hint ? (
-        <p className="text-[11px] italic leading-snug text-[var(--text-muted)]">{hint}</p>
+        <p className="text-[11px] italic leading-snug text-[var(--text-muted)]">
+          {hint}
+        </p>
       ) : null}
     </div>
   );

@@ -42,15 +42,23 @@ describe('CVScoreCard Phase 1 (ATS + job match)', () => {
     );
     expect(screen.getByText(/ATS read \(basic checks\)/i)).toBeInTheDocument();
     expect(
-      screen.queryByText(/These ATS-related items are heuristic checks on structure and text in this product/i),
+      screen.queryByText(
+        /These ATS-related items are heuristic checks on structure and text in this product/i,
+      ),
     ).not.toBeInTheDocument();
-    const hint = screen.getByRole('button', { name: /about heuristic ATS checks/i });
+    const hint = screen.getByRole('button', {
+      name: /about heuristic ATS checks/i,
+    });
     expect(hint).toBeInTheDocument();
     fireEvent.pointerEnter(hint.parentElement!);
     expect(
-      await screen.findByText(/These ATS-related items are heuristic checks on structure and text in this product/i),
+      await screen.findByText(
+        /These ATS-related items are heuristic checks on structure and text in this product/i,
+      ),
     ).toBeInTheDocument();
-    expect(screen.getByText(/ATS-friendly \(basic checks\)/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/ATS-friendly \(basic checks\)/i),
+    ).toBeInTheDocument();
   });
 
   it('shows hybrid blend and rubric-only banner', async () => {
@@ -68,13 +76,19 @@ describe('CVScoreCard Phase 1 (ATS + job match)', () => {
           scoringTransparency: {
             headline: 'Blended CV score',
             methods: {
-              hybrid: { title: 'Hybrid', short: 'Structure plus quality review.' },
+              hybrid: {
+                title: 'Hybrid',
+                short: 'Structure plus quality review.',
+              },
               rubric_only: {
                 title: 'Structure only',
                 short: 'Quality review unavailable — structure check only.',
               },
             },
-            structural: { title: 'Structure', short: 'Section completeness check.' },
+            structural: {
+              title: 'Structure',
+              short: 'Section completeness check.',
+            },
             ai: { title: 'Quality', short: 'AI reads your CV excerpt.' },
             weights: { structuralPercent: 30, aiPercent: 70, short: '30/70.' },
             cache: { title: 'Cache', short: 'Cached for 24 hours.' },
@@ -101,18 +115,26 @@ describe('CVScoreCard Phase 1 (ATS + job match)', () => {
       />,
     );
     expect(screen.getByText(/Blended from two scores/i)).toBeInTheDocument();
-    expect(screen.getByText(/30% structure · 70% quality/i)).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /where the blend weights come from/i }),
+      screen.getByText(/30% structure · 70% quality/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: /where the blend weights come from/i,
+      }),
     ).toBeInTheDocument();
     expect(screen.getByText(/^Structure score$/i)).toBeInTheDocument();
     expect(screen.getByText(/^Quality score$/i)).toBeInTheDocument();
     expect(
       screen.getByText(/How we calculated this: 73 ≈ 30% × 62 \+ 70% × 78/i),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Recruiter-style feedback here/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Recruiter-style feedback here/i),
+    ).toBeInTheDocument();
     expect(screen.getByText(/Cached quality review/i)).toBeInTheDocument();
-    const hint = screen.getByRole('button', { name: /how your resume score is calculated/i });
+    const hint = screen.getByRole('button', {
+      name: /how your resume score is calculated/i,
+    });
     fireEvent.pointerEnter(hint.parentElement!);
     expect(await screen.findByText(/Blended CV score/i)).toBeInTheDocument();
   });
@@ -134,12 +156,17 @@ describe('CVScoreCard Phase 1 (ATS + job match)', () => {
               hybrid: { title: 'Hybrid', short: 'Hybrid method.' },
               rubric_only: {
                 title: 'Structure only',
-                short: 'Quality review unavailable — showing structure check only.',
+                short:
+                  'Quality review unavailable — showing structure check only.',
               },
             },
             structural: { title: 'Structure', short: 'Rubric sections.' },
             ai: { title: 'Quality', short: 'AI off.' },
-            weights: { structuralPercent: 100, aiPercent: 0, short: '100% structure.' },
+            weights: {
+              structuralPercent: 100,
+              aiPercent: 0,
+              short: '100% structure.',
+            },
             cache: { title: 'Cache', short: 'N/A.' },
             jobContext: { title: 'Job', short: 'N/A.' },
           },
@@ -164,7 +191,9 @@ describe('CVScoreCard Phase 1 (ATS + job match)', () => {
     );
     expect(screen.getByText(/Resume score/i)).toBeInTheDocument();
     expect(
-      screen.queryByText(/Quality review unavailable — showing structure check only/i),
+      screen.queryByText(
+        /Quality review unavailable — showing structure check only/i,
+      ),
     ).not.toBeInTheDocument();
   });
 
@@ -247,10 +276,17 @@ describe('CVScoreCard Phase 1 (ATS + job match)', () => {
               overallScore: 74,
               coveragePercent: 55,
               dimensions: {
-                keywordMatch: { score0to100: 60, weight: 0.3, contribution: 18 },
+                keywordMatch: {
+                  score0to100: 60,
+                  weight: 0.3,
+                  contribution: 18,
+                },
               },
               keywords: {
-                required: { present: ['TypeScript'], missing: ['Kubernetes', 'Docker'] },
+                required: {
+                  present: ['TypeScript'],
+                  missing: ['Kubernetes', 'Docker'],
+                },
                 preferred: { present: ['REST'], missing: [] },
               },
               hardSkillMatches: [
@@ -261,7 +297,9 @@ describe('CVScoreCard Phase 1 (ATS + job match)', () => {
               seniorityAlignmentScore: 70,
               semanticSimilarityScore: 66,
               formattingParseabilityScore: 88,
-              recommendations: ['Mirror priority keywords from the posting in your skills block.'],
+              recommendations: [
+                'Mirror priority keywords from the posting in your skills block.',
+              ],
             },
           },
           flags: [],
@@ -273,19 +311,37 @@ describe('CVScoreCard Phase 1 (ATS + job match)', () => {
 
     expect(screen.getByTestId('ats-simulation-root')).toBeInTheDocument();
     expect(screen.getByTestId('ats-simulation-metrics')).toBeInTheDocument();
-    expect(screen.getByTestId('ats-metric-keyword-match')).toHaveTextContent('60%');
-    expect(screen.getByTestId('ats-metric-hard-skills')).toHaveTextContent('50%');
-    expect(screen.getByTestId('ats-metric-title-alignment')).toHaveTextContent('82%');
-    expect(screen.getByTestId('ats-metric-seniority-alignment')).toHaveTextContent('70%');
-    expect(screen.getByTestId('ats-metric-semantic-similarity')).toHaveTextContent('66%');
-    expect(screen.getByTestId('ats-metric-formatting')).toHaveTextContent('88%');
+    expect(screen.getByTestId('ats-metric-keyword-match')).toHaveTextContent(
+      '60%',
+    );
+    expect(screen.getByTestId('ats-metric-hard-skills')).toHaveTextContent(
+      '50%',
+    );
+    expect(screen.getByTestId('ats-metric-title-alignment')).toHaveTextContent(
+      '82%',
+    );
+    expect(
+      screen.getByTestId('ats-metric-seniority-alignment'),
+    ).toHaveTextContent('70%');
+    expect(
+      screen.getByTestId('ats-metric-semantic-similarity'),
+    ).toHaveTextContent('66%');
+    expect(screen.getByTestId('ats-metric-formatting')).toHaveTextContent(
+      '88%',
+    );
     expect(screen.getByTestId('ats-simulation-dimensions')).toBeInTheDocument();
     expect(screen.getByTestId('ats-hard-skill-matches')).toBeInTheDocument();
     expect(screen.getByTestId('ats-missing-keywords')).toBeInTheDocument();
-    expect(screen.getByTestId('ats-missing-keywords')).toHaveTextContent('Kubernetes');
+    expect(screen.getByTestId('ats-missing-keywords')).toHaveTextContent(
+      'Kubernetes',
+    );
     expect(screen.getByTestId('ats-matched-keywords')).toBeInTheDocument();
-    expect(screen.getByTestId('ats-matched-keywords')).toHaveTextContent('TypeScript');
-    expect(screen.getByTestId('ats-simulation-recommendations')).toBeInTheDocument();
+    expect(screen.getByTestId('ats-matched-keywords')).toHaveTextContent(
+      'TypeScript',
+    );
+    expect(
+      screen.getByTestId('ats-simulation-recommendations'),
+    ).toBeInTheDocument();
     expect(screen.getByText(/Mirror priority keywords/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId('ats-draft-keywords-assistant'));

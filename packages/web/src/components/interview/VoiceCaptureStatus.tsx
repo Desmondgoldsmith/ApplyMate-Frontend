@@ -55,7 +55,8 @@ export function VoiceCaptureStatus({
         ? STATUS_COPY.listening
         : STATUS_COPY[status]);
 
-  const showPulse = recordingState === 'recording' || (isRecording && status === 'listening');
+  const showPulse =
+    recordingState === 'recording' || (isRecording && status === 'listening');
 
   return (
     <p

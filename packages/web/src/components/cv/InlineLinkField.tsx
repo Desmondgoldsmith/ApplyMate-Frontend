@@ -30,7 +30,8 @@ function readStoredLabel(key: string): string {
 function writeStoredLabel(key: string, v: string) {
   if (typeof window === 'undefined') return;
   try {
-    if (v.trim()) window.sessionStorage.setItem(`applymate:cv:linkLabel:${key}`, v.trim());
+    if (v.trim())
+      window.sessionStorage.setItem(`applymate:cv:linkLabel:${key}`, v.trim());
     else window.sessionStorage.removeItem(`applymate:cv:linkLabel:${key}`);
   } catch {
     /* ignore */
@@ -65,7 +66,12 @@ export function InlineLinkField({
   }, [editing, linkHref, defaultDisplay, stored]);
 
   const commit = useCallback(() => {
-    writeStoredLabel(fieldKey, labelDraft.trim() && labelDraft.trim() !== defaultDisplay ? labelDraft : '');
+    writeStoredLabel(
+      fieldKey,
+      labelDraft.trim() && labelDraft.trim() !== defaultDisplay
+        ? labelDraft
+        : '',
+    );
     onChangeHref(hrefDraft);
     setEditing(false);
   }, [fieldKey, labelDraft, hrefDraft, onChangeHref, defaultDisplay]);
@@ -79,7 +85,10 @@ export function InlineLinkField({
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setLabelDraft((readStoredLabel(fieldKey) || defaultDisplay).trim() || defaultDisplay);
+        setLabelDraft(
+          (readStoredLabel(fieldKey) || defaultDisplay).trim() ||
+            defaultDisplay,
+        );
         setHrefDraft(linkHref);
         setEditing(false);
       }
@@ -98,7 +107,12 @@ export function InlineLinkField({
   if (!inline) {
     if (!showLink) return <span className={className}>{displayText}</span>;
     return (
-      <a href={built} className={cn('underline', linkClassName, className)} target="_blank" rel="noreferrer">
+      <a
+        href={built}
+        className={cn('underline', linkClassName, className)}
+        target="_blank"
+        rel="noreferrer"
+      >
         {displayText}
       </a>
     );
@@ -108,15 +122,26 @@ export function InlineLinkField({
     return (
       <button
         type="button"
-        className={cn('cursor-text bg-transparent p-0 text-inherit underline', linkClassName, className)}
+        className={cn(
+          'cursor-text bg-transparent p-0 text-inherit underline',
+          linkClassName,
+          className,
+        )}
         onClick={(e) => {
           e.stopPropagation();
-          setLabelDraft((readStoredLabel(fieldKey) || defaultDisplay).trim() || defaultDisplay);
+          setLabelDraft(
+            (readStoredLabel(fieldKey) || defaultDisplay).trim() ||
+              defaultDisplay,
+          );
           setHrefDraft(linkHref);
           setEditing(true);
         }}
       >
-        {showLink ? displayText : <span className="text-black/40 italic">{defaultDisplay}</span>}
+        {showLink ? (
+          displayText
+        ) : (
+          <span className="text-black/40 italic">{defaultDisplay}</span>
+        )}
       </button>
     );
   }
@@ -128,13 +153,17 @@ export function InlineLinkField({
         className="absolute bottom-full left-1/2 z-30 mb-1 flex w-[min(18rem,calc(100vw-2rem))] -translate-x-1/2 flex-col rounded-lg border border-[#00C9B1]/35 bg-[#0C0F0F] p-2.5 text-left shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="text-[9px] font-semibold uppercase tracking-wide text-white/70">Label</span>
+        <span className="text-[9px] font-semibold uppercase tracking-wide text-white/70">
+          Label
+        </span>
         <input
           className="mt-1 rounded border border-black/15 bg-white px-1.5 py-1 text-[11px] text-[#111111] outline-none placeholder:text-black/40 focus:border-[#00C9B1]/60"
           value={labelDraft}
           onChange={(e) => setLabelDraft(e.target.value)}
         />
-        <span className="mt-2 text-[9px] font-semibold uppercase tracking-wide text-white/70">URL / Email</span>
+        <span className="mt-2 text-[9px] font-semibold uppercase tracking-wide text-white/70">
+          URL / Email
+        </span>
         <input
           className="mt-1 rounded border border-black/15 bg-white px-1.5 py-1 text-[11px] text-[#111111] outline-none placeholder:text-black/40 focus:border-[#00C9B1]/60"
           value={hrefDraft}

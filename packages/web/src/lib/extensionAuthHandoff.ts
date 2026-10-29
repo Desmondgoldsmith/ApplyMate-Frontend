@@ -27,7 +27,9 @@ function resolveExtensionId(): string | null {
   if (fromEnv) return fromEnv;
   if (typeof window === 'undefined') return null;
   try {
-    const fromSession = window.sessionStorage.getItem(EXTENSION_ID_SESSION_KEY)?.trim();
+    const fromSession = window.sessionStorage
+      .getItem(EXTENSION_ID_SESSION_KEY)
+      ?.trim();
     if (fromSession) return fromSession;
     const fromUrl = new URLSearchParams(window.location.search)
       .get('extensionId')
@@ -79,8 +81,8 @@ export function captureExtensionIdFromUrl(): string | null {
 
 function readChromeRuntime(): ChromeRuntime | null {
   if (typeof window === 'undefined') return null;
-  const runtime = (window as Window & { chrome?: { runtime?: ChromeRuntime } }).chrome
-    ?.runtime;
+  const runtime = (window as Window & { chrome?: { runtime?: ChromeRuntime } })
+    .chrome?.runtime;
   return runtime ?? null;
 }
 
@@ -141,17 +143,20 @@ export async function handoffExtensionTokenIfInstalled(
   if (!runtime) return false;
 
   try {
-    const res = await fetch(resolveExtensionHandoffApiUrl('/auth/extension-token'), {
-      method: 'POST',
-      credentials: 'include',
-      headers: ngrokSkipHeaders(
-        {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        readNormalizedPublicApiUrl(),
-      ),
-    });
+    const res = await fetch(
+      resolveExtensionHandoffApiUrl('/auth/extension-token'),
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: ngrokSkipHeaders(
+          {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          readNormalizedPublicApiUrl(),
+        ),
+      },
+    );
 
     const body = (await res.json()) as ApiEnvelope<{
       extensionToken: string;
@@ -169,7 +174,8 @@ export async function handoffExtensionTokenIfInstalled(
           expiresAt: body.data.expiresAt,
         },
         () => {
-          if (runtime.lastError?.message) reject(new Error(runtime.lastError.message));
+          if (runtime.lastError?.message)
+            reject(new Error(runtime.lastError.message));
           else resolve();
         },
       );

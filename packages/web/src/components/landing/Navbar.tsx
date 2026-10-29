@@ -43,7 +43,10 @@ export function Navbar() {
         <Link href="/" className="flex shrink-0 items-center gap-2.5">
           <span
             className="h-2.5 w-2.5 shrink-0 rounded-full"
-            style={{ backgroundColor: '#00C9B1', boxShadow: '0 0 12px #00C9B1' }}
+            style={{
+              backgroundColor: '#00C9B1',
+              boxShadow: '0 0 12px #00C9B1',
+            }}
             aria-hidden
           />
           <span className="text-[17px] font-bold tracking-tight text-white">

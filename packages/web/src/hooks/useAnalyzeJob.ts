@@ -15,7 +15,9 @@ export function useAnalyzeJob() {
     mutationFn: api.jobs.analyze,
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.jobs.history() });
-      const previous = queryClient.getQueryData<JobHistoryItem[]>(queryKeys.jobs.history());
+      const previous = queryClient.getQueryData<JobHistoryItem[]>(
+        queryKeys.jobs.history(),
+      );
       const optimistic: JobHistoryItem = {
         id: `optimistic-${Date.now()}`,
         jobTitle: input.title ?? '',
@@ -31,10 +33,10 @@ export function useAnalyzeJob() {
         hasCoverLetter: false,
         title: input.title,
       };
-      queryClient.setQueryData<JobHistoryItem[]>(queryKeys.jobs.history(), (old = []) => [
-        optimistic,
-        ...old,
-      ]);
+      queryClient.setQueryData<JobHistoryItem[]>(
+        queryKeys.jobs.history(),
+        (old = []) => [optimistic, ...old],
+      );
       return { previous };
     },
     onError: (_error, _vars, context) => {
@@ -43,7 +45,10 @@ export function useAnalyzeJob() {
       }
     },
     onSuccess: (data) => {
-      queryClient.setQueryData<JobAnalysis>(queryKeys.jobs.analysisCurrent(), data);
+      queryClient.setQueryData<JobAnalysis>(
+        queryKeys.jobs.analysisCurrent(),
+        data,
+      );
       const jobAnalysisId = (data.id ?? '').trim() || null;
       void api.growth.trackEvent({
         eventName: 'analyze_completed',
@@ -55,7 +60,9 @@ export function useAnalyzeJob() {
       });
       /** Preview / heuristic-only completion — skip extra growth nudges when no AI report was produced. */
       const shallowHeuristic =
-        data.scoreSource === 'heuristic' && !data.analysisV2 && !data.reusedExistingAnalysis;
+        data.scoreSource === 'heuristic' &&
+        !data.analysisV2 &&
+        !data.reusedExistingAnalysis;
       if (!shallowHeuristic) {
         void consumeFeedback();
       }
@@ -63,16 +70,19 @@ export function useAnalyzeJob() {
         void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.cv.profileDefault() });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.profileDefault(),
+      });
       queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
       queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
       queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.hub.bookmarks(),
+      });
       invalidateTodayPlanQueries(queryClient);
     },
   });
 }
-

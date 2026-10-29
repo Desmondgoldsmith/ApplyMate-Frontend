@@ -14,11 +14,21 @@ type AuthFormCardProps = {
 /**
  * Same language as landing “Install & Import” cards: animated border + teal radial accents + gradient fill.
  */
-export function AuthFormCard({ children, className, contentClassName }: AuthFormCardProps) {
+export function AuthFormCard({
+  children,
+  className,
+  contentClassName,
+}: AuthFormCardProps) {
   return (
     <AnimatedBorderCard
-      className={cn('transition-all duration-300 ease-out hover:-translate-y-0.5', className)}
-      contentClassName={cn('relative overflow-hidden rounded-[20px] p-0', contentClassName)}
+      className={cn(
+        'transition-all duration-300 ease-out hover:-translate-y-0.5',
+        className,
+      )}
+      contentClassName={cn(
+        'relative overflow-hidden rounded-[20px] p-0',
+        contentClassName,
+      )}
       radiusPx={20}
       rotateDuration={6}
     >
@@ -32,7 +42,8 @@ export function AuthFormCard({ children, className, contentClassName }: AuthForm
       <div
         className="pointer-events-none absolute -bottom-[56px] -left-[48px] h-[190px] w-[190px] rounded-full opacity-[0.07]"
         style={{
-          background: 'radial-gradient(circle, rgba(0,212,212,0.55) 0%, transparent 72%)',
+          background:
+            'radial-gradient(circle, rgba(0,212,212,0.55) 0%, transparent 72%)',
         }}
         aria-hidden
       />

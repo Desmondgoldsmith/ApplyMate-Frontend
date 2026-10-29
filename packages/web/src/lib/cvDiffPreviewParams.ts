@@ -1,7 +1,10 @@
 import type { CvTruthfulnessMeta } from '@/lib/api';
 
 export type { CvDiffPreviewMap } from '@/lib/cvDiffPreviewMap';
-export { cvDiffPreviewStorageKey, cvStructuralDiffPayloadPresent } from '@/lib/cvDiffPreviewMap';
+export {
+  cvDiffPreviewStorageKey,
+  cvStructuralDiffPayloadPresent,
+} from '@/lib/cvDiffPreviewMap';
 
 /** Payload from Apply with AI → parent `setDiffPreview` (optional truthfulness from server). */
 export type CvImprovementDiffPreviewParams = CvTruthfulnessMeta & {

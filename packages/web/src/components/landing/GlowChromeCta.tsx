@@ -29,7 +29,10 @@ export function GlowChromeCta({
     <div
       className={`glow-cta-wrap group relative inline-block rounded-full ${wrapPad} transition-[box-shadow] duration-300 ease-out hover:shadow-[0_0_24px_rgba(0,201,177,0.22)] ${className}`}
     >
-      <div className="glow-cta-rotating absolute inset-0 rounded-full" aria-hidden />
+      <div
+        className="glow-cta-rotating absolute inset-0 rounded-full"
+        aria-hidden
+      />
       <a
         href={href}
         onClick={onClick}

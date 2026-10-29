@@ -141,7 +141,8 @@ export function InterviewSetupStepper() {
   const prepQuota = quotaQ.data;
   const weeklyLimitReached =
     isInterviewPrepWeeklyLimitReached(prepQuota) || weeklyLimitGate != null;
-  const canStartSession = canStartInterviewPrepSession(prepQuota) && !weeklyLimitGate;
+  const canStartSession =
+    canStartInterviewPrepSession(prepQuota) && !weeklyLimitGate;
 
   useEffect(() => {
     if (weeklyLimitGate) {

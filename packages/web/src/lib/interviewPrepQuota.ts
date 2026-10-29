@@ -7,7 +7,8 @@ export const INTERVIEW_PREP_QUOTA_PATH = '/interview-prep/quota';
 export const INTERVIEW_PREP_WEEKLY_LIMIT_REACHED_CODE =
   'INTERVIEW_PREP_WEEKLY_LIMIT_REACHED' as const;
 
-export const INTERVIEW_VOICE_PAID_ONLY_CODE = 'INTERVIEW_VOICE_PAID_ONLY' as const;
+export const INTERVIEW_VOICE_PAID_ONLY_CODE =
+  'INTERVIEW_VOICE_PAID_ONLY' as const;
 
 export const INTERVIEW_PREP_PRO_UPGRADE_MESSAGE =
   'Upgrade to Pro for unlimited practice sessions and AI voice feedback.';
@@ -34,32 +35,50 @@ export type InterviewPrepWeeklyLimitDetails = {
   voiceRequiresPaid: boolean;
 };
 
-function readStringField(obj: Record<string, unknown>, key: string): string | undefined {
+function readStringField(
+  obj: Record<string, unknown>,
+  key: string,
+): string | undefined {
   const v = obj[key];
   return typeof v === 'string' && v.trim() ? v.trim() : undefined;
 }
 
-function readNumberOrNull(obj: Record<string, unknown>, key: string): number | null {
+function readNumberOrNull(
+  obj: Record<string, unknown>,
+  key: string,
+): number | null {
   const v = obj[key];
   if (v === null) return null;
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
-function readNumberField(obj: Record<string, unknown>, key: string, fallback = 0): number {
+function readNumberField(
+  obj: Record<string, unknown>,
+  key: string,
+  fallback = 0,
+): number {
   const v = obj[key];
   return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
 }
 
-function readBoolField(obj: Record<string, unknown>, key: string, fallback = false): boolean {
+function readBoolField(
+  obj: Record<string, unknown>,
+  key: string,
+  fallback = false,
+): boolean {
   const v = obj[key];
   return typeof v === 'boolean' ? v : fallback;
 }
 
-export function parseInterviewPrepQuota(raw: unknown): InterviewPrepQuota | null {
+export function parseInterviewPrepQuota(
+  raw: unknown,
+): InterviewPrepQuota | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const root = raw as Record<string, unknown>;
   const data =
-    root.data !== undefined && typeof root.data === 'object' && !Array.isArray(root.data)
+    root.data !== undefined &&
+    typeof root.data === 'object' &&
+    !Array.isArray(root.data)
       ? (root.data as Record<string, unknown>)
       : root;
 
@@ -72,17 +91,24 @@ export function parseInterviewPrepQuota(raw: unknown): InterviewPrepQuota | null
   return {
     tier,
     weeklyLimit,
-    sessionsCompletedThisWeek: readNumberField(data, 'sessionsCompletedThisWeek', 0),
+    sessionsCompletedThisWeek: readNumberField(
+      data,
+      'sessionsCompletedThisWeek',
+      0,
+    ),
     sessionsRemaining,
     quotaResetsAt,
     quotaTimezone,
     voiceEnabled: readBoolField(data, 'voiceEnabled', false),
     upgradeMessage:
-      readStringField(data, 'upgradeMessage') ?? INTERVIEW_PREP_PRO_UPGRADE_MESSAGE,
+      readStringField(data, 'upgradeMessage') ??
+      INTERVIEW_PREP_PRO_UPGRADE_MESSAGE,
   };
 }
 
-export function isInterviewPrepPaidTier(quota: InterviewPrepQuota | null | undefined): boolean {
+export function isInterviewPrepPaidTier(
+  quota: InterviewPrepQuota | null | undefined,
+): boolean {
   if (!quota) return false;
   return (
     quota.tier.toUpperCase() === 'PAID' ||
@@ -127,15 +153,21 @@ export function formatInterviewPrepQuotaReset(
   }
 }
 
-function readQuotaFieldsFromObject(obj: Record<string, unknown>): Partial<InterviewPrepWeeklyLimitDetails> {
+function readQuotaFieldsFromObject(
+  obj: Record<string, unknown>,
+): Partial<InterviewPrepWeeklyLimitDetails> {
   return {
     message: readStringField(obj, 'message'),
     upgradeMessage: readStringField(obj, 'upgradeMessage'),
     weeklyLimit: readNumberOrNull(obj, 'weeklyLimit'),
-    sessionsCompletedThisWeek: readNumberOrNull(obj, 'sessionsCompletedThisWeek'),
+    sessionsCompletedThisWeek: readNumberOrNull(
+      obj,
+      'sessionsCompletedThisWeek',
+    ),
     quotaResetsAt: readStringField(obj, 'quotaResetsAt') ?? null,
     voiceRequiresPaid:
-      obj.voiceRequiresPaid === true || readBoolField(obj, 'voiceRequiresPaid', false),
+      obj.voiceRequiresPaid === true ||
+      readBoolField(obj, 'voiceRequiresPaid', false),
   };
 }
 
@@ -144,7 +176,8 @@ export function readInterviewPrepWeeklyLimitFromError(
   error: unknown,
 ): InterviewPrepWeeklyLimitDetails | null {
   if (!axios.isAxiosError(error)) return null;
-  if (getApiErrorCode(error) !== INTERVIEW_PREP_WEEKLY_LIMIT_REACHED_CODE) return null;
+  if (getApiErrorCode(error) !== INTERVIEW_PREP_WEEKLY_LIMIT_REACHED_CODE)
+    return null;
 
   const data = error.response?.data;
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
@@ -177,16 +210,18 @@ export function readInterviewPrepWeeklyLimitFromError(
       INTERVIEW_PREP_PRO_UPGRADE_MESSAGE,
     weeklyLimit: fromRoot.weeklyLimit ?? fromErr.weeklyLimit ?? 3,
     sessionsCompletedThisWeek:
-      fromRoot.sessionsCompletedThisWeek ?? fromErr.sessionsCompletedThisWeek ?? null,
+      fromRoot.sessionsCompletedThisWeek ??
+      fromErr.sessionsCompletedThisWeek ??
+      null,
     quotaResetsAt: fromRoot.quotaResetsAt ?? fromErr.quotaResetsAt ?? null,
     voiceRequiresPaid:
-      fromRoot.voiceRequiresPaid ??
-      fromErr.voiceRequiresPaid ??
-      true,
+      fromRoot.voiceRequiresPaid ?? fromErr.voiceRequiresPaid ?? true,
   };
 }
 
-export function readInterviewVoicePaidOnlyUpgradeMessage(error: unknown): string | null {
+export function readInterviewVoicePaidOnlyUpgradeMessage(
+  error: unknown,
+): string | null {
   if (!axios.isAxiosError(error)) return null;
   if (getApiErrorCode(error) !== INTERVIEW_VOICE_PAID_ONLY_CODE) return null;
   const data = error.response?.data;

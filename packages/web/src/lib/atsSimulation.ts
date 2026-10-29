@@ -49,7 +49,9 @@ export type AtsSimulationReport = {
   seniorityAlignment?: AtsSeniorityAlignment;
 };
 
-function parseSeniorityAlignment(raw: unknown): AtsSeniorityAlignment | undefined {
+function parseSeniorityAlignment(
+  raw: unknown,
+): AtsSeniorityAlignment | undefined {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
   const o = raw as Record<string, unknown>;
   const score =
@@ -60,8 +62,18 @@ function parseSeniorityAlignment(raw: unknown): AtsSeniorityAlignment | undefine
   if (score === undefined) return undefined;
   return {
     score0to100: Math.round(Math.min(100, Math.max(0, score))),
-    jobLevel: typeof o.jobLevel === 'string' ? o.jobLevel : typeof o.job_level === 'string' ? o.job_level : undefined,
-    cvLevel: typeof o.cvLevel === 'string' ? o.cvLevel : typeof o.cv_level === 'string' ? o.cv_level : undefined,
+    jobLevel:
+      typeof o.jobLevel === 'string'
+        ? o.jobLevel
+        : typeof o.job_level === 'string'
+          ? o.job_level
+          : undefined,
+    cvLevel:
+      typeof o.cvLevel === 'string'
+        ? o.cvLevel
+        : typeof o.cv_level === 'string'
+          ? o.cv_level
+          : undefined,
     jobTitleNormalized:
       typeof o.jobTitleNormalized === 'string'
         ? o.jobTitleNormalized
@@ -80,7 +92,8 @@ function parseSeniorityAlignment(raw: unknown): AtsSeniorityAlignment | undefine
 
 function num(v: unknown): number | undefined {
   if (typeof v === 'number' && Number.isFinite(v)) return v;
-  if (typeof v === 'string' && v.trim() && Number.isFinite(Number(v))) return Number(v);
+  if (typeof v === 'string' && v.trim() && Number.isFinite(Number(v)))
+    return Number(v);
   return undefined;
 }
 
@@ -100,7 +113,9 @@ function parseKeywordBucket(raw: unknown): AtsKeywordBucket | undefined {
   };
 }
 
-function parseDimensions(raw: unknown): Record<string, AtsDimensionBucket> | undefined {
+function parseDimensions(
+  raw: unknown,
+): Record<string, AtsDimensionBucket> | undefined {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
   const out: Record<string, AtsDimensionBucket> = {};
   for (const [key, val] of Object.entries(raw as Record<string, unknown>)) {
@@ -132,27 +147,35 @@ function parseHardSkillMatches(raw: unknown): AtsHardSkillMatch[] | undefined {
     out.push({
       term: typeof o.term === 'string' ? o.term : undefined,
       canonical: typeof o.canonical === 'string' ? o.canonical : undefined,
-      matched: o.matched === true ? true : o.matched === false ? false : undefined,
+      matched:
+        o.matched === true ? true : o.matched === false ? false : undefined,
     });
   }
   return out.length > 0 ? out : undefined;
 }
 
 /** Best-effort parse of `ats.simulation` from score breakdown JSON. */
-export function parseAtsSimulationReport(raw: unknown): AtsSimulationReport | undefined {
+export function parseAtsSimulationReport(
+  raw: unknown,
+): AtsSimulationReport | undefined {
   if (raw === null || raw === undefined) return undefined;
   if (typeof raw !== 'object' || Array.isArray(raw)) return undefined;
   const src = raw as Record<string, unknown>;
   const keywordsRaw = src.keywords ?? src.keyword_groups;
   let keywords: AtsSimulationReport['keywords'];
-  if (keywordsRaw && typeof keywordsRaw === 'object' && !Array.isArray(keywordsRaw)) {
+  if (
+    keywordsRaw &&
+    typeof keywordsRaw === 'object' &&
+    !Array.isArray(keywordsRaw)
+  ) {
     const k = keywordsRaw as Record<string, unknown>;
     keywords = {
       required: parseKeywordBucket(k.required),
       preferred: parseKeywordBucket(k.preferred),
       niceToHave: parseKeywordBucket(k.niceToHave ?? k.nice_to_have),
     };
-    if (!keywords.required && !keywords.preferred && !keywords.niceToHave) keywords = undefined;
+    if (!keywords.required && !keywords.preferred && !keywords.niceToHave)
+      keywords = undefined;
   }
 
   const out: AtsSimulationReport = {
@@ -160,23 +183,34 @@ export function parseAtsSimulationReport(raw: unknown): AtsSimulationReport | un
     coveragePercent: num(src.coveragePercent ?? src.coverage_percent),
     dimensions: parseDimensions(src.dimensions),
     keywords,
-    hardSkillMatches: parseHardSkillMatches(src.hardSkillMatches ?? src.hard_skill_matches),
-    titleAlignmentScore: num(src.titleAlignmentScore ?? src.title_alignment_score),
-    seniorityAlignmentScore: num(src.seniorityAlignmentScore ?? src.seniority_alignment_score),
-    semanticSimilarityScore: num(src.semanticSimilarityScore ?? src.semantic_similarity_score),
-    formattingParseabilityScore: num(src.formattingParseabilityScore ?? src.formatting_parseability_score),
-    quantifiedAchievementsScore: num(src.quantifiedAchievementsScore ?? src.quantified_achievements_score),
-    sectionCompletenessScore: num(src.sectionCompletenessScore ?? src.section_completeness_score),
+    hardSkillMatches: parseHardSkillMatches(
+      src.hardSkillMatches ?? src.hard_skill_matches,
+    ),
+    titleAlignmentScore: num(
+      src.titleAlignmentScore ?? src.title_alignment_score,
+    ),
+    seniorityAlignmentScore: num(
+      src.seniorityAlignmentScore ?? src.seniority_alignment_score,
+    ),
+    semanticSimilarityScore: num(
+      src.semanticSimilarityScore ?? src.semantic_similarity_score,
+    ),
+    formattingParseabilityScore: num(
+      src.formattingParseabilityScore ?? src.formatting_parseability_score,
+    ),
+    quantifiedAchievementsScore: num(
+      src.quantifiedAchievementsScore ?? src.quantified_achievements_score,
+    ),
+    sectionCompletenessScore: num(
+      src.sectionCompletenessScore ?? src.section_completeness_score,
+    ),
     recommendations: strList(src.recommendations),
     seniorityAlignment: parseSeniorityAlignment(
       src.seniorityAlignment ?? src.seniority_alignment,
     ),
   };
 
-  if (
-    out.seniorityAlignment &&
-    out.seniorityAlignmentScore === undefined
-  ) {
+  if (out.seniorityAlignment && out.seniorityAlignmentScore === undefined) {
     out.seniorityAlignmentScore = out.seniorityAlignment.score0to100;
   }
 
@@ -210,7 +244,8 @@ export function dimensionScoreByHint(
   if (!dimensions) return undefined;
   for (const [key, bucket] of Object.entries(dimensions)) {
     const nk = normDimKey(key);
-    if (fragments.some((f) => nk.includes(normDimKey(f)))) return bucket.score0to100;
+    if (fragments.some((f) => nk.includes(normDimKey(f))))
+      return bucket.score0to100;
   }
   return undefined;
 }

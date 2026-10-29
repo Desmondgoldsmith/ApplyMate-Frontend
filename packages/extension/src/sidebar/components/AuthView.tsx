@@ -1,5 +1,6 @@
 const LOGIN_URL_BASE =
-  import.meta.env.VITE_WEB_LOGIN_URL ?? 'http://localhost:3001/login?source=extension';
+  import.meta.env.VITE_WEB_LOGIN_URL ??
+  'http://localhost:3001/login?source=extension';
 
 function buildLoginUrl(): string {
   try {

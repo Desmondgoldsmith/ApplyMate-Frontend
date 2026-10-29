@@ -5,7 +5,10 @@ export const JOB_HUB_EMAIL_TEMPLATE_OPTIONS = [
   { value: 'connection_request', label: 'Personalized connection request' },
   { value: 'thank_you_post_interview', label: 'Thank-you after interview' },
   { value: 'salary_or_offer', label: 'Salary / offer discussion' },
-  { value: 'hiring_manager_outreach', label: 'Cold outreach to hiring manager' },
+  {
+    value: 'hiring_manager_outreach',
+    label: 'Cold outreach to hiring manager',
+  },
   { value: 'referral_request', label: 'Referral / warm intro request' },
   { value: 'follow_up_after_silence', label: 'Follow-up after no reply' },
   { value: 'accept_offer', label: 'Accept offer (professional)' },
@@ -13,9 +16,12 @@ export const JOB_HUB_EMAIL_TEMPLATE_OPTIONS = [
   { value: 'withdraw_application', label: 'Withdraw application' },
 ] as const;
 
-export type JobHubEmailTemplateType = (typeof JOB_HUB_EMAIL_TEMPLATE_OPTIONS)[number]['value'];
+export type JobHubEmailTemplateType =
+  (typeof JOB_HUB_EMAIL_TEMPLATE_OPTIONS)[number]['value'];
 
-const INTERNAL_VALUES = new Set<string>(JOB_HUB_EMAIL_TEMPLATE_OPTIONS.map((o) => o.value));
+const INTERNAL_VALUES = new Set<string>(
+  JOB_HUB_EMAIL_TEMPLATE_OPTIONS.map((o) => o.value),
+);
 
 /** Backend / URL slug aliases (kebab-case and variants) → generate API `templateType`. */
 const TEMPLATE_QUERY_ALIASES: Record<string, JobHubEmailTemplateType> = {
@@ -32,7 +38,9 @@ const TEMPLATE_QUERY_ALIASES: Record<string, JobHubEmailTemplateType> = {
  * Resolves `?template=` from Job Hub deep links (backend today-plan, legacy query strings).
  * Accepts internal snake_case values and common kebab-case aliases.
  */
-export function coalesceJobHubEmailTemplateQueryParam(raw: string | null | undefined): JobHubEmailTemplateType | null {
+export function coalesceJobHubEmailTemplateQueryParam(
+  raw: string | null | undefined,
+): JobHubEmailTemplateType | null {
   const s = raw?.trim();
   if (!s) return null;
   const lower = s.toLowerCase();
@@ -40,6 +48,7 @@ export function coalesceJobHubEmailTemplateQueryParam(raw: string | null | undef
   if (aliased) return aliased;
   if (INTERNAL_VALUES.has(s)) return s as JobHubEmailTemplateType;
   const normalizedUnderscore = lower.replace(/-/g, '_');
-  if (INTERNAL_VALUES.has(normalizedUnderscore)) return normalizedUnderscore as JobHubEmailTemplateType;
+  if (INTERNAL_VALUES.has(normalizedUnderscore))
+    return normalizedUnderscore as JobHubEmailTemplateType;
   return null;
 }

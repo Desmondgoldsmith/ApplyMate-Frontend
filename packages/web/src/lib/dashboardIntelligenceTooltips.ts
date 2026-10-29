@@ -1,5 +1,8 @@
 import type { SemanticOutlookPayload } from '@/lib/dashboardSemanticOutlook';
-import type { DashboardCommandBarSource, DeterministicIndexScorePayload } from '@/lib/today-plan';
+import type {
+  DashboardCommandBarSource,
+  DeterministicIndexScorePayload,
+} from '@/lib/today-plan';
 
 /**
  * Plain-language tooltips for dashboard intelligence scores (from today-plan).
@@ -32,7 +35,8 @@ export function predictiveOutlookDisclaimerFootnote(
 ): string {
   const i = interview?.disclaimer?.trim();
   const o = offer?.disclaimer?.trim();
-  if (i && o && i !== o) return `${i.replace(/\s*—\s*/g, ', ')}\n\n${o.replace(/\s*—\s*/g, ', ')}`;
+  if (i && o && i !== o)
+    return `${i.replace(/\s*—\s*/g, ', ')}\n\n${o.replace(/\s*—\s*/g, ', ')}`;
   if (i) return i.replace(/\s*—\s*/g, ', ');
   if (o) return o.replace(/\s*—\s*/g, ', ');
   return fallback;
@@ -104,9 +108,13 @@ export const TOOLTIP_CONTINUATION_RESUME_SIGNAL =
 export const TOOLTIP_WEEKLY_STRATEGIC_COACHING_FIT =
   'How well this week’s coaching theme fits what we saw in your activity.';
 
-export type CommandBarConfidenceTooltipSource = DashboardCommandBarSource | 'strategic_recommendation';
+export type CommandBarConfidenceTooltipSource =
+  | DashboardCommandBarSource
+  | 'strategic_recommendation';
 
-export function tooltipCommandBarConfidence(source: CommandBarConfidenceTooltipSource): string {
+export function tooltipCommandBarConfidence(
+  source: CommandBarConfidenceTooltipSource,
+): string {
   switch (source) {
     case 'priority_intelligence':
     case 'strategic_recommendation':
@@ -137,9 +145,12 @@ const PIPELINE_HEALTH_LEVEL_HINT = {
   strong: 'Strong: several positive signs are working together.',
 } as const;
 
-export type PipelineHealthTooltipLevel = keyof typeof PIPELINE_HEALTH_LEVEL_HINT;
+export type PipelineHealthTooltipLevel =
+  keyof typeof PIPELINE_HEALTH_LEVEL_HINT;
 
-export function tooltipPipelineHealthText(health: PipelineHealthTooltipLevel | null): string {
+export function tooltipPipelineHealthText(
+  health: PipelineHealthTooltipLevel | null,
+): string {
   if (!health) return TOOLTIP_PIPELINE_HEALTH_BASE;
   return `${TOOLTIP_PIPELINE_HEALTH_BASE} ${PIPELINE_HEALTH_LEVEL_HINT[health]}`;
 }

@@ -38,7 +38,9 @@ const minimalSections = (): CVSectionRecord[] => [
 
 describe('stableStringify', () => {
   it('is order-independent for object keys', () => {
-    expect(stableStringify({ b: 1, a: 2 })).toBe(stableStringify({ a: 2, b: 1 }));
+    expect(stableStringify({ b: 1, a: 2 })).toBe(
+      stableStringify({ a: 2, b: 1 }),
+    );
   });
 });
 
@@ -54,7 +56,11 @@ describe('computeCvBuilderSaveFingerprint', () => {
   it('changes when summary text changes', () => {
     const s = minimalSections();
     const a = computeCvBuilderSaveFingerprint(minimalData(), 'modern', s);
-    const b = computeCvBuilderSaveFingerprint({ ...minimalData(), summary: { text: 'Bye' } }, 'modern', s);
+    const b = computeCvBuilderSaveFingerprint(
+      { ...minimalData(), summary: { text: 'Bye' } },
+      'modern',
+      s,
+    );
     expect(a).not.toBe(b);
   });
 });

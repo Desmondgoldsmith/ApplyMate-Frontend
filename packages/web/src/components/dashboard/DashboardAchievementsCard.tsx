@@ -44,14 +44,19 @@ function rarityStyles(rarity: TodayPlanAchievementRarity | null): string {
   }
 }
 
-export function DashboardAchievementsCard({ achievements, phase15Empty }: Props) {
+export function DashboardAchievementsCard({
+  achievements,
+  phase15Empty,
+}: Props) {
   const list = achievements ?? [];
   const rows = list.slice(0, 6);
   const earned = list.length;
 
   return (
     <section className="rounded-3xl border border-white/[0.07] bg-white/[0.025] p-5 shadow-[0_20px_48px_-36px_rgba(0,0,0,0.45)] ring-1 ring-white/[0.05] sm:p-6">
-      <p className="text-[11px] font-medium tracking-wide text-white/38">Achievements</p>
+      <p className="text-[11px] font-medium tracking-wide text-white/38">
+        Achievements
+      </p>
       <p className="mt-2 text-[15px] font-semibold text-white/90">
         Recent badges
         {earned > 0 ? (
@@ -71,7 +76,8 @@ export function DashboardAchievementsCard({ achievements, phase15Empty }: Props)
           {rows.map((item, index) => {
             const rawTitle = item.title?.trim() || 'Achievement';
             const displayTitle =
-              /^cv above 85$/i.test(rawTitle) || /^cv score 85\+$/i.test(rawTitle)
+              /^cv above 85$/i.test(rawTitle) ||
+              /^cv score 85\+$/i.test(rawTitle)
                 ? '⭐ CV Score 85+'
                 : /^10 jobs analyzed$/i.test(rawTitle)
                   ? '🎯 10 Jobs Analyzed'
@@ -79,10 +85,20 @@ export function DashboardAchievementsCard({ achievements, phase15Empty }: Props)
             const description = item.description?.trim() || '';
             const key = item.key?.trim() || `${rawTitle}-${index}`;
             return (
-              <li key={key} className={cn('rounded-xl border p-4 transition-colors', rarityStyles(item.rarity ?? null))}>
-                <p className="text-[13px] font-semibold leading-snug text-white/90">{displayTitle}</p>
+              <li
+                key={key}
+                className={cn(
+                  'rounded-xl border p-4 transition-colors',
+                  rarityStyles(item.rarity ?? null),
+                )}
+              >
+                <p className="text-[13px] font-semibold leading-snug text-white/90">
+                  {displayTitle}
+                </p>
                 {description ? (
-                  <p className="mt-2 text-[12px] leading-relaxed text-white/50">{shortBadgeDescription(description)}</p>
+                  <p className="mt-2 text-[12px] leading-relaxed text-white/50">
+                    {shortBadgeDescription(description)}
+                  </p>
                 ) : null}
               </li>
             );

@@ -5,7 +5,10 @@ import { motion } from 'framer-motion';
 
 import { InterviewAvatar } from '@/components/interview/InterviewAvatar';
 import { useMotionSafe } from '@/hooks/useMotionSafe';
-import { personaAvatarKey, type ResolvedInterviewPersona } from '@/lib/interviewPersonas';
+import {
+  personaAvatarKey,
+  type ResolvedInterviewPersona,
+} from '@/lib/interviewPersonas';
 import { cn } from '@/lib/utils';
 
 type AvatarSize = 'sm' | 'md' | 'lg';
@@ -59,7 +62,10 @@ export const InterviewPersonaAvatar = memo(function InterviewPersonaAvatar({
           />
         ) : null}
         <div
-          className={cn('relative h-full w-full overflow-hidden rounded-full ring-2', persona.theme.glowClass)}
+          className={cn(
+            'relative h-full w-full overflow-hidden rounded-full ring-2',
+            persona.theme.glowClass,
+          )}
           style={{ boxShadow: `0 0 0 2px ${persona.accentColor}66` }}
         >
           <InterviewAvatar

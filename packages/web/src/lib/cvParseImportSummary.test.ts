@@ -36,7 +36,9 @@ describe('cvParseImportSummary', () => {
       importSummary: {
         sectionCount: 1,
         message: 'Imported.',
-        sections: [{ type: 'summary', label: 'Summary', itemCount: 1, kind: 'core' }],
+        sections: [
+          { type: 'summary', label: 'Summary', itemCount: 1, kind: 'core' },
+        ],
       },
     });
     expect(summary?.sections).toHaveLength(1);

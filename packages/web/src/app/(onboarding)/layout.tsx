@@ -6,7 +6,11 @@ import { buildAppNoIndexMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = buildAppNoIndexMetadata('Onboarding');
 
-export default function OnboardingLayout({ children }: { children: ReactNode }) {
+export default function OnboardingLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   return (
     <>
       <OnboardingAnalytics />

@@ -10,7 +10,11 @@ export type JobHubPipelineStageSlug =
   | 'accepted'
   | 'rejected';
 
-export type JobHubPipelineStepState = 'complete' | 'current' | 'upcoming' | 'unavailable';
+export type JobHubPipelineStepState =
+  | 'complete'
+  | 'current'
+  | 'upcoming'
+  | 'unavailable';
 
 export type JobHubPipelineStep = {
   id: string;
@@ -30,7 +34,11 @@ export type JobHubPipelineStepperPayload = {
   terminal?: boolean;
 };
 
-export type JobHubGuidanceTaskState = 'pending' | 'completed' | 'skipped' | 'blocked';
+export type JobHubGuidanceTaskState =
+  | 'pending'
+  | 'completed'
+  | 'skipped'
+  | 'blocked';
 
 export type JobHubGuidanceTask = {
   id: string;
@@ -85,13 +93,17 @@ const GUIDANCE_TASK_SUPPORTING_FALLBACKS: Record<string, string> = {
 /** In-panel action — handled by Job Hub archive confirm, not router navigation. */
 export const JOB_HUB_GUIDANCE_ARCHIVE_HREF = '#applymate:hub-archive';
 
-export function isJobHubGuidanceArchiveHref(href: string | null | undefined): boolean {
+export function isJobHubGuidanceArchiveHref(
+  href: string | null | undefined,
+): boolean {
   if (!href?.trim()) return false;
   const h = href.trim();
   if (h === JOB_HUB_GUIDANCE_ARCHIVE_HREF) return true;
   try {
     const u = new URL(h, 'https://applymate.local');
-    return (u.searchParams.get('action') ?? '').trim().toLowerCase() === 'archive';
+    return (
+      (u.searchParams.get('action') ?? '').trim().toLowerCase() === 'archive'
+    );
   } catch {
     return false;
   }
@@ -145,14 +157,17 @@ function pickStr(o: Record<string, unknown>, ...keys: string[]): string | null {
   return null;
 }
 
-function parseHubPipelineStageValue(v: unknown): JobHubPipelineStageSlug | null {
+function parseHubPipelineStageValue(
+  v: unknown,
+): JobHubPipelineStageSlug | null {
   if (typeof v !== 'string') return null;
   const s = v.trim() as JobHubPipelineStageSlug;
   return HUB_PIPELINE_STAGES.has(s) ? s : null;
 }
 
 function parsePipelineStep(raw: unknown): JobHubPipelineStep | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const id = pickStr(o, 'id');
   const label = pickStr(o, 'label');
@@ -182,8 +197,11 @@ function parsePipelineStep(raw: unknown): JobHubPipelineStep | null {
   };
 }
 
-export function parseJobHubPipelineStepper(raw: unknown): JobHubPipelineStepperPayload | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+export function parseJobHubPipelineStepper(
+  raw: unknown,
+): JobHubPipelineStepperPayload | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const currentStepId = pickStr(o, 'currentStepId', 'current_step_id');
   const stepsRaw = o.steps;
@@ -202,7 +220,8 @@ export function parseJobHubPipelineStepper(raw: unknown): JobHubPipelineStepperP
 }
 
 function parseGuidanceTask(raw: unknown): JobHubGuidanceTask | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const id = pickStr(o, 'id');
   const label = pickStr(o, 'label');
@@ -214,7 +233,9 @@ function parseGuidanceTask(raw: unknown): JobHubGuidanceTask | null {
       : 'pending';
   const tipsRaw = o.tips;
   const tips = Array.isArray(tipsRaw)
-    ? tipsRaw.filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+    ? tipsRaw.filter(
+        (x): x is string => typeof x === 'string' && x.trim().length > 0,
+      )
     : undefined;
   return {
     id,
@@ -242,13 +263,17 @@ function parseGuidanceTask(raw: unknown): JobHubGuidanceTask | null {
   };
 }
 
-export function parseJobHubGuidance(raw: unknown): JobHubGuidancePayload | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+export function parseJobHubGuidance(
+  raw: unknown,
+): JobHubGuidancePayload | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const phaseId = pickStr(o, 'phaseId', 'phase_id');
   const phaseLabel = pickStr(o, 'phaseLabel', 'phase_label');
   const title = pickStr(o, 'title') ?? 'Guidance';
-  const headline = pickStr(o, 'headline') ?? `${phaseLabel ?? 'Pipeline'} steps`;
+  const headline =
+    pickStr(o, 'headline') ?? `${phaseLabel ?? 'Pipeline'} steps`;
   if (!phaseId || !phaseLabel) return null;
   const percentRaw = o.percentComplete ?? o.percent_complete;
   const percentComplete =
@@ -257,7 +282,9 @@ export function parseJobHubGuidance(raw: unknown): JobHubGuidancePayload | null 
       : 0;
   const tasksRaw = o.tasks;
   const tasks = Array.isArray(tasksRaw)
-    ? tasksRaw.map(parseGuidanceTask).filter((x): x is JobHubGuidanceTask => x != null)
+    ? tasksRaw
+        .map(parseGuidanceTask)
+        .filter((x): x is JobHubGuidanceTask => x != null)
     : [];
   return {
     phaseId,
@@ -297,7 +324,9 @@ export function isManualGuidanceTaskId(taskId: string): boolean {
 }
 
 /** Whether the user may tick/untick this row (manual-only tasks). */
-export function isGuidanceTaskUserToggleable(task: JobHubGuidanceTask): boolean {
+export function isGuidanceTaskUserToggleable(
+  task: JobHubGuidanceTask,
+): boolean {
   if (task.state === 'blocked') return false;
   if (task.autoCompleted) return false;
   if (task.userToggleable === false) return false;
@@ -312,27 +341,38 @@ export function buildJobHubJobsHref(
   params: Record<string, string>,
 ): string {
   const q = new URLSearchParams();
-  if (ctx.applicationId?.trim()) q.set('applicationId', ctx.applicationId.trim());
+  if (ctx.applicationId?.trim())
+    q.set('applicationId', ctx.applicationId.trim());
   else if (ctx.jobAnalysisId?.trim()) q.set('jobId', ctx.jobAnalysisId.trim());
-  else if (ctx.hubBookmarkId?.trim()) q.set('bookmarkId', ctx.hubBookmarkId.trim());
+  else if (ctx.hubBookmarkId?.trim())
+    q.set('bookmarkId', ctx.hubBookmarkId.trim());
   for (const [k, v] of Object.entries(params)) {
     if (v.trim()) q.set(k, v.trim());
   }
   return `/dashboard/jobs?${q.toString()}`;
 }
 
-function jobHubHrefHasTab(href: string | null | undefined, tab: string): boolean {
+function jobHubHrefHasTab(
+  href: string | null | undefined,
+  tab: string,
+): boolean {
   if (!href?.trim()) return false;
   try {
     const u = new URL(href, 'https://applymate.local');
-    const t = (u.searchParams.get('tab') ?? '').trim().toLowerCase().replace(/_/g, '-');
+    const t = (u.searchParams.get('tab') ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/_/g, '-');
     return t === tab || t === `${tab}-letter`;
   } catch {
     return false;
   }
 }
 
-function jobHubHrefHasTemplate(href: string | null | undefined, template: string): boolean {
+function jobHubHrefHasTemplate(
+  href: string | null | undefined,
+  template: string,
+): boolean {
   if (!href?.trim()) return false;
   try {
     const u = new URL(href, 'https://applymate.local');
@@ -349,7 +389,12 @@ export function resolveGuidanceTaskActions(
   ctx: JobHubGuidanceJobContext,
 ): Pick<
   JobHubGuidanceTask,
-  'ctaLabel' | 'ctaHref' | 'secondaryCtaLabel' | 'secondaryCtaHref' | 'supporting' | 'tips'
+  | 'ctaLabel'
+  | 'ctaHref'
+  | 'secondaryCtaLabel'
+  | 'secondaryCtaHref'
+  | 'supporting'
+  | 'tips'
 > {
   const supporting =
     task.supporting?.trim() ||
@@ -376,7 +421,8 @@ export function resolveGuidanceTaskActions(
         secondaryCtaHref: null,
       };
     case 'identify_contacts':
-      if (jobHubHrefHasTemplate(base.ctaHref, 'hiring_manager_outreach')) return base;
+      if (jobHubHrefHasTemplate(base.ctaHref, 'hiring_manager_outreach'))
+        return base;
       return {
         ...base,
         ctaLabel: base.ctaLabel?.trim() || 'Open cold outreach template',
@@ -407,7 +453,8 @@ export function resolveGuidanceTaskActions(
         }),
       };
     case 'thank_you':
-      if (jobHubHrefHasTemplate(base.ctaHref, 'thank_you_post_interview')) return base;
+      if (jobHubHrefHasTemplate(base.ctaHref, 'thank_you_post_interview'))
+        return base;
       return {
         ...base,
         ctaHref:
@@ -509,7 +556,8 @@ export function resolveTrackedJobMatchScore(
 ): number | undefined {
   const candidates = [job.matchScore, jobDetailMatchScore];
   for (const c of candidates) {
-    if (typeof c === 'number' && Number.isFinite(c)) return Math.max(0, Math.round(c));
+    if (typeof c === 'number' && Number.isFinite(c))
+      return Math.max(0, Math.round(c));
   }
   return undefined;
 }
@@ -535,14 +583,9 @@ export function optimisticPipelineStepper(
 }
 
 /** Parse `tab` from a Job Hub deep link for in-panel navigation. */
-export function parseJobHubDetailTabFromHref(href: string):
-  | 'analysis'
-  | 'description'
-  | 'cover'
-  | 'notes'
-  | 'email'
-  | 'resume'
-  | null {
+export function parseJobHubDetailTabFromHref(
+  href: string,
+): 'analysis' | 'description' | 'cover' | 'notes' | 'email' | 'resume' | null {
   try {
     const u = new URL(href, 'https://applymate.local');
     if (!u.pathname.startsWith('/dashboard/jobs')) return null;

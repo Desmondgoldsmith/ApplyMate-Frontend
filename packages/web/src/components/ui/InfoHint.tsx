@@ -1,7 +1,14 @@
 'use client';
 
 import { Info } from 'lucide-react';
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 
 import { Modal } from '@/components/ui/Modal';
@@ -53,7 +60,10 @@ export function InfoHint({
   const tooltipId = useId();
   const [open, setOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [coords, setCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const [coords, setCoords] = useState<{ top: number; left: number }>({
+    top: 0,
+    left: 0,
+  });
   const triggerRef = useRef<HTMLSpanElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -96,7 +106,10 @@ export function InfoHint({
       VIEWPORT_MARGIN,
       Math.min(left, window.innerWidth - pw - VIEWPORT_MARGIN),
     );
-    if (top + ph > window.innerHeight - VIEWPORT_MARGIN && tr.top - ph - GAP_PX >= VIEWPORT_MARGIN) {
+    if (
+      top + ph > window.innerHeight - VIEWPORT_MARGIN &&
+      tr.top - ph - GAP_PX >= VIEWPORT_MARGIN
+    ) {
       top = tr.top - ph - GAP_PX;
     }
 
@@ -209,7 +222,10 @@ export function InfoHint({
             buttonClassName,
           )}
         >
-          <Info className={cn(useSheet ? 'h-4 w-4' : 'h-3.5 w-3.5')} aria-hidden />
+          <Info
+            className={cn(useSheet ? 'h-4 w-4' : 'h-3.5 w-3.5')}
+            aria-hidden
+          />
         </span>
       </span>
       {tooltip}
@@ -221,7 +237,9 @@ export function InfoHint({
           scrollBody
           className="max-w-md"
         >
-          <p className="whitespace-pre-line text-sm leading-relaxed text-white/70">{text}</p>
+          <p className="whitespace-pre-line text-sm leading-relaxed text-white/70">
+            {text}
+          </p>
         </Modal>
       ) : null}
     </>

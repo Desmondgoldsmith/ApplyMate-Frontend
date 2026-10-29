@@ -37,7 +37,8 @@ export const InterviewCoachingLayer = memo(function InterviewCoachingLayer({
 }: InterviewCoachingLayerProps) {
   const voice = useInterviewVoiceTranscript();
 
-  const rawBuffer = voice.inputMode === 'voice' ? voice.transcript : typedAnswer;
+  const rawBuffer =
+    voice.inputMode === 'voice' ? voice.transcript : typedAnswer;
   const answerBuffer = useThrottledValue(rawBuffer, 120);
 
   const prepActive =
@@ -60,16 +61,16 @@ export const InterviewCoachingLayer = memo(function InterviewCoachingLayer({
 
   useEffect(() => {
     onCoachingStateChange?.(coaching);
-  }, [
-    coaching,
-    onCoachingStateChange,
-  ]);
+  }, [coaching, onCoachingStateChange]);
 
   const showPre =
     prepActive && (phase === 'answering' || phase === 'questioning');
   const showLive = phase === 'answering' && answerBuffer.trim().length >= 12;
 
-  const bufferLength = useMemo(() => answerBuffer.trim().length, [answerBuffer]);
+  const bufferLength = useMemo(
+    () => answerBuffer.trim().length,
+    [answerBuffer],
+  );
 
   if (!enabled) return null;
 

@@ -8,7 +8,8 @@ import {
 } from '@/lib/interviewContinuation';
 
 function interviewItem(
-  partial: Partial<DashboardContinuationItemPayload> & Pick<DashboardContinuationItemPayload, 'id'>,
+  partial: Partial<DashboardContinuationItemPayload> &
+    Pick<DashboardContinuationItemPayload, 'id'>,
 ): DashboardContinuationItemPayload {
   return {
     type: 'interview',
@@ -23,11 +24,15 @@ function interviewItem(
 describe('shouldShowInterviewContinuationItem', () => {
   it('shows evaluation_processing and results_ready', () => {
     expect(
-      shouldShowInterviewContinuationItem(interviewItem({ id: '1', stepKey: 'evaluation_processing' })),
+      shouldShowInterviewContinuationItem(
+        interviewItem({ id: '1', stepKey: 'evaluation_processing' }),
+      ),
     ).toBe(true);
-    expect(shouldShowInterviewContinuationItem(interviewItem({ id: '2', stepKey: 'results_ready' }))).toBe(
-      true,
-    );
+    expect(
+      shouldShowInterviewContinuationItem(
+        interviewItem({ id: '2', stepKey: 'results_ready' }),
+      ),
+    ).toBe(true);
   });
 
   it('hides completed interviews', () => {
@@ -35,7 +40,10 @@ describe('shouldShowInterviewContinuationItem', () => {
       shouldShowInterviewContinuationItem(
         interviewItem({
           id: '3',
-          interviewResumeState: { evaluationStatus: 'completed', resultsPath: null },
+          interviewResumeState: {
+            evaluationStatus: 'completed',
+            resultsPath: null,
+          },
         }),
       ),
     ).toBe(false);
@@ -70,7 +78,10 @@ describe('prepareContinuationItemsForDisplay', () => {
       }),
       interviewItem({
         id: '6',
-        interviewResumeState: { evaluationStatus: 'completed', resultsPath: null },
+        interviewResumeState: {
+          evaluationStatus: 'completed',
+          resultsPath: null,
+        },
       }),
     ]);
     expect(items).toHaveLength(1);

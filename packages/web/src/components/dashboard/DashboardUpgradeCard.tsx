@@ -6,7 +6,11 @@ import Link from 'next/link';
 import { useDailyAiUsage } from '@/hooks/useDailyAiUsage';
 import { cn } from '@/lib/utils';
 
-const perks = ['Unlimited AI analyses & cover letters', 'Priority matching & insights', 'Full history & exports'];
+const perks = [
+  'Unlimited AI analyses & cover letters',
+  'Priority matching & insights',
+  'Full history & exports',
+];
 
 /**
  * Premium upsell card for the dashboard sidebar (links to marketing pricing).
@@ -15,7 +19,10 @@ export function DashboardUpgradeCard({ className }: { className?: string }) {
   const usage = useDailyAiUsage();
   const isPaid = usage.isPaidTier && !usage.isLoading;
   const atFreeCap =
-    !usage.isPaidTier && !usage.isLoading && usage.limit != null && (usage.remaining ?? 0) === 0;
+    !usage.isPaidTier &&
+    !usage.isLoading &&
+    usage.limit != null &&
+    (usage.remaining ?? 0) === 0;
 
   return (
     <div
@@ -34,17 +41,27 @@ export function DashboardUpgradeCard({ className }: { className?: string }) {
       >
         <div
           className="pointer-events-none absolute -right-8 -top-12 h-40 w-40 rounded-full opacity-50"
-          style={{ background: 'radial-gradient(circle, rgba(0,201,177,0.35) 0%, transparent 70%)' }}
+          style={{
+            background:
+              'radial-gradient(circle, rgba(0,201,177,0.35) 0%, transparent 70%)',
+          }}
         />
         <div
           className="pointer-events-none absolute -bottom-16 -left-10 h-44 w-44 rounded-full opacity-35"
-          style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.22) 0%, transparent 70%)' }}
+          style={{
+            background:
+              'radial-gradient(circle, rgba(139,92,246,0.22) 0%, transparent 70%)',
+          }}
         />
 
         <div className="relative">
           <div className="flex items-start justify-between gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[rgba(0,201,177,0.15)] ring-1 ring-[#00C9B1]/30">
-              <Crown className="h-5 w-5 text-[#00C9B1]" strokeWidth={1.75} aria-hidden />
+              <Crown
+                className="h-5 w-5 text-[#00C9B1]"
+                strokeWidth={1.75}
+                aria-hidden
+              />
             </div>
             {atFreeCap ? (
               <span className="rounded-full border border-amber-400/35 bg-amber-500/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-100/95">
@@ -65,7 +82,10 @@ export function DashboardUpgradeCard({ className }: { className?: string }) {
           {!isPaid ? (
             <ul className="mt-5 space-y-2.5">
               {perks.map((line) => (
-                <li key={line} className="flex gap-2.5 text-[12px] font-medium text-white/70">
+                <li
+                  key={line}
+                  className="flex gap-2.5 text-[12px] font-medium text-white/70"
+                >
                   <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#00C9B1]/15 text-[#00C9B1]">
                     <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden />
                   </span>

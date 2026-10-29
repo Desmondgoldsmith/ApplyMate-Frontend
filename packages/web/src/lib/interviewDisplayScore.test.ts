@@ -18,7 +18,9 @@ describe('interviewDisplayScore', () => {
   });
 
   it('falls back to overall then composite when readiness is missing', () => {
-    expect(resolveInterviewDisplayScore({ overallScore: 55, compositeScore: 39 })).toBe(55);
+    expect(
+      resolveInterviewDisplayScore({ overallScore: 55, compositeScore: 39 }),
+    ).toBe(55);
     expect(resolveInterviewDisplayScore({ compositeScore: 39 })).toBe(39);
   });
 

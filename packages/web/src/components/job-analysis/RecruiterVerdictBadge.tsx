@@ -21,7 +21,11 @@ const VERDICT_STYLE: Record<
   },
 };
 
-export function RecruiterVerdictBadge({ verdict }: { verdict: RecruiterVerdict }) {
+export function RecruiterVerdictBadge({
+  verdict,
+}: {
+  verdict: RecruiterVerdict;
+}) {
   const meta = VERDICT_STYLE[verdict];
   return (
     <span

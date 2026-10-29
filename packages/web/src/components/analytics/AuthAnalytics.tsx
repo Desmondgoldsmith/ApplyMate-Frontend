@@ -3,7 +3,11 @@
 import * as Sentry from '@sentry/nextjs';
 import { useEffect, useRef } from 'react';
 
-import { captureEvent, identifyUser, resetAnalyticsUser } from '@/lib/analytics';
+import {
+  captureEvent,
+  identifyUser,
+  resetAnalyticsUser,
+} from '@/lib/analytics';
 import { useAuthStore } from '@/store/useAuthStore';
 
 /** Keeps PostHog identity and Sentry user context in sync with auth state. */

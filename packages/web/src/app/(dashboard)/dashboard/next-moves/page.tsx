@@ -19,15 +19,16 @@ export default function NextMovesPage() {
         </div>
         <h1 className="text-2xl font-extrabold text-white">Your priorities</h1>
         <p className="mt-2 text-sm text-white/50">
-          This page is the destination for digest emails. Review stalled roles on Job Hub and today&apos;s plan on your
-          dashboard.
+          This page is the destination for digest emails. Review stalled roles
+          on Job Hub and today&apos;s plan on your dashboard.
         </p>
       </div>
 
       <GlowCard contentClassName="p-6">
         <p className="text-sm font-semibold text-white">Continue in the app</p>
         <p className="mt-1 text-xs text-white/45">
-          Weekly stall summaries send Monday 09:00 UTC when you opt in under Settings → Notifications.
+          Weekly stall summaries send Monday 09:00 UTC when you opt in under
+          Settings → Notifications.
         </p>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row">
           <Link

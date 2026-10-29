@@ -58,11 +58,14 @@ function FollowUpJobCard({
   variant: FollowUpCardVariant;
 }) {
   const title =
-    [row.jobTitle?.trim(), row.companyName?.trim()].filter(Boolean).join(' · ') || 'Role';
+    [row.jobTitle?.trim(), row.companyName?.trim()]
+      .filter(Boolean)
+      .join(' · ') || 'Role';
   const href = row.ctaHref?.trim();
   const label = row.ctaLabel?.trim() || FOLLOW_UP_PAGE.openAction;
   const days =
-    typeof row.daysSinceApplication === 'number' && Number.isFinite(row.daysSinceApplication)
+    typeof row.daysSinceApplication === 'number' &&
+    Number.isFinite(row.daysSinceApplication)
       ? Math.max(0, Math.round(row.daysSinceApplication))
       : null;
   const company = row.companyName?.trim() || 'Company';
@@ -75,7 +78,10 @@ function FollowUpJobCard({
       )}
     >
       <div
-        className={cn('pointer-events-none absolute inset-y-2 left-0 w-0.5 rounded-full', variant.accentBar)}
+        className={cn(
+          'pointer-events-none absolute inset-y-2 left-0 w-0.5 rounded-full',
+          variant.accentBar,
+        )}
         aria-hidden
       />
       <div className="flex flex-col gap-2.5 pl-1">
@@ -97,15 +103,23 @@ function FollowUpJobCard({
                 {variant.shortLabel}
               </span>
               {days != null ? (
-                <span className="text-[10px] tabular-nums text-white/35">{days}d</span>
+                <span className="text-[10px] tabular-nums text-white/35">
+                  {days}d
+                </span>
               ) : null}
             </div>
-            <h2 className="mt-1.5 text-[13px] font-semibold leading-snug text-white/95">{title}</h2>
+            <h2 className="mt-1.5 text-[13px] font-semibold leading-snug text-white/95">
+              {title}
+            </h2>
             {row.headline?.trim() ? (
-              <p className="mt-0.5 text-[11px] font-medium leading-snug text-white/65">{row.headline.trim()}</p>
+              <p className="mt-0.5 text-[11px] font-medium leading-snug text-white/65">
+                {row.headline.trim()}
+              </p>
             ) : null}
             {row.supporting?.trim() ? (
-              <p className="mt-1.5 text-[11px] leading-relaxed text-white/48 line-clamp-3">{row.supporting.trim()}</p>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-white/48 line-clamp-3">
+                {row.supporting.trim()}
+              </p>
             ) : null}
           </div>
         </div>
@@ -119,7 +133,9 @@ function FollowUpJobCard({
             {label}
           </Link>
         ) : (
-          <span className="text-center text-[12px] text-white/35">{FOLLOW_UP_PAGE.noLink}</span>
+          <span className="text-center text-[12px] text-white/35">
+            {FOLLOW_UP_PAGE.noLink}
+          </span>
         )}
       </div>
     </article>
@@ -135,20 +151,27 @@ function FollowUpJobsTable({ rows }: { rows: FollowUpJobRowPayload[] }) {
             <th className="px-3 py-2.5 pl-4">{FOLLOW_UP_PAGE.typeColumn}</th>
             <th className="px-3 py-2.5">{FOLLOW_UP_PAGE.roleColumn}</th>
             <th className="px-3 py-2.5">{FOLLOW_UP_PAGE.sourceColumn}</th>
-            <th className="px-3 py-2.5 pr-4 text-right">{FOLLOW_UP_PAGE.actionColumn}</th>
+            <th className="px-3 py-2.5 pr-4 text-right">
+              {FOLLOW_UP_PAGE.actionColumn}
+            </th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => {
             const variant = followUpJobCardVariant(row.source);
             const title =
-              [row.jobTitle?.trim(), row.companyName?.trim()].filter(Boolean).join(' · ') || '—';
+              [row.jobTitle?.trim(), row.companyName?.trim()]
+                .filter(Boolean)
+                .join(' · ') || '—';
             const href = row.ctaHref?.trim();
             const label = row.ctaLabel?.trim() || FOLLOW_UP_PAGE.openAction;
             const sourceLabel = followUpJobSourceDisplayLabel(row.source);
             const company = row.companyName?.trim() || 'Company';
             return (
-              <tr key={row.id} className="border-b border-white/[0.05] transition-colors hover:bg-white/[0.03]">
+              <tr
+                key={row.id}
+                className="border-b border-white/[0.05] transition-colors hover:bg-white/[0.03]"
+              >
                 <td className="px-3 py-3 pl-4 align-middle">
                   <span
                     className={cn(
@@ -168,10 +191,14 @@ function FollowUpJobsTable({ rows }: { rows: FollowUpJobRowPayload[] }) {
                       shape="rounded"
                     />
                     <div className="min-w-0">
-                      <p className="text-[12px] font-semibold text-white/90">{title}</p>
-                  {row.headline?.trim() ? (
-                    <p className="mt-0.5 text-[11px] text-white/45 line-clamp-2">{row.headline.trim()}</p>
-                  ) : null}
+                      <p className="text-[12px] font-semibold text-white/90">
+                        {title}
+                      </p>
+                      {row.headline?.trim() ? (
+                        <p className="mt-0.5 text-[11px] text-white/45 line-clamp-2">
+                          {row.headline.trim()}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                 </td>
@@ -187,7 +214,9 @@ function FollowUpJobsTable({ rows }: { rows: FollowUpJobRowPayload[] }) {
                       {label}
                     </Link>
                   ) : (
-                    <span className="text-[12px] text-white/35">{FOLLOW_UP_PAGE.noLink}</span>
+                    <span className="text-[12px] text-white/35">
+                      {FOLLOW_UP_PAGE.noLink}
+                    </span>
                   )}
                 </td>
               </tr>
@@ -228,7 +257,10 @@ export function FollowUpJobsView({ jobs, serverTotalCount }: Props) {
     }
   }, []);
 
-  const filtered = useMemo(() => jobs.filter((row) => rowMatchesQuery(row, query)), [jobs, query]);
+  const filtered = useMemo(
+    () => jobs.filter((row) => rowMatchesQuery(row, query)),
+    [jobs, query],
+  );
 
   useEffect(() => {
     setPage(1);
@@ -250,18 +282,28 @@ export function FollowUpJobsView({ jobs, serverTotalCount }: Props) {
       {/* Hero */}
       <header className="flex flex-col gap-4 border-b border-white/[0.06] pb-8 md:flex-row md:items-end md:justify-between md:gap-8">
         <div className="min-w-0 flex-1 space-y-3">
-          <h1 className="text-2xl font-semibold tracking-tight text-white md:text-[1.65rem]">{FOLLOW_UP_PAGE.title}</h1>
-          <p className="max-w-2xl text-[14px] leading-relaxed text-white/50 md:text-[15px]">{FOLLOW_UP_PAGE.subtitle}</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-white md:text-[1.65rem]">
+            {FOLLOW_UP_PAGE.title}
+          </h1>
+          <p className="max-w-2xl text-[14px] leading-relaxed text-white/50 md:text-[15px]">
+            {FOLLOW_UP_PAGE.subtitle}
+          </p>
           {serverTotalCount != null && jobs.length < serverTotalCount ? (
-            <p className="text-[12px] leading-relaxed text-amber-200/70">{FOLLOW_UP_PAGE.capNote(jobs.length, serverTotalCount)}</p>
+            <p className="text-[12px] leading-relaxed text-amber-200/70">
+              {FOLLOW_UP_PAGE.capNote(jobs.length, serverTotalCount)}
+            </p>
           ) : null}
         </div>
       </header>
 
       {jobs.length === 0 ? (
         <GlowCard contentClassName="p-8 text-center md:p-10">
-          <p className="text-[17px] font-semibold text-white/90">{FOLLOW_UP_PAGE.emptyTitle}</p>
-          <p className="mx-auto mt-3 max-w-md text-[14px] leading-relaxed text-white/45">{FOLLOW_UP_PAGE.emptyBody}</p>
+          <p className="text-[17px] font-semibold text-white/90">
+            {FOLLOW_UP_PAGE.emptyTitle}
+          </p>
+          <p className="mx-auto mt-3 max-w-md text-[14px] leading-relaxed text-white/45">
+            {FOLLOW_UP_PAGE.emptyBody}
+          </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button variant="primary" className="cursor-pointer" asChild>
               <Link href="/dashboard">Go to dashboard</Link>
@@ -289,7 +331,11 @@ export function FollowUpJobsView({ jobs, serverTotalCount }: Props) {
                 aria-label={FOLLOW_UP_PAGE.searchPlaceholder}
               />
             </div>
-            <div className="flex rounded-xl border border-white/12 p-0.5" role="group" aria-label="Layout">
+            <div
+              className="flex rounded-xl border border-white/12 p-0.5"
+              role="group"
+              aria-label="Layout"
+            >
               <button
                 type="button"
                 title={FOLLOW_UP_PAGE.cardsLabel}
@@ -327,7 +373,10 @@ export function FollowUpJobsView({ jobs, serverTotalCount }: Props) {
 
           {filtered.length === 0 ? (
             <GlowCard contentClassName="p-6">
-              <p className="text-[14px] text-white/65">No roles match your search. Try another keyword or clear the filter.</p>
+              <p className="text-[14px] text-white/65">
+                No roles match your search. Try another keyword or clear the
+                filter.
+              </p>
               <button
                 type="button"
                 onClick={() => setQuery('')}
@@ -340,7 +389,10 @@ export function FollowUpJobsView({ jobs, serverTotalCount }: Props) {
             <ul className="grid gap-3 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
               {pageRows.map((row) => (
                 <li key={row.id}>
-                  <FollowUpJobCard row={row} variant={followUpJobCardVariant(row.source)} />
+                  <FollowUpJobCard
+                    row={row}
+                    variant={followUpJobCardVariant(row.source)}
+                  />
                 </li>
               ))}
             </ul>
@@ -354,7 +406,9 @@ export function FollowUpJobsView({ jobs, serverTotalCount }: Props) {
               className="flex flex-col items-stretch justify-between gap-4 border-t border-white/[0.06] pt-6 sm:flex-row sm:items-center"
               aria-label="Pagination"
             >
-              <p className="text-[13px] tabular-nums text-white/45">{FOLLOW_UP_PAGE.pageStatus(safePage, totalPages)}</p>
+              <p className="text-[13px] tabular-nums text-white/45">
+                {FOLLOW_UP_PAGE.pageStatus(safePage, totalPages)}
+              </p>
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"

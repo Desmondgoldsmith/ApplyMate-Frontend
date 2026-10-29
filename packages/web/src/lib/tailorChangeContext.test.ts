@@ -30,8 +30,16 @@ describe('tailorChangeContext', () => {
   it('resolves role labels from changed field paths', () => {
     const after = JSON.stringify({
       items: [
-        { title: 'Frontend Developer', company: 'Dummy Group', bullets: ['New bullet'] },
-        { title: 'Software Engineer', company: 'Google', bullets: ['Another bullet'] },
+        {
+          title: 'Frontend Developer',
+          company: 'Dummy Group',
+          bullets: ['New bullet'],
+        },
+        {
+          title: 'Software Engineer',
+          company: 'Google',
+          bullets: ['Another bullet'],
+        },
       ],
     });
     const labels = resolveExperienceRoleLabelsFromChangedFields(
@@ -52,7 +60,8 @@ describe('tailorChangeContext', () => {
           {
             title: 'Frontend Developer',
             company: 'Dummy Group',
-            roleLabel: 'Frontend Developer at Dummy Group (Jul 2024 – Dec 2025)',
+            roleLabel:
+              'Frontend Developer at Dummy Group (Jul 2024 – Dec 2025)',
             bullets: ['Built UI'],
           },
         ],

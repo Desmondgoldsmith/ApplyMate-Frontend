@@ -17,7 +17,11 @@ import {
   trackConversionFunnelEvent,
   trackUpgradePrompted,
 } from '@/lib/analytics';
-import { cvParseMutationShouldRetry, getApiErrorMessage, isTransientAiStructuredOutputError } from '@/lib/axios';
+import {
+  cvParseMutationShouldRetry,
+  getApiErrorMessage,
+  isTransientAiStructuredOutputError,
+} from '@/lib/axios';
 import { useToast } from '@/components/ui/Toast';
 import { CvUploadProgressSteps } from '@/components/cv/CvUploadProgressSteps';
 import { Button } from '@/components/ui/Button';
@@ -67,7 +71,9 @@ export function CVUploadZone({
     mutationFn: async (file: File) => {
       const row = await api.cv.createProfile({
         name: profileName?.trim() || profileNameFromUploadFile(file),
-        ...(profileTemplate?.trim() ? { template: profileTemplate.trim() } : {}),
+        ...(profileTemplate?.trim()
+          ? { template: profileTemplate.trim() }
+          : {}),
       });
       const profileId = row.id.trim();
       if (!profileId) throw new Error('Could not create CV profile');
@@ -84,13 +90,18 @@ export function CVUploadZone({
         const formData = new FormData();
         formData.append('file', file);
         try {
-          return await api.cv.parse(formData, { rebuildSections: true, cvProfileId: profileId });
+          return await api.cv.parse(formData, {
+            rebuildSections: true,
+            cvProfileId: profileId,
+          });
         } catch (e) {
           lastError = e;
           const nextAttempt = attempt + 1;
           if (nextAttempt >= 6) break;
           if (!cvParseMutationShouldRetry(nextAttempt, e)) break;
-          const backoff = isTransientAiStructuredOutputError(e) ? 600 * nextAttempt : 400 * nextAttempt;
+          const backoff = isTransientAiStructuredOutputError(e)
+            ? 600 * nextAttempt
+            : 400 * nextAttempt;
           await new Promise((r) => setTimeout(r, backoff));
         }
       }
@@ -100,7 +111,9 @@ export function CVUploadZone({
     onSuccess: async (data) => {
       await refreshCvStateAfterCvParseSuccess(queryClient, data.profile);
       void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.analytics.root(),
+      });
     },
   });
 
@@ -163,7 +176,9 @@ export function CVUploadZone({
     });
   };
 
-  const isPending = useNewProfileFlow ? createProfileThenParse.isPending : uploadMutation.isPending;
+  const isPending = useNewProfileFlow
+    ? createProfileThenParse.isPending
+    : uploadMutation.isPending;
 
   return (
     <div
@@ -171,13 +186,23 @@ export function CVUploadZone({
       onDrop={(e) => {
         e.preventDefault();
         const file = e.dataTransfer.files[0];
-        if (file && !isPending && (aiUsage.isPaidTier || aiUsage.isLoading || (aiUsage.remaining ?? 0) > 0))
+        if (
+          file &&
+          !isPending &&
+          (aiUsage.isPaidTier ||
+            aiUsage.isLoading ||
+            (aiUsage.remaining ?? 0) > 0)
+        )
           upload(file);
       }}
       className={`flex w-full flex-col items-center justify-center rounded-2xl border border-dashed border-[#00C9B1]/25 bg-[#111616] p-6 text-center ${
         isPending ? 'min-h-[220px] h-auto' : 'h-[200px]'
       } ${
-        !aiUsage.isPaidTier && !aiUsage.isLoading && (aiUsage.remaining ?? 0) === 0 ? 'opacity-60' : ''
+        !aiUsage.isPaidTier &&
+        !aiUsage.isLoading &&
+        (aiUsage.remaining ?? 0) === 0
+          ? 'opacity-60'
+          : ''
       } ${isPending ? 'pointer-events-none opacity-90' : ''}`}
     >
       {isPending ? (
@@ -185,16 +210,20 @@ export function CVUploadZone({
       ) : skillsFound !== null ? (
         <div className="space-y-3">
           <div className="space-y-2">
-            <div className="mx-auto h-10 w-10 rounded-full bg-[#00C9B1]/20 text-[#00C9B1]">✓</div>
-            <p className="font-semibold text-white">Resume parsed successfully</p>
+            <div className="mx-auto h-10 w-10 rounded-full bg-[#00C9B1]/20 text-[#00C9B1]">
+              ✓
+            </div>
+            <p className="font-semibold text-white">
+              Resume parsed successfully
+            </p>
             <p className="text-sm text-[#9be8e8]">{skillsFound} skills found</p>
           </div>
           {lastPartial && !partialDismissed ? (
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-left">
               <div className="flex items-start justify-between gap-2">
                 <p className="text-xs leading-relaxed text-amber-100/90">
-                  Your resume was not fully extracted. Experience or education may be missing. Try
-                  another file or re-upload.
+                  Your resume was not fully extracted. Experience or education
+                  may be missing. Try another file or re-upload.
                 </p>
                 <button
                   type="button"
@@ -224,13 +253,24 @@ export function CVUploadZone({
         <>
           <UploadCloud className="mb-2 h-8 w-8 text-[#00C9B1]" />
           <p className="font-medium text-white">Drop your resume here</p>
-          <p className="mb-3 text-sm text-white/50">PDF, DOCX, or TXT. Max 5MB.</p>
-          {!aiUsage.isPaidTier && !aiUsage.isLoading && (aiUsage.remaining ?? 0) === 0 ? (
-            <p className="mb-2 text-xs text-amber-200/90">{DAILY_AI_LIMIT_REACHED_MESSAGE}</p>
+          <p className="mb-3 text-sm text-white/50">
+            PDF, DOCX, or TXT. Max 5MB.
+          </p>
+          {!aiUsage.isPaidTier &&
+          !aiUsage.isLoading &&
+          (aiUsage.remaining ?? 0) === 0 ? (
+            <p className="mb-2 text-xs text-amber-200/90">
+              {DAILY_AI_LIMIT_REACHED_MESSAGE}
+            </p>
           ) : null}
           <Button
             variant="ghost"
-            disabled={isPending || (!aiUsage.isPaidTier && !aiUsage.isLoading && (aiUsage.remaining ?? 0) === 0)}
+            disabled={
+              isPending ||
+              (!aiUsage.isPaidTier &&
+                !aiUsage.isLoading &&
+                (aiUsage.remaining ?? 0) === 0)
+            }
             onClick={() => inputRef.current?.click()}
           >
             Select file

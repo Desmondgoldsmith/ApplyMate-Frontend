@@ -89,8 +89,14 @@ import {
   dedupePreviewSectionKeys,
   professionalSectionRank,
 } from '@/lib/cvSectionProfessionalOrder';
-import { filterParsedCustomSectionsForEditor, shouldRenderCustomLegacySection } from '@/lib/cvParsedCustomSectionUtils';
-import { containsCvChangeMarker, richTextPlainText } from '@/lib/cvRichTextCore';
+import {
+  filterParsedCustomSectionsForEditor,
+  shouldRenderCustomLegacySection,
+} from '@/lib/cvParsedCustomSectionUtils';
+import {
+  containsCvChangeMarker,
+  richTextPlainText,
+} from '@/lib/cvRichTextCore';
 import {
   readStoredPreviewSectionOrder,
   writeStoredPreviewSectionOrder,
@@ -159,7 +165,10 @@ function mergeNewSectionsIntoData(
   seedIfEmpty('certifications', prev.certifications, incoming.certifications);
   seedIfEmpty('achievements', prev.achievements, incoming.achievements);
   seedIfEmpty('references', prev.references, incoming.references);
-  if (filterParsedCustomSectionsForEditor(incoming.parsedCustomSections).length === 0) {
+  if (
+    filterParsedCustomSectionsForEditor(incoming.parsedCustomSections)
+      .length === 0
+  ) {
     seedIfEmpty('customSections', prev.customSections, incoming.customSections);
   }
   if (!prev.experience.items.length && incoming.experience.items.length) {
@@ -481,7 +490,13 @@ function previewOrderFromSections(sections: CVSectionRecord[]): string[] {
     if (!keys.includes(key)) keys.push(key);
   }
   // Keep core sections visible even when a refetch temporarily returns optional-only rows.
-  for (const core of ['summary', 'experience', 'education', 'projects', 'skills']) {
+  for (const core of [
+    'summary',
+    'experience',
+    'education',
+    'projects',
+    'skills',
+  ]) {
     if (!keys.includes(core)) keys.push(core);
   }
   return dedupePreviewSectionKeys(keys);
@@ -501,7 +516,8 @@ function mergePreviewSectionOrder(
   const prevFiltered = prev.filter((k) => serverSet.has(k));
   const prevSet = new Set(prevFiltered);
   const newKeys = server.filter((k) => !prevSet.has(k));
-  const out = newKeys.length > 0 ? [...prevFiltered, ...newKeys] : [...prevFiltered];
+  const out =
+    newKeys.length > 0 ? [...prevFiltered, ...newKeys] : [...prevFiltered];
   for (const k of server) {
     if (!out.includes(k)) out.push(k);
   }
@@ -651,7 +667,10 @@ export type CVBuilderProps = {
   assistantAcceptHighlightSectionId?: string | null;
   assistantAcceptHighlightNonce?: number;
   /** Recruiter Scan: attention heatmap on preview sections (preview section ids). */
-  recruiterScanHeatmap?: Record<string, import('@/lib/cvRecruiterScan').CvRecruiterScanReadingPathEntry> | null;
+  recruiterScanHeatmap?: Record<
+    string,
+    import('@/lib/cvRecruiterScan').CvRecruiterScanReadingPathEntry
+  > | null;
   /** LanguageTool / spellcheck locale (e.g. en, de, fr). Defaults to en. */
   spellcheckLanguage?: string;
   /** Exposes undo/redo controls for toolbar wiring. */
@@ -755,7 +774,9 @@ export function CVBuilder({
       emptyCVBuilderData({ email: emailDefault, name: user?.name }),
   );
   /** Version the local `data` is based on; `null` = unknown (next save re-establishes it). */
-  const contentVersionRef = useRef<number | null>(initialContentVersion ?? null);
+  const contentVersionRef = useRef<number | null>(
+    initialContentVersion ?? null,
+  );
   const initialContentVersionRef = useRef(initialContentVersion);
   initialContentVersionRef.current = initialContentVersion;
   const [contentConflict, setContentConflict] = useState(false);
@@ -861,15 +882,22 @@ export function CVBuilder({
   const [sectionVisibility, setSectionVisibility] = useState<
     Record<string, boolean>
   >({});
-  const [previewSectionOrder, setPreviewSectionOrder] = useState<string[]>(() => {
-    const server = previewOrderFromSections(existingSections);
-    const stored = profileId?.trim() ? readStoredPreviewSectionOrder(profileId.trim()) : null;
-    if (!stored?.length) return server;
-    const serverSet = new Set(server);
-    const fromStored = stored.filter((k) => serverSet.has(k));
-    const merged = fromStored.length > 0 ? [...fromStored, ...server.filter((k) => !fromStored.includes(k))] : server;
-    return dedupePreviewSectionKeys(merged.length > 0 ? merged : server);
-  });
+  const [previewSectionOrder, setPreviewSectionOrder] = useState<string[]>(
+    () => {
+      const server = previewOrderFromSections(existingSections);
+      const stored = profileId?.trim()
+        ? readStoredPreviewSectionOrder(profileId.trim())
+        : null;
+      if (!stored?.length) return server;
+      const serverSet = new Set(server);
+      const fromStored = stored.filter((k) => serverSet.has(k));
+      const merged =
+        fromStored.length > 0
+          ? [...fromStored, ...server.filter((k) => !fromStored.includes(k))]
+          : server;
+      return dedupePreviewSectionKeys(merged.length > 0 ? merged : server);
+    },
+  );
   const [reorderPending, setReorderPending] = useState(false);
   const [spellIssuesBySection, setSpellIssuesBySection] = useState<
     Record<string, number>
@@ -958,8 +986,7 @@ export function CVBuilder({
       }
       const mod = e.metaKey || e.ctrlKey;
       if (!mod || e.altKey) return;
-      const isUndo =
-        e.key === 'z' && !e.shiftKey && canUndoRef.current;
+      const isUndo = e.key === 'z' && !e.shiftKey && canUndoRef.current;
       const isRedo =
         (e.key === 'y' || (e.key === 'z' && e.shiftKey)) && canRedoRef.current;
       if (!isUndo && !isRedo) return;
@@ -985,7 +1012,8 @@ export function CVBuilder({
       }
     };
     window.addEventListener('keydown', onKey, { capture: true });
-    return () => window.removeEventListener('keydown', onKey, { capture: true });
+    return () =>
+      window.removeEventListener('keydown', onKey, { capture: true });
   }, [mode, undoEdit, redoEdit, applyHistoryRestore]);
 
   useEffect(() => {
@@ -1025,7 +1053,14 @@ export function CVBuilder({
       },
       clearHistory: resetUndoStack,
     });
-  }, [canUndo, canRedo, undoEdit, redoEdit, applyHistoryRestore, resetUndoStack]);
+  }, [
+    canUndo,
+    canRedo,
+    undoEdit,
+    redoEdit,
+    applyHistoryRestore,
+    resetUndoStack,
+  ]);
 
   useEffect(
     () => () => {
@@ -1087,7 +1122,9 @@ export function CVBuilder({
         if (pid) writeStoredPreviewSectionOrder(pid, server);
       } else {
         const fromStore = pid ? readStoredPreviewSectionOrder(pid) : null;
-        const next = fromStore?.length ? dedupePreviewSectionKeys(fromStore) : server;
+        const next = fromStore?.length
+          ? dedupePreviewSectionKeys(fromStore)
+          : server;
         setPreviewSectionOrder(next);
         lastConfirmedPreviewOrderRef.current = next;
       }
@@ -1111,7 +1148,14 @@ export function CVBuilder({
       if (pid) writeStoredPreviewSectionOrder(pid, server);
       return server;
     });
-  }, [cvSectionRowsSig, dirty, existingSections, mode, profileId, reorderPending]);
+  }, [
+    cvSectionRowsSig,
+    dirty,
+    existingSections,
+    mode,
+    profileId,
+    reorderPending,
+  ]);
 
   useEffect(() => {
     onReorderPendingChange?.(reorderPending);
@@ -1119,7 +1163,8 @@ export function CVBuilder({
 
   useEffect(() => {
     if (reorderPending) return;
-    lastConfirmedPreviewOrderRef.current = previewOrderFromSections(existingSections);
+    lastConfirmedPreviewOrderRef.current =
+      previewOrderFromSections(existingSections);
   }, [existingSections, reorderPending]);
 
   const setHeaderPreview = useCallback(
@@ -1205,9 +1250,7 @@ export function CVBuilder({
       });
       seedNew('languages', prev.languages.length > 0, () => {
         const n = touch();
-        n.languages = [
-          { id: newLocalId(), language: '', proficiency: '' },
-        ];
+        n.languages = [{ id: newLocalId(), language: '', proficiency: '' }];
       });
       seedNew('achievements', prev.achievements.length > 0, () => {
         const n = touch();
@@ -1215,19 +1258,23 @@ export function CVBuilder({
           { id: newLocalId(), title: '', issuer: '', date: '', detail: '' },
         ];
       });
-      seedNew('references', filterCvBuilderReferences(prev.references).length > 0, () => {
-        const n = touch();
-        n.references = [
-          {
-            id: newLocalId(),
-            name: '',
-            title: '',
-            company: '',
-            email: '',
-            phone: '',
-          },
-        ];
-      });
+      seedNew(
+        'references',
+        filterCvBuilderReferences(prev.references).length > 0,
+        () => {
+          const n = touch();
+          n.references = [
+            {
+              id: newLocalId(),
+              name: '',
+              title: '',
+              company: '',
+              email: '',
+              phone: '',
+            },
+          ];
+        },
+      );
 
       return changed ? next : prev;
     });
@@ -1237,13 +1284,17 @@ export function CVBuilder({
   useEffect(() => {
     setData((prev) => {
       const cleanedRefs = filterCvBuilderReferences(prev.references);
-      const cleanedParsed = filterParsedCustomSectionsForEditor(prev.parsedCustomSections);
+      const cleanedParsed = filterParsedCustomSectionsForEditor(
+        prev.parsedCustomSections,
+      );
       const refsSame =
         cleanedRefs.length === prev.references.length &&
         cleanedRefs.every((r, i) => r.id === prev.references[i]?.id);
       const parsedSame =
         cleanedParsed.length === prev.parsedCustomSections.length &&
-        cleanedParsed.every((b, i) => b.sectionId === prev.parsedCustomSections[i]?.sectionId);
+        cleanedParsed.every(
+          (b, i) => b.sectionId === prev.parsedCustomSections[i]?.sectionId,
+        );
       if (refsSame && parsedSame) return prev;
       return {
         ...prev,
@@ -1391,8 +1442,12 @@ export function CVBuilder({
       const customSlugSections = existingSections.filter((s) =>
         s.type.startsWith('custom_'),
       );
-      const prevParsedIds = new Set(prevData.parsedCustomSections.map((b) => b.sectionId));
-      const newCustomRows = customSlugSections.filter((s) => !prevParsedIds.has(s.id));
+      const prevParsedIds = new Set(
+        prevData.parsedCustomSections.map((b) => b.sectionId),
+      );
+      const newCustomRows = customSlugSections.filter(
+        (s) => !prevParsedIds.has(s.id),
+      );
       if (newCustomRows.length > 0) {
         const added = newCustomRows.map((s) => {
           const d = (s.data ?? {}) as Record<string, unknown>;
@@ -1412,7 +1467,10 @@ export function CVBuilder({
             items: [{ id: newLocalId(), text: '', subItems: [] }],
           };
         });
-        next.parsedCustomSections = [...prevData.parsedCustomSections, ...added];
+        next.parsedCustomSections = [
+          ...prevData.parsedCustomSections,
+          ...added,
+        ];
         next.customSections = [];
       }
 
@@ -1445,7 +1503,13 @@ export function CVBuilder({
      * the preview always renders them — this is what removed the buggy hide path the user
      * complained about.
      */
-    for (const core of ['summary', 'experience', 'education', 'projects', 'skills']) {
+    for (const core of [
+      'summary',
+      'experience',
+      'education',
+      'projects',
+      'skills',
+    ]) {
       next[core] = true;
     }
     /**
@@ -1517,7 +1581,10 @@ export function CVBuilder({
         hp.showPhoto ? { ...hp, showPhoto: false } : hp,
       );
     }
-    if (leftOnyx || (selectedTemplate !== 'onyx' && dataRef.current.personal.photoUrl?.trim())) {
+    if (
+      leftOnyx ||
+      (selectedTemplate !== 'onyx' && dataRef.current.personal.photoUrl?.trim())
+    ) {
       setHeaderPreviewState((hp) => ({ ...hp, showPhoto: false }));
       pushUndoSnapshot(dataRef.current, 'Template change');
       setData((d) =>
@@ -1594,7 +1661,9 @@ export function CVBuilder({
         typeof patch === 'function'
           ? patch(current)
           : ({ ...current, ...patch } as CVBuilderData);
-      if (computeCvUndoFingerprint(next) === computeCvUndoFingerprint(current)) {
+      if (
+        computeCvUndoFingerprint(next) === computeCvUndoFingerprint(current)
+      ) {
         return;
       }
       if (!undoCoalesceOpenRef.current) {
@@ -1666,7 +1735,11 @@ export function CVBuilder({
         sectionsRef.current,
       );
       setSaveStatus('idle');
-      logCvBuilderSavePerfDev('hydrate.apply', t0, { nonce, reason, preserveHistory });
+      logCvBuilderSavePerfDev('hydrate.apply', t0, {
+        nonce,
+        reason,
+        preserveHistory,
+      });
     },
     [
       emailDefault,
@@ -1738,7 +1811,12 @@ export function CVBuilder({
     lastForceServerHydrateNonceRef.current = forceServerHydrateNonce;
     lastServerHydrateNonceRef.current = serverHydrateNonce;
     applyServerHydrateFromInitialData(forceServerHydrateNonce, 'force');
-  }, [mode, forceServerHydrateNonce, serverHydrateNonce, applyServerHydrateFromInitialData]);
+  }, [
+    mode,
+    forceServerHydrateNonce,
+    serverHydrateNonce,
+    applyServerHydrateFromInitialData,
+  ]);
 
   const [conflictReloadNonce, setConflictReloadNonce] = useState(0);
 
@@ -2507,7 +2585,10 @@ export function CVBuilder({
           refreshSections: true,
         });
         if (saved.sections.length > 0) {
-          queryClient.setQueryData(queryKeys.cv.sections(profileId), saved.sections);
+          queryClient.setQueryData(
+            queryKeys.cv.sections(profileId),
+            saved.sections,
+          );
         }
         writeSectionOrderBannerDismissed(profileId);
         void queryClient.invalidateQueries({
@@ -3074,7 +3155,13 @@ export function CVBuilder({
     return () => {
       cancelled = true;
     };
-  }, [spellFixAllTrigger, profileId, pushUndoSnapshot, sectionKeyToRowId, toast]);
+  }, [
+    spellFixAllTrigger,
+    profileId,
+    pushUndoSnapshot,
+    sectionKeyToRowId,
+    toast,
+  ]);
 
   const formSectionTabs = useMemo(() => {
     const base: { id: string; label: string }[] = [
@@ -3273,9 +3360,9 @@ export function CVBuilder({
               This CV was changed somewhere else
             </p>
             <p className="mt-1 text-[11px] leading-relaxed text-white/65">
-              Another tab, an applied suggestion, an import or a restored version
-              updated it after you opened this editor. Your latest edits haven&apos;t
-              been saved yet.
+              Another tab, an applied suggestion, an import or a restored
+              version updated it after you opened this editor. Your latest edits
+              haven&apos;t been saved yet.
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               <Button
@@ -3878,8 +3965,8 @@ export function CVBuilder({
                   </p>
                   <p className="mb-2.5 text-xs leading-relaxed text-white/50">
                     Your uploaded CV may have been too long for our parser to
-                    read completely. Try re-uploading your resume — we have improved
-                    our extraction.
+                    read completely. Try re-uploading your resume — we have
+                    improved our extraction.
                   </p>
                   {onRequestReparse ? (
                     <button
@@ -4022,34 +4109,39 @@ export function CVBuilder({
                         <div className="space-y-2">
                           <ul className="list-disc space-y-1.5 pl-4 text-sm text-white/85 marker:text-[#00C9B1]">
                             {job.bullets
-                              .filter((bullet) => richTextPlainText(bullet).length > 0)
+                              .filter(
+                                (bullet) =>
+                                  richTextPlainText(bullet).length > 0,
+                              )
                               .map((bullet, bulletIdx) => (
-                                <li key={`${job.id}-marker-bullet-${bulletIdx}`}>
+                                <li
+                                  key={`${job.id}-marker-bullet-${bulletIdx}`}
+                                >
                                   <CvRichTextSpan html={bullet} />
                                 </li>
                               ))}
                           </ul>
                           <p className="text-[10px] leading-relaxed text-white/40">
-                            Tailor highlights are shown in the CV preview. Edit those bullets
-                            there so underlines stay intact.
+                            Tailor highlights are shown in the CV preview. Edit
+                            those bullets there so underlines stay intact.
                           </p>
                         </div>
                       ) : (
-                      <textarea
-                        className={cn(fieldClass, 'min-h-[100px]')}
-                        placeholder={
-                          'Example:\nLed a team of 4 to launch a new checkout flow\nCut page load time by 35%'
-                        }
-                        value={job.bullets.join('\n')}
-                        onChange={(e) => {
-                          const bullets = e.target.value.split('\n');
-                          const items = experienceItems.map((x) =>
-                            x.id === job.id ? { ...x, bullets } : x,
-                          );
-                          update({ experience: { items } });
-                        }}
-                        onFocus={() => jumpToSection('experience', job.id)}
-                      />
+                        <textarea
+                          className={cn(fieldClass, 'min-h-[100px]')}
+                          placeholder={
+                            'Example:\nLed a team of 4 to launch a new checkout flow\nCut page load time by 35%'
+                          }
+                          value={job.bullets.join('\n')}
+                          onChange={(e) => {
+                            const bullets = e.target.value.split('\n');
+                            const items = experienceItems.map((x) =>
+                              x.id === job.id ? { ...x, bullets } : x,
+                            );
+                            update({ experience: { items } });
+                          }}
+                          onFocus={() => jumpToSection('experience', job.id)}
+                        />
                       )}
                       <Button
                         type="button"
@@ -4353,7 +4445,9 @@ export function CVBuilder({
               with AI&quot; for a first draft, then edit in your own voice.
             </p>
             <div className="relative">
-              {containsCvChangeMarker(normalizeText(data.summary?.text as unknown)) ? (
+              {containsCvChangeMarker(
+                normalizeText(data.summary?.text as unknown),
+              ) ? (
                 <BuilderRichTextField
                   value={normalizeText(data.summary?.text as unknown)}
                   onChange={(text) => update({ summary: { text } })}
@@ -4362,14 +4456,16 @@ export function CVBuilder({
                   placeholder="2–3 short sentences: who you are, what you do best, and what you want next."
                 />
               ) : (
-              <textarea
-                className={cn(fieldClass, 'min-h-[120px] resize-y')}
-                placeholder="2–3 short sentences: who you are, what you do best, and what you want next."
-                value={normalizeText(data.summary?.text as unknown)}
-                onChange={(e) => update({ summary: { text: e.target.value } })}
-                onFocus={() => jumpToSection('summary')}
-                maxLength={500}
-              />
+                <textarea
+                  className={cn(fieldClass, 'min-h-[120px] resize-y')}
+                  placeholder="2–3 short sentences: who you are, what you do best, and what you want next."
+                  value={normalizeText(data.summary?.text as unknown)}
+                  onChange={(e) =>
+                    update({ summary: { text: e.target.value } })
+                  }
+                  onFocus={() => jumpToSection('summary')}
+                  maxLength={500}
+                />
               )}
               <p className="mt-1 text-right text-[11px] text-white/25">
                 {normalizeText(data.summary?.text as unknown).length} / 500
@@ -5036,7 +5132,8 @@ export function CVBuilder({
               }
             >
               <p className="mb-2 text-[10px] leading-snug text-white/40">
-                References appear in the Onyx template and as an optional section in other layouts.
+                References appear in the Onyx template and as an optional
+                section in other layouts.
               </p>
               {data.references.map((ref) => (
                 <GlowCard
@@ -5790,9 +5887,7 @@ export function CVBuilder({
       : '');
   const diffActionBar = (
     <CvDiffMobileActionBar
-      visible={Boolean(
-        diffActionBarSectionId && onAcceptDiff && onRejectDiff,
-      )}
+      visible={Boolean(diffActionBarSectionId && onAcceptDiff && onRejectDiff)}
       sectionId={diffActionBarSectionId || null}
       disabled={diffActionsDisabled}
       onAccept={() => onAcceptDiff?.()}

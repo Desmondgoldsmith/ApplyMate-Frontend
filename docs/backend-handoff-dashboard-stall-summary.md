@@ -27,9 +27,9 @@ This should **not** be a second, divergent scoring engine: **one source of truth
 
 ### Option A — Dedicated read endpoint (recommended for clarity)
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| `GET` | `/api/dashboard/weekly-stall-summary` | Returns stalled pipeline rows + metadata for the **current user**, **same rules** as digest email body. |
+| Method | Path                                  | Purpose                                                                                                 |
+| ------ | ------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/api/dashboard/weekly-stall-summary` | Returns stalled pipeline rows + metadata for the **current user**, **same rules** as digest email body. |
 
 **Illustrative response (adjust to your DTOs):**
 
@@ -107,4 +107,4 @@ If you already ship **`GET /api/dashboard/next-moves`** (or plan to), add a **`s
 
 ---
 
-*Goal in one line: **same stall intelligence as the weekly email, exposed for the dashboard card, one implementation, consistent prefs.***
+\*Goal in one line: **same stall intelligence as the weekly email, exposed for the dashboard card, one implementation, consistent prefs.\***

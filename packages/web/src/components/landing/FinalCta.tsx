@@ -57,7 +57,9 @@ export function FinalCta() {
               <div className="mt-10">
                 <GlowChromeCta
                   href="#cta"
-                  onClick={() => trackMarketingCta('chrome_extension', 'final_cta')}
+                  onClick={() =>
+                    trackMarketingCta('chrome_extension', 'final_cta')
+                  }
                 >
                   <ChromeIcon className="shrink-0" />
                   Add to Chrome — It&apos;s Free

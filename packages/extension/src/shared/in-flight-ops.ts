@@ -22,7 +22,9 @@ export async function readInFlight(): Promise<InFlightState | null> {
   return op;
 }
 
-export async function clearInFlight(operation?: InFlightOperation): Promise<void> {
+export async function clearInFlight(
+  operation?: InFlightOperation,
+): Promise<void> {
   if (!operation) {
     await chrome.storage.session.remove(IN_FLIGHT_KEY);
     return;

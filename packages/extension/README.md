@@ -75,7 +75,7 @@ After `npm run build`, reload the extension at `chrome://extensions` (load **`di
 
 ## Env
 
-| Variable | Default |
-|----------|---------|
-| `VITE_API_URL` | `http://localhost:3000/api` |
+| Variable             | Default                                        |
+| -------------------- | ---------------------------------------------- |
+| `VITE_API_URL`       | `http://localhost:3000/api`                    |
 | `VITE_WEB_LOGIN_URL` | `http://localhost:3001/login?source=extension` |

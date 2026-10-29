@@ -51,7 +51,9 @@ describe('notificationDeepLink', () => {
     expect(
       notificationActionHref(
         n({
-          metadata: { href: '/dashboard/job-hub?jobAnalysisId=ja-legacy&focus=analysis' },
+          metadata: {
+            href: '/dashboard/job-hub?jobAnalysisId=ja-legacy&focus=analysis',
+          },
         }),
       ),
     ).toBe('/dashboard/jobs?jobId=ja-legacy&focus=analysis');

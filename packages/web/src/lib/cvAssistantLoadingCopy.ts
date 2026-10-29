@@ -24,7 +24,9 @@ export type CvAssistantBusyStage =
   | 'validating'
   | null;
 
-export function cvAssistantBusyMessage(stage: CvAssistantBusyStage): string | null {
+export function cvAssistantBusyMessage(
+  stage: CvAssistantBusyStage,
+): string | null {
   switch (stage) {
     case 'generating':
       return CV_ASSISTANT_GENERATING_MESSAGE;

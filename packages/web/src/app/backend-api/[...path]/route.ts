@@ -46,7 +46,11 @@ function forwardResponseHeaders(upstream: Response): Headers {
   return headers;
 }
 
-function proxyFailureResponse(code: typeof BACKEND_UNREACHABLE_ERROR_CODE | typeof BACKEND_TIMEOUT_ERROR_CODE): NextResponse {
+function proxyFailureResponse(
+  code:
+    | typeof BACKEND_UNREACHABLE_ERROR_CODE
+    | typeof BACKEND_TIMEOUT_ERROR_CODE,
+): NextResponse {
   const message =
     code === BACKEND_TIMEOUT_ERROR_CODE
       ? 'The API server took too long to respond. Try again, or restart the Nest backend if it is stuck.'
@@ -61,7 +65,10 @@ function proxyFailureResponse(code: typeof BACKEND_UNREACHABLE_ERROR_CODE | type
   );
 }
 
-async function proxyToNest(req: NextRequest, pathSegments: string[]): Promise<NextResponse> {
+async function proxyToNest(
+  req: NextRequest,
+  pathSegments: string[],
+): Promise<NextResponse> {
   const path = pathSegments.join('/');
   const target = `${resolveNestApiOrigin()}/api/${path}${req.nextUrl.search}`;
   const method = req.method.toUpperCase();
@@ -111,12 +118,18 @@ async function proxyToNest(req: NextRequest, pathSegments: string[]): Promise<Ne
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 
-async function handle(req: NextRequest, ctx: RouteContext): Promise<NextResponse> {
+async function handle(
+  req: NextRequest,
+  ctx: RouteContext,
+): Promise<NextResponse> {
   const { path } = await ctx.params;
   const segments = Array.isArray(path) ? path : [];
   if (segments.length === 0) {
     return NextResponse.json(
-      { success: false, error: { message: 'Missing API path', code: 'BAD_PROXY_PATH' } },
+      {
+        success: false,
+        error: { message: 'Missing API path', code: 'BAD_PROXY_PATH' },
+      },
       { status: 400 },
     );
   }

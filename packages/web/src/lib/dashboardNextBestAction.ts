@@ -16,11 +16,14 @@ export type NextBestActionVm = {
 };
 
 function clampPct(n: unknown): number | null {
-  if (typeof n === 'number' && Number.isFinite(n)) return Math.max(0, Math.min(100, Math.round(n)));
+  if (typeof n === 'number' && Number.isFinite(n))
+    return Math.max(0, Math.min(100, Math.round(n)));
   return null;
 }
 
-function fromRecommendedMovePayload(plan: TodayPlanPayload | null | undefined): NextBestActionVm | null {
+function fromRecommendedMovePayload(
+  plan: TodayPlanPayload | null | undefined,
+): NextBestActionVm | null {
   const rm = plan?.recommendedMove;
   if (!rm) return null;
   const headline = rm.headline?.trim() ?? '';
@@ -42,6 +45,8 @@ function fromRecommendedMovePayload(plan: TodayPlanPayload | null | undefined): 
 }
 
 /** Recommended Move: use backend `recommendedMove` only (no client-side candidate selection or suppression). */
-export function resolveRecommendedMove(plan: TodayPlanPayload | null | undefined): NextBestActionVm | null {
+export function resolveRecommendedMove(
+  plan: TodayPlanPayload | null | undefined,
+): NextBestActionVm | null {
   return fromRecommendedMovePayload(plan);
 }

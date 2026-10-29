@@ -213,351 +213,358 @@ function CvClinicTripleRightPanelInner({
           {changesSlot}
         </div>
       ) : (
-      <div
-        data-lenis-prevent-wheel
-        className="app-scrollbar scroll-content-end-pad min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-0 pt-1 lg:pb-6"
-      >
-        {activeTab === 'analysis' ? (
-          <div className="space-y-3 px-3">
-            {!scoreLoading ? (
-              scoreValue !== null && scoreValue !== undefined ? (
-                <div className="space-y-2">
-                  {scoreRefreshing ? (
-                    <p className="text-[10px] font-medium text-white/40">Updating score…</p>
-                  ) : null}
-                  <div
-                    className={
-                      scoreRefreshing
-                        ? 'opacity-50 transition-opacity duration-200'
-                        : undefined
-                    }
+        <div
+          data-lenis-prevent-wheel
+          className="app-scrollbar scroll-content-end-pad min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-0 pt-1 lg:pb-6"
+        >
+          {activeTab === 'analysis' ? (
+            <div className="space-y-3 px-3">
+              {!scoreLoading ? (
+                scoreValue !== null && scoreValue !== undefined ? (
+                  <div className="space-y-2">
+                    {scoreRefreshing ? (
+                      <p className="text-[10px] font-medium text-white/40">
+                        Updating score…
+                      </p>
+                    ) : null}
+                    <div
+                      className={
+                        scoreRefreshing
+                          ? 'opacity-50 transition-opacity duration-200'
+                          : undefined
+                      }
+                    >
+                      <CVScoreCard
+                        mode={scoreCardMode}
+                        score={scoreValue}
+                        breakdown={scoreBreakdown as never}
+                        scorePayload={scorePayload ?? undefined}
+                        cvProfileId={profileId}
+                        pendingImprovements={improvementList}
+                        onDiffPreview={onDiffPreview}
+                        onScoreRefresh={onScoreRefresh}
+                        activePreviewSuggestionId={activePreviewSuggestionId}
+                        hideJobMatch
+                        onAtsKeywordAssist={onAtsKeywordAssist}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    className="w-full gap-2"
+                    disabled={analyzeScanPending}
+                    onClick={() => void onAnalyzeScan()}
                   >
-                    <CVScoreCard
-                  mode={scoreCardMode}
-                  score={scoreValue}
-                  breakdown={scoreBreakdown as never}
-                  scorePayload={scorePayload ?? undefined}
-                  cvProfileId={profileId}
-                  pendingImprovements={improvementList}
-                  onDiffPreview={onDiffPreview}
-                  onScoreRefresh={onScoreRefresh}
-                  activePreviewSuggestionId={activePreviewSuggestionId}
-                  hideJobMatch
-                  onAtsKeywordAssist={onAtsKeywordAssist}
-                />
-                  </div>
-                </div>
+                    {analyzeScanPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" /> Scan…
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" /> Analyze this CV
+                      </>
+                    )}
+                  </Button>
+                )
               ) : (
-                <Button
-                  type="button"
-                  className="w-full gap-2"
-                  disabled={analyzeScanPending}
-                  onClick={() => void onAnalyzeScan()}
-                >
-                  {analyzeScanPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Scan…
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4" /> Analyze this CV
-                    </>
-                  )}
-                </Button>
-              )
-            ) : (
-              <Skeleton height={120} borderRadius={12} />
-            )}
+                <Skeleton height={120} borderRadius={12} />
+              )}
 
-            {onRecruiterScan ? (
-              <div className="rounded-xl border border-orange-400/20 bg-orange-500/[0.05] p-4">
-                <div className="flex items-start gap-3">
-                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-500/15 text-orange-300">
-                    <ScanEye className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold text-orange-200">Recruiter Scan</p>
-                    <p className="mt-1 text-[11px] leading-relaxed text-white/50">
-                      See what a recruiter notices in the first 6 seconds — reading order,
-                      takeaways, and honest concerns.
-                    </p>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="mt-3 h-8 border border-orange-400/30 px-3 text-xs text-orange-200 hover:bg-orange-500/10"
-                      disabled={recruiterScanPending}
-                      onClick={onRecruiterScan}
-                    >
-                      {recruiterScanPending ? (
-                        <>
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Scanning…
-                        </>
-                      ) : (
-                        <>
-                          <ScanEye className="h-3.5 w-3.5" /> Run Recruiter Scan
-                        </>
-                      )}
-                    </Button>
+              {onRecruiterScan ? (
+                <div className="rounded-xl border border-orange-400/20 bg-orange-500/[0.05] p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-500/15 text-orange-300">
+                      <ScanEye className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-orange-200">
+                        Recruiter Scan
+                      </p>
+                      <p className="mt-1 text-[11px] leading-relaxed text-white/50">
+                        See what a recruiter notices in the first 6 seconds —
+                        reading order, takeaways, and honest concerns.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="mt-3 h-8 border border-orange-400/30 px-3 text-xs text-orange-200 hover:bg-orange-500/10"
+                        disabled={recruiterScanPending}
+                        onClick={onRecruiterScan}
+                      >
+                        {recruiterScanPending ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />{' '}
+                            Scanning…
+                          </>
+                        ) : (
+                          <>
+                            <ScanEye className="h-3.5 w-3.5" /> Run Recruiter
+                            Scan
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : null}
+              ) : null}
 
-            {!isOnRecommendedTemplate ? (
-              <div className="flex flex-col gap-3 rounded-xl border border-[rgba(0,201,177,0.15)] bg-white/[0.02] p-4">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-[#00C9B1]">
-                    Format suggestion for {formatRecommendation.label}
-                  </p>
-                  <p className="mt-1 text-[11px] leading-relaxed text-white/50">
-                    {formatRecommendation.reason}
-                  </p>
+              {!isOnRecommendedTemplate ? (
+                <div className="flex flex-col gap-3 rounded-xl border border-[rgba(0,201,177,0.15)] bg-white/[0.02] p-4">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-[#00C9B1]">
+                      Format suggestion for {formatRecommendation.label}
+                    </p>
+                    <p className="mt-1 text-[11px] leading-relaxed text-white/50">
+                      {formatRecommendation.reason}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void onTemplateChange(formatRecommendation.recommended)
+                    }
+                    className="inline-flex shrink-0 items-center justify-center rounded-full border border-[rgba(0,201,177,0.3)] bg-[rgba(0,201,177,0.12)] px-4 py-1.5 text-xs font-semibold text-[#00C9B1] transition hover:border-[#00C9B1]/50"
+                  >
+                    Try {formatRecommendation.recommended}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    void onTemplateChange(formatRecommendation.recommended)
-                  }
-                  className="inline-flex shrink-0 items-center justify-center rounded-full border border-[rgba(0,201,177,0.3)] bg-[rgba(0,201,177,0.12)] px-4 py-1.5 text-xs font-semibold text-[#00C9B1] transition hover:border-[#00C9B1]/50"
-                >
-                  Try {formatRecommendation.recommended}
-                </button>
-              </div>
-            ) : null}
-          </div>
-        ) : (
-          <>
-            {completenessGroups.length > 0 ? (
-              <div className="mx-3 mt-3 rounded-[10px] border border-[rgba(251,191,36,0.20)] bg-[rgba(251,191,36,0.07)] px-3.5 py-3">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <p className="text-xs font-semibold text-white/85">
-                    Sections to complete
+              ) : null}
+            </div>
+          ) : (
+            <>
+              {completenessGroups.length > 0 ? (
+                <div className="mx-3 mt-3 rounded-[10px] border border-[rgba(251,191,36,0.20)] bg-[rgba(251,191,36,0.07)] px-3.5 py-3">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold text-white/85">
+                      Sections to complete
+                    </p>
+                  </div>
+                  <p className="mb-2.5 text-[11px] text-white/40">
+                    {completenessScore != null
+                      ? `Completeness ${completenessScore}% · ${completenessGroups.length} section${
+                          completenessGroups.length === 1 ? '' : 's'
+                        } need details`
+                      : `${completenessGroups.length} section${completenessGroups.length === 1 ? '' : 's'} need details`}
                   </p>
+                  <ul className="divide-y divide-white/[0.06]">
+                    {completenessGroups.map((sec) => (
+                      <li
+                        key={sec.sectionKey}
+                        className="flex items-center justify-between gap-2 py-1.5 first:pt-0 last:pb-0"
+                      >
+                        <span className="text-xs text-white/70">
+                          {sec.sectionLabel}
+                        </span>
+                        <button
+                          type="button"
+                          className="inline-flex h-6 shrink-0 items-center rounded-md border border-white/[0.12] bg-transparent px-2.5 text-[11px] font-medium text-white/60 transition hover:border-white/25 hover:text-white"
+                          onClick={() =>
+                            jumpToSectionRef.current?.(
+                              resolveJumpSectionKey(sec.sectionKey),
+                              undefined,
+                              {
+                                scrollForm: false,
+                              },
+                            )
+                          }
+                        >
+                          Open
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <p className="mb-2.5 text-[11px] text-white/40">
-                  {completenessScore != null
-                    ? `Completeness ${completenessScore}% · ${completenessGroups.length} section${
-                        completenessGroups.length === 1 ? '' : 's'
-                      } need details`
-                    : `${completenessGroups.length} section${completenessGroups.length === 1 ? '' : 's'} need details`}
-                </p>
-                <ul className="divide-y divide-white/[0.06]">
-                  {completenessGroups.map((sec) => (
-                    <li
-                      key={sec.sectionKey}
-                      className="flex items-center justify-between gap-2 py-1.5 first:pt-0 last:pb-0"
-                    >
-                      <span className="text-xs text-white/70">
-                        {sec.sectionLabel}
-                      </span>
+              ) : null}
+
+              {qualitySignals.spellIssueCount > 0 ||
+              qualitySignals.grammarIssueCount > 0 ||
+              qualitySignals.isSpellChecking ? (
+                <div className="mx-3 mb-3 rounded-[10px] border border-[rgba(52,211,153,0.18)] bg-[rgba(52,211,153,0.06)] px-3.5 py-2.5">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-white/85">
+                        Spelling & grammar
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-white/40">
+                        {qualitySignals.isSpellChecking
+                          ? 'Checking…'
+                          : `${qualitySignals.spellIssueCount} spelling · ${qualitySignals.grammarIssueCount} grammar`}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5">
                       <button
                         type="button"
-                        className="inline-flex h-6 shrink-0 items-center rounded-md border border-white/[0.12] bg-transparent px-2.5 text-[11px] font-medium text-white/60 transition hover:border-white/25 hover:text-white"
-                        onClick={() =>
-                          jumpToSectionRef.current?.(
-                            resolveJumpSectionKey(sec.sectionKey),
-                            undefined,
-                            {
-                              scrollForm: false,
-                            },
-                          )
+                        title="Apply every spelling suggestion"
+                        className="rounded-md border border-emerald-400/35 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
+                        disabled={
+                          qualitySignals.spellIssueCount <= 0 ||
+                          qualitySignals.isSpellChecking
                         }
+                        onClick={bumpSpellFixAll}
                       >
-                        Open
+                        Fix all
                       </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
-            {qualitySignals.spellIssueCount > 0 ||
-            qualitySignals.grammarIssueCount > 0 ||
-            qualitySignals.isSpellChecking ? (
-              <div className="mx-3 mb-3 rounded-[10px] border border-[rgba(52,211,153,0.18)] bg-[rgba(52,211,153,0.06)] px-3.5 py-2.5">
-                <div className="flex flex-wrap items-start justify-between gap-2">
+                      <button
+                        type="button"
+                        title="Re-run spell + grammar check"
+                        className="inline-flex h-[26px] items-center rounded-md border border-[rgba(52,211,153,0.30)] bg-transparent px-3 text-[11px] font-medium text-[#34D399] transition hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-40"
+                        disabled={qualitySignals.isSpellChecking}
+                        onClick={bumpSpellCheck}
+                      >
+                        Re-check
+                      </button>
+                    </div>
+                  </div>
+                  {qualitySignals.isSpellChecking ? (
+                    <p className="mt-2 text-[10px] text-white/40">
+                      Looking through your CV…
+                    </p>
+                  ) : (
+                    <div className="mt-2 space-y-3">
+                      {Object.entries(
+                        qualitySignals.spellIssueEntriesBySection,
+                      ).map(([sectionKey, issues]) => {
+                        if (!issues.length) return null;
+                        const sectionLabel =
+                          qualitySignals.sectionLabels[sectionKey] ??
+                          sectionKey;
+                        return (
+                          <div key={sectionKey}>
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-[11px] font-semibold text-white/85">
+                                {sectionLabel}
+                              </p>
+                              <button
+                                type="button"
+                                className="rounded-md border border-white/[0.12] bg-white/[0.04] px-1.5 py-0.5 text-[9px] font-semibold text-white/60 transition hover:border-white/[0.2]"
+                                onClick={() =>
+                                  jumpToSectionRef.current?.(
+                                    resolveJumpSectionKey(sectionKey),
+                                    undefined,
+                                    {
+                                      scrollForm: false,
+                                    },
+                                  )
+                                }
+                              >
+                                Open
+                              </button>
+                            </div>
+                            <ul className="mt-1 space-y-1.5">
+                              {issues.map((issue, idx) => {
+                                const kind =
+                                  issue.type === 'grammar' ||
+                                  issue.type === 'style'
+                                    ? 'grammar'
+                                    : 'spelling';
+                                const original = (issue.original ?? '').trim();
+                                const suggestion = (
+                                  issue.suggestion ?? ''
+                                ).trim();
+                                return (
+                                  <li
+                                    key={
+                                      issue.issueId
+                                        ? `${sectionKey}-${issue.issueId}`
+                                        : `${sectionKey}-${idx}-${original}`
+                                    }
+                                    className="rounded-lg border border-white/[0.08] bg-[#111616] p-2"
+                                  >
+                                    <div className="flex flex-wrap items-start justify-between gap-2">
+                                      <div className="min-w-0">
+                                        <p className="text-[10px] font-semibold uppercase tracking-wide text-rose-300">
+                                          {kind}
+                                        </p>
+                                        <p className="mt-0.5 break-words text-[11px] text-white/85">
+                                          <span className="rounded bg-rose-500/15 px-1 text-rose-200 line-through decoration-rose-400/70">
+                                            {original}
+                                          </span>
+                                          {suggestion ? (
+                                            <>
+                                              <span className="mx-1 text-white/40">
+                                                →
+                                              </span>
+                                              <span className="rounded bg-emerald-500/15 px-1 text-emerald-200">
+                                                {suggestion}
+                                              </span>
+                                            </>
+                                          ) : null}
+                                        </p>
+                                        {issue.message ? (
+                                          <p className="mt-1 text-[10px] text-white/50">
+                                            {issue.message}
+                                          </p>
+                                        ) : null}
+                                      </div>
+                                      <div className="flex shrink-0 items-center gap-1.5">
+                                        {suggestion ? (
+                                          <button
+                                            type="button"
+                                            className="rounded-md border border-emerald-300/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300"
+                                            onClick={() =>
+                                              onApplySpellIssue(issue)
+                                            }
+                                          >
+                                            Apply
+                                          </button>
+                                        ) : null}
+                                        <button
+                                          type="button"
+                                          className="rounded-md border border-white/[0.12] bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold text-white/60"
+                                          onClick={() =>
+                                            onDismissSpellIssue(issue)
+                                          }
+                                        >
+                                          Dismiss
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="mx-3 mb-3 flex flex-wrap items-start justify-between gap-2 rounded-[10px] border border-[rgba(52,211,153,0.18)] bg-[rgba(52,211,153,0.06)] px-3.5 py-2.5">
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-semibold text-white/85">
                       Spelling & grammar
                     </p>
                     <p className="mt-0.5 text-[11px] text-white/40">
-                      {qualitySignals.isSpellChecking
-                        ? 'Checking…'
-                        : `${qualitySignals.spellIssueCount} spelling · ${qualitySignals.grammarIssueCount} grammar`}
+                      Run Re-check to scan this CV for spelling and grammar. No
+                      issues right now.
                     </p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <button
-                      type="button"
-                      title="Apply every spelling suggestion"
-                      className="rounded-md border border-emerald-400/35 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
-                      disabled={
-                        qualitySignals.spellIssueCount <= 0 ||
-                        qualitySignals.isSpellChecking
-                      }
-                      onClick={bumpSpellFixAll}
-                    >
-                      Fix all
-                    </button>
-                    <button
-                      type="button"
-                      title="Re-run spell + grammar check"
-                      className="inline-flex h-[26px] items-center rounded-md border border-[rgba(52,211,153,0.30)] bg-transparent px-3 text-[11px] font-medium text-[#34D399] transition hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-40"
-                      disabled={qualitySignals.isSpellChecking}
-                      onClick={bumpSpellCheck}
-                    >
-                      Re-check
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    className="inline-flex h-[26px] shrink-0 items-center rounded-md border border-[rgba(52,211,153,0.30)] bg-transparent px-3 text-[11px] font-medium text-[#34D399] transition hover:bg-emerald-500/10"
+                    onClick={bumpSpellCheck}
+                    disabled={qualitySignals.isSpellChecking}
+                  >
+                    Re-check
+                  </button>
                 </div>
-                {qualitySignals.isSpellChecking ? (
-                  <p className="mt-2 text-[10px] text-white/40">
-                    Looking through your CV…
-                  </p>
-                ) : (
-                  <div className="mt-2 space-y-3">
-                    {Object.entries(
-                      qualitySignals.spellIssueEntriesBySection,
-                    ).map(([sectionKey, issues]) => {
-                      if (!issues.length) return null;
-                      const sectionLabel =
-                        qualitySignals.sectionLabels[sectionKey] ?? sectionKey;
-                      return (
-                        <div key={sectionKey}>
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-[11px] font-semibold text-white/85">
-                              {sectionLabel}
-                            </p>
-                            <button
-                              type="button"
-                              className="rounded-md border border-white/[0.12] bg-white/[0.04] px-1.5 py-0.5 text-[9px] font-semibold text-white/60 transition hover:border-white/[0.2]"
-                              onClick={() =>
-                                jumpToSectionRef.current?.(
-                                  resolveJumpSectionKey(sectionKey),
-                                  undefined,
-                                  {
-                                    scrollForm: false,
-                                  },
-                                )
-                              }
-                            >
-                              Open
-                            </button>
-                          </div>
-                          <ul className="mt-1 space-y-1.5">
-                            {issues.map((issue, idx) => {
-                              const kind =
-                                issue.type === 'grammar' ||
-                                issue.type === 'style'
-                                  ? 'grammar'
-                                  : 'spelling';
-                              const original = (issue.original ?? '').trim();
-                              const suggestion = (
-                                issue.suggestion ?? ''
-                              ).trim();
-                              return (
-                                <li
-                                  key={
-                                    issue.issueId
-                                      ? `${sectionKey}-${issue.issueId}`
-                                      : `${sectionKey}-${idx}-${original}`
-                                  }
-                                  className="rounded-lg border border-white/[0.08] bg-[#111616] p-2"
-                                >
-                                  <div className="flex flex-wrap items-start justify-between gap-2">
-                                    <div className="min-w-0">
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-rose-300">
-                                        {kind}
-                                      </p>
-                                      <p className="mt-0.5 break-words text-[11px] text-white/85">
-                                        <span className="rounded bg-rose-500/15 px-1 text-rose-200 line-through decoration-rose-400/70">
-                                          {original}
-                                        </span>
-                                        {suggestion ? (
-                                          <>
-                                            <span className="mx-1 text-white/40">
-                                              →
-                                            </span>
-                                            <span className="rounded bg-emerald-500/15 px-1 text-emerald-200">
-                                              {suggestion}
-                                            </span>
-                                          </>
-                                        ) : null}
-                                      </p>
-                                      {issue.message ? (
-                                        <p className="mt-1 text-[10px] text-white/50">
-                                          {issue.message}
-                                        </p>
-                                      ) : null}
-                                    </div>
-                                    <div className="flex shrink-0 items-center gap-1.5">
-                                      {suggestion ? (
-                                        <button
-                                          type="button"
-                                          className="rounded-md border border-emerald-300/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300"
-                                          onClick={() =>
-                                            onApplySpellIssue(issue)
-                                          }
-                                        >
-                                          Apply
-                                        </button>
-                                      ) : null}
-                                      <button
-                                        type="button"
-                                        className="rounded-md border border-white/[0.12] bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold text-white/60"
-                                        onClick={() =>
-                                          onDismissSpellIssue(issue)
-                                        }
-                                      >
-                                        Dismiss
-                                      </button>
-                                    </div>
-                                  </div>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="mx-3 mb-3 flex flex-wrap items-start justify-between gap-2 rounded-[10px] border border-[rgba(52,211,153,0.18)] bg-[rgba(52,211,153,0.06)] px-3.5 py-2.5">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-white/85">
-                    Spelling & grammar
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-white/40">
-                    Run Re-check to scan this CV for spelling and grammar. No
-                    issues right now.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="inline-flex h-[26px] shrink-0 items-center rounded-md border border-[rgba(52,211,153,0.30)] bg-transparent px-3 text-[11px] font-medium text-[#34D399] transition hover:bg-emerald-500/10"
-                  onClick={bumpSpellCheck}
-                  disabled={qualitySignals.isSpellChecking}
-                >
-                  Re-check
-                </button>
-              </div>
-            )}
+              )}
 
-            <ImprovementsPanel
-              improvements={improvementList}
-              profileId={profileId}
-              acceptAllQuota={acceptAllQuota}
-              onDiffPreview={onDiffPreview}
-              onJumpToTarget={onJumpToImprovementTarget}
-              activePreviewSuggestionId={activePreviewSuggestionId}
-              onViewVersions={onViewVersions}
-            />
-          </>
-        )}
-        <ScrollContentEnd />
-      </div>
+              <ImprovementsPanel
+                improvements={improvementList}
+                profileId={profileId}
+                acceptAllQuota={acceptAllQuota}
+                onDiffPreview={onDiffPreview}
+                onJumpToTarget={onJumpToImprovementTarget}
+                activePreviewSuggestionId={activePreviewSuggestionId}
+                onViewVersions={onViewVersions}
+              />
+            </>
+          )}
+          <ScrollContentEnd />
+        </div>
       )}
       {footerSlot ? (
         <div className="shrink-0 border-t border-white/[0.08] bg-[#080A0A] p-3 shadow-[0_-8px_24px_rgba(0,0,0,0.35)]">

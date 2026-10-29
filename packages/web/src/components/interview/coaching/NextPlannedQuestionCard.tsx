@@ -27,7 +27,9 @@ export const NextPlannedQuestionCard = memo(function NextPlannedQuestionCard({
       aria-label="Next interview question"
     >
       <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-teal)]">
-        {nextPlanned.turnKind === 'follow_up' ? 'Optional follow-up (counts)' : 'Next main question'}
+        {nextPlanned.turnKind === 'follow_up'
+          ? 'Optional follow-up (counts)'
+          : 'Next main question'}
       </p>
       <p className="mt-0.5 text-[10px] text-[var(--text-muted)]">
         {nextPlanned.label?.trim() ||

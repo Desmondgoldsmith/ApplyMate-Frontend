@@ -68,7 +68,12 @@ export type MessageAction =
       payload: { rawText: string; pageTitle: string; pageUrl: string };
     }
   | { action: 'saveJob'; payload: SaveJobPayload }
-  | { action: 'jobSaved'; jobId: string; jobStatus: string; companyLogoUrl?: string | null }
+  | {
+      action: 'jobSaved';
+      jobId: string;
+      jobStatus: string;
+      companyLogoUrl?: string | null;
+    }
   | { action: 'saveError'; message: string }
   | { action: 'checkJobSaved'; url: string }
   | { action: 'jobCheckResult'; result: CheckResponse; url?: string }
@@ -186,7 +191,12 @@ export type OpenRecentJobResponse = {
 export type SaveState =
   | { status: 'idle' }
   | { status: 'saving' }
-  | { status: 'saved'; jobId: string; jobStatus: string; companyLogoUrl?: string | null }
+  | {
+      status: 'saved';
+      jobId: string;
+      jobStatus: string;
+      companyLogoUrl?: string | null;
+    }
   | { status: 'error'; message: string };
 
 export type CheckResponse = {

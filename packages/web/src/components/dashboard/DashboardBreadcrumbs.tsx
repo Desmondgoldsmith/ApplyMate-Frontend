@@ -5,7 +5,10 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
 
-import { useBreadcrumbTrail, type BreadcrumbItem } from '@/components/dashboard/BreadcrumbContext';
+import {
+  useBreadcrumbTrail,
+  type BreadcrumbItem,
+} from '@/components/dashboard/BreadcrumbContext';
 import { cn } from '@/lib/utils';
 
 function buildBaseTrail(pathname: string): BreadcrumbItem[] {
@@ -140,20 +143,32 @@ export function DashboardBreadcrumbs({ className }: { className?: string }) {
         {trail.map((item, i) => {
           const isLast = i === trail.length - 1;
           return (
-            <li key={`${item.label}-${i}`} className="flex min-w-0 max-w-full items-center gap-1">
+            <li
+              key={`${item.label}-${i}`}
+              className="flex min-w-0 max-w-full items-center gap-1"
+            >
               {i > 0 ? (
-                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-white/25" aria-hidden />
+                <ChevronRight
+                  className="h-3.5 w-3.5 shrink-0 text-white/25"
+                  aria-hidden
+                />
               ) : null}
               {item.href && !isLast ? (
                 <Link
                   href={item.href}
-                  className={cn(crumbClass, 'text-white/55 transition hover:text-[#00C9B1]')}
+                  className={cn(
+                    crumbClass,
+                    'text-white/55 transition hover:text-[#00C9B1]',
+                  )}
                 >
                   {item.label}
                 </Link>
               ) : (
                 <span
-                  className={cn(crumbClass, isLast ? 'font-semibold text-white/95' : 'text-white/55')}
+                  className={cn(
+                    crumbClass,
+                    isLast ? 'font-semibold text-white/95' : 'text-white/55',
+                  )}
                   aria-current={isLast ? 'page' : undefined}
                 >
                   {item.label}

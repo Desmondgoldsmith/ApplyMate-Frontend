@@ -383,7 +383,9 @@ export function mergeTrackedJobs(
       applicationId: app?.id ?? null,
       applicationStatus: app?.status ?? null,
       serverPipelineStage:
-        fromServer && stage === fromServer ? (hist?.pipelineStatus ?? null) : null,
+        fromServer && stage === fromServer
+          ? (hist?.pipelineStatus ?? null)
+          : null,
       title,
       company,
       companyLogoUrl,
@@ -496,9 +498,7 @@ export function hubStageToApplicationStatus(stage: HubStage): string | null {
 }
 
 /** Payload for POST /jobs/archive — prefer bookmark, then analysis, then application. */
-export function archivePayloadForTrackedJob(
-  job: TrackedJob,
-): {
+export function archivePayloadForTrackedJob(job: TrackedJob): {
   bookmarkId?: string;
   jobAnalysisId?: string;
   applicationId?: string;

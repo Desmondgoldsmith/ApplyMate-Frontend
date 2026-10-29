@@ -35,15 +35,16 @@ export function unlockTourScroll(): void {
   }
 }
 
-export function bindTourScrollPrevent(
-  isActive: () => boolean,
-): () => void {
+export function bindTourScrollPrevent(isActive: () => boolean): () => void {
   const block = (e: Event) => {
     if (!isActive()) return;
     e.preventDefault();
   };
   document.addEventListener('wheel', block, { passive: false, capture: true });
-  document.addEventListener('touchmove', block, { passive: false, capture: true });
+  document.addEventListener('touchmove', block, {
+    passive: false,
+    capture: true,
+  });
   return () => {
     document.removeEventListener('wheel', block, { capture: true });
     document.removeEventListener('touchmove', block, { capture: true });

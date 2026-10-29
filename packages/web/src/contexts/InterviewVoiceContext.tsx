@@ -115,7 +115,9 @@ export function InterviewVoiceProvider({
 
   return (
     <RecordingContext.Provider value={recordingSlice}>
-      <TranscriptContext.Provider value={transcriptSlice}>{children}</TranscriptContext.Provider>
+      <TranscriptContext.Provider value={transcriptSlice}>
+        {children}
+      </TranscriptContext.Provider>
     </RecordingContext.Provider>
   );
 }
@@ -136,7 +138,9 @@ export function useInterviewVoiceRecording(): RecordingSlice {
 export function useInterviewVoiceTranscript(): TranscriptSlice {
   const ctx = useContext(TranscriptContext);
   if (!ctx) {
-    throw new Error('useInterviewVoiceTranscript must be used within InterviewVoiceProvider');
+    throw new Error(
+      'useInterviewVoiceTranscript must be used within InterviewVoiceProvider',
+    );
   }
   return ctx;
 }

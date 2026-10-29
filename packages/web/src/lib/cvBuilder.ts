@@ -33,12 +33,18 @@ export const CV_TEMPLATE_IDS: readonly CvTemplateId[] = [
   'onyx',
 ];
 
-export function isCvTemplateId(v: string | undefined | null): v is CvTemplateId {
-  return typeof v === 'string' && (CV_TEMPLATE_IDS as readonly string[]).includes(v);
+export function isCvTemplateId(
+  v: string | undefined | null,
+): v is CvTemplateId {
+  return (
+    typeof v === 'string' && (CV_TEMPLATE_IDS as readonly string[]).includes(v)
+  );
 }
 
 /** Split CV bullets whether stored as a string (newline-separated) or string[]. */
-export function normalizeBullets(bullets: string | string[] | undefined | null): string[] {
+export function normalizeBullets(
+  bullets: string | string[] | undefined | null,
+): string[] {
   if (!bullets) return [];
   if (Array.isArray(bullets)) {
     return bullets
@@ -137,7 +143,13 @@ export type CVBuilderCertification = {
 export type CVBuilderLanguage = {
   id: string;
   language: string;
-  proficiency: '' | 'Native' | 'Fluent' | 'Professional' | 'Intermediate' | 'Basic';
+  proficiency:
+    | ''
+    | 'Native'
+    | 'Fluent'
+    | 'Professional'
+    | 'Intermediate'
+    | 'Basic';
   /** CEFR breakdown — used by Europass templates */
   listening?: string;
   reading?: string;
@@ -174,13 +186,19 @@ export function isCvReferenceUponRequestPlaceholder(ref: {
   );
 }
 
-export function filterCvBuilderReferences(refs: CVBuilderReference[]): CVBuilderReference[] {
+export function filterCvBuilderReferences(
+  refs: CVBuilderReference[],
+): CVBuilderReference[] {
   return refs.filter((r) => !isCvReferenceUponRequestPlaceholder(r));
 }
 
 export function cvReferenceHasContent(ref: CVBuilderReference): boolean {
   return Boolean(
-    ref.name.trim() || ref.title.trim() || ref.company.trim() || ref.email.trim() || ref.phone.trim(),
+    ref.name.trim() ||
+    ref.title.trim() ||
+    ref.company.trim() ||
+    ref.email.trim() ||
+    ref.phone.trim(),
   );
 }
 
@@ -237,7 +255,10 @@ export function newLocalId(): string {
   return `id-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 }
 
-export function emptyCVBuilderData(defaults?: { email?: string; name?: string }): CVBuilderData {
+export function emptyCVBuilderData(defaults?: {
+  email?: string;
+  name?: string;
+}): CVBuilderData {
   return {
     personal: {
       name: defaults?.name ?? '',
@@ -269,12 +290,16 @@ export function emptyCVBuilderData(defaults?: { email?: string; name?: string })
  * Coerces partial or merged builder snapshots (e.g. optimistic patches) into a shape safe for
  * document preview components, which assume `experience.items`, `education.items`, etc. exist.
  */
-export function ensureCvPreviewData(data: CVBuilderData | Partial<CVBuilderData> | null | undefined): CVBuilderData {
+export function ensureCvPreviewData(
+  data: CVBuilderData | Partial<CVBuilderData> | null | undefined,
+): CVBuilderData {
   const empty = emptyCVBuilderData();
   if (!data || typeof data !== 'object') return empty;
   const d = data as Partial<CVBuilderData>;
   const rawPersonal =
-    d.personal && typeof d.personal === 'object' ? { ...empty.personal, ...d.personal } : empty.personal;
+    d.personal && typeof d.personal === 'object'
+      ? { ...empty.personal, ...d.personal }
+      : empty.personal;
   const personal: CVBuilderPersonal = {
     ...rawPersonal,
     name: normalizeText(rawPersonal.name),
@@ -292,12 +317,30 @@ export function ensureCvPreviewData(data: CVBuilderData | Partial<CVBuilderData>
           value: normalizeText(e?.value),
         }))
       : [],
-    dateOfBirth: rawPersonal.dateOfBirth !== undefined ? normalizeText(rawPersonal.dateOfBirth) : undefined,
-    placeOfBirth: rawPersonal.placeOfBirth !== undefined ? normalizeText(rawPersonal.placeOfBirth) : undefined,
-    nationality: rawPersonal.nationality !== undefined ? normalizeText(rawPersonal.nationality) : undefined,
-    gender: rawPersonal.gender !== undefined ? normalizeText(rawPersonal.gender) : undefined,
-    maritalStatus: rawPersonal.maritalStatus !== undefined ? normalizeText(rawPersonal.maritalStatus) : undefined,
-    drivingLicence: rawPersonal.drivingLicence !== undefined ? normalizeText(rawPersonal.drivingLicence) : undefined,
+    dateOfBirth:
+      rawPersonal.dateOfBirth !== undefined
+        ? normalizeText(rawPersonal.dateOfBirth)
+        : undefined,
+    placeOfBirth:
+      rawPersonal.placeOfBirth !== undefined
+        ? normalizeText(rawPersonal.placeOfBirth)
+        : undefined,
+    nationality:
+      rawPersonal.nationality !== undefined
+        ? normalizeText(rawPersonal.nationality)
+        : undefined,
+    gender:
+      rawPersonal.gender !== undefined
+        ? normalizeText(rawPersonal.gender)
+        : undefined,
+    maritalStatus:
+      rawPersonal.maritalStatus !== undefined
+        ? normalizeText(rawPersonal.maritalStatus)
+        : undefined,
+    drivingLicence:
+      rawPersonal.drivingLicence !== undefined
+        ? normalizeText(rawPersonal.drivingLicence)
+        : undefined,
     photoUrl:
       rawPersonal.photoUrl === undefined
         ? undefined
@@ -305,7 +348,10 @@ export function ensureCvPreviewData(data: CVBuilderData | Partial<CVBuilderData>
             const s = normalizeText(rawPersonal.photoUrl as unknown);
             return s || undefined;
           })(),
-    hobbies: rawPersonal.hobbies !== undefined ? normalizeText(rawPersonal.hobbies) : undefined,
+    hobbies:
+      rawPersonal.hobbies !== undefined
+        ? normalizeText(rawPersonal.hobbies)
+        : undefined,
   };
   const summaryPlain =
     typeof d.summary === 'string'
@@ -321,7 +367,9 @@ export function ensureCvPreviewData(data: CVBuilderData | Partial<CVBuilderData>
       items: Array.isArray(d.education?.items) ? d.education.items : [],
     },
     skills: {
-      categories: Array.isArray(d.skills?.categories) ? d.skills.categories : [],
+      categories: Array.isArray(d.skills?.categories)
+        ? d.skills.categories
+        : [],
     },
     projects: Array.isArray(d.projects) ? d.projects : [],
     certifications: Array.isArray(d.certifications) ? d.certifications : [],
@@ -329,7 +377,9 @@ export function ensureCvPreviewData(data: CVBuilderData | Partial<CVBuilderData>
     achievements: Array.isArray(d.achievements) ? d.achievements : [],
     references: Array.isArray(d.references) ? d.references : [],
     customSections: Array.isArray(d.customSections) ? d.customSections : [],
-    parsedCustomSections: Array.isArray(d.parsedCustomSections) ? d.parsedCustomSections : [],
+    parsedCustomSections: Array.isArray(d.parsedCustomSections)
+      ? d.parsedCustomSections
+      : [],
   };
 }
 
@@ -337,15 +387,28 @@ export function ensureCvPreviewData(data: CVBuilderData | Partial<CVBuilderData>
  * Ensures every user-visible string leaf in builder state is a plain string (never `[object Object]`).
  * Use after deep-merging assistant patches or when hydrating snapshots that may contain nested API shapes.
  */
-export function coerceStructuredTextInCvBuilderData(data: CVBuilderData): CVBuilderData {
+export function coerceStructuredTextInCvBuilderData(
+  data: CVBuilderData,
+): CVBuilderData {
   const base = ensureCvPreviewData(data);
-  const profOrder = ['Native', 'Fluent', 'Professional', 'Intermediate', 'Basic'] as const;
-  const coerceProf = (p: CVBuilderLanguage['proficiency']): CVBuilderLanguage['proficiency'] => {
+  const profOrder = [
+    'Native',
+    'Fluent',
+    'Professional',
+    'Intermediate',
+    'Basic',
+  ] as const;
+  const coerceProf = (
+    p: CVBuilderLanguage['proficiency'],
+  ): CVBuilderLanguage['proficiency'] => {
     if (p === '') return '';
-    if (typeof p === 'string' && (profOrder as readonly string[]).includes(p)) return p;
+    if (typeof p === 'string' && (profOrder as readonly string[]).includes(p))
+      return p;
     const t = normalizeText(p as unknown).trim();
     if (!t) return '';
-    return (profOrder as readonly string[]).includes(t) ? (t as CVBuilderLanguage['proficiency']) : '';
+    return (profOrder as readonly string[]).includes(t)
+      ? (t as CVBuilderLanguage['proficiency'])
+      : '';
   };
   return {
     ...base,
@@ -357,7 +420,9 @@ export function coerceStructuredTextInCvBuilderData(data: CVBuilderData): CVBuil
         location: normalizeText(it.location as unknown),
         startDate: normalizeText(it.startDate as unknown),
         endDate: normalizeText(it.endDate as unknown),
-        bullets: (Array.isArray(it.bullets) ? it.bullets : []).map((b) => normalizeText(b as unknown)),
+        bullets: (Array.isArray(it.bullets) ? it.bullets : []).map((b) =>
+          normalizeText(b as unknown),
+        ),
       })),
     },
     education: {
@@ -385,7 +450,9 @@ export function coerceStructuredTextInCvBuilderData(data: CVBuilderData): CVBuil
       ...p,
       name: normalizeText(p.name as unknown),
       description: normalizeText(p.description as unknown),
-      technologies: (Array.isArray(p.technologies) ? p.technologies : []).map((t) => normalizeText(t as unknown)),
+      technologies: (Array.isArray(p.technologies) ? p.technologies : []).map(
+        (t) => normalizeText(t as unknown),
+      ),
       url: normalizeText(p.url as unknown),
       bullets: normalizeText(p.bullets as unknown),
     })),
@@ -407,13 +474,26 @@ export function coerceStructuredTextInCvBuilderData(data: CVBuilderData): CVBuil
       ...l,
       language: normalizeText(l.language as unknown),
       proficiency: coerceProf(l.proficiency),
-      listening: l.listening !== undefined ? normalizeText(l.listening as unknown) : undefined,
-      reading: l.reading !== undefined ? normalizeText(l.reading as unknown) : undefined,
+      listening:
+        l.listening !== undefined
+          ? normalizeText(l.listening as unknown)
+          : undefined,
+      reading:
+        l.reading !== undefined
+          ? normalizeText(l.reading as unknown)
+          : undefined,
       spokenInteraction:
-        l.spokenInteraction !== undefined ? normalizeText(l.spokenInteraction as unknown) : undefined,
+        l.spokenInteraction !== undefined
+          ? normalizeText(l.spokenInteraction as unknown)
+          : undefined,
       spokenProduction:
-        l.spokenProduction !== undefined ? normalizeText(l.spokenProduction as unknown) : undefined,
-      writing: l.writing !== undefined ? normalizeText(l.writing as unknown) : undefined,
+        l.spokenProduction !== undefined
+          ? normalizeText(l.spokenProduction as unknown)
+          : undefined,
+      writing:
+        l.writing !== undefined
+          ? normalizeText(l.writing as unknown)
+          : undefined,
     })),
     references: filterCvBuilderReferences(
       base.references.map((r) => ({
@@ -436,8 +516,11 @@ export function coerceStructuredTextInCvBuilderData(data: CVBuilderData): CVBuil
       items: sec.items.map((it) => ({
         ...it,
         text: normalizeText(it.text as unknown),
-        date: it.date !== undefined ? normalizeText(it.date as unknown) : undefined,
-        subItems: (Array.isArray(it.subItems) ? it.subItems : []).map((s) => normalizeText(s as unknown)),
+        date:
+          it.date !== undefined ? normalizeText(it.date as unknown) : undefined,
+        subItems: (Array.isArray(it.subItems) ? it.subItems : []).map((s) =>
+          normalizeText(s as unknown),
+        ),
       })),
     })),
   };
@@ -447,7 +530,10 @@ function str(v: unknown): string {
   return typeof v === 'string' ? v : '';
 }
 
-function sectionByType(sections: CVSectionRecord[], type: string): CVSectionRecord | undefined {
+function sectionByType(
+  sections: CVSectionRecord[],
+  type: string,
+): CVSectionRecord | undefined {
   return sections.find((s) => s.type.toLowerCase() === type.toLowerCase());
 }
 
@@ -456,7 +542,11 @@ function sectionExperienceHasMeaningfulItems(items: unknown[]): boolean {
   for (const raw of items) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
     const o = raw as Record<string, unknown>;
-    if (str(o.title ?? o.role ?? o.position).trim() || str(o.company ?? o.organization).trim()) return true;
+    if (
+      str(o.title ?? o.role ?? o.position).trim() ||
+      str(o.company ?? o.organization).trim()
+    )
+      return true;
   }
   return false;
 }
@@ -465,25 +555,36 @@ function sectionEducationHasMeaningfulItems(items: unknown[]): boolean {
   for (const raw of items) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
     const o = raw as Record<string, unknown>;
-    if (str(o.degree ?? o.qualification).trim() || str(o.school ?? o.institution ?? o.university).trim()) return true;
+    if (
+      str(o.degree ?? o.qualification).trim() ||
+      str(o.school ?? o.institution ?? o.university).trim()
+    )
+      return true;
   }
   return false;
 }
 
-function sectionSkillsHasMeaningfulData(skSec: CVSectionRecord | undefined): boolean {
+function sectionSkillsHasMeaningfulData(
+  skSec: CVSectionRecord | undefined,
+): boolean {
   if (!skSec?.data) return false;
   const d = skSec.data;
-  if (Array.isArray(d.skillCategories) && d.skillCategories.length > 0) return true;
+  if (Array.isArray(d.skillCategories) && d.skillCategories.length > 0)
+    return true;
   if (Array.isArray(d.groups) && d.groups.length > 0) return true;
   if (Array.isArray(d.categories)) {
     return d.categories.some((c) => {
       if (!c || typeof c !== 'object') return false;
       const o = c as Record<string, unknown>;
       const skills = Array.isArray(o.skills)
-        ? o.skills.filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+        ? o.skills.filter(
+            (x): x is string => typeof x === 'string' && x.trim().length > 0,
+          )
         : [];
       const items = Array.isArray(o.items)
-        ? o.items.filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+        ? o.items.filter(
+            (x): x is string => typeof x === 'string' && x.trim().length > 0,
+          )
         : [];
       return skills.length > 0 || items.length > 0;
     });
@@ -525,12 +626,15 @@ function coalesceItemsFromSectionData(
   return undefined;
 }
 
-function structuredCoreIsEmpty(st: CVProfile['structured'] | undefined): boolean {
+function structuredCoreIsEmpty(
+  st: CVProfile['structured'] | undefined,
+): boolean {
   const ex = st?.experience;
   const ed = st?.education;
   const sk = st?.skills;
   const pk = st?.primarySkills;
-  const sc = (st as { skillCategories?: unknown[] } | undefined)?.skillCategories;
+  const sc = (st as { skillCategories?: unknown[] } | undefined)
+    ?.skillCategories;
   const noEx = !Array.isArray(ex) || ex.length === 0;
   const noEd = !Array.isArray(ed) || ed.length === 0;
   const noSk =
@@ -557,26 +661,32 @@ function stripCvExtractionNoise(raw: string): string {
     .trim();
 }
 
-type ParsedCvTextSection = 'summary' | 'education' | 'skills' | 'projects' | 'experience';
+type ParsedCvTextSection =
+  | 'summary'
+  | 'education'
+  | 'skills'
+  | 'projects'
+  | 'experience';
 
-const CV_TEXT_SECTION_HEADERS: { key: ParsedCvTextSection; pattern: RegExp }[] = [
-  { key: 'summary', pattern: /^(professional\s+)?summary$/i },
-  { key: 'summary', pattern: /^profile$/i },
-  { key: 'summary', pattern: /^objective$/i },
-  { key: 'summary', pattern: /^about(\s+me)?$/i },
-  { key: 'education', pattern: /^education$/i },
-  { key: 'education', pattern: /^academic(\s+background)?$/i },
-  { key: 'experience', pattern: /^(work\s+)?experience$/i },
-  { key: 'experience', pattern: /^employment(\s+history)?$/i },
-  { key: 'experience', pattern: /^professional\s+experience$/i },
-  { key: 'skills', pattern: /^skills$/i },
-  { key: 'skills', pattern: /^technical\s+skills$/i },
-  { key: 'skills', pattern: /^core\s+competencies$/i },
-  { key: 'skills', pattern: /^areas\s+of\s+expertise$/i },
-  { key: 'skills', pattern: /^expertise$/i },
-  { key: 'projects', pattern: /^projects?$/i },
-  { key: 'projects', pattern: /^selected\s+projects$/i },
-];
+const CV_TEXT_SECTION_HEADERS: { key: ParsedCvTextSection; pattern: RegExp }[] =
+  [
+    { key: 'summary', pattern: /^(professional\s+)?summary$/i },
+    { key: 'summary', pattern: /^profile$/i },
+    { key: 'summary', pattern: /^objective$/i },
+    { key: 'summary', pattern: /^about(\s+me)?$/i },
+    { key: 'education', pattern: /^education$/i },
+    { key: 'education', pattern: /^academic(\s+background)?$/i },
+    { key: 'experience', pattern: /^(work\s+)?experience$/i },
+    { key: 'experience', pattern: /^employment(\s+history)?$/i },
+    { key: 'experience', pattern: /^professional\s+experience$/i },
+    { key: 'skills', pattern: /^skills$/i },
+    { key: 'skills', pattern: /^technical\s+skills$/i },
+    { key: 'skills', pattern: /^core\s+competencies$/i },
+    { key: 'skills', pattern: /^areas\s+of\s+expertise$/i },
+    { key: 'skills', pattern: /^expertise$/i },
+    { key: 'projects', pattern: /^projects?$/i },
+    { key: 'projects', pattern: /^selected\s+projects$/i },
+  ];
 
 function matchCvTextSectionHeader(line: string): ParsedCvTextSection | null {
   const t = line.trim().replace(/[:：]\s*$/, '');
@@ -590,7 +700,9 @@ function matchCvTextSectionHeader(line: string): ParsedCvTextSection | null {
 }
 
 /** Split CV plain text on common ALL-CAPS / title headings (upload extract when `structured` is empty). */
-function splitCvTextIntoSections(raw: string): Map<ParsedCvTextSection, string> {
+function splitCvTextIntoSections(
+  raw: string,
+): Map<ParsedCvTextSection, string> {
   const out = new Map<ParsedCvTextSection, string>();
   const lines = stripCvExtractionNoise(raw).split('\n');
   let current: ParsedCvTextSection | null = null;
@@ -618,12 +730,19 @@ function splitCvTextIntoSections(raw: string): Map<ParsedCvTextSection, string> 
   return out;
 }
 
-function parseEducationItemsFromTextBlob(blob: string): CVBuilderEducationItem[] {
-  const lines = blob.split('\n').map((l) => l.trim()).filter(Boolean);
+function parseEducationItemsFromTextBlob(
+  blob: string,
+): CVBuilderEducationItem[] {
+  const lines = blob
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
   const items: CVBuilderEducationItem[] = [];
   /** Start of school line: has optional "|" and a 4-digit year range, or classic "University …" */
   const isSchoolLine = (ln: string) =>
-    /\d{4}\s*[–—-]\s*(\d{4}|present)/i.test(ln) && (ln.includes('|') || /university|college|institute|school|academy/i.test(ln));
+    /\d{4}\s*[–—-]\s*(\d{4}|present)/i.test(ln) &&
+    (ln.includes('|') ||
+      /university|college|institute|school|academy/i.test(ln));
 
   let i = 0;
   while (i < lines.length) {
@@ -639,9 +758,17 @@ function parseEducationItemsFromTextBlob(blob: string): CVBuilderEducationItem[]
     if (yr && yr.index !== undefined) {
       startYear = yr[1]!;
       endYear = /present/i.test(yr[2]!) ? 'Present' : yr[2]!;
-      school = first.slice(0, yr.index).trim().replace(/\|\s*$/, '').trim();
+      school = first
+        .slice(0, yr.index)
+        .trim()
+        .replace(/\|\s*$/, '')
+        .trim();
     }
-    const degree = (lines[i + 1] && !isSchoolLine(lines[i + 1]!) ? lines[i + 1]! : '').replace(/\s*\.\s*$/, '').trim();
+    const degree = (
+      lines[i + 1] && !isSchoolLine(lines[i + 1]!) ? lines[i + 1]! : ''
+    )
+      .replace(/\s*\.\s*$/, '')
+      .trim();
     if (school.length > 2 || degree.length > 2) {
       items.push({
         id: newLocalId(),
@@ -658,8 +785,13 @@ function parseEducationItemsFromTextBlob(blob: string): CVBuilderEducationItem[]
   return items;
 }
 
-function parseSkillCategoriesFromTextBlob(blob: string): CVBuilderSkillCategory[] {
-  const lines = blob.split('\n').map((l) => l.trim()).filter(Boolean);
+function parseSkillCategoriesFromTextBlob(
+  blob: string,
+): CVBuilderSkillCategory[] {
+  const lines = blob
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
   const cats: CVBuilderSkillCategory[] = [];
 
   for (const line of lines) {
@@ -675,7 +807,10 @@ function parseSkillCategoriesFromTextBlob(blob: string): CVBuilderSkillCategory[
       continue;
     }
     if (line.includes('|') && line.length < 400 && !line.includes('http')) {
-      const parts = line.split('|').map((s) => s.trim()).filter((s) => s.length > 1);
+      const parts = line
+        .split('|')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 1);
       if (parts.length >= 3) {
         cats.push({ id: newLocalId(), name: 'Expertise', skills: parts });
       }
@@ -685,25 +820,39 @@ function parseSkillCategoriesFromTextBlob(blob: string): CVBuilderSkillCategory[
 }
 
 function parseProjectsFromTextBlob(blob: string): CVBuilderProject[] {
-  const chunks = blob.split(/\n\s*\n+/).map((c) => c.trim()).filter(Boolean);
+  const chunks = blob
+    .split(/\n\s*\n+/)
+    .map((c) => c.trim())
+    .filter(Boolean);
   const projects: CVBuilderProject[] = [];
   for (const chunk of chunks) {
     const urlM = chunk.match(/https?:\/\/[^\s)]+/i);
     const url = urlM ? urlM[0]!.replace(/[),.;]+$/, '') : '';
-    const lines = chunk.split('\n').map((l) => l.trim()).filter(Boolean);
+    const lines = chunk
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
     if (!lines.length) continue;
     const titleParts: string[] = [];
     for (const ln of lines) {
       if (/^https?:\/\//i.test(ln)) break;
       if (/^o\s+/i.test(ln)) continue;
       if (ln.startsWith('•') || ln.startsWith('-')) break;
-      if (titleParts.length < 2 && ln.length < 120) titleParts.push(ln.replace(/[-–—]\s*$/, '').trim());
+      if (titleParts.length < 2 && ln.length < 120)
+        titleParts.push(ln.replace(/[-–—]\s*$/, '').trim());
       else break;
     }
     const title = titleParts.join(' — ').trim();
-    const bulletLines = lines.filter((l) => /^[•\-\u2022o]\s+/i.test(l) || /^o\s+/i.test(l));
+    const bulletLines = lines.filter(
+      (l) => /^[•\-\u2022o]\s+/i.test(l) || /^o\s+/i.test(l),
+    );
     const bullets = bulletLines
-      .map((l) => l.replace(/^[•\-\u2022o]\s+/i, '').replace(/^o\s+/i, '').trim())
+      .map((l) =>
+        l
+          .replace(/^[•\-\u2022o]\s+/i, '')
+          .replace(/^o\s+/i, '')
+          .trim(),
+      )
       .filter(Boolean)
       .join('\n');
     if (title || url || bullets.length > 20) {
@@ -720,11 +869,17 @@ function parseProjectsFromTextBlob(blob: string): CVBuilderProject[] {
   return projects;
 }
 
-function extractContactHintsFromRawText(raw: string, base: CVBuilderData): void {
+function extractContactHintsFromRawText(
+  raw: string,
+  base: CVBuilderData,
+): void {
   const first = raw.split('\n')[0]?.trim() ?? '';
   if (!base.personal.location.trim() && first.includes('|')) {
     const locCand = first.split('|')[0]?.trim() ?? '';
-    if (/^[A-Za-zÀ-ÿ0-9\s,.()-]{3,80}$/.test(locCand) && !locCand.includes('@')) {
+    if (
+      /^[A-Za-zÀ-ÿ0-9\s,.()-]{3,80}$/.test(locCand) &&
+      !locCand.includes('@')
+    ) {
       base.personal.location = locCand;
     }
   }
@@ -746,7 +901,10 @@ function extractContactHintsFromRawText(raw: string, base: CVBuilderData): void 
  * When the API leaves `structured.experience` (etc.) empty but `rawText` holds a readable CV,
  * infer sections from common headings so the builder is usable without a second backend parse.
  */
-function applyRawTextFallbackToBuilder(profile: CVProfile, base: CVBuilderData): void {
+function applyRawTextFallbackToBuilder(
+  profile: CVProfile,
+  base: CVBuilderData,
+): void {
   const raw = profile.rawText?.trim();
   if (!raw || raw.length < 80) return;
   // Do not gate the whole fallback on `structuredCoreIsEmpty`: when the API fills
@@ -787,7 +945,10 @@ function applyRawTextFallbackToBuilder(profile: CVProfile, base: CVBuilderData):
 
   const expBlob = parsedSections.get('experience');
   if (expBlob && base.experience.items.length === 0) {
-    const lines = expBlob.split('\n').map((l) => l.trim()).filter(Boolean);
+    const lines = expBlob
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
     const bullets: string[] = [];
     let title = '';
     let company = '';
@@ -800,7 +961,8 @@ function applyRawTextFallbackToBuilder(profile: CVProfile, base: CVBuilderData):
         company = ln;
         continue;
       }
-      if (ln.startsWith('•') || ln.startsWith('-')) bullets.push(ln.replace(/^[•\-]\s*/, '').trim());
+      if (ln.startsWith('•') || ln.startsWith('-'))
+        bullets.push(ln.replace(/^[•\-]\s*/, '').trim());
     }
     if (title || bullets.length) {
       base.experience.items.push({
@@ -838,7 +1000,9 @@ export function cvProfileContentFingerprint(
   const kwN = st?.keywords?.length ?? 0;
   const role = st?.roleLevel ?? '';
   const rawFb =
-    profile?.rawText && structuredCoreIsEmpty(st) ? djb2Short(profile.rawText) : '';
+    profile?.rawText && structuredCoreIsEmpty(st)
+      ? djb2Short(profile.rawText)
+      : '';
   return [
     profile?.id ?? '',
     profile?.updatedAt ?? '',
@@ -864,7 +1028,10 @@ function parseFirstLineName(raw?: string): string {
 }
 
 /** Map loose API item → experience row */
-function mapExpItem(o: Record<string, unknown>, id: string): CVBuilderExperienceItem {
+function mapExpItem(
+  o: Record<string, unknown>,
+  id: string,
+): CVBuilderExperienceItem {
   let startDate = str(o.startDate ?? o.start ?? '');
   let endDate = str(o.endDate ?? o.end ?? '');
   const duration = str(o.duration);
@@ -897,12 +1064,17 @@ function mapExpItem(o: Record<string, unknown>, id: string): CVBuilderExperience
     location: str(o.location),
     startDate,
     endDate,
-    current: o.current === true || str(o.endDate ?? endDate).toLowerCase() === 'present',
+    current:
+      o.current === true ||
+      str(o.endDate ?? endDate).toLowerCase() === 'present',
     bullets,
   };
 }
 
-function mapEduItem(o: Record<string, unknown>, id: string): CVBuilderEducationItem {
+function mapEduItem(
+  o: Record<string, unknown>,
+  id: string,
+): CVBuilderEducationItem {
   return {
     id,
     degree: str(o.degree ?? o.qualification),
@@ -914,10 +1086,19 @@ function mapEduItem(o: Record<string, unknown>, id: string): CVBuilderEducationI
   };
 }
 
-const LANGUAGE_PROFICIENCY_LEVELS = ['Native', 'Fluent', 'Professional', 'Intermediate', 'Basic'] as const;
+const LANGUAGE_PROFICIENCY_LEVELS = [
+  'Native',
+  'Fluent',
+  'Professional',
+  'Intermediate',
+  'Basic',
+] as const;
 
 function humanizeCustomSectionType(type: string): string {
-  const raw = type.replace(/^custom_?/i, '').replace(/_/g, ' ').trim();
+  const raw = type
+    .replace(/^custom_?/i, '')
+    .replace(/_/g, ' ')
+    .trim();
   if (!raw) return 'Custom section';
   return raw.replace(/\b\w/g, (c) => c.toUpperCase());
 }
@@ -936,16 +1117,27 @@ function mapParsedCustomItemRaw(raw: unknown): CVBuilderParsedCustomItem {
   const date = str(o.date);
   let subItems: string[] = [];
   if (Array.isArray(o.subItems)) {
-    subItems = o.subItems.filter((x): x is string => typeof x === 'string').map((x) => x.trim()).filter(Boolean);
+    subItems = o.subItems
+      .filter((x): x is string => typeof x === 'string')
+      .map((x) => x.trim())
+      .filter(Boolean);
   } else if (Array.isArray(o.bullets)) {
-    subItems = o.bullets.filter((x): x is string => typeof x === 'string').map((x) => x.trim()).filter(Boolean);
+    subItems = o.bullets
+      .filter((x): x is string => typeof x === 'string')
+      .map((x) => x.trim())
+      .filter(Boolean);
   } else if (typeof o.subItemsText === 'string') {
-    subItems = o.subItemsText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    subItems = o.subItemsText
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
   }
   return { id, text, date: date || undefined, subItems };
 }
 
-function mapSectionToParsedCustom(s: CVSectionRecord): CVBuilderParsedCustomSection {
+function mapSectionToParsedCustom(
+  s: CVSectionRecord,
+): CVBuilderParsedCustomSection {
   const d = (s.data ?? {}) as Record<string, unknown>;
   const title = str(d.title) || humanizeCustomSectionType(s.type);
   const rawItems = d.items;
@@ -969,7 +1161,9 @@ export function transformSectionsToCVBuilderData(
   const sorted = [...sections].sort((a, b) => a.order - b.order);
 
   if (profile) {
-    base.personal.headline = normalizeProfessionalHeadlineTitle(normalizeText(profile.headline as unknown));
+    base.personal.headline = normalizeProfessionalHeadlineTitle(
+      normalizeText(profile.headline as unknown),
+    );
     base.personal.phone = profile.phone ?? '';
     base.personal.location = profile.location ?? '';
     base.personal.website = profile.website ?? '';
@@ -980,7 +1174,10 @@ export function transformSectionsToCVBuilderData(
     const rawExtras = stRec?.extras;
     if (Array.isArray(rawExtras)) {
       base.personal.extras = rawExtras
-        .filter((x): x is Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x))
+        .filter(
+          (x): x is Record<string, unknown> =>
+            x !== null && typeof x === 'object' && !Array.isArray(x),
+        )
         .map((o) => ({ label: str(o.label), value: str(o.value) }))
         .filter((e) => e.label || e.value);
     }
@@ -990,23 +1187,32 @@ export function transformSectionsToCVBuilderData(
       typeof stRec?.placeOfBirth === 'string' ? stRec.placeOfBirth : undefined;
     base.personal.nationality =
       typeof stRec?.nationality === 'string' ? stRec.nationality : undefined;
-    base.personal.gender = typeof stRec?.gender === 'string' ? stRec.gender : undefined;
+    base.personal.gender =
+      typeof stRec?.gender === 'string' ? stRec.gender : undefined;
     base.personal.maritalStatus =
-      typeof stRec?.maritalStatus === 'string' ? stRec.maritalStatus : undefined;
+      typeof stRec?.maritalStatus === 'string'
+        ? stRec.maritalStatus
+        : undefined;
     base.personal.drivingLicence =
-      typeof stRec?.drivingLicence === 'string' ? stRec.drivingLicence : undefined;
-    base.personal.photoUrl = typeof stRec?.photoUrl === 'string' ? stRec.photoUrl : undefined;
-    base.personal.hobbies = typeof stRec?.hobbies === 'string' ? stRec.hobbies : undefined;
+      typeof stRec?.drivingLicence === 'string'
+        ? stRec.drivingLicence
+        : undefined;
+    base.personal.photoUrl =
+      typeof stRec?.photoUrl === 'string' ? stRec.photoUrl : undefined;
+    base.personal.hobbies =
+      typeof stRec?.hobbies === 'string' ? stRec.hobbies : undefined;
 
     if (Array.isArray(stRec?.references)) {
-      base.references = (stRec.references as Record<string, unknown>[]).map((r) => ({
-        id: typeof r.id === 'string' ? r.id : newLocalId(),
-        name: typeof r.name === 'string' ? r.name : '',
-        title: typeof r.title === 'string' ? r.title : '',
-        company: typeof r.company === 'string' ? r.company : '',
-        email: typeof r.email === 'string' ? r.email : '',
-        phone: typeof r.phone === 'string' ? r.phone : '',
-      }));
+      base.references = (stRec.references as Record<string, unknown>[]).map(
+        (r) => ({
+          id: typeof r.id === 'string' ? r.id : newLocalId(),
+          name: typeof r.name === 'string' ? r.name : '',
+          title: typeof r.title === 'string' ? r.title : '',
+          company: typeof r.company === 'string' ? r.company : '',
+          email: typeof r.email === 'string' ? r.email : '',
+          phone: typeof r.phone === 'string' ? r.phone : '',
+        }),
+      );
     }
     const structuredName =
       str(stRec?.fullName) ||
@@ -1025,7 +1231,10 @@ export function transformSectionsToCVBuilderData(
   }
   const stRecTop = profile?.structured as Record<string, unknown> | undefined;
   const structuredEmail = str(
-    stRecTop?.email ?? stRecTop?.contactEmail ?? stRecTop?.eMail ?? stRecTop?.mail,
+    stRecTop?.email ??
+      stRecTop?.contactEmail ??
+      stRecTop?.eMail ??
+      stRecTop?.mail,
   );
   base.personal.email = structuredEmail || defaults?.email?.trim() || '';
 
@@ -1044,7 +1253,9 @@ export function transformSectionsToCVBuilderData(
 
   const expSec = sectionByType(sorted, 'experience');
   const expData =
-    expSec?.data !== null && typeof expSec?.data === 'object' && !Array.isArray(expSec.data)
+    expSec?.data !== null &&
+    typeof expSec?.data === 'object' &&
+    !Array.isArray(expSec.data)
       ? (expSec.data as Record<string, unknown>)
       : undefined;
   const expItemsRaw =
@@ -1057,7 +1268,10 @@ export function transformSectionsToCVBuilderData(
   if (useExpFromSections) {
     base.experience.items = (expItemsRaw as unknown[]).map((raw) => {
       if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
-        return mapExpItem(raw as Record<string, unknown>, str((raw as { id?: string }).id) || newLocalId());
+        return mapExpItem(
+          raw as Record<string, unknown>,
+          str((raw as { id?: string }).id) || newLocalId(),
+        );
       }
       return mapExpItem({}, newLocalId());
     });
@@ -1077,8 +1291,18 @@ export function transformSectionsToCVBuilderData(
                 : [];
         return mapExpItem(
           {
-            title: raw.title ?? raw.jobTitle ?? raw.role ?? raw.position ?? raw.designation,
-            company: raw.company ?? raw.employer ?? raw.organization ?? raw.organisation ?? raw.companyName,
+            title:
+              raw.title ??
+              raw.jobTitle ??
+              raw.role ??
+              raw.position ??
+              raw.designation,
+            company:
+              raw.company ??
+              raw.employer ??
+              raw.organization ??
+              raw.organisation ??
+              raw.companyName,
             location: raw.location ?? raw.city,
             startDate: raw.startDate ?? raw.start ?? raw.from ?? raw.startYear,
             endDate: raw.endDate ?? raw.end ?? raw.to ?? raw.endYear,
@@ -1089,23 +1313,33 @@ export function transformSectionsToCVBuilderData(
           newLocalId(),
         );
       })
-      .filter((item) => item.title.trim().length > 0 || item.company.trim().length > 0);
+      .filter(
+        (item) =>
+          item.title.trim().length > 0 || item.company.trim().length > 0,
+      );
   }
 
   const eduSec = sectionByType(sorted, 'education');
   const eduData =
-    eduSec?.data !== null && typeof eduSec?.data === 'object' && !Array.isArray(eduSec.data)
+    eduSec?.data !== null &&
+    typeof eduSec?.data === 'object' &&
+    !Array.isArray(eduSec.data)
       ? (eduSec.data as Record<string, unknown>)
       : undefined;
   const eduItemsRaw =
     coalesceItemsFromSectionData(eduData, SECTION_ITEM_KEYS_EDU) ??
     (Array.isArray(eduData?.items) ? eduData.items : undefined);
   const useEduFromSections =
-    Array.isArray(eduItemsRaw) && eduItemsRaw.length > 0 && sectionEducationHasMeaningfulItems(eduItemsRaw);
+    Array.isArray(eduItemsRaw) &&
+    eduItemsRaw.length > 0 &&
+    sectionEducationHasMeaningfulItems(eduItemsRaw);
   if (useEduFromSections) {
     base.education.items = (eduItemsRaw as unknown[]).map((raw) => {
       if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
-        return mapEduItem(raw as Record<string, unknown>, str((raw as { id?: string }).id) || newLocalId());
+        return mapEduItem(
+          raw as Record<string, unknown>,
+          str((raw as { id?: string }).id) || newLocalId(),
+        );
       }
       return mapEduItem({}, newLocalId());
     });
@@ -1116,41 +1350,85 @@ export function transformSectionsToCVBuilderData(
         const raw = e as Record<string, unknown>;
         return mapEduItem(
           {
-            degree: raw.degree ?? raw.qualification ?? raw.certificate ?? raw.program ?? raw.award,
-            field: raw.field ?? raw.major ?? raw.fieldOfStudy ?? raw.course ?? raw.subject,
-            school: raw.school ?? raw.institution ?? raw.university ?? raw.college ?? raw.institute,
+            degree:
+              raw.degree ??
+              raw.qualification ??
+              raw.certificate ??
+              raw.program ??
+              raw.award,
+            field:
+              raw.field ??
+              raw.major ??
+              raw.fieldOfStudy ??
+              raw.course ??
+              raw.subject,
+            school:
+              raw.school ??
+              raw.institution ??
+              raw.university ??
+              raw.college ??
+              raw.institute,
             startYear: raw.startYear ?? raw.start ?? raw.from ?? raw.startDate,
-            endYear: raw.endYear ?? raw.year ?? raw.end ?? raw.to ?? raw.graduationYear ?? raw.endDate,
-            grade: raw.grade ?? raw.gpa ?? raw.result ?? raw.classification ?? raw.honors ?? raw.honour,
+            endYear:
+              raw.endYear ??
+              raw.year ??
+              raw.end ??
+              raw.to ??
+              raw.graduationYear ??
+              raw.endDate,
+            grade:
+              raw.grade ??
+              raw.gpa ??
+              raw.result ??
+              raw.classification ??
+              raw.honors ??
+              raw.honour,
             location: raw.location ?? raw.city,
           },
           newLocalId(),
         );
       })
-      .filter((item) => item.school.trim().length > 0 || item.degree.trim().length > 0);
+      .filter(
+        (item) =>
+          item.school.trim().length > 0 || item.degree.trim().length > 0,
+      );
   }
 
   const skSec = sectionByType(sorted, 'skills');
-  const useSkillsFromSections = skSec?.data && sectionSkillsHasMeaningfulData(skSec);
+  const useSkillsFromSections =
+    skSec?.data && sectionSkillsHasMeaningfulData(skSec);
   if (useSkillsFromSections && skSec?.data) {
     const d = skSec.data;
     if (Array.isArray(d.skillCategories) && d.skillCategories.length > 0) {
-      base.skills.categories = (d.skillCategories as { category?: string; items?: string[] }[])
+      base.skills.categories = (
+        d.skillCategories as { category?: string; items?: string[] }[]
+      )
         .filter((c) => c && Array.isArray(c.items) && c.items.length > 0)
         .map((c) => ({
           id: newLocalId(),
           name: String(c.category ?? 'Skills').trim(),
-          skills: (c.items ?? []).filter((s): s is string => typeof s === 'string' && s.trim().length > 0),
+          skills: (c.items ?? []).filter(
+            (s): s is string => typeof s === 'string' && s.trim().length > 0,
+          ),
         }))
         .filter((c) => c.skills.length > 0);
     } else if (Array.isArray(d.groups) && d.groups.length > 0) {
       base.skills.categories = (d.groups as unknown[])
-        .filter((g): g is Record<string, unknown> => g !== null && typeof g === 'object' && !Array.isArray(g))
+        .filter(
+          (g): g is Record<string, unknown> =>
+            g !== null && typeof g === 'object' && !Array.isArray(g),
+        )
         .map((g) => ({
           id: newLocalId(),
           name: String(g.name ?? g.title ?? g.category ?? 'Skills').trim(),
-          skills: (Array.isArray(g.skills) ? g.skills : Array.isArray(g.items) ? g.items : [])
-            .filter((s): s is string => typeof s === 'string' && s.trim().length > 0),
+          skills: (Array.isArray(g.skills)
+            ? g.skills
+            : Array.isArray(g.items)
+              ? g.items
+              : []
+          ).filter(
+            (s): s is string => typeof s === 'string' && s.trim().length > 0,
+          ),
         }))
         .filter((c) => c.skills.length > 0);
     } else if (Array.isArray(d.categories)) {
@@ -1175,7 +1453,8 @@ export function transformSectionsToCVBuilderData(
     (Array.isArray(st?.skills) && st.skills.length > 0) ||
     (Array.isArray(st?.primarySkills) && st.primarySkills.length > 0) ||
     (Array.isArray((st as { skillCategories?: unknown })?.skillCategories) &&
-      ((st as { skillCategories?: unknown[] }).skillCategories?.length ?? 0) > 0)
+      ((st as { skillCategories?: unknown[] }).skillCategories?.length ?? 0) >
+        0)
   ) {
     const stExt = st as Record<string, unknown>;
 
@@ -1185,12 +1464,16 @@ export function transformSectionsToCVBuilderData(
       typeof stExt.skillCategories[0] === 'object' &&
       stExt.skillCategories[0] !== null
     ) {
-      base.skills.categories = (stExt.skillCategories as { category?: string; items?: string[] }[])
+      base.skills.categories = (
+        stExt.skillCategories as { category?: string; items?: string[] }[]
+      )
         .filter((c) => c.items && c.items.length > 0)
         .map((c) => ({
           id: newLocalId(),
           name: String(c.category ?? 'Skills').trim(),
-          skills: (c.items ?? []).filter((s): s is string => typeof s === 'string' && s.trim().length > 0),
+          skills: (c.items ?? []).filter(
+            (s): s is string => typeof s === 'string' && s.trim().length > 0,
+          ),
         }))
         .filter((c) => c.skills.length > 0);
     }
@@ -1203,12 +1486,21 @@ export function transformSectionsToCVBuilderData(
       st.skills[0] !== null
     ) {
       base.skills.categories = (st.skills as unknown[])
-        .filter((c): c is Record<string, unknown> => c !== null && typeof c === 'object' && !Array.isArray(c))
+        .filter(
+          (c): c is Record<string, unknown> =>
+            c !== null && typeof c === 'object' && !Array.isArray(c),
+        )
         .map((c) => ({
           id: newLocalId(),
           name: String(c.category ?? c.name ?? 'Skills').trim(),
-          skills: (Array.isArray(c.items) ? c.items : Array.isArray(c.skills) ? c.skills : [])
-            .filter((s): s is string => typeof s === 'string' && s.trim().length > 0),
+          skills: (Array.isArray(c.items)
+            ? c.items
+            : Array.isArray(c.skills)
+              ? c.skills
+              : []
+          ).filter(
+            (s): s is string => typeof s === 'string' && s.trim().length > 0,
+          ),
         }))
         .filter((c) => c.skills.length > 0);
     }
@@ -1222,7 +1514,9 @@ export function transformSectionsToCVBuilderData(
       ];
       const unique = [...new Set(merged.map((s) => s.trim()).filter(Boolean))];
       if (unique.length > 0) {
-        base.skills.categories = [{ id: newLocalId(), name: '', skills: unique }];
+        base.skills.categories = [
+          { id: newLocalId(), name: '', skills: unique },
+        ];
       }
     }
   }
@@ -1236,9 +1530,12 @@ export function transformSectionsToCVBuilderData(
       const label = str(o.label).toLowerCase();
       const url = str(o.url ?? o.href ?? o.value);
       if (!url) continue;
-      if (label.includes('linkedin')) base.personal.linkedin = base.personal.linkedin || url;
-      else if (label.includes('github')) base.personal.github = base.personal.github || url;
-      else if (label.includes('portfolio') || label.includes('website')) base.personal.portfolio = base.personal.portfolio || url;
+      if (label.includes('linkedin'))
+        base.personal.linkedin = base.personal.linkedin || url;
+      else if (label.includes('github'))
+        base.personal.github = base.personal.github || url;
+      else if (label.includes('portfolio') || label.includes('website'))
+        base.personal.portfolio = base.personal.portfolio || url;
     }
   }
 
@@ -1249,14 +1546,20 @@ export function transformSectionsToCVBuilderData(
     ? sorted.find((s) => s.type.toLowerCase() === 'custom')
     : undefined;
   if (customSec?.data?.items && Array.isArray(customSec.data.items)) {
-    base.customSections = (customSec.data.items as Record<string, unknown>[]).map((o) => ({
+    base.customSections = (
+      customSec.data.items as Record<string, unknown>[]
+    ).map((o) => ({
       id: str(o.id) || newLocalId(),
       title: str(o.title),
       body: str(o.body ?? o.text ?? o.content),
     }));
   }
 
-  const LEGACY_CUSTOM_TYPES = new Set(['publications', 'volunteering', 'interests']);
+  const LEGACY_CUSTOM_TYPES = new Set([
+    'publications',
+    'volunteering',
+    'interests',
+  ]);
   const slugParsed = customSlugSections.map((s) => mapSectionToParsedCustom(s));
   const slugTitleKeys = new Set(
     slugParsed.map((b) => normalizedCustomSectionKey(b.title, b.sectionType)),
@@ -1265,7 +1568,9 @@ export function transformSectionsToCVBuilderData(
     .filter((s) => LEGACY_CUSTOM_TYPES.has(s.type.toLowerCase()))
     .filter((s) => {
       const block = mapSectionToParsedCustom(s);
-      return !slugTitleKeys.has(normalizedCustomSectionKey(block.title, s.type));
+      return !slugTitleKeys.has(
+        normalizedCustomSectionKey(block.title, s.type),
+      );
     })
     .map((s) => mapSectionToParsedCustom(s));
 
@@ -1292,21 +1597,32 @@ export function transformSectionsToCVBuilderData(
         bullets: bulletsFromProjectRaw(o),
       }));
     }
-    if (t === 'certifications' && s.data?.items && Array.isArray(s.data.items)) {
-      base.certifications = (s.data.items as Record<string, unknown>[]).map((o) => ({
-        id: str(o.id) || newLocalId(),
-        name: str(o.name ?? o.title),
-        issuer: str(o.issuer ?? o.issuingBody),
-        date: str(o.date),
-        url: str(o.url),
-      }));
+    if (
+      t === 'certifications' &&
+      s.data?.items &&
+      Array.isArray(s.data.items)
+    ) {
+      base.certifications = (s.data.items as Record<string, unknown>[]).map(
+        (o) => ({
+          id: str(o.id) || newLocalId(),
+          name: str(o.name ?? o.title),
+          issuer: str(o.issuer ?? o.issuingBody),
+          date: str(o.date),
+          url: str(o.url),
+        }),
+      );
     }
     if (t === 'languages' && s.data?.items && Array.isArray(s.data.items)) {
       base.languages = (s.data.items as Record<string, unknown>[]).map((o) => {
         const rawProf =
-          str(o.proficiency) || str(o.level) || str(o.fluency) || str(o.proficiencyLevel);
+          str(o.proficiency) ||
+          str(o.level) ||
+          str(o.fluency) ||
+          str(o.proficiencyLevel);
         const norm = rawProf.trim();
-        const match = LANGUAGE_PROFICIENCY_LEVELS.find((l) => l.toLowerCase() === norm.toLowerCase());
+        const match = LANGUAGE_PROFICIENCY_LEVELS.find(
+          (l) => l.toLowerCase() === norm.toLowerCase(),
+        );
         const proficiency = (match ?? '') as CVBuilderLanguage['proficiency'];
         const cefr = (key: string, alt?: string) => {
           const v = str(o[key]).trim() || (alt ? str(o[alt]).trim() : '');
@@ -1325,16 +1641,18 @@ export function transformSectionsToCVBuilderData(
       });
     }
     if (t === 'achievements' && s.data?.items && Array.isArray(s.data.items)) {
-      base.achievements = (s.data.items as Record<string, unknown>[]).map((o) => {
-        const id = str((o as { id?: string }).id) || newLocalId();
-        return {
-          id,
-          title: str(o.title ?? o.name ?? o.award),
-          issuer: str(o.issuer ?? o.organization ?? o.issuingBody),
-          date: str(o.date ?? o.year),
-          detail: str(o.detail ?? o.note ?? o.description ?? o.notes),
-        };
-      });
+      base.achievements = (s.data.items as Record<string, unknown>[]).map(
+        (o) => {
+          const id = str((o as { id?: string }).id) || newLocalId();
+          return {
+            id,
+            title: str(o.title ?? o.name ?? o.award),
+            issuer: str(o.issuer ?? o.organization ?? o.issuingBody),
+            date: str(o.date ?? o.year),
+            detail: str(o.detail ?? o.note ?? o.description ?? o.notes),
+          };
+        },
+      );
     }
     if (t === 'references' && s.data?.items && Array.isArray(s.data.items)) {
       base.references = filterCvBuilderReferences(
@@ -1396,7 +1714,9 @@ function filterReferenceUponRequestParsedBlocks(
   });
 }
 
-function stripExpId(items: CVBuilderExperienceItem[]): Record<string, unknown>[] {
+function stripExpId(
+  items: CVBuilderExperienceItem[],
+): Record<string, unknown>[] {
   return items.map(({ id: _id, bullets, ...rest }) => ({
     ...rest,
     bullets: bullets
@@ -1411,7 +1731,8 @@ export function normalizeProfileWebsiteUrl(input: string): string {
   if (!t) return '';
   if (/^https?:\/\//i.test(t)) return t;
   if (/^[a-z][\w+.-]*:\/\//i.test(t)) return t;
-  if (/^[\w.-]+\.[a-z]{2,}([\/?#].*)?$/i.test(t)) return `https://${t}`.slice(0, 200);
+  if (/^[\w.-]+\.[a-z]{2,}([\/?#].*)?$/i.test(t))
+    return `https://${t}`.slice(0, 200);
   return t;
 }
 
@@ -1433,7 +1754,9 @@ function collapseAlternatingPathRepeat(parts: string[]): string[] {
  * Parser bugs can concatenate `/segment/segment` many times or paste an email onto the URL.
  * Used when hydrating website/portfolio from the API so previews stay readable.
  */
-export function sanitizeContactUrlField(raw: string | undefined | null): string {
+export function sanitizeContactUrlField(
+  raw: string | undefined | null,
+): string {
   let s = (raw ?? '').trim();
   if (!s) return '';
   s = s.replace(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\s*$/i, '').trim();
@@ -1479,7 +1802,9 @@ export function sanitizeContactUrlField(raw: string | undefined | null): string 
  * PDF/DOCX export reads stored profile + section rows. Sanitize bloated URLs before download:
  * top-level `website`, `structured` contact fields, and `links` section items (export often mirrors DB, not the in-memory preview).
  */
-export async function patchSanitizedContactUrlsForExport(cvProfileId: string): Promise<void> {
+export async function patchSanitizedContactUrlsForExport(
+  cvProfileId: string,
+): Promise<void> {
   const id = cvProfileId.trim();
   if (!id) return;
 
@@ -1515,7 +1840,9 @@ export async function patchSanitizedContactUrlsForExport(cvProfileId: string): P
 
   if (spf !== rawPf || sli !== rawLi || sgh !== rawGh) {
     payload.structured = {
-      ...(typeof st === 'object' && st !== null && !Array.isArray(st) ? st : {}),
+      ...(typeof st === 'object' && st !== null && !Array.isArray(st)
+        ? st
+        : {}),
       ...(spf !== rawPf ? { portfolio: spf } : {}),
       ...(sli !== rawLi ? { linkedin: sli.slice(0, 500) } : {}),
       ...(sgh !== rawGh ? { github: sgh.slice(0, 500) } : {}),
@@ -1556,7 +1883,11 @@ export async function patchSanitizedContactUrlsForExport(cvProfileId: string): P
     if (!changed) continue;
 
     try {
-      await api.cv.updateSection(section.id, { data: { ...d, items: nextItems } }, id);
+      await api.cv.updateSection(
+        section.id,
+        { data: { ...d, items: nextItems } },
+        id,
+      );
     } catch {
       /* export still proceeds */
     }
@@ -1626,19 +1957,23 @@ export function buildCvProfilePatch(
   if (p.placeOfBirth?.trim()) structured.placeOfBirth = p.placeOfBirth.trim();
   if (p.nationality?.trim()) structured.nationality = p.nationality.trim();
   if (p.gender?.trim()) structured.gender = p.gender.trim();
-  if (p.maritalStatus?.trim()) structured.maritalStatus = p.maritalStatus.trim();
-  if (p.drivingLicence?.trim()) structured.drivingLicence = p.drivingLicence.trim();
+  if (p.maritalStatus?.trim())
+    structured.maritalStatus = p.maritalStatus.trim();
+  if (p.drivingLicence?.trim())
+    structured.drivingLicence = p.drivingLicence.trim();
   if (p.photoUrl?.trim()) structured.photoUrl = p.photoUrl.trim();
   if (p.hobbies?.trim()) structured.hobbies = p.hobbies.trim();
   if (data.summary.text?.trim()) structured.summary = data.summary.text.trim();
 
-  structured.references = filterCvBuilderReferences(data.references ?? []).map(({ id: _id, ...r }) => ({
-    name: r.name.trim(),
-    title: r.title.trim(),
-    company: r.company.trim(),
-    email: r.email.trim(),
-    phone: r.phone.trim(),
-  }));
+  structured.references = filterCvBuilderReferences(data.references ?? []).map(
+    ({ id: _id, ...r }) => ({
+      name: r.name.trim(),
+      title: r.title.trim(),
+      company: r.company.trim(),
+      email: r.email.trim(),
+      phone: r.phone.trim(),
+    }),
+  );
 
   if (Object.keys(structured).length) patch.structured = structured;
   return patch;
@@ -1847,7 +2182,11 @@ export function cvTemplatePreviewSampleData(): CVBuilderData {
       categories: [
         { id: 'sk1', name: 'Cloud Platforms', skills: ['AWS', 'Azure', 'GCP'] },
         { id: 'sk2', name: 'Environments', skills: ['Linux', 'Windows'] },
-        { id: 'sk3', name: 'Languages', skills: ['Bash', 'JavaScript', 'Python'] },
+        {
+          id: 'sk3',
+          name: 'Languages',
+          skills: ['Bash', 'JavaScript', 'Python'],
+        },
         { id: 'sk4', name: 'Versioning', skills: ['Git', 'Azure DevOps'] },
       ],
     },
@@ -1892,24 +2231,39 @@ export function cvTemplatePreviewSampleData(): CVBuilderData {
 }
 
 /** Template-specific thumbnail sample (Onyx uses its own reference layout). */
-export function cvTemplatePreviewSampleDataFor(template: CvTemplateId): CVBuilderData {
+export function cvTemplatePreviewSampleDataFor(
+  template: CvTemplateId,
+): CVBuilderData {
   if (template === 'onyx') return cvOnyxTemplatePreviewSampleData();
   return cvTemplatePreviewSampleData();
 }
 
-function stripEduId(items: CVBuilderEducationItem[]): Record<string, unknown>[] {
+function stripEduId(
+  items: CVBuilderEducationItem[],
+): Record<string, unknown>[] {
   return items.map(({ id: _id, ...rest }) => ({ ...rest }));
 }
 
 /** PDF / importers sometimes use arrays instead of a single `bullets` string. */
 function bulletsFromProjectRaw(o: Record<string, unknown>): string {
   if (Array.isArray(o.bullets)) {
-    const arr = (o.bullets as unknown[]).filter((x): x is string => typeof x === 'string');
-    if (arr.length) return arr.map((s) => s.trim()).filter(Boolean).join('\n');
+    const arr = (o.bullets as unknown[]).filter(
+      (x): x is string => typeof x === 'string',
+    );
+    if (arr.length)
+      return arr
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .join('\n');
   }
   const direct = str(o.bullets);
   if (direct) return direct;
-  for (const key of ['activities', 'highlights', 'bulletPoints', 'achievements'] as const) {
+  for (const key of [
+    'activities',
+    'highlights',
+    'bulletPoints',
+    'achievements',
+  ] as const) {
     const arr = o[key];
     if (Array.isArray(arr)) {
       const lines = arr
@@ -1923,7 +2277,10 @@ function bulletsFromProjectRaw(o: Record<string, unknown>): string {
 }
 
 function projectBulletLinesForSave(bullets: string): string[] {
-  const lines = bullets.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const lines = bullets
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
   if (lines.length > 0) return lines.map((b) => b.replace(/^[-•]\s*/, ''));
   const t = bullets.trim().replace(/^[-•]\s*/, '');
   return t ? [t] : [];
@@ -1934,7 +2291,11 @@ function projectToSectionPayload(p: CVBuilderProject): Record<string, unknown> {
   const lines = projectBulletLinesForSave(p.bullets ?? '');
   const bulletsStr = p.bullets ?? '';
   const techJoined = p.technologies.filter(Boolean).join(', ');
-  const detailsBlock = [p.description?.trim(), lines.map((x) => `• ${x}`).join('\n'), techJoined]
+  const detailsBlock = [
+    p.description?.trim(),
+    lines.map((x) => `• ${x}`).join('\n'),
+    techJoined,
+  ]
     .filter(Boolean)
     .join('\n\n');
   return {
@@ -1962,7 +2323,9 @@ function projectToSectionPayload(p: CVBuilderProject): Record<string, unknown> {
   };
 }
 
-function languageToSectionPayload(l: CVBuilderLanguage): Record<string, unknown> {
+function languageToSectionPayload(
+  l: CVBuilderLanguage,
+): Record<string, unknown> {
   const lang = l.language.trim();
   const prof = l.proficiency;
   const out: Record<string, unknown> = {
@@ -1974,8 +2337,10 @@ function languageToSectionPayload(l: CVBuilderLanguage): Record<string, unknown>
   };
   if (l.listening?.trim()) out.listening = l.listening.trim();
   if (l.reading?.trim()) out.reading = l.reading.trim();
-  if (l.spokenInteraction?.trim()) out.spokenInteraction = l.spokenInteraction.trim();
-  if (l.spokenProduction?.trim()) out.spokenProduction = l.spokenProduction.trim();
+  if (l.spokenInteraction?.trim())
+    out.spokenInteraction = l.spokenInteraction.trim();
+  if (l.spokenProduction?.trim())
+    out.spokenProduction = l.spokenProduction.trim();
   if (l.writing?.trim()) out.writing = l.writing.trim();
   return out;
 }
@@ -1984,7 +2349,10 @@ function nextOrder(sections: CVSectionRecord[]): number {
   return sections.reduce((m, s) => Math.max(m, s.order), 0) + 1;
 }
 
-function findSectionByTypeLoose(mutable: CVSectionRecord[], type: string): CVSectionRecord | undefined {
+function findSectionByTypeLoose(
+  mutable: CVSectionRecord[],
+  type: string,
+): CVSectionRecord | undefined {
   const t = type.toLowerCase();
   return mutable.find((s) => s.type.toLowerCase() === t);
 }
@@ -1996,7 +2364,8 @@ export function stableStringify(value: unknown): string {
   if (typ === 'number' || typ === 'boolean') return JSON.stringify(value);
   if (typ === 'string') return JSON.stringify(value);
   if (typ !== 'object') return JSON.stringify(String(value));
-  if (Array.isArray(value)) return `[${value.map((v) => stableStringify(v)).join(',')}]`;
+  if (Array.isArray(value))
+    return `[${value.map((v) => stableStringify(v)).join(',')}]`;
   const obj = value as Record<string, unknown>;
   const keys = Object.keys(obj).sort();
   return `{${keys.map((k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`).join(',')}}`;
@@ -2011,7 +2380,12 @@ export type SaveCVBuilderDataResult = {
 };
 
 /** CV Builder autosave / toolbar status (Phase 4 — extended states). */
-export type CvBuilderSaveStatus = 'idle' | 'dirty' | 'saving' | 'saved' | 'error';
+export type CvBuilderSaveStatus =
+  | 'idle'
+  | 'dirty'
+  | 'saving'
+  | 'saved'
+  | 'error';
 
 export function logCvBuilderSavePerfDev(
   label: string,
@@ -2026,13 +2400,21 @@ export function logCvBuilderSavePerfDev(
     logCvDevPerf('cv.autosave', startedAt, { subLabel: label, ...detail });
   }
   if (label.includes('hydrate')) {
-    logCvDevPerf('cv.builderHydration', startedAt, { subLabel: label, ...detail });
+    logCvDevPerf('cv.builderHydration', startedAt, {
+      subLabel: label,
+      ...detail,
+    });
   }
 }
 
 function normalizeSectionOrder(order: unknown): number {
   if (order == null || order === '') return 0;
-  const n = typeof order === 'number' ? order : typeof order === 'string' ? parseFloat(order) : NaN;
+  const n =
+    typeof order === 'number'
+      ? order
+      : typeof order === 'string'
+        ? parseFloat(order)
+        : NaN;
   if (!Number.isFinite(n)) return 0;
   return Math.max(0, Math.round(n));
 }
@@ -2043,7 +2425,11 @@ function buildCvBuilderBatchSectionEntries(
   mutable: CVSectionRecord[],
 ): CvBatchUpsertSectionInput[] {
   const entries: CvBatchUpsertSectionInput[] = [];
-  const pushEntry = (type: string, payload: Record<string, unknown>, opts?: { includeWhenEmpty?: boolean }) => {
+  const pushEntry = (
+    type: string,
+    payload: Record<string, unknown>,
+    opts?: { includeWhenEmpty?: boolean },
+  ) => {
     if (!opts?.includeWhenEmpty && Object.keys(payload).length === 0) return;
     const row = findSectionByTypeLoose(mutable, type);
     const order = normalizeSectionOrder(row?.order ?? nextOrder(mutable));
@@ -2062,7 +2448,10 @@ function buildCvBuilderBatchSectionEntries(
   pushEntry('experience', { items: stripExpId(data.experience.items) });
   pushEntry('education', { items: stripEduId(data.education.items) });
   pushEntry('skills', {
-    categories: data.skills.categories.map(({ name, skills }) => ({ name, skills })),
+    categories: data.skills.categories.map(({ name, skills }) => ({
+      name,
+      skills,
+    })),
   });
 
   if (data.projects.length > 0 || findSectionByTypeLoose(mutable, 'projects')) {
@@ -2072,31 +2461,47 @@ function buildCvBuilderBatchSectionEntries(
       { includeWhenEmpty: true },
     );
   }
-  if (data.certifications.length > 0 || findSectionByTypeLoose(mutable, 'certifications')) {
+  if (
+    data.certifications.length > 0 ||
+    findSectionByTypeLoose(mutable, 'certifications')
+  ) {
     pushEntry(
       'certifications',
       { items: data.certifications.map(({ id: _i, ...p }) => p) },
       { includeWhenEmpty: true },
     );
   }
-  if (data.languages.length > 0 || findSectionByTypeLoose(mutable, 'languages')) {
+  if (
+    data.languages.length > 0 ||
+    findSectionByTypeLoose(mutable, 'languages')
+  ) {
     pushEntry(
       'languages',
       { items: data.languages.map(languageToSectionPayload) },
       { includeWhenEmpty: true },
     );
   }
-  if (data.achievements.length > 0 || findSectionByTypeLoose(mutable, 'achievements')) {
+  if (
+    data.achievements.length > 0 ||
+    findSectionByTypeLoose(mutable, 'achievements')
+  ) {
     pushEntry(
       'achievements',
       { items: data.achievements.map(achievementToSectionPayload) },
       { includeWhenEmpty: true },
     );
   }
-  if (data.references.length > 0 || findSectionByTypeLoose(mutable, 'references')) {
+  if (
+    data.references.length > 0 ||
+    findSectionByTypeLoose(mutable, 'references')
+  ) {
     pushEntry(
       'references',
-      { items: filterCvBuilderReferences(data.references).map(({ id: _i, ...r }) => r) },
+      {
+        items: filterCvBuilderReferences(data.references).map(
+          ({ id: _i, ...r }) => r,
+        ),
+      },
       { includeWhenEmpty: true },
     );
   }
@@ -2104,7 +2509,12 @@ function buildCvBuilderBatchSectionEntries(
   if (data.customSections.length > 0 && !hasCustomSlugRows) {
     pushEntry(
       'custom',
-      { items: data.customSections.map(({ id: _i, title, body }) => ({ title, body })) },
+      {
+        items: data.customSections.map(({ id: _i, title, body }) => ({
+          title,
+          body,
+        })),
+      },
       { includeWhenEmpty: true },
     );
   }
@@ -2158,19 +2568,40 @@ async function persistCvBuilderSectionsSequential(
   mutable: CVSectionRecord[],
   cvProfileId?: string,
 ): Promise<void> {
-  await upsertSectionData(mutable, 'summary', { text: data.summary.text }, cvProfileId);
-  await upsertSectionData(mutable, 'experience', { items: stripExpId(data.experience.items) }, cvProfileId);
-  await upsertSectionData(mutable, 'education', { items: stripEduId(data.education.items) }, cvProfileId);
+  await upsertSectionData(
+    mutable,
+    'summary',
+    { text: data.summary.text },
+    cvProfileId,
+  );
+  await upsertSectionData(
+    mutable,
+    'experience',
+    { items: stripExpId(data.experience.items) },
+    cvProfileId,
+  );
+  await upsertSectionData(
+    mutable,
+    'education',
+    { items: stripEduId(data.education.items) },
+    cvProfileId,
+  );
   await upsertSectionData(
     mutable,
     'skills',
     {
-      categories: data.skills.categories.map(({ name, skills }) => ({ name, skills })),
+      categories: data.skills.categories.map(({ name, skills }) => ({
+        name,
+        skills,
+      })),
     },
     cvProfileId,
   );
 
-  if (data.projects.length || mutable.some((s) => s.type.toLowerCase() === 'projects')) {
+  if (
+    data.projects.length ||
+    mutable.some((s) => s.type.toLowerCase() === 'projects')
+  ) {
     await upsertSectionData(
       mutable,
       'projects',
@@ -2180,7 +2611,10 @@ async function persistCvBuilderSectionsSequential(
       cvProfileId,
     );
   }
-  if (data.certifications.length || mutable.some((s) => s.type.toLowerCase() === 'certifications')) {
+  if (
+    data.certifications.length ||
+    mutable.some((s) => s.type.toLowerCase() === 'certifications')
+  ) {
     await upsertSectionData(
       mutable,
       'certifications',
@@ -2190,7 +2624,10 @@ async function persistCvBuilderSectionsSequential(
       cvProfileId,
     );
   }
-  if (data.languages.length || mutable.some((s) => s.type.toLowerCase() === 'languages')) {
+  if (
+    data.languages.length ||
+    mutable.some((s) => s.type.toLowerCase() === 'languages')
+  ) {
     await upsertSectionData(
       mutable,
       'languages',
@@ -2200,7 +2637,10 @@ async function persistCvBuilderSectionsSequential(
       cvProfileId,
     );
   }
-  if (data.achievements.length || mutable.some((s) => s.type.toLowerCase() === 'achievements')) {
+  if (
+    data.achievements.length ||
+    mutable.some((s) => s.type.toLowerCase() === 'achievements')
+  ) {
     await upsertSectionData(
       mutable,
       'achievements',
@@ -2210,11 +2650,18 @@ async function persistCvBuilderSectionsSequential(
       cvProfileId,
     );
   }
-  if (data.references.length || mutable.some((s) => s.type.toLowerCase() === 'references')) {
+  if (
+    data.references.length ||
+    mutable.some((s) => s.type.toLowerCase() === 'references')
+  ) {
     await upsertSectionData(
       mutable,
       'references',
-      { items: filterCvBuilderReferences(data.references).map(({ id: _i, ...r }) => r) },
+      {
+        items: filterCvBuilderReferences(data.references).map(
+          ({ id: _i, ...r }) => r,
+        ),
+      },
       cvProfileId,
     );
   }
@@ -2223,7 +2670,10 @@ async function persistCvBuilderSectionsSequential(
       mutable,
       'custom',
       {
-        items: data.customSections.map(({ id: _i, title, body }) => ({ title, body })),
+        items: data.customSections.map(({ id: _i, title, body }) => ({
+          title,
+          body,
+        })),
       },
       cvProfileId,
     );
@@ -2252,7 +2702,11 @@ async function persistCvBuilderSectionsSequential(
  * Backend POST /cv/sections only creates optional bucket rows.
  * Core sections (summary, experience, …) come from parse / sync-from-structured — never POST those types here.
  */
-const SECTION_TYPES_CREATABLE_VIA_POST = new Set(['projects', 'certifications', 'languages']);
+const SECTION_TYPES_CREATABLE_VIA_POST = new Set([
+  'projects',
+  'certifications',
+  'languages',
+]);
 
 async function upsertSectionData(
   mutableSections: CVSectionRecord[],
@@ -2260,7 +2714,9 @@ async function upsertSectionData(
   sectionPayload: Record<string, unknown>,
   cvProfileId?: string,
 ): Promise<void> {
-  const found = mutableSections.find((s) => s.type.toLowerCase() === type.toLowerCase());
+  const found = mutableSections.find(
+    (s) => s.type.toLowerCase() === type.toLowerCase(),
+  );
   if (found?.id) {
     await api.cv.updateSection(found.id, { data: sectionPayload }, cvProfileId);
     return;
@@ -2269,10 +2725,17 @@ async function upsertSectionData(
     return;
   }
   try {
-    const created = await api.cv.addSection({ type, order: nextOrder(mutableSections) }, cvProfileId);
+    const created = await api.cv.addSection(
+      { type, order: nextOrder(mutableSections) },
+      cvProfileId,
+    );
     mutableSections.push(created);
     if (created.id) {
-      await api.cv.updateSection(created.id, { data: sectionPayload }, cvProfileId);
+      await api.cv.updateSection(
+        created.id,
+        { data: sectionPayload },
+        cvProfileId,
+      );
     }
   } catch (e) {
     /**
@@ -2283,11 +2746,17 @@ async function upsertSectionData(
     if (cvProfileId?.trim()) {
       try {
         const all = await api.cv.getSections(true, cvProfileId);
-        const existing = all.find((s) => s.type.toLowerCase() === type.toLowerCase());
+        const existing = all.find(
+          (s) => s.type.toLowerCase() === type.toLowerCase(),
+        );
         if (existing?.id) {
           mutableSections.push(existing);
           if (existing.hidden !== true) {
-            await api.cv.updateSection(existing.id, { data: sectionPayload }, cvProfileId);
+            await api.cv.updateSection(
+              existing.id,
+              { data: sectionPayload },
+              cvProfileId,
+            );
           }
           return;
         }
@@ -2299,7 +2768,9 @@ async function upsertSectionData(
   }
 }
 
-function achievementToSectionPayload(a: CVBuilderAchievement): Record<string, unknown> {
+function achievementToSectionPayload(
+  a: CVBuilderAchievement,
+): Record<string, unknown> {
   return {
     title: a.title,
     name: a.title,
@@ -2312,7 +2783,9 @@ function achievementToSectionPayload(a: CVBuilderAchievement): Record<string, un
   };
 }
 
-function parsedCustomItemToPayload(i: CVBuilderParsedCustomItem): Record<string, unknown> {
+function parsedCustomItemToPayload(
+  i: CVBuilderParsedCustomItem,
+): Record<string, unknown> {
   return {
     id: i.id,
     text: i.text,
@@ -2324,74 +2797,117 @@ function parsedCustomItemToPayload(i: CVBuilderParsedCustomItem): Record<string,
 /** One segment of backend spellcheck `fieldPath` (e.g. `items[0].bullets[1]`). */
 export type CvSectionFieldPathStep = { key: string; index?: number };
 
-export function parseCvSectionFieldPath(fieldPath: string): CvSectionFieldPathStep[] {
+export function parseCvSectionFieldPath(
+  fieldPath: string,
+): CvSectionFieldPathStep[] {
   if (!fieldPath.trim()) return [];
   return fieldPath
     .split('.')
     .map((seg) => {
       const m = seg.match(/^([^[\]]+)(?:\[(\d+)\])?$/);
       if (!m) return null;
-      return m[2] !== undefined ? { key: m[1]!, index: Number(m[2]) } : { key: m[1]! };
+      return m[2] !== undefined
+        ? { key: m[1]!, index: Number(m[2]) }
+        : { key: m[1]! };
     })
     .filter((x): x is CvSectionFieldPathStep => x !== null);
 }
 
-function getSectionRootPlain(sectionKey: string, data: CVBuilderData): Record<string, unknown> | null {
+function getSectionRootPlain(
+  sectionKey: string,
+  data: CVBuilderData,
+): Record<string, unknown> | null {
   switch (sectionKey) {
     case 'summary':
       return { text: data.summary.text };
     case 'experience':
-      return JSON.parse(JSON.stringify({ items: data.experience.items })) as Record<string, unknown>;
+      return JSON.parse(
+        JSON.stringify({ items: data.experience.items }),
+      ) as Record<string, unknown>;
     case 'education':
-      return JSON.parse(JSON.stringify({ items: data.education.items })) as Record<string, unknown>;
+      return JSON.parse(
+        JSON.stringify({ items: data.education.items }),
+      ) as Record<string, unknown>;
     case 'skills':
-      return JSON.parse(JSON.stringify({ categories: data.skills.categories })) as Record<string, unknown>;
+      return JSON.parse(
+        JSON.stringify({ categories: data.skills.categories }),
+      ) as Record<string, unknown>;
     case 'projects':
-      return JSON.parse(JSON.stringify({ items: data.projects })) as Record<string, unknown>;
+      return JSON.parse(JSON.stringify({ items: data.projects })) as Record<
+        string,
+        unknown
+      >;
     case 'achievements':
-      return JSON.parse(JSON.stringify({ items: data.achievements })) as Record<string, unknown>;
+      return JSON.parse(JSON.stringify({ items: data.achievements })) as Record<
+        string,
+        unknown
+      >;
     case 'certifications':
-      return JSON.parse(JSON.stringify({ items: data.certifications })) as Record<string, unknown>;
+      return JSON.parse(
+        JSON.stringify({ items: data.certifications }),
+      ) as Record<string, unknown>;
     case 'languages':
-      return JSON.parse(JSON.stringify({ items: data.languages })) as Record<string, unknown>;
+      return JSON.parse(JSON.stringify({ items: data.languages })) as Record<
+        string,
+        unknown
+      >;
     case 'references':
-      return JSON.parse(JSON.stringify({ items: data.references })) as Record<string, unknown>;
+      return JSON.parse(JSON.stringify({ items: data.references })) as Record<
+        string,
+        unknown
+      >;
     case 'custom-legacy':
-      return JSON.parse(JSON.stringify({ items: data.customSections })) as Record<string, unknown>;
+      return JSON.parse(
+        JSON.stringify({ items: data.customSections }),
+      ) as Record<string, unknown>;
     default:
       if (sectionKey.startsWith('parsed-')) {
         const sid = sectionKey.slice('parsed-'.length);
-        const block = data.parsedCustomSections.find((b) => b.sectionId === sid);
+        const block = data.parsedCustomSections.find(
+          (b) => b.sectionId === sid,
+        );
         return block
-          ? (JSON.parse(JSON.stringify({ title: block.title, items: block.items })) as Record<string, unknown>)
+          ? (JSON.parse(
+              JSON.stringify({ title: block.title, items: block.items }),
+            ) as Record<string, unknown>)
           : null;
       }
       return null;
   }
 }
 
-function readValueAtSteps(root: unknown, steps: CvSectionFieldPathStep[]): unknown {
+function readValueAtSteps(
+  root: unknown,
+  steps: CvSectionFieldPathStep[],
+): unknown {
   let cur: unknown = root;
   for (const s of steps) {
     if (cur === null || typeof cur !== 'object') return undefined;
     const o = cur as Record<string, unknown>;
     cur = o[s.key];
     if (s.index !== undefined) {
-      if (!Array.isArray(cur) || s.index < 0 || s.index >= cur.length) return undefined;
+      if (!Array.isArray(cur) || s.index < 0 || s.index >= cur.length)
+        return undefined;
       cur = cur[s.index];
     }
   }
   return cur;
 }
 
-function writeValueAtSteps(root: Record<string, unknown>, steps: CvSectionFieldPathStep[], value: string): Record<string, unknown> {
+function writeValueAtSteps(
+  root: Record<string, unknown>,
+  steps: CvSectionFieldPathStep[],
+  value: string,
+): Record<string, unknown> {
   if (steps.length === 0) return root;
   const [head, ...rest] = steps;
   if (head.index === undefined) {
     if (rest.length === 0) return { ...root, [head.key]: value };
     const child = root[head.key];
     const childObj =
-      child && typeof child === 'object' && !Array.isArray(child) ? (child as Record<string, unknown>) : {};
+      child && typeof child === 'object' && !Array.isArray(child)
+        ? (child as Record<string, unknown>)
+        : {};
     return { ...root, [head.key]: writeValueAtSteps(childObj, rest, value) };
   }
   const arrRaw = root[head.key];
@@ -2404,42 +2920,76 @@ function writeValueAtSteps(root: Record<string, unknown>, steps: CvSectionFieldP
   }
   const child = arr[idx];
   const childObj =
-    child && typeof child === 'object' && !Array.isArray(child) ? (child as Record<string, unknown>) : {};
+    child && typeof child === 'object' && !Array.isArray(child)
+      ? (child as Record<string, unknown>)
+      : {};
   const nextArr = [...arr];
   nextArr[idx] = writeValueAtSteps(childObj, rest, value);
   return { ...root, [head.key]: nextArr };
 }
 
-function mergeSectionRootIntoData(data: CVBuilderData, sectionKey: string, nextRoot: Record<string, unknown>): CVBuilderData {
+function mergeSectionRootIntoData(
+  data: CVBuilderData,
+  sectionKey: string,
+  nextRoot: Record<string, unknown>,
+): CVBuilderData {
   if (sectionKey === 'summary') {
     return { ...data, summary: { text: normalizeText(nextRoot.text) } };
   }
   if (sectionKey === 'experience') {
-    return { ...data, experience: { items: nextRoot.items as CVBuilderData['experience']['items'] } };
+    return {
+      ...data,
+      experience: {
+        items: nextRoot.items as CVBuilderData['experience']['items'],
+      },
+    };
   }
   if (sectionKey === 'education') {
-    return { ...data, education: { items: nextRoot.items as CVBuilderData['education']['items'] } };
+    return {
+      ...data,
+      education: {
+        items: nextRoot.items as CVBuilderData['education']['items'],
+      },
+    };
   }
   if (sectionKey === 'skills') {
-    return { ...data, skills: { categories: nextRoot.categories as CVBuilderData['skills']['categories'] } };
+    return {
+      ...data,
+      skills: {
+        categories:
+          nextRoot.categories as CVBuilderData['skills']['categories'],
+      },
+    };
   }
   if (sectionKey === 'projects') {
     return { ...data, projects: nextRoot.items as CVBuilderData['projects'] };
   }
   if (sectionKey === 'achievements') {
-    return { ...data, achievements: nextRoot.items as CVBuilderData['achievements'] };
+    return {
+      ...data,
+      achievements: nextRoot.items as CVBuilderData['achievements'],
+    };
   }
   if (sectionKey === 'certifications') {
-    return { ...data, certifications: nextRoot.items as CVBuilderData['certifications'] };
+    return {
+      ...data,
+      certifications: nextRoot.items as CVBuilderData['certifications'],
+    };
   }
   if (sectionKey === 'languages') {
     return { ...data, languages: nextRoot.items as CVBuilderData['languages'] };
   }
   if (sectionKey === 'references') {
-    return { ...data, references: nextRoot.items as CVBuilderData['references'] };
+    return {
+      ...data,
+      references: nextRoot.items as CVBuilderData['references'],
+    };
   }
   if (sectionKey === 'custom-legacy') {
-    return { ...data, customSections: nextRoot.items as CVBuilderData['customSections'] };
+    return {
+      ...data,
+      customSections: nextRoot.items as CVBuilderData['customSections'],
+    };
   }
   if (sectionKey.startsWith('parsed-')) {
     const sid = sectionKey.slice('parsed-'.length);
@@ -2460,7 +3010,11 @@ function mergeSectionRootIntoData(data: CVBuilderData, sectionKey: string, nextR
 }
 
 /** Read the string at `fieldPath` for the section accordion key (matches spellcheck / PATCH section payloads). */
-export function getCvBuilderSectionFieldText(data: CVBuilderData, sectionKey: string, fieldPath: string): string {
+export function getCvBuilderSectionFieldText(
+  data: CVBuilderData,
+  sectionKey: string,
+  fieldPath: string,
+): string {
   const root = getSectionRootPlain(sectionKey, data);
   if (!root) return '';
   const steps = parseCvSectionFieldPath(fieldPath);
@@ -2492,18 +3046,31 @@ export async function saveCVBuilderData(
     contentVersionRef?: CvContentVersionRef;
   },
 ): Promise<SaveCVBuilderDataResult> {
-  const result: SaveCVBuilderDataResult = { usedBatch: false, profilePatched: false };
+  const result: SaveCVBuilderDataResult = {
+    usedBatch: false,
+    profilePatched: false,
+  };
   let mutable = [...existingSections];
   const cvProfileId = opts?.cvProfileId?.trim();
   const versionRef = opts?.contentVersionRef;
-  const versionOpts = () => ({ baseContentVersion: versionRef?.current ?? null });
+  const versionOpts = () => ({
+    baseContentVersion: versionRef?.current ?? null,
+  });
   const adoptVersion = (v: number | undefined) => {
     if (versionRef && typeof v === 'number') versionRef.current = v;
   };
 
   if (cvProfileId) {
-    const coreTypes = ['summary', 'experience', 'education', 'projects', 'skills'] as const;
-    const missingCore = coreTypes.some((t) => !mutable.some((s) => s.type.toLowerCase() === t));
+    const coreTypes = [
+      'summary',
+      'experience',
+      'education',
+      'projects',
+      'skills',
+    ] as const;
+    const missingCore = coreTypes.some(
+      (t) => !mutable.some((s) => s.type.toLowerCase() === t),
+    );
     if (missingCore) {
       try {
         await api.cv.syncCoreSectionsFromStructured(cvProfileId);
@@ -2526,22 +3093,32 @@ export async function saveCVBuilderData(
         );
         adoptVersion(saved.contentVersion);
       } else {
-        await api.cv.patchProfile(profilePatch as Parameters<typeof api.cv.patchProfile>[0]);
+        await api.cv.patchProfile(
+          profilePatch as Parameters<typeof api.cv.patchProfile>[0],
+        );
       }
     } catch (e) {
       if (isPayloadTooLargeError(e) || isCvContentConflictError(e)) {
         throw e;
       }
       const minimal: Parameters<typeof api.cv.patchProfile>[0] = {};
-      if (profilePatch.headline !== undefined) minimal.headline = profilePatch.headline ?? undefined;
-      if (profilePatch.phone !== undefined) minimal.phone = profilePatch.phone ?? undefined;
-      if (profilePatch.location !== undefined) minimal.location = profilePatch.location ?? undefined;
-      if (profilePatch.website !== undefined) minimal.website = profilePatch.website ?? undefined;
+      if (profilePatch.headline !== undefined)
+        minimal.headline = profilePatch.headline ?? undefined;
+      if (profilePatch.phone !== undefined)
+        minimal.phone = profilePatch.phone ?? undefined;
+      if (profilePatch.location !== undefined)
+        minimal.location = profilePatch.location ?? undefined;
+      if (profilePatch.website !== undefined)
+        minimal.website = profilePatch.website ?? undefined;
       if (profilePatch.template) minimal.template = profilePatch.template;
       try {
         if (Object.keys(minimal).length > 0) {
           if (cvProfileId) {
-            const saved = await api.cv.patchProfilesEntry(cvProfileId, minimal, versionOpts());
+            const saved = await api.cv.patchProfilesEntry(
+              cvProfileId,
+              minimal,
+              versionOpts(),
+            );
             adoptVersion(saved.contentVersion);
           } else {
             await api.cv.patchProfile(minimal);
@@ -2554,7 +3131,11 @@ export async function saveCVBuilderData(
     }
   }
 
-  const entries = buildCvBuilderBatchSectionEntries(data, opts?.template, mutable);
+  const entries = buildCvBuilderBatchSectionEntries(
+    data,
+    opts?.template,
+    mutable,
+  );
   if (entries.length === 0) {
     return result;
   }
@@ -2568,7 +3149,10 @@ export async function saveCVBuilderData(
         versionOpts(),
       );
       adoptVersion(br.contentVersion);
-      logCvBuilderSavePerfDev('batchUpsert', tBatch, { updated: br.updated, unchanged: br.unchanged });
+      logCvBuilderSavePerfDev('batchUpsert', tBatch, {
+        updated: br.updated,
+        unchanged: br.unchanged,
+      });
       result.usedBatch = true;
       result.batch = { updated: br.updated, unchanged: br.unchanged };
       if (br.sections.length > 0) result.sections = br.sections;
@@ -2582,7 +3166,11 @@ export async function saveCVBuilderData(
         if (status === 409 || status === 500) {
           try {
             mutable = await api.cv.getSections(true, cvProfileId);
-            const retryEntries = buildCvBuilderBatchSectionEntries(data, opts?.template, mutable);
+            const retryEntries = buildCvBuilderBatchSectionEntries(
+              data,
+              opts?.template,
+              mutable,
+            );
             const br = await api.cv.batchUpsertProfileSections(
               cvProfileId,
               { sections: retryEntries },
@@ -2603,13 +3191,17 @@ export async function saveCVBuilderData(
         }
         throw e;
       }
-      logCvBuilderSavePerfDev('batchUpsert.fallback', tBatch, { reason: 'route_unsupported' });
+      logCvBuilderSavePerfDev('batchUpsert.fallback', tBatch, {
+        reason: 'route_unsupported',
+      });
     }
   }
 
   const tSeq = performance.now();
   await persistCvBuilderSectionsSequential(data, mutable, cvProfileId);
-  logCvBuilderSavePerfDev('sectionsSequential', tSeq, { sections: entries.length });
+  logCvBuilderSavePerfDev('sectionsSequential', tSeq, {
+    sections: entries.length,
+  });
   return result;
 }
 
@@ -2627,7 +3219,8 @@ export function countFilledSections(data: CVBuilderData): number {
   const parsedCustom = data.parsedCustomSections ?? [];
 
   let n = 0;
-  if (String(personal.name ?? '').trim() && String(personal.email ?? '').trim()) n++;
+  if (String(personal.name ?? '').trim() && String(personal.email ?? '').trim())
+    n++;
   if (String(summaryText).trim().length > 20) n++;
   if (Array.isArray(expItems) && expItems.length) n++;
   if (Array.isArray(eduItems) && eduItems.length) n++;
@@ -2635,10 +3228,17 @@ export function countFilledSections(data: CVBuilderData): number {
   n += projects.length > 0 ? 1 : 0;
   n += certifications.length > 0 ? 1 : 0;
   n += languages.length > 0 ? 1 : 0;
-  n += achievements.some((a) => String(a?.title ?? '').trim() || String(a?.issuer ?? '').trim()) ? 1 : 0;
+  n += achievements.some(
+    (a) => String(a?.title ?? '').trim() || String(a?.issuer ?? '').trim(),
+  )
+    ? 1
+    : 0;
   n += customSections.length;
-  n += parsedCustom.filter((b) =>
-    String(b?.title ?? '').trim() || (Array.isArray(b?.items) && b.items.some((i) => String(i?.text ?? '').trim())),
+  n += parsedCustom.filter(
+    (b) =>
+      String(b?.title ?? '').trim() ||
+      (Array.isArray(b?.items) &&
+        b.items.some((i) => String(i?.text ?? '').trim())),
   ).length;
   return n;
 }
@@ -2680,10 +3280,14 @@ export function applyAcceptedSectionsToBuilderData(
     };
   });
 
-  const partialUpdate = transformSectionsToCVBuilderData(null, patchedSections, {
-    email: current.personal.email,
-    name: current.personal.name,
-  });
+  const partialUpdate = transformSectionsToCVBuilderData(
+    null,
+    patchedSections,
+    {
+      email: current.personal.email,
+      name: current.personal.name,
+    },
+  );
 
   const updatedTypes = new Set(updatedSections.map((s) => s.type));
   const result: CVBuilderData = { ...current };
@@ -2698,7 +3302,9 @@ export function applyAcceptedSectionsToBuilderData(
       if (typeof headlineRaw === 'string' && headlineRaw.trim()) {
         result.personal = {
           ...result.personal,
-          headline: normalizeProfessionalHeadlineTitle(normalizeText(headlineRaw)),
+          headline: normalizeProfessionalHeadlineTitle(
+            normalizeText(headlineRaw),
+          ),
         };
       }
       continue;
@@ -2707,14 +3313,18 @@ export function applyAcceptedSectionsToBuilderData(
     if (builderKey) {
       const key = builderKey as keyof CVBuilderData;
       if (partialUpdate[key] !== undefined) {
-        (result as Record<keyof CVBuilderData, unknown>)[key] = partialUpdate[key];
+        (result as Record<keyof CVBuilderData, unknown>)[key] =
+          partialUpdate[key];
       }
     }
   }
 
   if (partialUpdate.parsedCustomSections.length > 0) {
     const bySectionId = new Map(
-      partialUpdate.parsedCustomSections.map((block) => [block.sectionId, block]),
+      partialUpdate.parsedCustomSections.map((block) => [
+        block.sectionId,
+        block,
+      ]),
     );
     const mergedParsed = result.parsedCustomSections.map(
       (block) => bySectionId.get(block.sectionId) ?? block,

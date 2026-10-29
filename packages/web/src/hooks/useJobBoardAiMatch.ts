@@ -1,13 +1,25 @@
 'use client';
 
 import { queryKeys } from '@/lib/queryKeys';
-import { type QueryClient, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  type QueryClient,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 
 import { useDailyAiUsage } from '@/hooks/useDailyAiUsage';
 import { useJobAnalyzeLocationPayload } from '@/hooks/useJobAnalyzeLocationPayload';
-import { api, type HubBookmarkItem, type JobAnalysis, type JobAnalysisSummary } from '@/lib/api';
-import { canUseAiFromDailyAiUsage, type DailyAiUsage } from '@/lib/ai-daily-usage';
+import {
+  api,
+  type HubBookmarkItem,
+  type JobAnalysis,
+  type JobAnalysisSummary,
+} from '@/lib/api';
+import {
+  canUseAiFromDailyAiUsage,
+  type DailyAiUsage,
+} from '@/lib/ai-daily-usage';
 import {
   jobDescriptionsLikelySame,
   pickAnalysisIdForListing,
@@ -27,11 +39,15 @@ export type JobBoardAiMatchResult = {
 /** Dedupe concurrent POST /jobs/analyze for the same board job + CV (Strict Mode / fast remounts). */
 const inflightAnalyzeByKey = new Map<string, Promise<JobAnalysis>>();
 
-function runAnalyzePostOnce(cacheKey: string, fn: () => Promise<JobAnalysis>): Promise<JobAnalysis> {
+function runAnalyzePostOnce(
+  cacheKey: string,
+  fn: () => Promise<JobAnalysis>,
+): Promise<JobAnalysis> {
   const existing = inflightAnalyzeByKey.get(cacheKey);
   if (existing) return existing;
   const p = fn().finally(() => {
-    if (inflightAnalyzeByKey.get(cacheKey) === p) inflightAnalyzeByKey.delete(cacheKey);
+    if (inflightAnalyzeByKey.get(cacheKey) === p)
+      inflightAnalyzeByKey.delete(cacheKey);
   });
   inflightAnalyzeByKey.set(cacheKey, p);
   return p;
@@ -46,7 +62,14 @@ async function fetchJobBoardReuseOnlyMatch(params: {
   company: string;
   description: string;
 }): Promise<JobBoardAiMatchResult | null> {
-  const { queryClient, discoveryJobId, cvProfileId, title, company, description } = params;
+  const {
+    queryClient,
+    discoveryJobId,
+    cvProfileId,
+    title,
+    company,
+    description,
+  } = params;
   const cv = cvProfileId.trim();
 
   let listingRows: JobAnalysisSummary[] = [];
@@ -149,7 +172,8 @@ export function useJobBoardAiMatch(opts: {
   const desc = opts.description.trim();
   const descOk = desc.length >= 30;
   const usageOk = !aiUsage.isLoading && canUseAiFromDailyAiUsage(aiUsage);
-  const settledOnJob = debouncedJobId === opts.discoveryJobId && opts.discoveryJobId.length > 0;
+  const settledOnJob =
+    debouncedJobId === opts.discoveryJobId && opts.discoveryJobId.length > 0;
 
   const quotaHit = !aiUsage.isLoading && !canUseAiFromDailyAiUsage(aiUsage);
 
@@ -191,8 +215,8 @@ export function useJobBoardAiMatch(opts: {
   const savedAnalysisOverQuota = overQuotaReuseQuery.data;
   const hasSavedAnalysisOverQuota = Boolean(
     savedAnalysisOverQuota &&
-      typeof savedAnalysisOverQuota.analysis?.matchScore === 'number' &&
-      Number.isFinite(savedAnalysisOverQuota.analysis.matchScore),
+    typeof savedAnalysisOverQuota.analysis?.matchScore === 'number' &&
+    Number.isFinite(savedAnalysisOverQuota.analysis.matchScore),
   );
 
   const overQuotaReuseSettled =
@@ -202,16 +226,20 @@ export function useJobBoardAiMatch(opts: {
 
   const quotaFitEnabled = Boolean(
     quotaHit &&
-      opts.jobDetailReady &&
-      settledOnJob &&
-      cv &&
-      desc.length >= 20 &&
-      overQuotaReuseSettled &&
-      !hasSavedAnalysisOverQuota,
+    opts.jobDetailReady &&
+    settledOnJob &&
+    cv &&
+    desc.length >= 20 &&
+    overQuotaReuseSettled &&
+    !hasSavedAnalysisOverQuota,
   );
 
   const quotaFitQuery = useQuery({
-    queryKey: queryKeys.jobs.boardQuotaFit(cv, opts.discoveryJobId, desc.slice(0, 2400)),
+    queryKey: queryKeys.jobs.boardQuotaFit(
+      cv,
+      opts.discoveryJobId,
+      desc.slice(0, 2400),
+    ),
     queryFn: () =>
       api.jobs.matchScore({
         description: opts.description,
@@ -255,20 +283,34 @@ export function useJobBoardAiMatch(opts: {
         }),
       );
 
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.analyses(),
+      });
 
-      if (!analysis.reusedExistingAnalysis && analysis.scoreSource !== 'heuristic') {
+      if (
+        !analysis.reusedExistingAnalysis &&
+        analysis.scoreSource !== 'heuristic'
+      ) {
         void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.analytics.root(),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.jobs.history(),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.cv.profiles(),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.hub.bookmarks(),
+        });
         invalidateTodayPlanQueries(queryClient);
       }
 
       return {
         analysis,
-        matchSource: analysis.reusedExistingAnalysis === true ? 'reused' : 'fresh',
+        matchSource:
+          analysis.reusedExistingAnalysis === true ? 'reused' : 'fresh',
       };
     },
     enabled,
@@ -282,8 +324,12 @@ export function useJobBoardAiMatch(opts: {
 
   const isDebouncing = Boolean(opts.discoveryJobId && !settledOnJob);
 
-  const savedAnalysisOverQuotaMasked = quotaHit ? savedAnalysisOverQuota : undefined;
-  const overQuotaReuseFetching = Boolean(quotaHit && overQuotaReuseQuery.isFetching);
+  const savedAnalysisOverQuotaMasked = quotaHit
+    ? savedAnalysisOverQuota
+    : undefined;
+  const overQuotaReuseFetching = Boolean(
+    quotaHit && overQuotaReuseQuery.isFetching,
+  );
 
   return {
     ...query,
@@ -309,6 +355,8 @@ export function jobBoardAiMatchDisabledReason(
 }
 
 /** POST /jobs/match-score needs at least 20 characters of job description. */
-export function jobBoardQuotaFitBlockedReason(description: string): 'short_jd' | null {
+export function jobBoardQuotaFitBlockedReason(
+  description: string,
+): 'short_jd' | null {
   return description.trim().length < 20 ? 'short_jd' : null;
 }

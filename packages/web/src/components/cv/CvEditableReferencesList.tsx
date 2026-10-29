@@ -54,7 +54,9 @@ export function CvEditableReferencesList({
   };
 
   const updateRow = (id: string, patch: Partial<CVBuilderReference>) => {
-    patchRefs(editableRows().map((row) => (row.id === id ? { ...row, ...patch } : row)));
+    patchRefs(
+      editableRows().map((row) => (row.id === id ? { ...row, ...patch } : row)),
+    );
   };
 
   const mapRef = (r: CVBuilderReference, rIdx: number) => {
@@ -67,7 +69,14 @@ export function CvEditableReferencesList({
           onAddEntry={() =>
             patchRefs([
               ...rows,
-              { id: newLocalId(), name: '', title: '', company: '', email: '', phone: '' },
+              {
+                id: newLocalId(),
+                name: '',
+                title: '',
+                company: '',
+                email: '',
+                phone: '',
+              },
             ])
           }
           onMoveUp={() => {
@@ -145,7 +154,8 @@ export function CvEditableReferencesList({
                 />
               </>
             ) : (
-              [r.title.trim(), r.company.trim()].filter(Boolean).join(' · ') || 'Title · Company'
+              [r.title.trim(), r.company.trim()].filter(Boolean).join(' · ') ||
+              'Title · Company'
             )}
           </p>
           <p>
@@ -334,7 +344,14 @@ export function CvEditableReferencesList({
   const addEmpty = () =>
     patchRefs([
       ...filterCvBuilderReferences(references),
-      { id: newLocalId(), name: '', title: '', company: '', email: '', phone: '' },
+      {
+        id: newLocalId(),
+        name: '',
+        title: '',
+        company: '',
+        email: '',
+        phone: '',
+      },
     ]);
 
   const emptyButton = inline ? (
@@ -348,19 +365,22 @@ export function CvEditableReferencesList({
   ) : null;
 
   const body: ReactNode =
-    rows.length > 0 ? (
-      rows.map((r, rIdx) => mapRef(r, rIdx))
-    ) : (
-      emptyButton
-    );
+    rows.length > 0 ? rows.map((r, rIdx) => mapRef(r, rIdx)) : emptyButton;
 
   if (layout === 'onyx-grid') {
     return (
-      <div className={cn('grid grid-cols-2 gap-x-4 gap-y-3', className)} style={{ color: '#333333' }}>
+      <div
+        className={cn('grid grid-cols-2 gap-x-4 gap-y-3', className)}
+        style={{ color: '#333333' }}
+      >
         {body}
       </div>
     );
   }
 
-  return <div className={cn('mt-1.5 space-y-1.5', textClassName, className)}>{body}</div>;
+  return (
+    <div className={cn('mt-1.5 space-y-1.5', textClassName, className)}>
+      {body}
+    </div>
+  );
 }

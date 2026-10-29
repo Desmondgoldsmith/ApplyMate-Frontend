@@ -50,11 +50,16 @@ export function AnalysisAxisCard({
         </div>
       </div>
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[20px] font-bold tabular-nums text-white">{safe}%</span>
+        <span className="text-[20px] font-bold tabular-nums text-white">
+          {safe}%
+        </span>
       </div>
       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
         <div
-          className={cn('h-full rounded-full bg-gradient-to-r transition-[width] duration-500', tierClass(safe))}
+          className={cn(
+            'h-full rounded-full bg-gradient-to-r transition-[width] duration-500',
+            tierClass(safe),
+          )}
           style={{ width: `${safe}%` }}
         />
       </div>

@@ -40,7 +40,11 @@ export type PostCoachingScore = {
   relevance: number;
 };
 
-export type PostCoachingFollowUpType = 'clarity' | 'depth' | 'behavioral' | 'technical';
+export type PostCoachingFollowUpType =
+  | 'clarity'
+  | 'depth'
+  | 'behavioral'
+  | 'technical';
 
 export type PostCoachingFollowUp = {
   question: string;

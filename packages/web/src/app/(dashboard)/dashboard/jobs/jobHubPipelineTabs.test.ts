@@ -8,7 +8,9 @@ import {
   pipelineStatusLabel,
 } from './jobHubPipelineTabs';
 
-function job(overrides: Partial<TrackedJob> & Pick<TrackedJob, 'key' | 'stage'>): TrackedJob {
+function job(
+  overrides: Partial<TrackedJob> & Pick<TrackedJob, 'key' | 'stage'>,
+): TrackedJob {
   return {
     jobAnalysisId: 'job-1',
     applicationId: null,
@@ -36,7 +38,12 @@ describe('jobHubPipelineTabs', () => {
       key: 'b',
       stage: 'analyzed',
       hasAnalysis: true,
-      applicationAssist: { hasCvReady: true, hasTailoredCv: true, hasCoverLetterDraft: false, missingFields: [] },
+      applicationAssist: {
+        hasCvReady: true,
+        hasTailoredCv: true,
+        hasCoverLetterDraft: false,
+        missingFields: [],
+      },
     });
     expect(derivePipelineTab(j)).toBe('tailoring');
     expect(jobMatchesPipelineTab(j, 'tailoring')).toBe(true);

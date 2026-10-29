@@ -19,12 +19,12 @@ Product/legal: default-on marketing email remains sensitive in some regions — 
 
 ### `notificationPrefs` on `GET /users/me`
 
-| Key | Intended default when **absent** or `null` nested | Opt-out |
-|-----|---------------------------------------------------|---------|
-| `emailHubReminderDue` | **Send** transactional emails when CRM hub reminders are due | `false` → do not email |
-| `weeklyStallDigest` | **Send** weekly stall digest (subject to scheduler rules) | `false` → do not send digest |
-| `pushHubReminderDue` | **Allow** push when push is implemented (reserved) | `false` → no push |
-| `maxMarketingEmailsPerWeek` | Server cap logic when absent (e.g. **3**) — unchanged | User may set 1–21 |
+| Key                         | Intended default when **absent** or `null` nested            | Opt-out                      |
+| --------------------------- | ------------------------------------------------------------ | ---------------------------- |
+| `emailHubReminderDue`       | **Send** transactional emails when CRM hub reminders are due | `false` → do not email       |
+| `weeklyStallDigest`         | **Send** weekly stall digest (subject to scheduler rules)    | `false` → do not send digest |
+| `pushHubReminderDue`        | **Allow** push when push is implemented (reserved)           | `false` → no push            |
+| `maxMarketingEmailsPerWeek` | Server cap logic when absent (e.g. **3**) — unchanged        | User may set 1–21            |
 
 ### Implementation expectations
 

@@ -18,8 +18,14 @@ function storageHasSessionCookie(storagePath: string): boolean {
 }
 
 export function skipUnlessCvE2eReady(): void {
-  test.skip(!CV_E2E_ENABLED, 'Set PLAYWRIGHT_CV_E2E=1 to run authenticated CV E2E.');
-  test.skip(!fs.existsSync(DEFAULT_STORAGE), 'Missing e2e/.auth/user.json — run auth.setup with E2E_LOGIN_* or PLAYWRIGHT_STORAGE_STATE.');
+  test.skip(
+    !CV_E2E_ENABLED,
+    'Set PLAYWRIGHT_CV_E2E=1 to run authenticated CV E2E.',
+  );
+  test.skip(
+    !fs.existsSync(DEFAULT_STORAGE),
+    'Missing e2e/.auth/user.json — run auth.setup with E2E_LOGIN_* or PLAYWRIGHT_STORAGE_STATE.',
+  );
   test.skip(
     !storageHasSessionCookie(DEFAULT_STORAGE),
     'Storage state has no cookies — set E2E_LOGIN_EMAIL + E2E_LOGIN_PASSWORD (or PLAYWRIGHT_STORAGE_STATE with a signed-in export).',
@@ -39,7 +45,9 @@ export async function ensureCvEditor(page: Page): Promise<string | null> {
     await expect(page).toHaveURL(/profileId=/);
     return fromEnv;
   }
-  const opener = page.locator('section[aria-labelledby="cv-library-heading"] ul.grid button').first();
+  const opener = page
+    .locator('section[aria-labelledby="cv-library-heading"] ul.grid button')
+    .first();
   if (await opener.isVisible().catch(() => false)) {
     await opener.click();
     await page.waitForURL(/profileId=/, { timeout: 45_000 });
@@ -47,7 +55,10 @@ export async function ensureCvEditor(page: Page): Promise<string | null> {
   const u = new URL(page.url());
   const id = u.searchParams.get('profileId');
   if (id) return id;
-  const sel = page.locator('select').filter({ has: page.locator('option') }).first();
+  const sel = page
+    .locator('select')
+    .filter({ has: page.locator('option') })
+    .first();
   if ((await sel.count()) > 0) {
     const v = await sel.inputValue();
     if (v) return v;
@@ -62,5 +73,7 @@ export async function openNewCvModal(page: Page): Promise<void> {
   } else {
     await page.getByRole('button', { name: 'New CV', exact: true }).click();
   }
-  await expect(page.getByRole('heading', { name: /Name your CV/i })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /Name your CV/i }),
+  ).toBeVisible();
 }

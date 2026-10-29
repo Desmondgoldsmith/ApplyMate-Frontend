@@ -24,7 +24,9 @@ export function DashboardRecommendedMoveSection({
   followUpJobsTotalCount = null,
   followUpJobsViewAllHref = null,
 }: Props) {
-  const supporting = sanitizeDashboardDisplayText(action.supporting?.trim() ?? '');
+  const supporting = sanitizeDashboardDisplayText(
+    action.supporting?.trim() ?? '',
+  );
 
   const snap = Math.max(0, Math.round(followUpJobsSnapshotCount));
   const total =

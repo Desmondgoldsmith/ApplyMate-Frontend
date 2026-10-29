@@ -24,7 +24,11 @@ type Props = {
   data: StrategicWeeklyCoachingPayload;
 };
 
-function toneShell(tone: StrategicWeeklyCoachingTone | null): { ring: string; glow: string; badge: string } {
+function toneShell(tone: StrategicWeeklyCoachingTone | null): {
+  ring: string;
+  glow: string;
+  badge: string;
+} {
   switch (tone) {
     case 'celebratory':
       return {
@@ -59,17 +63,22 @@ function toneShell(tone: StrategicWeeklyCoachingTone | null): { ring: string; gl
   }
 }
 
-const REASON_ICONS: Partial<Record<StrategicWeeklyCoachingReason, LucideIcon>> = {
-  analysis_paralysis: Brain,
-  low_application_volume: Briefcase,
-  interview_focus: Mic2,
-  low_fit_targeting: Target,
-  stalled_pipeline: PauseCircle,
-  strong_momentum: TrendingUp,
-  recovery_mode: RotateCcw,
-};
+const REASON_ICONS: Partial<Record<StrategicWeeklyCoachingReason, LucideIcon>> =
+  {
+    analysis_paralysis: Brain,
+    low_application_volume: Briefcase,
+    interview_focus: Mic2,
+    low_fit_targeting: Target,
+    stalled_pipeline: PauseCircle,
+    strong_momentum: TrendingUp,
+    recovery_mode: RotateCcw,
+  };
 
-function ReasonIcon({ reason }: { reason: StrategicWeeklyCoachingReason | null }) {
+function ReasonIcon({
+  reason,
+}: {
+  reason: StrategicWeeklyCoachingReason | null;
+}) {
   const Icon = reason ? REASON_ICONS[reason] : undefined;
   return Icon ? <Icon className="h-5 w-5" aria-hidden /> : null;
 }
@@ -98,7 +107,10 @@ export function DashboardStrategicWeeklyCoachingCard({ data }: Props) {
         shell.ring,
       )}
     >
-      <div aria-hidden className={cn('pointer-events-none absolute inset-0', shell.glow)} />
+      <div
+        aria-hidden
+        className={cn('pointer-events-none absolute inset-0', shell.glow)}
+      />
 
       <div className="relative space-y-5">
         <div className="flex flex-wrap items-center gap-2">
@@ -140,7 +152,9 @@ export function DashboardStrategicWeeklyCoachingCard({ data }: Props) {
         ) : null}
 
         {supporting ? (
-          <p className="max-w-[72ch] text-[13px] leading-relaxed text-white/58 sm:text-[14px]">{supporting}</p>
+          <p className="max-w-[72ch] text-[13px] leading-relaxed text-white/58 sm:text-[14px]">
+            {supporting}
+          </p>
         ) : null}
 
         {recommendedAction ? (
@@ -148,7 +162,9 @@ export function DashboardStrategicWeeklyCoachingCard({ data }: Props) {
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9CF5EA]/65">
               Recommended action
             </p>
-            <p className="mt-2 text-[13px] leading-relaxed text-white/85 sm:text-[14px]">{recommendedAction}</p>
+            <p className="mt-2 text-[13px] leading-relaxed text-white/85 sm:text-[14px]">
+              {recommendedAction}
+            </p>
           </div>
         ) : null}
 
@@ -157,7 +173,10 @@ export function DashboardStrategicWeeklyCoachingCard({ data }: Props) {
             <div className="flex items-center justify-between gap-3 text-[11px] font-medium text-white/35">
               <span className="inline-flex items-center gap-1.5">
                 <span>Weekly coaching fit</span>
-                <InfoHint text={TOOLTIP_WEEKLY_STRATEGIC_COACHING_FIT} buttonAriaLabel="What is weekly coaching fit?" />
+                <InfoHint
+                  text={TOOLTIP_WEEKLY_STRATEGIC_COACHING_FIT}
+                  buttonAriaLabel="What is weekly coaching fit?"
+                />
               </span>
               <span className="tabular-nums text-white/45">{confidence}%</span>
             </div>

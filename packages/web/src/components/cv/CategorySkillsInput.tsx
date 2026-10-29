@@ -25,20 +25,33 @@ export const CategorySkillsInput = memo(function CategorySkillsInput({
   hint?: string;
 }) {
   const [text, setText] = useState(() =>
-    skills.map((s) => skillLabelForCommaField(s)).filter(Boolean).join(', '),
+    skills
+      .map((s) => skillLabelForCommaField(s))
+      .filter(Boolean)
+      .join(', '),
   );
   const focusedRef = useRef(false);
 
   useEffect(() => {
     if (!focusedRef.current) {
-      setText(skills.map((s) => skillLabelForCommaField(s)).filter(Boolean).join(', '));
+      setText(
+        skills
+          .map((s) => skillLabelForCommaField(s))
+          .filter(Boolean)
+          .join(', '),
+      );
     }
   }, [skills]);
 
   const commit = (raw: string) => {
     const next = resolveSkillsFromCommaInput(raw, skills);
     onChange(next);
-    setText(next.map((s) => skillLabelForCommaField(s)).filter(Boolean).join(', '));
+    setText(
+      next
+        .map((s) => skillLabelForCommaField(s))
+        .filter(Boolean)
+        .join(', '),
+    );
   };
 
   return (

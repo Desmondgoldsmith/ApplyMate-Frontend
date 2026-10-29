@@ -26,12 +26,15 @@ export const useToastStore = create<ToastState>((set) => ({
   push: ({ type, message, action, durationMs }) => {
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const ttl = durationMs ?? (action ? 12_000 : 3500);
-    set((s) => ({ toasts: [...s.toasts, { id, type, message, action, durationMs: ttl }] }));
+    set((s) => ({
+      toasts: [...s.toasts, { id, type, message, action, durationMs: ttl }],
+    }));
     window.setTimeout(() => {
       set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
     }, ttl);
   },
-  dismiss: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
+  dismiss: (id) =>
+    set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 }));
 
 function getStyle(type: ToastType) {
@@ -72,7 +75,9 @@ export function ToastViewport() {
               transition={{ duration: 0.2 }}
               className={`pointer-events-auto relative overflow-hidden rounded-xl border bg-[#111616] p-3 ${style.border}`}
             >
-              <span className={`absolute left-0 top-0 h-full w-1 ${style.accent}`} />
+              <span
+                className={`absolute left-0 top-0 h-full w-1 ${style.accent}`}
+              />
               <button
                 type="button"
                 onClick={() => dismiss(toast.id)}
@@ -110,8 +115,10 @@ export function useToast() {
   const push = useToastStore((state) => state.push);
   return useMemo(
     () => ({
-      success: (message: string, action?: { label: string; onClick: () => void }) =>
-        push({ type: 'success', message, action }),
+      success: (
+        message: string,
+        action?: { label: string; onClick: () => void },
+      ) => push({ type: 'success', message, action }),
       error: (message: string) => push({ type: 'error', message }),
       info: (message: string) => push({ type: 'info', message }),
     }),

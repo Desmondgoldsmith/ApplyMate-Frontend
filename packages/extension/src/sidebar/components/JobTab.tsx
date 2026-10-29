@@ -8,7 +8,10 @@ import type {
 } from '@/shared/types';
 import { isLikelyJobUrl } from '@/shared/job-page-url';
 import { isExtractedJobIncomplete } from '@/shared/extracted-job';
-import { openWebAppTabWithAnalyzerPrefill, openWebAppTabWithHubPrefill } from '@/shared/web-hub-prefill';
+import {
+  openWebAppTabWithAnalyzerPrefill,
+  openWebAppTabWithHubPrefill,
+} from '@/shared/web-hub-prefill';
 
 import { useJobSession } from '../context/JobSessionContext';
 import { CompanyLogoBadge } from './CompanyLogoBadge';
@@ -33,7 +36,8 @@ const TOKENS = {
 } as const;
 
 const WEB_APP_BASE =
-  import.meta.env.VITE_WEB_APP_URL?.replace(/\/$/, '') ?? 'http://localhost:3001';
+  import.meta.env.VITE_WEB_APP_URL?.replace(/\/$/, '') ??
+  'http://localhost:3001';
 
 const JOB_HUB_URL = `${WEB_APP_BASE}/dashboard/jobs`;
 
@@ -233,7 +237,9 @@ function NotAJobPageView({
             }}
           />
           {importError ? (
-            <p style={{ marginTop: 8, fontSize: 11, color: TOKENS.red }}>{importError}</p>
+            <p style={{ marginTop: 8, fontSize: 11, color: TOKENS.red }}>
+              {importError}
+            </p>
           ) : (
             <p style={{ marginTop: 8, fontSize: 11, color: TOKENS.textMuted }}>
               Opens the job page in your current tab and detects the posting.
@@ -332,7 +338,9 @@ function SaveJobButton({
         jobType: job.jobType ?? undefined,
         experienceLevel: job.experienceLevel ?? undefined,
         postedDate: job.postedDate ?? undefined,
-        ...(job.logoCandidateUrl?.trim() ? { logoCandidateUrl: job.logoCandidateUrl.trim() } : {}),
+        ...(job.logoCandidateUrl?.trim()
+          ? { logoCandidateUrl: job.logoCandidateUrl.trim() }
+          : {}),
         sourceUrl: job.sourceUrl,
         sourceSite: job.sourceSite,
       },
@@ -494,7 +502,14 @@ function SaveJobButton({
         >
           {saving ? 'Saving…' : 'Save analyzed job to Hub'}
         </button>
-        <p style={{ margin: '8px 0 0', fontSize: 11, color: TOKENS.textMuted, lineHeight: 1.5 }}>
+        <p
+          style={{
+            margin: '8px 0 0',
+            fontSize: 11,
+            color: TOKENS.textMuted,
+            lineHeight: 1.5,
+          }}
+        >
           Analysis is ready — save to keep this role in Job Hub.
         </p>
       </div>
@@ -591,7 +606,7 @@ function JobReadyView({
   const displayLogoUrl =
     saveState.status === 'saved'
       ? saveState.companyLogoUrl
-      : scoreCompanyLogoUrl ?? job.logoCandidateUrl;
+      : (scoreCompanyLogoUrl ?? job.logoCandidateUrl);
 
   const openAnalyzer = () => {
     const analysisId =
@@ -632,10 +647,17 @@ function JobReadyView({
             padding: 14,
           }}
         >
-          <p style={{ margin: 0, fontSize: 12, lineHeight: 1.6, color: TOKENS.textSecondary }}>
+          <p
+            style={{
+              margin: 0,
+              fontSize: 12,
+              lineHeight: 1.6,
+              color: TOKENS.textSecondary,
+            }}
+          >
             Job details could not be read from this page. Click{' '}
-            <strong style={{ color: TOKENS.textPrimary }}>Reload tab</strong> below, or refresh the
-            tab and open the extension again.
+            <strong style={{ color: TOKENS.textPrimary }}>Reload tab</strong>{' '}
+            below, or refresh the tab and open the extension again.
           </p>
           <button
             type="button"
@@ -659,7 +681,14 @@ function JobReadyView({
           </button>
         </div>
       ) : null}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
         <div style={{ display: 'flex', flex: 1, minWidth: 0, gap: 12 }}>
           <CompanyLogoBadge
             company={job.company || job.title}
@@ -667,62 +696,83 @@ function JobReadyView({
             size={40}
           />
           <div style={{ flex: 1, minWidth: 0 }}>
-        <span
-          style={{
-            display: 'inline-block',
-            background: TOKENS.teal10,
-            border: `1px solid ${TOKENS.teal20}`,
-            borderRadius: 20,
-            padding: '3px 10px',
-            fontSize: 11,
-            color: TOKENS.primary,
-            fontWeight: 500,
-          }}
-        >
-          {badgeParts.join(' · ')}
-        </span>
-        <h2
-          style={{
-            marginTop: 10,
-            marginBottom: 0,
-            fontSize: 16,
-            fontWeight: 600,
-            color: TOKENS.textPrimary,
-            lineHeight: 1.3,
-          }}
-        >
-          {job.title}
-        </h2>
-        {job.company ? (
-          <p style={{ marginTop: 4, marginBottom: 0, fontSize: 13, color: 'rgba(240,244,242,0.70)' }}>
-            {job.company}
-          </p>
-        ) : null}
-        {metaPills.length > 0 ? (
-          <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {metaPills.map((pill) => (
-              <span
-                key={pill}
+            <span
+              style={{
+                display: 'inline-block',
+                background: TOKENS.teal10,
+                border: `1px solid ${TOKENS.teal20}`,
+                borderRadius: 20,
+                padding: '3px 10px',
+                fontSize: 11,
+                color: TOKENS.primary,
+                fontWeight: 500,
+              }}
+            >
+              {badgeParts.join(' · ')}
+            </span>
+            <h2
+              style={{
+                marginTop: 10,
+                marginBottom: 0,
+                fontSize: 16,
+                fontWeight: 600,
+                color: TOKENS.textPrimary,
+                lineHeight: 1.3,
+              }}
+            >
+              {job.title}
+            </h2>
+            {job.company ? (
+              <p
                 style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 20,
-                  padding: '2px 8px',
-                  fontSize: 11,
-                  color: 'rgba(240,244,242,0.50)',
+                  marginTop: 4,
+                  marginBottom: 0,
+                  fontSize: 13,
+                  color: 'rgba(240,244,242,0.70)',
                 }}
               >
-                {pill}
-              </span>
-            ))}
+                {job.company}
+              </p>
+            ) : null}
+            {metaPills.length > 0 ? (
+              <div
+                style={{
+                  marginTop: 6,
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                }}
+              >
+                {metaPills.map((pill) => (
+                  <span
+                    key={pill}
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 20,
+                      padding: '2px 8px',
+                      fontSize: 11,
+                      color: 'rgba(240,244,242,0.50)',
+                    }}
+                  >
+                    {pill}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            {pinnedFromOtherTab ? (
+              <p
+                style={{
+                  marginTop: 10,
+                  marginBottom: 0,
+                  fontSize: 11,
+                  color: TOKENS.textMuted,
+                }}
+              >
+                Kept from a previous job page — clear when you are done.
+              </p>
+            ) : null}
           </div>
-        ) : null}
-        {pinnedFromOtherTab ? (
-          <p style={{ marginTop: 10, marginBottom: 0, fontSize: 11, color: TOKENS.textMuted }}>
-            Kept from a previous job page — clear when you are done.
-          </p>
-        ) : null}
-        </div>
         </div>
         <button
           type="button"
@@ -767,7 +817,14 @@ function JobReadyView({
             >
               {job.salary}
             </p>
-            <p style={{ marginTop: 3, marginBottom: 0, fontSize: 11, color: TOKENS.textMuted }}>
+            <p
+              style={{
+                marginTop: 3,
+                marginBottom: 0,
+                fontSize: 11,
+                color: TOKENS.textMuted,
+              }}
+            >
               AI estimate · Not verified market data
             </p>
           </div>
@@ -870,7 +927,9 @@ export function JobTab() {
     clearJob,
   } = useJobSession();
 
-  const [state, dispatch] = useReducer(reducer, { status: 'not-a-job-page' } satisfies JobExtractionState);
+  const [state, dispatch] = useReducer(reducer, {
+    status: 'not-a-job-page',
+  } satisfies JobExtractionState);
   const [onJobListingPage, setOnJobListingPage] = useState(false);
   const [reloadingPage, setReloadingPage] = useState(false);
   const [importingUrl, setImportingUrl] = useState(false);
@@ -878,9 +937,11 @@ export function JobTab() {
 
   useEffect(() => {
     const syncJobListingPage = () => {
-      void chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
-        setOnJobListingPage(Boolean(tab?.url && isLikelyJobUrl(tab.url)));
-      });
+      void chrome.tabs
+        .query({ active: true, currentWindow: true })
+        .then(([tab]) => {
+          setOnJobListingPage(Boolean(tab?.url && isLikelyJobUrl(tab.url)));
+        });
     };
     syncJobListingPage();
     const id = window.setInterval(syncJobListingPage, 1200);
@@ -899,7 +960,10 @@ export function JobTab() {
   useEffect(() => {
     if (state.status !== 'ready') return;
     chrome.runtime.sendMessage(
-      { action: 'checkJobSaved', url: state.job.sourceUrl } satisfies MessageAction,
+      {
+        action: 'checkJobSaved',
+        url: state.job.sourceUrl,
+      } satisfies MessageAction,
       () => {
         /* session context handles enriched check response */
       },
@@ -957,7 +1021,9 @@ export function JobTab() {
   }
 
   if (state.status === 'error') {
-    return <ErrorView message={state.message} onRetry={() => void refreshJob()} />;
+    return (
+      <ErrorView message={state.message} onRetry={() => void refreshJob()} />
+    );
   }
 
   if (state.status === 'ready') {
@@ -970,16 +1036,21 @@ export function JobTab() {
         pinnedFromOtherTab={pinnedFromOtherTab}
         jobAnalysisId={
           jobAnalysisId ??
-          (scoreState.status === 'done' ? scoreState.result.jobAnalysisId ?? null : null)
+          (scoreState.status === 'done'
+            ? (scoreState.result.jobAnalysisId ?? null)
+            : null)
         }
         hasAnalysis={Boolean(
           checkResult?.hasAnalysis ||
-            (scoreState.status === 'done' && scoreState.result.matchScore != null),
+          (scoreState.status === 'done' &&
+            scoreState.result.matchScore != null),
         )}
         onReloadPage={reloadPage}
         reloading={reloadingPage}
         scoreCompanyLogoUrl={
-          scoreState.status === 'done' ? scoreState.result.companyLogoUrl ?? null : null
+          scoreState.status === 'done'
+            ? (scoreState.result.companyLogoUrl ?? null)
+            : null
         }
       />
     );

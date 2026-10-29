@@ -60,9 +60,15 @@ export function CvUploadProgressSteps({
               )}
             >
               {done ? (
-                <Check className="h-3.5 w-3.5 shrink-0 text-emerald-400" aria-hidden />
+                <Check
+                  className="h-3.5 w-3.5 shrink-0 text-emerald-400"
+                  aria-hidden
+                />
               ) : current ? (
-                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[#00C9B1]" aria-hidden />
+                <Loader2
+                  className="h-3.5 w-3.5 shrink-0 animate-spin text-[#00C9B1]"
+                  aria-hidden
+                />
               ) : (
                 <span className="inline-block h-3.5 w-3.5 shrink-0 rounded-full border border-white/15" />
               )}

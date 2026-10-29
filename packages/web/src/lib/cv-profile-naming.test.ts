@@ -32,7 +32,9 @@ describe('cv-profile-naming export', () => {
   });
 
   it('parses display label with em dash', () => {
-    expect(parseCvDisplayLabelParts('Desmond Goldsmith — DevOps Engineer')).toEqual({
+    expect(
+      parseCvDisplayLabelParts('Desmond Goldsmith — DevOps Engineer'),
+    ).toEqual({
       userName: 'Desmond Goldsmith',
       role: 'DevOps Engineer',
     });
@@ -40,7 +42,10 @@ describe('cv-profile-naming export', () => {
 
   it('builds export naming from display label', () => {
     const naming = buildCvNamingForExport(
-      { headline: 'DevOps Engineer', structured: { fullName: 'Desmond Goldsmith' } } as never,
+      {
+        headline: 'DevOps Engineer',
+        structured: { fullName: 'Desmond Goldsmith' },
+      } as never,
       'Desmond Goldsmith — DevOps Engineer',
     );
     expect(naming.userName).toBe('Desmond Goldsmith');

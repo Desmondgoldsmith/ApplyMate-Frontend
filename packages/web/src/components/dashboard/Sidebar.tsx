@@ -148,7 +148,9 @@ export function Sidebar() {
   const displayName = getDisplayName(user);
   const initials = getDisplayInitials(user);
   const showUserSkeleton =
-    meLoading && !me && (!storeUser?.email || getDisplayInitials(storeUser) === 'U');
+    meLoading &&
+    !me &&
+    (!storeUser?.email || getDisplayInitials(storeUser) === 'U');
 
   const features = user?.selectedFeatures ?? ['cv'];
 
@@ -357,7 +359,9 @@ export function Sidebar() {
               {!collapsed ? (
                 <div className="min-w-0">
                   <p className="truncate text-sm text-white">{displayName}</p>
-                  <p className="truncate text-xs text-white/45">{user?.email}</p>
+                  <p className="truncate text-xs text-white/45">
+                    {user?.email}
+                  </p>
                 </div>
               ) : null}
             </>

@@ -18,7 +18,12 @@ import {
   subscribeAuthTokensUpdated,
 } from '@/lib/authSync';
 import type { ErrorBody } from '@/lib/axios';
-import { API_BASE_URL, axiosClient, getApiBaseUrl, throwIfApiFailureResponse } from '@/lib/axios';
+import {
+  API_BASE_URL,
+  axiosClient,
+  getApiBaseUrl,
+  throwIfApiFailureResponse,
+} from '@/lib/axios';
 import { useAuthStore } from '@/store/useAuthStore';
 
 /** Refresh ~2 minutes before JWT `exp`. */
@@ -37,7 +42,8 @@ function readNestedErrorCode(data: unknown): string | undefined {
     const code = (err as { code?: unknown }).code;
     if (typeof code === 'string' && code.trim()) return code.trim();
   }
-  if (typeof root.code === 'string' && root.code.trim()) return root.code.trim();
+  if (typeof root.code === 'string' && root.code.trim())
+    return root.code.trim();
   return undefined;
 }
 
@@ -127,7 +133,11 @@ export async function tryRestoreSessionFromApiCookie(): Promise<boolean> {
           const user = await api.users.me();
           useAuthStore
             .getState()
-            .setAuth(user, token, state.refreshToken ?? readApplymateRefreshTokenFromCookie());
+            .setAuth(
+              user,
+              token,
+              state.refreshToken ?? readApplymateRefreshTokenFromCookie(),
+            );
         } catch {
           useAuthStore.getState().clearAuth({ skipBroadcast: true });
           return false;
@@ -170,19 +180,29 @@ function withAuthRefreshLock<T>(fn: () => Promise<T>): Promise<T> {
   if (!locks?.request) return fn();
   /** The lock is held until the callback's promise settles. */
   return new Promise<T>((resolve, reject) => {
-    locks.request(AUTH_REFRESH_LOCK_NAME, () => fn().then(resolve, reject)).catch(reject);
+    locks
+      .request(AUTH_REFRESH_LOCK_NAME, () => fn().then(resolve, reject))
+      .catch(reject);
   });
 }
 
-type KnownAuthTokens = { accessToken: string | null; refreshToken: string | null };
+type KnownAuthTokens = {
+  accessToken: string | null;
+  refreshToken: string | null;
+};
 
 /** This tab's view, not the shared cookies — another tab may have rotated them already. */
 function readKnownAuthTokens(): KnownAuthTokens {
   const state = useAuthStore.getState();
   return {
-    accessToken: state.accessToken?.trim() || readApplymateTokenFromCookie()?.trim() || null,
+    accessToken:
+      state.accessToken?.trim() ||
+      readApplymateTokenFromCookie()?.trim() ||
+      null,
     refreshToken:
-      state.refreshToken?.trim() || readApplymateRefreshTokenFromCookie()?.trim() || null,
+      state.refreshToken?.trim() ||
+      readApplymateRefreshTokenFromCookie()?.trim() ||
+      null,
   };
 }
 
@@ -198,8 +218,10 @@ function isAccessTokenFresh(token: string): boolean {
 function adoptTokensRefreshedByAnotherTab(known: KnownAuthTokens): boolean {
   const cookieAccess = readApplymateTokenFromCookie()?.trim() || null;
   const cookieRefresh = readApplymateRefreshTokenFromCookie()?.trim() || null;
-  const accessRotated = cookieAccess !== null && cookieAccess !== known.accessToken;
-  const refreshRotated = cookieRefresh !== null && cookieRefresh !== known.refreshToken;
+  const accessRotated =
+    cookieAccess !== null && cookieAccess !== known.accessToken;
+  const refreshRotated =
+    cookieRefresh !== null && cookieRefresh !== known.refreshToken;
   if (!accessRotated && !refreshRotated) return false;
   useAuthStore.getState().hydrateFromStorage();
   return accessRotated && isAccessTokenFresh(cookieAccess);
@@ -225,7 +247,11 @@ export async function refreshAccessToken(): Promise<boolean> {
       const user = mapNormalizedUserToAuthUser(normalized.user);
       useAuthStore
         .getState()
-        .setAuth(user, normalized.accessToken, normalized.refreshToken ?? refreshToken);
+        .setAuth(
+          user,
+          normalized.accessToken,
+          normalized.refreshToken ?? refreshToken,
+        );
       broadcastAuthTokensUpdated();
       return true;
     } catch (error) {
@@ -274,7 +300,9 @@ function shouldSkipAuthRefresh(url: string | undefined): boolean {
 
 function isLoginOrRegisterAttemptUrl(url: string | undefined): boolean {
   if (!url) return false;
-  return /(^|\/)(auth\/login|auth\/register|auth\/google)(\/?$|[/?#])/i.test(url);
+  return /(^|\/)(auth\/login|auth\/register|auth\/google)(\/?$|[/?#])/i.test(
+    url,
+  );
 }
 
 let refreshInterceptorInstalled = false;

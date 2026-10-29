@@ -86,12 +86,13 @@ export async function GET(request: NextRequest) {
   });
 
   try {
-    const { accessToken, refreshToken } = await exchangeGoogleIdTokenWithBackend({
-      idToken,
-      intent,
-      name: typeof jwt?.name === 'string' ? jwt.name : undefined,
-      image: typeof jwt?.picture === 'string' ? jwt.picture : undefined,
-    });
+    const { accessToken, refreshToken } =
+      await exchangeGoogleIdTokenWithBackend({
+        idToken,
+        intent,
+        name: typeof jwt?.name === 'string' ? jwt.name : undefined,
+        image: typeof jwt?.picture === 'string' ? jwt.picture : undefined,
+      });
 
     const completeUrl = new URL('/oauth-complete', request.url);
     completeUrl.searchParams.set('intent', intent);
@@ -104,7 +105,11 @@ export async function GET(request: NextRequest) {
     };
     response.cookies.set(APPLYMATE_AUTH_COOKIE, accessToken, cookieOpts);
     if (refreshToken?.trim()) {
-      response.cookies.set(APPLYMATE_REFRESH_COOKIE, refreshToken.trim(), cookieOpts);
+      response.cookies.set(
+        APPLYMATE_REFRESH_COOKIE,
+        refreshToken.trim(),
+        cookieOpts,
+      );
     }
     return response;
   } catch (err) {

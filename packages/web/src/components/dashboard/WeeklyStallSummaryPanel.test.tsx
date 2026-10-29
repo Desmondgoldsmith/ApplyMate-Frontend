@@ -46,4 +46,3 @@ describe('WeeklyStallSummaryPanel', () => {
     expect(screen.getByText(/Tailor CV/i)).toBeInTheDocument();
   });
 });
-

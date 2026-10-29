@@ -11,7 +11,8 @@ export type CvAcceptAllQuota = {
 };
 
 function pickInt(v: unknown, fallback = 0): number {
-  if (typeof v === 'number' && Number.isFinite(v)) return Math.max(0, Math.floor(v));
+  if (typeof v === 'number' && Number.isFinite(v))
+    return Math.max(0, Math.floor(v));
   return fallback;
 }
 
@@ -36,8 +37,12 @@ export function parseAcceptAllQuota(raw: unknown): CvAcceptAllQuota | null {
     aiUsesRemaining: pickInt(o.aiUsesRemaining ?? o.ai_uses_remaining),
     pendingCount,
     pendingNeedingAi,
-    pendingReusePreview: pickInt(o.pendingReusePreview ?? o.pending_reuse_preview),
-    canAcceptWithAiToday: pickInt(o.canAcceptWithAiToday ?? o.can_accept_with_ai_today),
+    pendingReusePreview: pickInt(
+      o.pendingReusePreview ?? o.pending_reuse_preview,
+    ),
+    canAcceptWithAiToday: pickInt(
+      o.canAcceptWithAiToday ?? o.can_accept_with_ai_today,
+    ),
     acceptAllCountsAsOneAiUse: pickBool(
       o.acceptAllCountsAsOneAiUse ?? o.accept_all_counts_as_one_ai_use,
       true,
@@ -54,7 +59,9 @@ export function isAcceptAllBlockedByDailyQuota(
   return quota.pendingNeedingAi > 0 && quota.aiUsesRemaining === 0;
 }
 
-export function extractAcceptAllQuotaFromApiBody(data: unknown): CvAcceptAllQuota | null {
+export function extractAcceptAllQuotaFromApiBody(
+  data: unknown,
+): CvAcceptAllQuota | null {
   if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
   const root = data as Record<string, unknown>;
   const err =

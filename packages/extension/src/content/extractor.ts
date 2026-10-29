@@ -11,7 +11,10 @@ import {
   SPLIT_VIEW_LIST_STRIP_SELECTORS,
 } from '@/content/job-detail-scope';
 import { pageHasJobPostingSignals } from '@/content/job-page-heuristics';
-import { isApplyMateAppUrl, isExcludedNonJobSiteUrl } from '@/shared/job-page-url';
+import {
+  isApplyMateAppUrl,
+  isExcludedNonJobSiteUrl,
+} from '@/shared/job-page-url';
 
 const SITE_EXTRACTORS = [
   extractFromLinkedIn,
@@ -225,7 +228,9 @@ export function cleanDescription(text: string | null | undefined): string {
 export function collectLegacyPageText(doc: Document = document): string {
   if (!doc.body) return '';
   const clone = doc.body.cloneNode(true) as HTMLElement;
-  clone.querySelectorAll('script, style, noscript, svg, nav, footer, header').forEach((el) => el.remove());
+  clone
+    .querySelectorAll('script, style, noscript, svg, nav, footer, header')
+    .forEach((el) => el.remove());
   return normalizeWhitespace(clone.innerText ?? '').slice(0, MAX_RAW_TEXT);
 }
 
@@ -253,7 +258,9 @@ export function collectPrimaryJobText(doc: Document = document): string {
     for (const selector of descriptionSelectors) {
       const el = detailRoot.querySelector(selector);
       if (!el) continue;
-      const text = trimJobDescription(normalizeWhitespace(el.textContent ?? ''));
+      const text = trimJobDescription(
+        normalizeWhitespace(el.textContent ?? ''),
+      );
       if (text.length >= 200) return text.slice(0, MAX_RAW_TEXT);
     }
   }
@@ -288,7 +295,9 @@ const SPLIT_VIEW_LIST_SELECTORS = SPLIT_VIEW_LIST_STRIP_SELECTORS;
 function collectTextFromRoot(root: Element): string {
   const clone = root.cloneNode(true) as HTMLElement;
   clone.querySelectorAll(PRIMARY_NOISE_SELECTORS).forEach((el) => el.remove());
-  clone.querySelectorAll(SPLIT_VIEW_LIST_SELECTORS).forEach((el) => el.remove());
+  clone
+    .querySelectorAll(SPLIT_VIEW_LIST_SELECTORS)
+    .forEach((el) => el.remove());
   const text = normalizeWhitespace(clone.innerText ?? '');
   return trimJobDescription(text).slice(0, MAX_RAW_TEXT);
 }
@@ -305,7 +314,8 @@ export function normaliseJobType(raw: string | null): string | null {
   const lower = value.toLowerCase();
   if (/(full[\s-]?time|fulltime)/i.test(lower)) return 'Full-time';
   if (/(part[\s-]?time|parttime)/i.test(lower)) return 'Part-time';
-  if (/(contractor|contract[\s-]?role|^contract$)/i.test(lower)) return 'Contract';
+  if (/(contractor|contract[\s-]?role|^contract$)/i.test(lower))
+    return 'Contract';
   if (/(internship|^intern$)/i.test(lower)) return 'Internship';
   return value;
 }
@@ -320,13 +330,18 @@ function textFromRoot(root: Element | Document, selector: string): string {
 
 function descriptionFrom(...selectors: string[]): string {
   for (const selector of selectors) {
-    const cleaned = cleanDescription(document.querySelector(selector)?.textContent);
+    const cleaned = cleanDescription(
+      document.querySelector(selector)?.textContent,
+    );
     if (cleaned.length >= 80) return cleaned;
   }
   return '';
 }
 
-function descriptionFromRoot(root: Element | Document, ...selectors: string[]): string {
+function descriptionFromRoot(
+  root: Element | Document,
+  ...selectors: string[]
+): string {
   for (const selector of selectors) {
     const cleaned = cleanDescription(root.querySelector(selector)?.textContent);
     if (cleaned.length >= 80) return cleaned;
@@ -338,7 +353,10 @@ function readImageSrc(el: Element | null | undefined): string | null {
   if (!el) return null;
   const img = el instanceof HTMLImageElement ? el : el.querySelector('img');
   if (!(img instanceof HTMLImageElement)) return null;
-  const src = img.currentSrc?.trim() || img.src?.trim() || img.getAttribute('src')?.trim();
+  const src =
+    img.currentSrc?.trim() ||
+    img.src?.trim() ||
+    img.getAttribute('src')?.trim();
   if (!src || !/^https?:\/\//i.test(src)) return null;
   return src;
 }
@@ -351,7 +369,10 @@ function logoFromSelectors(...selectors: string[]): string | null {
   return null;
 }
 
-function logoFromSelectorsInRoot(root: Element | Document, ...selectors: string[]): string | null {
+function logoFromSelectorsInRoot(
+  root: Element | Document,
+  ...selectors: string[]
+): string | null {
   for (const selector of selectors) {
     const src = readImageSrc(root.querySelector(selector));
     if (src) return src;
@@ -373,10 +394,16 @@ function logoFromSchemaNode(node: Record<string, unknown>): string | null {
   const org = node.hiringOrganization;
   if (org && typeof org === 'object' && !Array.isArray(org)) {
     const orgRecord = org as Record<string, unknown>;
-    if (typeof orgRecord.logo === 'string' && orgRecord.logo.startsWith('http')) {
+    if (
+      typeof orgRecord.logo === 'string' &&
+      orgRecord.logo.startsWith('http')
+    ) {
       return orgRecord.logo;
     }
-    if (typeof orgRecord.image === 'string' && orgRecord.image.startsWith('http')) {
+    if (
+      typeof orgRecord.image === 'string' &&
+      orgRecord.image.startsWith('http')
+    ) {
       return orgRecord.image;
     }
   }
@@ -390,7 +417,9 @@ function logoFromSchemaNode(node: Record<string, unknown>): string | null {
 }
 
 export function extractLogoFromJsonLd(): string | null {
-  const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+  const scripts = document.querySelectorAll(
+    'script[type="application/ld+json"]',
+  );
 
   for (const script of Array.from(scripts)) {
     try {
@@ -454,7 +483,10 @@ function extractSiteSpecificLogo(): string | null {
     return logoFromSelectors('.logo img', '#logo img');
   }
   if (host.includes('lever.co')) {
-    return logoFromSelectors('.posting-headline .logo img', '.main-header-logo img');
+    return logoFromSelectors(
+      '.posting-headline .logo img',
+      '.main-header-logo img',
+    );
   }
   if (host.includes('myworkdayjobs.com') || host.includes('workday.com')) {
     return logoFromSelectors('[data-automation-id="companyLogo"] img');
@@ -463,12 +495,17 @@ function extractSiteSpecificLogo(): string | null {
 }
 
 function extractOgImageLogo(): string | null {
-  const ogImage = document.querySelector('meta[property="og:image"]')?.getAttribute('content');
+  const ogImage = document
+    .querySelector('meta[property="og:image"]')
+    ?.getAttribute('content');
   if (ogImage?.startsWith('http')) return ogImage;
   return null;
 }
 
-function resolvePageLogo(): Pick<ExtractedJob, 'logoCandidateUrl' | 'logoSource'> | null {
+function resolvePageLogo(): Pick<
+  ExtractedJob,
+  'logoCandidateUrl' | 'logoSource'
+> | null {
   const jsonLd = extractLogoFromJsonLd();
   if (jsonLd) {
     return { logoCandidateUrl: jsonLd, logoSource: 'json-ld' };
@@ -487,9 +524,14 @@ function resolvePageLogo(): Pick<ExtractedJob, 'logoCandidateUrl' | 'logoSource'
   return null;
 }
 
-function buildJob(partial: Omit<ExtractedJob, 'sourceUrl' | 'confidence' | 'extractedBy'>): ExtractedJob | null {
+function buildJob(
+  partial: Omit<ExtractedJob, 'sourceUrl' | 'confidence' | 'extractedBy'>,
+): ExtractedJob | null {
   if (!partial.title.trim()) return null;
-  if (partial.sourceSite === 'linkedin.com' && !isValidLinkedInTitle(partial.title)) {
+  if (
+    partial.sourceSite === 'linkedin.com' &&
+    !isValidLinkedInTitle(partial.title)
+  ) {
     return null;
   }
 
@@ -500,7 +542,10 @@ function buildJob(partial: Omit<ExtractedJob, 'sourceUrl' | 'confidence' | 'extr
           logoSource: partial.logoSource,
         }
       : partial.logoCandidateUrl?.trim()
-        ? { logoCandidateUrl: partial.logoCandidateUrl.trim(), logoSource: 'site-extractor' as const }
+        ? {
+            logoCandidateUrl: partial.logoCandidateUrl.trim(),
+            logoSource: 'site-extractor' as const,
+          }
         : partial.sourceSite === 'linkedin.com'
           ? null
           : resolvePageLogo();
@@ -513,7 +558,9 @@ function buildJob(partial: Omit<ExtractedJob, 'sourceUrl' | 'confidence' | 'extr
     description: cleanDescription(partial.description),
     salary: partial.salary ? cleanText(partial.salary) : null,
     jobType: normaliseJobType(partial.jobType),
-    experienceLevel: partial.experienceLevel ? cleanText(partial.experienceLevel) : null,
+    experienceLevel: partial.experienceLevel
+      ? cleanText(partial.experienceLevel)
+      : null,
     postedDate: partial.postedDate ? cleanText(partial.postedDate) : null,
     ...(resolvedLogo ?? {}),
     sourceUrl: window.location.href,
@@ -526,7 +573,8 @@ function extractFromIndeed(): ExtractedJob | null {
   if (!window.location.hostname.includes('indeed.com')) return null;
 
   const root = getJobDetailRoot(document, window.location.href);
-  if (looksLikeSplitViewJobListingPage(window.location.href) && !root) return null;
+  if (looksLikeSplitViewJobListingPage(window.location.href) && !root)
+    return null;
 
   const scope = root ?? document;
 
@@ -550,15 +598,20 @@ function extractFromIndeed(): ExtractedJob | null {
     scope.querySelectorAll('[data-testid="attribute_snippet_testid"]'),
   ).map((el) => cleanText(el.textContent));
 
-  const salary = snippets.find((s) => /\$|£|€|salary|year|hour/i.test(s)) ?? null;
+  const salary =
+    snippets.find((s) => /\$|£|€|salary|year|hour/i.test(s)) ?? null;
   const jobType =
     snippets
       .map((s) => normaliseJobType(s))
-      .find((s) => s && /full-time|part-time|contract|internship|temporary/i.test(s)) ??
-    null;
+      .find(
+        (s) =>
+          s && /full-time|part-time|contract|internship|temporary/i.test(s),
+      ) ?? null;
 
   const postedDate =
-    cleanText(scope.querySelector('[data-testid="myJobsStateDate"]')?.textContent) || null;
+    cleanText(
+      scope.querySelector('[data-testid="myJobsStateDate"]')?.textContent,
+    ) || null;
 
   return buildJob({
     title,
@@ -589,13 +642,14 @@ function extractFromGreenhouse(): ExtractedJob | null {
     }
   }
 
-  const location =
-    textFrom('.location') || textFrom('[class*="location"]');
+  const location = textFrom('.location') || textFrom('[class*="location"]');
 
   const description = descriptionFrom('#content', '.job-post-description');
 
   const jobType =
-    cleanText(document.querySelector('[class*="employment-type"]')?.textContent) || null;
+    cleanText(
+      document.querySelector('[class*="employment-type"]')?.textContent,
+    ) || null;
 
   return buildJob({
     title,
@@ -623,14 +677,17 @@ function extractFromLever(): ExtractedJob | null {
   }
 
   const location =
-    textFrom('.sort-by-time.posting-category') || textFrom('[class*="location"]');
+    textFrom('.sort-by-time.posting-category') ||
+    textFrom('[class*="location"]');
 
   const description = descriptionFrom('.content');
 
   const salary =
-    cleanText(document.querySelector('[class*="compensation"]')?.textContent) || null;
+    cleanText(document.querySelector('[class*="compensation"]')?.textContent) ||
+    null;
   const jobType =
-    cleanText(document.querySelector('[class*="work-type"]')?.textContent) || null;
+    cleanText(document.querySelector('[class*="work-type"]')?.textContent) ||
+    null;
 
   return buildJob({
     title,
@@ -647,7 +704,10 @@ function extractFromLever(): ExtractedJob | null {
 
 function extractFromWorkday(): ExtractedJob | null {
   const host = window.location.hostname;
-  if (!host.includes('myworkdayjobs.com') && !host.includes('wd3.myworkday.com')) {
+  if (
+    !host.includes('myworkdayjobs.com') &&
+    !host.includes('wd3.myworkday.com')
+  ) {
     return null;
   }
 
@@ -661,16 +721,22 @@ function extractFromWorkday(): ExtractedJob | null {
     : '';
 
   const location =
-    textFrom('[data-automation-id="location"]') || textFrom('[class*="location"]');
+    textFrom('[data-automation-id="location"]') ||
+    textFrom('[class*="location"]');
 
-  const description = descriptionFrom('[data-automation-id="jobPostingDescription"]');
+  const description = descriptionFrom(
+    '[data-automation-id="jobPostingDescription"]',
+  );
 
   const jobType =
-    cleanText(document.querySelector('[data-automation-id="Time_Type"]')?.textContent) ||
-    null;
+    cleanText(
+      document.querySelector('[data-automation-id="Time_Type"]')?.textContent,
+    ) || null;
 
   const postedDate =
-    cleanText(document.querySelector('[data-automation-id="postedOn"]')?.textContent) || null;
+    cleanText(
+      document.querySelector('[data-automation-id="postedOn"]')?.textContent,
+    ) || null;
 
   return buildJob({
     title,
@@ -697,9 +763,14 @@ function extractFromJobberman(): ExtractedJob | null {
 
   const location =
     textFrom('[class*="location"]') ||
-    cleanText(document.querySelector('[itemprop="addressLocality"]')?.textContent);
+    cleanText(
+      document.querySelector('[itemprop="addressLocality"]')?.textContent,
+    );
 
-  const description = descriptionFrom('[class*="job-description"]', '#job-description');
+  const description = descriptionFrom(
+    '[class*="job-description"]',
+    '#job-description',
+  );
 
   const salary = textFrom('[class*="salary"]') || null;
   const jobType = textFrom('[class*="job-type"]') || null;
@@ -728,7 +799,9 @@ function extractFromJobgether(): ExtractedJob | null {
   if (looksLikeSplitViewJobListingPage(url) && !detailRoot) return null;
 
   const scope = detailRoot ?? document;
-  const scopeText = detailRoot ? collectTextFromRoot(detailRoot) : (document.body?.innerText ?? '');
+  const scopeText = detailRoot
+    ? collectTextFromRoot(detailRoot)
+    : (document.body?.innerText ?? '');
 
   const title =
     textFromRoot(scope, 'h1') ||
@@ -763,7 +836,10 @@ function extractFromJobgether(): ExtractedJob | null {
       '[class*="job-description"]',
       '[class*="JobDescription"]',
       '[id*="job-description"]',
-    ) || (detailRoot ? collectTextFromRoot(detailRoot) : extractLargestTextBlock()),
+    ) ||
+      (detailRoot
+        ? collectTextFromRoot(detailRoot)
+        : extractLargestTextBlock()),
   );
 
   return buildJob({
@@ -784,7 +860,12 @@ function companyFromHostname(): string {
   const parts = host.split('.');
   if (parts.length < 2) return '';
   const label = parts[parts.length - 2] ?? '';
-  if (!label || ['jobs', 'careers', 'apply', 'boards', 'workday', 'jobgether'].includes(label)) {
+  if (
+    !label ||
+    ['jobs', 'careers', 'apply', 'boards', 'workday', 'jobgether'].includes(
+      label,
+    )
+  ) {
     return '';
   }
   return label.charAt(0).toUpperCase() + label.slice(1);
@@ -867,7 +948,9 @@ function extractFromGenericCareersPage(): ExtractedJob | null {
     textFromRoot(scope, '[data-automation-id="location"]') ||
     textFromRoot(scope, '[itemprop="addressLocality"]');
 
-  const description = detailRoot ? collectTextFromRoot(detailRoot) : extractLargestTextBlock();
+  const description = detailRoot
+    ? collectTextFromRoot(detailRoot)
+    : extractLargestTextBlock();
   if (description.length < 80) return null;
 
   return buildJob({
@@ -904,11 +987,16 @@ export async function extractJobFromPageWithRetry(): Promise<ExtractedJob | null
 
   for (let attempt = 1; attempt <= LINKEDIN_EXTRACT_MAX_ATTEMPTS; attempt++) {
     const job = await extractJobFromPage();
-    if (job?.description && job.description.length > LINKEDIN_MIN_DESCRIPTION_LEN) {
+    if (
+      job?.description &&
+      job.description.length > LINKEDIN_MIN_DESCRIPTION_LEN
+    ) {
       return job;
     }
     if (attempt < LINKEDIN_EXTRACT_MAX_ATTEMPTS) {
-      await new Promise((resolve) => window.setTimeout(resolve, LINKEDIN_EXTRACT_WAIT_MS));
+      await new Promise((resolve) =>
+        window.setTimeout(resolve, LINKEDIN_EXTRACT_WAIT_MS),
+      );
     }
   }
 

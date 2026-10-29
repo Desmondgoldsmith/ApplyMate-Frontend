@@ -37,14 +37,19 @@ export function MatchScoreRing({
 }: MatchScoreRingProps) {
   const r = useMemo(() => (size - strokeWidth) / 2, [size, strokeWidth]);
   const c = 2 * Math.PI * r;
-  const pct = score !== null && Number.isFinite(score) ? Math.min(100, Math.max(0, score)) / 100 : 0;
+  const pct =
+    score !== null && Number.isFinite(score)
+      ? Math.min(100, Math.max(0, score)) / 100
+      : 0;
   const { stroke, text } = scoreHue(score);
   const [offset, setOffset] = useState(c);
   const reducedMotion = useRef(false);
 
   useEffect(() => {
     try {
-      reducedMotion.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      reducedMotion.current = window.matchMedia(
+        '(prefers-reduced-motion: reduce)',
+      ).matches;
     } catch {
       reducedMotion.current = false;
     }
@@ -73,13 +78,22 @@ export function MatchScoreRing({
   const display =
     score !== null && Number.isFinite(score) ? `${Math.round(score)}` : '—';
   const fs = size >= 44 ? 12 : 9;
-  const showPct = unit === 'percent' && score !== null && Number.isFinite(score);
+  const showPct =
+    unit === 'percent' && score !== null && Number.isFinite(score);
 
   return (
     <div
-      className={cn('relative inline-flex shrink-0 items-center justify-center', className)}
+      className={cn(
+        'relative inline-flex shrink-0 items-center justify-center',
+        className,
+      )}
       style={{ width: size, height: size }}
-      aria-label={label ?? (score != null ? `Match score ${Math.round(score)} percent` : 'No score')}
+      aria-label={
+        label ??
+        (score != null
+          ? `Match score ${Math.round(score)} percent`
+          : 'No score')
+      }
     >
       <svg width={size} height={size} className="-rotate-90">
         <circle
@@ -104,11 +118,16 @@ export function MatchScoreRing({
         />
       </svg>
       <span
-        className={cn('pointer-events-none absolute font-bold tabular-nums leading-none', text)}
+        className={cn(
+          'pointer-events-none absolute font-bold tabular-nums leading-none',
+          text,
+        )}
         style={{ fontSize: fs }}
       >
         {display}
-        {showPct ? <span className="text-[0.65em] font-semibold opacity-80">%</span> : null}
+        {showPct ? (
+          <span className="text-[0.65em] font-semibold opacity-80">%</span>
+        ) : null}
       </span>
     </div>
   );

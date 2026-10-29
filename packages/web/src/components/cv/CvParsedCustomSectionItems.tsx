@@ -24,7 +24,10 @@ function entryFocusStyle(focused: boolean): CSSProperties {
 }
 
 function cvBulletFieldDomIsEmpty(e: { currentTarget: HTMLElement }): boolean {
-  const t = (e.currentTarget.innerText || '').replace(/\u200b/g, '').replace(/\u00a0/g, ' ').trim();
+  const t = (e.currentTarget.innerText || '')
+    .replace(/\u200b/g, '')
+    .replace(/\u00a0/g, ' ')
+    .trim();
   return t.length === 0;
 }
 
@@ -47,13 +50,18 @@ export function CvParsedCustomSectionItems({
 }: CvParsedCustomSectionItemsProps) {
   const ctx = useCVEdit();
   const inline = Boolean(ctx?.isEditing && ctx?.onUpdate);
-  const fieldOn = (entryKey: string, field: string) => entryFieldOnProp?.(entryKey, field) ?? true;
-  const usesRangeDates = /volunteer|experience|employment|work|project/i.test(block.sectionType);
+  const fieldOn = (entryKey: string, field: string) =>
+    entryFieldOnProp?.(entryKey, field) ?? true;
+  const usesRangeDates = /volunteer|experience|employment|work|project/i.test(
+    block.sectionType,
+  );
   const mainPh = parsedCustomMainPlaceholder(block.sectionType);
   const datePh = parsedCustomDatePlaceholder(block.sectionType, usesRangeDates);
   const bulletPh = parsedCustomBulletPlaceholder(block.sectionType);
 
-  const patchBlock = (mapper: (b: CVBuilderParsedCustomSection) => CVBuilderParsedCustomSection) => {
+  const patchBlock = (
+    mapper: (b: CVBuilderParsedCustomSection) => CVBuilderParsedCustomSection,
+  ) => {
     if (!ctx?.onUpdate) return;
     ctx.onUpdate({
       parsedCustomSections: ctx.data.parsedCustomSections.map((b) =>
@@ -118,7 +126,13 @@ export function CvParsedCustomSectionItems({
                     ...b,
                     items: b.items.map((it) =>
                       it.id === item.id
-                        ? { ...it, subItems: [...(it.subItems.length ? it.subItems : ['']), ''] }
+                        ? {
+                            ...it,
+                            subItems: [
+                              ...(it.subItems.length ? it.subItems : ['']),
+                              '',
+                            ],
+                          }
                         : it,
                     ),
                   }))
@@ -126,14 +140,20 @@ export function CvParsedCustomSectionItems({
                 onAddEntry={() =>
                   patchBlock((b) => ({
                     ...b,
-                    items: [...b.items, { id: newLocalId(), text: '', date: '', subItems: [] }],
+                    items: [
+                      ...b.items,
+                      { id: newLocalId(), text: '', date: '', subItems: [] },
+                    ],
                   }))
                 }
                 onMoveUp={() => {
                   if (itemIdx === 0) return;
                   patchBlock((b) => {
                     const next = [...b.items];
-                    [next[itemIdx - 1], next[itemIdx]] = [next[itemIdx], next[itemIdx - 1]];
+                    [next[itemIdx - 1], next[itemIdx]] = [
+                      next[itemIdx],
+                      next[itemIdx - 1],
+                    ];
                     return { ...b, items: next };
                   });
                 }}
@@ -141,12 +161,18 @@ export function CvParsedCustomSectionItems({
                   if (itemIdx >= block.items.length - 1) return;
                   patchBlock((b) => {
                     const next = [...b.items];
-                    [next[itemIdx], next[itemIdx + 1]] = [next[itemIdx + 1], next[itemIdx]];
+                    [next[itemIdx], next[itemIdx + 1]] = [
+                      next[itemIdx + 1],
+                      next[itemIdx],
+                    ];
                     return { ...b, items: next };
                   });
                 }}
                 onDelete={() => {
-                  patchBlock((b) => ({ ...b, items: b.items.filter((it) => it.id !== item.id) }));
+                  patchBlock((b) => ({
+                    ...b,
+                    items: b.items.filter((it) => it.id !== item.id),
+                  }));
                   ctx.setFocusedEntryId(null);
                   ctx.setFocusedEntrySection(null);
                 }}
@@ -178,13 +204,15 @@ export function CvParsedCustomSectionItems({
                           key: 'date',
                           label: 'Date',
                           enabled: fieldOn(entryKey, 'date'),
-                          onToggle: (next) => setEntryFieldOnProp(entryKey, 'date', next),
+                          onToggle: (next) =>
+                            setEntryFieldOnProp(entryKey, 'date', next),
                         },
                         {
                           key: 'bullets',
                           label: 'Bullets',
                           enabled: fieldOn(entryKey, 'bullets'),
-                          onToggle: (next) => setEntryFieldOnProp(entryKey, 'bullets', next),
+                          onToggle: (next) =>
+                            setEntryFieldOnProp(entryKey, 'bullets', next),
                         },
                       ]
                     : []
@@ -200,7 +228,9 @@ export function CvParsedCustomSectionItems({
                 onChange={(v) =>
                   patchBlock((b) => ({
                     ...b,
-                    items: b.items.map((it) => (it.id === item.id ? { ...it, text: v } : it)),
+                    items: b.items.map((it) =>
+                      it.id === item.id ? { ...it, text: v } : it,
+                    ),
                   }))
                 }
                 className={cn('font-bold', textClassName)}
@@ -216,7 +246,9 @@ export function CvParsedCustomSectionItems({
                     onChange={(v) =>
                       patchBlock((b) => ({
                         ...b,
-                        items: b.items.map((it) => (it.id === item.id ? { ...it, date: v } : it)),
+                        items: b.items.map((it) =>
+                          it.id === item.id ? { ...it, date: v } : it,
+                        ),
                       }))
                     }
                     className={textClassName}
@@ -225,67 +257,84 @@ export function CvParsedCustomSectionItems({
               ) : null}
             </p>
             {fieldOn(entryKey, 'bullets') ? (
-              <ul className={cn('mt-1 list-none space-y-0.5 pl-0 leading-[1.35]', textClassName)}>
-                {(item.subItems.length > 0 ? item.subItems : ['']).map((line, lineIdx) => (
-                  <li key={`${item.id}-sub-${lineIdx}`} className="flex items-start gap-1.5">
-                    <span className="mt-0.5 shrink-0">•</span>
-                    <span className="flex-1">
-                      <InlineField
-                        value={line}
-                        placeholder={bulletPh}
-                        sectionId={previewSectionId}
-                        entryId={item.id}
-                        layout="block"
-                        onChange={(v) =>
-                          patchBlock((b) => ({
-                            ...b,
-                            items: b.items.map((it) => {
-                              if (it.id !== item.id) return it;
-                              const subs = [...(it.subItems.length ? it.subItems : [''])];
-                              subs[lineIdx] = v;
-                              return { ...it, subItems: subs };
-                            }),
-                          }))
-                        }
-                        onInputKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
+              <ul
+                className={cn(
+                  'mt-1 list-none space-y-0.5 pl-0 leading-[1.35]',
+                  textClassName,
+                )}
+              >
+                {(item.subItems.length > 0 ? item.subItems : ['']).map(
+                  (line, lineIdx) => (
+                    <li
+                      key={`${item.id}-sub-${lineIdx}`}
+                      className="flex items-start gap-1.5"
+                    >
+                      <span className="mt-0.5 shrink-0">•</span>
+                      <span className="flex-1">
+                        <InlineField
+                          value={line}
+                          placeholder={bulletPh}
+                          sectionId={previewSectionId}
+                          entryId={item.id}
+                          layout="block"
+                          onChange={(v) =>
                             patchBlock((b) => ({
                               ...b,
                               items: b.items.map((it) => {
                                 if (it.id !== item.id) return it;
-                                const next = [...(it.subItems.length ? it.subItems : [''])];
-                                next.splice(lineIdx + 1, 0, '');
-                                return { ...it, subItems: next };
+                                const subs = [
+                                  ...(it.subItems.length ? it.subItems : ['']),
+                                ];
+                                subs[lineIdx] = v;
+                                return { ...it, subItems: subs };
                               }),
-                            }));
+                            }))
                           }
-                          if (
-                            e.key === 'Backspace' &&
-                            cvBulletFieldDomIsEmpty(e) &&
-                            (item.subItems.length || 1) > 1
-                          ) {
-                            e.preventDefault();
-                            patchBlock((b) => ({
-                              ...b,
-                              items: b.items.map((it) =>
-                                it.id === item.id
-                                  ? {
-                                      ...it,
-                                      subItems: (it.subItems.length ? it.subItems : ['']).filter(
-                                        (_, i) => i !== lineIdx,
-                                      ),
-                                    }
-                                  : it,
-                              ),
-                            }));
-                          }
-                        }}
-                        className={textClassName}
-                      />
-                    </span>
-                  </li>
-                ))}
+                          onInputKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              patchBlock((b) => ({
+                                ...b,
+                                items: b.items.map((it) => {
+                                  if (it.id !== item.id) return it;
+                                  const next = [
+                                    ...(it.subItems.length
+                                      ? it.subItems
+                                      : ['']),
+                                  ];
+                                  next.splice(lineIdx + 1, 0, '');
+                                  return { ...it, subItems: next };
+                                }),
+                              }));
+                            }
+                            if (
+                              e.key === 'Backspace' &&
+                              cvBulletFieldDomIsEmpty(e) &&
+                              (item.subItems.length || 1) > 1
+                            ) {
+                              e.preventDefault();
+                              patchBlock((b) => ({
+                                ...b,
+                                items: b.items.map((it) =>
+                                  it.id === item.id
+                                    ? {
+                                        ...it,
+                                        subItems: (it.subItems.length
+                                          ? it.subItems
+                                          : ['']
+                                        ).filter((_, i) => i !== lineIdx),
+                                      }
+                                    : it,
+                                ),
+                              }));
+                            }
+                          }}
+                          className={textClassName}
+                        />
+                      </span>
+                    </li>
+                  ),
+                )}
               </ul>
             ) : null}
           </div>

@@ -1,5 +1,8 @@
 import { trimJobDescriptionForApi } from '@/shared/job-description-limits';
-import { canonicalJobViewUrl, isLinkedInJobSearchUrl } from '@/shared/job-page-url';
+import {
+  canonicalJobViewUrl,
+  isLinkedInJobSearchUrl,
+} from '@/shared/job-page-url';
 
 /** Allowed fields for POST /extension/cv/score (CvScoreDto). */
 export type CvScoreRequestPayload = {
@@ -37,7 +40,11 @@ export function cvScoreBlockReason(input: {
     return 'A job description is required. Open the full job posting before analyzing.';
   }
 
-  if (input.sourceUrl && isLinkedInJobSearchUrl(input.sourceUrl) && description.length < 80) {
+  if (
+    input.sourceUrl &&
+    isLinkedInJobSearchUrl(input.sourceUrl) &&
+    description.length < 80
+  ) {
     return 'Open a single job posting to analyze — wait for the description to load in the detail pane.';
   }
 
@@ -70,7 +77,9 @@ export function buildCvScorePayload(input: {
     payload.jobAnalysisId = jobAnalysisId;
   }
 
-  const sourceUrl = input.sourceUrl ? canonicalJobViewUrl(input.sourceUrl) : null;
+  const sourceUrl = input.sourceUrl
+    ? canonicalJobViewUrl(input.sourceUrl)
+    : null;
   if (sourceUrl) {
     payload.sourceUrl = sourceUrl;
   }
@@ -90,7 +99,8 @@ export function buildCvScorePayload(input: {
 
 export function formatCvScoreValidationError(raw: string): string {
   const trimmed = raw.trim();
-  if (!trimmed) return 'Could not analyze this job. Check the job description and try again.';
+  if (!trimmed)
+    return 'Could not analyze this job. Check the job description and try again.';
   if (/jobdescription|job description/i.test(trimmed)) {
     return trimmed;
   }

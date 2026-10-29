@@ -7,7 +7,11 @@ import { motion } from 'framer-motion';
 
 import { CVDocumentPreview } from '@/components/cv/CVDocumentPreview';
 import { GlowCard } from '@/components/ui/GlowCard';
-import { CV_TEMPLATE_IDS, cvTemplatePreviewSampleDataFor, type CvTemplateId } from '@/lib/cvBuilder';
+import {
+  CV_TEMPLATE_IDS,
+  cvTemplatePreviewSampleDataFor,
+  type CvTemplateId,
+} from '@/lib/cvBuilder';
 import { cn } from '@/lib/utils';
 
 /** Same labels as CV clinic `TemplatePickerModal` (grid layout). */
@@ -23,7 +27,8 @@ export const ONBOARDING_TEMPLATE_LABELS: Record<CvTemplateId, string> = {
 const CLINIC_GRID_LABELS = ONBOARDING_TEMPLATE_LABELS;
 
 export function getOnboardingTemplateLabel(id: string): string {
-  if (id in ONBOARDING_TEMPLATE_LABELS) return ONBOARDING_TEMPLATE_LABELS[id as CvTemplateId];
+  if (id in ONBOARDING_TEMPLATE_LABELS)
+    return ONBOARDING_TEMPLATE_LABELS[id as CvTemplateId];
   return id;
 }
 
@@ -133,7 +138,11 @@ function TemplatePickerOnboardingGrid({
                     transformOrigin: 'top left',
                   }}
                 >
-                  <CVDocumentPreview data={cvTemplatePreviewSampleDataFor(tid)} template={tid} activeSection={null} />
+                  <CVDocumentPreview
+                    data={cvTemplatePreviewSampleDataFor(tid)}
+                    template={tid}
+                    activeSection={null}
+                  />
                 </div>
               </div>
               <span className="px-2 pb-3 pt-2.5 text-center text-[13px] font-medium text-[rgba(255,255,255,0.8)]">
@@ -156,7 +165,9 @@ function TemplatePickerClinicGrid({
     <div className="w-full space-y-3">
       {showHeader ? (
         <>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40">Choose your resume style</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40">
+            Choose your resume style
+          </p>
           <p className="text-xs text-white/25">You can change this anytime</p>
         </>
       ) : null}
@@ -189,7 +200,11 @@ function TemplatePickerClinicGrid({
                     transformOrigin: 'top left',
                   }}
                 >
-                  <CVDocumentPreview data={cvTemplatePreviewSampleDataFor(tid)} template={tid} activeSection={null} />
+                  <CVDocumentPreview
+                    data={cvTemplatePreviewSampleDataFor(tid)}
+                    template={tid}
+                    activeSection={null}
+                  />
                 </div>
               </div>
               <span className="border-t border-white/[0.06] px-2 py-2 text-center text-xs font-medium capitalize text-white/80">
@@ -219,7 +234,13 @@ export function TemplatePicker({
     );
   }
   if (layout === 'clinicGrid') {
-    return <TemplatePickerClinicGrid selectedTemplate={selectedTemplate} onSelect={onSelect} showHeader={showHeader} />;
+    return (
+      <TemplatePickerClinicGrid
+        selectedTemplate={selectedTemplate}
+        onSelect={onSelect}
+        showHeader={showHeader}
+      />
+    );
   }
   return (
     <TemplatePickerCarousel
@@ -247,12 +268,17 @@ function TemplatePickerCarousel({
   }, []);
 
   useEffect(() => {
-    setStartIndex((prev) => Math.min(prev, Math.max(0, TEMPLATES.length - visibleCount)));
+    setStartIndex((prev) =>
+      Math.min(prev, Math.max(0, TEMPLATES.length - visibleCount)),
+    );
   }, [visibleCount]);
 
   const canGoBack = startIndex > 0;
   const canGoForward = startIndex + visibleCount < TEMPLATES.length;
-  const visibleTemplates = TEMPLATES.slice(startIndex, startIndex + visibleCount);
+  const visibleTemplates = TEMPLATES.slice(
+    startIndex,
+    startIndex + visibleCount,
+  );
 
   const goBack = useCallback(() => {
     setStartIndex((i) => Math.max(0, i - 1));
@@ -266,7 +292,9 @@ function TemplatePickerCarousel({
     <div className="w-full space-y-3">
       {showHeader ? (
         <>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40">Choose your resume style</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40">
+            Choose your resume style
+          </p>
           <p className="text-xs text-white/25">You can change this anytime</p>
         </>
       ) : null}
@@ -301,7 +329,10 @@ function TemplatePickerCarousel({
                 key={tpl.id}
                 type="button"
                 onClick={() => onSelect(tpl.id)}
-                className={cn('min-w-0 text-left transition-transform', selected ? 'scale-[1.02]' : '')}
+                className={cn(
+                  'min-w-0 text-left transition-transform',
+                  selected ? 'scale-[1.02]' : '',
+                )}
               >
                 <GlowCard
                   className={cn(
@@ -326,7 +357,11 @@ function TemplatePickerCarousel({
                       style={{ transform: 'translateX(-50%) scale(0.45)' }}
                       aria-hidden
                     >
-                      <CVDocumentPreview data={cvTemplatePreviewSampleDataFor(tpl.id)} template={tpl.id} activeSection={null} />
+                      <CVDocumentPreview
+                        data={cvTemplatePreviewSampleDataFor(tpl.id)}
+                        template={tpl.id}
+                        activeSection={null}
+                      />
                     </div>
                   </div>
                   <div className="space-y-1 pr-1">
@@ -339,7 +374,9 @@ function TemplatePickerCarousel({
                       ) : null}
                     </div>
                     <p className="text-xs text-white/55">{tpl.description}</p>
-                    <p className="text-[11px] text-white/30">Best for: {tpl.bestFor}</p>
+                    <p className="text-[11px] text-white/30">
+                      Best for: {tpl.bestFor}
+                    </p>
                   </div>
                 </GlowCard>
               </button>
@@ -370,7 +407,9 @@ function TemplatePickerCarousel({
             key={i}
             className={cn(
               'h-1.5 w-1.5 rounded-full transition-colors duration-200',
-              i >= startIndex && i < startIndex + visibleCount ? 'bg-[#00C9B1]' : 'bg-white/20',
+              i >= startIndex && i < startIndex + visibleCount
+                ? 'bg-[#00C9B1]'
+                : 'bg-white/20',
             )}
           />
         ))}

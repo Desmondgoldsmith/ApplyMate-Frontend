@@ -1,6 +1,13 @@
 'use client';
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 
 export type BreadcrumbItem = {
   label: string;
@@ -16,7 +23,9 @@ type BreadcrumbContextValue = {
 const BreadcrumbContext = createContext<BreadcrumbContextValue | null>(null);
 
 export function BreadcrumbProvider({ children }: { children: ReactNode }) {
-  const [trailSuffix, setTrailSuffixState] = useState<BreadcrumbItem[] | null>(null);
+  const [trailSuffix, setTrailSuffixState] = useState<BreadcrumbItem[] | null>(
+    null,
+  );
 
   const setTrailSuffix = useCallback((items: BreadcrumbItem[] | null) => {
     setTrailSuffixState(items);
@@ -30,7 +39,11 @@ export function BreadcrumbProvider({ children }: { children: ReactNode }) {
     [trailSuffix, setTrailSuffix],
   );
 
-  return <BreadcrumbContext.Provider value={value}>{children}</BreadcrumbContext.Provider>;
+  return (
+    <BreadcrumbContext.Provider value={value}>
+      {children}
+    </BreadcrumbContext.Provider>
+  );
 }
 
 export function useBreadcrumbTrail() {

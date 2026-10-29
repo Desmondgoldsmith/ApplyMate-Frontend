@@ -29,7 +29,9 @@ export function AddSectionPreviewCard({
     <div
       className={cn(
         'group relative min-h-[162px] overflow-hidden rounded-2xl border bg-[#0B0F10]/90 p-3',
-        checked ? 'border-[#00C9B1]/55 shadow-[0_0_0_1px_rgba(0,201,177,0.22)]' : 'border-white/[0.08]',
+        checked
+          ? 'border-[#00C9B1]/55 shadow-[0_0_0_1px_rgba(0,201,177,0.22)]'
+          : 'border-white/[0.08]',
         !checked && !locked && 'hover:border-[#00C9B1]/45',
       )}
     >

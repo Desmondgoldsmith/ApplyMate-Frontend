@@ -36,7 +36,8 @@ function AfterTextWithPlaceholders({ text }: { text: string }) {
       </p>
       {hasPlaceholders ? (
         <p className="mt-1.5 text-[9px] leading-snug text-amber-700/90">
-          Replace bracketed placeholders with your real numbers before submitting your CV.
+          Replace bracketed placeholders with your real numbers before
+          submitting your CV.
         </p>
       ) : null}
     </>

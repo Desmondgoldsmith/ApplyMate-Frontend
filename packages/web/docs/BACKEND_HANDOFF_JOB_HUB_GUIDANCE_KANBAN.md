@@ -11,10 +11,10 @@
 
 Job Hub detail (`/dashboard/jobs?…`) needs two TealHQ-inspired surfaces on **every tracked job**:
 
-| # | Feature | Goal |
-|---|---------|------|
-| 1 | **Kanban pipeline stepper** | Chevron-style progress bar showing where this job sits in the pipeline (past = done, current = active, future = upcoming). Click to advance/correct stage. |
-| 2 | **Phase guidance checklist** | Collapsible coach panel with **stage-specific tasks**, auto-completion from real user data, progress %, and deep-link CTAs. **Collapsed by default** on the frontend — backend must supply rich payload so expanded state is immediately useful. |
+| #   | Feature                      | Goal                                                                                                                                                                                                                                             |
+| --- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | **Kanban pipeline stepper**  | Chevron-style progress bar showing where this job sits in the pipeline (past = done, current = active, future = upcoming). Click to advance/correct stage.                                                                                       |
+| 2   | **Phase guidance checklist** | Collapsible coach panel with **stage-specific tasks**, auto-completion from real user data, progress %, and deep-link CTAs. **Collapsed by default** on the frontend — backend must supply rich payload so expanded state is immediately useful. |
 
 **Do not** push checklist logic or phase copy selection to the frontend. The client will render and persist UI state (collapse, selected task); **eligibility, completion, ordering, and coaching copy** belong on the server.
 
@@ -61,14 +61,14 @@ Mapping already exists in frontend (`hubPipelineStageToHubStage` / `hubStageToHu
 
 Show a **linear happy path** in the stepper (reject/withdraw as terminal actions outside the chevron, e.g. row menu — same as today):
 
-| Order | Step `id` | Label (suggested) | Server stage anchor |
-|------:|-----------|-------------------|---------------------|
-| 1 | `bookmarked` | Saved | `saved`, no analysis |
-| 2 | `preparing` | Preparing to apply | `saved` + has analysis / tailoring in progress |
-| 3 | `applied` | Applied | `applied` |
-| 4 | `interviewing` | Interviewing | `interviewing` |
-| 5 | `negotiating` | Negotiating | `negotiating` or `offered` |
-| 6 | `accepted` | Accepted | `accepted` |
+| Order | Step `id`      | Label (suggested)  | Server stage anchor                            |
+| ----: | -------------- | ------------------ | ---------------------------------------------- |
+|     1 | `bookmarked`   | Saved              | `saved`, no analysis                           |
+|     2 | `preparing`    | Preparing to apply | `saved` + has analysis / tailoring in progress |
+|     3 | `applied`      | Applied            | `applied`                                      |
+|     4 | `interviewing` | Interviewing       | `interviewing`                                 |
+|     5 | `negotiating`  | Negotiating        | `negotiating` or `offered`                     |
+|     6 | `accepted`     | Accepted           | `accepted`                                     |
 
 **Notes:**
 
@@ -79,7 +79,11 @@ Show a **linear happy path** in the stepper (reject/withdraw as terminal actions
 ### Stepper item shape
 
 ```typescript
-type JobHubPipelineStepState = 'complete' | 'current' | 'upcoming' | 'unavailable';
+type JobHubPipelineStepState =
+  | 'complete'
+  | 'current'
+  | 'upcoming'
+  | 'unavailable';
 
 type JobHubPipelineStep = {
   id: string; // stable slug, e.g. 'applied'
@@ -167,35 +171,35 @@ Backend should own copy; below is the **minimum** set ApplyMate needs. Expand wi
 
 ### Saved / Bookmarked (`phaseId: bookmarked`)
 
-| Task id | Label | Auto-complete when |
-|---------|-------|-------------------|
-| `review_posting` | Review job description & requirements | User opened description tab or analysis exists |
-| `research_company` | Research the company | Optional manual |
-| `rate_fit` | Check match score / decide to pursue | `matchScore` present or analysis completed |
+| Task id            | Label                                 | Auto-complete when                             |
+| ------------------ | ------------------------------------- | ---------------------------------------------- |
+| `review_posting`   | Review job description & requirements | User opened description tab or analysis exists |
+| `research_company` | Research the company                  | Optional manual                                |
+| `rate_fit`         | Check match score / decide to pursue  | `matchScore` present or analysis completed     |
 
 CTAs: `tab=description`, `tab=analysis`, external `applyUrl`.
 
 ### Preparing to apply (`phaseId: preparing`)
 
-| Task id | Label | Auto-complete when |
-|---------|-------|-------------------|
-| `run_analysis` | Run job match analysis | `hasAnalysis` / completed analyze |
-| `tailor_cv` | Tailor CV for this role | `applicationAssist.hasTailoredCv` |
-| `draft_cover_letter` | Draft cover letter | `applicationAssist.hasCoverLetterDraft` |
-| `identify_contacts` | Find recruiter or hiring manager | Optional manual |
-| `submit_application` | Submit application on company site | User marks complete OR `appliedAt` set |
+| Task id              | Label                              | Auto-complete when                      |
+| -------------------- | ---------------------------------- | --------------------------------------- |
+| `run_analysis`       | Run job match analysis             | `hasAnalysis` / completed analyze       |
+| `tailor_cv`          | Tailor CV for this role            | `applicationAssist.hasTailoredCv`       |
+| `draft_cover_letter` | Draft cover letter                 | `applicationAssist.hasCoverLetterDraft` |
+| `identify_contacts`  | Find recruiter or hiring manager   | Optional manual                         |
+| `submit_application` | Submit application on company site | User marks complete OR `appliedAt` set  |
 
 Reuse / supersede existing `applicationAssist` + `suggestedNextStep` — fold into this structure so frontend can remove the separate “Apply assist” box.
 
 ### Applied (`phaseId: applied`)
 
-| Task id | Label | Auto-complete when |
-|---------|-------|-------------------|
-| `confirm_applied_date` | Confirm application date | `appliedAt` present |
-| `follow_up_1` | Send 1st follow-up | Email draft generated/sent OR manual |
-| `follow_up_2` | Send 2nd follow-up | Scheduled `appliedAt + 7d` |
-| `follow_up_3` | Send 3rd follow-up | Scheduled `appliedAt + 14d` |
-| `archive_if_silent` | Archive if no reply after 3 weeks | `staleApplicationNotice.show` OR archived |
+| Task id                | Label                             | Auto-complete when                        |
+| ---------------------- | --------------------------------- | ----------------------------------------- |
+| `confirm_applied_date` | Confirm application date          | `appliedAt` present                       |
+| `follow_up_1`          | Send 1st follow-up                | Email draft generated/sent OR manual      |
+| `follow_up_2`          | Send 2nd follow-up                | Scheduled `appliedAt + 7d`                |
+| `follow_up_3`          | Send 3rd follow-up                | Scheduled `appliedAt + 14d`               |
+| `archive_if_silent`    | Archive if no reply after 3 weeks | `staleApplicationNotice.show` OR archived |
 
 **Follow-up schedule:** Compute `scheduledFor` from `appliedAt` (timezone-aware). Emit `scheduledLabel` server-side. Integrate with `staleApplicationNotice` (21-day quiet rule) — task copy should match dashboard coaching (“No word from {Company} in {n} days”).
 
@@ -207,32 +211,32 @@ Primary CTA for follow-ups:
 
 ### Interviewing (`phaseId: interviewing`)
 
-| Task id | Label | Auto-complete when |
-|---------|-------|-------------------|
-| `research_prepare` | Research company & interviewers | Optional / manual |
-| `practice_interview` | Practice for this role | Interview prep session linked to `jobAnalysisId` |
-| `tech_check` | Test audio/video (virtual) | Optional manual |
-| `thank_you` | Send thank-you email | Template `thank-you-post-interview` used |
-| `follow_up_interview` | Follow up after interview | Manual or scheduled |
+| Task id               | Label                           | Auto-complete when                               |
+| --------------------- | ------------------------------- | ------------------------------------------------ |
+| `research_prepare`    | Research company & interviewers | Optional / manual                                |
+| `practice_interview`  | Practice for this role          | Interview prep session linked to `jobAnalysisId` |
+| `tech_check`          | Test audio/video (virtual)      | Optional manual                                  |
+| `thank_you`           | Send thank-you email            | Template `thank-you-post-interview` used         |
+| `follow_up_interview` | Follow up after interview       | Manual or scheduled                              |
 
 CTAs: `/dashboard/interview?jobAnalysisId=…`, email template tab.
 
 ### Negotiating / Offer (`phaseId: negotiating`)
 
-| Task id | Label | Auto-complete when |
-|---------|-------|-------------------|
-| `research_market_rate` | Research market rate | Optional |
-| `evaluate_offer` | Evaluate offer details | `offered` stage or offer fields present |
-| `negotiate` | Negotiate compensation | Manual |
-| `decline_or_accept` | Accept or decline in writing | Templates `accept_offer` / `decline_offer` |
+| Task id                | Label                        | Auto-complete when                         |
+| ---------------------- | ---------------------------- | ------------------------------------------ |
+| `research_market_rate` | Research market rate         | Optional                                   |
+| `evaluate_offer`       | Evaluate offer details       | `offered` stage or offer fields present    |
+| `negotiate`            | Negotiate compensation       | Manual                                     |
+| `decline_or_accept`    | Accept or decline in writing | Templates `accept_offer` / `decline_offer` |
 
 ### Accepted (`phaseId: accepted`)
 
-| Task id | Label | Auto-complete when |
-|---------|-------|-------------------|
-| `confirm_acceptance` | Confirm acceptance sent | Stage `accepted` |
-| `share_win` | Share your win (optional) | Optional |
-| `verify_placement` | Verify placement (ApplyMate) | Verification status from existing flow |
+| Task id              | Label                        | Auto-complete when                     |
+| -------------------- | ---------------------------- | -------------------------------------- |
+| `confirm_acceptance` | Confirm acceptance sent      | Stage `accepted`                       |
+| `share_win`          | Share your win (optional)    | Optional                               |
+| `verify_placement`   | Verify placement (ApplyMate) | Verification status from existing flow |
 
 ---
 
@@ -242,11 +246,11 @@ CTAs: `/dashboard/interview?jobAnalysisId=…`, email template tab.
 
 Add **`pipelineStepper`** and **`guidance`** to each response the Job Hub detail already hydrates:
 
-| Endpoint | When |
-|----------|------|
-| `GET /jobs/:jobAnalysisId` | Analysis-backed jobs |
-| `GET /applications/:applicationId` | Applied jobs (already has `staleApplicationNotice`) |
-| `GET /job-discovery/bookmarks` items or `GET …/bookmarks/:id` | Bookmark-only rows |
+| Endpoint                                                      | When                                                |
+| ------------------------------------------------------------- | --------------------------------------------------- |
+| `GET /jobs/:jobAnalysisId`                                    | Analysis-backed jobs                                |
+| `GET /applications/:applicationId`                            | Applied jobs (already has `staleApplicationNotice`) |
+| `GET /job-discovery/bookmarks` items or `GET …/bookmarks/:id` | Bookmark-only rows                                  |
 
 ```typescript
 type JobHubDetailEnrichment = {
@@ -290,16 +294,16 @@ Stepper clicks on the frontend will continue to call these; backend validates `c
 
 ## Deep links (canonical — frontend will not guess)
 
-| Intent | `ctaHref` pattern |
-|--------|-------------------|
+| Intent          | `ctaHref` pattern                                                             |
+| --------------- | ----------------------------------------------------------------------------- |
 | Email follow-up | `/dashboard/jobs?applicationId={id}&tab=email&template=follow-up-no-response` |
-| Thank-you | `…&template=thank-you-post-interview` |
-| Salary / offer | `…&template=salary-negotiation` |
-| Job description | `/dashboard/jobs?jobId={analysisId}&tab=description` |
-| Match & gaps | `…&tab=analysis` |
-| Tailor CV | `/dashboard/jobs/analyze?jobId={analysisId}&openTailor=1` |
-| Interview prep | `/dashboard/interview?jobAnalysisId={analysisId}` |
-| CV Clinic | `/dashboard/cv?profileId={cvProfileId}` |
+| Thank-you       | `…&template=thank-you-post-interview`                                         |
+| Salary / offer  | `…&template=salary-negotiation`                                               |
+| Job description | `/dashboard/jobs?jobId={analysisId}&tab=description`                          |
+| Match & gaps    | `…&tab=analysis`                                                              |
+| Tailor CV       | `/dashboard/jobs/analyze?jobId={analysisId}&openTailor=1`                     |
+| Interview prep  | `/dashboard/interview?jobAnalysisId={analysisId}`                             |
+| CV Clinic       | `/dashboard/cv?profileId={cvProfileId}`                                       |
 
 Alias map lives in `packages/web/src/app/(dashboard)/dashboard/jobs/jobHubEmailTemplates.ts`.
 
@@ -331,13 +335,13 @@ percentComplete = round(100 * completedRequired / totalRequired)
 
 ## Frontend integration (2026-06-10)
 
-| Area | Path |
-|------|------|
-| Kanban stepper | `packages/web/src/components/job-hub/JobHubPipelineStepper.tsx` |
-| Guidance panel | `packages/web/src/components/job-hub/JobHubGuidancePanel.tsx` (collapsed by default) |
-| Detail wiring | `packages/web/src/app/(dashboard)/dashboard/jobs/JobHubDetailPanel.tsx` |
-| Types / parsers | `packages/web/src/lib/jobHubGuidance.ts` + `api.ts` |
-| Task PATCH hook | `packages/web/src/hooks/usePatchJobHubGuidance.ts` |
+| Area            | Path                                                                                 |
+| --------------- | ------------------------------------------------------------------------------------ |
+| Kanban stepper  | `packages/web/src/components/job-hub/JobHubPipelineStepper.tsx`                      |
+| Guidance panel  | `packages/web/src/components/job-hub/JobHubGuidancePanel.tsx` (collapsed by default) |
+| Detail wiring   | `packages/web/src/app/(dashboard)/dashboard/jobs/JobHubDetailPanel.tsx`              |
+| Types / parsers | `packages/web/src/lib/jobHubGuidance.ts` + `api.ts`                                  |
+| Task PATCH hook | `packages/web/src/hooks/usePatchJobHubGuidance.ts`                                   |
 
 Removed legacy stage pills and the separate **Apply assist** box when server `guidance` is present. Guidance CTAs open in-panel tabs when the href is a Job Hub deep link.
 
@@ -357,10 +361,10 @@ When complete, please return:
 
 ## Key frontend files (for QA)
 
-| Area | Path |
-|------|------|
-| Job Hub detail | `packages/web/src/app/(dashboard)/dashboard/jobs/JobHubDetailPanel.tsx` |
-| Stage mapping | `packages/web/src/app/(dashboard)/dashboard/jobs/jobHubMerge.ts` |
-| List chevron CSS | `packages/web/src/app/globals.css` (`.pipeline-chevron`) |
+| Area                      | Path                                                                      |
+| ------------------------- | ------------------------------------------------------------------------- |
+| Job Hub detail            | `packages/web/src/app/(dashboard)/dashboard/jobs/JobHubDetailPanel.tsx`   |
+| Stage mapping             | `packages/web/src/app/(dashboard)/dashboard/jobs/jobHubMerge.ts`          |
+| List chevron CSS          | `packages/web/src/app/globals.css` (`.pipeline-chevron`)                  |
 | Email template deep links | `packages/web/src/app/(dashboard)/dashboard/jobs/jobHubEmailTemplates.ts` |
-| Stale notice | `packages/web/src/components/dashboard/StaleApplicationNoticeBanner.tsx` |
+| Stale notice              | `packages/web/src/components/dashboard/StaleApplicationNoticeBanner.tsx`  |

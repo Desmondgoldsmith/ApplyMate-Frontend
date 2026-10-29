@@ -11,10 +11,10 @@ Use this document as the single source of truth for APIs, data shapes, what is a
 
 ## 1. Executive summary
 
-| Area | Backend | Frontend (current) |
-|------|---------|-------------------|
-| **Phase 1 — Location** | IP resolve endpoint, effective-location priority in job discovery, `uiPrefs.jobSearchLocation` | Store, bootstrap hook, confirm modal, Job Board filter init — **mostly wired** |
-| **Phase 2 — Ranking** | Weighted score + tiers + explainability on every discovery item; decision feedback endpoint | API types + card tier badges — **partial**; detail panel + decision UI **not wired** |
+| Area                   | Backend                                                                                        | Frontend (current)                                                                   |
+| ---------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| **Phase 1 — Location** | IP resolve endpoint, effective-location priority in job discovery, `uiPrefs.jobSearchLocation` | Store, bootstrap hook, confirm modal, Job Board filter init — **mostly wired**       |
+| **Phase 2 — Ranking**  | Weighted score + tiers + explainability on every discovery item; decision feedback endpoint    | API types + card tier badges — **partial**; detail panel + decision UI **not wired** |
 
 **Important:** Job Board still has its own **on-demand AI match** (`useJobBoardAiMatch` → `GET /jobs/:id/match-score`). That is separate from the new **discovery ranking** (`ranking` / `explanation` on `GET /job-discovery`). Do not conflate them in UI copy or analytics.
 
@@ -59,11 +59,11 @@ User can always override via Job Board location filter (= `user_override`).
 
 ```ts
 type ResolvedGeoLocation = {
-  country: string | null;      // e.g. "Ghana"
-  countryCode: string | null;  // e.g. "GH"
-  city: string | null;         // e.g. "Accra"
-  region: string | null;       // e.g. "Greater Accra"
-  timezone: string | null;     // e.g. "Africa/Accra"
+  country: string | null; // e.g. "Ghana"
+  countryCode: string | null; // e.g. "GH"
+  city: string | null; // e.g. "Accra"
+  region: string | null; // e.g. "Greater Accra"
+  timezone: string | null; // e.g. "Africa/Accra"
   confidence: 'high' | 'medium' | 'low';
 };
 ```
@@ -72,13 +72,13 @@ type ResolvedGeoLocation = {
 
 ### 3.3 Effective location priority (client + server must match)
 
-| Priority | Source key | Where it comes from |
-|----------|------------|---------------------|
-| 1 | `user_override` | Job Board `location` query param / applied filter |
-| 2 | `saved_preference` | `me.uiPrefs.jobSearchLocation` and/or `useLocationStore.selectedLocation` |
-| 3 | `ip_detected` | `GET /location/resolve` → `useLocationStore.detectedLocation` |
-| 4 | `cv_profile` | Default CV profile `location` or `me.location` |
-| 5 | `role_default` | Empty — server falls back (e.g. US for JSearch country) |
+| Priority | Source key         | Where it comes from                                                       |
+| -------- | ------------------ | ------------------------------------------------------------------------- |
+| 1        | `user_override`    | Job Board `location` query param / applied filter                         |
+| 2        | `saved_preference` | `me.uiPrefs.jobSearchLocation` and/or `useLocationStore.selectedLocation` |
+| 3        | `ip_detected`      | `GET /location/resolve` → `useLocationStore.detectedLocation`             |
+| 4        | `cv_profile`       | Default CV profile `location` or `me.location`                            |
+| 5        | `role_default`     | Empty — server falls back (e.g. US for JSearch country)                   |
 
 **Client helper:** `packages/web/src/lib/resolve-effective-location-client.ts`  
 **Server:** `apply-mate-backend/src/common/location/resolve-effective-location.ts`
@@ -108,15 +108,15 @@ type UserUiPrefs = {
 
 ### 3.6 Frontend files already added
 
-| File | Role |
-|------|------|
-| `src/store/useLocationStore.ts` | Zustand + persist: `selectedLocation`, `promptDismissedAt` (detected geo is session-only) |
-| `src/hooks/useLocationBootstrap.ts` | Calls resolve API after login |
-| `src/components/location/LocationBootstrap.tsx` | Modal orchestration + `updateMe` on confirm |
-| `src/components/location/LocationConfirmPrompt.tsx` | UI modal |
-| `src/app/(dashboard)/layout.tsx` | Renders `<LocationBootstrap enabled={!!accessToken} />` (`'use client'`) |
-| `src/app/(dashboard)/dashboard/job-board/JobBoardContent.tsx` | Bootstraps `location` filter from effective location |
-| `src/lib/resolve-effective-location-client.test.ts` | Unit test for priority |
+| File                                                          | Role                                                                                      |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `src/store/useLocationStore.ts`                               | Zustand + persist: `selectedLocation`, `promptDismissedAt` (detected geo is session-only) |
+| `src/hooks/useLocationBootstrap.ts`                           | Calls resolve API after login                                                             |
+| `src/components/location/LocationBootstrap.tsx`               | Modal orchestration + `updateMe` on confirm                                               |
+| `src/components/location/LocationConfirmPrompt.tsx`           | UI modal                                                                                  |
+| `src/app/(dashboard)/layout.tsx`                              | Renders `<LocationBootstrap enabled={!!accessToken} />` (`'use client'`)                  |
+| `src/app/(dashboard)/dashboard/job-board/JobBoardContent.tsx` | Bootstraps `location` filter from effective location                                      |
+| `src/lib/resolve-effective-location-client.test.ts`           | Unit test for priority                                                                    |
 
 **Persist key:** `applymate:location-store` (partial: `selectedLocation`, `promptDismissedAt` only).
 
@@ -139,22 +139,22 @@ Optional feedback: user taps Apply / Maybe / Skip → **`POST /job-discovery/:jo
 
 When AI match exists on a saved `JobAnalysis` for that listing:
 
-| Signal | Weight |
-|--------|--------|
-| Semantic similarity (CV tokens vs job text) | 40% |
-| Heuristic skill overlap | 30% |
-| AI match score (from prior analyzer run) | 20% |
-| Preference fit (location remote/local, filters) | 10% |
+| Signal                                          | Weight |
+| ----------------------------------------------- | ------ |
+| Semantic similarity (CV tokens vs job text)     | 40%    |
+| Heuristic skill overlap                         | 30%    |
+| AI match score (from prior analyzer run)        | 20%    |
+| Preference fit (location remote/local, filters) | 10%    |
 
 When **no** AI score: weights are renormalized over the three remaining signals.
 
 **Tier thresholds:**
 
-| Tier | `ranking.tier` | Min score |
-|------|----------------|-----------|
-| Apply now | `APPLY_NOW` | ≥ 78 |
-| Consider | `CONSIDER` | ≥ 55 |
-| Low match | `LOW_MATCH` | < 55 |
+| Tier      | `ranking.tier` | Min score |
+| --------- | -------------- | --------- |
+| Apply now | `APPLY_NOW`    | ≥ 78      |
+| Consider  | `CONSIDER`     | ≥ 55      |
+| Low match | `LOW_MATCH`    | < 55      |
 
 ### 4.3 API — `GET /job-discovery` (extended response)
 
@@ -179,7 +179,11 @@ type DiscoverJobsResponse = {
     mode: 'healthy' | 'low_quality' | 'empty';
     reasonCodes: string[];
     suggestedActions: Array<{
-      type: 'improve_cv' | 'expand_location' | 'adjust_filters' | 'refresh_preferences';
+      type:
+        | 'improve_cv'
+        | 'expand_location'
+        | 'adjust_filters'
+        | 'refresh_preferences';
       label: string;
       route: string;
       impactHint: string | null;
@@ -187,10 +191,10 @@ type DiscoverJobsResponse = {
   };
   // NEW — explains what location/query the server used
   searchContext?: {
-    locationLabel: string;   // e.g. "Accra, Ghana"
+    locationLabel: string; // e.g. "Accra, Ghana"
     locationSource: EffectiveLocationSource; // see §3.3
-    countryCode: string;     // e.g. "GH"
-    roleQuery: string;       // role string sent to JSearch
+    countryCode: string; // e.g. "GH"
+    roleQuery: string; // role string sent to JSearch
   };
 };
 ```
@@ -199,18 +203,18 @@ type DiscoverJobsResponse = {
 
 ```ts
 type JobListingRanking = {
-  score: number;           // 0–100 integer
+  score: number; // 0–100 integer
   tier: 'APPLY_NOW' | 'CONSIDER' | 'LOW_MATCH';
   recommendation: string; // short CTA-style line from server
 };
 
 type JobListingExplanation = {
-  matchedSkills: string[];   // up to ~12
-  missingSkills: string[];   // up to ~10
-  riskFactors: string[];       // up to ~5
+  matchedSkills: string[]; // up to ~12
+  missingSkills: string[]; // up to ~10
+  riskFactors: string[]; // up to ~5
   seniorityMismatch: 'none' | 'under' | 'over' | 'unknown';
-  whyThisJob: string;        // full sentence(s)
-  recommendation: string;    // longer guidance
+  whyThisJob: string; // full sentence(s)
+  recommendation: string; // longer guidance
 };
 ```
 
@@ -261,11 +265,11 @@ await api.jobDiscovery.recordDecision(jobListingId, 'APPLY');
 
 ### 4.6 `matchPreview.version === 'v2-ranking'` — migration guide for UI
 
-| Old mental model | New behaviour |
-|------------------|---------------|
-| `instantScore` from debounced AI/heuristic fetch | Discovery list: use **`ranking.score`** as primary; `instantScore` mirrors it |
-| Poll/wait for `refinedReady` on list | `refinedScore` = saved analyzer score if exists; optional badge “AI verified” |
-| `useJobBoardAiMatch` on card | **Still valid** for user-triggered deep match / quota UX — do not remove unless product says so |
+| Old mental model                                 | New behaviour                                                                                   |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `instantScore` from debounced AI/heuristic fetch | Discovery list: use **`ranking.score`** as primary; `instantScore` mirrors it                   |
+| Poll/wait for `refinedReady` on list             | `refinedScore` = saved analyzer score if exists; optional badge “AI verified”                   |
+| `useJobBoardAiMatch` on card                     | **Still valid** for user-triggered deep match / quota UX — do not remove unless product says so |
 
 Suggested UI hierarchy on **list cards**:
 
@@ -284,11 +288,11 @@ Suggested **detail panel**:
 
 ### 4.7 Frontend files already touched
 
-| File | Status |
-|------|--------|
-| `src/lib/api.ts` | Types, normalizers, `api.location`, `api.jobDiscovery.recordDecision` |
-| `src/components/job-board/JobListingCard.tsx` | Tier badges on list |
-| `src/lib/resolve-effective-location-client.test.ts` | Location priority test |
+| File                                                | Status                                                                |
+| --------------------------------------------------- | --------------------------------------------------------------------- |
+| `src/lib/api.ts`                                    | Types, normalizers, `api.location`, `api.jobDiscovery.recordDecision` |
+| `src/components/job-board/JobListingCard.tsx`       | Tier badges on list                                                   |
+| `src/lib/resolve-effective-location-client.test.ts` | Location priority test                                                |
 
 ---
 
@@ -425,4 +429,4 @@ npx vitest run src/lib/resolve-effective-location-client.test.ts
 
 ---
 
-*Document generated for frontend handoff. Update this file when API contracts change.*
+_Document generated for frontend handoff. Update this file when API contracts change._

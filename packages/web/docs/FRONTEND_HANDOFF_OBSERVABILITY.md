@@ -33,14 +33,14 @@ Release name is auto-derived from `SENTRY_RELEASE`, `VERCEL_GIT_COMMIT_SHA`, or 
 
 ## Sentry
 
-| File | Role |
-|------|------|
-| `sentry.shared.config.ts` | Shared init (DSN, environment, release, sample rates) |
-| `instrumentation-client.ts` | Browser + Session Replay |
-| `sentry.server.config.ts` | Node SSR |
-| `sentry.edge.config.ts` | Edge / middleware |
-| `next.config.ts` | `withSentryConfig` — source maps on `next build` when `SENTRY_AUTH_TOKEN` is set |
-| `AuthAnalytics.tsx` | `Sentry.setUser` on login; clears on logout |
+| File                        | Role                                                                             |
+| --------------------------- | -------------------------------------------------------------------------------- |
+| `sentry.shared.config.ts`   | Shared init (DSN, environment, release, sample rates)                            |
+| `instrumentation-client.ts` | Browser + Session Replay                                                         |
+| `sentry.server.config.ts`   | Node SSR                                                                         |
+| `sentry.edge.config.ts`     | Edge / middleware                                                                |
+| `next.config.ts`            | `withSentryConfig` — source maps on `next build` when `SENTRY_AUTH_TOKEN` is set |
+| `AuthAnalytics.tsx`         | `Sentry.setUser` on login; clears on logout                                      |
 
 **Alerts (Sentry UI):** new issue in production, error-rate spike, P95 regression — configure per project.
 
@@ -50,16 +50,16 @@ Release name is auto-derived from `SENTRY_RELEASE`, `VERCEL_GIT_COMMIT_SHA`, or 
 
 Canonical event names (must match backend):
 
-| Event | Client fires? | Where |
-|-------|---------------|-------|
-| `cv_created` | Yes | `useCreateCVProfile`, CV upload, onboarding |
-| `job_analyzed` | Backend only | Server fires on persist — no client duplicate |
-| `cv_tailored` | Yes | Job Analyzer + Jobs tab after tailor draft |
-| `cover_letter_generated` | Yes | Job Analyzer generate success |
-| `job_saved_to_hub` | Yes | Save to hub + cover-letter save path |
-| `interview_started` | Yes | `useCreateInterview` + interview analytics batch |
-| `upgrade_prompted` | Yes | AI limit toasts, usage badge, interview weekly gate |
-| `upgrade_completed` | **Client only today** | Call `trackUpgradeCompleted()` from Stripe/checkout success |
+| Event                    | Client fires?         | Where                                                       |
+| ------------------------ | --------------------- | ----------------------------------------------------------- |
+| `cv_created`             | Yes                   | `useCreateCVProfile`, CV upload, onboarding                 |
+| `job_analyzed`           | Backend only          | Server fires on persist — no client duplicate               |
+| `cv_tailored`            | Yes                   | Job Analyzer + Jobs tab after tailor draft                  |
+| `cover_letter_generated` | Yes                   | Job Analyzer generate success                               |
+| `job_saved_to_hub`       | Yes                   | Save to hub + cover-letter save path                        |
+| `interview_started`      | Yes                   | `useCreateInterview` + interview analytics batch            |
+| `upgrade_prompted`       | Yes                   | AI limit toasts, usage badge, interview weekly gate         |
+| `upgrade_completed`      | **Client only today** | Call `trackUpgradeCompleted()` from Stripe/checkout success |
 
 Helpers: `@/lib/analytics` → `trackConversionFunnelEvent`, `trackUpgradePrompted`, `trackUpgradeCompleted`.
 

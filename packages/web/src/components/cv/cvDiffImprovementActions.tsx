@@ -25,10 +25,20 @@ export function CvDiffActionPair({
     'rounded-md border border-emerald-300 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold text-emerald-700 transition hover:bg-emerald-500/20 disabled:pointer-events-none disabled:opacity-40';
   return (
     <div className={className}>
-      <button type="button" disabled={busy} className={rejectCls} onClick={() => !busy && onReject?.()}>
+      <button
+        type="button"
+        disabled={busy}
+        className={rejectCls}
+        onClick={() => !busy && onReject?.()}
+      >
         {rejectLabel}
       </button>
-      <button type="button" disabled={busy} className={acceptCls} onClick={() => !busy && onAccept?.()}>
+      <button
+        type="button"
+        disabled={busy}
+        className={acceptCls}
+        onClick={() => !busy && onAccept?.()}
+      >
         {acceptLabel}
       </button>
     </div>

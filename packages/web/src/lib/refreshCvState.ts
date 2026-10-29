@@ -38,23 +38,44 @@ export async function refreshCvState(
 
   if (id) {
     if (options.refreshProfile) {
-      tasks.push(queryClient.refetchQueries({ queryKey: queryKeys.cv.profile(id), exact: true }));
+      tasks.push(
+        queryClient.refetchQueries({
+          queryKey: queryKeys.cv.profile(id),
+          exact: true,
+        }),
+      );
     }
     if (options.refreshSections) {
-      tasks.push(queryClient.refetchQueries({ queryKey: queryKeys.cv.sections(id), exact: true }));
+      tasks.push(
+        queryClient.refetchQueries({
+          queryKey: queryKeys.cv.sections(id),
+          exact: true,
+        }),
+      );
     }
     if (options.refreshSuggestions) {
-      tasks.push(queryClient.refetchQueries({ queryKey: cvSuggestionsQueryKey(id), exact: true }));
+      tasks.push(
+        queryClient.refetchQueries({
+          queryKey: cvSuggestionsQueryKey(id),
+          exact: true,
+        }),
+      );
     }
   }
 
   await Promise.all(tasks);
 
   if (id && options.invalidateScore) {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.cv.score(id), exact: true });
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.cv.score(id),
+      exact: true,
+    });
   }
 
   if (options.invalidateCvProfilesList) {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles(), exact: true });
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.cv.profiles(),
+      exact: true,
+    });
   }
 }

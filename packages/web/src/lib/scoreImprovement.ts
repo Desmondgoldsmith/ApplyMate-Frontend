@@ -1,5 +1,9 @@
 export type ScoreImprovementBand = 'low' | 'medium' | 'high';
-export type ScoreImprovementAxis = 'skills' | 'experience' | 'role_level' | 'evidence';
+export type ScoreImprovementAxis =
+  | 'skills'
+  | 'experience'
+  | 'role_level'
+  | 'evidence';
 
 export type ScoreImprovementItem = {
   id: string;
@@ -26,11 +30,18 @@ export const SCORE_BAND_LABELS: Record<ScoreImprovementBand, string> = {
 };
 
 const BANDS = new Set<ScoreImprovementBand>(['low', 'medium', 'high']);
-const AXES = new Set<ScoreImprovementAxis>(['skills', 'experience', 'role_level', 'evidence']);
+const AXES = new Set<ScoreImprovementAxis>([
+  'skills',
+  'experience',
+  'role_level',
+  'evidence',
+]);
 
 function parseBand(raw: unknown): ScoreImprovementBand {
   const s = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
-  return BANDS.has(s as ScoreImprovementBand) ? (s as ScoreImprovementBand) : 'medium';
+  return BANDS.has(s as ScoreImprovementBand)
+    ? (s as ScoreImprovementBand)
+    : 'medium';
 }
 
 function parseAxis(raw: unknown): ScoreImprovementAxis {
@@ -42,7 +53,12 @@ function parseAxis(raw: unknown): ScoreImprovementAxis {
 
 function parseOptionalScore(raw: unknown): number | null {
   if (raw === null || raw === undefined || raw === '') return null;
-  const n = typeof raw === 'number' ? raw : typeof raw === 'string' ? parseFloat(raw) : Number(raw);
+  const n =
+    typeof raw === 'number'
+      ? raw
+      : typeof raw === 'string'
+        ? parseFloat(raw)
+        : Number(raw);
   if (!Number.isFinite(n)) return null;
   return Math.max(0, Math.min(100, Math.round(n)));
 }
@@ -82,7 +98,9 @@ function stripScoreImprovementCopy(text: string): string {
 }
 
 /** Parse `scoreImprovement` from GET /jobs/:id or tailor payloads (post-tailor only). */
-export function parseScoreImprovementGuide(raw: unknown): ScoreImprovementGuide | undefined {
+export function parseScoreImprovementGuide(
+  raw: unknown,
+): ScoreImprovementGuide | undefined {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
   const o = raw as Record<string, unknown>;
 
@@ -156,7 +174,12 @@ const SENIORITY_TOKEN_LABELS: Record<string, string> = {
 
 /** Human-readable seniority — never show bare enum tokens like "mid". */
 export function formatSeniorityLabel(raw: string): string {
-  const t = raw.trim().toLowerCase().replace(/_/g, ' ').replace(/\s+level$/, '').trim();
+  const t = raw
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, ' ')
+    .replace(/\s+level$/, '')
+    .trim();
   if (!t) return raw.trim();
   return SENIORITY_TOKEN_LABELS[t] ?? (t.includes('level') ? t : `${t}-level`);
 }
@@ -179,12 +202,15 @@ export function humanizeScoreImprovementDetail(detail: string): string {
   );
   out = out.replace(
     /\b(job|role)\s+is\s+([\w-]+)\s+level\b/gi,
-    (_, noun: string, token: string) => `${noun} targets ${formatSeniorityLabel(token)} experience`,
+    (_, noun: string, token: string) =>
+      `${noun} targets ${formatSeniorityLabel(token)} experience`,
   );
   out = out.replace(/\bmid level\b/gi, 'mid-level');
   out = out.replace(/\bmid-level level\b/gi, 'mid-level');
 
-  if (/targets mid-level experience.*reads as mid-level on your cv/i.test(out)) {
+  if (
+    /targets mid-level experience.*reads as mid-level on your cv/i.test(out)
+  ) {
     out = out.replace(
       /targets mid-level experience;\s*your cv reads as mid-level on your cv\.?/i,
       'You and the role are both mid-level on paper. The gap is more about years, scope, or must-have depth, not title alone.',

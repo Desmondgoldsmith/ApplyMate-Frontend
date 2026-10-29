@@ -3,7 +3,10 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 
-import { type RefreshCvStateOptions, refreshCvState } from '@/lib/refreshCvState';
+import {
+  type RefreshCvStateOptions,
+  refreshCvState,
+} from '@/lib/refreshCvState';
 
 /**
  * Centralized scoped CV cache refresh (profile, sections, suggestions, score, list).
@@ -13,8 +16,10 @@ export function useCvStateRefresh() {
   const queryClient = useQueryClient();
   return useMemo(
     () => ({
-      refreshCvState: (profileId: string | null | undefined, options: RefreshCvStateOptions) =>
-        refreshCvState(queryClient, profileId, options),
+      refreshCvState: (
+        profileId: string | null | undefined,
+        options: RefreshCvStateOptions,
+      ) => refreshCvState(queryClient, profileId, options),
     }),
     [queryClient],
   );

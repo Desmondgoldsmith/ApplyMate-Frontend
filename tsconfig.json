@@ -15,5 +15,12 @@
     "shared/**/*.ts",
     "shared/**/*.tsx"
   ],
-  "exclude": ["node_modules", "**/node_modules", "**/.next", "**/dist", "**/out", "**/build"]
+  "exclude": [
+    "node_modules",
+    "**/node_modules",
+    "**/.next",
+    "**/dist",
+    "**/out",
+    "**/build"
+  ]
 }

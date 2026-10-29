@@ -22,7 +22,10 @@ import { useCVProfile } from '@/hooks/useCVProfile';
 import { useCVProfiles } from '@/hooks/useCVProfiles';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useGenerateContent } from '@/hooks/useGenerateContent';
-import { invalidateGrowthQueries, useConsumeImmediateGrowthFeedback } from '@/hooks/useGrowth';
+import {
+  invalidateGrowthQueries,
+  useConsumeImmediateGrowthFeedback,
+} from '@/hooks/useGrowth';
 import {
   invalidateNotificationList,
   scheduleUnreadNotificationCountInvalidate,
@@ -45,13 +48,19 @@ import {
   type TailorMutationResponse,
 } from '@/lib/api';
 import { inferCvProfileNameFromProfile } from '@/lib/infer-cv-profile-name';
-import { CV_SUGGESTIONS_QUERY_ROOT, cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
+import {
+  CV_SUGGESTIONS_QUERY_ROOT,
+  cvSuggestionsQueryKey,
+} from '@/lib/cvSuggestionsQuery';
 import {
   canUseAiFromDailyAiUsage,
   DAILY_AI_LIMIT_REACHED_MESSAGE,
 } from '@/lib/ai-daily-usage';
 import { resolveCvProfileIdForSavedJob } from '@/lib/jobAnalysisCvContext';
-import { consumePrefetchByContextToken, FRESH_ANALYZE_PREFILL_SESSION } from '@/lib/jobHubPrefill';
+import {
+  consumePrefetchByContextToken,
+  FRESH_ANALYZE_PREFILL_SESSION,
+} from '@/lib/jobHubPrefill';
 import { getApiErrorMessage } from '@/lib/axios';
 import { trackFunnelEvent } from '@/lib/actionFunnel';
 import {
@@ -62,7 +71,10 @@ import { downloadCoverLetterPdf } from '@/lib/cover-letter-pdf';
 import { substituteCoverLetterCandidateName } from '@/lib/cover-letter-placeholders';
 import { normalizeText } from '@/lib/normalizeText';
 import { getDisplayName } from '@/lib/display-name';
-import { resolveAnalysisAfterTailorMutation, commitTailorJobAnalysis } from '@/lib/applyTailorMutation';
+import {
+  resolveAnalysisAfterTailorMutation,
+  commitTailorJobAnalysis,
+} from '@/lib/applyTailorMutation';
 import { acceptedTailorSkillNames } from '@/lib/tailorAcceptedSkills';
 import { mergeTailorEstimatedScores } from '@/lib/tailorMatchScore';
 import { displayScoreBeforeTailorForAnalysis } from '@/lib/tailorAnalysisUi';
@@ -75,7 +87,8 @@ import { useUIStore } from '@/store/useUIStore';
 const STORAGE_FORM_KEY = 'applymate:dashboard:jobs:analyze-form';
 const STORAGE_ANALYSIS_KEY = 'applymate:dashboard:jobs:last-analysis';
 /** Completed tailor drafts keyed by CV + job text (survives refresh; cleared when JD/CV context changes). */
-const STORAGE_COMPLETED_TAILOR_KEY = 'applymate:dashboard:jobs:completed-tailor-by-fp';
+const STORAGE_COMPLETED_TAILOR_KEY =
+  'applymate:dashboard:jobs:completed-tailor-by-fp';
 
 function tailoringSessionFingerprint(
   cvProfileId: string,
@@ -90,7 +103,9 @@ function saveCompletedTailorDraft(fp: string, draft: CvTailorDraft) {
   if (typeof window === 'undefined') return;
   try {
     const raw = sessionStorage.getItem(STORAGE_COMPLETED_TAILOR_KEY);
-    const map: Record<string, CvTailorDraft> = raw ? (JSON.parse(raw) as Record<string, CvTailorDraft>) : {};
+    const map: Record<string, CvTailorDraft> = raw
+      ? (JSON.parse(raw) as Record<string, CvTailorDraft>)
+      : {};
     map[fp] = draft;
     sessionStorage.setItem(STORAGE_COMPLETED_TAILOR_KEY, JSON.stringify(map));
   } catch {
@@ -129,14 +144,22 @@ const schema = z.object({
   description: z.string().min(30, 'Please paste a fuller job description'),
 });
 
-function loadPersistedForm(): { title: string; company: string; description: string } {
+function loadPersistedForm(): {
+  title: string;
+  company: string;
+  description: string;
+} {
   if (typeof window === 'undefined') {
     return { title: '', company: '', description: '' };
   }
   try {
     const raw = sessionStorage.getItem(STORAGE_FORM_KEY);
     if (!raw) return { title: '', company: '', description: '' };
-    const p = JSON.parse(raw) as { title?: unknown; company?: unknown; description?: unknown };
+    const p = JSON.parse(raw) as {
+      title?: unknown;
+      company?: unknown;
+      description?: unknown;
+    };
     return {
       title: typeof p.title === 'string' ? p.title : '',
       company: typeof p.company === 'string' ? p.company : '',
@@ -153,7 +176,12 @@ function loadPersistedAnalysis(): JobAnalysis | null {
     const raw = sessionStorage.getItem(STORAGE_ANALYSIS_KEY);
     if (!raw) return null;
     const a = JSON.parse(raw) as JobAnalysis;
-    if (a && typeof a === 'object' && typeof a.matchScore === 'number' && Number.isFinite(a.matchScore)) {
+    if (
+      a &&
+      typeof a === 'object' &&
+      typeof a.matchScore === 'number' &&
+      Number.isFinite(a.matchScore)
+    ) {
       return a;
     }
   } catch {
@@ -171,7 +199,11 @@ function persistSessionSnapshot(
   if (typeof window === 'undefined') return;
   sessionStorage.setItem(
     STORAGE_FORM_KEY,
-    JSON.stringify({ title: nextTitle, company: nextCompany, description: nextDescription }),
+    JSON.stringify({
+      title: nextTitle,
+      company: nextCompany,
+      description: nextDescription,
+    }),
   );
   if (nextAnalysis) {
     sessionStorage.setItem(STORAGE_ANALYSIS_KEY, JSON.stringify(nextAnalysis));
@@ -204,7 +236,9 @@ function jobHistoryItemToDetail(item: JobHistoryItem): JobDetailForForm {
       ...(jh ? { jobListingSourceHash: jh } : {}),
       strengths: [],
       missingSkills: [],
-      ...(item.salaryEstimate != null ? { salaryEstimate: item.salaryEstimate } : {}),
+      ...(item.salaryEstimate != null
+        ? { salaryEstimate: item.salaryEstimate }
+        : {}),
     },
   };
 }
@@ -218,7 +252,10 @@ function historyRowKey(jobTitle: string, company: string): string {
  * When GET /jobs/:id returns a narrower analysis, do not drop tailor flags from prior state for the same job.
  * If both IDs are set and differ, do not merge (different jobs).
  */
-function mergeJobAnalysisForApply(prev: JobAnalysis | null, incoming: JobAnalysis): JobAnalysis {
+function mergeJobAnalysisForApply(
+  prev: JobAnalysis | null,
+  incoming: JobAnalysis,
+): JobAnalysis {
   const prevId = (prev?.id ?? '').trim();
   const incomingId = (incoming.id ?? '').trim();
   const bothIds = Boolean(prevId && incomingId);
@@ -236,12 +273,18 @@ function mergeJobAnalysisForApply(prev: JobAnalysis | null, incoming: JobAnalysi
   }
 
   const incName = incoming.tailoredCvName;
-  if ((incName === undefined || incName === null || String(incName).trim() === '') && prev.tailoredCvName) {
+  if (
+    (incName === undefined ||
+      incName === null ||
+      String(incName).trim() === '') &&
+    prev.tailoredCvName
+  ) {
     base.tailoredCvName = prev.tailoredCvName;
   }
 
   if (
-    (incoming.scoreBeforeTailoring === undefined || incoming.scoreBeforeTailoring === null) &&
+    (incoming.scoreBeforeTailoring === undefined ||
+      incoming.scoreBeforeTailoring === null) &&
     prev.scoreBeforeTailoring != null &&
     Number.isFinite(prev.scoreBeforeTailoring)
   ) {
@@ -249,35 +292,47 @@ function mergeJobAnalysisForApply(prev: JobAnalysis | null, incoming: JobAnalysi
   }
 
   if (
-    (incoming.tailoredCvProfileId === undefined || incoming.tailoredCvProfileId === null) &&
+    (incoming.tailoredCvProfileId === undefined ||
+      incoming.tailoredCvProfileId === null) &&
     prev.tailoredCvProfileId
   ) {
     base.tailoredCvProfileId = prev.tailoredCvProfileId;
   }
 
   if (
-    (incoming.sourceCvProfileId === undefined || incoming.sourceCvProfileId === null) &&
+    (incoming.sourceCvProfileId === undefined ||
+      incoming.sourceCvProfileId === null) &&
     prev.sourceCvProfileId
   ) {
     base.sourceCvProfileId = prev.sourceCvProfileId;
   }
 
-  if ((incoming.cvProfileId === undefined || incoming.cvProfileId === null) && prev.cvProfileId) {
+  if (
+    (incoming.cvProfileId === undefined || incoming.cvProfileId === null) &&
+    prev.cvProfileId
+  ) {
     base.cvProfileId = prev.cvProfileId;
   }
 
-  if ((incoming.jobListingId === undefined || incoming.jobListingId === null) && prev.jobListingId) {
+  if (
+    (incoming.jobListingId === undefined || incoming.jobListingId === null) &&
+    prev.jobListingId
+  ) {
     base.jobListingId = prev.jobListingId;
   }
 
   if (
-    (incoming.jobListingSourceHash === undefined || incoming.jobListingSourceHash === null) &&
+    (incoming.jobListingSourceHash === undefined ||
+      incoming.jobListingSourceHash === null) &&
     prev.jobListingSourceHash
   ) {
     base.jobListingSourceHash = prev.jobListingSourceHash;
   }
 
-  if (incoming.salaryEstimate === undefined && prev.salaryEstimate !== undefined) {
+  if (
+    incoming.salaryEstimate === undefined &&
+    prev.salaryEstimate !== undefined
+  ) {
     base.salaryEstimate = prev.salaryEstimate;
   }
 
@@ -286,13 +341,18 @@ function mergeJobAnalysisForApply(prev: JobAnalysis | null, incoming: JobAnalysi
   }
 
   if (
-    (incoming.matchCvProfileId === undefined || incoming.matchCvProfileId === null) &&
+    (incoming.matchCvProfileId === undefined ||
+      incoming.matchCvProfileId === null) &&
     prev.matchCvProfileId
   ) {
     base.matchCvProfileId = prev.matchCvProfileId;
   }
 
-  if (incoming.factorsBreakdown === undefined && prev.factorsBreakdown && incoming.isTailored !== false) {
+  if (
+    incoming.factorsBreakdown === undefined &&
+    prev.factorsBreakdown &&
+    incoming.isTailored !== false
+  ) {
     base.factorsBreakdown = prev.factorsBreakdown;
   }
 
@@ -330,7 +390,9 @@ export function JobsContent() {
   const [tailorSubmitting, setTailorSubmitting] = useState(false);
   const [rematching, setRematching] = useState(false);
   const [selectedSkillNames, setSelectedSkillNames] = useState<string[]>([]);
-  const [scoreBeforeTailor, setScoreBeforeTailor] = useState<number | null>(null);
+  const [scoreBeforeTailor, setScoreBeforeTailor] = useState<number | null>(
+    null,
+  );
   /** After rematch or when loading a tailored job — show job-fit before/after even if scores are flat or down. */
   const [tailoringCompleted, setTailoringCompleted] = useState(false);
 
@@ -349,9 +411,12 @@ export function JobsContent() {
   const history = useJobHistory();
   const { data: me } = useCurrentUser();
   const { data: cv, isPending: cvProfilePending } = useCVProfile();
-  const { data: cvProfilesData, isPending: cvProfilesPending } = useCVProfiles();
+  const { data: cvProfilesData, isPending: cvProfilesPending } =
+    useCVProfiles();
   const cvProfiles = cvProfilesData?.rows ?? [];
-  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
+    null,
+  );
   const analyzeLocationPayload = useJobAnalyzeLocationPayload(
     selectedProfileId && cv?.id === selectedProfileId ? cv.location : null,
   );
@@ -385,7 +450,9 @@ export function JobsContent() {
       .filter((s) => s.importance === 'CRITICAL' || s.importance === 'HIGH')
       .map((s) => s.name);
     /** If the API only returns MEDIUM/LOW gaps, nothing was auto-selected — select all gaps so Tailor stays usable. */
-    setSelectedSkillNames(criticalHigh.length > 0 ? criticalHigh : skills.map((s) => s.name));
+    setSelectedSkillNames(
+      criticalHigh.length > 0 ? criticalHigh : skills.map((s) => s.name),
+    );
   }, [skillsInitKey, analysis]);
 
   const toggleSkillSelected = useCallback((name: string) => {
@@ -415,11 +482,14 @@ export function JobsContent() {
       if (candidates.length === 0) return prev;
 
       const scoreMatch = candidates.find(
-        (x) => Math.round(x.matchScore ?? NaN) === Math.round(prev.matchScore ?? NaN),
+        (x) =>
+          Math.round(x.matchScore ?? NaN) ===
+          Math.round(prev.matchScore ?? NaN),
       );
       const sorted = [...candidates].sort(
         (a, b) =>
-          new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime(),
+          new Date(b.createdAt || 0).getTime() -
+          new Date(a.createdAt || 0).getTime(),
       );
       const pick = scoreMatch ?? sorted[0]!;
       return { ...prev, id: pick.id };
@@ -435,7 +505,13 @@ export function JobsContent() {
   const cvProfileIdForTailor = (selectedProfileId ?? cv?.id ?? '').trim();
   const jobAnalysisIdForTailor = (analysis?.id ?? '').trim();
   const tailoringFp = useMemo(
-    () => tailoringSessionFingerprint(cvProfileIdForTailor, title, company, description),
+    () =>
+      tailoringSessionFingerprint(
+        cvProfileIdForTailor,
+        title,
+        company,
+        description,
+      ),
     [cvProfileIdForTailor, title, company, description],
   );
   const tailoringFpRef = useRef<string | null>(null);
@@ -456,12 +532,21 @@ export function JobsContent() {
       const mergedDraft: CvTailorDraft = {
         ...result.draft,
         jobAnalysisId:
-          (result.draft.jobAnalysisId ?? '').trim() || (analysis?.id ?? '').trim() || result.draft.jobAnalysisId,
-        cvProfileId: (result.draft.cvProfileId ?? '').trim() || cvProfileIdForTailor || result.draft.cvProfileId,
+          (result.draft.jobAnalysisId ?? '').trim() ||
+          (analysis?.id ?? '').trim() ||
+          result.draft.jobAnalysisId,
+        cvProfileId:
+          (result.draft.cvProfileId ?? '').trim() ||
+          cvProfileIdForTailor ||
+          result.draft.cvProfileId,
       };
       setTailorDraft(mergedDraft);
       setAnalysis((prev) => {
-        const next = resolveAnalysisAfterTailorMutation(prev, { ...result, draft: mergedDraft }, tailorMutationRefs);
+        const next = resolveAnalysisAfterTailorMutation(
+          prev,
+          { ...result, draft: mergedDraft },
+          tailorMutationRefs,
+        );
         if (!next) return prev;
         analysisMergeRef.current = next;
         persistSessionSnapshot(title, company, description, next);
@@ -469,7 +554,15 @@ export function JobsContent() {
         return next;
       });
     },
-    [analysis?.id, company, cvProfileIdForTailor, description, queryClient, tailorMutationRefs, title],
+    [
+      analysis?.id,
+      company,
+      cvProfileIdForTailor,
+      description,
+      queryClient,
+      tailorMutationRefs,
+      title,
+    ],
   );
 
   const handleCreateTailorDraft = useCallback(async () => {
@@ -479,7 +572,9 @@ export function JobsContent() {
       return;
     }
     if (!cvProfileIdForTailor || !jobAnalysisIdForTailor) {
-      toast.error('Run a full job analysis first so we can tailor your CV to this role.');
+      toast.error(
+        'Run a full job analysis first so we can tailor your CV to this role.',
+      );
       return;
     }
     if (selectedSkillNames.length === 0) {
@@ -509,8 +604,10 @@ export function JobsContent() {
         ...result,
         draft: {
           ...result.draft,
-          jobAnalysisId: (result.draft.jobAnalysisId ?? '').trim() || jobAnalysisIdForTailor,
-          cvProfileId: (result.draft.cvProfileId ?? '').trim() || cvProfileIdForTailor,
+          jobAnalysisId:
+            (result.draft.jobAnalysisId ?? '').trim() || jobAnalysisIdForTailor,
+          cvProfileId:
+            (result.draft.cvProfileId ?? '').trim() || cvProfileIdForTailor,
         },
       });
       trackConversionFunnelEvent('cv_tailored', {
@@ -543,14 +640,19 @@ export function JobsContent() {
     if (!cvId) return;
     const jobId = (analysis?.id ?? '').trim();
     if (!jobId) {
-      toast.error('Analyze this job first so we can load the saved match score.');
+      toast.error(
+        'Analyze this job first so we can load the saved match score.',
+      );
       return;
     }
     setRematching(true);
     try {
       /** GET rematch only — do not POST /jobs/analyze here (would re-run AI and can change scores). */
       const detail = await api.jobs.getJob(jobId);
-      const merged = mergeJobAnalysisForApply(analysisMergeRef.current, detail.analysis);
+      const merged = mergeJobAnalysisForApply(
+        analysisMergeRef.current,
+        detail.analysis,
+      );
       const analysisIdRematch = (merged.id ?? '').trim();
 
       let nextDraft: CvTailorDraft | null = null;
@@ -561,13 +663,17 @@ export function JobsContent() {
         };
         setTailorDraft(nextDraft);
         setTailoringCompleted(
-          Boolean(detail.tailorDraft?.status === 'completed' || merged.isTailored === true),
+          Boolean(
+            detail.tailorDraft?.status === 'completed' ||
+            merged.isTailored === true,
+          ),
         );
       } else {
         setTailorDraft((prevDraft) => {
           if (
             prevDraft &&
-            (!analysisIdRematch || prevDraft.jobAnalysisId === analysisIdRematch) &&
+            (!analysisIdRematch ||
+              prevDraft.jobAnalysisId === analysisIdRematch) &&
             (merged.isTailored === true ||
               prevDraft.status === 'completed' ||
               detail.analysis.isTailored === true)
@@ -583,7 +689,8 @@ export function JobsContent() {
 
       if (tailorBaselineScoreRef.current == null && merged.isTailored) {
         const lockFrom =
-          merged.scoreBeforeTailoring != null && Number.isFinite(merged.scoreBeforeTailoring)
+          merged.scoreBeforeTailoring != null &&
+          Number.isFinite(merged.scoreBeforeTailoring)
             ? merged.scoreBeforeTailoring
             : null;
         if (lockFrom != null && Number.isFinite(lockFrom)) {
@@ -591,30 +698,62 @@ export function JobsContent() {
         }
       }
 
-      const scored = mergeTailorEstimatedScores(merged, nextDraft, tailorBaselineScoreRef.current);
-      if (scored.lockedBaseline != null) tailorBaselineScoreRef.current = scored.lockedBaseline;
+      const scored = mergeTailorEstimatedScores(
+        merged,
+        nextDraft,
+        tailorBaselineScoreRef.current,
+      );
+      if (scored.lockedBaseline != null)
+        tailorBaselineScoreRef.current = scored.lockedBaseline;
       setScoreBeforeTailor(scored.scoreBeforeTailor);
       analysisMergeRef.current = scored.analysis;
       setAnalysis(scored.analysis);
       setViewingSavedAnalysis(false);
       persistSessionSnapshot(title, company, description, scored.analysis);
-      queryClient.setQueryData(queryKeys.jobs.analysisCurrent(), scored.analysis);
+      queryClient.setQueryData(
+        queryKeys.jobs.analysisCurrent(),
+        scored.analysis,
+      );
       void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.root() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profileDefault() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profile(cvId) });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.analytics.root(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.profileDefault(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.profile(cvId),
+      });
       void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.score(cvId) });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.scoreRoot() });
-      void queryClient.invalidateQueries({ queryKey: cvSuggestionsQueryKey(cvId) });
-      void queryClient.invalidateQueries({ queryKey: CV_SUGGESTIONS_QUERY_ROOT });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.score(cvId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.scoreRoot(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: cvSuggestionsQueryKey(cvId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: CV_SUGGESTIONS_QUERY_ROOT,
+      });
       window.setTimeout(() => {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.cv.score(cvId) });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.cv.scoreRoot() });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.cv.score(cvId),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.cv.scoreRoot(),
+        });
       }, 2500);
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analysis(jobId) });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.history(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.analyses(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.analysis(jobId),
+      });
       invalidateTodayPlanQueries(queryClient);
       toast.success('Job match updated from your saved analysis');
     } catch (e) {
@@ -624,7 +763,15 @@ export function JobsContent() {
     } finally {
       setRematching(false);
     }
-  }, [analysis?.id, cvProfileIdForTailor, description, queryClient, title, company, toast]);
+  }, [
+    analysis?.id,
+    cvProfileIdForTailor,
+    description,
+    queryClient,
+    title,
+    company,
+    toast,
+  ]);
 
   const scheduleRematchAfterTailoring = useCallback(() => {
     if (rematchDebounceRef.current) {
@@ -676,13 +823,12 @@ export function JobsContent() {
     }
     return null;
   }, [cvProfiles, selectedProfileId, cv]);
-  const coverLetterDisplay = useMemo(
-    () => {
-      const plain = generated != null ? normalizeText(generated as unknown) : '';
-      return plain.trim() ? substituteCoverLetterCandidateName(plain, candidateDisplayName) : null;
-    },
-    [generated, candidateDisplayName],
-  );
+  const coverLetterDisplay = useMemo(() => {
+    const plain = generated != null ? normalizeText(generated as unknown) : '';
+    return plain.trim()
+      ? substituteCoverLetterCandidateName(plain, candidateDisplayName)
+      : null;
+  }, [generated, candidateDisplayName]);
 
   const applyDetail = useCallback((detail: JobDetailForForm) => {
     setTitle(detail.title);
@@ -697,7 +843,12 @@ export function JobsContent() {
       setScoreBeforeTailor(null);
       setTailoringCompleted(false);
       setTailorSidebarOpen(false);
-      persistSessionSnapshot(detail.title, detail.company, detail.description, null);
+      persistSessionSnapshot(
+        detail.title,
+        detail.company,
+        detail.description,
+        null,
+      );
       return;
     }
 
@@ -715,7 +866,10 @@ export function JobsContent() {
       const sbt = merged.scoreBeforeTailoring;
       setScoreBeforeTailor(sbt != null && Number.isFinite(sbt) ? sbt : null);
       setTailoringCompleted(
-        Boolean(detail.tailorDraft?.status === 'completed' || merged.isTailored === true),
+        Boolean(
+          detail.tailorDraft?.status === 'completed' ||
+          merged.isTailored === true,
+        ),
       );
     } else {
       setTailorDraft((prevDraft) => {
@@ -735,11 +889,18 @@ export function JobsContent() {
         setScoreBeforeTailor(sbt != null && Number.isFinite(sbt) ? sbt : null);
       }
       setTailoringCompleted(
-        Boolean(merged.isTailored === true || detail.analysis.isTailored === true),
+        Boolean(
+          merged.isTailored === true || detail.analysis.isTailored === true,
+        ),
       );
     }
     setTailorSidebarOpen(false);
-    persistSessionSnapshot(detail.title, detail.company, detail.description, merged);
+    persistSessionSnapshot(
+      detail.title,
+      detail.company,
+      detail.description,
+      merged,
+    );
   }, []);
 
   const loadJobById = useCallback(
@@ -755,7 +916,9 @@ export function JobsContent() {
           queryFn: () => api.jobs.getHistory(),
         });
         const items = ensureArray<JobHistoryItem>(
-          queryClient.getQueryData<JobHistoryItem[]>(queryKeys.jobs.history()) ?? history.data,
+          queryClient.getQueryData<JobHistoryItem[]>(
+            queryKeys.jobs.history(),
+          ) ?? history.data,
         );
         const item = items.find((i) => i.id === jobId);
         if (!item) {
@@ -799,7 +962,15 @@ export function JobsContent() {
       }
       return true;
     },
-    [applyDetail, history.data, queryClient, router, setActiveJobId, setSelectedProfileId, toast],
+    [
+      applyDetail,
+      history.data,
+      queryClient,
+      router,
+      setActiveJobId,
+      setSelectedProfileId,
+      toast,
+    ],
   );
 
   const sessionBootstrapped = useRef(false);
@@ -822,7 +993,9 @@ export function JobsContent() {
         pendingHubBookmarkIdRef.current = null;
         if (lastInitJobId.current === jobId) return;
         lastInitJobId.current = jobId;
-        await loadJobByIdRef.current(jobId, { clearUrl: Boolean(jobIdFromUrl) });
+        await loadJobByIdRef.current(jobId, {
+          clearUrl: Boolean(jobIdFromUrl),
+        });
         sessionBootstrapped.current = true;
         if (!cancelled) setHydrated(true);
         return;
@@ -839,7 +1012,9 @@ export function JobsContent() {
       let openTailorFromResume = false;
       if (typeof window !== 'undefined') {
         try {
-          const sessionRaw = window.sessionStorage.getItem(FRESH_ANALYZE_PREFILL_SESSION);
+          const sessionRaw = window.sessionStorage.getItem(
+            FRESH_ANALYZE_PREFILL_SESSION,
+          );
           if (sessionRaw) {
             const p = JSON.parse(sessionRaw) as {
               title?: unknown;
@@ -852,22 +1027,31 @@ export function JobsContent() {
             };
             const prefetch = consumePrefetchByContextToken(contextTokenFromUrl);
             const selectedCvIdFromPrefetch = prefetch?.selectedCvId ?? '';
-            const resumeWorkingStepFromPrefetch = prefetch?.resumeWorkingStep ?? '';
+            const resumeWorkingStepFromPrefetch =
+              prefetch?.resumeWorkingStep ?? '';
             pendingHubBookmarkIdRef.current =
-              typeof p.hubBookmarkId === 'string' && p.hubBookmarkId.trim() ? p.hubBookmarkId.trim() : null;
+              typeof p.hubBookmarkId === 'string' && p.hubBookmarkId.trim()
+                ? p.hubBookmarkId.trim()
+                : null;
             const selectedCvId =
-              selectedCvIdFromPrefetch || (typeof p.selectedCvId === 'string' ? p.selectedCvId.trim() : '');
+              selectedCvIdFromPrefetch ||
+              (typeof p.selectedCvId === 'string' ? p.selectedCvId.trim() : '');
             if (selectedCvId) setSelectedProfileId(selectedCvId);
-            const resumeWorkingStep =
-              (
-                resumeWorkingStepFromPrefetch ||
-                (typeof p.resumeWorkingStep === 'string' ? p.resumeWorkingStep.trim() : '')
-              ).toLowerCase();
+            const resumeWorkingStep = (
+              resumeWorkingStepFromPrefetch ||
+              (typeof p.resumeWorkingStep === 'string'
+                ? p.resumeWorkingStep.trim()
+                : '')
+            ).toLowerCase();
             openTailorFromResume =
-              resumeWorkingStep.includes('tailor') || resumeWorkingStep.includes('resume');
-            if (typeof p.title === 'string' && p.title.trim()) prefillTitle = p.title;
-            if (typeof p.company === 'string' && p.company.trim()) prefillCompany = p.company;
-            if (typeof p.description === 'string' && p.description.trim()) prefillJobDescription = p.description;
+              resumeWorkingStep.includes('tailor') ||
+              resumeWorkingStep.includes('resume');
+            if (typeof p.title === 'string' && p.title.trim())
+              prefillTitle = p.title;
+            if (typeof p.company === 'string' && p.company.trim())
+              prefillCompany = p.company;
+            if (typeof p.description === 'string' && p.description.trim())
+              prefillJobDescription = p.description;
             window.setTimeout(() => {
               try {
                 window.sessionStorage.removeItem(FRESH_ANALYZE_PREFILL_SESSION);
@@ -879,16 +1063,22 @@ export function JobsContent() {
             pendingHubBookmarkIdRef.current = null;
           }
           if (!prefillJobDescription.trim()) {
-            prefillJobDescription = window.localStorage.getItem('applymate_prefill_jd') ?? '';
-            if (prefillJobDescription.trim()) window.localStorage.removeItem('applymate_prefill_jd');
+            prefillJobDescription =
+              window.localStorage.getItem('applymate_prefill_jd') ?? '';
+            if (prefillJobDescription.trim())
+              window.localStorage.removeItem('applymate_prefill_jd');
           }
           if (!prefillTitle.trim()) {
-            prefillTitle = window.localStorage.getItem('applymate_prefill_title') ?? '';
-            if (prefillTitle.trim()) window.localStorage.removeItem('applymate_prefill_title');
+            prefillTitle =
+              window.localStorage.getItem('applymate_prefill_title') ?? '';
+            if (prefillTitle.trim())
+              window.localStorage.removeItem('applymate_prefill_title');
           }
           if (!prefillCompany.trim()) {
-            prefillCompany = window.localStorage.getItem('applymate_prefill_company') ?? '';
-            if (prefillCompany.trim()) window.localStorage.removeItem('applymate_prefill_company');
+            prefillCompany =
+              window.localStorage.getItem('applymate_prefill_company') ?? '';
+            if (prefillCompany.trim())
+              window.localStorage.removeItem('applymate_prefill_company');
           }
         } catch {
           /* ignore */
@@ -897,7 +1087,9 @@ export function JobsContent() {
       setTitle(prefillTitle.trim() ? prefillTitle : form.title);
       setCompany(prefillCompany.trim() ? prefillCompany : form.company);
       const hasPrefillDescription = prefillJobDescription.trim().length > 0;
-      setDescription(hasPrefillDescription ? prefillJobDescription : form.description);
+      setDescription(
+        hasPrefillDescription ? prefillJobDescription : form.description,
+      );
       setAnalysis(hasPrefillDescription ? null : persistedAnalysis);
       if (!hasPrefillDescription && persistedAnalysis) {
         setViewingSavedAnalysis(true);
@@ -950,7 +1142,10 @@ export function JobsContent() {
   useEffect(() => {
     if (!hydrated || !analysis?.id || tailorDraft) return;
     const stored = loadCompletedTailorDraft(tailoringFp);
-    if (stored?.status === 'completed' && stored.cvProfileId === cvProfileIdForTailor) {
+    if (
+      stored?.status === 'completed' &&
+      stored.cvProfileId === cvProfileIdForTailor
+    ) {
       setTailorDraft({ ...stored, jobAnalysisId: analysis.id });
     }
   }, [hydrated, analysis?.id, tailoringFp, tailorDraft, cvProfileIdForTailor]);
@@ -963,7 +1158,12 @@ export function JobsContent() {
 
   const clearForm = () => {
     removeCompletedTailorDraft(
-      tailoringSessionFingerprint((selectedProfileId ?? cv?.id ?? '').trim(), title, company, description),
+      tailoringSessionFingerprint(
+        (selectedProfileId ?? cv?.id ?? '').trim(),
+        title,
+        company,
+        description,
+      ),
     );
     setTitle('');
     setCompany('');
@@ -989,8 +1189,12 @@ export function JobsContent() {
   const recordApplication = useMutation({
     mutationFn: api.applications.create,
     onMutate: async (payload) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.applications.root() });
-      const previous = queryClient.getQueryData<ApplicationItem[]>(queryKeys.applications.root());
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.applications.root(),
+      });
+      const previous = queryClient.getQueryData<ApplicationItem[]>(
+        queryKeys.applications.root(),
+      );
       const optimistic: ApplicationItem = {
         id: `optimistic-${Date.now()}`,
         title: payload.title,
@@ -1000,22 +1204,29 @@ export function JobsContent() {
         status: 'applied',
         createdAt: new Date().toISOString(),
       };
-      queryClient.setQueryData<ApplicationItem[]>(queryKeys.applications.root(), (old = []) => [
-        optimistic,
-        ...old,
-      ]);
+      queryClient.setQueryData<ApplicationItem[]>(
+        queryKeys.applications.root(),
+        (old = []) => [optimistic, ...old],
+      );
       return { previous };
     },
     onError: (_e, _v, ctx) => {
-      queryClient.setQueryData(queryKeys.applications.root(), ctx?.previous ?? []);
+      queryClient.setQueryData(
+        queryKeys.applications.root(),
+        ctx?.previous ?? [],
+      );
     },
     onSuccess: () => {
       invalidateNotificationList(queryClient);
       scheduleUnreadNotificationCountInvalidate(queryClient);
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.applications.root(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.analyses(),
+      });
       invalidateGrowthQueries(queryClient);
       invalidateTodayPlanQueries(queryClient);
     },
@@ -1084,22 +1295,30 @@ export function JobsContent() {
           analysisMergeRef.current = res;
           setAnalysis(res);
           setViewingSavedAnalysis(false);
-          void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
+          void queryClient.invalidateQueries({
+            queryKey: queryKeys.jobs.analyses(),
+          });
           const analysisId = (res.id ?? '').trim();
           const hb = pendingHubBookmarkIdRef.current;
           if (hb && analysisId) {
             pendingHubBookmarkIdRef.current = null;
             void (async () => {
               try {
-                await api.jobDiscovery.patchBookmark(hb, { jobAnalysisId: analysisId });
+                await api.jobDiscovery.patchBookmark(hb, {
+                  jobAnalysisId: analysisId,
+                });
               } catch {
                 try {
-                  await api.users.patchHubBookmark(hb, { jobAnalysisId: analysisId });
+                  await api.users.patchHubBookmark(hb, {
+                    jobAnalysisId: analysisId,
+                  });
                 } catch {
                   /* ignore */
                 }
               }
-              void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
+              void queryClient.invalidateQueries({
+                queryKey: queryKeys.hub.bookmarks(),
+              });
               invalidateTodayPlanQueries(queryClient);
             })();
           } else {
@@ -1120,16 +1339,22 @@ export function JobsContent() {
   };
 
   const tailorDraftForCurrentJob =
-    tailorDraft && analysis?.id && tailorDraft.jobAnalysisId === analysis.id ? tailorDraft : null;
+    tailorDraft && analysis?.id && tailorDraft.jobAnalysisId === analysis.id
+      ? tailorDraft
+      : null;
 
   const tailorSectionComplete = useMemo(
     () =>
       Boolean(
         tailoringCompleted ||
-          analysis?.isTailored ||
-          tailorDraftForCurrentJob?.status === 'completed',
+        analysis?.isTailored ||
+        tailorDraftForCurrentJob?.status === 'completed',
       ),
-    [tailoringCompleted, analysis?.isTailored, tailorDraftForCurrentJob?.status],
+    [
+      tailoringCompleted,
+      analysis?.isTailored,
+      tailorDraftForCurrentJob?.status,
+    ],
   );
 
   const displayScoreBeforeTailor = useMemo(
@@ -1162,511 +1387,641 @@ export function JobsContent() {
 
   return (
     <>
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45 }}
-      className="w-full min-w-0 max-w-full space-y-4 overflow-x-hidden"
-    >
-      <div className="flex gap-6 overflow-x-auto border-b border-[#00C9B1]/10 sm:gap-8">
-        <button
-          type="button"
-          onClick={() => router.replace('/dashboard/jobs')}
-          className={cn(
-            '-mb-px pb-3 text-sm font-semibold transition-colors duration-200 ease-out',
-            jobsTab === 'analyze' ? 'border-b-2 border-[#00C9B1] text-white' : 'text-white/45',
-          )}
-        >
-          Analyze
-        </button>
-        <button
-          type="button"
-          onClick={() => router.replace('/dashboard/jobs?tab=saved')}
-          className={cn(
-            '-mb-px pb-3 text-sm font-semibold transition-colors duration-200 ease-out',
-            jobsTab === 'saved' ? 'border-b-2 border-[#00C9B1] text-white' : 'text-white/45',
-          )}
-        >
-          Applications
-        </button>
-      </div>
-
-      {jobsTab === 'saved' ? (
-        <ApplicationsSavedPanel />
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid w-full min-w-0 gap-4 lg:grid-cols-[40%_1fr]"
-        >
-      <GlowCard contentClassName="p-4 sm:p-5">
-        {cvProfiles.length > 1 ? (
-          <div className="mb-4 rounded-xl border border-[rgba(0,201,177,0.15)] bg-[#111616] px-4 py-3">
-            <p className="text-xs font-semibold text-white/55">Which CV are we matching against?</p>
-            <p className="mt-1 text-[11px] leading-snug text-white/40">
-              Job fit below uses your structured CV. The rubric number is CV quality only — not the same as match % for
-              this role.
-            </p>
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <select
-                className="min-w-[12rem] flex-1 rounded-lg border border-[rgba(0,201,177,0.2)] bg-[#0C0F0F] px-3 py-2 text-sm text-white outline-none focus:border-[#00C9B1]"
-                value={selectedProfileId ?? ''}
-                onChange={(e) => setSelectedProfileId(e.target.value || null)}
-              >
-                {cvProfiles.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-              {selectedProfile ? (
-                <p className="text-xs text-white/45">
-                  {selectedProfile.score !== null ? (
-                    <span>
-                      CV quality:{' '}
-                      <span className="font-semibold text-white">{selectedProfile.score}</span>/100
-                    </span>
-                  ) : (
-                    <span>Not scored yet</span>
-                  )}
-                  {selectedProfile.isDefault ? (
-                    <span className="ml-2 text-[#00C9B1]">· ★ Default</span>
-                  ) : null}
-                </p>
-              ) : null}
-            </div>
-          </div>
-        ) : null}
-        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-          <h2 className="text-lg font-extrabold text-white sm:text-xl">Analyze a Job</h2>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45 }}
+        className="w-full min-w-0 max-w-full space-y-4 overflow-x-hidden"
+      >
+        <div className="flex gap-6 overflow-x-auto border-b border-[#00C9B1]/10 sm:gap-8">
           <button
             type="button"
-            onClick={clearForm}
-            className="text-xs font-medium text-white/45 underline-offset-2 hover:text-white/70 hover:underline"
+            onClick={() => router.replace('/dashboard/jobs')}
+            className={cn(
+              '-mb-px pb-3 text-sm font-semibold transition-colors duration-200 ease-out',
+              jobsTab === 'analyze'
+                ? 'border-b-2 border-[#00C9B1] text-white'
+                : 'text-white/45',
+            )}
           >
-            Clear form
+            Analyze
+          </button>
+          <button
+            type="button"
+            onClick={() => router.replace('/dashboard/jobs?tab=saved')}
+            className={cn(
+              '-mb-px pb-3 text-sm font-semibold transition-colors duration-200 ease-out',
+              jobsTab === 'saved'
+                ? 'border-b-2 border-[#00C9B1] text-white'
+                : 'text-white/45',
+            )}
+          >
+            Applications
           </button>
         </div>
-        <div className="space-y-3">
-          <Input value={title} onChange={setTitle} placeholder="Job Title (optional)" />
-          <Input value={company} onChange={setCompany} placeholder="Company (optional)" />
-          <div className="relative">
-            <textarea
-              className={cn(
-                'h-36 w-full min-w-0 rounded-xl border bg-[#111616] px-3 py-3 pb-8 text-sm text-white outline-none transition focus:shadow-[0_0_0_3px_rgba(0,201,177,0.1)] sm:h-44 sm:px-4',
-                isJobDescriptionOverAiLimit(description.length)
-                  ? 'border-rose-400/40 focus:border-rose-400/50'
-                  : 'border-[#00C9B1]/20 focus:border-[#00C9B1]',
-              )}
-              placeholder="Paste the full job description here..."
-              value={description}
-              maxLength={AI_PROMPT_INPUT_JOB_DESCRIPTION_MAX_CHARS}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-            <span
-              className={cn(
-                'pointer-events-none absolute bottom-2 right-3 text-[11px]',
-                isJobDescriptionOverAiLimit(description.length)
-                  ? 'text-rose-400/80'
-                  : 'text-white/35',
-              )}
-            >
-              {formatJobDescriptionCharCount(description.length)}
-            </span>
-          </div>
-          {error ? <p className="text-xs text-red-300">{error}</p> : null}
-          <Button
-            fullWidth
-            onClick={submit}
-            title={
-              viewingSavedAnalysis
-                ? 'This job is already analyzed. Clear the form to run analysis on another posting.'
-                : undefined
-            }
-            disabled={
-              analyze.isPending ||
-              viewingSavedAnalysis ||
-              (cvProfiles.length > 1 && !selectedProfileId) ||
-              (!aiUsage.isPaidTier && !aiUsage.isLoading && (aiUsage.remaining ?? 0) === 0)
-            }
-          >
-            {analyze.isPending
-              ? 'Analyzing...'
-              : viewingSavedAnalysis
-                ? 'Already analyzed'
-                : !aiUsage.isPaidTier && !aiUsage.isLoading && (aiUsage.remaining ?? 0) === 0
-                  ? 'Daily AI limit reached'
-                  : 'Analyze Job'}
-          </Button>
-        </div>
-        <div className="mt-6">
-          <p className="mb-2 text-sm font-semibold text-white">Recent analyses</p>
-          <div className="space-y-2">
-            {ensureArray<JobHistoryItem>(history.data).slice(0, 6).map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                disabled={historyLoadingId === item.id}
-                onClick={async () => {
-                  setHistoryLoadingId(item.id);
-                  try {
-                    await loadJobById(item.id);
-                  } finally {
-                    setHistoryLoadingId(null);
-                  }
-                }}
-                className="w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-left text-sm text-white/75 hover:bg-white/[0.05] disabled:opacity-50"
-              >
-                <p className="font-medium">{item.company ?? 'Unknown company'}</p>
-                <p className="text-xs text-white/45">
-                  {historyLoadingId === item.id ? 'Loading…' : item.jobTitle || item.title || 'Untitled role'}
-                </p>
-              </button>
-            ))}
-          </div>
-        </div>
-      </GlowCard>
 
-      <GlowCard contentClassName="min-w-0 p-4 sm:p-6">
-        {!analysis ? (
-          <div className="flex h-full min-h-[480px] flex-col items-center justify-center text-center">
-            <Search className="mb-3 h-16 w-16 text-[#00C9B1]" />
-            <p className="text-lg font-semibold text-white">Paste a job description to see your match score</p>
-          </div>
+        {jobsTab === 'saved' ? (
+          <ApplicationsSavedPanel />
         ) : (
-          <div className="space-y-4">
-            <JobAnalysisCard
-              key={analysis.id}
-              analysis={analysis}
-              rematchInProgress={rematching}
-              scoreBeforeTailor={displayScoreBeforeTailor}
-              isTailored={analysis?.isTailored === true}
-              acceptedSkillNames={acceptedSkillNames}
-              showTailorAction={true}
-            />
-            <div className="min-w-0 max-w-full overflow-x-hidden rounded-2xl border border-[#00C9B1]/15 bg-[#0C0F0F] p-4 sm:p-6">
-              {(analysis.missingSkills ?? []).length === 0 ? (
-                <>
-                  <h3 className="mb-3 text-sm font-semibold text-white">Tailor your CV to this job</h3>
-                  <p className="text-xs text-white/45">No skill gaps were returned for this job.</p>
-                </>
-              ) : analysis?.isTailored === true ? (
-                <>
-                  <div className="mb-4 flex items-start gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2.5">
-                    <span className="mt-0.5 text-emerald-400" aria-hidden>
-                      ✓
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold text-white">CV tailored for this role</p>
-                      <p className="mt-1 text-xs text-white/50">
-                        Changes are saved on your CV.
-                        {tailorDraftForCurrentJob
-                          ? ' Open the panel to review before/after sections and export.'
-                          : ' If section details don’t load, use Refresh match score — your tailored CV is still on file.'}
-                      </p>
-                      {displayScoreBeforeTailor != null && Number.isFinite(displayScoreBeforeTailor) ? (
-                        <p
-                          className={cn(
-                            'mt-2 text-xs',
-                            analysis.matchScore > displayScoreBeforeTailor
-                              ? 'text-emerald-200/90'
-                              : analysis.matchScore === displayScoreBeforeTailor
-                                ? 'text-white/45'
-                                : 'text-amber-200/85',
-                          )}
-                        >
-                          Job fit: {Math.round(displayScoreBeforeTailor)}% → {Math.round(analysis.matchScore)}
-                          {analysis.matchScore === displayScoreBeforeTailor ? ' (no change)' : ''}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-                  {tailorDraftForCurrentJob ? (
-                    <Button type="button" fullWidth className="gap-2" onClick={() => setTailorSidebarOpen(true)}>
-                      <span className="text-base leading-none" aria-hidden>
-                        ✦
-                      </span>
-                      View tailored CV & changes
-                    </Button>
-                  ) : null}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    fullWidth
-                    className={cn('gap-2', tailorDraftForCurrentJob && 'mt-2')}
-                    disabled={rematching || analyze.isPending}
-                    onClick={() => void rematchJobToUpdatedCv()}
-                  >
-                    {rematching ? (
-                      <>
-                        <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
-                        Refreshing match…
-                      </>
-                    ) : (
-                      'Refresh match score'
-                    )}
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <h3 className="mb-3 text-sm font-semibold text-white">Tailor your CV to this job</h3>
-                  <p className="mb-3 text-xs text-white/50">
-                    Select which gaps to address. Critical and high-importance skills are pre-selected.
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="grid w-full min-w-0 gap-4 lg:grid-cols-[40%_1fr]"
+          >
+            <GlowCard contentClassName="p-4 sm:p-5">
+              {cvProfiles.length > 1 ? (
+                <div className="mb-4 rounded-xl border border-[rgba(0,201,177,0.15)] bg-[#111616] px-4 py-3">
+                  <p className="text-xs font-semibold text-white/55">
+                    Which CV are we matching against?
                   </p>
-                  <div className="flex flex-col gap-2">
-                    {(analysis.missingSkills ?? []).map((skill) => {
-                      const checked = selectedSkillNames.includes(skill.name);
-                      const badgeVariant =
-                        skill.importance === 'CRITICAL' || skill.importance === 'HIGH'
-                          ? 'red'
-                          : skill.importance === 'MEDIUM'
-                            ? 'amber'
-                            : 'muted';
-                      return (
-                        <label
-                          key={skill.name}
-                          className={cn(
-                            'flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition',
-                            checked
-                              ? 'border-[#00C9B1]/35 bg-[rgba(0,201,177,0.07)]'
-                              : 'border-white/10 bg-white/[0.02] hover:border-white/15',
-                          )}
-                        >
-                          <input
-                            type="checkbox"
-                            className="h-4 w-4 shrink-0 rounded border-white/20 bg-[#111616] text-[#00C9B1] focus:ring-[#00C9B1]/40"
-                            checked={checked}
-                            onChange={() => toggleSkillSelected(skill.name)}
-                          />
-                          <span className="min-w-0 flex-1 text-sm text-white/90">{skill.name}</span>
-                          <Badge variant={badgeVariant}>{skill.importance}</Badge>
-                        </label>
-                      );
-                    })}
-                  </div>
-                  <Button
-                    type="button"
-                    fullWidth
-                    className="mt-4 gap-2"
-                    disabled={
-                      tailorSubmitting ||
-                      selectedSkillNames.length === 0 ||
-                      !jobAnalysisIdForTailor ||
-                      (!cvProfileIdForTailor && !cvBootstrapPending) ||
-                      (cvProfiles.length > 1 && !selectedProfileId) ||
-                      tailorAiBlocked
-                    }
-                    title={
-                      !jobAnalysisIdForTailor
-                        ? 'This analysis is not linked to a saved job record yet — open this job from Recent analyses, or Clear form and run Analyze again.'
-                        : tailorAiBlocked
-                          ? DAILY_AI_LIMIT_REACHED_MESSAGE
-                          : cvProfiles.length > 1 && !selectedProfileId
-                            ? 'Choose which CV to tailor in the dropdown above.'
-                            : !cvProfileIdForTailor && !cvBootstrapPending
-                              ? 'Upload or select a CV profile first.'
-                              : selectedSkillNames.length === 0
-                                ? 'Select at least one skill gap to tailor toward.'
-                                : undefined
-                    }
-                    onClick={() => void handleCreateTailorDraft()}
-                  >
-                    {tailorSubmitting ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <span className="text-base leading-none" aria-hidden>
-                        ✦
-                      </span>
-                    )}
-                    {tailorSubmitting
-                      ? 'Tailoring…'
-                      : tailorDraftForCurrentJob
-                        ? 'Re-tailor CV'
-                        : 'Tailor to Job'}
-                  </Button>
-                  {analysis && !jobAnalysisIdForTailor ? (
-                    <p className="mt-2 text-xs text-amber-200/85">
-                      Tailoring needs a saved job id. We try to attach it from Recent analyses automatically — if this
-                      stays disabled, click this job in the list on the left, or use{' '}
-                      <span className="font-semibold text-white/90">Clear form</span> and run{' '}
-                      <span className="font-semibold text-white/90">Analyze Job</span> once more.
-                    </p>
-                  ) : null}
-                  {tailorDraftForCurrentJob ? (
-                    <button
-                      type="button"
-                      onClick={() => setTailorSidebarOpen(true)}
-                      className="mt-3 w-full rounded-xl border border-white/15 bg-transparent py-2 text-center text-xs font-semibold text-[#00C9B1] transition hover:border-[#00C9B1]/40 hover:bg-[#00C9B1]/5"
+                  <p className="mt-1 text-[11px] leading-snug text-white/40">
+                    Job fit below uses your structured CV. The rubric number is
+                    CV quality only — not the same as match % for this role.
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-3">
+                    <select
+                      className="min-w-[12rem] flex-1 rounded-lg border border-[rgba(0,201,177,0.2)] bg-[#0C0F0F] px-3 py-2 text-sm text-white outline-none focus:border-[#00C9B1]"
+                      value={selectedProfileId ?? ''}
+                      onChange={(e) =>
+                        setSelectedProfileId(e.target.value || null)
+                      }
                     >
-                      Resume tailoring →
-                    </button>
-                  ) : null}
-                </>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                title={
-                  hasCoverLetter
-                    ? 'You already have a cover letter for this job. Clear the form to generate another.'
-                    : undefined
-                }
-                disabled={
-                  hasCoverLetter ||
-                  generate.isPending ||
-                  recordApplication.isPending ||
-                  (!aiUsage.isPaidTier && !aiUsage.isLoading && (aiUsage.remaining ?? 0) === 0)
-                }
-                onClick={() => {
-                  if (!canUseAiFromDailyAiUsage(aiUsage)) {
-                    toast.error(DAILY_AI_LIMIT_REACHED_MESSAGE);
-                    return;
-                  }
-                  generate.mutate(
-                    {
-                      title,
-                      company,
-                      description,
-                      questions: [],
-                      ...(analysis?.id?.trim() ? { jobAnalysisId: analysis.id.trim() } : {}),
-                    },
-                    {
-                      onSuccess: async (res) => {
-                        const raw = normalizeText(res.coverLetter as unknown).trim();
-                        const letter = raw !== '' ? raw : 'Generated content received.';
-                        setGenerated(letter);
-                        try {
-                          await recordApplication.mutateAsync({
-                            title: title || 'Untitled role',
-                            company: company || 'Unknown company',
-                            url: '',
-                            matchScore: analysis.matchScore,
-                          });
-                          toast.success('Job saved to your list');
-                          trackFunnelEvent('apply_completed', {
-                            jobAnalysisId: analysis.id ?? null,
-                            title,
-                            company,
-                          });
-                          void api.growth.trackEvent({
-                            eventName: 'apply_completed',
-                            context: { jobAnalysisId: analysis.id ?? null, title, company },
-                          });
-                          void consumeGrowthFeedback();
-                        } catch {
-                          toast.error(
-                            'Cover letter is ready, but it could not be saved to your tracker. You can still copy or download it below.',
-                          );
-                        } finally {
-                          void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
-                          invalidateTodayPlanQueries(queryClient);
-                        }
-                      },
-                      onError: (err) => {
-                        toast.error(getApiErrorMessage(err));
-                        queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
-                      },
-                    },
-                  );
-                }}
-              >
-                {recordApplication.isPending
-                  ? 'Saving...'
-                  : generate.isPending
-                  ? 'Generating...'
-                  : hasCoverLetter
-                    ? 'Cover letter ready'
-                    : !aiUsage.isPaidTier && !aiUsage.isLoading && (aiUsage.remaining ?? 0) === 0
-                      ? 'Daily AI limit reached'
-                      : 'Generate cover letter'}
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  const qp = new URLSearchParams();
-                  const analysisId = (analysis?.id ?? '').trim();
-                  const preferredCv = (
-                    analysis?.tailoredCvProfileId ??
-                    analysis?.sourceCvProfileId ??
-                    analysis?.cvProfileId ??
-                    selectedProfileId ??
-                    cv?.id ??
-                    ''
-                  ).trim();
-                  const analyzedCv = (analysis?.sourceCvProfileId ?? analysis?.cvProfileId ?? '').trim();
-                  const baseCv = (analysis?.cvProfileId ?? selectedProfileId ?? cv?.id ?? '').trim();
-                  if (analysisId) qp.set('jobAnalysisId', analysisId);
-                  if (title.trim()) qp.set('jobTitle', title.trim());
-                  if (company.trim()) qp.set('company', company.trim());
-                  if (preferredCv) {
-                    qp.set('preferredCvProfileId', preferredCv);
-                    qp.set('tailoringCvProfileId', preferredCv);
-                  }
-                  if (analyzedCv) qp.set('analyzedCvProfileId', analyzedCv);
-                  if (baseCv) qp.set('cvProfileId', baseCv);
-                  router.push(`/dashboard/interview${qp.toString() ? `?${qp.toString()}` : ''}`);
-                }}
-              >
-                Start Mock Interview
-              </Button>
-            </div>
-            {hasCoverLetter ? (
-              <div className="overflow-hidden rounded-xl border border-[#00C9B1]/20 bg-gradient-to-b from-[#121a1a]/95 to-[#0c1212] shadow-[inset_0_1px_0_rgba(0,201,177,0.08)]">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#00C9B1]/12 bg-[rgba(0,201,177,0.06)] px-4 py-3">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Cover letter</p>
-                    <p className="text-xs text-white/40">Copy, download as PDF, or edit before you apply</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => void copyCoverLetter()}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/12 bg-[#111616]/80 px-3 py-2 text-xs font-semibold text-white/85 transition hover:border-[#00C9B1]/40 hover:bg-[#00C9B1]/10 hover:text-white"
-                    >
-                      <Copy className="h-3.5 w-3.5 text-[#00C9B1]" strokeWidth={2} />
-                      Copy
-                    </button>
-                    <button
-                      type="button"
-                      onClick={saveCoverLetterPdf}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/12 bg-[#111616]/80 px-3 py-2 text-xs font-semibold text-white/85 transition hover:border-[#00C9B1]/40 hover:bg-[#00C9B1]/10 hover:text-white"
-                    >
-                      <FileDown className="h-3.5 w-3.5 text-[#00C9B1]" strokeWidth={2} />
-                      PDF
-                    </button>
+                      {cvProfiles.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedProfile ? (
+                      <p className="text-xs text-white/45">
+                        {selectedProfile.score !== null ? (
+                          <span>
+                            CV quality:{' '}
+                            <span className="font-semibold text-white">
+                              {selectedProfile.score}
+                            </span>
+                            /100
+                          </span>
+                        ) : (
+                          <span>Not scored yet</span>
+                        )}
+                        {selectedProfile.isDefault ? (
+                          <span className="ml-2 text-[#00C9B1]">
+                            · ★ Default
+                          </span>
+                        ) : null}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
-                <div className="max-h-[min(52vh,520px)] overflow-y-auto px-4 py-4">
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-white/80">{coverLetterDisplay}</p>
+              ) : null}
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                <h2 className="text-lg font-extrabold text-white sm:text-xl">
+                  Analyze a Job
+                </h2>
+                <button
+                  type="button"
+                  onClick={clearForm}
+                  className="text-xs font-medium text-white/45 underline-offset-2 hover:text-white/70 hover:underline"
+                >
+                  Clear form
+                </button>
+              </div>
+              <div className="space-y-3">
+                <Input
+                  value={title}
+                  onChange={setTitle}
+                  placeholder="Job Title (optional)"
+                />
+                <Input
+                  value={company}
+                  onChange={setCompany}
+                  placeholder="Company (optional)"
+                />
+                <div className="relative">
+                  <textarea
+                    className={cn(
+                      'h-36 w-full min-w-0 rounded-xl border bg-[#111616] px-3 py-3 pb-8 text-sm text-white outline-none transition focus:shadow-[0_0_0_3px_rgba(0,201,177,0.1)] sm:h-44 sm:px-4',
+                      isJobDescriptionOverAiLimit(description.length)
+                        ? 'border-rose-400/40 focus:border-rose-400/50'
+                        : 'border-[#00C9B1]/20 focus:border-[#00C9B1]',
+                    )}
+                    placeholder="Paste the full job description here..."
+                    value={description}
+                    maxLength={AI_PROMPT_INPUT_JOB_DESCRIPTION_MAX_CHARS}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
+                  <span
+                    className={cn(
+                      'pointer-events-none absolute bottom-2 right-3 text-[11px]',
+                      isJobDescriptionOverAiLimit(description.length)
+                        ? 'text-rose-400/80'
+                        : 'text-white/35',
+                    )}
+                  >
+                    {formatJobDescriptionCharCount(description.length)}
+                  </span>
+                </div>
+                {error ? <p className="text-xs text-red-300">{error}</p> : null}
+                <Button
+                  fullWidth
+                  onClick={submit}
+                  title={
+                    viewingSavedAnalysis
+                      ? 'This job is already analyzed. Clear the form to run analysis on another posting.'
+                      : undefined
+                  }
+                  disabled={
+                    analyze.isPending ||
+                    viewingSavedAnalysis ||
+                    (cvProfiles.length > 1 && !selectedProfileId) ||
+                    (!aiUsage.isPaidTier &&
+                      !aiUsage.isLoading &&
+                      (aiUsage.remaining ?? 0) === 0)
+                  }
+                >
+                  {analyze.isPending
+                    ? 'Analyzing...'
+                    : viewingSavedAnalysis
+                      ? 'Already analyzed'
+                      : !aiUsage.isPaidTier &&
+                          !aiUsage.isLoading &&
+                          (aiUsage.remaining ?? 0) === 0
+                        ? 'Daily AI limit reached'
+                        : 'Analyze Job'}
+                </Button>
+              </div>
+              <div className="mt-6">
+                <p className="mb-2 text-sm font-semibold text-white">
+                  Recent analyses
+                </p>
+                <div className="space-y-2">
+                  {ensureArray<JobHistoryItem>(history.data)
+                    .slice(0, 6)
+                    .map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        disabled={historyLoadingId === item.id}
+                        onClick={async () => {
+                          setHistoryLoadingId(item.id);
+                          try {
+                            await loadJobById(item.id);
+                          } finally {
+                            setHistoryLoadingId(null);
+                          }
+                        }}
+                        className="w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-left text-sm text-white/75 hover:bg-white/[0.05] disabled:opacity-50"
+                      >
+                        <p className="font-medium">
+                          {item.company ?? 'Unknown company'}
+                        </p>
+                        <p className="text-xs text-white/45">
+                          {historyLoadingId === item.id
+                            ? 'Loading…'
+                            : item.jobTitle || item.title || 'Untitled role'}
+                        </p>
+                      </button>
+                    ))}
                 </div>
               </div>
-            ) : null}
-          </div>
+            </GlowCard>
+
+            <GlowCard contentClassName="min-w-0 p-4 sm:p-6">
+              {!analysis ? (
+                <div className="flex h-full min-h-[480px] flex-col items-center justify-center text-center">
+                  <Search className="mb-3 h-16 w-16 text-[#00C9B1]" />
+                  <p className="text-lg font-semibold text-white">
+                    Paste a job description to see your match score
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <JobAnalysisCard
+                    key={analysis.id}
+                    analysis={analysis}
+                    rematchInProgress={rematching}
+                    scoreBeforeTailor={displayScoreBeforeTailor}
+                    isTailored={analysis?.isTailored === true}
+                    acceptedSkillNames={acceptedSkillNames}
+                    showTailorAction={true}
+                  />
+                  <div className="min-w-0 max-w-full overflow-x-hidden rounded-2xl border border-[#00C9B1]/15 bg-[#0C0F0F] p-4 sm:p-6">
+                    {(analysis.missingSkills ?? []).length === 0 ? (
+                      <>
+                        <h3 className="mb-3 text-sm font-semibold text-white">
+                          Tailor your CV to this job
+                        </h3>
+                        <p className="text-xs text-white/45">
+                          No skill gaps were returned for this job.
+                        </p>
+                      </>
+                    ) : analysis?.isTailored === true ? (
+                      <>
+                        <div className="mb-4 flex items-start gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2.5">
+                          <span className="mt-0.5 text-emerald-400" aria-hidden>
+                            ✓
+                          </span>
+                          <div>
+                            <p className="text-sm font-semibold text-white">
+                              CV tailored for this role
+                            </p>
+                            <p className="mt-1 text-xs text-white/50">
+                              Changes are saved on your CV.
+                              {tailorDraftForCurrentJob
+                                ? ' Open the panel to review before/after sections and export.'
+                                : ' If section details don’t load, use Refresh match score — your tailored CV is still on file.'}
+                            </p>
+                            {displayScoreBeforeTailor != null &&
+                            Number.isFinite(displayScoreBeforeTailor) ? (
+                              <p
+                                className={cn(
+                                  'mt-2 text-xs',
+                                  analysis.matchScore > displayScoreBeforeTailor
+                                    ? 'text-emerald-200/90'
+                                    : analysis.matchScore ===
+                                        displayScoreBeforeTailor
+                                      ? 'text-white/45'
+                                      : 'text-amber-200/85',
+                                )}
+                              >
+                                Job fit: {Math.round(displayScoreBeforeTailor)}%
+                                → {Math.round(analysis.matchScore)}
+                                {analysis.matchScore ===
+                                displayScoreBeforeTailor
+                                  ? ' (no change)'
+                                  : ''}
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                        {tailorDraftForCurrentJob ? (
+                          <Button
+                            type="button"
+                            fullWidth
+                            className="gap-2"
+                            onClick={() => setTailorSidebarOpen(true)}
+                          >
+                            <span
+                              className="text-base leading-none"
+                              aria-hidden
+                            >
+                              ✦
+                            </span>
+                            View tailored CV & changes
+                          </Button>
+                        ) : null}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          fullWidth
+                          className={cn(
+                            'gap-2',
+                            tailorDraftForCurrentJob && 'mt-2',
+                          )}
+                          disabled={rematching || analyze.isPending}
+                          onClick={() => void rematchJobToUpdatedCv()}
+                        >
+                          {rematching ? (
+                            <>
+                              <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                              Refreshing match…
+                            </>
+                          ) : (
+                            'Refresh match score'
+                          )}
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="mb-3 text-sm font-semibold text-white">
+                          Tailor your CV to this job
+                        </h3>
+                        <p className="mb-3 text-xs text-white/50">
+                          Select which gaps to address. Critical and
+                          high-importance skills are pre-selected.
+                        </p>
+                        <div className="flex flex-col gap-2">
+                          {(analysis.missingSkills ?? []).map((skill) => {
+                            const checked = selectedSkillNames.includes(
+                              skill.name,
+                            );
+                            const badgeVariant =
+                              skill.importance === 'CRITICAL' ||
+                              skill.importance === 'HIGH'
+                                ? 'red'
+                                : skill.importance === 'MEDIUM'
+                                  ? 'amber'
+                                  : 'muted';
+                            return (
+                              <label
+                                key={skill.name}
+                                className={cn(
+                                  'flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition',
+                                  checked
+                                    ? 'border-[#00C9B1]/35 bg-[rgba(0,201,177,0.07)]'
+                                    : 'border-white/10 bg-white/[0.02] hover:border-white/15',
+                                )}
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 shrink-0 rounded border-white/20 bg-[#111616] text-[#00C9B1] focus:ring-[#00C9B1]/40"
+                                  checked={checked}
+                                  onChange={() =>
+                                    toggleSkillSelected(skill.name)
+                                  }
+                                />
+                                <span className="min-w-0 flex-1 text-sm text-white/90">
+                                  {skill.name}
+                                </span>
+                                <Badge variant={badgeVariant}>
+                                  {skill.importance}
+                                </Badge>
+                              </label>
+                            );
+                          })}
+                        </div>
+                        <Button
+                          type="button"
+                          fullWidth
+                          className="mt-4 gap-2"
+                          disabled={
+                            tailorSubmitting ||
+                            selectedSkillNames.length === 0 ||
+                            !jobAnalysisIdForTailor ||
+                            (!cvProfileIdForTailor && !cvBootstrapPending) ||
+                            (cvProfiles.length > 1 && !selectedProfileId) ||
+                            tailorAiBlocked
+                          }
+                          title={
+                            !jobAnalysisIdForTailor
+                              ? 'This analysis is not linked to a saved job record yet — open this job from Recent analyses, or Clear form and run Analyze again.'
+                              : tailorAiBlocked
+                                ? DAILY_AI_LIMIT_REACHED_MESSAGE
+                                : cvProfiles.length > 1 && !selectedProfileId
+                                  ? 'Choose which CV to tailor in the dropdown above.'
+                                  : !cvProfileIdForTailor && !cvBootstrapPending
+                                    ? 'Upload or select a CV profile first.'
+                                    : selectedSkillNames.length === 0
+                                      ? 'Select at least one skill gap to tailor toward.'
+                                      : undefined
+                          }
+                          onClick={() => void handleCreateTailorDraft()}
+                        >
+                          {tailorSubmitting ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <span
+                              className="text-base leading-none"
+                              aria-hidden
+                            >
+                              ✦
+                            </span>
+                          )}
+                          {tailorSubmitting
+                            ? 'Tailoring…'
+                            : tailorDraftForCurrentJob
+                              ? 'Re-tailor CV'
+                              : 'Tailor to Job'}
+                        </Button>
+                        {analysis && !jobAnalysisIdForTailor ? (
+                          <p className="mt-2 text-xs text-amber-200/85">
+                            Tailoring needs a saved job id. We try to attach it
+                            from Recent analyses automatically — if this stays
+                            disabled, click this job in the list on the left, or
+                            use{' '}
+                            <span className="font-semibold text-white/90">
+                              Clear form
+                            </span>{' '}
+                            and run{' '}
+                            <span className="font-semibold text-white/90">
+                              Analyze Job
+                            </span>{' '}
+                            once more.
+                          </p>
+                        ) : null}
+                        {tailorDraftForCurrentJob ? (
+                          <button
+                            type="button"
+                            onClick={() => setTailorSidebarOpen(true)}
+                            className="mt-3 w-full rounded-xl border border-white/15 bg-transparent py-2 text-center text-xs font-semibold text-[#00C9B1] transition hover:border-[#00C9B1]/40 hover:bg-[#00C9B1]/5"
+                          >
+                            Resume tailoring →
+                          </button>
+                        ) : null}
+                      </>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      title={
+                        hasCoverLetter
+                          ? 'You already have a cover letter for this job. Clear the form to generate another.'
+                          : undefined
+                      }
+                      disabled={
+                        hasCoverLetter ||
+                        generate.isPending ||
+                        recordApplication.isPending ||
+                        (!aiUsage.isPaidTier &&
+                          !aiUsage.isLoading &&
+                          (aiUsage.remaining ?? 0) === 0)
+                      }
+                      onClick={() => {
+                        if (!canUseAiFromDailyAiUsage(aiUsage)) {
+                          toast.error(DAILY_AI_LIMIT_REACHED_MESSAGE);
+                          return;
+                        }
+                        generate.mutate(
+                          {
+                            title,
+                            company,
+                            description,
+                            questions: [],
+                            ...(analysis?.id?.trim()
+                              ? { jobAnalysisId: analysis.id.trim() }
+                              : {}),
+                          },
+                          {
+                            onSuccess: async (res) => {
+                              const raw = normalizeText(
+                                res.coverLetter as unknown,
+                              ).trim();
+                              const letter =
+                                raw !== ''
+                                  ? raw
+                                  : 'Generated content received.';
+                              setGenerated(letter);
+                              try {
+                                await recordApplication.mutateAsync({
+                                  title: title || 'Untitled role',
+                                  company: company || 'Unknown company',
+                                  url: '',
+                                  matchScore: analysis.matchScore,
+                                });
+                                toast.success('Job saved to your list');
+                                trackFunnelEvent('apply_completed', {
+                                  jobAnalysisId: analysis.id ?? null,
+                                  title,
+                                  company,
+                                });
+                                void api.growth.trackEvent({
+                                  eventName: 'apply_completed',
+                                  context: {
+                                    jobAnalysisId: analysis.id ?? null,
+                                    title,
+                                    company,
+                                  },
+                                });
+                                void consumeGrowthFeedback();
+                              } catch {
+                                toast.error(
+                                  'Cover letter is ready, but it could not be saved to your tracker. You can still copy or download it below.',
+                                );
+                              } finally {
+                                void queryClient.invalidateQueries({
+                                  queryKey: queryKeys.jobs.analyses(),
+                                });
+                                invalidateTodayPlanQueries(queryClient);
+                              }
+                            },
+                            onError: (err) => {
+                              toast.error(getApiErrorMessage(err));
+                              queryClient.invalidateQueries({
+                                queryKey: queryKeys.auth.me(),
+                              });
+                            },
+                          },
+                        );
+                      }}
+                    >
+                      {recordApplication.isPending
+                        ? 'Saving...'
+                        : generate.isPending
+                          ? 'Generating...'
+                          : hasCoverLetter
+                            ? 'Cover letter ready'
+                            : !aiUsage.isPaidTier &&
+                                !aiUsage.isLoading &&
+                                (aiUsage.remaining ?? 0) === 0
+                              ? 'Daily AI limit reached'
+                              : 'Generate cover letter'}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        const qp = new URLSearchParams();
+                        const analysisId = (analysis?.id ?? '').trim();
+                        const preferredCv = (
+                          analysis?.tailoredCvProfileId ??
+                          analysis?.sourceCvProfileId ??
+                          analysis?.cvProfileId ??
+                          selectedProfileId ??
+                          cv?.id ??
+                          ''
+                        ).trim();
+                        const analyzedCv = (
+                          analysis?.sourceCvProfileId ??
+                          analysis?.cvProfileId ??
+                          ''
+                        ).trim();
+                        const baseCv = (
+                          analysis?.cvProfileId ??
+                          selectedProfileId ??
+                          cv?.id ??
+                          ''
+                        ).trim();
+                        if (analysisId) qp.set('jobAnalysisId', analysisId);
+                        if (title.trim()) qp.set('jobTitle', title.trim());
+                        if (company.trim()) qp.set('company', company.trim());
+                        if (preferredCv) {
+                          qp.set('preferredCvProfileId', preferredCv);
+                          qp.set('tailoringCvProfileId', preferredCv);
+                        }
+                        if (analyzedCv)
+                          qp.set('analyzedCvProfileId', analyzedCv);
+                        if (baseCv) qp.set('cvProfileId', baseCv);
+                        router.push(
+                          `/dashboard/interview${qp.toString() ? `?${qp.toString()}` : ''}`,
+                        );
+                      }}
+                    >
+                      Start Mock Interview
+                    </Button>
+                  </div>
+                  {hasCoverLetter ? (
+                    <div className="overflow-hidden rounded-xl border border-[#00C9B1]/20 bg-gradient-to-b from-[#121a1a]/95 to-[#0c1212] shadow-[inset_0_1px_0_rgba(0,201,177,0.08)]">
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#00C9B1]/12 bg-[rgba(0,201,177,0.06)] px-4 py-3">
+                        <div>
+                          <p className="text-sm font-semibold text-white">
+                            Cover letter
+                          </p>
+                          <p className="text-xs text-white/40">
+                            Copy, download as PDF, or edit before you apply
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void copyCoverLetter()}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-white/12 bg-[#111616]/80 px-3 py-2 text-xs font-semibold text-white/85 transition hover:border-[#00C9B1]/40 hover:bg-[#00C9B1]/10 hover:text-white"
+                          >
+                            <Copy
+                              className="h-3.5 w-3.5 text-[#00C9B1]"
+                              strokeWidth={2}
+                            />
+                            Copy
+                          </button>
+                          <button
+                            type="button"
+                            onClick={saveCoverLetterPdf}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-white/12 bg-[#111616]/80 px-3 py-2 text-xs font-semibold text-white/85 transition hover:border-[#00C9B1]/40 hover:bg-[#00C9B1]/10 hover:text-white"
+                          >
+                            <FileDown
+                              className="h-3.5 w-3.5 text-[#00C9B1]"
+                              strokeWidth={2}
+                            />
+                            PDF
+                          </button>
+                        </div>
+                      </div>
+                      <div className="max-h-[min(52vh,520px)] overflow-y-auto px-4 py-4">
+                        <p className="whitespace-pre-wrap text-sm leading-relaxed text-white/80">
+                          {coverLetterDisplay}
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </GlowCard>
+          </motion.div>
         )}
-      </GlowCard>
-        </motion.div>
-      )}
-    </motion.div>
-    <CvTailoringSidebar
-      open={tailorSidebarOpen}
-      onClose={() => setTailorSidebarOpen(false)}
-      draft={tailorDraft}
-      onTailorMutation={applyTailorMutation}
-      jobTitle={analysis?.title ?? title}
-      jobCompany={analysis?.company ?? company}
-      exportTemplate={selectedProfile?.template ?? cv?.template ?? null}
-      onTailoringCvPersisted={() => {
-        scheduleRematchAfterTailoring();
-        void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
-        invalidateTodayPlanQueries(queryClient);
-      }}
-      scoreBeforeTailor={displayScoreBeforeTailor}
-      currentScore={analysis?.matchScore ?? null}
-      tailoredCvName={analysis?.tailoredCvName ?? tailorDraft?.tailoredCvName ?? null}
-      jobAnalysisId={jobAnalysisIdForTailor || null}
-      isTailored={analysis?.isTailored === true}
-      missingSkills={analysis?.missingSkills ?? []}
-    />
+      </motion.div>
+      <CvTailoringSidebar
+        open={tailorSidebarOpen}
+        onClose={() => setTailorSidebarOpen(false)}
+        draft={tailorDraft}
+        onTailorMutation={applyTailorMutation}
+        jobTitle={analysis?.title ?? title}
+        jobCompany={analysis?.company ?? company}
+        exportTemplate={selectedProfile?.template ?? cv?.template ?? null}
+        onTailoringCvPersisted={() => {
+          scheduleRematchAfterTailoring();
+          void queryClient.invalidateQueries({
+            queryKey: queryKeys.jobs.analyses(),
+          });
+          invalidateTodayPlanQueries(queryClient);
+        }}
+        scoreBeforeTailor={displayScoreBeforeTailor}
+        currentScore={analysis?.matchScore ?? null}
+        tailoredCvName={
+          analysis?.tailoredCvName ?? tailorDraft?.tailoredCvName ?? null
+        }
+        jobAnalysisId={jobAnalysisIdForTailor || null}
+        isTailored={analysis?.isTailored === true}
+        missingSkills={analysis?.missingSkills ?? []}
+      />
     </>
   );
 }

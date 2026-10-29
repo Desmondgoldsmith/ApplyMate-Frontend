@@ -4,7 +4,12 @@ import { cn } from '@/lib/utils';
 import { JobHubBadges } from './JobHubBadges';
 import { JobHubRowMenu } from './JobHubRowMenu';
 
-import { HUB_STAGE_LABELS, HUB_STAGES, type HubStage, type TrackedJob } from './jobHubMerge';
+import {
+  HUB_STAGE_LABELS,
+  HUB_STAGES,
+  type HubStage,
+  type TrackedJob,
+} from './jobHubMerge';
 
 function formatDate(iso: string | null) {
   if (!iso) return '—';
@@ -44,7 +49,9 @@ export function JobHubTable({
 }: Props) {
   if (jobs.length === 0) {
     return (
-      <p className="py-12 text-center text-sm text-white/45">No jobs match this filter.</p>
+      <p className="py-12 text-center text-sm text-white/45">
+        No jobs match this filter.
+      </p>
     );
   }
 
@@ -82,7 +89,9 @@ export function JobHubTable({
                 </td>
                 <td className="px-4 py-3 text-white/75">{row.company}</td>
                 <td className="px-4 py-3 tabular-nums text-white/80">
-                  {row.matchScore != null ? `${Math.round(row.matchScore)}%` : '—'}
+                  {row.matchScore != null
+                    ? `${Math.round(row.matchScore)}%`
+                    : '—'}
                 </td>
                 <td
                   className="px-4 py-3"
@@ -91,7 +100,9 @@ export function JobHubTable({
                 >
                   <select
                     value={row.stage}
-                    onChange={(e) => onStageChange(row, e.target.value as HubStage)}
+                    onChange={(e) =>
+                      onStageChange(row, e.target.value as HubStage)
+                    }
                     className="max-w-[200px] rounded-lg border border-white/15 bg-[#111616] px-2 py-1.5 text-xs text-white focus:border-[#00C9B1]/50 focus:outline-none"
                   >
                     {HUB_STAGES.map((s) => (
@@ -101,7 +112,9 @@ export function JobHubTable({
                     ))}
                   </select>
                 </td>
-                <td className="px-4 py-3 tabular-nums text-white/50">{formatDate(row.createdAt)}</td>
+                <td className="px-4 py-3 tabular-nums text-white/50">
+                  {formatDate(row.createdAt)}
+                </td>
                 <td
                   className="px-4 py-3 text-right"
                   onClick={(e) => e.stopPropagation()}

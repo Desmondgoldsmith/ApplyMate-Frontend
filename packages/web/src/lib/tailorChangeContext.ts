@@ -23,7 +23,9 @@ function strField(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-export function parseTailorExperienceItems(raw: string): TailorExperienceItem[] {
+export function parseTailorExperienceItems(
+  raw: string,
+): TailorExperienceItem[] {
   const parsed = parseSectionJson(raw);
   if (!parsed || typeof parsed !== 'object') return [];
   const items = (parsed as { items?: unknown }).items;
@@ -40,9 +42,22 @@ export function parseTailorExperienceItems(raw: string): TailorExperienceItem[] 
       const roleLabel = strField(x.roleLabel ?? x.role_label);
       const current = x.current === true;
       const bullets = Array.isArray(x.bullets)
-        ? x.bullets.filter((b): b is string => typeof b === 'string' && b.trim().length > 0).map((b) => b.trim())
+        ? x.bullets
+            .filter(
+              (b): b is string => typeof b === 'string' && b.trim().length > 0,
+            )
+            .map((b) => b.trim())
         : [];
-      return { title, company, startDate, endDate, duration, roleLabel, current, bullets };
+      return {
+        title,
+        company,
+        startDate,
+        endDate,
+        duration,
+        roleLabel,
+        current,
+        bullets,
+      };
     })
     .filter((x): x is TailorExperienceItem => x !== null);
 }

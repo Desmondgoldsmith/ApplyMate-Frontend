@@ -18,10 +18,16 @@ export function DashboardLandscapeCard({ title, body, emptyStateCopy }: Props) {
   return (
     <section className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-5 sm:p-6">
       <div className="min-w-0">
-        <p className="text-[11px] font-medium tracking-wide text-white/38">A quick perspective</p>
-        <p className="mt-2 text-[15px] font-medium leading-snug text-white/88">{title}</p>
+        <p className="text-[11px] font-medium tracking-wide text-white/38">
+          A quick perspective
+        </p>
+        <p className="mt-2 text-[15px] font-medium leading-snug text-white/88">
+          {title}
+        </p>
         {hasBody ? (
-          <p className="mt-2 text-[13px] leading-relaxed text-white/85 whitespace-pre-wrap">{raw}</p>
+          <p className="mt-2 text-[13px] leading-relaxed text-white/85 whitespace-pre-wrap">
+            {raw}
+          </p>
         ) : (
           <p className="mt-2 text-[13px] leading-relaxed text-white/52">
             {emptyStateCopy?.trim() ||

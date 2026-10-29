@@ -20,7 +20,8 @@ describe('parseInterviewPrepQuota', () => {
       quotaResetsAt: '2026-06-08T00:00:00.000Z',
       quotaTimezone: 'UTC',
       voiceEnabled: false,
-      upgradeMessage: 'Upgrade to Pro for unlimited practice sessions and AI voice feedback.',
+      upgradeMessage:
+        'Upgrade to Pro for unlimited practice sessions and AI voice feedback.',
     });
     expect(q).toMatchObject({
       tier: 'FREE',
@@ -39,7 +40,8 @@ describe('parseInterviewPrepQuota', () => {
       quotaResetsAt: '2026-06-08T00:00:00.000Z',
       quotaTimezone: 'UTC',
       voiceEnabled: true,
-      upgradeMessage: 'Upgrade to Pro for unlimited practice sessions and AI voice feedback.',
+      upgradeMessage:
+        'Upgrade to Pro for unlimited practice sessions and AI voice feedback.',
     });
     expect(q).toMatchObject({
       tier: 'PAID',
@@ -97,7 +99,8 @@ describe('interview prep API errors', () => {
     const err = makeAxiosError({
       code: 'INTERVIEW_PREP_WEEKLY_LIMIT_REACHED',
       message: 'Weekly limit reached',
-      upgradeMessage: 'Upgrade to Pro for unlimited practice sessions and AI voice feedback.',
+      upgradeMessage:
+        'Upgrade to Pro for unlimited practice sessions and AI voice feedback.',
       weeklyLimit: 3,
       sessionsCompletedThisWeek: 3,
       quotaResetsAt: '2026-06-08T00:00:00.000Z',
@@ -113,10 +116,13 @@ describe('interview prep API errors', () => {
     const err = makeAxiosError(
       {
         code: 'INTERVIEW_VOICE_PAID_ONLY',
-        upgradeMessage: 'Upgrade to Pro for unlimited practice sessions and AI voice feedback.',
+        upgradeMessage:
+          'Upgrade to Pro for unlimited practice sessions and AI voice feedback.',
       },
       403,
     );
-    expect(readInterviewVoicePaidOnlyUpgradeMessage(err)).toMatch(/Upgrade to Pro/i);
+    expect(readInterviewVoicePaidOnlyUpgradeMessage(err)).toMatch(
+      /Upgrade to Pro/i,
+    );
   });
 });

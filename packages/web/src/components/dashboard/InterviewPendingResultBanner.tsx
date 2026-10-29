@@ -32,7 +32,8 @@ function PendingRow({
     queryFn: () => api.interviews.getResult(item.sessionId),
     refetchInterval: (query) => {
       const poll = query.state.data as InterviewEvaluationPollState | undefined;
-      if (poll?.status === 'completed' || poll?.status === 'failed') return false;
+      if (poll?.status === 'completed' || poll?.status === 'failed')
+        return false;
       return 5000;
     },
     staleTime: 0,
@@ -67,7 +68,10 @@ function PendingRow({
             ✓
           </span>
         ) : (
-          <Loader2 className="h-5 w-5 shrink-0 animate-spin text-[#00C9B1]" aria-hidden />
+          <Loader2
+            className="h-5 w-5 shrink-0 animate-spin text-[#00C9B1]"
+            aria-hidden
+          />
         )}
         <div className="min-w-0">
           <p className="text-sm font-semibold text-white/90">
@@ -107,7 +111,11 @@ function PendingRow({
 }
 
 /** Polls sessions the user left while scoring; surfaces a CTA when results land. */
-export function InterviewPendingResultBanner({ className }: { className?: string }) {
+export function InterviewPendingResultBanner({
+  className,
+}: {
+  className?: string;
+}) {
   const queryClient = useQueryClient();
   const [items, setItems] = useState<PendingInterviewResult[]>([]);
 
@@ -125,8 +133,13 @@ export function InterviewPendingResultBanner({ className }: { className?: string
   const handleReady = (sessionId: string) => {
     clearInterviewPendingResult(sessionId);
     setItems(listPendingInterviewResults());
-    void queryClient.invalidateQueries({ queryKey: queryKeys.interview.sessions() });
-    void queryClient.invalidateQueries({ queryKey: queryKeys.interview.session(sessionId), exact: true });
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.interview.sessions(),
+    });
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.interview.session(sessionId),
+      exact: true,
+    });
   };
 
   const handleFailed = (sessionId: string) => {

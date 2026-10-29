@@ -3,7 +3,10 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
 
-import { FOLLOW_UP_REASON_COPY, type FollowUpReason } from '@/lib/interview-prep-types';
+import {
+  FOLLOW_UP_REASON_COPY,
+  type FollowUpReason,
+} from '@/lib/interview-prep-types';
 import { useMotionSafe } from '@/hooks/useMotionSafe';
 import { cn } from '@/lib/utils';
 
@@ -15,7 +18,9 @@ export const FollowUpBanner = memo(function FollowUpBanner({
   className?: string;
 }) {
   const reduceMotion = useMotionSafe();
-  const hint = reason ? FOLLOW_UP_REASON_COPY[reason] : 'Based on your last answer…';
+  const hint = reason
+    ? FOLLOW_UP_REASON_COPY[reason]
+    : 'Based on your last answer…';
 
   const inner = (
     <div

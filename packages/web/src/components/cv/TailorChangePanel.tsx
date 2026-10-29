@@ -4,12 +4,20 @@ import { Check, ChevronDown, Loader2, RotateCcw, X } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { PreTailorGapChecklist, type TailorMissingSkill } from '@/components/dashboard/PreTailorGapChecklist';
+import {
+  PreTailorGapChecklist,
+  type TailorMissingSkill,
+} from '@/components/dashboard/PreTailorGapChecklist';
 import { TailorChangeHighlights } from '@/components/dashboard/TailorChangeHighlights';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
-import { api, type CvTailorDraft, type CvTailorDraftEntry, type TailorMutationResponse } from '@/lib/api';
+import {
+  api,
+  type CvTailorDraft,
+  type CvTailorDraftEntry,
+  type TailorMutationResponse,
+} from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
 import {
   acceptRespectingEdits,
@@ -59,7 +67,11 @@ function TailorSuggestionCard({
 
   const invalidateCv = useCallback(
     async (profileId: string) => {
-      await rehydrateCvBuilderAfterStructuredPersist(queryClient, profileId, onCvRehydrated);
+      await rehydrateCvBuilderAfterStructuredPersist(
+        queryClient,
+        profileId,
+        onCvRehydrated,
+      );
     },
     [queryClient, onCvRehydrated],
   );
@@ -68,7 +80,9 @@ function TailorSuggestionCard({
     onAcceptStart();
     try {
       const result = await acceptRespectingEdits((overwriteEdits) =>
-        api.cv.acceptTailorSection(draftId, entry.sectionId, { overwriteEdits }),
+        api.cv.acceptTailorSection(draftId, entry.sectionId, {
+          overwriteEdits,
+        }),
       );
       if (!result) {
         toast.info(TAILOR_KEPT_EDITS_MESSAGE);
@@ -103,7 +117,9 @@ function TailorSuggestionCard({
   const revert = async () => {
     const patchId = entry.patchId?.trim();
     if (!patchId) {
-      toast.error('Revert unavailable — patch id missing (server may have restarted).');
+      toast.error(
+        'Revert unavailable — patch id missing (server may have restarted).',
+      );
       return;
     }
     onRevertStart();
@@ -124,7 +140,10 @@ function TailorSuggestionCard({
     entry.status === 'pending' ? (
       <Badge variant="amber">Pending</Badge>
     ) : entry.status === 'accepted' ? (
-      <Badge className="border-emerald-400/30 bg-emerald-500/15 text-emerald-300" variant="teal">
+      <Badge
+        className="border-emerald-400/30 bg-emerald-500/15 text-emerald-300"
+        variant="teal"
+      >
         Accepted
       </Badge>
     ) : (
@@ -140,14 +159,23 @@ function TailorSuggestionCard({
         aria-expanded={expanded}
       >
         <div>
-          <p className="text-[14px] font-semibold text-white">{sectionTitle(entry.sectionType)}</p>
+          <p className="text-[14px] font-semibold text-white">
+            {sectionTitle(entry.sectionType)}
+          </p>
           {entry.summary?.trim() ? (
-            <p className="mt-0.5 line-clamp-2 text-[12px] text-white/45">{entry.summary.trim()}</p>
+            <p className="mt-0.5 line-clamp-2 text-[12px] text-white/45">
+              {entry.summary.trim()}
+            </p>
           ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {statusBadge}
-          <ChevronDown className={cn('h-4 w-4 text-white/40 transition', expanded && 'rotate-180')} />
+          <ChevronDown
+            className={cn(
+              'h-4 w-4 text-white/40 transition',
+              expanded && 'rotate-180',
+            )}
+          />
         </div>
       </button>
 
@@ -170,7 +198,11 @@ function TailorSuggestionCard({
                 disabled={accepting || rejecting || reverting}
                 onClick={() => void accept()}
               >
-                {accepting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                {accepting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
                 Accept
               </Button>
               <Button
@@ -180,7 +212,11 @@ function TailorSuggestionCard({
                 disabled={accepting || rejecting || reverting}
                 onClick={() => void reject()}
               >
-                {rejecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                {rejecting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <X className="h-4 w-4" />
+                )}
                 Reject
               </Button>
             </div>
@@ -192,7 +228,11 @@ function TailorSuggestionCard({
               disabled={accepting || rejecting || reverting}
               onClick={() => void revert()}
             >
-              {reverting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+              {reverting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RotateCcw className="h-4 w-4" />
+              )}
               Undo accept
             </Button>
           ) : null}
@@ -226,15 +266,22 @@ export function TailorChangePanel({
   className,
 }: TailorChangePanelProps) {
   const [busySectionId, setBusySectionId] = useState<string | null>(null);
-  const [busyAction, setBusyAction] = useState<'accept' | 'reject' | 'revert' | null>(null);
+  const [busyAction, setBusyAction] = useState<
+    'accept' | 'reject' | 'revert' | null
+  >(null);
 
   const sorted = useMemo(() => {
     if (!draft?.drafts.length) return [];
-    const rank: Record<string, number> = { pending: 0, accepted: 1, rejected: 2 };
+    const rank: Record<string, number> = {
+      pending: 0,
+      accepted: 1,
+      rejected: 2,
+    };
     return [...draft.drafts].sort((a, b) => rank[a.status]! - rank[b.status]!);
   }, [draft]);
 
-  const pendingCount = draft?.drafts.filter((d) => d.status === 'pending').length ?? 0;
+  const pendingCount =
+    draft?.drafts.filter((d) => d.status === 'pending').length ?? 0;
 
   const titleLine =
     jobTitle?.trim() || jobCompany?.trim()
@@ -249,7 +296,9 @@ export function TailorChangePanel({
       )}
     >
       <header className="shrink-0 border-b border-white/[0.08] px-4 py-3">
-        <h2 className="text-[15px] font-semibold text-white">Tailor suggestions</h2>
+        <h2 className="text-[15px] font-semibold text-white">
+          Tailor suggestions
+        </h2>
         <p className="mt-0.5 text-[12px] text-white/45">{titleLine}</p>
         {draft ? (
           <p className="mt-2 text-[11px] font-medium text-[#00C9B1]">
@@ -269,7 +318,9 @@ export function TailorChangePanel({
               plannedSections={draft.plannedSections}
             />
             {sorted.length === 0 ? (
-              <p className="text-sm text-white/45">No section suggestions in this draft.</p>
+              <p className="text-sm text-white/45">
+                No section suggestions in this draft.
+              </p>
             ) : (
               sorted.map((entry) => (
                 <TailorSuggestionCard
@@ -280,9 +331,15 @@ export function TailorChangePanel({
                   onTailorMutation={onTailorMutation}
                   onCvRehydrated={() => onCvRehydrated?.()}
                   onAcceptSucceeded={onAcceptSucceeded}
-                  accepting={busySectionId === entry.sectionId && busyAction === 'accept'}
-                  rejecting={busySectionId === entry.sectionId && busyAction === 'reject'}
-                  reverting={busySectionId === entry.sectionId && busyAction === 'revert'}
+                  accepting={
+                    busySectionId === entry.sectionId && busyAction === 'accept'
+                  }
+                  rejecting={
+                    busySectionId === entry.sectionId && busyAction === 'reject'
+                  }
+                  reverting={
+                    busySectionId === entry.sectionId && busyAction === 'revert'
+                  }
                   onAcceptStart={() => {
                     setBusySectionId(entry.sectionId);
                     setBusyAction('accept');

@@ -22,7 +22,8 @@ export const CV_VERSION_NOT_AVAILABLE_MESSAGE = 'Version not available';
 
 export const CV_VERSION_RESTORED_MESSAGE = 'Version restored.';
 
-export const CV_VERSION_SAVED_AFTER_UPLOAD_MESSAGE = 'Your previous version was saved.';
+export const CV_VERSION_SAVED_AFTER_UPLOAD_MESSAGE =
+  'Your previous version was saved.';
 
 export const CV_VERSION_SAVED_BEFORE_ACCEPT_ALL_MESSAGE =
   'Saved a copy before applying all suggestions.';

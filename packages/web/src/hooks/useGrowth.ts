@@ -4,7 +4,11 @@ import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQuery, type QueryClient } from '@tanstack/react-query';
 
 import { useToast } from '@/components/ui/Toast';
-import { api, type GrowthEventName, type GrowthProgressWindow } from '@/lib/api';
+import {
+  api,
+  type GrowthEventName,
+  type GrowthProgressWindow,
+} from '@/lib/api';
 
 /** Invalidate dashboard growth widgets (`GET /growth/*`) after pipeline / application changes. */
 export function invalidateGrowthQueries(queryClient: QueryClient): void {
@@ -59,8 +63,10 @@ export function useGrowthAchievements() {
 
 export function useTrackGrowthEvent() {
   return useMutation({
-    mutationFn: (payload: { eventName: GrowthEventName; context?: Record<string, unknown> }) =>
-      api.growth.trackEvent(payload),
+    mutationFn: (payload: {
+      eventName: GrowthEventName;
+      context?: Record<string, unknown>;
+    }) => api.growth.trackEvent(payload),
   });
 }
 
@@ -70,9 +76,13 @@ export function useConsumeImmediateGrowthFeedback() {
     try {
       const { feedback } = await api.growth.getImmediateFeedback();
       if (!feedback?.id || !feedback.message.trim()) return;
-      const prev = typeof window !== 'undefined' ? window.sessionStorage.getItem(FEEDBACK_SESSION_KEY) : null;
+      const prev =
+        typeof window !== 'undefined'
+          ? window.sessionStorage.getItem(FEEDBACK_SESSION_KEY)
+          : null;
       if (prev && prev === feedback.id) return;
-      if (typeof window !== 'undefined') window.sessionStorage.setItem(FEEDBACK_SESSION_KEY, feedback.id);
+      if (typeof window !== 'undefined')
+        window.sessionStorage.setItem(FEEDBACK_SESSION_KEY, feedback.id);
       toast.success(feedback.message);
     } catch {
       // Keep completion flows resilient even if feedback endpoint is unavailable.

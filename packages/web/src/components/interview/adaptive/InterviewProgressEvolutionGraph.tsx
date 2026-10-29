@@ -2,7 +2,10 @@
 
 import { memo, useMemo } from 'react';
 
-import { buildEvolutionFromHistory, type SkillEvolutionPoint } from '@/lib/interviewAdaptive';
+import {
+  buildEvolutionFromHistory,
+  type SkillEvolutionPoint,
+} from '@/lib/interviewAdaptive';
 import { cn } from '@/lib/utils';
 
 function Sparkline({
@@ -40,8 +43,15 @@ function Sparkline({
 
   return (
     <div className="flex items-center gap-2">
-      <span className="w-14 shrink-0 text-[10px] text-[var(--text-muted)]">{label}</span>
-      <svg width={w} height={h} className="shrink-0 overflow-visible" aria-hidden>
+      <span className="w-14 shrink-0 text-[10px] text-[var(--text-muted)]">
+        {label}
+      </span>
+      <svg
+        width={w}
+        height={h}
+        className="shrink-0 overflow-visible"
+        aria-hidden
+      >
         <polyline
           fill="none"
           stroke="currentColor"
@@ -64,33 +74,51 @@ function Sparkline({
   );
 }
 
-export const InterviewProgressEvolutionGraph = memo(function InterviewProgressEvolutionGraph({
-  history,
-  className,
-  compact,
-}: {
-  history: SkillEvolutionPoint[];
-  className?: string;
-  compact?: boolean;
-}) {
-  const series = useMemo(() => buildEvolutionFromHistory(history), [history]);
+export const InterviewProgressEvolutionGraph = memo(
+  function InterviewProgressEvolutionGraph({
+    history,
+    className,
+    compact,
+  }: {
+    history: SkillEvolutionPoint[];
+    className?: string;
+    compact?: boolean;
+  }) {
+    const series = useMemo(() => buildEvolutionFromHistory(history), [history]);
 
-  if (history.length < 2) {
+    if (history.length < 2) {
+      return (
+        <p className={cn('text-[10px] text-[var(--text-muted)]', className)}>
+          Answer a few more questions to see your session trend.
+        </p>
+      );
+    }
+
     return (
-      <p className={cn('text-[10px] text-[var(--text-muted)]', className)}>
-        Answer a few more questions to see your session trend.
-      </p>
+      <div
+        className={cn('space-y-2', compact && 'space-y-1.5', className)}
+        role="img"
+        aria-label="Skill trend this session"
+      >
+        <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+          This session
+        </p>
+        <Sparkline
+          values={series.clarity}
+          colorClass="text-sky-400"
+          label="Clarity"
+        />
+        <Sparkline
+          values={series.structure}
+          colorClass="text-[var(--teal)]"
+          label="Structure"
+        />
+        <Sparkline
+          values={series.confidence}
+          colorClass="text-violet-300"
+          label="Confidence"
+        />
+      </div>
     );
-  }
-
-  return (
-    <div className={cn('space-y-2', compact && 'space-y-1.5', className)} role="img" aria-label="Skill trend this session">
-      <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
-        This session
-      </p>
-      <Sparkline values={series.clarity} colorClass="text-sky-400" label="Clarity" />
-      <Sparkline values={series.structure} colorClass="text-[var(--teal)]" label="Structure" />
-      <Sparkline values={series.confidence} colorClass="text-violet-300" label="Confidence" />
-    </div>
-  );
-});
+  },
+);

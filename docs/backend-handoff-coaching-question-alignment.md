@@ -16,18 +16,18 @@
 
 ## Frontend wiring
 
-| Contract | Implementation |
-|----------|----------------|
-| `questionText` on every turn submit | Required in `submitPrepAnswer` (on-screen text) |
-| Active turn after submit | `resolveActiveTurnIdAfterSubmit` + `syncQueueFromSession` |
-| Coaching panel | `lastFeedback` from **this** response only; `feedbackTurnId` = `answeredQuestion.turnId` |
-| Question header | `resolveAnsweredQuestionText` |
-| User answer display | `resolveScoredAnswerText` |
-| Practice chips | `POST …/practice-coaching` only |
-| Optional turn | `optionalNextQuestion` → navigate by `turnId` + matching `questionText` |
-| End interview | `canEndInterviewSession(progress, lastFeedback)` |
-| Continue | Does not auto-advance optional queue turns (`parentTurnId`) |
-| Errors | `QUESTION_TURN_MISMATCH`, `TURN_ALREADY_ANSWERED` user messages |
+| Contract                            | Implementation                                                                           |
+| ----------------------------------- | ---------------------------------------------------------------------------------------- |
+| `questionText` on every turn submit | Required in `submitPrepAnswer` (on-screen text)                                          |
+| Active turn after submit            | `resolveActiveTurnIdAfterSubmit` + `syncQueueFromSession`                                |
+| Coaching panel                      | `lastFeedback` from **this** response only; `feedbackTurnId` = `answeredQuestion.turnId` |
+| Question header                     | `resolveAnsweredQuestionText`                                                            |
+| User answer display                 | `resolveScoredAnswerText`                                                                |
+| Practice chips                      | `POST …/practice-coaching` only                                                          |
+| Optional turn                       | `optionalNextQuestion` → navigate by `turnId` + matching `questionText`                  |
+| End interview                       | `canEndInterviewSession(progress, lastFeedback)`                                         |
+| Continue                            | Does not auto-advance optional queue turns (`parentTurnId`)                              |
+| Errors                              | `QUESTION_TURN_MISMATCH`, `TURN_ALREADY_ANSWERED` user messages                          |
 
 ---
 

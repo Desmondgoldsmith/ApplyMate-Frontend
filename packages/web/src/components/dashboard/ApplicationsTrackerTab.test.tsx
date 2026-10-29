@@ -17,11 +17,12 @@ import {
 import type { ApplicationItem } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
 
-const { getFollowUpDraft, invalidateDailyAiUsageQuery, dailyAiUsage } = vi.hoisted(() => ({
-  getFollowUpDraft: vi.fn(),
-  invalidateDailyAiUsageQuery: vi.fn(),
-  dailyAiUsage: vi.fn(),
-}));
+const { getFollowUpDraft, invalidateDailyAiUsageQuery, dailyAiUsage } =
+  vi.hoisted(() => ({
+    getFollowUpDraft: vi.fn(),
+    invalidateDailyAiUsageQuery: vi.fn(),
+    dailyAiUsage: vi.fn(),
+  }));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
@@ -49,7 +50,11 @@ vi.mock('@/hooks/useApplications', () => ({
 }));
 
 vi.mock('@/hooks/useApplicationMutations', () => ({
-  useUpdateApplicationStatus: () => ({ mutate: vi.fn(), isPending: false, variables: undefined }),
+  useUpdateApplicationStatus: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+    variables: undefined,
+  }),
 }));
 
 vi.mock('@/hooks/useDailyAiUsage', () => ({
@@ -83,7 +88,10 @@ const requestConfig = {
   headers: new AxiosHeaders(),
 } as InternalAxiosRequestConfig;
 
-function apiError(status: number, error: { code?: string; message: string }): AxiosError {
+function apiError(
+  status: number,
+  error: { code?: string; message: string },
+): AxiosError {
   return new AxiosError(
     `Request failed with status code ${status}`,
     AxiosError.ERR_BAD_REQUEST,
@@ -123,7 +131,10 @@ describe('ApplicationsTrackerTab follow-up draft', () => {
   });
 
   it('refreshes the daily AI usage badge after a successful draft', async () => {
-    getFollowUpDraft.mockResolvedValueOnce({ subject: 'Checking in', body: 'Hi team' });
+    getFollowUpDraft.mockResolvedValueOnce({
+      subject: 'Checking in',
+      body: 'Hi team',
+    });
     const user = userEvent.setup();
     const queryClient = renderTab();
 
@@ -132,7 +143,10 @@ describe('ApplicationsTrackerTab follow-up draft', () => {
     expect(await screen.findByText('Checking in')).toBeInTheDocument();
     expect(getFollowUpDraft).toHaveBeenCalledWith('app-1');
     expect(invalidateDailyAiUsageQuery).toHaveBeenCalledTimes(1);
-    expect(invalidateDailyAiUsageQuery).toHaveBeenCalledWith(queryClient, 'token-1');
+    expect(invalidateDailyAiUsageQuery).toHaveBeenCalledWith(
+      queryClient,
+      'token-1',
+    );
   });
 
   it('shows the standard daily-limit message on 429 DAILY_AI_LIMIT_REACHED', async () => {
@@ -148,14 +162,19 @@ describe('ApplicationsTrackerTab follow-up draft', () => {
     await user.click(followUpButton());
 
     expect(
-      await screen.findByText(`${DAILY_AI_LIMIT_REACHED_MESSAGE} ${AI_QUOTA_UPGRADE_HINT}`),
+      await screen.findByText(
+        `${DAILY_AI_LIMIT_REACHED_MESSAGE} ${AI_QUOTA_UPGRADE_HINT}`,
+      ),
     ).toBeInTheDocument();
     expect(invalidateDailyAiUsageQuery).toHaveBeenCalledTimes(1);
   });
 
   it('keeps the API message for other errors', async () => {
     getFollowUpDraft.mockRejectedValueOnce(
-      apiError(400, { code: 'BAD_REQUEST', message: 'Application is not in applied status.' }),
+      apiError(400, {
+        code: 'BAD_REQUEST',
+        message: 'Application is not in applied status.',
+      }),
     );
     const user = userEvent.setup();
     renderTab();
@@ -165,7 +184,9 @@ describe('ApplicationsTrackerTab follow-up draft', () => {
     expect(
       await screen.findByText('Application is not in applied status.'),
     ).toBeInTheDocument();
-    expect(screen.queryByText(new RegExp(AI_QUOTA_UPGRADE_HINT))).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(new RegExp(AI_QUOTA_UPGRADE_HINT)),
+    ).not.toBeInTheDocument();
     expect(invalidateDailyAiUsageQuery).not.toHaveBeenCalled();
   });
 
@@ -175,16 +196,26 @@ describe('ApplicationsTrackerTab follow-up draft', () => {
 
     expect(followUpButton()).toBeDisabled();
     expect(followUpButton()).toHaveAttribute('title', 'Daily AI limit reached');
-    expect(screen.getByText('Daily free AI limit reached.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Daily free AI limit reached.'),
+    ).toBeInTheDocument();
   });
 
   it('keeps the draft button enabled for paid users', () => {
     dailyAiUsage.mockReturnValue(
-      usage({ used: 40, limit: null, remaining: null, isLimited: false, isPaidTier: true }),
+      usage({
+        used: 40,
+        limit: null,
+        remaining: null,
+        isLimited: false,
+        isPaidTier: true,
+      }),
     );
     renderTab();
 
     expect(followUpButton()).toBeEnabled();
-    expect(screen.queryByText('Daily free AI limit reached.')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Daily free AI limit reached.'),
+    ).not.toBeInTheDocument();
   });
 });

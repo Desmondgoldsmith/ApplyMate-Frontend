@@ -12,8 +12,7 @@ const PIPELINE_METRIC_HINTS: Record<string, string> = {
     'Interview dates in the next 7 days on applications, plus Job Hub follow-ups you scheduled for the next 7 days.',
   followUpNeeded:
     'Follow-ups that still need attention—including pending sends and overdue Job Hub CRM reminders you have not marked done.',
-  waiting:
-    'Roles where you are waiting on the employer\'s reply.',
+  waiting: "Roles where you are waiting on the employer's reply.",
   newMatchesSinceVisit:
     'New matches surfaced since your last visit—roles you may want to explore or move forward.',
   stalledApplied:

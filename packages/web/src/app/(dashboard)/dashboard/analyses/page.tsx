@@ -9,7 +9,10 @@ import { ApplicationRow } from '@/components/dashboard/ApplicationRow';
 import { Button } from '@/components/ui/Button';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { JOB_HISTORY_PAGE_SIZE, useJobHistoryPage } from '@/hooks/useJobHistory';
+import {
+  JOB_HISTORY_PAGE_SIZE,
+  useJobHistoryPage,
+} from '@/hooks/useJobHistory';
 
 export default function AnalysesPage() {
   const router = useRouter();
@@ -43,8 +46,8 @@ export default function AnalysesPage() {
         <div>
           <h2 className="text-2xl font-extrabold text-white">Job analyses</h2>
           <p className="text-sm text-white/50">
-            Every successful analysis is listed here (newest first). Use Analyze to run a new analysis or generate a
-            cover letter.
+            Every successful analysis is listed here (newest first). Use Analyze
+            to run a new analysis or generate a cover letter.
           </p>
         </div>
         <Link
@@ -87,12 +90,12 @@ export default function AnalysesPage() {
                       router.push(`/dashboard/jobs/analyze?${qs.toString()}`);
                     }}
                   >
-                  <ApplicationRow
-                    company={item.company ?? 'Unknown company'}
-                    title={item.jobTitle || item.title || 'Untitled role'}
-                    matchScore={item.matchScore ?? 0}
-                    date={item.createdAt}
-                  />
+                    <ApplicationRow
+                      company={item.company ?? 'Unknown company'}
+                      title={item.jobTitle || item.title || 'Untitled role'}
+                      matchScore={item.matchScore ?? 0}
+                      date={item.createdAt}
+                    />
                   </button>
                 </li>
               ))}
@@ -115,7 +118,9 @@ export default function AnalysesPage() {
                     type="button"
                     variant="ghost"
                     disabled={pageIndex >= totalPages - 1 || history.isFetching}
-                    onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}
+                    onClick={() =>
+                      setPageIndex((p) => Math.min(totalPages - 1, p + 1))
+                    }
                   >
                     Next
                   </Button>

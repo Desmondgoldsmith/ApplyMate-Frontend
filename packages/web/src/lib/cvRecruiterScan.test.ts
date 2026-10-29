@@ -16,7 +16,8 @@ const SAMPLE_REPORT = {
     verdict: 'mixed',
     headline: 'Credible PM — but the lead is buried',
     narrative: 'Two sentences of gut reaction.',
-    sixSecondSnapshot: 'They see State University before your current PM title.',
+    sixSecondSnapshot:
+      'They see State University before your current PM title.',
   },
   readingPath: [
     {
@@ -40,7 +41,11 @@ const SAMPLE_REPORT = {
     },
   ],
   whatStandsOut: {
-    takeaways: ['8 years in B2B SaaS', 'Launched billing v2', 'Cross-functional lead'],
+    takeaways: [
+      '8 years in B2B SaaS',
+      'Launched billing v2',
+      'Cross-functional lead',
+    ],
     highlights: [
       {
         text: '40% reduction in churn',
@@ -93,7 +98,9 @@ describe('normalizeCvRecruiterScanReport', () => {
     const report = normalizeCvRecruiterScanReport(SAMPLE_REPORT);
     expect(report).not.toBeNull();
     expect(report?.firstImpression.verdict).toBe('mixed');
-    expect(report?.firstImpression.sixSecondSnapshot).toContain('State University');
+    expect(report?.firstImpression.sixSecondSnapshot).toContain(
+      'State University',
+    );
     expect(report?.readingPath).toHaveLength(2);
     expect(report?.readingPath[0]?.readOrder).toBe(1);
     expect(report?.whatStandsOut.takeaways).toHaveLength(3);
@@ -143,7 +150,9 @@ describe('normalizeCvRecruiterScanResponse', () => {
 
 describe('recruiterScanRowIdToPreviewKey', () => {
   it('maps core section types to fixed preview keys', () => {
-    expect(recruiterScanRowIdToPreviewKey('experience', SECTIONS)).toBe('experience');
+    expect(recruiterScanRowIdToPreviewKey('experience', SECTIONS)).toBe(
+      'experience',
+    );
     expect(recruiterScanRowIdToPreviewKey('summary', SECTIONS)).toBe('summary');
   });
 

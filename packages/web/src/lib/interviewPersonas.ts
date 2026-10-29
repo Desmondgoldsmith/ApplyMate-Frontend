@@ -9,7 +9,12 @@ export type InterviewPersonaId =
   | 'technical_interviewer'
   | 'silent_observer';
 
-export type PersonaMood = 'supportive' | 'neutral' | 'strict' | 'calm' | 'minimal';
+export type PersonaMood =
+  | 'supportive'
+  | 'neutral'
+  | 'strict'
+  | 'calm'
+  | 'minimal';
 
 export type PersonalityPresentation = {
   feedbackStyle?: string;
@@ -58,7 +63,10 @@ const PERSONA_IDS = new Set<string>([
   'silent_observer',
 ]);
 
-export const INTERVIEW_PERSONAS: Record<InterviewPersonaId, ResolvedInterviewPersona> = {
+export const INTERVIEW_PERSONAS: Record<
+  InterviewPersonaId,
+  ResolvedInterviewPersona
+> = {
   friendly_coach: {
     id: 'friendly_coach',
     personName: 'Desmond Goldsmith',
@@ -223,17 +231,22 @@ export type SessionPersonaSource = {
 
 /** Legacy sessions that still send a role title in `interviewerLabel`. */
 const LEGACY_ROLE_INTERVIEWER_LABELS = new Set(
-  Object.values(INTERVIEW_PERSONAS).map((p) => p.roleLabel.trim().toLowerCase()),
+  Object.values(INTERVIEW_PERSONAS).map((p) =>
+    p.roleLabel.trim().toLowerCase(),
+  ),
 );
 
 /** True when `interviewerLabel` is a role title, not a human name (pre–May 2026 API). */
-export function isLegacyRoleInterviewerLabel(label: string | undefined | null): boolean {
+export function isLegacyRoleInterviewerLabel(
+  label: string | undefined | null,
+): boolean {
   const fromApi = label?.trim() ?? '';
   if (!fromApi) return true;
   const normalized = fromApi.toLowerCase();
   if (LEGACY_ROLE_INTERVIEWER_LABELS.has(normalized)) return true;
   return (
-    /\b(coach|interviewer|observer)\b/i.test(fromApi) && !/\s[A-Za-z]+\s[A-Za-z]+/.test(fromApi)
+    /\b(coach|interviewer|observer)\b/i.test(fromApi) &&
+    !/\s[A-Za-z]+\s[A-Za-z]+/.test(fromApi)
   );
 }
 
@@ -249,19 +262,28 @@ export function resolveInterviewerPersonName(
   return persona.personName;
 }
 
-export function resolveSessionPersona(session: SessionPersonaSource): ResolvedInterviewPersona {
+export function resolveSessionPersona(
+  session: SessionPersonaSource,
+): ResolvedInterviewPersona {
   const fromPrep = prepModeToPersona(session.prepMode);
   const rawPersona =
     session.interviewPersona ??
     session.interviewPersonaId ??
-    (isInterviewPersonaId(session.interviewerPersonality) ? session.interviewerPersonality : null);
+    (isInterviewPersonaId(session.interviewerPersonality)
+      ? session.interviewerPersonality
+      : null);
 
   let id: InterviewPersonaId = fromPrep ?? 'friendly_coach';
   if (rawPersona && isInterviewPersonaId(rawPersona)) {
     id = normalizeInterviewPersonaId(rawPersona);
   } else if (!fromPrep && session.coachPersonality) {
     const coach = session.coachPersonality.trim().toLowerCase();
-    if (coach === 'friendly' || coach === 'professional' || coach === 'strict' || coach === 'fast_paced') {
+    if (
+      coach === 'friendly' ||
+      coach === 'professional' ||
+      coach === 'strict' ||
+      coach === 'fast_paced'
+    ) {
       id = coachToPersona(coach as CoachPersonality);
     }
   } else if (session.interviewType === 'technical') {
@@ -269,7 +291,10 @@ export function resolveSessionPersona(session: SessionPersonaSource): ResolvedIn
   }
 
   const base = INTERVIEW_PERSONAS[id];
-  const personName = resolveInterviewerPersonName(session.interviewerLabel, base);
+  const personName = resolveInterviewerPersonName(
+    session.interviewerLabel,
+    base,
+  );
   const roleLabel = session.interviewerRoleLabel?.trim() || base.roleLabel;
   const label = personName;
   const accentColor = session.interviewerColor?.trim() || base.accentColor;
@@ -291,12 +316,16 @@ export function resolveSessionPersona(session: SessionPersonaSource): ResolvedIn
 }
 
 /** Avatar key for SVG rendering — unique per persona even when legacy API personality repeats. */
-export function personaAvatarKey(persona: ResolvedInterviewPersona): InterviewPersonality | 'jordan' {
+export function personaAvatarKey(
+  persona: ResolvedInterviewPersona,
+): InterviewPersonality | 'jordan' {
   return persona.avatarPersonality ?? persona.legacyAvatar;
 }
 
 /** Spoken + on-screen intro — uses resolved {@link personName}, not legacy personality copy. */
-export function interviewerGreetingMessage(persona: ResolvedInterviewPersona): string {
+export function interviewerGreetingMessage(
+  persona: ResolvedInterviewPersona,
+): string {
   const name = persona.personName.trim();
   switch (persona.id) {
     case 'strict_interviewer':
@@ -313,7 +342,9 @@ export function interviewerGreetingMessage(persona: ResolvedInterviewPersona): s
 }
 
 /** Spoken + on-screen wrap-up after End interview. */
-export function postInterviewThankYouMessage(persona: ResolvedInterviewPersona): string {
+export function postInterviewThankYouMessage(
+  persona: ResolvedInterviewPersona,
+): string {
   const first = persona.personName.split(/\s+/)[0] || persona.personName;
   switch (persona.id) {
     case 'strict_interviewer':
@@ -331,12 +362,18 @@ export function postInterviewThankYouMessage(persona: ResolvedInterviewPersona):
 
 export function personaFeedbackMessage(
   persona: ResolvedInterviewPersona,
-  scores?: { clarityScore?: number; structureScore?: number; relevanceScore?: number },
+  scores?: {
+    clarityScore?: number;
+    structureScore?: number;
+    relevanceScore?: number;
+  },
 ): string | null {
   if (!persona.showMidSessionFeedback) return null;
-  const vals = [scores?.clarityScore, scores?.structureScore, scores?.relevanceScore].filter(
-    (v): v is number => typeof v === 'number',
-  );
+  const vals = [
+    scores?.clarityScore,
+    scores?.structureScore,
+    scores?.relevanceScore,
+  ].filter((v): v is number => typeof v === 'number');
   if (vals.length === 0) return persona.tagline;
   const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
   return avg >= 65 ? persona.positiveFeedback : persona.criticalFeedback;

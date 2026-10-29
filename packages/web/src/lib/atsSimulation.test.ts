@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { dimensionScoreByHint, parseAtsSimulationReport } from '@/lib/atsSimulation';
+import {
+  dimensionScoreByHint,
+  parseAtsSimulationReport,
+} from '@/lib/atsSimulation';
 
 describe('parseAtsSimulationReport', () => {
   it('returns undefined for null / non-object', () => {
@@ -66,7 +69,9 @@ describe('parseAtsSimulationReport', () => {
 
 describe('dimensionScoreByHint', () => {
   it('matches normalized dimension keys', () => {
-    const d = { HardSkillMatch: { score0to100: 42, weight: 0.1, contribution: 4 } };
+    const d = {
+      HardSkillMatch: { score0to100: 42, weight: 0.1, contribution: 4 },
+    };
     expect(dimensionScoreByHint(d, ['hard', 'skill'])).toBe(42);
   });
 });

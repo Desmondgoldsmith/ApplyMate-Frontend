@@ -5,7 +5,8 @@ import type { TodayPlanCta } from './today-plan';
 import { resolveTodayPlanHref } from './today-plan';
 
 /** Root segment for React Query keys — invalidated with `invalidateTodayPlanQueries` (see `today-plan.ts`). */
-export const WEEKLY_STALL_SUMMARY_QUERY_ROOT = queryKeys.weeklyStallSummary.root()[0];
+export const WEEKLY_STALL_SUMMARY_QUERY_ROOT =
+  queryKeys.weeklyStallSummary.root()[0];
 
 const LIMIT_DEFAULT = 5;
 const LIMIT_MIN = 1;
@@ -13,7 +14,10 @@ const LIMIT_MAX = 20;
 
 export function weeklyStallSummaryQueryKey(params?: { limit?: number }) {
   const raw = params?.limit ?? LIMIT_DEFAULT;
-  const limit = Math.min(LIMIT_MAX, Math.max(LIMIT_MIN, Number.isFinite(raw) ? raw : LIMIT_DEFAULT));
+  const limit = Math.min(
+    LIMIT_MAX,
+    Math.max(LIMIT_MIN, Number.isFinite(raw) ? raw : LIMIT_DEFAULT),
+  );
   return queryKeys.weeklyStallSummary.key(limit);
 }
 
@@ -50,7 +54,12 @@ export type WeeklyStallSummaryPayload = {
 function unwrapEnvelope(raw: unknown): Record<string, unknown> {
   if (raw !== null && typeof raw === 'object' && !Array.isArray(raw)) {
     const o = raw as Record<string, unknown>;
-    if (o.success === true && o.data !== null && typeof o.data === 'object' && !Array.isArray(o.data)) {
+    if (
+      o.success === true &&
+      o.data !== null &&
+      typeof o.data === 'object' &&
+      !Array.isArray(o.data)
+    ) {
       return o.data as Record<string, unknown>;
     }
     return o;
@@ -58,7 +67,10 @@ function unwrapEnvelope(raw: unknown): Record<string, unknown> {
   return {};
 }
 
-function pickStr(o: Record<string, unknown>, ...keys: string[]): string | undefined {
+function pickStr(
+  o: Record<string, unknown>,
+  ...keys: string[]
+): string | undefined {
   for (const k of keys) {
     const v = o[k];
     if (typeof v === 'string' && v.trim()) return v.trim();
@@ -71,8 +83,15 @@ function pickStrArray(v: unknown): string[] {
   return v.filter((x): x is string => typeof x === 'string' && x.length > 0);
 }
 
-const CTA_HINTS = new Set<WeeklyStallCtaHint>(['OPEN_JOB_HUB', 'OPEN_JOB_ANALYZE']);
-const EMPTY_REASONS = new Set<WeeklyStallEmptyReason>(['opt_out', 'paused', 'no_stalled_rows']);
+const CTA_HINTS = new Set<WeeklyStallCtaHint>([
+  'OPEN_JOB_HUB',
+  'OPEN_JOB_ANALYZE',
+]);
+const EMPTY_REASONS = new Set<WeeklyStallEmptyReason>([
+  'opt_out',
+  'paused',
+  'no_stalled_rows',
+]);
 
 function parseKind(v: unknown): WeeklyStallItemKind {
   const s = typeof v === 'string' ? v.trim().toLowerCase() : '';
@@ -81,7 +100,8 @@ function parseKind(v: unknown): WeeklyStallItemKind {
 }
 
 function parseCtaHint(v: unknown): WeeklyStallCtaHint {
-  const s = typeof v === 'string' ? v.trim().toUpperCase().replace(/-/g, '_') : '';
+  const s =
+    typeof v === 'string' ? v.trim().toUpperCase().replace(/-/g, '_') : '';
   if (s === 'OPEN_JOB_HUB' || s === 'OPEN_JOB_ANALYZE') return s;
   return 'OPEN_JOB_HUB';
 }
@@ -108,7 +128,8 @@ function pickIdsFromBody(o: Record<string, unknown>): {
 }
 
 function pickItem(raw: unknown): WeeklyStallSummaryItem | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const id = pickStr(o, 'id') ?? '';
   if (!id) return null;
@@ -127,7 +148,7 @@ function pickItem(raw: unknown): WeeklyStallSummaryItem | null {
     title,
     company,
     companyLogoUrl: pickCompanyLogoUrl(o),
-    stage: o.stage === null ? null : pickStr(o, 'stage') ?? null,
+    stage: o.stage === null ? null : (pickStr(o, 'stage') ?? null),
     applicationId: ids.applicationId,
     jobAnalysisId: ids.jobAnalysisId,
     bookmarkId: ids.bookmarkId,
@@ -150,28 +171,43 @@ function parseReasonIfEmpty(v: unknown): WeeklyStallEmptyReason | null {
   if (v === null || v === undefined) return null;
   const s = typeof v === 'string' ? v.trim() : '';
   if (!s) return null;
-  return EMPTY_REASONS.has(s as WeeklyStallEmptyReason) ? (s as WeeklyStallEmptyReason) : null;
+  return EMPTY_REASONS.has(s as WeeklyStallEmptyReason)
+    ? (s as WeeklyStallEmptyReason)
+    : null;
 }
 
-export function normalizeWeeklyStallSummary(raw: unknown): WeeklyStallSummaryPayload {
+export function normalizeWeeklyStallSummary(
+  raw: unknown,
+): WeeklyStallSummaryPayload {
   const body = unwrapEnvelope(raw);
   const eligible = body.eligible === true;
-  const reasonIfEmpty = parseReasonIfEmpty(body.reasonIfEmpty ?? body.reason_if_empty);
+  const reasonIfEmpty = parseReasonIfEmpty(
+    body.reasonIfEmpty ?? body.reason_if_empty,
+  );
   const showMore =
     pickStr(body, 'showMoreHref', 'show_more_href') ?? '/dashboard/next-moves';
   return {
-    generatedAt: String(pickStr(body, 'generatedAt', 'generated_at') ?? new Date().toISOString()),
-    digestVersion: String(pickStr(body, 'digestVersion', 'digest_version') ?? ''),
+    generatedAt: String(
+      pickStr(body, 'generatedAt', 'generated_at') ?? new Date().toISOString(),
+    ),
+    digestVersion: String(
+      pickStr(body, 'digestVersion', 'digest_version') ?? '',
+    ),
     eligible,
     reasonIfEmpty,
     items: pickItemArray(body.items),
-    totalCount: typeof body.totalCount === 'number' && Number.isFinite(body.totalCount) ? body.totalCount : 0,
+    totalCount:
+      typeof body.totalCount === 'number' && Number.isFinite(body.totalCount)
+        ? body.totalCount
+        : 0,
     showMoreHref: showMore.startsWith('/') ? showMore : `/dashboard/next-moves`,
   };
 }
 
 /** Map stall row + `ctaHint` + ids to Job Hub / Analyzer routes (same rules as Today’s Plan CTAs). */
-export function weeklyStallItemHref(item: WeeklyStallSummaryItem): string | null {
+export function weeklyStallItemHref(
+  item: WeeklyStallSummaryItem,
+): string | null {
   const action: Record<string, unknown> = {
     type: item.ctaHint,
   };
@@ -183,6 +219,7 @@ export function weeklyStallItemHref(item: WeeklyStallSummaryItem): string | null
 }
 
 export function clampWeeklyStallLimit(limit?: number): number {
-  const n = typeof limit === 'number' && Number.isFinite(limit) ? limit : LIMIT_DEFAULT;
+  const n =
+    typeof limit === 'number' && Number.isFinite(limit) ? limit : LIMIT_DEFAULT;
   return Math.min(LIMIT_MAX, Math.max(LIMIT_MIN, Math.round(n)));
 }

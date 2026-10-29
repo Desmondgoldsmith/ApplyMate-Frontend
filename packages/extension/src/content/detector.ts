@@ -1,6 +1,15 @@
-import { collectAiFallbackPayload, extractJobFromPage } from '@/content/extractor';
-import { shouldMonitorPageForJob, shouldShowFloatingJobIcon } from '@/content/job-page-heuristics';
-import { isApplyMateAppUrl, urlLooksLikeJobListing } from '@/shared/job-page-url';
+import {
+  collectAiFallbackPayload,
+  extractJobFromPage,
+} from '@/content/extractor';
+import {
+  shouldMonitorPageForJob,
+  shouldShowFloatingJobIcon,
+} from '@/content/job-page-heuristics';
+import {
+  isApplyMateAppUrl,
+  urlLooksLikeJobListing,
+} from '@/shared/job-page-url';
 
 const ICON_SIZE = 48;
 const ICON_MARGIN_RIGHT = 16;
@@ -135,9 +144,13 @@ function createFloatingIcon(): void {
     } catch {
       /* extension context may be stale — user can use toolbar icon */
     }
-    void chrome.runtime.sendMessage({ action: 'probeActiveJob' } satisfies { action: 'probeActiveJob' }).catch(() => {
-      /* ignore */
-    });
+    void chrome.runtime
+      .sendMessage({ action: 'probeActiveJob' } satisfies {
+        action: 'probeActiveJob';
+      })
+      .catch(() => {
+        /* ignore */
+      });
     void runPageDetection();
   });
 
@@ -164,7 +177,10 @@ async function runPageDetection(): Promise<void> {
 
   const mayHaveJob = pageMayHaveJob();
   const job = mayHaveJob ? await extractJobFromPage() : null;
-  const showIcon = shouldShowFloatingJobIcon(window.location.href, Boolean(job));
+  const showIcon = shouldShowFloatingJobIcon(
+    window.location.href,
+    Boolean(job),
+  );
 
   if (!showIcon) {
     hideFloatingIcon();
@@ -175,9 +191,11 @@ async function runPageDetection(): Promise<void> {
   refreshIconStackOrder();
 
   if (job) {
-    void chrome.runtime.sendMessage({ action: 'jobExtracted', job }).catch(() => {
-      /* ignore */
-    });
+    void chrome.runtime
+      .sendMessage({ action: 'jobExtracted', job })
+      .catch(() => {
+        /* ignore */
+      });
     return;
   }
 

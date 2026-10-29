@@ -24,7 +24,8 @@ export function BentoItem({ index, className, children }: BentoItemProps) {
 
 export function BentoGrid({ children }: { children: ReactNode }) {
   return (
-    <div className={cn('grid gap-4 md:grid-cols-3 auto-rows-fr')}>{children}</div>
+    <div className={cn('grid gap-4 md:grid-cols-3 auto-rows-fr')}>
+      {children}
+    </div>
   );
 }
-

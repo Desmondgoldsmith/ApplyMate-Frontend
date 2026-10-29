@@ -40,20 +40,29 @@ export const InterviewCoachTip = memo(function InterviewCoachTip({
           💡 Coach tip{personaName ? ` · ${personaName}` : ''}
         </span>
         <ChevronDown
-          className={cn('h-3.5 w-3.5 shrink-0 text-[var(--text-muted)] transition', open && 'rotate-180')}
+          className={cn(
+            'h-3.5 w-3.5 shrink-0 text-[var(--text-muted)] transition',
+            open && 'rotate-180',
+          )}
           aria-hidden
         />
       </button>
       {open ? (
         <div className="mt-2 space-y-2">
           {coaching.message ? (
-            <p className="text-xs leading-relaxed text-[var(--text-secondary)]">{coaching.message}</p>
+            <p className="text-xs leading-relaxed text-[var(--text-secondary)]">
+              {coaching.message}
+            </p>
           ) : null}
           <p className="text-[11px] font-medium text-[var(--text-primary)]">
-            <span className="text-[var(--text-muted)]">🎯 Focus:</span> {focusLabel}
+            <span className="text-[var(--text-muted)]">🎯 Focus:</span>{' '}
+            {focusLabel}
           </p>
           <p className="text-xs leading-relaxed text-[var(--text-primary)]">
-            <span className="font-semibold text-[var(--text-teal)]">⚡ Quick win:</span> {coaching.tip}
+            <span className="font-semibold text-[var(--text-teal)]">
+              ⚡ Quick win:
+            </span>{' '}
+            {coaching.tip}
           </p>
         </div>
       ) : null}

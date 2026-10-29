@@ -32,7 +32,9 @@ export function pickNextBestAction(
     };
   }
 
-  const pipelineTailor = career?.activePipelineJobs.find((p) => p.pipelineStage === 'TAILORED');
+  const pipelineTailor = career?.activePipelineJobs.find(
+    (p) => p.pipelineStage === 'TAILORED',
+  );
   if (pipelineTailor) {
     const metaId =
       typeof pipelineTailor.jobId === 'string' ? pipelineTailor.jobId : '';
@@ -40,7 +42,9 @@ export function pickNextBestAction(
       id: 'tailor-pipeline',
       label: 'Continue tailoring',
       detail: `Resume tailoring for ${pipelineTailor.title ?? 'this role'}.`,
-      href: metaId ? `/dashboard/jobs?jobId=${encodeURIComponent(metaId)}` : '/dashboard/jobs',
+      href: metaId
+        ? `/dashboard/jobs?jobId=${encodeURIComponent(metaId)}`
+        : '/dashboard/jobs',
       onClickKey: 'tailor',
     };
   }
@@ -61,7 +65,9 @@ export function pickNextBestAction(
     };
   }
 
-  const interviewing = jobs.find((j) => j.stage === 'interviewing' && j.jobAnalysisId);
+  const interviewing = jobs.find(
+    (j) => j.stage === 'interviewing' && j.jobAnalysisId,
+  );
   if (interviewing?.jobAnalysisId) {
     return {
       id: 'interview',
@@ -73,7 +79,8 @@ export function pickNextBestAction(
   }
 
   const acceptedCount =
-    (career?.acceptedJobs.length ?? 0) + jobs.filter((j) => j.stage === 'accepted').length;
+    (career?.acceptedJobs.length ?? 0) +
+    jobs.filter((j) => j.stage === 'accepted').length;
   if (acceptedCount > 0) {
     return {
       id: 'accepted',
@@ -84,7 +91,9 @@ export function pickNextBestAction(
     };
   }
 
-  const analyzed = career?.activePipelineJobs.find((p) => p.pipelineStage === 'ANALYZED');
+  const analyzed = career?.activePipelineJobs.find(
+    (p) => p.pipelineStage === 'ANALYZED',
+  );
   if (analyzed) {
     return {
       id: 'analyze-pipeline',

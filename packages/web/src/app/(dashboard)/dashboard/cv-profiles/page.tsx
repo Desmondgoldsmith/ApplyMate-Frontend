@@ -191,7 +191,9 @@ function CvProfilesPageInner() {
                       selectedId,
                       summaryRow.template ?? undefined,
                     )
-                      .catch((e: unknown) => toast.error(getCvExportErrorMessage(e)))
+                      .catch((e: unknown) =>
+                        toast.error(getCvExportErrorMessage(e)),
+                      )
                       .finally(() => setPdfPending(false));
                   }}
                 >

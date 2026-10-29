@@ -7,6 +7,9 @@ export default async function InterviewSessionAliasPage({
 }) {
   const { sessionId } = await params;
   const id = typeof sessionId === 'string' ? sessionId.trim() : '';
-  redirect(id ? `/dashboard/interview/${encodeURIComponent(id)}` : '/dashboard/interviews');
+  redirect(
+    id
+      ? `/dashboard/interview/${encodeURIComponent(id)}`
+      : '/dashboard/interviews',
+  );
 }
-

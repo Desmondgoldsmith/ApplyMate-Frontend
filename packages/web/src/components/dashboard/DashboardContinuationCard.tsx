@@ -13,7 +13,8 @@ type Props = {
 };
 
 function formatLastWorked(hours: number | null): string | null {
-  if (typeof hours !== 'number' || !Number.isFinite(hours) || hours <= 0) return null;
+  if (typeof hours !== 'number' || !Number.isFinite(hours) || hours <= 0)
+    return null;
   if (hours < 1) return 'Last worked: just now';
   if (hours < 24) return `Last worked: ${Math.round(hours)}h ago`;
   const days = Math.max(1, Math.round(hours / 24));
@@ -23,10 +24,16 @@ function formatLastWorked(hours: number | null): string | null {
 export function DashboardContinuationCard({ continuation, onClick }: Props) {
   const title = continuation.title.trim();
   if (!title) return null;
-  const safeHref = ensureSafeDashboardHref(continuation.href, '/dashboard/job-board').href;
-  const lastWorked = formatLastWorked(continuation.interruptionAgeHours ?? null);
+  const safeHref = ensureSafeDashboardHref(
+    continuation.href,
+    '/dashboard/job-board',
+  ).href;
+  const lastWorked = formatLastWorked(
+    continuation.interruptionAgeHours ?? null,
+  );
   const steps =
-    typeof continuation.remainingSteps === 'number' && Number.isFinite(continuation.remainingSteps)
+    typeof continuation.remainingSteps === 'number' &&
+    Number.isFinite(continuation.remainingSteps)
       ? Math.max(0, Math.round(continuation.remainingSteps))
       : null;
   const pct =
@@ -35,7 +42,8 @@ export function DashboardContinuationCard({ continuation, onClick }: Props) {
     continuation.percentComplete > 0
       ? Math.max(0, Math.min(100, Math.round(continuation.percentComplete)))
       : null;
-  const stepLabel = continuation.continuationContext?.exactStepLabel?.trim() || null;
+  const stepLabel =
+    continuation.continuationContext?.exactStepLabel?.trim() || null;
   const stepIdx = continuation.continuationContext?.exactStepIndex ?? null;
   const total = continuation.continuationContext?.totalSteps ?? null;
   const stepProgress =
@@ -48,28 +56,42 @@ export function DashboardContinuationCard({ continuation, onClick }: Props) {
       : null;
   return (
     <section className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 sm:p-6">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/45">Continue</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/45">
+        Continue
+      </p>
       <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="text-[15px] font-semibold leading-snug text-white/92">{title}</p>
+          <p className="text-[15px] font-semibold leading-snug text-white/92">
+            {title}
+          </p>
           <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-medium text-white/40">
             {lastWorked ? <span>{lastWorked}</span> : null}
-            {lastWorked && steps != null ? <span className="text-white/20">·</span> : null}
+            {lastWorked && steps != null ? (
+              <span className="text-white/20">·</span>
+            ) : null}
             {steps != null ? (
               <span>
-                {steps === 0 ? 'Nearly done' : `${steps} step${steps === 1 ? '' : 's'} remaining`}
+                {steps === 0
+                  ? 'Nearly done'
+                  : `${steps} step${steps === 1 ? '' : 's'} remaining`}
               </span>
             ) : null}
-            {(lastWorked || steps != null) && pct != null ? <span className="text-white/20">·</span> : null}
+            {(lastWorked || steps != null) && pct != null ? (
+              <span className="text-white/20">·</span>
+            ) : null}
             {pct != null ? <span>{pct}% complete</span> : null}
-            {(lastWorked || steps != null || pct != null) && (stepLabel || stepProgress) ? (
+            {(lastWorked || steps != null || pct != null) &&
+            (stepLabel || stepProgress) ? (
               <span className="text-white/20">·</span>
             ) : null}
             {stepProgress ? <span>{stepProgress}</span> : null}
           </div>
           {continuation.subtitle?.trim() ? (
             <p className="mt-1.5 text-[13px] leading-relaxed text-white/55">
-              <CornerDownRight className="mr-1 inline h-3.5 w-3.5 text-white/35" aria-hidden />
+              <CornerDownRight
+                className="mr-1 inline h-3.5 w-3.5 text-white/35"
+                aria-hidden
+              />
               {continuation.subtitle.trim()}
             </p>
           ) : null}
@@ -79,7 +101,9 @@ export function DashboardContinuationCard({ continuation, onClick }: Props) {
             </p>
           ) : null}
         </div>
-        {continuation.showPrimaryCta && safeHref && continuation.ctaLabel?.trim() ? (
+        {continuation.showPrimaryCta &&
+        safeHref &&
+        continuation.ctaLabel?.trim() ? (
           <div className="shrink-0">
             {continuation.minutes ? (
               <p className="text-[12px] font-medium leading-relaxed text-white/35">
@@ -103,4 +127,3 @@ export function DashboardContinuationCard({ continuation, onClick }: Props) {
     </section>
   );
 }
-

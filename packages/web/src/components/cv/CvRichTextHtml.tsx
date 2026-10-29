@@ -11,7 +11,12 @@ type CvRichTextHtmlProps = {
 };
 
 /** Renders stored CV rich-text (links, bold, italic) in preview and international templates. */
-export function CvRichTextHtml({ text, className, style, as: Tag = 'span' }: CvRichTextHtmlProps) {
+export function CvRichTextHtml({
+  text,
+  className,
+  style,
+  as: Tag = 'span',
+}: CvRichTextHtmlProps) {
   const trimmed = text?.trim() ?? '';
   if (!trimmed) return null;
   return (

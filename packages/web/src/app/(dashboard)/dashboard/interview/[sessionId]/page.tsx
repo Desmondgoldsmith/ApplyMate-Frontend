@@ -2617,7 +2617,9 @@ export default function InterviewSessionPage() {
                     className="mx-5 text-center text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]"
                     aria-live="polite"
                   >
-                    {prepQuota.voiceEnabled ? 'AI voice (Pro)' : 'Text practice'}
+                    {prepQuota.voiceEnabled
+                      ? 'AI voice (Pro)'
+                      : 'Text practice'}
                   </p>
                 ) : null}
 

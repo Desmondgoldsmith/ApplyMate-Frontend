@@ -50,7 +50,9 @@ export function TemplatePickerModal({
 }: TemplatePickerModalProps) {
   const ids =
     templateIds && templateIds.length > 0
-      ? templateIds.filter((id): id is CvTemplateId => CV_TEMPLATE_IDS.includes(id))
+      ? templateIds.filter((id): id is CvTemplateId =>
+          CV_TEMPLATE_IDS.includes(id),
+        )
       : [...CV_TEMPLATE_IDS];
 
   return (

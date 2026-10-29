@@ -22,7 +22,10 @@ export function DashboardProgressIntelligenceCollapsible({
 
   useEffect(() => {
     try {
-      const v = typeof window !== 'undefined' ? window.localStorage.getItem(LS_KEY) : null;
+      const v =
+        typeof window !== 'undefined'
+          ? window.localStorage.getItem(LS_KEY)
+          : null;
       if (v === '1') setOpen(false);
     } catch {
       /* ignore */
@@ -57,7 +60,9 @@ export function DashboardProgressIntelligenceCollapsible({
         onClick={toggle}
         aria-expanded={effectiveOpen}
       >
-        <span className="text-[14px] font-semibold leading-snug text-[var(--text-primary)]">{title}</span>
+        <span className="text-[14px] font-semibold leading-snug text-[var(--text-primary)]">
+          {title}
+        </span>
         <ChevronDown
           className={cn(
             'h-4 w-4 shrink-0 text-[var(--text-muted)] transition-transform duration-200 ease-out',
@@ -73,7 +78,10 @@ export function DashboardProgressIntelligenceCollapsible({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.28, ease: [0.21, 0.47, 0.32, 0.98] as const }}
+            transition={{
+              duration: 0.28,
+              ease: [0.21, 0.47, 0.32, 0.98] as const,
+            }}
             className="overflow-hidden border-t border-[var(--border-subtle)]"
           >
             <div className="grid grid-cols-1 items-start gap-6 p-4 pt-5 sm:p-5 sm:pt-6 md:gap-8">

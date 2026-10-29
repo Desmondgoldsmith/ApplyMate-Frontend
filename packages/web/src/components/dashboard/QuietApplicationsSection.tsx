@@ -46,22 +46,27 @@ function QuietApplicationRow({
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 flex-1 gap-3">
-          <CompanyLogo company={item.company} logoUrl={item.companyLogoUrl} size="md" />
+          <CompanyLogo
+            company={item.company}
+            logoUrl={item.companyLogoUrl}
+            size="md"
+          />
           <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <p className="min-w-0 text-[14px] font-semibold leading-snug text-[var(--text-primary)]">
-              {sanitizeDashboardDisplayText(item.headline)}
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <p className="min-w-0 text-[14px] font-semibold leading-snug text-[var(--text-primary)]">
+                {sanitizeDashboardDisplayText(item.headline)}
+              </p>
+              <span className="shrink-0 rounded-full border border-[rgba(251,191,36,0.25)] bg-[rgba(251,191,36,0.10)] px-2 py-0.5 text-[11px] font-medium text-[#FCD34D]">
+                {item.lastActivityLabel}
+              </span>
+            </div>
+            <p className="mt-1 text-[12px] font-medium text-[var(--text-secondary)]">
+              {sanitizeDashboardDisplayText(item.jobTitle)} ·{' '}
+              {sanitizeDashboardDisplayText(item.company)}
             </p>
-            <span className="shrink-0 rounded-full border border-[rgba(251,191,36,0.25)] bg-[rgba(251,191,36,0.10)] px-2 py-0.5 text-[11px] font-medium text-[#FCD34D]">
-              {item.lastActivityLabel}
-            </span>
-          </div>
-          <p className="mt-1 text-[12px] font-medium text-[var(--text-secondary)]">
-            {sanitizeDashboardDisplayText(item.jobTitle)} · {sanitizeDashboardDisplayText(item.company)}
-          </p>
-          <p className="mt-1.5 line-clamp-3 text-[13px] leading-relaxed text-[var(--text-secondary)]">
-            {sanitizeDashboardDisplayText(item.supporting)}
-          </p>
+            <p className="mt-1.5 line-clamp-3 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+              {sanitizeDashboardDisplayText(item.supporting)}
+            </p>
           </div>
         </div>
         <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:min-w-[148px]">
@@ -87,16 +92,27 @@ function QuietApplicationRow({
   );
 }
 
-export function QuietApplicationsSection({ items, totalCount, viewAllHref, plan }: Props) {
+export function QuietApplicationsSection({
+  items,
+  totalCount,
+  viewAllHref,
+  plan,
+}: Props) {
   const toast = useToast();
   const queryClient = useQueryClient();
 
   const archiveMutation = useMutation({
     mutationFn: (applicationId: string) => api.jobs.archive({ applicationId }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.archive() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.applications.root(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.history(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.archive(),
+      });
       invalidateTodayPlanQueries(queryClient);
       toast.success('Job archived');
     },
@@ -121,8 +137,14 @@ export function QuietApplicationsSection({ items, totalCount, viewAllHref, plan 
   const visible = items.slice(0, DASHBOARD_QUIET_HOME_CAP);
   const showViewAll = total > DASHBOARD_QUIET_HOME_CAP;
   const moreCount = Math.max(0, total - visible.length);
-  const heading = normalizedSectionTitle(plan, 'quiet_applications', 'Applications going quiet');
-  const viewAll = (viewAllHref?.trim() || '/dashboard/quiet-applications').trim();
+  const heading = normalizedSectionTitle(
+    plan,
+    'quiet_applications',
+    'Applications going quiet',
+  );
+  const viewAll = (
+    viewAllHref?.trim() || '/dashboard/quiet-applications'
+  ).trim();
 
   const headerRight = showViewAll ? (
     <Link
@@ -131,7 +153,9 @@ export function QuietApplicationsSection({ items, totalCount, viewAllHref, plan 
     >
       <span>View all →</span>
       {moreCount > 0 ? (
-        <span className="font-normal text-[var(--text-muted)]">(+{moreCount} more)</span>
+        <span className="font-normal text-[var(--text-muted)]">
+          (+{moreCount} more)
+        </span>
       ) : null}
     </Link>
   ) : null;

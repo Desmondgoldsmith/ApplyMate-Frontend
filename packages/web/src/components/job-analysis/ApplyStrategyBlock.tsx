@@ -23,7 +23,9 @@ const STRATEGY_COPY: Record<
   },
 };
 
-function strategyToDecision(strategy: ApplyStrategy): 'APPLY' | 'MAYBE' | 'SKIP' {
+function strategyToDecision(
+  strategy: ApplyStrategy,
+): 'APPLY' | 'MAYBE' | 'SKIP' {
   if (strategy === 'APPLY_NOW') return 'APPLY';
   if (strategy === 'SKIP') return 'SKIP';
   return 'MAYBE';
@@ -52,18 +54,23 @@ export function ApplyStrategyBlock({
   const displayStrategy: Exclude<ApplyStrategy, 'SKIP'> =
     strategy === 'SKIP' || strategy === 'APPLY_NOW' ? 'APPLY_NOW' : strategy;
 
-  const copy = isTailored && displayStrategy === 'TAILOR_FIRST'
-    ? {
-        primary: 'Apply now',
-        detail: 'You have tailored your CV for this role. Apply when you are ready.',
-      }
-    : STRATEGY_COPY[displayStrategy];
+  const copy =
+    isTailored && displayStrategy === 'TAILOR_FIRST'
+      ? {
+          primary: 'Apply now',
+          detail:
+            'You have tailored your CV for this role. Apply when you are ready.',
+        }
+      : STRATEGY_COPY[displayStrategy];
 
   const record = useMutation({
     mutationFn: async (picked: ApplyStrategy) => {
       const listingId = jobListingId?.trim();
       if (!listingId) return { skipped: true as const };
-      await api.jobDiscovery.recordDecision(listingId, strategyToDecision(picked));
+      await api.jobDiscovery.recordDecision(
+        listingId,
+        strategyToDecision(picked),
+      );
       return { skipped: false as const };
     },
     onSuccess: (_data, picked) => {
@@ -77,7 +84,9 @@ export function ApplyStrategyBlock({
   const runStrategy = useCallback(
     (picked: 'APPLY_NOW' | 'TAILOR_FIRST') => {
       if (picked === 'TAILOR_FIRST') {
-        void record.mutateAsync('TAILOR_FIRST').finally(() => onTailorFirst?.());
+        void record
+          .mutateAsync('TAILOR_FIRST')
+          .finally(() => onTailorFirst?.());
         return;
       }
       void record.mutateAsync('APPLY_NOW').finally(() => onApplyNow?.());
@@ -92,11 +101,18 @@ export function ApplyStrategyBlock({
       className="rounded-2xl border border-[#00C9B1]/20 bg-[#00C9B1]/[0.05] p-4 sm:p-5"
       aria-labelledby="apply-strategy-heading"
     >
-      <h3 id="apply-strategy-heading" className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">
+      <h3
+        id="apply-strategy-heading"
+        className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35"
+      >
         Recommended next step
       </h3>
-      <p className="mt-2 text-[14px] font-semibold text-white">{copy.primary}</p>
-      <p className="mt-1 text-[12px] leading-relaxed text-white/55">{copy.detail}</p>
+      <p className="mt-2 text-[14px] font-semibold text-white">
+        {copy.primary}
+      </p>
+      <p className="mt-1 text-[12px] leading-relaxed text-white/55">
+        {copy.detail}
+      </p>
 
       <div className="mt-4 flex flex-wrap gap-2">
         {applyUrl?.trim() ? (
@@ -128,14 +144,20 @@ export function ApplyStrategyBlock({
             tailorDisabled && 'cursor-not-allowed opacity-45',
           )}
           disabled={tailorDisabled}
-          title={isTailored ? 'You have already tailored your CV for this role' : undefined}
+          title={
+            isTailored
+              ? 'You have already tailored your CV for this role'
+              : undefined
+          }
           onClick={() => runStrategy('TAILOR_FIRST')}
         >
           Tailor first
         </Button>
       </div>
       {isTailored ? (
-        <p className="mt-2 text-[11px] text-white/40">Tailoring complete for this role.</p>
+        <p className="mt-2 text-[11px] text-white/40">
+          Tailoring complete for this role.
+        </p>
       ) : null}
       {saved ? (
         <p className="mt-2 text-[11px] text-white/40" role="status">

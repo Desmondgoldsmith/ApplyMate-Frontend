@@ -10,8 +10,13 @@ export type InterviewScoreSources = {
   compositeScore?: number | null;
 };
 
-export function resolveInterviewDisplayScore(sources: InterviewScoreSources): number | null {
-  if (typeof sources.readinessScore === 'number' && Number.isFinite(sources.readinessScore)) {
+export function resolveInterviewDisplayScore(
+  sources: InterviewScoreSources,
+): number | null {
+  if (
+    typeof sources.readinessScore === 'number' &&
+    Number.isFinite(sources.readinessScore)
+  ) {
     return clampScore(sources.readinessScore);
   }
   const fallback = sources.overallScore ?? sources.compositeScore;
@@ -25,14 +30,18 @@ function clampScore(value: number): number {
   return Math.round(Math.max(0, Math.min(100, value)));
 }
 
-export function scoreFromProgressTrendPoint(point: ProgressTrendPoint): number | null {
+export function scoreFromProgressTrendPoint(
+  point: ProgressTrendPoint,
+): number | null {
   return resolveInterviewDisplayScore({
     readinessScore: point.readinessScore,
     compositeScore: point.compositeScore,
   });
 }
 
-export function scoreFromInterviewResult(result: InterviewResult | null | undefined): number | null {
+export function scoreFromInterviewResult(
+  result: InterviewResult | null | undefined,
+): number | null {
   if (!result) return null;
   return resolveInterviewDisplayScore({
     readinessScore: result.readinessScore,
@@ -50,7 +59,10 @@ export function scoreFromInterviewSession(
 }
 
 export function scoreFromSessionWithCachedResult(
-  session: Pick<InterviewSession, 'id' | 'readinessScore' | 'overallScore' | 'result'>,
+  session: Pick<
+    InterviewSession,
+    'id' | 'readinessScore' | 'overallScore' | 'result'
+  >,
   options?: {
     progressScore?: number | null;
     cachedPoll?: InterviewEvaluationPollState | null;
@@ -85,7 +97,9 @@ export function enrichProgressTrendPoints(
   });
 }
 
-export function averageDisplayScore(points: ProgressTrendPoint[]): number | null {
+export function averageDisplayScore(
+  points: ProgressTrendPoint[],
+): number | null {
   const scores = points
     .map((p) => scoreFromProgressTrendPoint(p))
     .filter((s): s is number => s != null);

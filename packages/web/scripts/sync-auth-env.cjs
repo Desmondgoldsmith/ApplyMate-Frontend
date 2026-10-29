@@ -98,7 +98,8 @@ for (const key of SYNC_FROM_ROOT) {
   const fromRoot = rootVars[key]?.trim();
   if (fromRoot) {
     if (key === 'NEXTAUTH_URL') synced[key] = normalizeNextAuthUrl(fromRoot);
-    else if (key === 'NEXT_PUBLIC_API_URL') synced[key] = normalizeApiUrl(fromRoot);
+    else if (key === 'NEXT_PUBLIC_API_URL')
+      synced[key] = normalizeApiUrl(fromRoot);
     else synced[key] = fromRoot;
   }
 }
@@ -125,7 +126,12 @@ const header =
   '# Auto-synced from repo root .env (scripts/sync-auth-env.cjs). Edit root .env, not auth keys here.';
 const nextContent = formatEnvFile(synced, header);
 
-if (!fs.existsSync(webLocalPath) || fs.readFileSync(webLocalPath, 'utf8') !== nextContent) {
+if (
+  !fs.existsSync(webLocalPath) ||
+  fs.readFileSync(webLocalPath, 'utf8') !== nextContent
+) {
   fs.writeFileSync(webLocalPath, nextContent, 'utf8');
-  console.log('[sync-auth-env] Updated packages/web/.env.local from repo root .env');
+  console.log(
+    '[sync-auth-env] Updated packages/web/.env.local from repo root .env',
+  );
 }

@@ -59,8 +59,7 @@ export function Pricing() {
           <span
             className={`pr-3 text-[12px] font-semibold ${yearly ? 'text-white' : 'text-[rgba(255,255,255,0.35)]'}`}
           >
-            Yearly{' '}
-            <span className="text-[#00C9B1]">(save 40%)</span>
+            Yearly <span className="text-[#00C9B1]">(save 40%)</span>
           </span>
         </div>
       </motion.div>

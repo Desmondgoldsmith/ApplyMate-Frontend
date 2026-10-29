@@ -15,7 +15,8 @@ export function resolveCvDisplayScore(
   if (direct != null && Number.isFinite(direct)) return Math.round(direct);
 
   const breakdown = payload.breakdown as Record<string, unknown> | undefined;
-  const fromBreakdown = breakdown?.overall ?? breakdown?.overallScore ?? breakdown?.score;
+  const fromBreakdown =
+    breakdown?.overall ?? breakdown?.overallScore ?? breakdown?.score;
   if (typeof fromBreakdown === 'number' && Number.isFinite(fromBreakdown)) {
     return Math.round(fromBreakdown);
   }
@@ -47,7 +48,8 @@ export function mergeBreakdownWithPublishedSections(
     ...(sections as Record<string, unknown>),
   };
   for (const [key, publishedScore] of Object.entries(lastPublished)) {
-    if (typeof publishedScore !== 'number' || !Number.isFinite(publishedScore)) continue;
+    if (typeof publishedScore !== 'number' || !Number.isFinite(publishedScore))
+      continue;
     const score = Math.round(Math.max(0, Math.min(100, publishedScore)));
     const existing = mergedSections[key];
     if (existing && typeof existing === 'object' && !Array.isArray(existing)) {

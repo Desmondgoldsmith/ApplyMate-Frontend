@@ -2,7 +2,11 @@
 
 export type SemanticOutlookBand = 'strong' | 'moderate' | 'building' | 'low';
 
-export type TimelineOutlookBand = 'near-term' | 'medium-term' | 'extended' | 'early-stage';
+export type TimelineOutlookBand =
+  | 'near-term'
+  | 'medium-term'
+  | 'extended'
+  | 'early-stage';
 
 export type SemanticOutlookPayload = {
   value: SemanticOutlookBand;
@@ -11,7 +15,12 @@ export type SemanticOutlookPayload = {
   disclaimer: string | null;
 };
 
-const SEMANTIC_OUTLOOK_BANDS = new Set<string>(['strong', 'moderate', 'building', 'low']);
+const SEMANTIC_OUTLOOK_BANDS = new Set<string>([
+  'strong',
+  'moderate',
+  'building',
+  'low',
+]);
 
 const TIMELINE_OUTLOOK_BANDS = new Set<string>([
   'near-term',

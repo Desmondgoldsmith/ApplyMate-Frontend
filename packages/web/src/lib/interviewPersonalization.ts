@@ -7,7 +7,12 @@ import type {
   SkillTrend,
 } from '@/lib/interview-prep-types';
 
-export const GROWTH_SKILL_KEYS = ['clarity', 'structure', 'depth', 'confidence'] as const;
+export const GROWTH_SKILL_KEYS = [
+  'clarity',
+  'structure',
+  'depth',
+  'confidence',
+] as const;
 
 export type GrowthSkillKey = (typeof GROWTH_SKILL_KEYS)[number];
 
@@ -47,17 +52,27 @@ export function highlightedTrend(
   return trendIndicator(improvementTrend ?? weaknessTrend ?? 'stable');
 }
 
-export function questionStyleBadgeLabel(hint: DifficultyHint | null | undefined): string | null {
+export function questionStyleBadgeLabel(
+  hint: DifficultyHint | null | undefined,
+): string | null {
   if (!hint) return null;
   const style = (hint.questionStyle ?? '').toLowerCase();
   const level = hint.difficultyLevel;
-  if (style.includes('simplified') || style.includes('warm') || level === 'easy') {
+  if (
+    style.includes('simplified') ||
+    style.includes('warm') ||
+    level === 'easy'
+  ) {
     return 'Warm-up question';
   }
   if (style.includes('behavioral') || style.includes('challenge')) {
     return 'Behavioral challenge';
   }
-  if (level === 'hard' || style.includes('senior') || style.includes('scenario')) {
+  if (
+    level === 'hard' ||
+    style.includes('senior') ||
+    style.includes('scenario')
+  ) {
     return 'Senior-level scenario';
   }
   if (level === 'medium') return 'Behavioral challenge';
@@ -82,18 +97,26 @@ export function buildLearningMoments(
   if (evolution.length >= 2) {
     const prev = evolution[evolution.length - 2]!;
     const cur = evolution[evolution.length - 1]!;
-    if (cur.structure > prev.structure + 4) lines.push('Better structure than last time');
-    if (cur.clarity > prev.clarity + 4) lines.push('More clarity than your previous answer');
+    if (cur.structure > prev.structure + 4)
+      lines.push('Better structure than last time');
+    if (cur.clarity > prev.clarity + 4)
+      lines.push('More clarity than your previous answer');
     const avgPrev = (prev.clarity + prev.structure) / 2;
     const avgCur = (cur.clarity + cur.structure) / 2;
     if (avgCur > avgPrev + 4 && lines.length === 0) {
       lines.push('Clearer delivery than your last response');
     }
   }
-  if (previousComparison?.improvedSinceLastSession && previousComparison.improvementInsight?.trim()) {
+  if (
+    previousComparison?.improvedSinceLastSession &&
+    previousComparison.improvementInsight?.trim()
+  ) {
     lines.push(previousComparison.improvementInsight.trim());
   }
-  if (personalization?.weaknessProfile?.trend === 'improving' && lines.length < 2) {
+  if (
+    personalization?.weaknessProfile?.trend === 'improving' &&
+    lines.length < 2
+  ) {
     lines.push('Your focus areas are trending up this session');
   }
   return [...new Set(lines)].slice(0, 2);
@@ -102,11 +125,14 @@ export function buildLearningMoments(
 export function coachHintsFromPersonalization(
   personalization: PersonalizationPayload | null | undefined,
 ): string[] {
-  const nudges = personalization?.realTimeSignals?.nudges?.filter((n) => n?.trim()) ?? [];
+  const nudges =
+    personalization?.realTimeSignals?.nudges?.filter((n) => n?.trim()) ?? [];
   return nudges.slice(0, 2);
 }
 
-export function topWeaknessKey(weaknesses: string[] | undefined): GrowthSkillKey | null {
+export function topWeaknessKey(
+  weaknesses: string[] | undefined,
+): GrowthSkillKey | null {
   const raw = weaknesses?.[0]?.trim().toLowerCase();
   if (!raw) return null;
   if (raw.includes('clarity') || raw === 'communication') return 'clarity';

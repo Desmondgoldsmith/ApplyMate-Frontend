@@ -19,7 +19,10 @@ export function PredictiveOutlookSection() {
     deepDivePredictiveSummary(payload),
     <DashboardPredictiveOutlookCard
       data={payload}
-      phase15Empty={dashboardEmptyStateFor(todayPlan.data, 'predictive_outlook')}
+      phase15Empty={dashboardEmptyStateFor(
+        todayPlan.data,
+        'predictive_outlook',
+      )}
     />,
   );
 }

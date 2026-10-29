@@ -25,11 +25,7 @@ export async function syncWebSessionToDashboardTabs(): Promise<void> {
     try {
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
-        func: (
-          token: string,
-          eventName: string,
-          authCookie: string,
-        ) => {
+        func: (token: string, eventName: string, authCookie: string) => {
           document.cookie = `${authCookie}=${encodeURIComponent(token)}; path=/; SameSite=Lax`;
           window.dispatchEvent(new CustomEvent(eventName));
         },

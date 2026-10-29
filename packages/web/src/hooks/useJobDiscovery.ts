@@ -17,7 +17,10 @@ export type JobDiscoveryParams = {
   remoteFirst?: boolean;
 };
 
-function discoveryPlaceholderAllowed(prev: JobDiscoveryParams, next: JobDiscoveryParams): boolean {
+function discoveryPlaceholderAllowed(
+  prev: JobDiscoveryParams,
+  next: JobDiscoveryParams,
+): boolean {
   return (
     prev.cvProfileId === next.cvProfileId &&
     prev.q === next.q &&
@@ -39,9 +42,13 @@ export function useJobDiscovery(params: JobDiscoveryParams, enabled = true) {
     refetchOnWindowFocus: false,
     placeholderData: (previousData, previousQuery) => {
       if (!previousData) return undefined;
-      const prevParams = previousQuery?.queryKey?.[1] as JobDiscoveryParams | undefined;
+      const prevParams = previousQuery?.queryKey?.[1] as
+        | JobDiscoveryParams
+        | undefined;
       if (!prevParams) return undefined;
-      return discoveryPlaceholderAllowed(prevParams, params) ? previousData : undefined;
+      return discoveryPlaceholderAllowed(prevParams, params)
+        ? previousData
+        : undefined;
     },
     enabled,
   });

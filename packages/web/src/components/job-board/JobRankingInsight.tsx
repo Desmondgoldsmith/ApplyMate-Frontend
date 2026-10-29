@@ -24,7 +24,8 @@ const TIER_CLASS: Record<JobRankingTier, string> = {
 };
 
 const SENIORITY_COPY: Record<string, string> = {
-  under: 'This role may expect more senior experience than your profile suggests.',
+  under:
+    'This role may expect more senior experience than your profile suggests.',
   over: 'This role may be below your current seniority level.',
   unknown: 'Seniority fit could not be determined from the listing.',
 };
@@ -38,16 +39,28 @@ function TierBadge({ tier, score }: { tier: JobRankingTier; score?: number }) {
       )}
     >
       {TIER_LABEL[tier]}
-      {typeof score === 'number' ? <span className="font-medium opacity-90">· {score}%</span> : null}
+      {typeof score === 'number' ? (
+        <span className="font-medium opacity-90">· {score}%</span>
+      ) : null}
     </span>
   );
 }
 
-function SkillChips({ title, skills, tone }: { title: string; skills: string[]; tone: 'match' | 'gap' }) {
+function SkillChips({
+  title,
+  skills,
+  tone,
+}: {
+  title: string;
+  skills: string[];
+  tone: 'match' | 'gap';
+}) {
   if (skills.length === 0) return null;
   return (
     <section className="space-y-2">
-      <h4 className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">{title}</h4>
+      <h4 className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">
+        {title}
+      </h4>
       <div className="flex flex-wrap gap-1.5">
         {skills.map((skill) => (
           <span
@@ -74,7 +87,8 @@ export function JobRankingInsight({ job }: { job: JobListingDto }) {
   const [decision, setDecision] = useState<JobDecision | null>(null);
 
   const recordDecision = useMutation({
-    mutationFn: (next: JobDecision) => api.jobDiscovery.recordDecision(job.id, next),
+    mutationFn: (next: JobDecision) =>
+      api.jobDiscovery.recordDecision(job.id, next),
     onSuccess: (_data, next) => {
       setDecision(next);
     },
@@ -98,7 +112,9 @@ export function JobRankingInsight({ job }: { job: JobListingDto }) {
   const risks = (explanation?.riskFactors ?? []).slice(0, 5);
   const seniority = explanation?.seniorityMismatch;
   const seniorityNote =
-    seniority && seniority !== 'none' ? SENIORITY_COPY[seniority] ?? null : null;
+    seniority && seniority !== 'none'
+      ? (SENIORITY_COPY[seniority] ?? null)
+      : null;
   const refinedScore = job.matchPreview?.refinedScore;
   const showAiVerified =
     job.matchPreview?.refinedReady === true &&
@@ -112,11 +128,16 @@ export function JobRankingInsight({ job }: { job: JobListingDto }) {
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 space-y-2">
-          <h3 id={`job-ranking-${job.id}`} className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">
+          <h3
+            id={`job-ranking-${job.id}`}
+            className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35"
+          >
             Why this job
           </h3>
           <div className="flex flex-wrap items-center gap-2">
-            {ranking?.tier ? <TierBadge tier={ranking.tier} score={ranking.score} /> : null}
+            {ranking?.tier ? (
+              <TierBadge tier={ranking.tier} score={ranking.score} />
+            ) : null}
             {showAiVerified ? (
               <span className="rounded-full border border-[#00C9B1]/25 bg-[#00C9B1]/10 px-2 py-0.5 text-[10px] font-semibold text-[#8af3e7]">
                 AI verified · {Math.round(refinedScore)}%
@@ -124,17 +145,24 @@ export function JobRankingInsight({ job }: { job: JobListingDto }) {
             ) : null}
           </div>
           {ranking?.recommendation ? (
-            <p className="text-[13px] font-medium leading-snug text-[#8af3e7]/90">{ranking.recommendation}</p>
+            <p className="text-[13px] font-medium leading-snug text-[#8af3e7]/90">
+              {ranking.recommendation}
+            </p>
           ) : null}
         </div>
       </div>
 
       {explanation?.whyThisJob ? (
-        <p className="text-[13px] leading-[1.65] text-white/70">{explanation.whyThisJob}</p>
+        <p className="text-[13px] leading-[1.65] text-white/70">
+          {explanation.whyThisJob}
+        </p>
       ) : null}
 
-      {explanation?.recommendation && explanation.recommendation !== ranking?.recommendation ? (
-        <p className="text-[12px] leading-relaxed text-white/50">{explanation.recommendation}</p>
+      {explanation?.recommendation &&
+      explanation.recommendation !== ranking?.recommendation ? (
+        <p className="text-[12px] leading-relaxed text-white/50">
+          {explanation.recommendation}
+        </p>
       ) : null}
 
       <SkillChips title="Skills you match" skills={matched} tone="match" />
@@ -142,11 +170,16 @@ export function JobRankingInsight({ job }: { job: JobListingDto }) {
 
       {risks.length > 0 ? (
         <section className="space-y-2">
-          <h4 className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">Watch outs</h4>
+          <h4 className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35">
+            Watch outs
+          </h4>
           <ul className="space-y-1.5 text-[12px] leading-relaxed text-amber-100/85">
             {risks.map((risk) => (
               <li key={risk} className="flex gap-2">
-                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-300/80" aria-hidden />
+                <span
+                  className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-300/80"
+                  aria-hidden
+                />
                 <span>{risk}</span>
               </li>
             ))}
@@ -168,7 +201,9 @@ export function JobRankingInsight({ job }: { job: JobListingDto }) {
           <DecisionButton
             label="Apply"
             active={decision === 'APPLY'}
-            pending={recordDecision.isPending && recordDecision.variables === 'APPLY'}
+            pending={
+              recordDecision.isPending && recordDecision.variables === 'APPLY'
+            }
             onClick={() => onDecision('APPLY')}
             className="border-emerald-400/35 bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/15"
             icon={<ThumbsUp className="h-3.5 w-3.5" aria-hidden />}
@@ -176,7 +211,9 @@ export function JobRankingInsight({ job }: { job: JobListingDto }) {
           <DecisionButton
             label="Maybe"
             active={decision === 'MAYBE'}
-            pending={recordDecision.isPending && recordDecision.variables === 'MAYBE'}
+            pending={
+              recordDecision.isPending && recordDecision.variables === 'MAYBE'
+            }
             onClick={() => onDecision('MAYBE')}
             className="border-amber-400/30 bg-amber-500/10 text-amber-100 hover:bg-amber-500/15"
             icon={<Check className="h-3.5 w-3.5" aria-hidden />}
@@ -184,7 +221,9 @@ export function JobRankingInsight({ job }: { job: JobListingDto }) {
           <DecisionButton
             label="Skip"
             active={decision === 'SKIP'}
-            pending={recordDecision.isPending && recordDecision.variables === 'SKIP'}
+            pending={
+              recordDecision.isPending && recordDecision.variables === 'SKIP'
+            }
             onClick={() => onDecision('SKIP')}
             className="border-white/15 bg-white/[0.04] text-white/60 hover:bg-white/[0.06]"
             icon={<ThumbsDown className="h-3.5 w-3.5" aria-hidden />}
@@ -196,7 +235,8 @@ export function JobRankingInsight({ job }: { job: JobListingDto }) {
           </p>
         ) : (
           <p className="mt-2 text-[11px] text-white/40">
-            Quick feedback helps us surface better matches. This does not change your ranking score.
+            Quick feedback helps us surface better matches. This does not change
+            your ranking score.
           </p>
         )}
       </div>
@@ -232,7 +272,11 @@ function DecisionButton({
       )}
       aria-pressed={active}
     >
-      {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : icon}
+      {pending ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+      ) : (
+        icon
+      )}
       {label}
     </Button>
   );

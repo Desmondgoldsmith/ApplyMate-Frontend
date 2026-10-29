@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { assistantTargetSectionToEditorId } from '@/lib/cvAssistantCommit';
-import { parseCvAssistantCommitResponse, type CVSectionRecord } from '@/lib/api';
+import {
+  parseCvAssistantCommitResponse,
+  type CVSectionRecord,
+} from '@/lib/api';
 
 describe('parseCvAssistantCommitResponse', () => {
   it('reads profile envelope, sections, and metadata', () => {
@@ -45,8 +48,12 @@ describe('assistantTargetSectionToEditorId', () => {
   ];
 
   it('maps fixed section keys', () => {
-    expect(assistantTargetSectionToEditorId('projects', sections)).toBe('projects');
-    expect(assistantTargetSectionToEditorId('summary', sections)).toBe('summary');
+    expect(assistantTargetSectionToEditorId('projects', sections)).toBe(
+      'projects',
+    );
+    expect(assistantTargetSectionToEditorId('summary', sections)).toBe(
+      'summary',
+    );
   });
 
   it('maps project slug hints to projects when row exists', () => {
@@ -56,8 +63,8 @@ describe('assistantTargetSectionToEditorId', () => {
   });
 
   it('maps custom_* via section row type', () => {
-    expect(assistantTargetSectionToEditorId('custom_volunteering', sections)).toBe(
-      'custom_volunteering',
-    );
+    expect(
+      assistantTargetSectionToEditorId('custom_volunteering', sections),
+    ).toBe('custom_volunteering');
   });
 });

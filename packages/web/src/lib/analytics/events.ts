@@ -39,7 +39,9 @@ export type FunnelAnalyticsEventName =
   | 'dashboard_entered'
   | 'page_viewed';
 
-export type AnalyticsEventName = FunnelAnalyticsEventName | ProductAnalyticsEventName;
+export type AnalyticsEventName =
+  | FunnelAnalyticsEventName
+  | ProductAnalyticsEventName;
 
 export const PRODUCT_ANALYTICS_EVENTS = new Set<string>([
   'mission_completed',
@@ -67,6 +69,8 @@ export const PRODUCT_ANALYTICS_EVENTS = new Set<string>([
   'fast_path_used',
 ]);
 
-export function isProductAnalyticsEvent(name: string): name is ProductAnalyticsEventName {
+export function isProductAnalyticsEvent(
+  name: string,
+): name is ProductAnalyticsEventName {
   return PRODUCT_ANALYTICS_EVENTS.has(name);
 }

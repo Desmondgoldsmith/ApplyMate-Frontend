@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import type { CvApplyImprovementResult } from '@/lib/api';
 
-import { isCvApplyImprovementTerminalNoDiff, toastCopyForTerminalNoDiffApply } from './cvApplyImprovementQueue';
+import {
+  isCvApplyImprovementTerminalNoDiff,
+  toastCopyForTerminalNoDiffApply,
+} from './cvApplyImprovementQueue';
 
 const base = (): CvApplyImprovementResult => ({
   success: true,
@@ -19,11 +22,21 @@ const base = (): CvApplyImprovementResult => ({
 describe('isCvApplyImprovementTerminalNoDiff', () => {
   it('is true for alreadyApplied or autoResolved (not duplicateSuppressed alone)', () => {
     expect(
-      isCvApplyImprovementTerminalNoDiff({ ...base(), alreadyApplied: true, duplicateSuppressed: true }),
+      isCvApplyImprovementTerminalNoDiff({
+        ...base(),
+        alreadyApplied: true,
+        duplicateSuppressed: true,
+      }),
     ).toBe(true);
-    expect(isCvApplyImprovementTerminalNoDiff({ ...base(), autoResolved: true })).toBe(true);
     expect(
-      isCvApplyImprovementTerminalNoDiff({ ...base(), duplicateSuppressed: true, cacheHit: true }),
+      isCvApplyImprovementTerminalNoDiff({ ...base(), autoResolved: true }),
+    ).toBe(true);
+    expect(
+      isCvApplyImprovementTerminalNoDiff({
+        ...base(),
+        duplicateSuppressed: true,
+        cacheHit: true,
+      }),
     ).toBe(false);
   });
 });
@@ -40,11 +53,11 @@ describe('toastCopyForTerminalNoDiffApply', () => {
   });
 
   it('uses generic copy otherwise', () => {
-    expect(toastCopyForTerminalNoDiffApply({ ...base(), alreadyApplied: true })).toBe(
-      'This improvement is already reflected in your CV.',
-    );
-    expect(toastCopyForTerminalNoDiffApply({ ...base(), autoResolved: true })).toBe(
-      'This improvement is already reflected in your CV.',
-    );
+    expect(
+      toastCopyForTerminalNoDiffApply({ ...base(), alreadyApplied: true }),
+    ).toBe('This improvement is already reflected in your CV.');
+    expect(
+      toastCopyForTerminalNoDiffApply({ ...base(), autoResolved: true }),
+    ).toBe('This improvement is already reflected in your CV.');
   });
 });

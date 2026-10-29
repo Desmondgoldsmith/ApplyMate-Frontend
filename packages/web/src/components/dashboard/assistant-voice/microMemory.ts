@@ -26,7 +26,10 @@ export function writeDashboardOpenedNow(): void {
 /**
  * Short welcome line when returning after a gap (first session has no extra line — time-of-day greeting covers it).
  */
-export function dashboardWelcomeLine(params: { firstName: string; lastOpenedAtMs: number | null }): string | null {
+export function dashboardWelcomeLine(params: {
+  firstName: string;
+  lastOpenedAtMs: number | null;
+}): string | null {
   const name = params.firstName.trim() || 'there';
   if (params.lastOpenedAtMs == null || params.lastOpenedAtMs <= 0) {
     return null;
@@ -39,7 +42,11 @@ export function dashboardWelcomeLine(params: { firstName: string; lastOpenedAtMs
 
 /** Eyebrow for continuation — calm variants, deterministic from stable string. */
 export function continuationEyebrowLabel(seed: string): string {
-  const variants = ['Where you left off', 'Pick up where you stopped', 'Continue from earlier'];
+  const variants = [
+    'Where you left off',
+    'Pick up where you stopped',
+    'Continue from earlier',
+  ];
   let h = 0;
   const s = seed.trim() || 'default';
   for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) | 0;

@@ -206,7 +206,9 @@ export function MergeCvProfilesModal({
             <div className="flex items-start gap-2">
               <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[#00C9B1]" />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-white">Merge preview</p>
+                <p className="text-sm font-semibold text-white">
+                  Merge preview
+                </p>
                 {summaryPreview ? (
                   <p className="mt-2 line-clamp-4 text-xs leading-relaxed text-white/55">
                     {summaryPreview}
@@ -221,7 +223,10 @@ export function MergeCvProfilesModal({
             </div>
 
             {preview.sections.length > 0 ? (
-              <ul className="mt-4 max-h-48 space-y-2 overflow-y-auto" aria-label="Merged sections">
+              <ul
+                className="mt-4 max-h-48 space-y-2 overflow-y-auto"
+                aria-label="Merged sections"
+              >
                 {preview.sections.map((row) => (
                   <li
                     key={`${row.type}-${row.label}-${row.order}`}
@@ -239,7 +244,9 @@ export function MergeCvProfilesModal({
             ) : null}
 
             <label className="mt-4 block border-t border-white/[0.08] pt-4">
-              <span className="text-xs font-semibold text-white/55">CV name</span>
+              <span className="text-xs font-semibold text-white/55">
+                CV name
+              </span>
               <input
                 type="text"
                 value={mergeName}
@@ -298,21 +305,18 @@ export function MergeCvProfilesModal({
 export function useCvProfileMergeSelection(profiles: CvProfileSummary[]) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const toggle = useCallback(
-    (id: string) => {
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(id)) {
-          next.delete(id);
-          return next;
-        }
-        if (next.size >= CV_MERGE_MAX_PROFILES) return prev;
-        next.add(id);
+  const toggle = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
         return next;
-      });
-    },
-    [],
-  );
+      }
+      if (next.size >= CV_MERGE_MAX_PROFILES) return prev;
+      next.add(id);
+      return next;
+    });
+  }, []);
 
   const clear = useCallback(() => setSelectedIds(new Set()), []);
 
@@ -359,7 +363,9 @@ export function CvProfileMergeToolbar({
     >
       <p className="text-xs text-white/70">
         {selectedCount} selected
-        {overLimit ? ` — select at most ${CV_MERGE_MAX_PROFILES} to merge` : null}
+        {overLimit
+          ? ` — select at most ${CV_MERGE_MAX_PROFILES} to merge`
+          : null}
       </p>
       <div className="flex flex-wrap gap-2">
         <Button

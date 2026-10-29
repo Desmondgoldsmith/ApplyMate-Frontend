@@ -34,7 +34,7 @@ const CLARIFICATION_QUICK_PROMPTS: { label: string; answer: string }[] = [
   {
     label: 'Skip this',
     answer:
-      "Skip this particular item and continue applying the other improvements.",
+      'Skip this particular item and continue applying the other improvements.',
   },
   {
     label: 'Use your best judgment',

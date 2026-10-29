@@ -1,7 +1,10 @@
 # ApplyMate — Frontend Product & Technical Audit
+
 # Role: Senior Product Manager + Frontend Architect
+
 # Objective: Full audit report — product quality, feature completeness,
-#             UX effectiveness, code quality, scalability readiness
+
+# UX effectiveness, code quality, scalability readiness
 
 ---
 
@@ -26,6 +29,7 @@ Read every file. Report everything you find honestly.
 Before writing any findings, read ALL of the following:
 
 ### Application entry points
+
 ```
 packages/web/src/app/
 packages/web/src/components/
@@ -37,6 +41,7 @@ packages/web/src/utils/
 ```
 
 ### Every page in the dashboard
+
 ```
 packages/web/src/app/(dashboard)/dashboard/page.tsx
 packages/web/src/app/(dashboard)/dashboard/overview/
@@ -50,6 +55,7 @@ packages/web/src/app/(dashboard)/dashboard/settings/
 ```
 
 ### Every major component
+
 ```
 packages/web/src/components/cv/
 packages/web/src/components/dashboard/
@@ -60,6 +66,7 @@ packages/web/src/components/onboarding/
 ```
 
 ### Config and infrastructure files
+
 ```
 packages/web/package.json
 packages/web/next.config.js (or .ts)
@@ -82,6 +89,7 @@ function names, and patterns you found.
 ### SECTION A — FEATURE COMPLETENESS AUDIT
 
 For each feature below, report:
+
 - **Status**: Fully built / Partially built / Stubbed / Missing
 - **How it works**: Step-by-step flow from user action to result
 - **Quality**: Does it meet global SaaS standards? (compare to tools like
@@ -330,6 +338,7 @@ For each competitor, list features they have that ApplyMate is missing,
 and features ApplyMate has that competitors don't.
 
 Competitors to benchmark against:
+
 - **Teal HQ** (job tracker + AI resume builder)
 - **Enhancv** (CV builder with analytics)
 - **Kickresume** (AI CV builder)
@@ -350,22 +359,27 @@ Present your findings as a structured report with this format:
 # ApplyMate Frontend Audit Report
 
 ## Executive Summary
+
 3-5 sentences. Overall assessment. Is this ready for launch? Can it
 make $1M+ in revenue? What are the top 3 things that must be fixed?
 
 ## Feature Scorecard
-| Feature | Status | Quality (1-10) | User Value (1-10) | Critical Gaps |
-|---|---|---|---|---|
-| CV Builder | | | | |
-| AI CV Creation | | | | |
-| ... | | | | |
+
+| Feature        | Status | Quality (1-10) | User Value (1-10) | Critical Gaps |
+| -------------- | ------ | -------------- | ----------------- | ------------- |
+| CV Builder     |        |                |                   |               |
+| AI CV Creation |        |                |                   |               |
+| ...            |        |                |                   |               |
 
 ## Top 5 Strengths
+
 What this product does genuinely well that would delight users and
 differentiate from competitors.
 
 ## Top 10 Issues (Priority Ordered)
+
 For each issue:
+
 - **Severity**: Critical / High / Medium / Low
 - **What is broken/missing**
 - **Evidence** (file name, line, component)
@@ -373,25 +387,30 @@ For each issue:
 - **Estimated fix complexity**: Hours / Days / Weeks
 
 ## UX Score Summary
-| Area | Score (1-10) | Key Finding |
-|---|---|---|
-| Onboarding | | |
-| Navigation | | |
-| Error handling | | |
-| ... | | |
+
+| Area           | Score (1-10) | Key Finding |
+| -------------- | ------------ | ----------- |
+| Onboarding     |              |             |
+| Navigation     |              |             |
+| Error handling |              |             |
+| ...            |              |             |
 
 ## Code Quality Assessment
+
 Overall grade: A / B / C / D
 Key findings with file-level evidence.
 
 ## Scalability Assessment
+
 Can this handle 10,000 concurrent users? 100,000? 1,000,000?
 What breaks first?
 
 ## Revenue Readiness Score: X/10
+
 What would push this to 10/10?
 
 ## Recommended Action Plan
+
 Prioritised list of improvements needed before this product can
 confidently acquire, retain, and monetise users at scale.
 

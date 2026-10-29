@@ -27,7 +27,10 @@ export const CoachHintToasts = memo(function CoachHintToasts({
     }
     setFading(false);
     setVisible(next);
-    const fadeTimer = window.setTimeout(() => setFading(true), AUTO_HIDE_MS - 400);
+    const fadeTimer = window.setTimeout(
+      () => setFading(true),
+      AUTO_HIDE_MS - 400,
+    );
     const hideTimer = window.setTimeout(() => {
       setVisible([]);
       setFading(false);

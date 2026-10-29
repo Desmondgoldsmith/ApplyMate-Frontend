@@ -31,7 +31,10 @@ export function listPendingInterviewResults(): PendingInterviewResult[] {
   return readAll();
 }
 
-export function markInterviewPendingResult(sessionId: string, label?: string): void {
+export function markInterviewPendingResult(
+  sessionId: string,
+  label?: string,
+): void {
   if (!sessionId) return;
   const items = readAll().filter((i) => i.sessionId !== sessionId);
   items.unshift({

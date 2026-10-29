@@ -58,11 +58,7 @@ export function cancelTurnSubmitsForSession(sessionId: string): void {
 
 const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-export function debounceByKey(
-  key: string,
-  ms: number,
-  fn: () => void,
-): void {
+export function debounceByKey(key: string, ms: number, fn: () => void): void {
   const prev = debounceTimers.get(key);
   if (prev) clearTimeout(prev);
   debounceTimers.set(

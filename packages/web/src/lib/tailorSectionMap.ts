@@ -3,7 +3,8 @@ export function tailorSectionTypeToBuilderId(sectionType: string): string {
   const s = sectionType.trim().toLowerCase();
   if (!s) return 'summary';
   if (s === 'skills' || s === 'skill') return 'skills';
-  if (s === 'experience' || s === 'work' || s === 'employment') return 'experience';
+  if (s === 'experience' || s === 'work' || s === 'employment')
+    return 'experience';
   if (s === 'education') return 'education';
   if (s === 'summary' || s === 'profile') return 'summary';
   if (s === 'personal' || s === 'contact' || s === 'header') return 'personal';

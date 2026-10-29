@@ -20,7 +20,10 @@ export function useJobAnalyzeLocationPayload(
   );
 
   return useMemo(() => {
-    const uiPrefs = me?.uiPrefs as { jobSearchLocation?: string } | null | undefined;
+    const uiPrefs = me?.uiPrefs as
+      | { jobSearchLocation?: string }
+      | null
+      | undefined;
     return jobAnalyzeCandidateLocationFields({
       userLocation: me?.location,
       jobSearchLocation: uiPrefs?.jobSearchLocation,
@@ -28,5 +31,11 @@ export function useJobAnalyzeLocationPayload(
       detectedCountryCode,
       cvProfileLocation,
     });
-  }, [me?.location, me?.uiPrefs, selectedLocation, detectedCountryCode, cvProfileLocation]);
+  }, [
+    me?.location,
+    me?.uiPrefs,
+    selectedLocation,
+    detectedCountryCode,
+    cvProfileLocation,
+  ]);
 }

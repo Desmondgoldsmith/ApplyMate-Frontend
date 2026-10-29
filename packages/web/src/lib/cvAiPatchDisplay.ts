@@ -148,7 +148,11 @@ export function coerceAiPatchToDisplayString(
   if (typeof value === 'string') {
     const parsed = parseMaybeJsonString(value);
     if (parsed !== value) {
-      const nested = coerceAiPatchToDisplayString(parsed, sectionHint, fieldHint);
+      const nested = coerceAiPatchToDisplayString(
+        parsed,
+        sectionHint,
+        fieldHint,
+      );
       if (nested) return nested;
     }
     return sanitizeDiffDisplayText(value.trim());
@@ -172,15 +176,27 @@ export function coerceAiPatchToDisplayString(
   }
 
   if ('patch' in o) {
-    const nested = coerceAiPatchToDisplayString(o.patch, sectionHint, fieldHint);
+    const nested = coerceAiPatchToDisplayString(
+      o.patch,
+      sectionHint,
+      fieldHint,
+    );
     if (nested) return nested;
   }
   if ('patches' in o && Array.isArray(o.patches)) {
-    const nested = coerceAiPatchToDisplayString(o.patches, sectionHint, fieldHint);
+    const nested = coerceAiPatchToDisplayString(
+      o.patches,
+      sectionHint,
+      fieldHint,
+    );
     if (nested) return nested;
   }
   if ('changes' in o && Array.isArray(o.changes)) {
-    const nested = coerceAiPatchToDisplayString(o.changes, sectionHint, fieldHint);
+    const nested = coerceAiPatchToDisplayString(
+      o.changes,
+      sectionHint,
+      fieldHint,
+    );
     if (nested) return nested;
   }
 
@@ -238,7 +254,9 @@ export type CvMetricPlaceholderSegment = {
   isPlaceholder: boolean;
 };
 
-export function splitCvMetricPlaceholders(text: string): CvMetricPlaceholderSegment[] {
+export function splitCvMetricPlaceholders(
+  text: string,
+): CvMetricPlaceholderSegment[] {
   const trimmed = text.trim();
   if (!trimmed) return [];
   const parts: CvMetricPlaceholderSegment[] = [];
@@ -247,7 +265,10 @@ export function splitCvMetricPlaceholders(text: string): CvMetricPlaceholderSegm
   let match: RegExpExecArray | null;
   while ((match = re.exec(trimmed)) !== null) {
     if (match.index > lastIndex) {
-      parts.push({ text: trimmed.slice(lastIndex, match.index), isPlaceholder: false });
+      parts.push({
+        text: trimmed.slice(lastIndex, match.index),
+        isPlaceholder: false,
+      });
     }
     parts.push({ text: match[0]!, isPlaceholder: true });
     lastIndex = match.index + match[0]!.length;
@@ -278,7 +299,11 @@ export function normalizeCvDiffChangedField(
   const fieldLabel =
     (field.fieldLabel ?? field.field ?? fieldPath).trim() || fieldPath;
 
-  let before = coerceAiPatchToDisplayString(field.before, sectionHint, fieldPath);
+  let before = coerceAiPatchToDisplayString(
+    field.before,
+    sectionHint,
+    fieldPath,
+  );
   let after = coerceAiPatchToDisplayString(field.after, sectionHint, fieldPath);
 
   if (!before && !after && isAiPatchOperation(field.after)) {

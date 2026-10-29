@@ -9,9 +9,17 @@ type ListPageShimmerProps = {
 };
 
 /** Loading placeholder — stacked cards on mobile, table rows on desktop. */
-export function ListPageShimmer({ cardCount = 4, tableRows = 5, className }: ListPageShimmerProps) {
+export function ListPageShimmer({
+  cardCount = 4,
+  tableRows = 5,
+  className,
+}: ListPageShimmerProps) {
   return (
-    <div className={cn('space-y-3', className)} aria-busy="true" aria-label="Loading">
+    <div
+      className={cn('space-y-3', className)}
+      aria-busy="true"
+      aria-label="Loading"
+    >
       <ul className="space-y-2.5 md:hidden">
         {Array.from({ length: cardCount }).map((_, i) => (
           <li

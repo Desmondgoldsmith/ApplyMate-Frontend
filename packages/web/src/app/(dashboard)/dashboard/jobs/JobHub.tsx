@@ -2,7 +2,13 @@
 
 import { queryKeys } from '@/lib/queryKeys';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, LayoutGrid, List, Search } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  LayoutGrid,
+  List,
+  Search,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -68,7 +74,13 @@ import { isCompletedJobAnalysis } from '@/lib/jobAnalysisComplete';
 import { trackFunnelEvent } from '@/lib/actionFunnel';
 
 type HubView = 'board' | 'list';
-type HubDetailTab = 'analysis' | 'description' | 'cover' | 'notes' | 'email' | 'resume';
+type HubDetailTab =
+  | 'analysis'
+  | 'description'
+  | 'cover'
+  | 'notes'
+  | 'email'
+  | 'resume';
 
 export function JobHub() {
   const router = useRouter();
@@ -92,14 +104,29 @@ export function JobHub() {
     Record<string, { base: string | null; requested: string }>
   >({});
   const patchBookmarkPipeline = useMutation({
-    mutationFn: (args: { bookmarkId: string; hubPipelineStage: ReturnType<typeof hubStageToHubPipelineStage> }) =>
-      api.jobDiscovery.patchBookmark(args.bookmarkId, { hubPipelineStage: args.hubPipelineStage }),
+    mutationFn: (args: {
+      bookmarkId: string;
+      hubPipelineStage: ReturnType<typeof hubStageToHubPipelineStage>;
+    }) =>
+      api.jobDiscovery.patchBookmark(args.bookmarkId, {
+        hubPipelineStage: args.hubPipelineStage,
+      }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.remindersRoot() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.career.dashboard() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.hub.bookmarks(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.history(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.applications.root(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.hub.remindersRoot(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.career.dashboard(),
+      });
       invalidateGrowthQueries(queryClient);
       invalidateTodayPlanQueries(queryClient);
     },
@@ -129,17 +156,31 @@ export function JobHub() {
           if (prev === null || typeof prev !== 'object') return prev;
           return {
             ...(prev as Record<string, unknown>),
-            ...(enrichment.pipelineStepper ? { pipelineStepper: enrichment.pipelineStepper } : {}),
+            ...(enrichment.pipelineStepper
+              ? { pipelineStepper: enrichment.pipelineStepper }
+              : {}),
             ...(enrichment.guidance ? { guidance: enrichment.guidance } : {}),
           };
         },
       );
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analysis(args.jobAnalysisId) });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.remindersRoot() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.career.dashboard() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.history(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.analysis(args.jobAnalysisId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.hub.bookmarks(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.applications.root(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.hub.remindersRoot(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.career.dashboard(),
+      });
       invalidateGrowthQueries(queryClient);
       invalidateTodayPlanQueries(queryClient);
     },
@@ -155,8 +196,12 @@ export function JobHub() {
         delete next[args.overrideKey];
         return next;
       });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.history(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.hub.bookmarks(),
+      });
       toast.error(
         'This job was updated somewhere else, so we loaded its latest stage. Move it again if needed.',
       );
@@ -174,7 +219,8 @@ export function JobHub() {
     company: string;
   } | null>(null);
   const [verifyOpen, setVerifyOpen] = useState(false);
-  const [verificationStatus, setVerificationStatus] = useState<VerificationUiStatus>('none');
+  const [verificationStatus, setVerificationStatus] =
+    useState<VerificationUiStatus>('none');
   const careerQ = useCareerDashboard(true);
   const [view, setView] = useState<HubView>('board');
   const [mobileDetailCollapsed, setMobileDetailCollapsed] = useState(false);
@@ -204,7 +250,13 @@ export function JobHub() {
   }, [queryClient]);
 
   const merged = useMemo(
-    () => mergeTrackedJobs(apps.data ?? [], history.data ?? [], overrides, hubBookmarks.data ?? []),
+    () =>
+      mergeTrackedJobs(
+        apps.data ?? [],
+        history.data ?? [],
+        overrides,
+        hubBookmarks.data ?? [],
+      ),
     [apps.data, history.data, overrides, hubBookmarks.data],
   );
 
@@ -217,22 +269,31 @@ export function JobHub() {
   const [detailJobPin, setDetailJobPin] = useState<TrackedJob | null>(null);
 
   const selectedJob = useMemo(() => {
-    const jid = searchParams.get('jobId')?.trim() || searchParams.get('jobAnalysisId')?.trim();
+    const jid =
+      searchParams.get('jobId')?.trim() ||
+      searchParams.get('jobAnalysisId')?.trim();
     const aid = searchParams.get('applicationId')?.trim();
     const bid = searchParams.get('bookmarkId')?.trim();
     const jlid = searchParams.get('jobListingId')?.trim();
     const rawKey = searchParams.get('jobKey')?.trim();
     if (jid) return merged.find((j) => j.jobAnalysisId === jid) ?? null;
     if (aid) return merged.find((j) => j.applicationId === aid) ?? null;
-    if (bid) return merged.find((j) => (j.hubBookmarkId ?? '').trim() === bid) ?? null;
-    if (jlid) return merged.find((j) => (j.boardDiscoveryId ?? '').trim() === jlid) ?? null;
+    if (bid)
+      return merged.find((j) => (j.hubBookmarkId ?? '').trim() === bid) ?? null;
+    if (jlid)
+      return (
+        merged.find((j) => (j.boardDiscoveryId ?? '').trim() === jlid) ?? null
+      );
     if (rawKey) return merged.find((j) => j.key === rawKey) ?? null;
     return null;
   }, [merged, searchParams]);
 
   const deepLinkJobId =
-    searchParams.get('jobId')?.trim() || searchParams.get('jobAnalysisId')?.trim() || '';
-  const needsDeepLinkHydrate = Boolean(deepLinkJobId) && hubDataReady && !selectedJob;
+    searchParams.get('jobId')?.trim() ||
+    searchParams.get('jobAnalysisId')?.trim() ||
+    '';
+  const needsDeepLinkHydrate =
+    Boolean(deepLinkJobId) && hubDataReady && !selectedJob;
   const deepLinkJobDetail = useQuery({
     queryKey: queryKeys.jobs.analysis(deepLinkJobId),
     queryFn: () => api.jobs.getJob(deepLinkJobId),
@@ -251,7 +312,8 @@ export function JobHub() {
       title: d.title?.trim() || d.analysis?.title?.trim() || 'Untitled role',
       company: d.company?.trim() || d.analysis?.company?.trim() || '—',
       matchScore:
-        typeof d.analysis?.matchScore === 'number' && Number.isFinite(d.analysis.matchScore)
+        typeof d.analysis?.matchScore === 'number' &&
+        Number.isFinite(d.analysis.matchScore)
           ? d.analysis.matchScore
           : null,
       createdAt: d.analysis?.createdAt ?? null,
@@ -267,7 +329,9 @@ export function JobHub() {
   }, [deepLinkJobDetail.data, deepLinkJobId, selectedJob]);
 
   const detailJob = useMemo(() => {
-    const jid = searchParams.get('jobId')?.trim() || searchParams.get('jobAnalysisId')?.trim();
+    const jid =
+      searchParams.get('jobId')?.trim() ||
+      searchParams.get('jobAnalysisId')?.trim();
     const rawKey = searchParams.get('jobKey')?.trim();
     const bid = searchParams.get('bookmarkId')?.trim();
     const aid = searchParams.get('applicationId')?.trim();
@@ -308,16 +372,26 @@ export function JobHub() {
   }, [searchParams]);
 
   const requestedEmailTemplate = useMemo(() => {
-    const fromQuery = coalesceJobHubEmailTemplateQueryParam(searchParams.get('template'));
+    const fromQuery = coalesceJobHubEmailTemplateQueryParam(
+      searchParams.get('template'),
+    );
     if (fromQuery) return fromQuery;
-    if (legacyFollowUpFocus) return coalesceJobHubEmailTemplateQueryParam('follow-up-no-response');
+    if (legacyFollowUpFocus)
+      return coalesceJobHubEmailTemplateQueryParam('follow-up-no-response');
     return undefined;
   }, [searchParams, legacyFollowUpFocus]);
 
   const requestedTab = useMemo<HubDetailTab | undefined>(() => {
     const t = (searchParams.get('tab') ?? '').trim().toLowerCase();
     if (t === 'email-templates') return 'email';
-    if (t === 'analysis' || t === 'description' || t === 'cover' || t === 'notes' || t === 'email' || t === 'resume') {
+    if (
+      t === 'analysis' ||
+      t === 'description' ||
+      t === 'cover' ||
+      t === 'notes' ||
+      t === 'email' ||
+      t === 'resume'
+    ) {
       return t;
     }
     if (legacyFollowUpFocus) return 'email';
@@ -337,7 +411,9 @@ export function JobHub() {
     const title = detailJob.title?.trim() || 'Job details';
     const params = new URLSearchParams(searchParams.toString());
     if (!params.get('jobKey')?.trim()) params.set('jobKey', detailJob.key);
-    setTrailSuffix([{ label: title, href: `/dashboard/jobs?${params.toString()}` }]);
+    setTrailSuffix([
+      { label: title, href: `/dashboard/jobs?${params.toString()}` },
+    ]);
     return () => setTrailSuffix(null);
   }, [detailJob, searchParams, setTrailSuffix]);
 
@@ -368,7 +444,10 @@ export function JobHub() {
   }, [afterSearch, filter]);
 
   const visibleForTable = visibleForBoard;
-  const listPagination = useClientPagination(view === 'list' ? visibleForTable : [], 15);
+  const listPagination = useClientPagination(
+    view === 'list' ? visibleForTable : [],
+    15,
+  );
 
   const stageCounts = useMemo(() => {
     const c: Partial<Record<HubStage, number>> = {};
@@ -398,7 +477,8 @@ export function JobHub() {
     (job: TrackedJob) =>
       job.stage === 'accepted'
         ? {
-            onShareWin: () => openShareAchievement(null, job.title, job.company),
+            onShareWin: () =>
+              openShareAchievement(null, job.title, job.company),
             onVerifyPlacement: () => setVerifyOpen(true),
             verificationStatus,
           }
@@ -407,18 +487,32 @@ export function JobHub() {
   );
 
   const markAcceptedMutation = useMutation({
-    mutationFn: (args: { jobAnalysisId: string; title: string; company: string }) =>
-      api.jobs.markAccepted(args.jobAnalysisId),
+    mutationFn: (args: {
+      jobAnalysisId: string;
+      title: string;
+      company: string;
+    }) => api.jobs.markAccepted(args.jobAnalysisId),
     onSuccess: (data, vars) => {
       setOverrides((prev) => ({ ...prev, [vars.jobAnalysisId]: 'accepted' }));
-      void queryClient.invalidateQueries({ queryKey: queryKeys.career.dashboard() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analysis(vars.jobAnalysisId) });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.career.dashboard(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.history(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.applications.root(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.hub.bookmarks(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.analysis(vars.jobAnalysisId),
+      });
       openShareAchievement(data.badge, vars.title, vars.company);
     },
-    onError: (e) => toast.error(getApiErrorMessage(e) || 'Could not mark as accepted'),
+    onError: (e) =>
+      toast.error(getApiErrorMessage(e) || 'Could not mark as accepted'),
   });
 
   const handleAcceptedStage = useCallback(
@@ -427,15 +521,23 @@ export function JobHub() {
       setDetailJobPin(acceptedJob);
       setOverrides((prev) => ({ ...prev, [job.key]: 'accepted' }));
       const params = new URLSearchParams(searchParams.toString());
-      if (acceptedJob.jobAnalysisId) params.set('jobId', acceptedJob.jobAnalysisId);
-      else if (acceptedJob.applicationId) params.set('applicationId', acceptedJob.applicationId);
-      else if (acceptedJob.hubBookmarkId) params.set('bookmarkId', acceptedJob.hubBookmarkId);
-      else if (acceptedJob.boardDiscoveryId) params.set('jobListingId', acceptedJob.boardDiscoveryId);
+      if (acceptedJob.jobAnalysisId)
+        params.set('jobId', acceptedJob.jobAnalysisId);
+      else if (acceptedJob.applicationId)
+        params.set('applicationId', acceptedJob.applicationId);
+      else if (acceptedJob.hubBookmarkId)
+        params.set('bookmarkId', acceptedJob.hubBookmarkId);
+      else if (acceptedJob.boardDiscoveryId)
+        params.set('jobListingId', acceptedJob.boardDiscoveryId);
       params.set('jobKey', acceptedJob.key);
       router.replace(`/dashboard/jobs?${params.toString()}`, { scroll: false });
       const jobAnalysisId = job.jobAnalysisId?.trim();
       if (jobAnalysisId) {
-        markAcceptedMutation.mutate({ jobAnalysisId, title: job.title, company: job.company });
+        markAcceptedMutation.mutate({
+          jobAnalysisId,
+          title: job.title,
+          company: job.company,
+        });
       } else if (job.hubBookmarkId) {
         patchBookmarkPipeline.mutate({
           bookmarkId: job.hubBookmarkId,
@@ -448,7 +550,13 @@ export function JobHub() {
         }, 900);
       }
     },
-    [markAcceptedMutation, openShareAchievement, patchBookmarkPipeline, router, searchParams],
+    [
+      markAcceptedMutation,
+      openShareAchievement,
+      patchBookmarkPipeline,
+      router,
+      searchParams,
+    ],
   );
 
   const applyStageChange = useCallback(
@@ -463,7 +571,12 @@ export function JobHub() {
       const optimisticJob: TrackedJob = {
         ...job,
         stage,
-        isApplied: stage === 'applied' || job.isApplied || stage === 'interviewing' || stage === 'negotiating' || stage === 'offered',
+        isApplied:
+          stage === 'applied' ||
+          job.isApplied ||
+          stage === 'interviewing' ||
+          stage === 'negotiating' ||
+          stage === 'offered',
       };
       setDetailJobPin((prev) => (prev?.key === job.key ? optimisticJob : prev));
       saveStageOverride(job.key, stage);
@@ -479,8 +592,12 @@ export function JobHub() {
           const applicationId = job.applicationId;
           const loaded = job.applicationStatus ?? null;
           const pending = lastRequestedStatusRef.current[applicationId];
-          const expectedStatus = pending && pending.base === loaded ? pending.requested : loaded;
-          lastRequestedStatusRef.current[applicationId] = { base: loaded, requested: apiStatus };
+          const expectedStatus =
+            pending && pending.base === loaded ? pending.requested : loaded;
+          lastRequestedStatusRef.current[applicationId] = {
+            base: loaded,
+            requested: apiStatus,
+          };
           const settle = () => {
             clearStageOverride(job.key);
             setOverrides((prev) => {
@@ -488,9 +605,15 @@ export function JobHub() {
               delete next[job.key];
               return next;
             });
-            void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
-            void queryClient.invalidateQueries({ queryKey: queryKeys.hub.remindersRoot() });
-            void queryClient.invalidateQueries({ queryKey: queryKeys.career.dashboard() });
+            void queryClient.invalidateQueries({
+              queryKey: queryKeys.hub.bookmarks(),
+            });
+            void queryClient.invalidateQueries({
+              queryKey: queryKeys.hub.remindersRoot(),
+            });
+            void queryClient.invalidateQueries({
+              queryKey: queryKeys.career.dashboard(),
+            });
             if (job.jobAnalysisId) {
               void queryClient.invalidateQueries({
                 queryKey: queryKeys.jobs.analysis(job.jobAnalysisId),
@@ -509,14 +632,20 @@ export function JobHub() {
                 delete lastRequestedStatusRef.current[applicationId];
                 setDetailJobPin((prev) => (prev?.key === job.key ? job : prev));
                 settle();
-                void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
-                void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
+                void queryClient.invalidateQueries({
+                  queryKey: queryKeys.applications.root(),
+                });
+                void queryClient.invalidateQueries({
+                  queryKey: queryKeys.jobs.history(),
+                });
                 if (getApiErrorCode(err) === 'APPLICATION_STATUS_CHANGED') {
                   toast.error(
                     'This job was updated somewhere else, so we loaded its latest stage. Move it again if needed.',
                   );
                 } else {
-                  toast.error(getApiErrorMessage(err) || 'Could not update the stage');
+                  toast.error(
+                    getApiErrorMessage(err) || 'Could not update the stage',
+                  );
                 }
               },
             },
@@ -531,7 +660,10 @@ export function JobHub() {
           });
         }
         if (job.hubBookmarkId) {
-          patchBookmarkPipeline.mutate({ bookmarkId: job.hubBookmarkId, hubPipelineStage: pipeline });
+          patchBookmarkPipeline.mutate({
+            bookmarkId: job.hubBookmarkId,
+            hubPipelineStage: pipeline,
+          });
         }
         return;
       }
@@ -539,8 +671,12 @@ export function JobHub() {
       if (job.jobAnalysisId) {
         const loaded = job.serverPipelineStage ?? null;
         const pending = lastRequestedStageRef.current[job.jobAnalysisId];
-        const expectedStage = pending && pending.base === loaded ? pending.requested : loaded;
-        lastRequestedStageRef.current[job.jobAnalysisId] = { base: loaded, requested: pipeline };
+        const expectedStage =
+          pending && pending.base === loaded ? pending.requested : loaded;
+        lastRequestedStageRef.current[job.jobAnalysisId] = {
+          base: loaded,
+          requested: pipeline,
+        };
         patchJobPipeline.mutate({
           jobAnalysisId: job.jobAnalysisId,
           stage: pipeline,
@@ -570,9 +706,12 @@ export function JobHub() {
         void (async () => {
           const jid = job.jobAnalysisId!;
           let detail =
-            queryClient.getQueryData<JobDetailForForm>(queryKeys.jobs.analysis(jid)) ?? null;
+            queryClient.getQueryData<JobDetailForForm>(
+              queryKeys.jobs.analysis(jid),
+            ) ?? null;
           if (
-            resolveTrackedJobMatchScore(job, detail?.analysis?.matchScore) === undefined
+            resolveTrackedJobMatchScore(job, detail?.analysis?.matchScore) ===
+            undefined
           ) {
             try {
               detail = await queryClient.fetchQuery({
@@ -583,7 +722,10 @@ export function JobHub() {
               /* create without score if detail unavailable */
             }
           }
-          const matchScore = resolveTrackedJobMatchScore(job, detail?.analysis?.matchScore);
+          const matchScore = resolveTrackedJobMatchScore(
+            job,
+            detail?.analysis?.matchScore,
+          );
           await api.applications.create({
             title: job.title,
             company: job.company,
@@ -591,8 +733,12 @@ export function JobHub() {
             jobAnalysisId: jid,
             ...(matchScore !== undefined ? { matchScore } : {}),
           });
-          void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
-          void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
+          void queryClient.invalidateQueries({
+            queryKey: queryKeys.applications.root(),
+          });
+          void queryClient.invalidateQueries({
+            queryKey: queryKeys.jobs.history(),
+          });
           invalidateTodayPlanQueries(queryClient);
         })().catch((err) => {
           toast.error(
@@ -602,7 +748,14 @@ export function JobHub() {
         });
       }
     },
-    [handleAcceptedStage, patchBookmarkPipeline, patchJobPipeline, queryClient, toast, updateStatus],
+    [
+      handleAcceptedStage,
+      patchBookmarkPipeline,
+      patchJobPipeline,
+      queryClient,
+      toast,
+      updateStatus,
+    ],
   );
 
   const openJob = useCallback(
@@ -650,7 +803,10 @@ export function JobHub() {
   }, [router]);
 
   const closeDetailPanel = useCallback(() => {
-    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches) {
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia('(max-width: 1023px)').matches
+    ) {
       setMobileDetailCollapsed(true);
       return;
     }
@@ -663,8 +819,12 @@ export function JobHub() {
     },
     onSuccess: () => {
       toast.success('Removed from your list.');
-      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.discovery({}) });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.hub.bookmarks(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.discovery({}),
+      });
       invalidateTodayPlanQueries(queryClient);
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -672,32 +832,58 @@ export function JobHub() {
 
   const archiveFromHub = useMutation({
     mutationFn: (vars: {
-      payload: { bookmarkId?: string; jobAnalysisId?: string; applicationId?: string };
+      payload: {
+        bookmarkId?: string;
+        jobAnalysisId?: string;
+        applicationId?: string;
+      };
       jobKey: string;
     }) => api.jobs.archive(vars.payload),
     onSuccess: () => {
-      toast.success('Archived. Restore anytime under Jobs workspace → Archived jobs.');
-      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.discovery({}) });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.analyses() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.career.dashboard() });
+      toast.success(
+        'Archived. Restore anytime under Jobs workspace → Archived jobs.',
+      );
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.hub.bookmarks(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.discovery({}),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.applications.root(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.history(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.analyses(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.career.dashboard(),
+      });
       invalidateNotificationList(queryClient);
       scheduleUnreadNotificationCountInvalidate(queryClient);
-      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.remindersRoot() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.archive() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.hub.remindersRoot(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.archive(),
+      });
       invalidateGrowthQueries(queryClient);
       invalidateTodayPlanQueries(queryClient);
     },
-    onError: (err) => toast.error(getApiErrorMessage(err) || 'Could not archive'),
+    onError: (err) =>
+      toast.error(getApiErrorMessage(err) || 'Could not archive'),
   });
 
-  const archivingJobKey = archiveFromHub.isPending ? archiveFromHub.variables?.jobKey ?? null : null;
+  const archivingJobKey = archiveFromHub.isPending
+    ? (archiveFromHub.variables?.jobKey ?? null)
+    : null;
 
-  const [hubConfirm, setHubConfirm] = useState<null | { mode: 'archive' | 'pipeline' | 'unbookmark'; job: TrackedJob }>(
-    null,
-  );
+  const [hubConfirm, setHubConfirm] = useState<null | {
+    mode: 'archive' | 'pipeline' | 'unbookmark';
+    job: TrackedJob;
+  }>(null);
 
   const handleRemoveFromHub = useCallback(
     (job: TrackedJob, opts?: { onSuccess?: () => void }) => {
@@ -732,9 +918,9 @@ export function JobHub() {
 
   const hubConfirmPending = Boolean(
     hubConfirm &&
-      (archivingJobKey === hubConfirm.job.key ||
-        (hubUnbookmark.isPending &&
-          hubUnbookmark.variables === hubConfirm.job.boardDiscoveryId?.trim())),
+    (archivingJobKey === hubConfirm.job.key ||
+      (hubUnbookmark.isPending &&
+        hubUnbookmark.variables === hubConfirm.job.boardDiscoveryId?.trim())),
   );
 
   const loading = apps.isLoading || history.isLoading || hubBookmarks.isLoading;
@@ -742,14 +928,21 @@ export function JobHub() {
 
   if (loading) {
     return (
-      <div className="w-full space-y-4 overflow-x-hidden py-1" aria-busy="true" aria-label="Loading jobs">
+      <div
+        className="w-full space-y-4 overflow-x-hidden py-1"
+        aria-busy="true"
+        aria-label="Loading jobs"
+      >
         <div className="h-9 w-48 animate-pulse rounded-lg bg-white/[0.06] sm:w-56" />
         <div className="h-4 w-full max-w-xl animate-pulse rounded-md bg-white/[0.04]" />
         <div className="h-11 w-full max-w-md animate-pulse rounded-xl bg-white/[0.05]" />
         <div className="h-10 w-full animate-pulse rounded-xl bg-white/[0.05]" />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-36 animate-pulse rounded-2xl bg-white/[0.04]" />
+            <div
+              key={i}
+              className="h-36 animate-pulse rounded-2xl bg-white/[0.04]"
+            />
           ))}
         </div>
       </div>
@@ -760,7 +953,11 @@ export function JobHub() {
     return (
       <GlowCard contentClassName="p-6">
         <p className="text-sm text-rose-200">{getApiErrorMessage(err)}</p>
-        <Button className="mt-4" variant="ghost" onClick={() => router.refresh()}>
+        <Button
+          className="mt-4"
+          variant="ghost"
+          onClick={() => router.refresh()}
+        >
           Retry
         </Button>
       </GlowCard>
@@ -778,7 +975,11 @@ export function JobHub() {
   if (detailRequested && !detailJob) {
     if (needsDeepLinkHydrate && deepLinkJobDetail.isLoading) {
       return (
-        <div className="w-full space-y-4 overflow-x-hidden py-1" aria-busy="true" aria-label="Loading job">
+        <div
+          className="w-full space-y-4 overflow-x-hidden py-1"
+          aria-busy="true"
+          aria-label="Loading job"
+        >
           <div className="h-9 w-48 animate-pulse rounded-lg bg-white/[0.06] sm:w-56" />
           <div className="h-[min(60vh,520px)] animate-pulse rounded-2xl bg-white/[0.04]" />
         </div>
@@ -788,13 +989,22 @@ export function JobHub() {
     return (
       <GlowCard contentClassName="flex flex-col items-center gap-4 p-6 text-center sm:p-8">
         <p className="text-sm text-white/70">
-          We could not reopen this exact role, but here are your recent active applications.
+          We could not reopen this exact role, but here are your recent active
+          applications.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <Button asChild variant="ghost" className="border border-[#00C9B1]/30 text-[#00C9B1]">
+          <Button
+            asChild
+            variant="ghost"
+            className="border border-[#00C9B1]/30 text-[#00C9B1]"
+          >
             <Link href={fallbackHref}>Open active applications</Link>
           </Button>
-          <Button variant="ghost" className="border border-white/12" onClick={closeJob}>
+          <Button
+            variant="ghost"
+            className="border border-white/12"
+            onClick={closeJob}
+          >
             Back to jobs
           </Button>
         </div>
@@ -810,7 +1020,9 @@ export function JobHub() {
           selectedKey={detailJob.key}
           onSelect={openJob}
           onUnbookmark={handleRemoveFromHub}
-          unbookmarkPendingId={hubUnbookmark.isPending ? hubUnbookmark.variables : null}
+          unbookmarkPendingId={
+            hubUnbookmark.isPending ? hubUnbookmark.variables : null
+          }
           removingJobKey={archivingJobKey}
           className={cn(
             'max-lg:shrink-0 lg:max-h-none',
@@ -853,14 +1065,21 @@ export function JobHub() {
                     onClose={closeDetailPanel}
                     onStageChange={applyStageChange}
                     dueUiTick={dueUiTick}
-                    onRequestHubArchive={(j) => setHubConfirm({ mode: 'archive', job: j })}
-                    onRequestHubPipelineRemove={(j) => setHubConfirm({ mode: 'pipeline', job: j })}
-                    onRequestHubUnbookmark={(j) => setHubConfirm({ mode: 'unbookmark', job: j })}
+                    onRequestHubArchive={(j) =>
+                      setHubConfirm({ mode: 'archive', job: j })
+                    }
+                    onRequestHubPipelineRemove={(j) =>
+                      setHubConfirm({ mode: 'pipeline', job: j })
+                    }
+                    onRequestHubUnbookmark={(j) =>
+                      setHubConfirm({ mode: 'unbookmark', job: j })
+                    }
                     hubManagePending={
                       Boolean(archivingJobKey === detailJob.key) ||
                       (Boolean(detailJob.boardDiscoveryId?.trim()) &&
                         hubUnbookmark.isPending &&
-                        hubUnbookmark.variables === detailJob.boardDiscoveryId?.trim())
+                        hubUnbookmark.variables ===
+                          detailJob.boardDiscoveryId?.trim())
                     }
                     {...detailCareerProps(detailJob)}
                   />
@@ -879,14 +1098,21 @@ export function JobHub() {
               onClose={closeDetailPanel}
               onStageChange={applyStageChange}
               dueUiTick={dueUiTick}
-              onRequestHubArchive={(j) => setHubConfirm({ mode: 'archive', job: j })}
-              onRequestHubPipelineRemove={(j) => setHubConfirm({ mode: 'pipeline', job: j })}
-              onRequestHubUnbookmark={(j) => setHubConfirm({ mode: 'unbookmark', job: j })}
+              onRequestHubArchive={(j) =>
+                setHubConfirm({ mode: 'archive', job: j })
+              }
+              onRequestHubPipelineRemove={(j) =>
+                setHubConfirm({ mode: 'pipeline', job: j })
+              }
+              onRequestHubUnbookmark={(j) =>
+                setHubConfirm({ mode: 'unbookmark', job: j })
+              }
               hubManagePending={
                 Boolean(archivingJobKey === detailJob.key) ||
                 (Boolean(detailJob.boardDiscoveryId?.trim()) &&
                   hubUnbookmark.isPending &&
-                  hubUnbookmark.variables === detailJob.boardDiscoveryId?.trim())
+                  hubUnbookmark.variables ===
+                    detailJob.boardDiscoveryId?.trim())
               }
               {...detailCareerProps(detailJob)}
             />
@@ -915,7 +1141,13 @@ export function JobHub() {
           onOpenChange={(open) => {
             if (!open && !hubConfirmPending) setHubConfirm(null);
           }}
-          title={hubConfirm?.mode === 'unbookmark' ? 'Remove bookmark?' : hubConfirm?.mode === 'pipeline' ? 'Remove from pipeline?' : 'Archive job?'}
+          title={
+            hubConfirm?.mode === 'unbookmark'
+              ? 'Remove bookmark?'
+              : hubConfirm?.mode === 'pipeline'
+                ? 'Remove from pipeline?'
+                : 'Archive job?'
+          }
           description={
             hubConfirm?.mode === 'unbookmark'
               ? 'This saved listing will be removed from your hub. You can save the job again later from the job board if you change your mind.'
@@ -923,12 +1155,20 @@ export function JobHub() {
                 ? 'This job will leave your active Job Hub and move to Archived jobs. Related reminders and hub notifications are cleared. You can restore it from Jobs workspace → Archived jobs.'
                 : 'Archive this job to your library. It leaves the active hub and appears under Archived jobs, where you can restore or permanently delete it later.'
           }
-          confirmLabel={hubConfirm?.mode === 'unbookmark' ? 'Remove' : hubConfirm?.mode === 'pipeline' ? 'Remove from pipeline' : 'Archive'}
+          confirmLabel={
+            hubConfirm?.mode === 'unbookmark'
+              ? 'Remove'
+              : hubConfirm?.mode === 'pipeline'
+                ? 'Remove from pipeline'
+                : 'Archive'
+          }
           variant={hubConfirm?.mode === 'unbookmark' ? 'danger' : 'default'}
           isPending={hubConfirmPending}
           onConfirm={() => {
             if (!hubConfirm) return;
-            handleRemoveFromHub(hubConfirm.job, { onSuccess: () => setHubConfirm(null) });
+            handleRemoveFromHub(hubConfirm.job, {
+              onSuccess: () => setHubConfirm(null),
+            });
           }}
         />
       </div>
@@ -938,9 +1178,12 @@ export function JobHub() {
   return (
     <div className="w-full min-w-0 max-w-full space-y-4 overflow-x-hidden sm:space-y-5">
       <div className="min-w-0" data-tour="job-hub-header">
-        <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">Job Hub</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
+          Job Hub
+        </h1>
         <p className="mt-1 text-sm text-white/45">
-          One place for saved roles, stages, notes, and emails. Use the board or list, then open a job.
+          One place for saved roles, stages, notes, and emails. Use the board or
+          list, then open a job.
           <span className="ml-1 inline-flex align-middle">
             <InfoHint text="Stages track where each role is in your pipeline. Origin and state badges show where a role came from and its current status." />
           </span>
@@ -970,113 +1213,137 @@ export function JobHub() {
 
       <div className="flex flex-col gap-4 xl:flex-row xl:items-stretch xl:min-h-[min(72vh,720px)]">
         <div className="min-h-0 min-w-0 flex-1 space-y-4 xl:overflow-y-auto xl:pr-1 app-scrollbar">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" data-tour="job-hub-search">
-        <div className="relative min-w-0 flex-1 sm:max-w-md">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by title or company…"
-            className="w-full rounded-xl border border-white/12 bg-[#0c1010] py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-white/35 focus:border-[#00C9B1]/50 focus:outline-none"
-            aria-label="Search jobs"
-          />
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button
-            className="h-10 shrink-0 bg-[#00C9B1] px-4 text-[#080A0A] hover:bg-[#00C9B1]"
-            data-tour="job-hub-analyze-cta"
-            onClick={() => {
-              prefillJobAnalyzerInStorage('', '', '');
-              router.push('/dashboard/jobs/analyze?clean=1');
-            }}
+          <div
+            className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+            data-tour="job-hub-search"
           >
-            Analyze Job
-          </Button>
-          <span className="sr-only">View mode</span>
-          <div className="flex rounded-xl border border-white/12 p-0.5">
-            <button
-              type="button"
-              title="Table"
-              onClick={() => setView('list')}
-              className={cn(
-                'rounded-lg p-2 transition-colors',
-                view === 'list' ? 'bg-[#00C9B1]/20 text-[#00C9B1]' : 'text-white/45 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]',
-              )}
-            >
-              <List className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              title="Board"
-              onClick={() => setView('board')}
-              className={cn(
-                'rounded-lg p-2 transition-colors',
-                view === 'board' ? 'bg-[#00C9B1]/20 text-[#00C9B1]' : 'text-white/45 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]',
-              )}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </button>
+            <div className="relative min-w-0 flex-1 sm:max-w-md">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by title or company…"
+                className="w-full rounded-xl border border-white/12 bg-[#0c1010] py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-white/35 focus:border-[#00C9B1]/50 focus:outline-none"
+                aria-label="Search jobs"
+              />
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button
+                className="h-10 shrink-0 bg-[#00C9B1] px-4 text-[#080A0A] hover:bg-[#00C9B1]"
+                data-tour="job-hub-analyze-cta"
+                onClick={() => {
+                  prefillJobAnalyzerInStorage('', '', '');
+                  router.push('/dashboard/jobs/analyze?clean=1');
+                }}
+              >
+                Analyze Job
+              </Button>
+              <span className="sr-only">View mode</span>
+              <div className="flex rounded-xl border border-white/12 p-0.5">
+                <button
+                  type="button"
+                  title="Table"
+                  onClick={() => setView('list')}
+                  className={cn(
+                    'rounded-lg p-2 transition-colors',
+                    view === 'list'
+                      ? 'bg-[#00C9B1]/20 text-[#00C9B1]'
+                      : 'text-white/45 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]',
+                  )}
+                >
+                  <List className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  title="Board"
+                  onClick={() => setView('board')}
+                  className={cn(
+                    'rounded-lg p-2 transition-colors',
+                    view === 'board'
+                      ? 'bg-[#00C9B1]/20 text-[#00C9B1]'
+                      : 'text-white/45 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]',
+                  )}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <HubPipelineStrip counts={stageCounts} filter={filter} onFilterChange={setFilter} />
-
-      <div data-tour="job-hub-board">
-      {merged.length === 0 ? (
-        <GlowCard contentClassName="flex min-h-[240px] flex-col items-center justify-center p-6 text-center sm:min-h-[280px] sm:p-8">
-          <p className="text-lg font-semibold text-white">No jobs yet</p>
-          <p className="mt-2 max-w-md text-sm text-white/45">
-            Bookmark a role from the job board or run an analysis — it will show up here.
-          </p>
-          <Button
-            className="mt-6 bg-[#00C9B1] text-[#080A0A] hover:bg-[#00C9B1]"
-            onClick={() => {
-              prefillJobAnalyzerInStorage('', '', '');
-              router.push('/dashboard/jobs/analyze?clean=1');
-            }}
-          >
-            Analyze a job →
-          </Button>
-        </GlowCard>
-      ) : view === 'board' ? (
-        <JobHubKanban
-          jobs={visibleForBoard}
-          onStageChange={applyStageChange}
-          onOpenJob={openJob}
-          onPrefetchJob={prefetchJob}
-          archivingJobKey={archivingJobKey}
-          onRequestArchiveJob={(j) => setHubConfirm({ mode: 'archive', job: j })}
-          onRequestPipelineRemoveJob={(j) => setHubConfirm({ mode: 'pipeline', job: j })}
-          onRequestUnbookmarkJob={(j) => setHubConfirm({ mode: 'unbookmark', job: j })}
-        />
-      ) : (
-        <div className="space-y-4">
-          <JobHubTable
-            jobs={listPagination.pageItems}
-            selectedKey={selectedJob?.key ?? null}
-            onOpenJob={openJob}
-            onStageChange={applyStageChange}
-            onPrefetchJob={prefetchJob}
-            archivingJobKey={archivingJobKey}
-            onRequestArchiveJob={(j) => setHubConfirm({ mode: 'archive', job: j })}
-            onRequestPipelineRemoveJob={(j) => setHubConfirm({ mode: 'pipeline', job: j })}
-            onRequestUnbookmarkJob={(j) => setHubConfirm({ mode: 'unbookmark', job: j })}
+          <HubPipelineStrip
+            counts={stageCounts}
+            filter={filter}
+            onFilterChange={setFilter}
           />
-          {listPagination.showPager ? (
-            <ListPagination
-              page={listPagination.page}
-              totalPages={listPagination.totalPages}
-              rangeStart={listPagination.rangeStart}
-              rangeEnd={listPagination.rangeEnd}
-              total={listPagination.total}
-              onPageChange={listPagination.setPage}
-            />
-          ) : null}
-        </div>
-      )}
-      </div>
+
+          <div data-tour="job-hub-board">
+            {merged.length === 0 ? (
+              <GlowCard contentClassName="flex min-h-[240px] flex-col items-center justify-center p-6 text-center sm:min-h-[280px] sm:p-8">
+                <p className="text-lg font-semibold text-white">No jobs yet</p>
+                <p className="mt-2 max-w-md text-sm text-white/45">
+                  Bookmark a role from the job board or run an analysis — it
+                  will show up here.
+                </p>
+                <Button
+                  className="mt-6 bg-[#00C9B1] text-[#080A0A] hover:bg-[#00C9B1]"
+                  onClick={() => {
+                    prefillJobAnalyzerInStorage('', '', '');
+                    router.push('/dashboard/jobs/analyze?clean=1');
+                  }}
+                >
+                  Analyze a job →
+                </Button>
+              </GlowCard>
+            ) : view === 'board' ? (
+              <JobHubKanban
+                jobs={visibleForBoard}
+                onStageChange={applyStageChange}
+                onOpenJob={openJob}
+                onPrefetchJob={prefetchJob}
+                archivingJobKey={archivingJobKey}
+                onRequestArchiveJob={(j) =>
+                  setHubConfirm({ mode: 'archive', job: j })
+                }
+                onRequestPipelineRemoveJob={(j) =>
+                  setHubConfirm({ mode: 'pipeline', job: j })
+                }
+                onRequestUnbookmarkJob={(j) =>
+                  setHubConfirm({ mode: 'unbookmark', job: j })
+                }
+              />
+            ) : (
+              <div className="space-y-4">
+                <JobHubTable
+                  jobs={listPagination.pageItems}
+                  selectedKey={selectedJob?.key ?? null}
+                  onOpenJob={openJob}
+                  onStageChange={applyStageChange}
+                  onPrefetchJob={prefetchJob}
+                  archivingJobKey={archivingJobKey}
+                  onRequestArchiveJob={(j) =>
+                    setHubConfirm({ mode: 'archive', job: j })
+                  }
+                  onRequestPipelineRemoveJob={(j) =>
+                    setHubConfirm({ mode: 'pipeline', job: j })
+                  }
+                  onRequestUnbookmarkJob={(j) =>
+                    setHubConfirm({ mode: 'unbookmark', job: j })
+                  }
+                />
+                {listPagination.showPager ? (
+                  <ListPagination
+                    page={listPagination.page}
+                    totalPages={listPagination.totalPages}
+                    rangeStart={listPagination.rangeStart}
+                    rangeEnd={listPagination.rangeEnd}
+                    total={listPagination.total}
+                    onPageChange={listPagination.setPage}
+                  />
+                ) : null}
+              </div>
+            )}
+          </div>
         </div>
 
         <aside
@@ -1095,7 +1362,9 @@ export function JobHub() {
                 : 'animate-career-rail-pulse border-[#00C9B1]/45 text-[#00C9B1] shadow-[0_0_18px_rgba(0,201,177,0.35)] hover:border-[#00C9B1] hover:text-[#00E5CC]',
             )}
             aria-expanded={careerRailOpen}
-            aria-label={careerRailOpen ? 'Collapse career rail' : 'Expand career rail'}
+            aria-label={
+              careerRailOpen ? 'Collapse career rail' : 'Expand career rail'
+            }
           >
             {careerRailOpen ? (
               <ChevronRight className="h-4 w-4" aria-hidden />
@@ -1143,7 +1412,13 @@ export function JobHub() {
         onOpenChange={(open) => {
           if (!open && !hubConfirmPending) setHubConfirm(null);
         }}
-        title={hubConfirm?.mode === 'unbookmark' ? 'Remove bookmark?' : hubConfirm?.mode === 'pipeline' ? 'Remove from pipeline?' : 'Archive job?'}
+        title={
+          hubConfirm?.mode === 'unbookmark'
+            ? 'Remove bookmark?'
+            : hubConfirm?.mode === 'pipeline'
+              ? 'Remove from pipeline?'
+              : 'Archive job?'
+        }
         description={
           hubConfirm?.mode === 'unbookmark'
             ? 'This saved listing will be removed from your hub. You can save the job again later from the job board if you change your mind.'
@@ -1151,12 +1426,20 @@ export function JobHub() {
               ? 'This job will leave your active Job Hub and move to Archived jobs. Related reminders and hub notifications are cleared. You can restore it from Jobs workspace → Archived jobs.'
               : 'Archive this job to your library. It leaves the active hub and appears under Archived jobs, where you can restore or permanently delete it later.'
         }
-        confirmLabel={hubConfirm?.mode === 'unbookmark' ? 'Remove' : hubConfirm?.mode === 'pipeline' ? 'Remove from pipeline' : 'Archive'}
+        confirmLabel={
+          hubConfirm?.mode === 'unbookmark'
+            ? 'Remove'
+            : hubConfirm?.mode === 'pipeline'
+              ? 'Remove from pipeline'
+              : 'Archive'
+        }
         variant={hubConfirm?.mode === 'unbookmark' ? 'danger' : 'default'}
         isPending={hubConfirmPending}
         onConfirm={() => {
           if (!hubConfirm) return;
-          handleRemoveFromHub(hubConfirm.job, { onSuccess: () => setHubConfirm(null) });
+          handleRemoveFromHub(hubConfirm.job, {
+            onSuccess: () => setHubConfirm(null),
+          });
         }}
       />
     </div>

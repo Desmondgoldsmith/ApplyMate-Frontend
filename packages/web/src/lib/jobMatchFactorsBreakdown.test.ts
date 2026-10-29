@@ -65,7 +65,8 @@ describe('parseJobMatchFactorsBreakdown', () => {
   });
 
   it('resolveFactorSkillLists uses API arrays only, not explanation prose', async () => {
-    const { resolveFactorSkillLists } = await import('@/lib/jobMatchFactorsBreakdown');
+    const { resolveFactorSkillLists } =
+      await import('@/lib/jobMatchFactorsBreakdown');
     const lists = resolveFactorSkillLists({
       key: 'skillsMatch',
       label: 'How well your experience matches what this role needs',
@@ -85,7 +86,8 @@ describe('parseJobMatchFactorsBreakdown', () => {
   });
 
   it('warnFactorScoreInconsistency logs when found chips exist but score is 0', async () => {
-    const { warnFactorScoreInconsistency } = await import('@/lib/jobMatchFactorsBreakdown');
+    const { warnFactorScoreInconsistency } =
+      await import('@/lib/jobMatchFactorsBreakdown');
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     warnFactorScoreInconsistency({
       key: 'skillsMatch',

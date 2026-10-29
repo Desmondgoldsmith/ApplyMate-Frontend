@@ -90,11 +90,16 @@ export function useInterviewPrepFlow(
   const usePrep = sessionHasPrepTurns(session);
   const [turnQueue, setTurnQueue] = useState<InterviewTurn[]>([]);
   const [turnIndex, setTurnIndex] = useState(0);
-  const [lastFeedback, setLastFeedback] = useState<TurnAnswerResponse | null>(null);
-  const [followUpReason, setFollowUpReason] = useState<TurnAnswerResponse['followUp']>(null);
+  const [lastFeedback, setLastFeedback] = useState<TurnAnswerResponse | null>(
+    null,
+  );
+  const [followUpReason, setFollowUpReason] =
+    useState<TurnAnswerResponse['followUp']>(null);
 
   /** Per-turn coaching cache — keyed by turnId (Phase 2). */
-  const [coachingByTurnId, setCoachingByTurnId] = useState<Record<string, CoachInsight>>({});
+  const [coachingByTurnId, setCoachingByTurnId] = useState<
+    Record<string, CoachInsight>
+  >({});
   const [coachingStatusByTurnId, setCoachingStatusByTurnId] = useState<
     Record<string, TurnCoachingStatus>
   >({});
@@ -112,17 +117,19 @@ export function useInterviewPrepFlow(
   >({});
   const pendingRecommendedTurnRef = useRef<string | null>(null);
   const pendingNextQuestionRef = useRef<NextQuestionPayload | null>(null);
-  const pendingNextPlannedQuestionRef = useRef<NextQuestionPayload | null>(null);
+  const pendingNextPlannedQuestionRef = useRef<NextQuestionPayload | null>(
+    null,
+  );
   const selectedFollowUpQuestionRef = useRef<string | null>(null);
   const partialCoachingTimerRef = useRef<number | null>(null);
   const lastDifficultyRef = useRef<'easy' | 'medium' | 'hard' | null>(null);
   const coachHintsTimerRef = useRef<number | null>(null);
 
   /** Phase D/E — personalization from turn submit. */
-  const [lastPersonalization, setLastPersonalization] = useState<PersonalizationPayload | null>(
-    null,
-  );
-  const [pendingQuestionStyle, setPendingQuestionStyle] = useState<DifficultyHint | null>(null);
+  const [lastPersonalization, setLastPersonalization] =
+    useState<PersonalizationPayload | null>(null);
+  const [pendingQuestionStyle, setPendingQuestionStyle] =
+    useState<DifficultyHint | null>(null);
   const [coachHints, setCoachHints] = useState<string[]>([]);
   const [questionStyleFading, setQuestionStyleFading] = useState(false);
 
@@ -131,13 +138,16 @@ export function useInterviewPrepFlow(
     Record<string, TurnCoachingUiState>
   >({});
   /** Turn being coached before `lastFeedback` is set (instant feedback phase). */
-  const [activeCoachingTurnId, setActiveCoachingTurnId] = useState<string | null>(null);
+  const [activeCoachingTurnId, setActiveCoachingTurnId] = useState<
+    string | null
+  >(null);
 
-  const [questionProgress, setQuestionProgress] = useState<QuestionProgress | null>(null);
-  const [activePracticeChip, setActivePracticeChip] = useState<SuggestedFollowUp | null>(null);
-  const [practiceFeedback, setPracticeFeedback] = useState<PracticeCoachingResponse | null>(
-    null,
-  );
+  const [questionProgress, setQuestionProgress] =
+    useState<QuestionProgress | null>(null);
+  const [activePracticeChip, setActivePracticeChip] =
+    useState<SuggestedFollowUp | null>(null);
+  const [practiceFeedback, setPracticeFeedback] =
+    useState<PracticeCoachingResponse | null>(null);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -165,8 +175,12 @@ export function useInterviewPrepFlow(
   const adaptiveSnapshot = sessionId
     ? (adaptiveBySessionId[sessionId] ?? EMPTY_ADAPTIVE)
     : EMPTY_ADAPTIVE;
-  const evolutionHistory = sessionId ? (evolutionBySessionId[sessionId] ?? []) : [];
-  const difficultyPulse = sessionId ? Boolean(difficultyPulseBySessionId[sessionId]) : false;
+  const evolutionHistory = sessionId
+    ? (evolutionBySessionId[sessionId] ?? [])
+    : [];
+  const difficultyPulse = sessionId
+    ? Boolean(difficultyPulseBySessionId[sessionId])
+    : false;
 
   const syncQueueFromSession = useCallback(
     (recommendedNextTurnId?: string | null) => {
@@ -175,7 +189,10 @@ export function useInterviewPrepFlow(
         return;
       }
       const pending = buildPendingTurnQueue(session.turns);
-      const ordered = orderPendingTurns(pending, recommendedNextTurnId ?? pendingRecommendedTurnRef.current);
+      const ordered = orderPendingTurns(
+        pending,
+        recommendedNextTurnId ?? pendingRecommendedTurnRef.current,
+      );
       setTurnQueue(ordered);
       setTurnIndex((idx) => Math.min(idx, Math.max(0, ordered.length - 1)));
     },
@@ -199,7 +216,9 @@ export function useInterviewPrepFlow(
   const totalTurns = session?.totalQuestions ?? turnQueue.length;
   const answeredCount = useMemo(() => {
     if (!session?.turns) return 0;
-    return session.turns.filter((t) => t.status === 'answered' || t.status === 'evaluated').length;
+    return session.turns.filter(
+      (t) => t.status === 'answered' || t.status === 'evaluated',
+    ).length;
   }, [session?.turns]);
 
   const feedbackTurnId =
@@ -210,13 +229,21 @@ export function useInterviewPrepFlow(
   const scheduleSessionRefresh = useCallback(() => {
     if (!sessionId) return;
     debounceByKey(`prep-refresh:${sessionId}`, 500, () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.interview.session(sessionId) });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.interviewPrep.turns(sessionId) });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.interviewPrep.session(sessionId) });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.interview.session(sessionId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.interviewPrep.turns(sessionId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.interviewPrep.session(sessionId),
+      });
       void queryClient.invalidateQueries({
         queryKey: queryKeys.interviewPrep.simulationState(sessionId),
       });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.interviewPrep.skillProfile() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.interviewPrep.skillProfile(),
+      });
     });
   }, [queryClient, sessionId]);
 
@@ -241,17 +268,20 @@ export function useInterviewPrepFlow(
     }, 320);
   }, []);
 
-  const cacheCoachingForTurn = useCallback((turnId: string, response: TurnAnswerResponse) => {
-    const insight = resolveCoachInsightFromResponse(response);
-    if (insight) {
-      const key = coachInsightCacheKey(insight);
-      if (coachingKeyByTurnRef.current[turnId] !== key) {
-        coachingKeyByTurnRef.current[turnId] = key;
-        setCoachingByTurnId((prev) => ({ ...prev, [turnId]: insight }));
+  const cacheCoachingForTurn = useCallback(
+    (turnId: string, response: TurnAnswerResponse) => {
+      const insight = resolveCoachInsightFromResponse(response);
+      if (insight) {
+        const key = coachInsightCacheKey(insight);
+        if (coachingKeyByTurnRef.current[turnId] !== key) {
+          coachingKeyByTurnRef.current[turnId] = key;
+          setCoachingByTurnId((prev) => ({ ...prev, [turnId]: insight }));
+        }
       }
-    }
-    setCoachingStatusByTurnId((prev) => ({ ...prev, [turnId]: 'ready' }));
-  }, []);
+      setCoachingStatusByTurnId((prev) => ({ ...prev, [turnId]: 'ready' }));
+    },
+    [],
+  );
 
   const hydrateCoachingFromResponse = useCallback(
     (turnId: string, response: TurnAnswerResponse) => {
@@ -302,32 +332,36 @@ export function useInterviewPrepFlow(
     [beginCoachingSubmit],
   );
 
-  const applyPersonalizationFromResponse = useCallback((response: TurnAnswerResponse) => {
-    const p = response.personalization;
-    if (!p) return;
-    setLastPersonalization(p);
-    if (p.difficultyHint) {
-      setPendingQuestionStyle((prev) => {
-        const next = p.difficultyHint!;
-        const changed =
-          prev?.difficultyLevel !== next.difficultyLevel ||
-          prev?.questionStyle !== next.questionStyle;
-        if (changed) {
-          setQuestionStyleFading(true);
-          window.setTimeout(() => setQuestionStyleFading(false), 480);
-        }
-        return next;
-      });
-    }
-    const hints = coachHintsFromPersonalization(p);
-    if (!hints.length) return;
-    setCoachHints(hints);
-    if (coachHintsTimerRef.current) window.clearTimeout(coachHintsTimerRef.current);
-    coachHintsTimerRef.current = window.setTimeout(() => {
-      setCoachHints([]);
-      coachHintsTimerRef.current = null;
-    }, 6500);
-  }, []);
+  const applyPersonalizationFromResponse = useCallback(
+    (response: TurnAnswerResponse) => {
+      const p = response.personalization;
+      if (!p) return;
+      setLastPersonalization(p);
+      if (p.difficultyHint) {
+        setPendingQuestionStyle((prev) => {
+          const next = p.difficultyHint!;
+          const changed =
+            prev?.difficultyLevel !== next.difficultyLevel ||
+            prev?.questionStyle !== next.questionStyle;
+          if (changed) {
+            setQuestionStyleFading(true);
+            window.setTimeout(() => setQuestionStyleFading(false), 480);
+          }
+          return next;
+        });
+      }
+      const hints = coachHintsFromPersonalization(p);
+      if (!hints.length) return;
+      setCoachHints(hints);
+      if (coachHintsTimerRef.current)
+        window.clearTimeout(coachHintsTimerRef.current);
+      coachHintsTimerRef.current = window.setTimeout(() => {
+        setCoachHints([]);
+        coachHintsTimerRef.current = null;
+      }, 6500);
+    },
+    [],
+  );
 
   const applyAdaptiveFromResponse = useCallback(
     (sid: string, response: TurnAnswerResponse) => {
@@ -367,11 +401,19 @@ export function useInterviewPrepFlow(
         const history = prev[sid] ?? [];
         return {
           ...prev,
-          [sid]: appendEvolutionPoint(history, response.turn.id, scores, adaptive.profile),
+          [sid]: appendEvolutionPoint(
+            history,
+            response.turn.id,
+            scores,
+            adaptive.profile,
+          ),
         };
       });
 
-      if (process.env.NODE_ENV !== 'production' && adaptive.reasoningTags?.length) {
+      if (
+        process.env.NODE_ENV !== 'production' &&
+        adaptive.reasoningTags?.length
+      ) {
         console.debug('[interview-adaptive]', adaptive.reasoningTags);
       }
     },
@@ -395,7 +437,9 @@ export function useInterviewPrepFlow(
   );
 
   const navigateToPrepTurn = useCallback(
-    (payload: NextQuestionPayload | null | undefined): PrepNavigationResult | null => {
+    (
+      payload: NextQuestionPayload | null | undefined,
+    ): PrepNavigationResult | null => {
       if (!payload?.questionText?.trim()) return null;
       const text = payload.questionText.trim();
       if (payload.turnId && session?.turns?.length) {
@@ -423,7 +467,9 @@ export function useInterviewPrepFlow(
   }, [clearCoachingStateForTurn, lastFeedback?.turn?.id]);
 
   const startAnswerForNavigation = useCallback(
-    (payload: NextQuestionPayload | null | undefined): PrepNavigationResult | null => {
+    (
+      payload: NextQuestionPayload | null | undefined,
+    ): PrepNavigationResult | null => {
       clearFeedbackPhase();
       return navigateToPrepTurn(payload);
     },
@@ -548,17 +594,23 @@ export function useInterviewPrepFlow(
     setPracticeFeedback(null);
   }, []);
 
-  const completePracticeAnswer = useCallback((res: PracticeCoachingResponse) => {
-    setActivePracticeChip(null);
-    setPracticeFeedback(res);
-  }, []);
+  const completePracticeAnswer = useCallback(
+    (res: PracticeCoachingResponse) => {
+      setActivePracticeChip(null);
+      setPracticeFeedback(res);
+    },
+    [],
+  );
 
-  const restoreFeedbackSnapshot = useCallback((snapshot: TurnAnswerResponse | null) => {
-    if (snapshot) {
-      setLastFeedback(snapshot);
-      setFollowUpReason(snapshot.followUp ?? null);
-    }
-  }, []);
+  const restoreFeedbackSnapshot = useCallback(
+    (snapshot: TurnAnswerResponse | null) => {
+      if (snapshot) {
+        setLastFeedback(snapshot);
+        setFollowUpReason(snapshot.followUp ?? null);
+      }
+    },
+    [],
+  );
 
   const setSelectedFollowUpQuestion = useCallback((question: string | null) => {
     selectedFollowUpQuestionRef.current = question?.trim() || null;
@@ -689,7 +741,10 @@ export function useInterviewPrepFlow(
 
   const prepProgressPercent = useMemo(() => {
     if (!usePrep || totalTurns <= 0) return 0;
-    return Math.min(100, Math.round(((answeredCount + (lastFeedback ? 0 : 0)) / totalTurns) * 100));
+    return Math.min(
+      100,
+      Math.round(((answeredCount + (lastFeedback ? 0 : 0)) / totalTurns) * 100),
+    );
   }, [answeredCount, lastFeedback, totalTurns, usePrep]);
 
   return {

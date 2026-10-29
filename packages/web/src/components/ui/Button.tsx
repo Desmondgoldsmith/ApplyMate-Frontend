@@ -31,17 +31,15 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
     asChild?: boolean;
   };
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { className, variant, fullWidth, asChild, ...props },
-  ref,
-) {
-  const Comp = asChild ? Slot : 'button';
-  return (
-    <Comp
-      ref={ref}
-      className={cn(buttonVariants({ variant, fullWidth }), className)}
-      {...props}
-    />
-  );
-});
-
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  function Button({ className, variant, fullWidth, asChild, ...props }, ref) {
+    const Comp = asChild ? Slot : 'button';
+    return (
+      <Comp
+        ref={ref}
+        className={cn(buttonVariants({ variant, fullWidth }), className)}
+        {...props}
+      />
+    );
+  },
+);

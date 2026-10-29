@@ -43,7 +43,8 @@ const VARIANTS: Record<FollowUpCardVariant['key'], FollowUpCardVariant> = {
     label: 'Application',
     shortLabel: 'Applied',
     Icon: Briefcase,
-    accentBar: 'bg-gradient-to-b from-emerald-400 via-emerald-500 to-teal-700/90',
+    accentBar:
+      'bg-gradient-to-b from-emerald-400 via-emerald-500 to-teal-700/90',
     iconWrap: 'border-emerald-400/35 bg-emerald-500/12 text-emerald-200',
     card: 'border-emerald-500/22 bg-gradient-to-br from-emerald-500/[0.07] to-transparent shadow-[inset_0_1px_0_0_rgba(16,185,129,0.12)]',
     pill: 'border-emerald-400/25 bg-emerald-500/12 text-emerald-100/90',
@@ -60,7 +61,9 @@ const VARIANTS: Record<FollowUpCardVariant['key'], FollowUpCardVariant> = {
   },
 };
 
-export function followUpJobCardVariant(source: FollowUpJobSource | null | undefined): FollowUpCardVariant {
+export function followUpJobCardVariant(
+  source: FollowUpJobSource | null | undefined,
+): FollowUpCardVariant {
   const s = (source ?? '').trim().toLowerCase();
   if (s === 'analysis') return VARIANTS.analysis;
   if (s === 'bookmark') return VARIANTS.bookmark;
@@ -69,6 +72,8 @@ export function followUpJobCardVariant(source: FollowUpJobSource | null | undefi
 }
 
 /** Human label derived from `source` only (not coaching stage). */
-export function followUpJobSourceDisplayLabel(source: FollowUpJobSource | null | undefined): string {
+export function followUpJobSourceDisplayLabel(
+  source: FollowUpJobSource | null | undefined,
+): string {
   return followUpJobCardVariant(source).label;
 }

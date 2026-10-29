@@ -33,7 +33,9 @@ export type CvMergeCreatedResult = {
   profile?: CVProfile;
 };
 
-export type CvMergeProfilesResponse = CvMergePreviewResult | CvMergeCreatedResult;
+export type CvMergeProfilesResponse =
+  | CvMergePreviewResult
+  | CvMergeCreatedResult;
 
 export const CV_MERGE_MAX_PROFILES = 6;
 export const CV_MERGE_MIN_PROFILES = 2;
@@ -56,10 +58,7 @@ function normalizeMergeSection(raw: unknown): CvMergeSectionRow | null {
   const o = raw as Record<string, unknown>;
   const type = pickString(o.type) || pickString(o.sectionType) || 'section';
   const label =
-    pickString(o.label) ||
-    pickString(o.title) ||
-    pickString(o.name) ||
-    type;
+    pickString(o.label) || pickString(o.title) || pickString(o.name) || type;
   const itemCount =
     typeof o.itemCount === 'number' && Number.isFinite(o.itemCount)
       ? Math.max(0, Math.floor(o.itemCount))
@@ -80,7 +79,9 @@ function normalizeStructured(raw: unknown): Record<string, unknown> {
   return { ...(raw as Record<string, unknown>) };
 }
 
-export function normalizeCvMergePreviewResponse(raw: unknown): CvMergePreviewResult {
+export function normalizeCvMergePreviewResponse(
+  raw: unknown,
+): CvMergePreviewResult {
   const body =
     raw !== null && typeof raw === 'object' && !Array.isArray(raw)
       ? (raw as Record<string, unknown>)
@@ -97,9 +98,7 @@ export function normalizeCvMergePreviewResponse(raw: unknown): CvMergePreviewRes
   )
     .map((row) => normalizeSourceProfile(row))
     .filter((row): row is CvMergeSourceProfile => row != null);
-  const sections = (
-    Array.isArray(body.sections) ? body.sections : []
-  )
+  const sections = (Array.isArray(body.sections) ? body.sections : [])
     .map((row) => normalizeMergeSection(row))
     .filter((row): row is CvMergeSectionRow => row != null)
     .sort((a, b) => a.order - b.order);
@@ -114,7 +113,9 @@ export function normalizeCvMergePreviewResponse(raw: unknown): CvMergePreviewRes
   };
 }
 
-export function normalizeCvMergeCreatedResponse(raw: unknown): CvMergeCreatedResult {
+export function normalizeCvMergeCreatedResponse(
+  raw: unknown,
+): CvMergeCreatedResult {
   const body =
     raw !== null && typeof raw === 'object' && !Array.isArray(raw)
       ? (raw as Record<string, unknown>)
@@ -140,24 +141,35 @@ export function normalizeCvMergeCreatedResponse(raw: unknown): CvMergeCreatedRes
     .map((id) => pickString(id))
     .filter(Boolean);
   const profileRaw =
-    body.profile && typeof body.profile === 'object' && !Array.isArray(body.profile)
+    body.profile &&
+    typeof body.profile === 'object' &&
+    !Array.isArray(body.profile)
       ? (body.profile as Record<string, unknown>)
       : null;
   const profile: CVProfile | undefined = profileRaw
     ? {
         id: profileId,
         rawText:
-          typeof profileRaw.rawText === 'string' ? profileRaw.rawText : undefined,
+          typeof profileRaw.rawText === 'string'
+            ? profileRaw.rawText
+            : undefined,
         structured:
-          profileRaw.structured !== null && typeof profileRaw.structured === 'object'
+          profileRaw.structured !== null &&
+          typeof profileRaw.structured === 'object'
             ? (profileRaw.structured as CVProfile['structured'])
             : undefined,
         template:
-          typeof profileRaw.template === 'string' ? profileRaw.template : undefined,
+          typeof profileRaw.template === 'string'
+            ? profileRaw.template
+            : undefined,
         createdAt:
-          typeof profileRaw.createdAt === 'string' ? profileRaw.createdAt : undefined,
+          typeof profileRaw.createdAt === 'string'
+            ? profileRaw.createdAt
+            : undefined,
         updatedAt:
-          typeof profileRaw.updatedAt === 'string' ? profileRaw.updatedAt : undefined,
+          typeof profileRaw.updatedAt === 'string'
+            ? profileRaw.updatedAt
+            : undefined,
       }
     : undefined;
   return {
@@ -169,7 +181,9 @@ export function normalizeCvMergeCreatedResponse(raw: unknown): CvMergeCreatedRes
   };
 }
 
-export function normalizeCvMergeProfilesResponse(raw: unknown): CvMergeProfilesResponse {
+export function normalizeCvMergeProfilesResponse(
+  raw: unknown,
+): CvMergeProfilesResponse {
   const body =
     raw !== null && typeof raw === 'object' && !Array.isArray(raw)
       ? (raw as Record<string, unknown>)

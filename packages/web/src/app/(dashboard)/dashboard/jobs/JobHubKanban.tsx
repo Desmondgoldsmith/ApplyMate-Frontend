@@ -20,7 +20,12 @@ import { cn } from '@/lib/utils';
 import { JobHubBadges } from './JobHubBadges';
 import { JobHubRowMenu } from './JobHubRowMenu';
 
-import { HUB_STAGE_LABELS, HUB_STAGES, type HubStage, type TrackedJob } from './jobHubMerge';
+import {
+  HUB_STAGE_LABELS,
+  HUB_STAGES,
+  type HubStage,
+  type TrackedJob,
+} from './jobHubMerge';
 
 function KanbanCard({
   job,
@@ -39,12 +44,15 @@ function KanbanCard({
   onRequestPipelineRemoveJob: (job: TrackedJob) => void;
   onRequestUnbookmarkJob: (job: TrackedJob) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: job.key,
-    data: { job },
-  });
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: job.key,
+      data: { job },
+    });
 
-  const style = transform ? { transform: CSS.Translate.toString(transform) } : undefined;
+  const style = transform
+    ? { transform: CSS.Translate.toString(transform) }
+    : undefined;
 
   return (
     <div
@@ -71,7 +79,9 @@ function KanbanCard({
         onMouseEnter={() => onPrefetch?.(job)}
         onFocus={() => onPrefetch?.(job)}
       >
-        <p className="text-sm font-semibold leading-snug text-white">{job.title}</p>
+        <p className="text-sm font-semibold leading-snug text-white">
+          {job.title}
+        </p>
         <p className="mt-1 line-clamp-2 text-xs text-white/45">{job.company}</p>
         <JobHubBadges job={job} className="mt-2" />
         {job.matchScore != null ? (
@@ -124,7 +134,9 @@ function KanbanColumn({
         <h3 className="text-[11px] font-semibold uppercase tracking-[0.05em] text-white/50">
           {HUB_STAGE_LABELS[stage]}
         </h3>
-        <span className="text-[11px] tabular-nums text-white/35">{jobs.length}</span>
+        <span className="text-[11px] tabular-nums text-white/35">
+          {jobs.length}
+        </span>
       </div>
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto app-scrollbar">
         {jobs.length === 0 ? (

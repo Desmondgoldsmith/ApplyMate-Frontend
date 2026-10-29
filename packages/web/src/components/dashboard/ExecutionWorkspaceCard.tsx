@@ -14,17 +14,24 @@ function clampPct(pct: number | null | undefined): number | null {
 }
 
 function humanLastVisit(hours: number | null | undefined): string | null {
-  if (typeof hours !== 'number' || !Number.isFinite(hours) || hours <= 0) return null;
+  if (typeof hours !== 'number' || !Number.isFinite(hours) || hours <= 0)
+    return null;
   if (hours < 1) return 'You were just here.';
   if (hours < 24) return `You paused ${Math.round(hours)} hours ago.`;
   const days = Math.max(1, Math.round(hours / 24));
   return days === 1 ? 'You paused yesterday.' : `You paused ${days} days ago.`;
 }
 
-function progressSummary(continuation: DashboardContinuationView): string | null {
+function progressSummary(
+  continuation: DashboardContinuationView,
+): string | null {
   const idx = continuation.continuationContext?.exactStepIndex;
   const total = continuation.continuationContext?.totalSteps;
-  const pct = clampPct(continuation.percentComplete ?? continuation.continuationContext?.completionPercent ?? null);
+  const pct = clampPct(
+    continuation.percentComplete ??
+      continuation.continuationContext?.completionPercent ??
+      null,
+  );
   const roleOnly = continuation.jobRoleTitle?.trim();
   if (pct === 0) {
     return roleOnly
@@ -32,12 +39,19 @@ function progressSummary(continuation: DashboardContinuationView): string | null
       : 'You just started this session.';
   }
   if (pct != null && pct < 10) return 'Everything is ready to continue.';
-  if (typeof idx === 'number' && Number.isFinite(idx) && typeof total === 'number' && Number.isFinite(total) && total > 0) {
+  if (
+    typeof idx === 'number' &&
+    Number.isFinite(idx) &&
+    typeof total === 'number' &&
+    Number.isFinite(total) &&
+    total > 0
+  ) {
     const current = Math.min(total, Math.max(1, idx + 1));
     const base = `${current} of ${total} steps along`;
     return pct != null ? `${base} — roughly ${pct}% through.` : `${base}.`;
   }
-  if (pct != null) return `Roughly ${pct}% through — worth finishing while it’s fresh.`;
+  if (pct != null)
+    return `Roughly ${pct}% through — worth finishing while it’s fresh.`;
   return null;
 }
 
@@ -73,21 +87,34 @@ export function ExecutionWorkspaceCard({
     <section className="rounded-2xl border border-[rgba(0,201,177,0.18)] bg-gradient-to-br from-[rgba(0,201,177,0.06)] to-[rgba(0,201,177,0.02)] p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[11px] font-medium tracking-wide text-[#9CF5EA]/70">{sectionEyebrow}</p>
-          <p className="mt-2 text-[17px] font-semibold leading-snug text-white">{title}</p>
+          <p className="text-[11px] font-medium tracking-wide text-[#9CF5EA]/70">
+            {sectionEyebrow}
+          </p>
+          <p className="mt-2 text-[17px] font-semibold leading-snug text-white">
+            {title}
+          </p>
           {jobLine ? (
-            <p className="mt-1.5 text-[13px] font-medium leading-snug text-white/72">{jobLine}</p>
+            <p className="mt-1.5 text-[13px] font-medium leading-snug text-white/72">
+              {jobLine}
+            </p>
           ) : null}
           {step ? (
             <p className="mt-2 text-[14px] leading-relaxed text-white/65">
-              <CornerDownRight className="mr-1 inline h-3.5 w-3.5 text-white/35" aria-hidden />
+              <CornerDownRight
+                className="mr-1 inline h-3.5 w-3.5 text-white/35"
+                aria-hidden
+              />
               {step}
             </p>
           ) : continuation.subtitle?.trim() ? (
-            <p className="mt-2 text-[14px] leading-relaxed text-white/58">{continuation.subtitle.trim()}</p>
+            <p className="mt-2 text-[14px] leading-relaxed text-white/58">
+              {continuation.subtitle.trim()}
+            </p>
           ) : null}
           {memoryMicrocopy?.trim() ? (
-            <p className="mt-3 text-[12px] leading-relaxed text-[#9CF5EA]/65">{memoryMicrocopy.trim()}</p>
+            <p className="mt-3 text-[12px] leading-relaxed text-[#9CF5EA]/65">
+              {memoryMicrocopy.trim()}
+            </p>
           ) : null}
           <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-white/42">
             {progress ? <span>{progress}</span> : null}
@@ -107,7 +134,9 @@ export function ExecutionWorkspaceCard({
                   'border-[#00C9B1]/50 bg-[#00C9B1]/10 text-[#B8F5EC] hover:bg-[#00C9B1] hover:text-[#080A0A]',
               )}
             >
-              {ctaLabel.endsWith('→') ? ctaLabel : (
+              {ctaLabel.endsWith('→') ? (
+                ctaLabel
+              ) : (
                 <>
                   {ctaLabel}
                   <ChevronRight className="ml-1 h-4 w-4" aria-hidden />

@@ -7,7 +7,9 @@ export function isExtensionContextValid(): boolean {
   }
 }
 
-export function safeRuntimeSendMessage<T = unknown>(message: unknown): Promise<T | undefined> {
+export function safeRuntimeSendMessage<T = unknown>(
+  message: unknown,
+): Promise<T | undefined> {
   if (!isExtensionContextValid()) {
     return Promise.resolve(undefined);
   }

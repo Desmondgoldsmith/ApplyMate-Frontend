@@ -256,7 +256,8 @@ function parseOperationScope(raw: unknown): CvGlobalAssistantOperationScope {
 export function normalizeCvGlobalAssistantOperation(
   raw: unknown,
 ): CvGlobalAssistantOperation | null {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw))
+    return null;
   const o = raw as Record<string, unknown>;
   const operation = parseOperationKey(o.operation);
   const label = String(o.label ?? '').trim();
@@ -268,7 +269,9 @@ export function normalizeCvGlobalAssistantOperation(
     description: String(o.description ?? '').trim(),
     exampleCommand: String(o.exampleCommand ?? o.example_command ?? '').trim(),
     affectedScopeLabel: String(
-      o.affectedScopeLabel ?? o.affected_scope_label ?? (scope === 'findings' ? 'Findings only' : 'Entire resume'),
+      o.affectedScopeLabel ??
+        o.affected_scope_label ??
+        (scope === 'findings' ? 'Findings only' : 'Entire resume'),
     ).trim(),
     scope,
   };
@@ -295,9 +298,12 @@ function parseSectionDiffs(raw: unknown): CvAssistantSectionDiff[] {
   if (!Array.isArray(raw)) return [];
   const out: CvAssistantSectionDiff[] = [];
   for (const item of raw) {
-    if (item === null || typeof item !== 'object' || Array.isArray(item)) continue;
+    if (item === null || typeof item !== 'object' || Array.isArray(item))
+      continue;
     const o = item as Record<string, unknown>;
-    const targetSection = String(o.targetSection ?? o.target_section ?? '').trim();
+    const targetSection = String(
+      o.targetSection ?? o.target_section ?? '',
+    ).trim();
     if (!targetSection) continue;
     const patch =
       o.patch && typeof o.patch === 'object' && !Array.isArray(o.patch)
@@ -395,7 +401,8 @@ export function normalizeCvGlobalAssistantCommandResponse(
           .filter(Boolean)
       : [];
     const report = normalizeCvRecruiterScanReport(body.report);
-    const scanId = String(body.scanId ?? body.scan_id ?? '').trim() || undefined;
+    const scanId =
+      String(body.scanId ?? body.scan_id ?? '').trim() || undefined;
     return {
       type: 'result',
       scope: 'findings',
@@ -435,7 +442,9 @@ export function normalizeCvGlobalAssistantCommandResponse(
 export function normalizeCvAssistantSectionCommandResponse(
   body: Record<string, unknown>,
 ): CvAssistantSectionCommandResult {
-  const targetSection = String(body.targetSection ?? body.target_section ?? 'summary');
+  const targetSection = String(
+    body.targetSection ?? body.target_section ?? 'summary',
+  );
   const patch =
     body.patch && typeof body.patch === 'object' && !Array.isArray(body.patch)
       ? (body.patch as Record<string, unknown>)
@@ -453,9 +462,10 @@ export function normalizeCvAssistantSectionCommandResponse(
   return {
     type: 'result',
     scope: 'section',
-    affectedScopeLabel: String(
-      body.affectedScopeLabel ?? body.affected_scope_label ?? 'This section',
-    ).trim() || 'This section',
+    affectedScopeLabel:
+      String(
+        body.affectedScopeLabel ?? body.affected_scope_label ?? 'This section',
+      ).trim() || 'This section',
     commandId: String(body.commandId ?? body.command_id ?? ''),
     targetSection,
     patch,

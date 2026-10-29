@@ -18,7 +18,10 @@ import { api } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
 import { sanitizeDashboardDisplayText } from '@/lib/dashboardDisplayCopy';
 import { queryKeys } from '@/lib/queryKeys';
-import { invalidateTodayPlanQueries, type DashboardStaleApplicationItemPayload } from '@/lib/today-plan';
+import {
+  invalidateTodayPlanQueries,
+  type DashboardStaleApplicationItemPayload,
+} from '@/lib/today-plan';
 import { cn } from '@/lib/utils';
 
 type ViewMode = 'board' | 'list';
@@ -51,14 +54,19 @@ function QuietTable({
             >
               <td className="max-w-[220px] px-4 py-3.5 pl-5 align-middle">
                 <div className="flex items-start gap-2.5">
-                  <CompanyLogo company={item.company} logoUrl={item.companyLogoUrl} size="sm" shape="rounded" />
+                  <CompanyLogo
+                    company={item.company}
+                    logoUrl={item.companyLogoUrl}
+                    size="sm"
+                    shape="rounded"
+                  />
                   <div className="min-w-0">
-                <p className="text-[13px] font-semibold text-white/90">
-                  {sanitizeDashboardDisplayText(item.jobTitle)}
-                </p>
-                <p className="mt-0.5 text-[11px] text-white/45">
-                  {sanitizeDashboardDisplayText(item.company)}
-                </p>
+                    <p className="text-[13px] font-semibold text-white/90">
+                      {sanitizeDashboardDisplayText(item.jobTitle)}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-white/45">
+                      {sanitizeDashboardDisplayText(item.company)}
+                    </p>
                   </div>
                 </div>
               </td>
@@ -124,9 +132,15 @@ export default function DashboardQuietApplicationsPage() {
   const archiveMutation = useMutation({
     mutationFn: (applicationId: string) => api.jobs.archive({ applicationId }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.applications.root() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.archive() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.applications.root(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.history(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jobs.archive(),
+      });
       invalidateTodayPlanQueries(queryClient);
       void quietQuery.refetch();
       toast.success('Job archived');
@@ -166,8 +180,8 @@ export default function DashboardQuietApplicationsPage() {
           Applications going quiet
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-white/45">
-          Roles with no updates in three weeks or more — follow up or archive to keep your search
-          focused.
+          Roles with no updates in three weeks or more — follow up or archive to
+          keep your search focused.
         </p>
       </div>
 
@@ -185,14 +199,20 @@ export default function DashboardQuietApplicationsPage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="sr-only">View mode</span>
-          <div className="flex rounded-xl border border-white/12 p-0.5" role="group" aria-label="View mode">
+          <div
+            className="flex rounded-xl border border-white/12 p-0.5"
+            role="group"
+            aria-label="View mode"
+          >
             <button
               type="button"
               title="Table"
               onClick={() => setView('list')}
               className={cn(
                 'rounded-lg p-2 transition-colors',
-                view === 'list' ? 'bg-[#00C9B1]/20 text-[#00C9B1]' : 'text-white/45 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]',
+                view === 'list'
+                  ? 'bg-[#00C9B1]/20 text-[#00C9B1]'
+                  : 'text-white/45 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]',
               )}
             >
               <List className="h-4 w-4" />
@@ -203,7 +223,9 @@ export default function DashboardQuietApplicationsPage() {
               onClick={() => setView('board')}
               className={cn(
                 'rounded-lg p-2 transition-colors',
-                view === 'board' ? 'bg-[#00C9B1]/20 text-[#00C9B1]' : 'text-white/45 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]',
+                view === 'board'
+                  ? 'bg-[#00C9B1]/20 text-[#00C9B1]'
+                  : 'text-white/45 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]',
               )}
             >
               <LayoutGrid className="h-4 w-4" />
@@ -216,19 +238,30 @@ export default function DashboardQuietApplicationsPage() {
         <ListPageShimmer cardCount={6} tableRows={8} />
       ) : quietQuery.isError ? (
         <GlowCard contentClassName="p-6">
-          <p className="text-sm text-rose-200">Could not load quiet applications.</p>
-          <Button className="mt-4" variant="ghost" onClick={() => void quietQuery.refetch()}>
+          <p className="text-sm text-rose-200">
+            Could not load quiet applications.
+          </p>
+          <Button
+            className="mt-4"
+            variant="ghost"
+            onClick={() => void quietQuery.refetch()}
+          >
             Retry
           </Button>
         </GlowCard>
       ) : pagination.total === 0 ? (
         <GlowCard contentClassName="flex min-h-[200px] flex-col items-center justify-center p-8 text-center">
-          <p className="text-lg font-semibold text-white/90">No quiet applications</p>
-          <p className="mt-2 max-w-md text-sm text-white/45">
-            When applications go three weeks without a reply, they appear here with follow-up or
-            archive options.
+          <p className="text-lg font-semibold text-white/90">
+            No quiet applications
           </p>
-          <Button asChild className="mt-6 bg-[#00C9B1] text-[#080A0A] hover:bg-[#00C9B1]">
+          <p className="mt-2 max-w-md text-sm text-white/45">
+            When applications go three weeks without a reply, they appear here
+            with follow-up or archive options.
+          </p>
+          <Button
+            asChild
+            className="mt-6 bg-[#00C9B1] text-[#080A0A] hover:bg-[#00C9B1]"
+          >
             <Link href="/dashboard">Back to dashboard</Link>
           </Button>
         </GlowCard>
@@ -241,41 +274,48 @@ export default function DashboardQuietApplicationsPage() {
                 className="rounded-xl border border-[rgba(251,191,36,0.15)] bg-[rgba(251,191,36,0.04)] p-4"
               >
                 <div className="flex items-start gap-3">
-                  <CompanyLogo company={item.company} logoUrl={item.companyLogoUrl} size="md" shape="rounded" />
+                  <CompanyLogo
+                    company={item.company}
+                    logoUrl={item.companyLogoUrl}
+                    size="md"
+                    shape="rounded"
+                  />
                   <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-[14px] font-semibold text-white/92">
-                    {sanitizeDashboardDisplayText(item.headline)}
-                  </p>
-                  <span className="shrink-0 text-[11px] font-medium text-[#FCD34D]">
-                    {item.lastActivityLabel}
-                  </span>
-                </div>
-                <p className="mt-1 text-[12px] text-white/50">
-                  {sanitizeDashboardDisplayText(item.jobTitle)} ·{' '}
-                  {sanitizeDashboardDisplayText(item.company)}
-                </p>
-                <p className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-white/45">
-                  {sanitizeDashboardDisplayText(item.supporting)}
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Link
-                    href={item.ctaHref}
-                    className="inline-flex min-h-[36px] items-center justify-center rounded-full border border-[#00C9B1]/45 px-3.5 py-1.5 text-[12px] font-semibold text-[#00C9B1] transition-colors hover:bg-[#00C9B1] hover:text-[#080A0A]"
-                  >
-                    {item.ctaLabel}
-                  </Link>
-                  {item.secondaryCtaLabel?.trim() ? (
-                    <button
-                      type="button"
-                      disabled={archiveMutation.isPending}
-                      onClick={() => archiveMutation.mutate(item.applicationId)}
-                      className="inline-flex min-h-[36px] items-center justify-center rounded-full border border-white/[0.12] px-3.5 py-1.5 text-[12px] font-medium text-white/65 transition-colors hover:text-white/85 disabled:opacity-60"
-                    >
-                      {item.secondaryCtaLabel}
-                    </button>
-                  ) : null}
-                </div>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-[14px] font-semibold text-white/92">
+                        {sanitizeDashboardDisplayText(item.headline)}
+                      </p>
+                      <span className="shrink-0 text-[11px] font-medium text-[#FCD34D]">
+                        {item.lastActivityLabel}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[12px] text-white/50">
+                      {sanitizeDashboardDisplayText(item.jobTitle)} ·{' '}
+                      {sanitizeDashboardDisplayText(item.company)}
+                    </p>
+                    <p className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-white/45">
+                      {sanitizeDashboardDisplayText(item.supporting)}
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Link
+                        href={item.ctaHref}
+                        className="inline-flex min-h-[36px] items-center justify-center rounded-full border border-[#00C9B1]/45 px-3.5 py-1.5 text-[12px] font-semibold text-[#00C9B1] transition-colors hover:bg-[#00C9B1] hover:text-[#080A0A]"
+                      >
+                        {item.ctaLabel}
+                      </Link>
+                      {item.secondaryCtaLabel?.trim() ? (
+                        <button
+                          type="button"
+                          disabled={archiveMutation.isPending}
+                          onClick={() =>
+                            archiveMutation.mutate(item.applicationId)
+                          }
+                          className="inline-flex min-h-[36px] items-center justify-center rounded-full border border-white/[0.12] px-3.5 py-1.5 text-[12px] font-medium text-white/65 transition-colors hover:text-white/85 disabled:opacity-60"
+                        >
+                          {item.secondaryCtaLabel}
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </li>

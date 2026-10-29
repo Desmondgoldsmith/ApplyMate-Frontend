@@ -33,7 +33,10 @@ const SPARK_ICON = (
  * Server-backed daily AI usage from `GET /users/me` (UTC day; FREE tier cap, PAID unlimited).
  * Premium pill: teal when under cap, amber pulse at limit; links to pricing for upgrades.
  */
-export function AiUsageBadge({ className = '', variant = 'default' }: AiUsageBadgeProps) {
+export function AiUsageBadge({
+  className = '',
+  variant = 'default',
+}: AiUsageBadgeProps) {
   const u = useDailyAiUsage();
   const compact = variant === 'compact';
 
@@ -52,7 +55,10 @@ export function AiUsageBadge({ className = '', variant = 'default' }: AiUsageBad
     return (
       <div
         data-tour="ai-counter"
-        className={cn(pillClass, 'border-white/10 bg-white/[0.04] text-[11px] font-medium text-white/45 sm:text-[13px]')}
+        className={cn(
+          pillClass,
+          'border-white/10 bg-white/[0.04] text-[11px] font-medium text-white/45 sm:text-[13px]',
+        )}
         title={title}
       >
         {SPARK_ICON}
@@ -75,7 +81,9 @@ export function AiUsageBadge({ className = '', variant = 'default' }: AiUsageBad
         {compact ? (
           <span className="min-w-0 truncate text-[10px] font-medium leading-tight tabular-nums text-white/90 sm:text-[13px]">
             Unlimited AI
-            <span className="hidden font-normal text-white/45 sm:inline sm:ml-1">({u.dayKey})</span>
+            <span className="hidden font-normal text-white/45 sm:inline sm:ml-1">
+              ({u.dayKey})
+            </span>
           </span>
         ) : (
           <span className="text-[13px] font-medium tabular-nums text-white/90">
@@ -104,9 +112,13 @@ export function AiUsageBadge({ className = '', variant = 'default' }: AiUsageBad
           ? 'border-amber-500/40 bg-amber-500/10 text-amber-100 shadow-[0_0_12px_rgba(245,158,11,0.35)] motion-safe:animate-[dashboard-ai-pulse_2.4s_ease-in-out_infinite]'
           : 'border-[rgba(0,201,177,0.35)] bg-[rgba(0,201,177,0.08)] text-white/90 hover:border-[#00C9B1]/55 hover:bg-[rgba(0,201,177,0.12)]',
       )}
-      title={atLimit ? "Today's free AI limit reached — click to view plans" : title}
+      title={
+        atLimit ? "Today's free AI limit reached — click to view plans" : title
+      }
     >
-      <span className={atLimit ? 'text-amber-400' : 'text-[#00C9B1]'}>{SPARK_ICON}</span>
+      <span className={atLimit ? 'text-amber-400' : 'text-[#00C9B1]'}>
+        {SPARK_ICON}
+      </span>
       {compact ? (
         <span
           className={cn(

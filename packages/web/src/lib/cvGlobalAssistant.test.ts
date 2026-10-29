@@ -50,7 +50,8 @@ describe('normalizeCvGlobalAssistantCommandResponse', () => {
       diff: { summary: 'Overall' },
     });
     expect(res.type).toBe('result');
-    if (res.type !== 'result' || res.scope !== 'full_cv') throw new Error('expected full_cv');
+    if (res.type !== 'result' || res.scope !== 'full_cv')
+      throw new Error('expected full_cv');
     expect(res.sectionDiffs).toHaveLength(1);
     expect(res.sectionDiffs[0]?.targetSection).toBe('experience');
   });
@@ -64,7 +65,8 @@ describe('normalizeCvGlobalAssistantCommandResponse', () => {
       findings: ['Weak summary'],
       diff: { summary: 'Scan complete' },
     });
-    if (res.type !== 'result' || res.scope !== 'findings') throw new Error('expected findings');
+    if (res.type !== 'result' || res.scope !== 'findings')
+      throw new Error('expected findings');
     expect(res.findings).toEqual(['Weak summary']);
   });
 
@@ -89,7 +91,8 @@ describe('normalizeCvGlobalAssistantCommandResponse', () => {
       },
       diff: { summary: 'Scan complete' },
     });
-    if (res.type !== 'result' || res.scope !== 'findings') throw new Error('expected findings');
+    if (res.type !== 'result' || res.scope !== 'findings')
+      throw new Error('expected findings');
     expect(res.report?.firstImpression.verdict).toBe('strong');
     expect(res.scanId).toBe('scan-1');
   });

@@ -4,7 +4,9 @@ import type { TrackedJob } from '@/app/(dashboard)/dashboard/jobs/jobHubMerge';
 import type { CareerDashboard } from '@/lib/career';
 import { pickNextBestAction } from '@/lib/jobHubNextAction';
 
-function job(overrides: Partial<TrackedJob> & Pick<TrackedJob, 'key' | 'stage'>): TrackedJob {
+function job(
+  overrides: Partial<TrackedJob> & Pick<TrackedJob, 'key' | 'stage'>,
+): TrackedJob {
   return {
     jobAnalysisId: 'job-1',
     applicationId: null,
@@ -42,10 +44,23 @@ describe('pickNextBestAction', () => {
   it('suggests accepted tab when accepted jobs exist', () => {
     const career: CareerDashboard = {
       activePipelineJobs: [],
-      acceptedJobs: [{ jobId: 'x', pipelineStage: 'ACCEPTED', company: 'Co', title: 'Dev', matchScore: null, lastEventAt: '' }],
+      acceptedJobs: [
+        {
+          jobId: 'x',
+          pipelineStage: 'ACCEPTED',
+          company: 'Co',
+          title: 'Dev',
+          matchScore: null,
+          lastEventAt: '',
+        },
+      ],
       recentActivity: [],
       badges: [],
-      insights: { strongestSkill: null, conversionRate: null, avgMatchScoreOfAppliedJobs: null },
+      insights: {
+        strongestSkill: null,
+        conversionRate: null,
+        avgMatchScoreOfAppliedJobs: null,
+      },
     };
     const action = pickNextBestAction(career, []);
     expect(action?.onClickKey).toBe('accepted');

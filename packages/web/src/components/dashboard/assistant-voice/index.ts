@@ -20,10 +20,16 @@ export { insightKindLabel } from '@/components/dashboard/assistant-voice/insight
 export { assistantToneFromMode } from '@/components/dashboard/assistant-voice/tone';
 export type { AssistantTone } from '@/components/dashboard/assistant-voice/tone';
 export { sectionPacingClass } from '@/components/dashboard/assistant-voice/pacing';
-export { MAX_HERO_SECONDARY_SENTENCES, MAX_INSIGHT_BODY_LINES } from '@/components/dashboard/assistant-voice/calmness';
+export {
+  MAX_HERO_SECONDARY_SENTENCES,
+  MAX_INSIGHT_BODY_LINES,
+} from '@/components/dashboard/assistant-voice/calmness';
 export { recoveryEncouragementKind } from '@/components/dashboard/assistant-voice/recoveryEncouragement';
 export type { RecoveryEncouragementKind } from '@/components/dashboard/assistant-voice/recoveryEncouragement';
-export { assistantToneHeroAccentClass, assistantToneStripClass } from '@/components/dashboard/assistant-voice/assistantToneStyles';
+export {
+  assistantToneHeroAccentClass,
+  assistantToneStripClass,
+} from '@/components/dashboard/assistant-voice/assistantToneStyles';
 export {
   continuationEyebrowLabel,
   dashboardWelcomeLine,

@@ -20,7 +20,13 @@ import { cn } from '@/lib/utils';
 
 function cleanDiffText(raw: string): string {
   if (!raw) return '';
-  return richTextPlainText(raw) || raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  return (
+    richTextPlainText(raw) ||
+    raw
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  );
 }
 
 function InlineEdit({ before, after }: { before: string; after: string }) {
@@ -30,7 +36,9 @@ function InlineEdit({ before, after }: { before: string; after: string }) {
   );
 
   if (tokens.length === 0) {
-    return <p className="text-[12px] leading-relaxed text-white/45">No changes</p>;
+    return (
+      <p className="text-[12px] leading-relaxed text-white/45">No changes</p>
+    );
   }
 
   return (
@@ -41,7 +49,8 @@ function InlineEdit({ before, after }: { before: string; after: string }) {
           className={cn(
             t.type === 'removed' &&
               'bg-rose-500/15 text-rose-200/90 line-through decoration-rose-400/50',
-            t.type === 'added' && 'bg-emerald-500/15 font-medium text-emerald-100',
+            t.type === 'added' &&
+              'bg-emerald-500/15 font-medium text-emerald-100',
           )}
         >
           {t.text}{' '}
@@ -51,7 +60,13 @@ function InlineEdit({ before, after }: { before: string; after: string }) {
   );
 }
 
-function SkillDelta({ removed, added }: { removed: string[]; added: string[] }) {
+function SkillDelta({
+  removed,
+  added,
+}: {
+  removed: string[];
+  added: string[];
+}) {
   return (
     <div className="space-y-2.5">
       {removed.length > 0 ? (
@@ -90,7 +105,9 @@ function ChangeBlock({ hunk }: { hunk: TailorChangeHunk }) {
   return (
     <div className="space-y-1.5">
       {hunk.label ? (
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-white/40">{hunk.label}</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-white/40">
+          {hunk.label}
+        </p>
       ) : null}
       <InlineEdit before={hunk.before} after={hunk.after} />
     </div>
@@ -156,8 +173,14 @@ function ExperienceRoleContext({ labels }: { labels: string[] }) {
       </p>
       <ul className="space-y-1">
         {labels.map((label) => (
-          <li key={label} className="flex items-start gap-2 text-[12px] leading-snug text-white/75">
-            <Briefcase className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#00C9B1]/70" aria-hidden />
+          <li
+            key={label}
+            className="flex items-start gap-2 text-[12px] leading-snug text-white/75"
+          >
+            <Briefcase
+              className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#00C9B1]/70"
+              aria-hidden
+            />
             <span>{label}</span>
           </li>
         ))}
@@ -209,24 +232,40 @@ export function TailorChangeHighlights({
   const st = sectionType.trim().toLowerCase();
   const hasDisplayDiff =
     Boolean(displayDiff) &&
-    ((displayDiff?.added.length ?? 0) > 0 || (displayDiff?.removed.length ?? 0) > 0);
+    ((displayDiff?.added.length ?? 0) > 0 ||
+      (displayDiff?.removed.length ?? 0) > 0);
 
   const experienceRoleLabels = useMemo(() => {
     if (hasDisplayDiff) return [];
     if (st !== 'experience' && st !== 'work' && st !== 'employment') return [];
-    return resolveExperienceRoleLabelsFromChangedFields(changedFields, beforeRaw, afterRaw);
+    return resolveExperienceRoleLabelsFromChangedFields(
+      changedFields,
+      beforeRaw,
+      afterRaw,
+    );
   }, [st, changedFields, beforeRaw, afterRaw, hasDisplayDiff]);
 
   const structured =
     !hasDisplayDiff &&
-    (isStructuredTailorSectionBlob(beforeRaw) || isStructuredTailorSectionBlob(afterRaw));
+    (isStructuredTailorSectionBlob(beforeRaw) ||
+      isStructuredTailorSectionBlob(afterRaw));
 
   const legacyHunks = useMemo(() => {
     if (hasDisplayDiff || structured) return [];
-    return buildTailorSectionChanges(sectionType, beforeRaw, afterRaw, changedFields).filter(
-      (h) => h.kind !== 'text' || h.before.trim() !== h.after.trim(),
-    );
-  }, [hasDisplayDiff, structured, sectionType, beforeRaw, afterRaw, changedFields]);
+    return buildTailorSectionChanges(
+      sectionType,
+      beforeRaw,
+      afterRaw,
+      changedFields,
+    ).filter((h) => h.kind !== 'text' || h.before.trim() !== h.after.trim());
+  }, [
+    hasDisplayDiff,
+    structured,
+    sectionType,
+    beforeRaw,
+    afterRaw,
+    changedFields,
+  ]);
 
   if (
     !summary?.trim() &&
@@ -239,13 +278,20 @@ export function TailorChangeHighlights({
   }
 
   return (
-    <div className={cn('rounded-xl border border-white/[0.08] bg-white/[0.02] p-3.5', className)}>
+    <div
+      className={cn(
+        'rounded-xl border border-white/[0.08] bg-white/[0.02] p-3.5',
+        className,
+      )}
+    >
       <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">
         Suggested edit
       </p>
 
       {summary?.trim() ? (
-        <p className="mb-3 text-[13px] leading-relaxed text-white/75">{summary.trim()}</p>
+        <p className="mb-3 text-[13px] leading-relaxed text-white/75">
+          {summary.trim()}
+        </p>
       ) : null}
 
       <ExperienceRoleContext labels={experienceRoleLabels} />
@@ -271,7 +317,8 @@ export function TailorChangeHighlights({
       <p className="mt-2.5 text-[10px] text-white/32">
         <span className="text-rose-300/70 line-through">Strikethrough</span>
         {' · '}
-        <span className="text-emerald-300/80">highlight</span> = changes for this role
+        <span className="text-emerald-300/80">highlight</span> = changes for
+        this role
       </p>
     </div>
   );

@@ -35,7 +35,8 @@ function hasUsableSkills(d: CVBuilderData): boolean {
   return cats.some(
     (c) =>
       String(c?.name ?? '').trim().length > 1 ||
-      (Array.isArray(c?.skills) && c.skills.some((s) => String(s ?? '').trim().length > 1)),
+      (Array.isArray(c?.skills) &&
+        c.skills.some((s) => String(s ?? '').trim().length > 1)),
   );
 }
 
@@ -75,7 +76,11 @@ function projectsHaveContent(d: CVBuilderData): boolean {
 function certificationsHaveRows(d: CVBuilderData): boolean {
   const rows = d.certifications;
   if (!Array.isArray(rows)) return false;
-  return rows.some((c) => String(c?.name ?? '').trim().length > 1 || String(c?.issuer ?? '').trim().length > 1);
+  return rows.some(
+    (c) =>
+      String(c?.name ?? '').trim().length > 1 ||
+      String(c?.issuer ?? '').trim().length > 1,
+  );
 }
 
 function languagesHaveRows(d: CVBuilderData): boolean {
@@ -87,19 +92,31 @@ function languagesHaveRows(d: CVBuilderData): boolean {
 function achievementsHaveRows(d: CVBuilderData): boolean {
   const rows = d.achievements;
   if (!Array.isArray(rows)) return false;
-  return rows.some((a) => String(a?.title ?? '').trim().length > 1 || String(a?.detail ?? '').trim().length > 8);
+  return rows.some(
+    (a) =>
+      String(a?.title ?? '').trim().length > 1 ||
+      String(a?.detail ?? '').trim().length > 8,
+  );
 }
 
 function referencesHaveRows(d: CVBuilderData): boolean {
   const rows = d.references;
   if (!Array.isArray(rows)) return false;
-  return rows.some((r) => String(r?.name ?? '').trim().length > 1 || String(r?.company ?? '').trim().length > 1);
+  return rows.some(
+    (r) =>
+      String(r?.name ?? '').trim().length > 1 ||
+      String(r?.company ?? '').trim().length > 1,
+  );
 }
 
 function customLegacyHasBody(d: CVBuilderData): boolean {
   const sections = d.customSections;
   if (!Array.isArray(sections)) return false;
-  return sections.some((s) => String(s?.title ?? '').trim().length > 0 || String(s?.body ?? '').trim().length > 8);
+  return sections.some(
+    (s) =>
+      String(s?.title ?? '').trim().length > 0 ||
+      String(s?.body ?? '').trim().length > 8,
+  );
 }
 
 function parsedCustomHasText(d: CVBuilderData): boolean {
@@ -109,13 +126,16 @@ function parsedCustomHasText(d: CVBuilderData): boolean {
     (Array.isArray(s?.items) ? s.items : []).some(
       (i) =>
         String(i?.text ?? '').trim().length > 8 ||
-        (Array.isArray(i?.subItems) && i.subItems.some((x) => String(x ?? '').trim().length > 4)),
+        (Array.isArray(i?.subItems) &&
+          i.subItems.some((x) => String(x ?? '').trim().length > 4)),
     ),
   );
 }
 
-const IMPROVE = 'Improve writing and clarity for this section using my existing CV content.';
-const RECRUITER = 'Review this section as a recruiter would: flag weaknesses and propose a stronger rewrite.';
+const IMPROVE =
+  'Improve writing and clarity for this section using my existing CV content.';
+const RECRUITER =
+  'Review this section as a recruiter would: flag weaknesses and propose a stronger rewrite.';
 const ATS =
   'Improve structure and keywords for readability and common resume-screening tools (heuristic suggestions only).';
 
@@ -126,7 +146,9 @@ export function getCvSectionAssistantSuggestions(
   let key = sectionId.startsWith('parsed-') ? 'parsed-custom' : sectionId;
   if (sectionId.startsWith('parsed-')) {
     const raw = sectionId.slice('parsed-'.length);
-    const block = (data.parsedCustomSections ?? []).find((b) => b.sectionId === raw);
+    const block = (data.parsedCustomSections ?? []).find(
+      (b) => b.sectionId === raw,
+    );
     const st = (block?.sectionType ?? '').toLowerCase();
     if (/volunteer/.test(st)) key = 'volunteering';
     else if (/interest|hobby/.test(st)) key = 'interests';
@@ -135,7 +157,10 @@ export function getCvSectionAssistantSuggestions(
   switch (key) {
     case 'summary': {
       if (!summaryHasContent(data)) {
-        const basis = hasUsableExperience(data) || hasUsableSkills(data) || hasUsableEducation(data);
+        const basis =
+          hasUsableExperience(data) ||
+          hasUsableSkills(data) ||
+          hasUsableEducation(data);
         if (basis) {
           return {
             suggestions: [
@@ -168,17 +193,31 @@ export function getCvSectionAssistantSuggestions(
             {
               label: 'Starter template',
               prompt:
-                  'Suggest 3 alternative summary openings I can adapt; I have not filled other sections yet.',
+                'Suggest 3 alternative summary openings I can adapt; I have not filled other sections yet.',
             },
           ],
         };
       }
       return {
         suggestions: [
-          { label: 'Improve writing', prompt: `For the Summary section: ${IMPROVE}` },
-          { label: 'Recruiter review', prompt: `For the Summary section: ${RECRUITER}` },
-          { label: 'Add metrics & impact', prompt: 'Rewrite my summary to emphasize measurable impact while staying truthful to the CV.' },
-          { label: 'Shorten', prompt: 'Shorten my summary to two crisp sentences without losing key strengths.' },
+          {
+            label: 'Improve writing',
+            prompt: `For the Summary section: ${IMPROVE}`,
+          },
+          {
+            label: 'Recruiter review',
+            prompt: `For the Summary section: ${RECRUITER}`,
+          },
+          {
+            label: 'Add metrics & impact',
+            prompt:
+              'Rewrite my summary to emphasize measurable impact while staying truthful to the CV.',
+          },
+          {
+            label: 'Shorten',
+            prompt:
+              'Shorten my summary to two crisp sentences without losing key strengths.',
+          },
         ],
       };
     }
@@ -194,7 +233,8 @@ export function getCvSectionAssistantSuggestions(
             },
             {
               label: 'Suggest bullet formula',
-              prompt: 'Give me a checklist and 5 example achievement bullets for my industry until I add real roles.',
+              prompt:
+                'Give me a checklist and 5 example achievement bullets for my industry until I add real roles.',
             },
           ],
         };
@@ -206,9 +246,18 @@ export function getCvSectionAssistantSuggestions(
             prompt:
               'Improve the achievement bullets in my current experience section: more impact, numbers where credible, active verbs.',
           },
-          { label: 'Improve writing', prompt: `For the Experience section: ${IMPROVE}` },
-          { label: 'Recruiter review', prompt: `For the Experience section: ${RECRUITER}` },
-          { label: 'Formatting polish', prompt: `For the Experience section: ${ATS}` },
+          {
+            label: 'Improve writing',
+            prompt: `For the Experience section: ${IMPROVE}`,
+          },
+          {
+            label: 'Recruiter review',
+            prompt: `For the Experience section: ${RECRUITER}`,
+          },
+          {
+            label: 'Formatting polish',
+            prompt: `For the Experience section: ${ATS}`,
+          },
         ],
       };
     }
@@ -227,11 +276,18 @@ export function getCvSectionAssistantSuggestions(
       }
       return {
         suggestions: [
-          { label: 'Improve writing', prompt: `For the Education section: ${IMPROVE}` },
-          { label: 'Recruiter review', prompt: `For the Education section: ${RECRUITER}` },
+          {
+            label: 'Improve writing',
+            prompt: `For the Education section: ${IMPROVE}`,
+          },
+          {
+            label: 'Recruiter review',
+            prompt: `For the Education section: ${RECRUITER}`,
+          },
           {
             label: 'Highlight relevance',
-            prompt: 'Tighten my education entries to emphasize relevance for employability without fluff.',
+            prompt:
+              'Tighten my education entries to emphasize relevance for employability without fluff.',
           },
         ],
       };
@@ -256,8 +312,14 @@ export function getCvSectionAssistantSuggestions(
             prompt:
               'Reorganize and lightly reword my skills section for clarity: group by theme, remove duplicates, keep honest proficiency.',
           },
-          { label: 'Improve writing', prompt: `For the Skills section: ${IMPROVE}` },
-          { label: 'Recruiter review', prompt: `For the Skills section: ${RECRUITER}` },
+          {
+            label: 'Improve writing',
+            prompt: `For the Skills section: ${IMPROVE}`,
+          },
+          {
+            label: 'Recruiter review',
+            prompt: `For the Skills section: ${RECRUITER}`,
+          },
         ],
       };
     }
@@ -278,10 +340,17 @@ export function getCvSectionAssistantSuggestions(
         suggestions: [
           {
             label: 'Impact bullets',
-            prompt: 'Improve my Projects section: sharper outcomes, technologies, and measurable results where credible.',
+            prompt:
+              'Improve my Projects section: sharper outcomes, technologies, and measurable results where credible.',
           },
-          { label: 'Improve writing', prompt: `For the Projects section: ${IMPROVE}` },
-          { label: 'Recruiter review', prompt: `For the Projects section: ${RECRUITER}` },
+          {
+            label: 'Improve writing',
+            prompt: `For the Projects section: ${IMPROVE}`,
+          },
+          {
+            label: 'Recruiter review',
+            prompt: `For the Projects section: ${RECRUITER}`,
+          },
         ],
       };
     }
@@ -300,8 +369,14 @@ export function getCvSectionAssistantSuggestions(
       }
       return {
         suggestions: [
-          { label: 'Improve writing', prompt: `For the Certifications section: ${IMPROVE}` },
-          { label: 'Recruiter review', prompt: `For the Certifications section: ${RECRUITER}` },
+          {
+            label: 'Improve writing',
+            prompt: `For the Certifications section: ${IMPROVE}`,
+          },
+          {
+            label: 'Recruiter review',
+            prompt: `For the Certifications section: ${RECRUITER}`,
+          },
         ],
       };
     }
@@ -320,8 +395,14 @@ export function getCvSectionAssistantSuggestions(
       }
       return {
         suggestions: [
-          { label: 'Improve writing', prompt: `For the Languages section: ${IMPROVE}` },
-          { label: 'Recruiter review', prompt: `For the Languages section: ${RECRUITER}` },
+          {
+            label: 'Improve writing',
+            prompt: `For the Languages section: ${IMPROVE}`,
+          },
+          {
+            label: 'Recruiter review',
+            prompt: `For the Languages section: ${RECRUITER}`,
+          },
         ],
       };
     }
@@ -342,10 +423,17 @@ export function getCvSectionAssistantSuggestions(
         suggestions: [
           {
             label: 'Sharpen impact',
-            prompt: 'Rewrite my achievements to be punchier and more credible, keeping facts aligned with the rest of my CV.',
+            prompt:
+              'Rewrite my achievements to be punchier and more credible, keeping facts aligned with the rest of my CV.',
           },
-          { label: 'Improve writing', prompt: `For the Achievements section: ${IMPROVE}` },
-          { label: 'Recruiter review', prompt: `For the Achievements section: ${RECRUITER}` },
+          {
+            label: 'Improve writing',
+            prompt: `For the Achievements section: ${IMPROVE}`,
+          },
+          {
+            label: 'Recruiter review',
+            prompt: `For the Achievements section: ${RECRUITER}`,
+          },
         ],
       };
     }
@@ -364,8 +452,14 @@ export function getCvSectionAssistantSuggestions(
       }
       return {
         suggestions: [
-          { label: 'Improve writing', prompt: `For the References section: ${IMPROVE}` },
-          { label: 'Recruiter review', prompt: `For the References section: ${RECRUITER}` },
+          {
+            label: 'Improve writing',
+            prompt: `For the References section: ${IMPROVE}`,
+          },
+          {
+            label: 'Recruiter review',
+            prompt: `For the References section: ${RECRUITER}`,
+          },
         ],
       };
     }
@@ -373,7 +467,8 @@ export function getCvSectionAssistantSuggestions(
       const p = data.personal ?? { name: '', email: '', headline: '' };
       const thin =
         String(p.name ?? '').trim().length < 2 ||
-        (String(p.headline ?? '').trim().length < 4 && String(p.email ?? '').trim().length < 4);
+        (String(p.headline ?? '').trim().length < 4 &&
+          String(p.email ?? '').trim().length < 4);
       if (thin) {
         return {
           hint: 'Fill your name and at least one contact line for stronger suggestions.',
@@ -385,7 +480,8 @@ export function getCvSectionAssistantSuggestions(
             },
             {
               label: 'Polish contact block',
-              prompt: 'Review my header/contact area for tone, clarity, and redundancy—propose minimal edits only.',
+              prompt:
+                'Review my header/contact area for tone, clarity, and redundancy—propose minimal edits only.',
             },
           ],
         };
@@ -397,8 +493,14 @@ export function getCvSectionAssistantSuggestions(
             prompt:
               'Propose 3 stronger headline variants for my CV header using my current headline, skills, and roles—keep them honest.',
           },
-          { label: 'Improve writing', prompt: `For the Personal / header section: ${IMPROVE}` },
-          { label: 'Recruiter review', prompt: `For the Personal / header section: ${RECRUITER}` },
+          {
+            label: 'Improve writing',
+            prompt: `For the Personal / header section: ${IMPROVE}`,
+          },
+          {
+            label: 'Recruiter review',
+            prompt: `For the Personal / header section: ${RECRUITER}`,
+          },
         ],
       };
     }
@@ -417,19 +519,33 @@ export function getCvSectionAssistantSuggestions(
       }
       return {
         suggestions: [
-          { label: 'Improve writing', prompt: `For my custom CV section: ${IMPROVE}` },
-          { label: 'Recruiter review', prompt: `For my custom CV section: ${RECRUITER}` },
-          { label: 'Formatting polish', prompt: `For my custom CV section: ${ATS}` },
+          {
+            label: 'Improve writing',
+            prompt: `For my custom CV section: ${IMPROVE}`,
+          },
+          {
+            label: 'Recruiter review',
+            prompt: `For my custom CV section: ${RECRUITER}`,
+          },
+          {
+            label: 'Formatting polish',
+            prompt: `For my custom CV section: ${ATS}`,
+          },
         ],
       };
     }
     case 'volunteering': {
-      const raw = sectionId.startsWith('parsed-') ? sectionId.slice('parsed-'.length) : '';
-      const block = (data.parsedCustomSections ?? []).find((b) => b.sectionId === raw);
+      const raw = sectionId.startsWith('parsed-')
+        ? sectionId.slice('parsed-'.length)
+        : '';
+      const block = (data.parsedCustomSections ?? []).find(
+        (b) => b.sectionId === raw,
+      );
       const hasRows = (block?.items ?? []).some(
         (i) =>
           String(i?.text ?? '').trim().length > 1 ||
-          (Array.isArray(i?.subItems) && i.subItems.some((s) => String(s ?? '').trim().length > 4)),
+          (Array.isArray(i?.subItems) &&
+            i.subItems.some((s) => String(s ?? '').trim().length > 4)),
       );
       if (!hasRows) {
         return {
@@ -450,18 +566,29 @@ export function getCvSectionAssistantSuggestions(
             prompt:
               'Improve my volunteering section: clearer impact, dates where relevant, and active verbs—stay truthful.',
           },
-          { label: 'Improve writing', prompt: `For my Volunteering section: ${IMPROVE}` },
-          { label: 'Recruiter review', prompt: `For my Volunteering section: ${RECRUITER}` },
+          {
+            label: 'Improve writing',
+            prompt: `For my Volunteering section: ${IMPROVE}`,
+          },
+          {
+            label: 'Recruiter review',
+            prompt: `For my Volunteering section: ${RECRUITER}`,
+          },
         ],
       };
     }
     case 'interests': {
-      const raw = sectionId.startsWith('parsed-') ? sectionId.slice('parsed-'.length) : '';
-      const block = (data.parsedCustomSections ?? []).find((b) => b.sectionId === raw);
+      const raw = sectionId.startsWith('parsed-')
+        ? sectionId.slice('parsed-'.length)
+        : '';
+      const block = (data.parsedCustomSections ?? []).find(
+        (b) => b.sectionId === raw,
+      );
       const hasRows = (block?.items ?? []).some(
         (i) =>
           String(i?.text ?? '').trim().length > 1 ||
-          (Array.isArray(i?.subItems) && i.subItems.some((s) => String(s ?? '').trim().length > 2)),
+          (Array.isArray(i?.subItems) &&
+            i.subItems.some((s) => String(s ?? '').trim().length > 2)),
       );
       if (!hasRows) {
         return {
@@ -482,8 +609,14 @@ export function getCvSectionAssistantSuggestions(
             prompt:
               'Tighten my interests/hobbies section: concise, professional tone, no clichés—keep it authentic.',
           },
-          { label: 'Improve writing', prompt: `For my Interests section: ${IMPROVE}` },
-          { label: 'Recruiter review', prompt: `For my Interests section: ${RECRUITER}` },
+          {
+            label: 'Improve writing',
+            prompt: `For my Interests section: ${IMPROVE}`,
+          },
+          {
+            label: 'Recruiter review',
+            prompt: `For my Interests section: ${RECRUITER}`,
+          },
         ],
       };
     }
@@ -502,9 +635,18 @@ export function getCvSectionAssistantSuggestions(
       }
       return {
         suggestions: [
-          { label: 'Improve writing', prompt: `For this custom section (${sectionId}): ${IMPROVE}` },
-          { label: 'Recruiter review', prompt: `For this custom section: ${RECRUITER}` },
-          { label: 'Formatting polish', prompt: `For this custom section: ${ATS}` },
+          {
+            label: 'Improve writing',
+            prompt: `For this custom section (${sectionId}): ${IMPROVE}`,
+          },
+          {
+            label: 'Recruiter review',
+            prompt: `For this custom section: ${RECRUITER}`,
+          },
+          {
+            label: 'Formatting polish',
+            prompt: `For this custom section: ${ATS}`,
+          },
         ],
       };
     }
@@ -513,7 +655,11 @@ export function getCvSectionAssistantSuggestions(
         suggestions: [
           { label: 'Improve writing', prompt: IMPROVE },
           { label: 'Recruiter review', prompt: RECRUITER },
-          { label: 'Inspire me', prompt: 'Suggest 3 concrete improvements for this part of my CV based on the current content.' },
+          {
+            label: 'Inspire me',
+            prompt:
+              'Suggest 3 concrete improvements for this part of my CV based on the current content.',
+          },
         ],
       };
   }

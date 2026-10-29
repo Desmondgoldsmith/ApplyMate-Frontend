@@ -3,7 +3,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
 import { createPortal } from 'react-dom';
 
 import { GlowCard } from '@/components/ui/GlowCard';
@@ -42,7 +48,9 @@ const STATUS_OPTIONS: { value: ApplicationTrackerStatus; label: string }[] = [
   { value: 'ghosted', label: 'Ghosted' },
 ];
 
-function statusBadgeClass(status: ApplicationTrackerStatus | undefined): string {
+function statusBadgeClass(
+  status: ApplicationTrackerStatus | undefined,
+): string {
   switch (status) {
     case 'draft':
     case 'researching':
@@ -80,7 +88,11 @@ function daysSinceCreated(iso: string | undefined): number {
 
 function formatSavedDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    return new Date(iso).toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
   } catch {
     return iso;
   }
@@ -90,7 +102,9 @@ export function ApplicationsTrackerTab() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const highlightId =
-    searchParams.get('applicationId') ?? searchParams.get('appId') ?? searchParams.get('application_id');
+    searchParams.get('applicationId') ??
+    searchParams.get('appId') ??
+    searchParams.get('application_id');
 
   const apps = useApplications();
   const toast = useToast();
@@ -103,7 +117,9 @@ export function ApplicationsTrackerTab() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [followUpAppId, setFollowUpAppId] = useState<string | null>(null);
-  const [followUpDraft, setFollowUpDraft] = useState<FollowUpEmailDraft | null>(null);
+  const [followUpDraft, setFollowUpDraft] = useState<FollowUpEmailDraft | null>(
+    null,
+  );
   const [followUpError, setFollowUpError] = useState<string | null>(null);
 
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -118,7 +134,9 @@ export function ApplicationsTrackerTab() {
     },
     onError: (err) => {
       if (isDailyAiLimitApiError(err)) {
-        setFollowUpError(`${DAILY_AI_LIMIT_REACHED_MESSAGE} ${AI_QUOTA_UPGRADE_HINT}`);
+        setFollowUpError(
+          `${DAILY_AI_LIMIT_REACHED_MESSAGE} ${AI_QUOTA_UPGRADE_HINT}`,
+        );
         invalidateDailyAiUsageQuery(queryClient, accessToken);
         return;
       }
@@ -161,11 +179,17 @@ export function ApplicationsTrackerTab() {
         { id, status },
         {
           onSuccess: (item) => {
-            if (status === 'interview_scheduled' && item.interviewPrepAvailable) {
-              toast.success('🎉 Interview scheduled! Want to prep with mock questions?', {
-                label: 'Start prep →',
-                onClick: () => router.push('/dashboard/jobs'),
-              });
+            if (
+              status === 'interview_scheduled' &&
+              item.interviewPrepAvailable
+            ) {
+              toast.success(
+                '🎉 Interview scheduled! Want to prep with mock questions?',
+                {
+                  label: 'Start prep →',
+                  onClick: () => router.push('/dashboard/jobs'),
+                },
+              );
             }
           },
           onError: (err) => setStatusError(getApiErrorMessage(err)),
@@ -188,7 +212,10 @@ export function ApplicationsTrackerTab() {
     return (
       <div className="grid gap-3">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-24 animate-pulse rounded-2xl bg-white/[0.04]" />
+          <div
+            key={i}
+            className="h-24 animate-pulse rounded-2xl bg-white/[0.04]"
+          />
         ))}
       </div>
     );
@@ -199,9 +226,13 @@ export function ApplicationsTrackerTab() {
       <GlowCard contentClassName="flex min-h-[320px] flex-col items-center justify-center p-8 text-center">
         <p className="text-lg font-semibold text-white">No applications yet</p>
         <p className="mt-2 max-w-md text-sm text-white/45">
-          Run a job analysis from the Analyze tab — your matches and tailored CVs appear here.
+          Run a job analysis from the Analyze tab — your matches and tailored
+          CVs appear here.
         </p>
-        <Button className="mt-6" onClick={() => router.replace('/dashboard/jobs')}>
+        <Button
+          className="mt-6"
+          onClick={() => router.replace('/dashboard/jobs')}
+        >
           Analyze a Job →
         </Button>
       </GlowCard>
@@ -231,9 +262,13 @@ export function ApplicationsTrackerTab() {
             highlighted={highlightId === item.id}
             menuRef={openMenuId === item.id ? menuRef : undefined}
             menuOpen={openMenuId === item.id}
-            onToggleMenu={() => setOpenMenuId((prev) => (prev === item.id ? null : item.id))}
+            onToggleMenu={() =>
+              setOpenMenuId((prev) => (prev === item.id ? null : item.id))
+            }
             onSelectStatus={(s) => handleStatusSelect(item.id, s)}
-            statusPending={updateStatus.isPending && updateStatus.variables?.id === item.id}
+            statusPending={
+              updateStatus.isPending && updateStatus.variables?.id === item.id
+            }
             followUpAiBlocked={followUpAiBlocked}
             onFollowUp={() => {
               if (followUpAiBlocked) return;
@@ -259,8 +294,12 @@ export function ApplicationsTrackerTab() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="border-b border-white/10 px-4 py-3">
-              <p className="text-sm font-semibold text-white">Follow-up email</p>
-              <p className="text-xs text-white/45">Send this from your own email client</p>
+              <p className="text-sm font-semibold text-white">
+                Follow-up email
+              </p>
+              <p className="text-xs text-white/45">
+                Send this from your own email client
+              </p>
             </div>
             <div className="max-h-[min(60vh,420px)] space-y-3 overflow-y-auto p-4">
               {followUpMutation.isPending ? (
@@ -273,12 +312,18 @@ export function ApplicationsTrackerTab() {
               ) : followUpDraft ? (
                 <>
                   <div>
-                    <p className="text-xs font-semibold text-white/50">Subject</p>
-                    <p className="mt-1 text-sm text-white/90">{followUpDraft.subject}</p>
+                    <p className="text-xs font-semibold text-white/50">
+                      Subject
+                    </p>
+                    <p className="mt-1 text-sm text-white/90">
+                      {followUpDraft.subject}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-white/50">Body</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-white/80">{followUpDraft.body}</p>
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-white/80">
+                      {followUpDraft.body}
+                    </p>
                   </div>
                 </>
               ) : null}
@@ -289,7 +334,10 @@ export function ApplicationsTrackerTab() {
                 variant="ghost"
                 className="flex-1 border border-white/10"
                 disabled={!followUpDraft}
-                onClick={() => followUpDraft && void copyText('Subject', followUpDraft.subject)}
+                onClick={() =>
+                  followUpDraft &&
+                  void copyText('Subject', followUpDraft.subject)
+                }
               >
                 Copy subject
               </Button>
@@ -298,11 +346,18 @@ export function ApplicationsTrackerTab() {
                 variant="ghost"
                 className="flex-1 border border-white/10"
                 disabled={!followUpDraft}
-                onClick={() => followUpDraft && void copyText('Email body', followUpDraft.body)}
+                onClick={() =>
+                  followUpDraft &&
+                  void copyText('Email body', followUpDraft.body)
+                }
               >
                 Copy email body
               </Button>
-              <Button type="button" className="sm:ml-auto" onClick={() => setFollowUpAppId(null)}>
+              <Button
+                type="button"
+                className="sm:ml-auto"
+                onClick={() => setFollowUpAppId(null)}
+              >
                 Close
               </Button>
             </div>
@@ -340,7 +395,11 @@ function ApplicationCard({
   const showFollowUp =
     current === 'applied' && daysSinceCreated(item.createdAt) > 7;
   const statusTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const [menuCoords, setMenuCoords] = useState<{ top: number; left: number; minWidth: number } | null>(null);
+  const [menuCoords, setMenuCoords] = useState<{
+    top: number;
+    left: number;
+    minWidth: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!menuOpen) {
@@ -375,7 +434,9 @@ function ApplicationCard({
 
   return (
     <GlowCard
-      className={cn(highlighted && 'notification-card-highlight [--rotate-duration:3.8s]')}
+      className={cn(
+        highlighted && 'notification-card-highlight [--rotate-duration:3.8s]',
+      )}
       contentClassName={cn(
         'p-4',
         highlighted &&
@@ -385,18 +446,24 @@ function ApplicationCard({
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 flex-1 gap-3">
-            <CompanyLogo company={item.company} logoUrl={item.companyLogoUrl} size="md" />
+            <CompanyLogo
+              company={item.company}
+              logoUrl={item.companyLogoUrl}
+              size="md"
+            />
             <div className="min-w-0">
-            {highlighted ? (
-              <span className="mb-1 inline-flex w-fit items-center rounded-md border border-[#00C9B1]/45 bg-[#00C9B1]/18 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#86FFFF]">
-                From notification
-              </span>
-            ) : null}
-            <p className="text-sm font-semibold text-white">{item.title}</p>
-            <p className="text-[13px] text-white/45">{item.company}</p>
-            {item.createdAt ? (
-              <p className="mt-1 text-xs text-white/35">Applied {formatSavedDate(item.createdAt)}</p>
-            ) : null}
+              {highlighted ? (
+                <span className="mb-1 inline-flex w-fit items-center rounded-md border border-[#00C9B1]/45 bg-[#00C9B1]/18 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#86FFFF]">
+                  From notification
+                </span>
+              ) : null}
+              <p className="text-sm font-semibold text-white">{item.title}</p>
+              <p className="text-[13px] text-white/45">{item.company}</p>
+              {item.createdAt ? (
+                <p className="mt-1 text-xs text-white/35">
+                  Applied {formatSavedDate(item.createdAt)}
+                </p>
+              ) : null}
             </div>
           </div>
           <div className="relative shrink-0" ref={menuRef}>
@@ -415,7 +482,12 @@ function ApplicationCard({
               {statusPending ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin opacity-80" />
               ) : (
-                <ChevronDown className={cn('h-3.5 w-3.5 opacity-70', menuOpen && 'rotate-180')} />
+                <ChevronDown
+                  className={cn(
+                    'h-3.5 w-3.5 opacity-70',
+                    menuOpen && 'rotate-180',
+                  )}
+                />
               )}
             </button>
             {menuOpen && menuCoords
@@ -423,7 +495,11 @@ function ApplicationCard({
                   <div
                     ref={menuRef}
                     className="fixed z-[220] max-h-64 overflow-y-auto rounded-xl border border-white/10 bg-[#111616] py-1 shadow-lg"
-                    style={{ top: menuCoords.top, left: menuCoords.left, minWidth: menuCoords.minWidth }}
+                    style={{
+                      top: menuCoords.top,
+                      left: menuCoords.left,
+                      minWidth: menuCoords.minWidth,
+                    }}
                   >
                     {STATUS_OPTIONS.map((opt) => (
                       <button
@@ -432,7 +508,8 @@ function ApplicationCard({
                         onClick={() => onSelectStatus(opt.value)}
                         className={cn(
                           'block w-full px-3 py-2 text-left text-xs text-white/85 hover:bg-white/[0.06]',
-                          opt.value === current && 'bg-[#00C9B1]/10 text-[#00C9B1]',
+                          opt.value === current &&
+                            'bg-[#00C9B1]/10 text-[#00C9B1]',
                         )}
                       >
                         {opt.label}
@@ -444,9 +521,13 @@ function ApplicationCard({
               : null}
           </div>
         </div>
-        {typeof item.matchScore === 'number' && Number.isFinite(item.matchScore) ? (
+        {typeof item.matchScore === 'number' &&
+        Number.isFinite(item.matchScore) ? (
           <p className="text-xs text-white/50">
-            Match score: <span className="font-semibold text-white/80">{Math.round(item.matchScore)}%</span>
+            Match score:{' '}
+            <span className="font-semibold text-white/80">
+              {Math.round(item.matchScore)}%
+            </span>
           </p>
         ) : null}
         {showFollowUp ? (
@@ -462,7 +543,9 @@ function ApplicationCard({
               Get follow-up email
             </Button>
             {followUpAiBlocked ? (
-              <span className="text-xs text-amber-200/90">Daily free AI limit reached.</span>
+              <span className="text-xs text-amber-200/90">
+                Daily free AI limit reached.
+              </span>
             ) : null}
           </div>
         ) : null}
@@ -471,7 +554,9 @@ function ApplicationCard({
             <button
               type="button"
               onClick={() =>
-                router.push(`/dashboard/jobs?jobId=${encodeURIComponent(item.jobAnalysisId!)}`)
+                router.push(
+                  `/dashboard/jobs?jobId=${encodeURIComponent(item.jobAnalysisId!)}`,
+                )
               }
               className="text-xs font-medium text-[#00C9B1] underline-offset-2 hover:underline"
             >

@@ -19,7 +19,11 @@ export type CVSectionWrapperProps = {
   className?: string;
 };
 
-export function CVSectionWrapper({ sectionId, children, className }: CVSectionWrapperProps) {
+export function CVSectionWrapper({
+  sectionId,
+  children,
+  className,
+}: CVSectionWrapperProps) {
   const ctx = useCVEdit();
   const [isHovered, setIsHovered] = useState(false);
   const [isDropTarget, setIsDropTarget] = useState(false);
@@ -29,10 +33,13 @@ export function CVSectionWrapper({ sectionId, children, className }: CVSectionWr
   const focusedEntrySection = ctx?.focusedEntrySection ?? null;
   const isFocused = focusedSection === sectionId;
   const isEntryLevelActive = focusedEntryId !== null;
-  const thisHasFocus = focusedSection === sectionId || focusedEntrySection === sectionId;
+  const thisHasFocus =
+    focusedSection === sectionId || focusedEntrySection === sectionId;
   const shouldDimForEntryLevel = isEntryLevelActive && !thisHasFocus;
-  const isSectionLevelActive = focusedSection !== null && focusedEntryId === null;
-  const shouldDimForSectionLevel = isSectionLevelActive && focusedSection !== sectionId;
+  const isSectionLevelActive =
+    focusedSection !== null && focusedEntryId === null;
+  const shouldDimForSectionLevel =
+    isSectionLevelActive && focusedSection !== sectionId;
 
   /**
    * While a single suggestion / section assistant diff is under review, keep that exact
@@ -42,7 +49,8 @@ export function CVSectionWrapper({ sectionId, children, className }: CVSectionWr
   const diffSection = ctx?.diffSection?.trim() || null;
   const isDiffReviewActive = diffSection !== null;
   const isDiffTarget =
-    isDiffReviewActive && diffSection.toLowerCase() === sectionId.trim().toLowerCase();
+    isDiffReviewActive &&
+    diffSection.toLowerCase() === sectionId.trim().toLowerCase();
 
   const dimmed = isDiffReviewActive
     ? !isDiffTarget
@@ -56,7 +64,9 @@ export function CVSectionWrapper({ sectionId, children, className }: CVSectionWr
   const thisSectionHasAssistantTarget =
     focusedSection === sectionId || focusedEntrySection === sectionId;
   const showAssistantPin =
-    Boolean(ctx?.runCvAssistantCommand) && !dimmed && thisSectionHasAssistantTarget;
+    Boolean(ctx?.runCvAssistantCommand) &&
+    !dimmed &&
+    thisSectionHasAssistantTarget;
 
   /**
    * The drop on the title bar uses `stopPropagation` so the wrapper's `onDrop` never runs.
@@ -66,7 +76,8 @@ export function CVSectionWrapper({ sectionId, children, className }: CVSectionWr
   useEffect(() => {
     const handler = () => setIsDropTarget(false);
     window.addEventListener(SECTION_DRAG_END_EVENT_NAME, handler);
-    return () => window.removeEventListener(SECTION_DRAG_END_EVENT_NAME, handler);
+    return () =>
+      window.removeEventListener(SECTION_DRAG_END_EVENT_NAME, handler);
   }, []);
 
   const sectionOutline = isDropTarget
@@ -130,7 +141,8 @@ export function CVSectionWrapper({ sectionId, children, className }: CVSectionWr
             : isHovered || isFocused
               ? 'rgba(0,201,177,0.03)'
               : 'transparent',
-        transition: 'outline-color 120ms, background-color 120ms, opacity 120ms, box-shadow 120ms',
+        transition:
+          'outline-color 120ms, background-color 120ms, opacity 120ms, box-shadow 120ms',
         opacity: dimmed
           ? 0.45
           : ctx?.recruiterScanHeatmap
@@ -140,12 +152,19 @@ export function CVSectionWrapper({ sectionId, children, className }: CVSectionWr
             : 1,
         borderRadius: '4px',
         position: 'relative',
-        boxShadow: hasIncomplete ? 'inset 0 0 0 1px rgba(245, 158, 11, 0.45)' : undefined,
+        boxShadow: hasIncomplete
+          ? 'inset 0 0 0 1px rgba(245, 158, 11, 0.45)'
+          : undefined,
         ...(heatmapEntry ? recruiterScanHeatmapStyle(heatmapEntry) : {}),
       }}
       title={
         heatmapEntry
-          ? [heatmapEntry.note, heatmapEntry.focalPoint ? `Focus: ${heatmapEntry.focalPoint}` : '']
+          ? [
+              heatmapEntry.note,
+              heatmapEntry.focalPoint
+                ? `Focus: ${heatmapEntry.focalPoint}`
+                : '',
+            ]
               .filter(Boolean)
               .join(' · ')
           : undefined
@@ -165,7 +184,9 @@ export function CVSectionWrapper({ sectionId, children, className }: CVSectionWr
           ) : null}
         </div>
       )}
-      {isEditing && showAssistantPin ? <CvSectionAssistantInline sectionId={sectionId} /> : null}
+      {isEditing && showAssistantPin ? (
+        <CvSectionAssistantInline sectionId={sectionId} />
+      ) : null}
       {isEditing ? (
         <div
           data-cv-entry-toolbar-slot=""

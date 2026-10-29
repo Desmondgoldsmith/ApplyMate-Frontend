@@ -12,7 +12,10 @@ export function dedupeExplainerCopy(text: string): string {
   const normalized = formatUiCopy(text).replace(/\s+/g, ' ').trim();
   if (!normalized) return '';
 
-  const sentences = normalized.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
+  const sentences = normalized
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
   const seen = new Set<string>();
   const unique: string[] = [];
   for (const sent of sentences) {
@@ -39,13 +42,18 @@ export function parseExplainerBlocks(raw: string): ExplainerBlock[] {
   );
   const tailOnly = withAfter
     ? null
-    : text.match(/^([\s\S]*?)\bWeak:\s*([\s\S]+?)\s*(?:→|->)\s*Strong:\s*([\s\S]+)$/i);
+    : text.match(
+        /^([\s\S]*?)\bWeak:\s*([\s\S]+?)\s*(?:→|->)\s*Strong:\s*([\s\S]+)$/i,
+      );
   const compare = withAfter ?? tailOnly;
 
   if (compare) {
     const before = compare[1].trim();
     const weak = compare[2].trim().replace(/^["']|["']$/g, '');
-    const strong = compare[3].trim().replace(/^["']|["']$/g, '').replace(/\.\s*$/, '');
+    const strong = compare[3]
+      .trim()
+      .replace(/^["']|["']$/g, '')
+      .replace(/\.\s*$/, '');
     const after = (compare[4] ?? '').trim().replace(/^\.\s*/, '');
 
     if (before) blocks.push(...parseLeadingSection(before));
@@ -142,7 +150,10 @@ export function renderExplainerBlocks(blocks: ExplainerBlock[]): ReactNode {
         }
         if (block.kind === 'compare') {
           return (
-            <div key={`b-${i}`} className="space-y-1.5 rounded-lg border border-white/[0.08] bg-white/[0.02] p-2">
+            <div
+              key={`b-${i}`}
+              className="space-y-1.5 rounded-lg border border-white/[0.08] bg-white/[0.02] p-2"
+            >
               <div className="flex gap-2 text-[10px] leading-snug sm:text-[11px]">
                 <span className="shrink-0 font-semibold uppercase tracking-wide text-rose-300/90">
                   Weak
@@ -155,7 +166,9 @@ export function renderExplainerBlocks(blocks: ExplainerBlock[]): ReactNode {
                 <span className="shrink-0 font-semibold uppercase tracking-wide text-[#00C9B1]">
                   Strong
                 </span>
-                <p className="min-w-0 font-medium text-white/75">{block.strong}</p>
+                <p className="min-w-0 font-medium text-white/75">
+                  {block.strong}
+                </p>
               </div>
             </div>
           );

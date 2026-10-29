@@ -42,7 +42,9 @@ export function extractSkillList(data: unknown): string[] {
   if (typeof data !== 'object') return [];
   const o = data as Record<string, unknown>;
   if (Array.isArray(o.skills)) {
-    return o.skills.filter((x): x is string => typeof x === 'string' && x.trim().length > 0).map((s) => s.trim());
+    return o.skills
+      .filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+      .map((s) => s.trim());
   }
   if (Array.isArray(o.categories)) {
     const out: string[] = [];
@@ -83,7 +85,11 @@ function extractExperienceItems(data: unknown): ExperienceItem[] {
       const title = typeof x.title === 'string' ? x.title.trim() : 'Role';
       const company = typeof x.company === 'string' ? x.company.trim() : '';
       const bullets = Array.isArray(x.bullets)
-        ? x.bullets.filter((b): b is string => typeof b === 'string' && b.trim().length > 0).map((b) => b.trim())
+        ? x.bullets
+            .filter(
+              (b): b is string => typeof b === 'string' && b.trim().length > 0,
+            )
+            .map((b) => b.trim())
         : [];
       return { title, company, bullets };
     })
@@ -99,7 +105,10 @@ function labelizeFieldPath(path: string): string {
     .replace(/^\w/, (c) => c.toUpperCase());
 }
 
-function pairLineDiffSwaps(beforeRaw: string, afterRaw: string): TailorChangeHunk[] {
+function pairLineDiffSwaps(
+  beforeRaw: string,
+  afterRaw: string,
+): TailorChangeHunk[] {
   const lines = buildLineDiff(beforeRaw, afterRaw);
   const hunks: TailorChangeHunk[] = [];
   let pendingRemoved: string[] = [];
@@ -160,10 +169,19 @@ export function buildTailorSectionChanges(
   }
 
   if (st === 'summary' || st === 'profile') {
-    const bText = extractSummaryText(beforeParsed) || (typeof beforeParsed === 'string' ? beforeParsed : '');
-    const aText = extractSummaryText(afterParsed) || (typeof afterParsed === 'string' ? afterParsed : '');
+    const bText =
+      extractSummaryText(beforeParsed) ||
+      (typeof beforeParsed === 'string' ? beforeParsed : '');
+    const aText =
+      extractSummaryText(afterParsed) ||
+      (typeof afterParsed === 'string' ? afterParsed : '');
     if (bText && aText && bText !== aText) {
-      hunks.push({ kind: 'text', label: 'Professional summary', before: bText, after: aText });
+      hunks.push({
+        kind: 'text',
+        label: 'Professional summary',
+        before: bText,
+        after: aText,
+      });
       return hunks;
     }
   }
@@ -202,10 +220,17 @@ export function buildTailorSectionChanges(
   for (const field of changedFields) {
     const label = labelizeFieldPath(field);
     if (label && !hunks.some((h) => h.kind === 'text' && h.label === label)) {
-      const bPlain = typeof beforeParsed === 'string' ? beforeParsed : beforeRaw.trim();
-      const aPlain = typeof afterParsed === 'string' ? afterParsed : afterRaw.trim();
+      const bPlain =
+        typeof beforeParsed === 'string' ? beforeParsed : beforeRaw.trim();
+      const aPlain =
+        typeof afterParsed === 'string' ? afterParsed : afterRaw.trim();
       if (bPlain && aPlain && bPlain !== aPlain) {
-        hunks.push({ kind: 'text', label, before: bPlain.slice(0, 600), after: aPlain.slice(0, 600) });
+        hunks.push({
+          kind: 'text',
+          label,
+          before: bPlain.slice(0, 600),
+          after: aPlain.slice(0, 600),
+        });
       }
     }
   }
@@ -218,7 +243,12 @@ export function buildTailorSectionChanges(
     (typeof afterParsed === 'string' ? afterParsed : afterRaw.trim());
 
   if (bPlain && aPlain && bPlain !== aPlain) {
-    hunks.push({ kind: 'text', label: sectionType ? labelizeFieldPath(sectionType) : 'Section', before: bPlain, after: aPlain });
+    hunks.push({
+      kind: 'text',
+      label: sectionType ? labelizeFieldPath(sectionType) : 'Section',
+      before: bPlain,
+      after: aPlain,
+    });
     return hunks;
   }
 
@@ -235,7 +265,10 @@ export function buildTailorSectionChanges(
  * Simple line-level diff for tailor before/after text blocks.
  * Green = added, red = removed (Grammarly-style inline lists).
  */
-export function buildLineDiff(before: string, after: string): CvTailorDiffLine[] {
+export function buildLineDiff(
+  before: string,
+  after: string,
+): CvTailorDiffLine[] {
   const beforeLines = before.split(/\r?\n/).map((l) => l.trimEnd());
   const afterLines = after.split(/\r?\n/).map((l) => l.trimEnd());
 
@@ -258,16 +291,23 @@ export function buildLineDiff(before: string, after: string): CvTailorDiffLine[]
  * Word diff in reading order (keeps unchanged words for context).
  * Use for inline track-changes in narrow panels — not {@link buildWordDiff}.
  */
-export function buildOrderedWordDiff(before: string, after: string): CvTailorDiffLine[] {
+export function buildOrderedWordDiff(
+  before: string,
+  after: string,
+): CvTailorDiffLine[] {
   const b = before.trim().split(/\s+/).filter(Boolean);
   const a = after.trim().split(/\s+/).filter(Boolean);
   if (b.length === 0 && a.length === 0) return [];
-  if (b.length === 0) return a.map((text) => ({ type: 'added' as const, text }));
-  if (a.length === 0) return b.map((text) => ({ type: 'removed' as const, text }));
+  if (b.length === 0)
+    return a.map((text) => ({ type: 'added' as const, text }));
+  if (a.length === 0)
+    return b.map((text) => ({ type: 'removed' as const, text }));
 
   const n = b.length;
   const m = a.length;
-  const dp: number[][] = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
+  const dp: number[][] = Array.from({ length: n + 1 }, () =>
+    Array(m + 1).fill(0),
+  );
   for (let i = n - 1; i >= 0; i--) {
     for (let j = m - 1; j >= 0; j--) {
       dp[i]![j] =
@@ -305,7 +345,10 @@ export function buildOrderedWordDiff(before: string, after: string): CvTailorDif
 }
 
 /** Set diff — removed/added tokens only (skills chip lists). */
-export function buildWordDiff(before: string, after: string): CvTailorDiffLine[] {
+export function buildWordDiff(
+  before: string,
+  after: string,
+): CvTailorDiffLine[] {
   const bTokens = before.trim().split(/\s+/).filter(Boolean);
   const aTokens = after.trim().split(/\s+/).filter(Boolean);
   const bSet = new Set(bTokens.map((t) => t.toLowerCase()));

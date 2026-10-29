@@ -17,19 +17,13 @@ function makeAxiosError<T>(params: {
   headers?: Record<string, string>;
 }): AxiosError<T> {
   const cfg = { url: params.url ?? '/cv/parse' } as InternalAxiosRequestConfig;
-  return new AxiosError(
-    params.message ?? 'fail',
-    params.code,
-    cfg,
-    undefined,
-    {
-      status: params.status ?? 500,
-      data: params.data as T,
-      statusText: 'Error',
-      headers: params.headers ?? {},
-      config: cfg,
-    },
-  );
+  return new AxiosError(params.message ?? 'fail', params.code, cfg, undefined, {
+    status: params.status ?? 500,
+    data: params.data as T,
+    statusText: 'Error',
+    headers: params.headers ?? {},
+    config: cfg,
+  });
 }
 
 describe('getApiErrorMessage', () => {
@@ -39,7 +33,11 @@ describe('getApiErrorMessage', () => {
       url: '/cv/parse',
       data: {
         success: false,
-        error: { code: 'RATE_LIMITED', message: 'Too many', retryAfterSeconds: 120 },
+        error: {
+          code: 'RATE_LIMITED',
+          message: 'Too many',
+          retryAfterSeconds: 120,
+        },
       },
     });
     expect(getApiErrorMessage(e)).toMatch(/Too many requests/i);
@@ -48,7 +46,10 @@ describe('getApiErrorMessage', () => {
   it('maps stale draft codes', () => {
     const e = makeAxiosError({
       status: 409,
-      data: { success: false, error: { code: 'IMPROVEMENT_STALE_DRAFT', message: 'stale' } },
+      data: {
+        success: false,
+        error: { code: 'IMPROVEMENT_STALE_DRAFT', message: 'stale' },
+      },
     });
     expect(getApiErrorMessage(e)).toMatch(/no longer matches your CV/i);
   });
@@ -62,7 +63,11 @@ describe('getApiErrorMessage', () => {
   });
 
   it('maps client timeout', () => {
-    const e = makeAxiosError({ status: undefined, code: 'ECONNABORTED', message: 'timeout of 0ms exceeded' });
+    const e = makeAxiosError({
+      status: undefined,
+      code: 'ECONNABORTED',
+      message: 'timeout of 0ms exceeded',
+    });
     expect(getApiErrorMessage(e)).toMatch(/timed out/i);
   });
 
@@ -78,7 +83,9 @@ describe('getApiErrorMessage', () => {
         },
       },
     });
-    expect(getApiErrorMessage(e)).toBe('This tailoring draft is being updated. Please try again.');
+    expect(getApiErrorMessage(e)).toBe(
+      'This tailoring draft is being updated. Please try again.',
+    );
   });
 
   it('maps assistant commit 422 factuality rejection (Phase 2 CV)', () => {
@@ -87,7 +94,10 @@ describe('getApiErrorMessage', () => {
       url: '/cv/profiles/p1/assistant/commit',
       data: {
         success: false,
-        error: { code: 'CV_ASSISTANT_COMMIT_REJECTED_FACTUALITY', message: 'Rejected' },
+        error: {
+          code: 'CV_ASSISTANT_COMMIT_REJECTED_FACTUALITY',
+          message: 'Rejected',
+        },
       },
     });
     const msg = getApiErrorMessage(e);
@@ -136,7 +146,13 @@ describe('getApiErrorMessage', () => {
   it('getApiErrorCode reads nested improvement codes like getApiErrorMessage', () => {
     const e = makeAxiosError({
       status: 409,
-      data: { success: false, error: { code: 'IMPROVEMENT_INVALID_FIELD_SELECTION', message: 'bad fields' } },
+      data: {
+        success: false,
+        error: {
+          code: 'IMPROVEMENT_INVALID_FIELD_SELECTION',
+          message: 'bad fields',
+        },
+      },
     });
     expect(getApiErrorCode(e)).toBe('IMPROVEMENT_INVALID_FIELD_SELECTION');
   });
@@ -173,7 +189,9 @@ describe('getApiErrorMessage', () => {
         statusCode: 409,
         code: 'IMPROVEMENT_INVALID_FIELD_SELECTION',
         message: 'Invalid',
-        details: { expectedSelectableKeys: ['summary.text', 'experience.items.0.title'] },
+        details: {
+          expectedSelectableKeys: ['summary.text', 'experience.items.0.title'],
+        },
       },
     });
     expect(getApiErrorMessage(e)).toMatch(/field selection/i);

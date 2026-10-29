@@ -134,7 +134,8 @@ async function parseApiEnvelope<T>(res: Response): Promise<T> {
   try {
     body = (await res.json()) as ApiEnvelope<T>;
   } catch {
-    if (!res.ok) throw new ApiRequestError(`API error ${res.status}`, res.status);
+    if (!res.ok)
+      throw new ApiRequestError(`API error ${res.status}`, res.status);
     throw new ApiRequestError('Invalid API response', res.status);
   }
 
@@ -156,7 +157,10 @@ async function parseApiEnvelope<T>(res: Response): Promise<T> {
   return body.data;
 }
 
-export async function apiFetch<T>(path: string, options?: ApiFetchOptions): Promise<T> {
+export async function apiFetch<T>(
+  path: string,
+  options?: ApiFetchOptions,
+): Promise<T> {
   const token = await getToken();
   const res = await fetch(resolveRequestUrl(path), {
     ...options,
@@ -226,7 +230,9 @@ function normalizeMissingSkills(raw: unknown): CvScoreResult['missingSkills'] {
     if (!skill) continue;
     const tierRaw = o.tier;
     const tier =
-      tierRaw === 'required' || tierRaw === 'preferred' || tierRaw === 'mentioned'
+      tierRaw === 'required' ||
+      tierRaw === 'preferred' ||
+      tierRaw === 'mentioned'
         ? tierRaw
         : undefined;
     const kindRaw = o.requirementKind ?? o.requirement_kind ?? o.kind;
@@ -258,7 +264,9 @@ function parseStringList(raw: unknown): string[] {
     .filter(Boolean);
 }
 
-function parseExtensionTailorStatus(raw: unknown): CheckResponse['tailorStatus'] {
+function parseExtensionTailorStatus(
+  raw: unknown,
+): CheckResponse['tailorStatus'] {
   if (typeof raw !== 'string') return null;
   const s = raw.trim().toLowerCase();
   if (s === 'in_progress' || s === 'in-progress') return 'in_progress';
@@ -267,7 +275,9 @@ function parseExtensionTailorStatus(raw: unknown): CheckResponse['tailorStatus']
   return null;
 }
 
-function parseTailorFields(raw: Record<string, unknown>): Pick<
+function parseTailorFields(
+  raw: Record<string, unknown>,
+): Pick<
   CheckResponse,
   | 'isTailored'
   | 'selectedCvProfileId'
@@ -289,20 +299,27 @@ function parseTailorFields(raw: Record<string, unknown>): Pick<
     (typeof raw.tailor_draft_id === 'string' && raw.tailor_draft_id.trim()) ||
     null;
   const selectedCvProfileId =
-    (typeof raw.selectedCvProfileId === 'string' && raw.selectedCvProfileId.trim()) ||
-    (typeof raw.selected_cv_profile_id === 'string' && raw.selected_cv_profile_id.trim()) ||
+    (typeof raw.selectedCvProfileId === 'string' &&
+      raw.selectedCvProfileId.trim()) ||
+    (typeof raw.selected_cv_profile_id === 'string' &&
+      raw.selected_cv_profile_id.trim()) ||
     null;
   const sourceCvProfileId =
-    (typeof raw.sourceCvProfileId === 'string' && raw.sourceCvProfileId.trim()) ||
-    (typeof raw.source_cv_profile_id === 'string' && raw.source_cv_profile_id.trim()) ||
+    (typeof raw.sourceCvProfileId === 'string' &&
+      raw.sourceCvProfileId.trim()) ||
+    (typeof raw.source_cv_profile_id === 'string' &&
+      raw.source_cv_profile_id.trim()) ||
     null;
   const matchCvProfileId =
     (typeof raw.matchCvProfileId === 'string' && raw.matchCvProfileId.trim()) ||
-    (typeof raw.match_cv_profile_id === 'string' && raw.match_cv_profile_id.trim()) ||
+    (typeof raw.match_cv_profile_id === 'string' &&
+      raw.match_cv_profile_id.trim()) ||
     null;
   let tailorStatusLabel =
-    (typeof raw.tailorStatusLabel === 'string' && raw.tailorStatusLabel.trim()) ||
-    (typeof raw.tailor_status_label === 'string' && raw.tailor_status_label.trim()) ||
+    (typeof raw.tailorStatusLabel === 'string' &&
+      raw.tailorStatusLabel.trim()) ||
+    (typeof raw.tailor_status_label === 'string' &&
+      raw.tailor_status_label.trim()) ||
     null;
   if (!tailorStatusLabel && tailorStatus === 'in_progress') {
     tailorStatusLabel = 'Tailoring in progress';
@@ -332,21 +349,27 @@ function parseTailorFields(raw: Record<string, unknown>): Pick<
 
 function parseAnalysisDetailHint(raw: Record<string, unknown>): string | null {
   const hint =
-    (typeof raw.analysisDetailHint === 'string' && raw.analysisDetailHint.trim()) ||
-    (typeof raw.analysis_detail_hint === 'string' && raw.analysis_detail_hint.trim()) ||
+    (typeof raw.analysisDetailHint === 'string' &&
+      raw.analysisDetailHint.trim()) ||
+    (typeof raw.analysis_detail_hint === 'string' &&
+      raw.analysis_detail_hint.trim()) ||
     '';
   return hint || null;
 }
 
 function parseScoreFormulaTooltip(raw: Record<string, unknown>): string | null {
   const tooltip =
-    (typeof raw.scoreFormulaTooltip === 'string' && raw.scoreFormulaTooltip.trim()) ||
-    (typeof raw.score_formula_tooltip === 'string' && raw.score_formula_tooltip.trim()) ||
+    (typeof raw.scoreFormulaTooltip === 'string' &&
+      raw.scoreFormulaTooltip.trim()) ||
+    (typeof raw.score_formula_tooltip === 'string' &&
+      raw.score_formula_tooltip.trim()) ||
     '';
   return tooltip || null;
 }
 
-function mapCheckResponse(data: CheckResponse & Record<string, unknown>): CheckResponse {
+function mapCheckResponse(
+  data: CheckResponse & Record<string, unknown>,
+): CheckResponse {
   const raw = data as Record<string, unknown>;
   const companyLogoUrl =
     (typeof data.companyLogoUrl === 'string' && data.companyLogoUrl.trim()) ||
@@ -363,12 +386,21 @@ function mapCheckResponse(data: CheckResponse & Record<string, unknown>): CheckR
     ...(companyLogoUrl ? { companyLogoUrl } : {}),
     ...(hasCoverLetter !== undefined ? { hasCoverLetter } : {}),
     topStrengths: normalizeStrengthsList(
-      data.topStrengths ?? raw.strengths ?? raw.top_strengths ?? raw.keyStrengths,
+      data.topStrengths ??
+        raw.strengths ??
+        raw.top_strengths ??
+        raw.keyStrengths,
     ),
     topGaps: normalizeStrengthsList(
-      data.topGaps ?? raw.gaps ?? raw.top_gaps ?? raw.skillGaps ?? raw.skill_gaps,
+      data.topGaps ??
+        raw.gaps ??
+        raw.top_gaps ??
+        raw.skillGaps ??
+        raw.skill_gaps,
     ),
-    missingSkills: normalizeMissingSkills(data.missingSkills ?? raw.missing_skills),
+    missingSkills: normalizeMissingSkills(
+      data.missingSkills ?? raw.missing_skills,
+    ),
     recommendation:
       typeof data.recommendation === 'string'
         ? data.recommendation
@@ -410,9 +442,12 @@ function normalizeSkillCoverage(raw: unknown): CvScoreResult['skillCoverage'] {
     const statusRaw =
       typeof o.status === 'string' ? o.status.trim().toLowerCase() : 'missing';
     const keywordOnly = o.keywordOnly === true || o.keyword_only === true;
-    const tierRaw = typeof o.tier === 'string' ? o.tier.trim().toLowerCase() : '';
+    const tierRaw =
+      typeof o.tier === 'string' ? o.tier.trim().toLowerCase() : '';
     const tier =
-      tierRaw === 'required' || tierRaw === 'preferred' || tierRaw === 'mentioned'
+      tierRaw === 'required' ||
+      tierRaw === 'preferred' ||
+      tierRaw === 'mentioned'
         ? tierRaw
         : undefined;
     const orGroupIdRaw = o.orGroupId ?? o.or_group_id;
@@ -438,7 +473,8 @@ function pickNumericScore(raw: unknown): number | null {
   }
   if (typeof raw === 'string' && raw.trim()) {
     const parsed = parseFloat(raw);
-    if (Number.isFinite(parsed)) return Math.max(0, Math.min(100, Math.round(parsed)));
+    if (Number.isFinite(parsed))
+      return Math.max(0, Math.min(100, Math.round(parsed)));
   }
   return null;
 }
@@ -451,11 +487,17 @@ function scoreLabelFromMatchScore(score: number): CvScoreResult['scoreLabel'] {
   return 'Weak';
 }
 
-function parseScoreFactors(raw: Record<string, unknown>): CvScoreResult['factors'] {
+function parseScoreFactors(
+  raw: Record<string, unknown>,
+): CvScoreResult['factors'] {
   const source =
-    raw.factors && typeof raw.factors === 'object' && !Array.isArray(raw.factors)
+    raw.factors &&
+    typeof raw.factors === 'object' &&
+    !Array.isArray(raw.factors)
       ? (raw.factors as Record<string, unknown>)
-      : raw.breakdown && typeof raw.breakdown === 'object' && !Array.isArray(raw.breakdown)
+      : raw.breakdown &&
+          typeof raw.breakdown === 'object' &&
+          !Array.isArray(raw.breakdown)
         ? (raw.breakdown as Record<string, unknown>)
         : null;
 
@@ -477,36 +519,64 @@ function parseScoreFactors(raw: Record<string, unknown>): CvScoreResult['factors
   };
 }
 
-function flattenScorePayload(data: Record<string, unknown>): Record<string, unknown> {
+function flattenScorePayload(
+  data: Record<string, unknown>,
+): Record<string, unknown> {
   const merged: Record<string, unknown> = { ...data };
-  for (const key of ['analysis', 'jobAnalysis', 'job_analysis', 'result', 'scoreResult']) {
+  for (const key of [
+    'analysis',
+    'jobAnalysis',
+    'job_analysis',
+    'result',
+    'scoreResult',
+  ]) {
     const nested = data[key];
-    if (!nested || typeof nested !== 'object' || Array.isArray(nested)) continue;
+    if (!nested || typeof nested !== 'object' || Array.isArray(nested))
+      continue;
     Object.assign(merged, nested as Record<string, unknown>);
   }
   return merged;
 }
 
 function pickJobAnalysisId(raw: Record<string, unknown>): string | null {
-  for (const key of ['jobAnalysisId', 'job_analysis_id', 'jobId', 'job_id', 'id', 'analysisId']) {
+  for (const key of [
+    'jobAnalysisId',
+    'job_analysis_id',
+    'jobId',
+    'job_id',
+    'id',
+    'analysisId',
+  ]) {
     const value = raw[key];
     if (typeof value === 'string' && value.trim()) return value.trim();
   }
   return null;
 }
 
-function mapApiScoreResult(data: CvScoreResult & Record<string, unknown>): CvScoreResult {
+function mapApiScoreResult(
+  data: CvScoreResult & Record<string, unknown>,
+): CvScoreResult {
   const raw = flattenScorePayload(data as Record<string, unknown>);
   const aiAssessment =
-    raw.aiAssessment && typeof raw.aiAssessment === 'object' && !Array.isArray(raw.aiAssessment)
+    raw.aiAssessment &&
+    typeof raw.aiAssessment === 'object' &&
+    !Array.isArray(raw.aiAssessment)
       ? (raw.aiAssessment as Record<string, unknown>)
-      : raw.ai_assessment && typeof raw.ai_assessment === 'object' && !Array.isArray(raw.ai_assessment)
+      : raw.ai_assessment &&
+          typeof raw.ai_assessment === 'object' &&
+          !Array.isArray(raw.ai_assessment)
         ? (raw.ai_assessment as Record<string, unknown>)
         : null;
 
-  const skillCoverage = normalizeSkillCoverage(raw.skillCoverage ?? raw.skill_coverage);
+  const skillCoverage = normalizeSkillCoverage(
+    raw.skillCoverage ?? raw.skill_coverage,
+  );
   const missingSkills = normalizeMissingSkills(
-    raw.missingSkills ?? raw.missing_skills ?? raw.gaps ?? raw.skillGaps ?? raw.skill_gaps,
+    raw.missingSkills ??
+      raw.missing_skills ??
+      raw.gaps ??
+      raw.skillGaps ??
+      raw.skill_gaps,
   );
 
   const parsedStrengths = normalizeStrengthsList(
@@ -533,9 +603,7 @@ function mapApiScoreResult(data: CvScoreResult & Record<string, unknown>): CvSco
     .map((item) => item.skill.trim())
     .filter(Boolean);
   const topGaps =
-    gapFromMissingSkills.length > 0
-      ? gapFromMissingSkills
-      : parsedGaps;
+    gapFromMissingSkills.length > 0 ? gapFromMissingSkills : parsedGaps;
 
   const matchScore = pickNumericScore(raw.matchScore ?? raw.match_score) ?? 0;
 
@@ -549,7 +617,8 @@ function mapApiScoreResult(data: CvScoreResult & Record<string, unknown>): CvSco
     raw.factorsBreakdown ?? raw.factors_breakdown,
   );
 
-  const recommendationRaw = raw.recommendation ?? raw.summary ?? aiAssessment?.summary;
+  const recommendationRaw =
+    raw.recommendation ?? raw.summary ?? aiAssessment?.summary;
   const recommendation =
     typeof recommendationRaw === 'string'
       ? recommendationRaw.trim()
@@ -578,33 +647,43 @@ function mapApiScoreResult(data: CvScoreResult & Record<string, unknown>): CvSco
     raw.scoreBeforeTailoring ?? raw.score_before_tailoring,
   );
   const selectedCvProfileId =
-    (typeof raw.selectedCvProfileId === 'string' && raw.selectedCvProfileId.trim()) ||
-    (typeof raw.selected_cv_profile_id === 'string' && raw.selected_cv_profile_id.trim()) ||
+    (typeof raw.selectedCvProfileId === 'string' &&
+      raw.selectedCvProfileId.trim()) ||
+    (typeof raw.selected_cv_profile_id === 'string' &&
+      raw.selected_cv_profile_id.trim()) ||
     null;
   const sourceCvProfileId =
-    (typeof raw.sourceCvProfileId === 'string' && raw.sourceCvProfileId.trim()) ||
-    (typeof raw.source_cv_profile_id === 'string' && raw.source_cv_profile_id.trim()) ||
+    (typeof raw.sourceCvProfileId === 'string' &&
+      raw.sourceCvProfileId.trim()) ||
+    (typeof raw.source_cv_profile_id === 'string' &&
+      raw.source_cv_profile_id.trim()) ||
     null;
   const tailorStatusLabel =
-    (typeof raw.tailorStatusLabel === 'string' && raw.tailorStatusLabel.trim()) ||
-    (typeof raw.tailor_status_label === 'string' && raw.tailor_status_label.trim()) ||
+    (typeof raw.tailorStatusLabel === 'string' &&
+      raw.tailorStatusLabel.trim()) ||
+    (typeof raw.tailor_status_label === 'string' &&
+      raw.tailor_status_label.trim()) ||
     null;
   const tailorSummary =
     (typeof raw.tailorSummary === 'string' && raw.tailorSummary.trim()) ||
     (typeof raw.tailor_summary === 'string' && raw.tailor_summary.trim()) ||
     null;
   const scoredAgainstCvProfileId =
-    (typeof raw.scoredAgainstCvProfileId === 'string' && raw.scoredAgainstCvProfileId.trim()) ||
+    (typeof raw.scoredAgainstCvProfileId === 'string' &&
+      raw.scoredAgainstCvProfileId.trim()) ||
     (typeof raw.scored_against_cv_profile_id === 'string' &&
       raw.scored_against_cv_profile_id.trim()) ||
     null;
   const matchCvProfileId =
     (typeof raw.matchCvProfileId === 'string' && raw.matchCvProfileId.trim()) ||
-    (typeof raw.match_cv_profile_id === 'string' && raw.match_cv_profile_id.trim()) ||
+    (typeof raw.match_cv_profile_id === 'string' &&
+      raw.match_cv_profile_id.trim()) ||
     scoredAgainstCvProfileId;
   const tailoredCvProfileId =
-    (typeof raw.tailoredCvProfileId === 'string' && raw.tailoredCvProfileId.trim()) ||
-    (typeof raw.tailored_cv_profile_id === 'string' && raw.tailored_cv_profile_id.trim()) ||
+    (typeof raw.tailoredCvProfileId === 'string' &&
+      raw.tailoredCvProfileId.trim()) ||
+    (typeof raw.tailored_cv_profile_id === 'string' &&
+      raw.tailored_cv_profile_id.trim()) ||
     null;
   const tailoredCvName =
     (typeof raw.tailoredCvName === 'string' && raw.tailoredCvName.trim()) ||
@@ -627,7 +706,9 @@ function mapApiScoreResult(data: CvScoreResult & Record<string, unknown>): CvSco
     topGaps,
     missingSkills,
     skillCoverage,
-    skillsToHighlight: parseStringList(raw.skillsToHighlight ?? raw.skills_to_highlight),
+    skillsToHighlight: parseStringList(
+      raw.skillsToHighlight ?? raw.skills_to_highlight,
+    ),
     recommendation,
     jobAnalysisId: pickJobAnalysisId(raw),
     dashboardUrl:
@@ -639,10 +720,15 @@ function mapApiScoreResult(data: CvScoreResult & Record<string, unknown>): CvSco
       raw.saved === true ||
       raw.hasAnalysis === true ||
       raw.has_analysis === true,
-    fromCache: raw.fromCache === true || raw.from_cache === true || raw.aiCached === true,
+    fromCache:
+      raw.fromCache === true ||
+      raw.from_cache === true ||
+      raw.aiCached === true,
     aiUsage: (raw.aiUsage ?? raw.ai_usage) as AiUsageSnapshot | undefined,
     scoreSource,
-    salaryEstimate: (raw.salaryEstimate ?? raw.salary_estimate ?? null) as CvScoreResult['salaryEstimate'],
+    salaryEstimate: (raw.salaryEstimate ??
+      raw.salary_estimate ??
+      null) as CvScoreResult['salaryEstimate'],
     locationEligibility: (raw.locationEligibility ??
       raw.location_eligibility ??
       null) as CvScoreResult['locationEligibility'],
@@ -668,7 +754,9 @@ function mapApiScoreResult(data: CvScoreResult & Record<string, unknown>): CvSco
   };
 }
 
-function mapJobState(data: ExtensionJobState & Record<string, unknown>): ExtensionJobState {
+function mapJobState(
+  data: ExtensionJobState & Record<string, unknown>,
+): ExtensionJobState {
   const raw = data as Record<string, unknown>;
   const checkLike = mapCheckResponse({
     saved: Boolean(raw.saved),
@@ -676,9 +764,7 @@ function mapJobState(data: ExtensionJobState & Record<string, unknown>): Extensi
       (typeof raw.jobId === 'string' && raw.jobId.trim()) ||
       (typeof raw.job_id === 'string' && raw.job_id.trim()) ||
       null,
-    status:
-      (typeof raw.status === 'string' && raw.status.trim()) ||
-      null,
+    status: (typeof raw.status === 'string' && raw.status.trim()) || null,
     hasAnalysis: raw.hasAnalysis === true || raw.has_analysis === true,
     matchScore: pickNumericScore(raw.matchScore ?? raw.match_score),
     scoreLabel:
@@ -686,7 +772,9 @@ function mapJobState(data: ExtensionJobState & Record<string, unknown>): Extensi
       (typeof raw.score_label === 'string' && raw.score_label) ||
       null,
     hasCoverLetter:
-      raw.hasCoverLetter === true || raw.has_cover_letter === true ? true : undefined,
+      raw.hasCoverLetter === true || raw.has_cover_letter === true
+        ? true
+        : undefined,
     dashboardUrl:
       (typeof raw.dashboardUrl === 'string' && raw.dashboardUrl) ||
       (typeof raw.dashboard_url === 'string' && raw.dashboard_url) ||
@@ -696,7 +784,9 @@ function mapJobState(data: ExtensionJobState & Record<string, unknown>): Extensi
       raw.topStrengths ?? raw.top_strengths ?? raw.strengths,
     ),
     topGaps: normalizeStrengthsList(raw.topGaps ?? raw.top_gaps ?? raw.gaps),
-    missingSkills: normalizeMissingSkills(raw.missingSkills ?? raw.missing_skills),
+    missingSkills: normalizeMissingSkills(
+      raw.missingSkills ?? raw.missing_skills,
+    ),
     recommendation:
       typeof raw.recommendation === 'string'
         ? raw.recommendation
@@ -709,8 +799,10 @@ function mapJobState(data: ExtensionJobState & Record<string, unknown>): Extensi
   });
 
   const coverLetterPreview =
-    (typeof raw.coverLetterPreview === 'string' && raw.coverLetterPreview.trim()) ||
-    (typeof raw.cover_letter_preview === 'string' && raw.cover_letter_preview.trim()) ||
+    (typeof raw.coverLetterPreview === 'string' &&
+      raw.coverLetterPreview.trim()) ||
+    (typeof raw.cover_letter_preview === 'string' &&
+      raw.cover_letter_preview.trim()) ||
     undefined;
   const coverLetterFull =
     (typeof raw.coverLetter === 'string' && raw.coverLetter.trim()) ||
@@ -736,8 +828,7 @@ function mapJobState(data: ExtensionJobState & Record<string, unknown>): Extensi
       (typeof raw.jobTitle === 'string' && raw.jobTitle.trim()) ||
       (typeof raw.job_title === 'string' && raw.job_title.trim()) ||
       null,
-    company:
-      (typeof raw.company === 'string' && raw.company.trim()) || null,
+    company: (typeof raw.company === 'string' && raw.company.trim()) || null,
     topGaps: checkLike.topGaps,
     topStrengths: checkLike.topStrengths,
     recommendation: checkLike.recommendation,
@@ -750,7 +841,8 @@ function mapJobState(data: ExtensionJobState & Record<string, unknown>): Extensi
     status: checkLike.status,
     missingSkills: checkLike.missingSkills,
     factors: checkLike.factors,
-    analysisDetailHint: checkLike.analysisDetailHint ?? parseAnalysisDetailHint(raw),
+    analysisDetailHint:
+      checkLike.analysisDetailHint ?? parseAnalysisDetailHint(raw),
   };
 }
 
@@ -760,10 +852,13 @@ export const extractionApi = {
     pageTitle: string;
     pageUrl: string;
   }): Promise<ExtractJobResult> => {
-    const data = await apiFetch<ExtractJobApiResponse>('/extension/extract-job', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+    const data = await apiFetch<ExtractJobApiResponse>(
+      '/extension/extract-job',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    );
     return {
       job: mapApiExtractedJob(data),
       fromCache: Boolean(data.fromCache),
@@ -782,7 +877,9 @@ export const authApi = {
   getMe: () => apiFetch<User>('/auth/extension/me'),
 
   /** Mint extension JWT from a web access token (no extension token side effects on 401). */
-  mintExtensionToken: async (accessToken: string): Promise<ExtensionAuthPayload> => {
+  mintExtensionToken: async (
+    accessToken: string,
+  ): Promise<ExtensionAuthPayload> => {
     const res = await fetch(resolveRequestUrl('/auth/extension-token'), {
       method: 'POST',
       credentials: 'include',
@@ -845,9 +942,13 @@ export const jobsApi = {
           : raw;
       const coverLetter =
         (typeof nested.coverLetter === 'string' && nested.coverLetter.trim()) ||
-        (typeof nested.cover_letter === 'string' && nested.cover_letter.trim()) ||
+        (typeof nested.cover_letter === 'string' &&
+          nested.cover_letter.trim()) ||
         undefined;
-      return { coverLetter, jobId: typeof nested.jobId === 'string' ? nested.jobId : jobAnalysisId };
+      return {
+        coverLetter,
+        jobId: typeof nested.jobId === 'string' ? nested.jobId : jobAnalysisId,
+      };
     }),
 
   recent: (limit = 10) =>

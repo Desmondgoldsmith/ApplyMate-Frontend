@@ -35,7 +35,9 @@ function pickString(v: unknown): string | undefined {
   return typeof v === 'string' && v.trim() ? v.trim() : undefined;
 }
 
-export function parseCvSectionScoreExplainer(raw: unknown): CvSectionScoreExplainer | null {
+export function parseCvSectionScoreExplainer(
+  raw: unknown,
+): CvSectionScoreExplainer | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
   const nested = o.explainer ?? o.scoreExplainer ?? o.score_explainer;
@@ -51,8 +53,9 @@ export function parseCvSectionScoreExplainer(raw: unknown): CvSectionScoreExplai
   const howToImprove =
     pickString(src.howToImprove ?? src.how_to_improve ?? src.improve) ?? '';
   const suggestionId =
-    pickString(src.suggestionId ?? src.suggestion_id ?? src.primarySuggestionId) ??
-    undefined;
+    pickString(
+      src.suggestionId ?? src.suggestion_id ?? src.primarySuggestionId,
+    ) ?? undefined;
 
   if (!whatItMeans && !whyThisScore && !howToImprove) return null;
 
@@ -60,9 +63,12 @@ export function parseCvSectionScoreExplainer(raw: unknown): CvSectionScoreExplai
     whatItMeans:
       whatItMeans ||
       'This score shows how strong this part of your CV looks to recruiters and screening software.',
-    whyThisScore: whyThisScore || 'Your current content triggered rubric checks for this section.',
+    whyThisScore:
+      whyThisScore ||
+      'Your current content triggered rubric checks for this section.',
     howToImprove:
-      howToImprove || 'Add clearer, role-relevant detail with measurable outcomes where you can.',
+      howToImprove ||
+      'Add clearer, role-relevant detail with measurable outcomes where you can.',
     ...(suggestionId ? { suggestionId } : {}),
   };
 }
@@ -71,7 +77,9 @@ export type ParsedSectionScore = SectionScore & {
   explainer?: CvSectionScoreExplainer | null;
 };
 
-export function parseSectionScoreWithExplainer(raw: unknown): ParsedSectionScore {
+export function parseSectionScoreWithExplainer(
+  raw: unknown,
+): ParsedSectionScore {
   const explainer = parseCvSectionScoreExplainer(raw);
   let base: SectionScore;
   if (
@@ -114,15 +122,22 @@ export function buildSectionExplainerFallback(
   const label = cvSectionLabel(sectionKey).toLowerCase();
   const feedback = section.feedback?.trim() ?? '';
   const flagFix =
-    section.flags?.find((f) => typeof f.fix === 'string' && f.fix.trim())?.fix?.trim() ??
-    section.flags?.find((f) => typeof f.message === 'string' && f.message.trim())?.message?.trim() ??
+    section.flags
+      ?.find((f) => typeof f.fix === 'string' && f.fix.trim())
+      ?.fix?.trim() ??
+    section.flags
+      ?.find((f) => typeof f.message === 'string' && f.message.trim())
+      ?.message?.trim() ??
     '';
 
-  const sectionNorm = sectionKey === 'jobMatch' ? 'jobmatch' : sectionKey.toLowerCase();
+  const sectionNorm =
+    sectionKey === 'jobMatch' ? 'jobmatch' : sectionKey.toLowerCase();
   const matched = improvements.find((item) => {
     const s = (item.section ?? '').trim().toLowerCase().replace(/\s+/g, '');
     if (!s) return false;
-    return s === sectionNorm || s.includes(sectionNorm) || sectionNorm.includes(s);
+    return (
+      s === sectionNorm || s.includes(sectionNorm) || sectionNorm.includes(s)
+    );
   });
   const suggestionId = matched?.id?.trim();
 
@@ -155,7 +170,9 @@ export function parseBreakdownSectionExplainers(
   if (!root || typeof root !== 'object' || Array.isArray(root)) return {};
   const out: Partial<Record<CvSectionScoreKey, CvSectionScoreExplainer>> = {};
   for (const key of Object.keys(SECTION_LABELS) as CvSectionScoreKey[]) {
-    const parsed = parseCvSectionScoreExplainer((root as Record<string, unknown>)[key]);
+    const parsed = parseCvSectionScoreExplainer(
+      (root as Record<string, unknown>)[key],
+    );
     if (parsed) out[key] = parsed;
   }
   return out;

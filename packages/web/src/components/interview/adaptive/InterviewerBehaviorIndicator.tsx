@@ -20,31 +20,37 @@ const STYLE: Record<InterviewerBehaviorMode, string> = {
   challenging: 'border-amber-400/30 bg-amber-500/8',
 };
 
-export const InterviewerBehaviorIndicator = memo(function InterviewerBehaviorIndicator({
-  mode,
-  className,
-}: {
-  mode: InterviewerBehaviorMode;
-  className?: string;
-}) {
-  const copy = interviewerBehaviorCopy(mode);
+export const InterviewerBehaviorIndicator = memo(
+  function InterviewerBehaviorIndicator({
+    mode,
+    className,
+  }: {
+    mode: InterviewerBehaviorMode;
+    className?: string;
+  }) {
+    const copy = interviewerBehaviorCopy(mode);
 
-  return (
-    <div
-      className={cn(
-        'flex items-start gap-2 rounded-lg border px-3 py-2',
-        STYLE[mode],
-        className,
-      )}
-      role="status"
-    >
-      <span className="text-base leading-none" aria-hidden>
-        {ICON[mode]}
-      </span>
-      <div className="min-w-0">
-        <p className="text-[11px] font-semibold text-[var(--text-primary)]">{copy.label}</p>
-        <p className="text-[10px] leading-snug text-[var(--text-muted)]">{copy.description}</p>
+    return (
+      <div
+        className={cn(
+          'flex items-start gap-2 rounded-lg border px-3 py-2',
+          STYLE[mode],
+          className,
+        )}
+        role="status"
+      >
+        <span className="text-base leading-none" aria-hidden>
+          {ICON[mode]}
+        </span>
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold text-[var(--text-primary)]">
+            {copy.label}
+          </p>
+          <p className="text-[10px] leading-snug text-[var(--text-muted)]">
+            {copy.description}
+          </p>
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  },
+);

@@ -12,7 +12,10 @@ import {
   isWeakScore,
   resolveExampleAnswer,
 } from '@/lib/interviewCoachingFeedback';
-import type { CoachingIntensity, TurnAnswerResponse } from '@/lib/interview-prep-types';
+import type {
+  CoachingIntensity,
+  TurnAnswerResponse,
+} from '@/lib/interview-prep-types';
 import { cn } from '@/lib/utils';
 
 function ScorePill({ label, value }: { label: string; value: number }) {
@@ -26,8 +29,15 @@ function ScorePill({ label, value }: { label: string; value: number }) {
           : 'border-[var(--border-subtle)] bg-[var(--bg-surface-1)]',
       )}
     >
-      <p className="text-[9px] uppercase tracking-wider text-[var(--text-muted)]">{label}</p>
-      <p className={cn('text-sm font-semibold tabular-nums', weak ? 'text-amber-100' : 'text-[var(--text-primary)]')}>
+      <p className="text-[9px] uppercase tracking-wider text-[var(--text-muted)]">
+        {label}
+      </p>
+      <p
+        className={cn(
+          'text-sm font-semibold tabular-nums',
+          weak ? 'text-amber-100' : 'text-[var(--text-primary)]',
+        )}
+      >
         {Math.round(value)}
       </p>
     </div>
@@ -81,7 +91,9 @@ export const ShapedCoachingPanel = memo(function ShapedCoachingPanel({
       aria-live="polite"
     >
       {view.summary ? (
-        <p className="text-sm font-medium leading-snug text-[var(--text-primary)]">{view.summary}</p>
+        <p className="text-sm font-medium leading-snug text-[var(--text-primary)]">
+          {view.summary}
+        </p>
       ) : null}
 
       {view.showScores ? (
@@ -97,7 +109,9 @@ export const ShapedCoachingPanel = memo(function ShapedCoachingPanel({
         <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-teal)]">
           Focus area
         </p>
-        <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{view.focusLabel}</p>
+        <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+          {view.focusLabel}
+        </p>
       </div>
 
       {view.improvements.length > 0 ? (
@@ -107,7 +121,10 @@ export const ShapedCoachingPanel = memo(function ShapedCoachingPanel({
           </p>
           <ul className="mt-1.5 space-y-1">
             {view.improvements.map((item) => (
-              <li key={item} className="ip-coach-body-primary text-xs leading-relaxed">
+              <li
+                key={item}
+                className="ip-coach-body-primary text-xs leading-relaxed"
+              >
                 · {item}
               </li>
             ))}
@@ -116,7 +133,11 @@ export const ShapedCoachingPanel = memo(function ShapedCoachingPanel({
       ) : null}
 
       {view.showInterviewerInsight && view.interviewerInsight ? (
-        <CollapsibleCoachingSection title="What the interviewer wants" defaultOpen active>
+        <CollapsibleCoachingSection
+          title="What the interviewer wants"
+          defaultOpen
+          active
+        >
           <p className="ip-coach-interviewer-wants text-xs leading-relaxed">
             {view.interviewerInsight}
           </p>
@@ -143,7 +164,11 @@ export const ShapedCoachingPanel = memo(function ShapedCoachingPanel({
       ) : null}
 
       {view.showExample && exampleAnswer ? (
-        <CollapsibleCoachingSection title="Example solution (model answer)" defaultOpen active>
+        <CollapsibleCoachingSection
+          title="Example solution (model answer)"
+          defaultOpen
+          active
+        >
           <p className="ip-coach-example-highlight whitespace-pre-wrap text-sm leading-relaxed">
             {exampleAnswer}
           </p>

@@ -13,7 +13,11 @@ export function CvOverlayLayerProvider({
   zIndex: number;
   children: React.ReactNode;
 }) {
-  return <CvOverlayLayerContext.Provider value={zIndex}>{children}</CvOverlayLayerContext.Provider>;
+  return (
+    <CvOverlayLayerContext.Provider value={zIndex}>
+      {children}
+    </CvOverlayLayerContext.Provider>
+  );
 }
 
 export function useCvOverlayZIndex(): number {

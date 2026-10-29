@@ -2,10 +2,17 @@
 
 import { memo } from 'react';
 
-import type { CoachingIntensity, CoachingSettings } from '@/lib/interview-prep-types';
+import type {
+  CoachingIntensity,
+  CoachingSettings,
+} from '@/lib/interview-prep-types';
 import { cn } from '@/lib/utils';
 
-const INTENSITY_OPTIONS: Array<{ id: CoachingIntensity; label: string; hint: string }> = [
+const INTENSITY_OPTIONS: Array<{
+  id: CoachingIntensity;
+  label: string;
+  hint: string;
+}> = [
   { id: 'light', label: 'Light', hint: 'Score + one tip' },
   { id: 'standard', label: 'Standard', hint: 'Full feedback' },
   { id: 'intensive', label: 'Intensive', hint: 'Examples + follow-ups' },
@@ -42,14 +49,18 @@ export const CoachingSetupControls = memo(function CoachingSetupControls({
         <span
           className={cn(
             'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-[var(--border-subtle)]',
-            settings.enabled && 'border-[var(--teal-500)] bg-[var(--teal-500)]/20',
+            settings.enabled &&
+              'border-[var(--teal-500)] bg-[var(--teal-500)]/20',
           )}
           aria-hidden
         />
         <span>
-          <span className="text-sm font-semibold text-[var(--text-primary)]">AI coaching</span>
+          <span className="text-sm font-semibold text-[var(--text-primary)]">
+            AI coaching
+          </span>
           <span className="mt-0.5 block text-[12px] leading-relaxed text-[var(--text-secondary)]">
-            Calm, collapsible feedback after each answer. Turn off anytime during the interview.
+            Calm, collapsible feedback after each answer. Turn off anytime
+            during the interview.
           </span>
         </span>
       </label>
@@ -102,11 +113,17 @@ export const CoachingStickyToggle = memo(function CoachingStickyToggle({
         className,
       )}
       onClick={onToggle}
-      title={settings.enabled ? 'Coaching on — tap to hide' : 'Coaching off — tap to show'}
+      title={
+        settings.enabled
+          ? 'Coaching on — tap to hide'
+          : 'Coaching off — tap to show'
+      }
     >
       Coaching {settings.enabled ? 'on' : 'off'}
       {settings.enabled ? (
-        <span className="ml-1.5 text-[10px] font-medium opacity-80">· {settings.intensity}</span>
+        <span className="ml-1.5 text-[10px] font-medium opacity-80">
+          · {settings.intensity}
+        </span>
       ) : null}
     </button>
   );

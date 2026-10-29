@@ -39,9 +39,12 @@ export function composeHeroSecondary(params: {
   arcLabel: string | null;
   continuityLine: string | null;
 }): string | null {
-  const sub = stripTechnicalTokens(params.subtitle?.trim() ?? "") || null;
-  const arc = params.arcLabel?.trim() ? stripTechnicalTokens(params.arcLabel.trim()) || null : null;
-  const cont = stripTechnicalTokens(params.continuityLine?.trim() ?? "") || null;
+  const sub = stripTechnicalTokens(params.subtitle?.trim() ?? '') || null;
+  const arc = params.arcLabel?.trim()
+    ? stripTechnicalTokens(params.arcLabel.trim()) || null
+    : null;
+  const cont =
+    stripTechnicalTokens(params.continuityLine?.trim() ?? '') || null;
 
   const seen = new Set<string>();
   const parts: string[] = [];
@@ -59,5 +62,5 @@ export function composeHeroSecondary(params: {
   if (cont && (!sub || cont.toLowerCase() !== sub.toLowerCase())) push(cont);
 
   if (parts.length === 0) return null;
-  return parts.slice(0, 2).join(" ");
+  return parts.slice(0, 2).join(' ');
 }

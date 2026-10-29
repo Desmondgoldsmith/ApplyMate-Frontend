@@ -35,7 +35,8 @@ function formatRelativeAnalyzed(iso: string): string {
 }
 
 function matchBadgeClass(score: number): string {
-  if (score >= 70) return 'border-emerald-400/40 bg-emerald-500/15 text-emerald-200';
+  if (score >= 70)
+    return 'border-emerald-400/40 bg-emerald-500/15 text-emerald-200';
   if (score >= 50) return 'border-amber-400/35 bg-amber-500/12 text-amber-100';
   return 'border-rose-400/35 bg-rose-500/12 text-rose-100';
 }
@@ -48,7 +49,10 @@ function AnalyzedJobsList() {
     return (
       <div className="grid gap-3">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-28 animate-pulse rounded-2xl bg-white/[0.04]" />
+          <div
+            key={i}
+            className="h-28 animate-pulse rounded-2xl bg-white/[0.04]"
+          />
         ))}
       </div>
     );
@@ -57,7 +61,9 @@ function AnalyzedJobsList() {
   if (q.isError) {
     return (
       <GlowCard contentClassName="p-6 text-center">
-        <p className="text-sm text-rose-200">Could not load analyzed jobs. Try again in a moment.</p>
+        <p className="text-sm text-rose-200">
+          Could not load analyzed jobs. Try again in a moment.
+        </p>
         <Button type="button" className="mt-4" onClick={() => void q.refetch()}>
           Retry
         </Button>
@@ -74,7 +80,10 @@ function AnalyzedJobsList() {
         <p className="mt-2 max-w-md text-sm text-white/45">
           Paste a job description in the Job Analyzer to get started.
         </p>
-        <Button className="mt-6" onClick={() => router.replace('/dashboard/jobs')}>
+        <Button
+          className="mt-6"
+          onClick={() => router.replace('/dashboard/jobs')}
+        >
           Go to analyzer →
         </Button>
       </GlowCard>
@@ -84,13 +93,25 @@ function AnalyzedJobsList() {
   return (
     <div className="space-y-3">
       {rows.map((item) => (
-        <AnalyzedJobCard key={item.id} item={item} onOpen={() => router.push(`/dashboard/jobs?jobId=${encodeURIComponent(item.id)}`)} />
+        <AnalyzedJobCard
+          key={item.id}
+          item={item}
+          onOpen={() =>
+            router.push(`/dashboard/jobs?jobId=${encodeURIComponent(item.id)}`)
+          }
+        />
       ))}
     </div>
   );
 }
 
-function AnalyzedJobCard({ item, onOpen }: { item: JobAnalysisSummary; onOpen: () => void }) {
+function AnalyzedJobCard({
+  item,
+  onOpen,
+}: {
+  item: JobAnalysisSummary;
+  onOpen: () => void;
+}) {
   const score = Math.round(item.matchScore);
   const rel = formatRelativeAnalyzed(item.updatedAt || item.createdAt);
   const salaryLine =
@@ -102,10 +123,14 @@ function AnalyzedJobCard({ item, onOpen }: { item: JobAnalysisSummary; onOpen: (
     <GlowCard contentClassName="p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-white">{item.title || 'Untitled role'}</p>
+          <p className="text-sm font-semibold text-white">
+            {item.title || 'Untitled role'}
+          </p>
           <p className="text-[13px] text-white/45">{item.company || '—'}</p>
           {rel ? <p className="mt-1 text-xs text-white/35">{rel}</p> : null}
-          {salaryLine ? <p className="mt-1 text-xs text-white/55">{salaryLine}</p> : null}
+          {salaryLine ? (
+            <p className="mt-1 text-xs text-white/55">{salaryLine}</p>
+          ) : null}
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           <span
@@ -188,7 +213,11 @@ export function ApplicationsSavedPanel() {
         </button>
       </div>
 
-      {savedView === 'applications' ? <ApplicationsTrackerTab /> : <AnalyzedJobsList />}
+      {savedView === 'applications' ? (
+        <ApplicationsTrackerTab />
+      ) : (
+        <AnalyzedJobsList />
+      )}
     </div>
   );
 }
