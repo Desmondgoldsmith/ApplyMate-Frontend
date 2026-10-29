@@ -1,4 +1,4 @@
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { AxiosError, AxiosHeaders } from 'axios';
 import { useRef, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -85,7 +85,9 @@ describe('useCVAutosave', () => {
   let saveSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
+    // Fully manual clock: `shouldAdvanceTime` let real time leak in, so a busy machine could
+    // fire the 800ms debounce before the test advanced past it.
+    vi.useFakeTimers();
     saveSpy = vi.spyOn(cvBuilder, 'saveCVBuilderData').mockResolvedValue({
       usedBatch: true,
       batch: { updated: 1, unchanged: 0 },
@@ -157,9 +159,9 @@ describe('useCVAutosave', () => {
 
     const { result, unmount } = renderHook(() => useConflictHarness());
     await act(async () => {
-      vi.advanceTimersByTime(800);
+      await vi.advanceTimersByTimeAsync(800);
     });
-    await waitFor(() => expect(onContentConflict).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(onContentConflict).toHaveBeenCalledTimes(1));
     expect(saveSpy.mock.calls[0][2]).toMatchObject({
       contentVersionRef: versionRef,
     });
@@ -172,7 +174,7 @@ describe('useCVAutosave', () => {
       });
     });
     await act(async () => {
-      vi.advanceTimersByTime(1600);
+      await vi.advanceTimersByTimeAsync(1600);
     });
     expect(saveSpy).toHaveBeenCalledTimes(1);
     unmount();
@@ -183,13 +185,13 @@ describe('useCVAutosave', () => {
 
     expect(saveSpy).not.toHaveBeenCalled();
     await act(async () => {
-      vi.advanceTimersByTime(799);
+      await vi.advanceTimersByTimeAsync(799);
     });
     expect(saveSpy).not.toHaveBeenCalled();
     await act(async () => {
-      vi.advanceTimersByTime(1);
+      await vi.advanceTimersByTimeAsync(1);
     });
-    await waitFor(() => expect(saveSpy).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(saveSpy).toHaveBeenCalledTimes(1));
     unmount();
   });
 });

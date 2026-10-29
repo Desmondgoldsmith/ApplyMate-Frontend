@@ -80,10 +80,11 @@ function refreshPosts() {
   return post.mock.calls.filter(([url]) => url === '/auth/refresh');
 }
 
+// Cold first import (module transform) can pass the 10s default hook timeout in full parallel runs.
 beforeAll(async () => {
   await import('@/lib/authRefresh');
   await import('@/store/useAuthStore');
-});
+}, 60_000);
 
 beforeEach(() => {
   post.mockReset();
