@@ -59,6 +59,11 @@ export type TrackedJob = {
   applicationId: string | null;
   /** Server `Application.status` as loaded (sent back as `expectedStatus` on stage changes). */
   applicationStatus?: string | null;
+  /**
+   * Server pipeline stage, set only when the card shows it (no local override); sent back as
+   * `expectedStage` on stage changes.
+   */
+  serverPipelineStage?: HubPipelineStage | null;
   title: string;
   company: string;
   companyLogoUrl?: string | null;
@@ -377,6 +382,8 @@ export function mergeTrackedJobs(
       jobAnalysisId,
       applicationId: app?.id ?? null,
       applicationStatus: app?.status ?? null,
+      serverPipelineStage:
+        fromServer && stage === fromServer ? (hist?.pipelineStatus ?? null) : null,
       title,
       company,
       companyLogoUrl,

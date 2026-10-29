@@ -87,6 +87,10 @@ export function JobHub() {
   const lastRequestedStatusRef = useRef<
     Record<string, { base: string | null; requested: string }>
   >({});
+  /** Same idea for analysis-only cards (`expectedStage` on the pipeline PATCH). */
+  const lastRequestedStageRef = useRef<
+    Record<string, { base: string | null; requested: string }>
+  >({});
   const patchBookmarkPipeline = useMutation({
     mutationFn: (args: { bookmarkId: string; hubPipelineStage: ReturnType<typeof hubStageToHubPipelineStage> }) =>
       api.jobDiscovery.patchBookmark(args.bookmarkId, { hubPipelineStage: args.hubPipelineStage }),
@@ -106,7 +110,12 @@ export function JobHub() {
       jobAnalysisId: string;
       stage: ReturnType<typeof hubStageToHubPipelineStage>;
       overrideKey: string;
-    }) => api.jobs.patchPipeline(args.jobAnalysisId, { stage: args.stage }),
+      expectedStage?: ReturnType<typeof hubStageToHubPipelineStage> | null;
+    }) =>
+      api.jobs.patchPipeline(args.jobAnalysisId, {
+        stage: args.stage,
+        expectedStage: args.expectedStage,
+      }),
     onSuccess: (enrichment, args) => {
       clearStageOverride(args.overrideKey);
       setOverrides((prev) => {
@@ -134,7 +143,24 @@ export function JobHub() {
       invalidateGrowthQueries(queryClient);
       invalidateTodayPlanQueries(queryClient);
     },
-    onError: (err) => toast.error(getApiErrorMessage(err)),
+    onError: (err, args) => {
+      delete lastRequestedStageRef.current[args.jobAnalysisId];
+      if (getApiErrorCode(err) !== 'JOB_STAGE_CHANGED') {
+        toast.error(getApiErrorMessage(err));
+        return;
+      }
+      clearStageOverride(args.overrideKey);
+      setOverrides((prev) => {
+        const next = { ...prev };
+        delete next[args.overrideKey];
+        return next;
+      });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.jobs.history() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.bookmarks() });
+      toast.error(
+        'This job was updated somewhere else, so we loaded its latest stage. Move it again if needed.',
+      );
+    },
   });
   const isMaxLg = useIsMaxLg();
 
@@ -511,10 +537,15 @@ export function JobHub() {
       }
 
       if (job.jobAnalysisId) {
+        const loaded = job.serverPipelineStage ?? null;
+        const pending = lastRequestedStageRef.current[job.jobAnalysisId];
+        const expectedStage = pending && pending.base === loaded ? pending.requested : loaded;
+        lastRequestedStageRef.current[job.jobAnalysisId] = { base: loaded, requested: pipeline };
         patchJobPipeline.mutate({
           jobAnalysisId: job.jobAnalysisId,
           stage: pipeline,
           overrideKey: job.key,
+          expectedStage: expectedStage as typeof pipeline | null,
         });
       }
 

@@ -8498,14 +8498,20 @@ const jobs = {
     );
     throwIfApiFailureResponse(res.data, res.status);
   },
-  /** PATCH /jobs/:jobAnalysisId/pipeline — canonical Job Hub stage moves. */
+  /**
+   * PATCH /jobs/:jobAnalysisId/pipeline — canonical Job Hub stage moves. With `expectedStage`
+   * the server answers 409 `JOB_STAGE_CHANGED` instead of overwriting a newer stage.
+   */
   patchPipeline: async (
     jobAnalysisId: string,
-    payload: { stage: HubPipelineStage },
+    payload: { stage: HubPipelineStage; expectedStage?: HubPipelineStage | null },
   ): Promise<JobHubContextEnrichment> => {
     const res = await axiosClient.patch<unknown>(
       `/jobs/${encodeURIComponent(jobAnalysisId)}/pipeline`,
-      payload,
+      {
+        stage: payload.stage,
+        ...(payload.expectedStage ? { expectedStage: payload.expectedStage } : {}),
+      },
     );
     throwIfApiFailureResponse(res.data, res.status);
     const body = unwrapApiDataEnvelope(res.data);
