@@ -15,6 +15,7 @@ import {
   aiWaitForResultBody,
   resolveMaybeQueuedAiResponse,
 } from './aiBackgroundJob';
+import { isCvExportBusyError } from './cvExportErrors';
 import { ensureArray } from './ensure-array';
 import {
   pickCompanyLogoSource,
@@ -7567,6 +7568,8 @@ export type CvExportRequestOpts = {
   cvProfileId?: string;
   /** Ties export to a job analysis for tailored default filenames. */
   jobAnalysisId?: string;
+  /** Header fields to leave out (`headerPreviewToHideList`), matching the editor preview. */
+  hide?: string[];
 };
 
 export type CvExportDownload = {
@@ -7582,8 +7585,13 @@ function cvExportQueryParams(
   if (opts.template?.trim()) params.template = opts.template.trim();
   const jobId = opts.jobAnalysisId?.trim();
   if (jobId) params.jobAnalysisId = jobId;
+  const hide = (opts.hide ?? []).map((h) => h.trim()).filter(Boolean);
+  if (hide.length) params.hide = hide.join(',');
   return params;
 }
+
+/** Wait before the single retry when the API reports `PDF_EXPORT_BUSY` (tests lower it). */
+export const cvExportBusyRetry = { delayMs: 3_000 };
 
 /**
  * The API allows CV export routes up to 120s (headless Chromium cold start); stay just above that.
@@ -7626,6 +7634,21 @@ function isMissingCvExportRoute(e: unknown): boolean {
  * failure is rethrown so a slow render is never started twice.
  */
 async function downloadCvExport(
+  format: 'pdf' | 'docx',
+  opts: CvExportRequestOpts,
+): Promise<CvExportDownload> {
+  try {
+    return await downloadCvExportOnce(format, opts);
+  } catch (e) {
+    if (!isCvExportBusyError(e)) throw e;
+    await new Promise((resolve) =>
+      setTimeout(resolve, cvExportBusyRetry.delayMs),
+    );
+    return downloadCvExportOnce(format, opts);
+  }
+}
+
+async function downloadCvExportOnce(
   format: 'pdf' | 'docx',
   opts: CvExportRequestOpts,
 ): Promise<CvExportDownload> {

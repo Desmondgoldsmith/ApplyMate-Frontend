@@ -39,6 +39,10 @@ import {
   DEFAULT_HEADER_PREVIEW,
   type HeaderPreviewSettings,
 } from '@/components/cv/CVEditContext';
+import {
+  readHeaderPreviewStorage,
+  writeHeaderPreviewStorage,
+} from '@/lib/cvHeaderPreview';
 import { BuilderRichTextField } from '@/components/cv/BuilderRichTextField';
 import { CategorySkillsInput } from '@/components/cv/CategorySkillsInput';
 import { CvDateField } from '@/components/cv/CvDateField';
@@ -352,57 +356,6 @@ function readStoredCvSplitPct(): number {
     return clampCvSplitPct(v);
   } catch {
     return CV_SPLIT_DEFAULT_PCT;
-  }
-}
-
-function readHeaderPreviewStorage(
-  profileId: string | null | undefined,
-): HeaderPreviewSettings {
-  if (!profileId?.trim() || typeof window === 'undefined')
-    return DEFAULT_HEADER_PREVIEW;
-  try {
-    const raw = window.sessionStorage.getItem(
-      `applymate:cv:headerPreview:${profileId.trim()}`,
-    );
-    if (!raw) return DEFAULT_HEADER_PREVIEW;
-    const o = JSON.parse(raw) as Partial<HeaderPreviewSettings> & {
-      showLink?: boolean;
-      showExtraLink?: boolean;
-    };
-    const legacyLink = o.showLink;
-    return {
-      ...DEFAULT_HEADER_PREVIEW,
-      ...o,
-      photoStyle: o.photoStyle ?? DEFAULT_HEADER_PREVIEW.photoStyle,
-      showHeadline: o.showHeadline ?? DEFAULT_HEADER_PREVIEW.showHeadline,
-      showLinkedIn:
-        o.showLinkedIn ?? legacyLink ?? DEFAULT_HEADER_PREVIEW.showLinkedIn,
-      showGithub:
-        o.showGithub ?? legacyLink ?? DEFAULT_HEADER_PREVIEW.showGithub,
-      showWebsiteToggle:
-        o.showWebsiteToggle ?? DEFAULT_HEADER_PREVIEW.showWebsiteToggle,
-      showPortfolioToggle:
-        o.showPortfolioToggle ??
-        o.showExtraLink ??
-        DEFAULT_HEADER_PREVIEW.showPortfolioToggle,
-    };
-  } catch {
-    return DEFAULT_HEADER_PREVIEW;
-  }
-}
-
-function writeHeaderPreviewStorage(
-  profileId: string | null | undefined,
-  next: HeaderPreviewSettings,
-) {
-  if (!profileId?.trim() || typeof window === 'undefined') return;
-  try {
-    window.sessionStorage.setItem(
-      `applymate:cv:headerPreview:${profileId.trim()}`,
-      JSON.stringify(next),
-    );
-  } catch {
-    /* ignore */
   }
 }
 

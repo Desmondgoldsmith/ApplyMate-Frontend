@@ -1,10 +1,18 @@
 import { api } from '@/lib/api';
 import { patchSanitizedContactUrlsForExport } from '@/lib/cvBuilder';
+import {
+  headerPreviewToHideList,
+  readHeaderPreviewStorage,
+} from '@/lib/cvHeaderPreview';
 
 /** Opens the exported PDF in a new browser tab (object URL). Backend should accept `cvProfileId` on GET /cv/export/pdf. */
 export async function openCvPdfInNewTab(cvProfileId: string, template?: string): Promise<void> {
   await patchSanitizedContactUrlsForExport(cvProfileId);
-  const { blob } = await api.cvExport.downloadPdf({ template, cvProfileId });
+  const { blob } = await api.cvExport.downloadPdf({
+    template,
+    cvProfileId,
+    hide: headerPreviewToHideList(readHeaderPreviewStorage(cvProfileId)),
+  });
   const mime = blob.type && blob.type !== 'application/octet-stream' ? blob.type : 'application/pdf';
   const typed = new Blob([blob], { type: mime });
   const url = URL.createObjectURL(typed);

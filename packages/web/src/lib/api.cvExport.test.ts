@@ -4,11 +4,26 @@ import {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
-import { api, CV_EXPORT_TIMEOUT_MS, type CvExportRequestOpts } from '@/lib/api';
+import {
+  api,
+  CV_EXPORT_TIMEOUT_MS,
+  cvExportBusyRetry,
+  type CvExportRequestOpts,
+} from '@/lib/api';
 import { axiosClient, getApiErrorCode } from '@/lib/axios';
 import {
+  CV_EXPORT_BUSY_MESSAGE,
   CV_EXPORT_NOT_FOUND_MESSAGE,
   CV_EXPORT_TIMEOUT_MESSAGE,
   getCvExportErrorMessage,
@@ -188,6 +203,70 @@ describe.each<ExportFormat>(['pdf', 'docx'])('cvExport %s download', (format) =>
     expect(get).toHaveBeenCalledTimes(1);
     expect(requestedPath(get, 0)).toBe(`/cv/export/${format}`);
     expect(requestedOptions(get, 0)?.timeout).toBeGreaterThanOrEqual(120_000);
+  });
+
+  it('sends hidden header fields on the scoped and legacy routes', async () => {
+    const get = mockGet()
+      .mockRejectedValueOnce(httpError(404))
+      .mockResolvedValueOnce(okResponse(format));
+
+    await download(format, { cvProfileId: PROFILE_ID, hide: ['phone', ' email '] });
+
+    expect(requestedOptions(get, 0)?.params).toMatchObject({ hide: 'phone,email' });
+    expect(requestedOptions(get, 1)?.params).toMatchObject({ hide: 'phone,email' });
+  });
+
+  it('omits hide when nothing is hidden', async () => {
+    const get = mockGet().mockResolvedValueOnce(okResponse(format));
+
+    await download(format, { cvProfileId: PROFILE_ID, template: 'modern', hide: [] });
+
+    expect(requestedOptions(get, 0)?.params).not.toHaveProperty('hide');
+  });
+
+  describe('when the PDF queue is busy', () => {
+    const defaultDelay = cvExportBusyRetry.delayMs;
+    beforeEach(() => {
+      cvExportBusyRetry.delayMs = 0;
+    });
+    afterEach(() => {
+      cvExportBusyRetry.delayMs = defaultDelay;
+    });
+
+    it('waits a few seconds by default before retrying', () => {
+      expect(defaultDelay).toBeGreaterThanOrEqual(2_000);
+    });
+
+    it('retries once and returns the file', async () => {
+      const get = mockGet()
+        .mockRejectedValueOnce(httpError(503, 'PDF_EXPORT_BUSY'))
+        .mockResolvedValueOnce(okResponse(format));
+
+      const result = await download(format);
+
+      expect(get).toHaveBeenCalledTimes(2);
+      expect(requestedPath(get, 1)).toBe(`/cv/profiles/${PROFILE_ID}/export/${format}`);
+      expect(result.blob).toBeInstanceOf(Blob);
+    });
+
+    it('gives up after one retry with the busy message', async () => {
+      const get = mockGet()
+        .mockRejectedValueOnce(httpError(503, 'PDF_EXPORT_BUSY'))
+        .mockRejectedValueOnce(httpError(503, 'PDF_EXPORT_BUSY'));
+
+      const err = await rejection(download(format));
+
+      expect(get).toHaveBeenCalledTimes(2);
+      expect(getCvExportErrorMessage(err)).toBe(CV_EXPORT_BUSY_MESSAGE);
+    });
+
+    it('does not retry other 503s', async () => {
+      const get = mockGet().mockRejectedValueOnce(httpError(503, 'SERVICE_UNAVAILABLE'));
+
+      await rejection(download(format));
+
+      expect(get).toHaveBeenCalledTimes(1);
+    });
   });
 });
 

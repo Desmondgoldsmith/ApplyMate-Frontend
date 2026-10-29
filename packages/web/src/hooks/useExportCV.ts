@@ -10,6 +10,10 @@ import {
   type CvProfileNamingInput,
 } from '@/lib/cv-profile-naming';
 import { patchSanitizedContactUrlsForExport } from '@/lib/cvBuilder';
+import {
+  headerPreviewToHideList,
+  readHeaderPreviewStorage,
+} from '@/lib/cvHeaderPreview';
 
 function hasValidPersonName(name: string): boolean {
   const n = name.trim().toLowerCase();
@@ -56,6 +60,7 @@ export function useExportCV() {
         template,
         cvProfileId,
         jobAnalysisId: jobAnalysisId?.trim() || undefined,
+        hide: headerPreviewToHideList(readHeaderPreviewStorage(cvProfileId)),
       };
       const { blob, filename: headerFilename } =
         format === 'pdf'
