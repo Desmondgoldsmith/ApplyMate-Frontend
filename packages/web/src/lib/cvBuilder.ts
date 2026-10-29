@@ -9,6 +9,10 @@ import {
 } from '@/lib/api';
 import { normalizeProfessionalHeadlineTitle } from '@/lib/infer-cv-profile-name';
 import { isPayloadTooLargeError } from '@/lib/axios';
+import {
+  isCvContentConflictError,
+  type CvContentVersionRef,
+} from '@/lib/cvContentConflict';
 import { logCvDevPerf } from '@/lib/cvDevPerf';
 import { richTextPlainText } from '@/lib/cvRichTextCore';
 import { normalizeText } from '@/lib/normalizeText';
@@ -2481,11 +2485,21 @@ export function setCvBuilderSectionFieldText(
 export async function saveCVBuilderData(
   data: CVBuilderData,
   existingSections: CVSectionRecord[],
-  opts?: { template?: CvTemplateId; cvProfileId?: string },
+  opts?: {
+    template?: CvTemplateId;
+    cvProfileId?: string;
+    /** Sent as the save's base version and advanced by each successful write. */
+    contentVersionRef?: CvContentVersionRef;
+  },
 ): Promise<SaveCVBuilderDataResult> {
   const result: SaveCVBuilderDataResult = { usedBatch: false, profilePatched: false };
   let mutable = [...existingSections];
   const cvProfileId = opts?.cvProfileId?.trim();
+  const versionRef = opts?.contentVersionRef;
+  const versionOpts = () => ({ baseContentVersion: versionRef?.current ?? null });
+  const adoptVersion = (v: number | undefined) => {
+    if (versionRef && typeof v === 'number') versionRef.current = v;
+  };
 
   if (cvProfileId) {
     const coreTypes = ['summary', 'experience', 'education', 'projects', 'skills'] as const;
@@ -2505,15 +2519,17 @@ export async function saveCVBuilderData(
   if (Object.keys(profilePatch).length > 0) {
     try {
       if (cvProfileId) {
-        await api.cv.patchProfilesEntry(
+        const saved = await api.cv.patchProfilesEntry(
           cvProfileId,
           profilePatch as Parameters<typeof api.cv.patchProfilesEntry>[1],
+          versionOpts(),
         );
+        adoptVersion(saved.contentVersion);
       } else {
         await api.cv.patchProfile(profilePatch as Parameters<typeof api.cv.patchProfile>[0]);
       }
     } catch (e) {
-      if (isPayloadTooLargeError(e)) {
+      if (isPayloadTooLargeError(e) || isCvContentConflictError(e)) {
         throw e;
       }
       const minimal: Parameters<typeof api.cv.patchProfile>[0] = {};
@@ -2525,12 +2541,14 @@ export async function saveCVBuilderData(
       try {
         if (Object.keys(minimal).length > 0) {
           if (cvProfileId) {
-            await api.cv.patchProfilesEntry(cvProfileId, minimal);
+            const saved = await api.cv.patchProfilesEntry(cvProfileId, minimal, versionOpts());
+            adoptVersion(saved.contentVersion);
           } else {
             await api.cv.patchProfile(minimal);
           }
         }
-      } catch {
+      } catch (minimalError) {
+        if (isCvContentConflictError(minimalError)) throw minimalError;
         /* Validation may still fail (e.g. website); sections + PATCH user name still apply. */
       }
     }
@@ -2544,22 +2562,33 @@ export async function saveCVBuilderData(
   if (cvProfileId) {
     const tBatch = performance.now();
     try {
-      const br = await api.cv.batchUpsertProfileSections(cvProfileId, { sections: entries });
+      const br = await api.cv.batchUpsertProfileSections(
+        cvProfileId,
+        { sections: entries },
+        versionOpts(),
+      );
+      adoptVersion(br.contentVersion);
       logCvBuilderSavePerfDev('batchUpsert', tBatch, { updated: br.updated, unchanged: br.unchanged });
       result.usedBatch = true;
       result.batch = { updated: br.updated, unchanged: br.unchanged };
       if (br.sections.length > 0) result.sections = br.sections;
       return result;
     } catch (e) {
+      if (isCvContentConflictError(e)) {
+        throw e;
+      }
       if (!isBatchUpsertRouteUnsupportedError(e)) {
         const status = axios.isAxiosError(e) ? e.response?.status : undefined;
         if (status === 409 || status === 500) {
           try {
             mutable = await api.cv.getSections(true, cvProfileId);
             const retryEntries = buildCvBuilderBatchSectionEntries(data, opts?.template, mutable);
-            const br = await api.cv.batchUpsertProfileSections(cvProfileId, {
-              sections: retryEntries,
-            });
+            const br = await api.cv.batchUpsertProfileSections(
+              cvProfileId,
+              { sections: retryEntries },
+              versionOpts(),
+            );
+            adoptVersion(br.contentVersion);
             logCvBuilderSavePerfDev('batchUpsert.retry', tBatch, {
               updated: br.updated,
               unchanged: br.unchanged,

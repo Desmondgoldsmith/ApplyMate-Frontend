@@ -2065,6 +2065,7 @@ export function CvClinicWorkspace({
             mode="dashboard"
             profileId={profileId}
             initialData={initialData}
+            initialContentVersion={profile?.contentVersion}
             selectedTemplate={selectedTemplate}
             onTemplateChange={(t) => {
               if (isCvTemplateId(t)) onTemplateIdChange(t);

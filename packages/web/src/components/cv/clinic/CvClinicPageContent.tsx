@@ -4099,6 +4099,7 @@ export function CvClinicPageContent() {
               mode="dashboard"
               profileId={targetId}
               initialData={initialData}
+              initialContentVersion={profile?.contentVersion}
               selectedTemplate={template}
               onTemplateChange={onTemplateChange}
               existingSections={sections}

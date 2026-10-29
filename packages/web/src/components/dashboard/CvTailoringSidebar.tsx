@@ -20,6 +20,10 @@ import { inferCvProfileNameFromProfile } from '@/lib/infer-cv-profile-name';
 import { buildCvNamingForExport } from '@/lib/cv-profile-naming';
 import { api, type CvTailorDraft, type CvTailorDraftEntry, type TailorMutationResponse } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
+import {
+  acceptRespectingEdits,
+  TAILOR_KEPT_EDITS_MESSAGE,
+} from '@/lib/tailorAcceptEdits';
 import { isCvTemplateId } from '@/lib/cvBuilder';
 import { getCvExportErrorMessage } from '@/lib/cvExportErrors';
 import { rehydrateCvBuilderAfterStructuredPersist } from '@/lib/cvStructuredDraftCommit';
@@ -503,7 +507,13 @@ export function CvTailoringSidebar({
     if (!draft) return;
     setAcceptAllLoading(true);
     try {
-      const result = await api.cv.acceptAllTailorSections(draft.id);
+      const result = await acceptRespectingEdits((overwriteEdits) =>
+        api.cv.acceptAllTailorSections(draft.id, { overwriteEdits }),
+      );
+      if (!result) {
+        toast.info(TAILOR_KEPT_EDITS_MESSAGE);
+        return;
+      }
       onTailorMutation(result);
       await rehydrateBuilderAfterTailorPersist(result.draft.cvProfileId);
       toast.success('All changes applied to your CV');
@@ -1014,7 +1024,13 @@ function SectionDiffCardWrapper({
 
   const runAccept = async () => {
     try {
-      const result = await api.cv.acceptTailorSection(draftId, liveEntry.sectionId);
+      const result = await acceptRespectingEdits((overwriteEdits) =>
+        api.cv.acceptTailorSection(draftId, liveEntry.sectionId, { overwriteEdits }),
+      );
+      if (!result) {
+        toast.info(TAILOR_KEPT_EDITS_MESSAGE);
+        return;
+      }
       onTailorMutation(result);
       await onInvalidate(result.draft.cvProfileId);
       const builderId = tailorSectionTypeToBuilderId(liveEntry.sectionType);

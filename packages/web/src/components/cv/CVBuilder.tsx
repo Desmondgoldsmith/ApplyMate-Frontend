@@ -12,6 +12,7 @@ import {
   Loader2,
   Maximize2,
   Minimize2,
+  TriangleAlert,
 } from 'lucide-react';
 import type { CSSProperties, ReactNode } from 'react';
 import {
@@ -623,6 +624,11 @@ export type CVBuilderProps = {
    */
   serverHydrateNonce?: number;
   /**
+   * `contentVersion` of the profile `initialData` was built from. The editor sends it with each
+   * autosave so a stale tab gets a conflict instead of overwriting newer content.
+   */
+  initialContentVersion?: number;
+  /**
    * When true for the next hydrate triggered by `serverHydrateNonce`, keep undo/redo history
    * (post-accept background confirmation, autosave echo).
    */
@@ -708,6 +714,7 @@ export function CVBuilder({
   cvAssistantClarificationQuestion,
   deferIncompletePreviewBadges: deferIncompletePreviewBadgesProp = false,
   serverHydrateNonce = 0,
+  initialContentVersion,
   serverHydratePreserveHistoryRef,
   forceServerHydrateNonce = 0,
   improvementDiffTruthPanel = false,
@@ -747,6 +754,12 @@ export function CVBuilder({
       initialData ??
       emptyCVBuilderData({ email: emailDefault, name: user?.name }),
   );
+  /** Version the local `data` is based on; `null` = unknown (next save re-establishes it). */
+  const contentVersionRef = useRef<number | null>(initialContentVersion ?? null);
+  const initialContentVersionRef = useRef(initialContentVersion);
+  initialContentVersionRef.current = initialContentVersion;
+  const [contentConflict, setContentConflict] = useState(false);
+  const [contentConflictBusy, setContentConflictBusy] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(() => {
     const seed =
       initialData ??
@@ -1042,6 +1055,9 @@ export function CVBuilder({
     cvSectionRowsSig,
     onDashboardSaved,
     toast,
+    contentVersionRef,
+    contentConflict,
+    onContentConflict: () => setContentConflict(true),
   });
   flushDashboardAutosaveRef.current = flushDashboardAutosave;
 
@@ -1639,6 +1655,7 @@ export function CVBuilder({
         return;
       }
       setData(coerceStructuredTextInCvBuilderData(snap));
+      contentVersionRef.current = initialContentVersionRef.current ?? null;
       setDirty(false);
       if (!preserveHistory) {
         resetUndoStack();
@@ -1677,6 +1694,8 @@ export function CVBuilder({
       );
       pushUndoSnapshotForced(dataRef.current, `AI Accept: ${sectionLabel}`);
       dataRef.current = next;
+      // The accept already bumped the server version; local data now includes it.
+      contentVersionRef.current = null;
       setData(next);
       setDataRevision((n) => n + 1);
     },
@@ -1721,9 +1740,53 @@ export function CVBuilder({
     applyServerHydrateFromInitialData(forceServerHydrateNonce, 'force');
   }, [mode, forceServerHydrateNonce, serverHydrateNonce, applyServerHydrateFromInitialData]);
 
+  const [conflictReloadNonce, setConflictReloadNonce] = useState(0);
+
+  /** Discard local edits and show what the server has now. */
+  const loadLatestAfterConflict = useCallback(async () => {
+    if (!profileId?.trim()) return;
+    setContentConflictBusy(true);
+    try {
+      await refreshCvState(queryClient, profileId, {
+        refreshProfile: true,
+        refreshSections: true,
+      });
+      setConflictReloadNonce((n) => n + 1);
+    } catch (e) {
+      toast.error(getApiErrorMessage(e) || 'Could not load the latest version');
+    } finally {
+      setContentConflictBusy(false);
+    }
+  }, [profileId, queryClient, toast]);
+
+  /** Save local edits over whatever the server has now. */
+  const keepMyVersionAfterConflict = useCallback(() => {
+    contentVersionRef.current = null;
+    setContentConflict(false);
+    setDirty(true);
+    window.setTimeout(() => void flushDashboardAutosaveRef.current?.(), 0);
+  }, []);
+
+  const handledConflictReloadRef = useRef(0);
+  useEffect(() => {
+    if (conflictReloadNonce === handledConflictReloadRef.current) return;
+    handledConflictReloadRef.current = conflictReloadNonce;
+    if (serverHydratePreserveHistoryRef) {
+      serverHydratePreserveHistoryRef.current = false;
+    }
+    applyServerHydrateFromInitialData(conflictReloadNonce, 'force');
+    setContentConflict(false);
+  }, [
+    conflictReloadNonce,
+    applyServerHydrateFromInitialData,
+    serverHydratePreserveHistoryRef,
+  ]);
+
   useEffect(() => {
     if (!externalPatch || externalPatchNonce <= 0) return;
     pushUndoSnapshot(dataRef.current, 'Assistant change');
+    // The assistant may already have committed this server-side; don't flag our own change as a conflict.
+    contentVersionRef.current = null;
     setDirty(true);
     setData((prev) => {
       const merged = mergeDeep(prev, externalPatch) as CVBuilderData;
@@ -3148,7 +3211,9 @@ export function CVBuilder({
                       <span className="text-amber-400/90">Unsaved changes</span>
                     ) : saveStatus === 'error' ? (
                       <span className="text-rose-400/90">
-                        Save failed — keep editing or retry
+                        {contentConflict
+                          ? 'Not saved — this CV changed elsewhere'
+                          : 'Save failed — keep editing or retry'}
                       </span>
                     ) : null}
                   </p>
@@ -3197,6 +3262,46 @@ export function CVBuilder({
         ) : (
           <div className="pt-5" />
         )}
+
+        {mode === 'dashboard' && contentConflict ? (
+          <div
+            role="alert"
+            className="mb-2 rounded-lg border border-amber-400/30 bg-amber-400/[0.07] px-3 py-2.5"
+          >
+            <p className="flex items-center gap-1.5 text-[12px] font-semibold text-amber-200">
+              <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              This CV was changed somewhere else
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-white/65">
+              Another tab, an applied suggestion, an import or a restored version
+              updated it after you opened this editor. Your latest edits haven&apos;t
+              been saved yet.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="primary"
+                className="gap-1.5 px-3 py-1.5 text-[12px]"
+                disabled={contentConflictBusy}
+                onClick={() => void loadLatestAfterConflict()}
+              >
+                {contentConflictBusy ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : null}
+                Load latest version
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="px-3 py-1.5 text-[12px]"
+                disabled={contentConflictBusy}
+                onClick={keepMyVersionAfterConflict}
+              >
+                Keep my version
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
         {mode === 'onboarding' && saveStatus !== 'idle' ? (
           <p className="mb-3 px-1 text-[11px] text-white/40">

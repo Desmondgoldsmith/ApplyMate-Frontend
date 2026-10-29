@@ -7,6 +7,10 @@ import type { useToast } from '@/components/ui/Toast';
 import type { CVSectionRecord } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
 import {
+  isCvContentConflictError,
+  type CvContentVersionRef,
+} from '@/lib/cvContentConflict';
+import {
   computeCvBuilderSaveFingerprint,
   logCvBuilderSavePerfDev,
   saveCVBuilderData,
@@ -35,6 +39,12 @@ export type UseCVAutosaveParams = {
   cvSectionRowsSig: string;
   onDashboardSaved?: (res: SaveCVBuilderDataResult) => void | Promise<void>;
   toast: ReturnType<typeof useToast>;
+  /** Version the local data is based on; sent with each save and advanced by it. */
+  contentVersionRef?: CvContentVersionRef;
+  /** While true, autosave is paused (the user must resolve a save conflict first). */
+  contentConflict?: boolean;
+  /** Server rejected the save because the CV changed elsewhere. */
+  onContentConflict?: () => void;
 };
 
 export type UseCVAutosaveResult = {
@@ -62,8 +72,15 @@ export function useCVAutosave(props: UseCVAutosaveParams): UseCVAutosaveResult {
     cvSectionRowsSig,
     onDashboardSaved,
     toast,
+    contentVersionRef,
+    contentConflict = false,
+    onContentConflict,
   } = props;
 
+  const contentConflictRef = useRef(contentConflict);
+  contentConflictRef.current = contentConflict;
+  const onContentConflictRef = useRef(onContentConflict);
+  onContentConflictRef.current = onContentConflict;
   const dirtyRef = useRef(false);
   const autosaveTimerRef = useRef<number | null>(null);
   const saveInFlightRef = useRef(false);
@@ -79,6 +96,7 @@ export function useCVAutosave(props: UseCVAutosaveParams): UseCVAutosaveResult {
 
   const flushDashboardAutosave = useCallback(async () => {
     if (mode !== 'dashboard' || !profileId?.trim()) return;
+    if (contentConflictRef.current) return;
     const fp = computeCvBuilderSaveFingerprint(dataRef.current, templateRef.current, sectionsRef.current);
     if (fp === lastPersistedFingerprintRef.current) {
       setDirty(false);
@@ -96,6 +114,7 @@ export function useCVAutosave(props: UseCVAutosaveParams): UseCVAutosaveResult {
       const res = await saveCVBuilderData(dataRef.current, sectionsRef.current, {
         template: templateRef.current,
         cvProfileId: profileId ?? undefined,
+        contentVersionRef,
       });
       logCvBuilderSavePerfDev('autosave.flush', t0, {
         usedBatch: res.usedBatch,
@@ -121,7 +140,12 @@ export function useCVAutosave(props: UseCVAutosaveParams): UseCVAutosaveResult {
       }
     } catch (e) {
       setSaveStatus('error');
-      toastRef.current.error(getApiErrorMessage(e));
+      if (isCvContentConflictError(e)) {
+        contentConflictRef.current = true;
+        onContentConflictRef.current?.();
+      } else {
+        toastRef.current.error(getApiErrorMessage(e));
+      }
     } finally {
       saveInFlightRef.current = false;
       if (saveQueuedRef.current && dirtyRef.current) {
@@ -131,7 +155,7 @@ export function useCVAutosave(props: UseCVAutosaveParams): UseCVAutosaveResult {
         saveQueuedRef.current = false;
       }
     }
-  }, [mode, profileId, setDirty, setSaveStatus]);
+  }, [mode, profileId, setDirty, setSaveStatus, contentVersionRef]);
 
   useEffect(() => {
     if (mode !== 'dashboard' || !profileId?.trim()) return;

@@ -337,6 +337,8 @@ export type CVProfile = {
   website?: string | null;
   /** Display label from API when present (e.g. "Name — Role"). */
   name?: string | null;
+  /** Bumped by every content change; the editor sends the one it loaded so stale saves get 409. */
+  contentVersion?: number;
 };
 
 /** Lightweight row from GET /cv/profiles */
@@ -412,7 +414,23 @@ function mapBodyToCvProfile(body: Record<string, unknown>): CVProfile {
     location: body.location === null ? null : nullableStr(body.location),
     phone: body.phone === null ? null : nullableStr(body.phone),
     website: body.website === null ? null : nullableStr(body.website),
+    contentVersion: readCvContentVersion(body.contentVersion),
   };
+}
+
+function readCvContentVersion(v: unknown): number | undefined {
+  return typeof v === 'number' && Number.isInteger(v) && v >= 0 ? v : undefined;
+}
+
+/** Header carrying the `contentVersion` an editor save is based on. */
+const CV_BASE_VERSION_HEADER = 'X-CV-Base-Version';
+
+function cvBaseVersionHeaders(
+  baseContentVersion: number | null | undefined,
+): Record<string, string> | undefined {
+  return typeof baseContentVersion === 'number'
+    ? { [CV_BASE_VERSION_HEADER]: String(baseContentVersion) }
+    : undefined;
 }
 
 /**
@@ -3303,6 +3321,8 @@ export type CvBatchUpsertSectionsResult = {
   updated: number;
   unchanged: number;
   sections: CVSectionRecord[];
+  /** Profile content version after this save (absent from older APIs). */
+  contentVersion?: number;
 };
 
 /** Prefer whichever list includes real server row UUIDs (PATCH reorder requires each row `id`). */
@@ -4646,6 +4666,7 @@ function normalizeCvBatchUpsertSectionsResult(
         ? Math.max(0, body.unchanged)
         : 0,
     sections,
+    contentVersion: readCvContentVersion(body.contentVersion),
   };
 }
 
@@ -6578,8 +6599,11 @@ const cv = {
       rawText?: string;
       template?: 'classic' | 'modern' | 'creative' | string;
     },
+    opts?: { baseContentVersion?: number | null },
   ) => {
-    const res = await axiosClient.patch<unknown>(`/cv/profiles/${id}`, payload);
+    const res = await axiosClient.patch<unknown>(`/cv/profiles/${id}`, payload, {
+      headers: cvBaseVersionHeaders(opts?.baseContentVersion),
+    });
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeCvProfileResponse(res.data);
   },
@@ -7227,10 +7251,11 @@ const cv = {
   acceptTailorSection: async (
     draftId: string,
     sectionId: string,
+    opts?: { overwriteEdits?: boolean },
   ): Promise<TailorMutationResponse> => {
     const res = await axiosClient.post<unknown>(
       `/cv/tailor-draft/${encodeURIComponent(draftId)}/accept-section`,
-      { sectionId },
+      { sectionId, ...(opts?.overwriteEdits ? { overwriteEdits: true } : {}) },
     );
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeTailorMutationResponse(res.data);
@@ -7248,10 +7273,11 @@ const cv = {
   },
   acceptAllTailorSections: async (
     draftId: string,
+    opts?: { overwriteEdits?: boolean },
   ): Promise<TailorMutationResponse> => {
     const res = await axiosClient.post<unknown>(
       `/cv/tailor-draft/${encodeURIComponent(draftId)}/accept-all`,
-      {},
+      opts?.overwriteEdits ? { overwriteEdits: true } : {},
     );
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeTailorMutationResponse(res.data);
@@ -7413,11 +7439,13 @@ const cv = {
   batchUpsertProfileSections: async (
     cvProfileId: string,
     payload: { sections: CvBatchUpsertSectionInput[] },
+    opts?: { baseContentVersion?: number | null },
   ): Promise<CvBatchUpsertSectionsResult> => {
     const id = cvProfileId.trim();
     const res = await axiosClient.post<unknown>(
       `/cv/profiles/${encodeURIComponent(id)}/sections/batch-upsert`,
       payload,
+      { headers: cvBaseVersionHeaders(opts?.baseContentVersion) },
     );
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeCvBatchUpsertSectionsResult(res.data);

@@ -11,6 +11,10 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { api, type CvTailorDraft, type CvTailorDraftEntry, type TailorMutationResponse } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
+import {
+  acceptRespectingEdits,
+  TAILOR_KEPT_EDITS_MESSAGE,
+} from '@/lib/tailorAcceptEdits';
 import { rehydrateCvBuilderAfterStructuredPersist } from '@/lib/cvStructuredDraftCommit';
 import { cn } from '@/lib/utils';
 
@@ -63,7 +67,13 @@ function TailorSuggestionCard({
   const accept = async () => {
     onAcceptStart();
     try {
-      const result = await api.cv.acceptTailorSection(draftId, entry.sectionId);
+      const result = await acceptRespectingEdits((overwriteEdits) =>
+        api.cv.acceptTailorSection(draftId, entry.sectionId, { overwriteEdits }),
+      );
+      if (!result) {
+        toast.info(TAILOR_KEPT_EDITS_MESSAGE);
+        return;
+      }
       onUpdated(result.draft);
       onTailorMutation?.(result);
       await invalidateCv(result.draft.cvProfileId);
