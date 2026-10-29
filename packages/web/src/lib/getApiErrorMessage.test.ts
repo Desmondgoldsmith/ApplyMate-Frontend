@@ -66,6 +66,21 @@ describe('getApiErrorMessage', () => {
     expect(getApiErrorMessage(e)).toMatch(/timed out/i);
   });
 
+  it('keeps the server message for tailoring conflicts that mention the draft', () => {
+    const e = makeAxiosError({
+      status: 409,
+      url: '/cv/tailor-draft/d1/accept-section',
+      data: {
+        success: false,
+        error: {
+          code: 'TAILOR_DRAFT_BUSY',
+          message: 'This tailoring draft is being updated. Please try again.',
+        },
+      },
+    });
+    expect(getApiErrorMessage(e)).toBe('This tailoring draft is being updated. Please try again.');
+  });
+
   it('maps assistant commit 422 factuality rejection (Phase 2 CV)', () => {
     const e = makeAxiosError({
       status: 422,

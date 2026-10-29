@@ -1092,6 +1092,7 @@ function SectionDiffCardWrapper({
         changedFields={liveEntry.changedFields}
         displayDiff={liveEntry.displayDiff}
         summary={liveEntry.summary}
+        safetyNotes={liveEntry.safetyNotes}
         className="mb-3"
       />
 

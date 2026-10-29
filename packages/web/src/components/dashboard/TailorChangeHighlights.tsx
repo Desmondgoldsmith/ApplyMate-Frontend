@@ -1,6 +1,6 @@
 'use client';
 
-import { Briefcase } from 'lucide-react';
+import { Briefcase, ShieldCheck } from 'lucide-react';
 import { useMemo } from 'react';
 
 import {
@@ -166,6 +166,26 @@ function ExperienceRoleContext({ labels }: { labels: string[] }) {
   );
 }
 
+/** Corrections the server made so the suggestion only uses facts already in the CV. */
+function FactCheckNotes({ notes }: { notes: string[] }) {
+  if (notes.length === 0) return null;
+  return (
+    <div className="mt-3 rounded-lg border border-[#00C9B1]/15 bg-[#00C9B1]/[0.04] px-3 py-2.5">
+      <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#9CF5EA]/80">
+        <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
+        Fact check
+      </p>
+      <ul className="space-y-1">
+        {notes.map((note) => (
+          <li key={note} className="text-[12px] leading-snug text-white/70">
+            {note}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function TailorChangeHighlights({
   sectionType,
   beforeRaw,
@@ -173,6 +193,7 @@ export function TailorChangeHighlights({
   changedFields = [],
   displayDiff,
   summary,
+  safetyNotes = [],
   className,
 }: {
   sectionType: string;
@@ -181,6 +202,8 @@ export function TailorChangeHighlights({
   changedFields?: string[];
   displayDiff?: TailorDisplayDiff | null;
   summary?: string | null;
+  /** Server fact-check corrections for this suggestion. */
+  safetyNotes?: string[];
   className?: string;
 }) {
   const st = sectionType.trim().toLowerCase();
@@ -242,6 +265,8 @@ export function TailorChangeHighlights({
           ))}
         </div>
       )}
+
+      <FactCheckNotes notes={safetyNotes} />
 
       <p className="mt-2.5 text-[10px] text-white/32">
         <span className="text-rose-300/70 line-through">Strikethrough</span>

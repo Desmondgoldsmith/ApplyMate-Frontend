@@ -718,6 +718,7 @@ function getApiErrorMessageBase(error: unknown): string {
     if (
       (nested.code && staleCodes.has(nested.code)) ||
       (responseStatus === 409 &&
+        !nested.code?.startsWith('TAILOR_') &&
         (/\bstale\b/.test(msgLower) ||
           /\bdraft\b/.test(msgLower) ||
           /\brevision\b/.test(msgLower)))

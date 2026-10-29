@@ -150,6 +150,7 @@ function TailorSuggestionCard({
             changedFields={entry.changedFields}
             displayDiff={entry.displayDiff}
             summary={entry.summary}
+            safetyNotes={entry.safetyNotes}
           />
           {entry.status === 'pending' ? (
             <div className="flex gap-2">

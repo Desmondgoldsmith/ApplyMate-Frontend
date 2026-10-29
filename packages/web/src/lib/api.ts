@@ -1768,6 +1768,8 @@ export type CvTailorDraftEntry = {
   summary?: string | null;
   /** Plain-text added/removed lines for diff UI (no cv-change-marker HTML). */
   displayDiff?: TailorDisplayDiff;
+  /** What the server's fact checks corrected in the AI suggestion (plain language). */
+  safetyNotes?: string[];
   /** Phase 4 patch registry id when returned by tailor-draft. */
   patchId?: string | null;
 };
@@ -3248,6 +3250,7 @@ export type CvRevisionReason =
   | 'cv_text_import'
   | 'accept_all'
   | 'tailor_accept'
+  | 'tailor_revert'
   | 'before_restore'
   | (string & {});
 
@@ -5587,7 +5590,7 @@ function parseTailorDisplayDiff(raw: unknown): TailorDisplayDiff | undefined {
   return { added, removed };
 }
 
-function normalizeCvTailorDraft(raw: unknown): CvTailorDraft {
+export function normalizeCvTailorDraft(raw: unknown): CvTailorDraft {
   const body = unwrapApiDataEnvelope(raw);
   /** Some stacks double-wrap `{ success, data: { data: draft } }` after a proxy. */
   let row = body;
@@ -5629,6 +5632,12 @@ function normalizeCvTailorDraft(raw: unknown): CvTailorDraft {
       const summary =
         typeof summaryRaw === 'string' && summaryRaw.trim() ? summaryRaw.trim() : null;
       const displayDiff = parseTailorDisplayDiff(d.displayDiff ?? d.display_diff);
+      const safetyNotes = Array.isArray(d.safetyNotes)
+        ? d.safetyNotes
+            .filter((x): x is string => typeof x === 'string')
+            .map((x) => x.trim())
+            .filter(Boolean)
+        : [];
       return {
         sectionId,
         sectionType,
@@ -5638,6 +5647,7 @@ function normalizeCvTailorDraft(raw: unknown): CvTailorDraft {
         changedFields: cf,
         summary,
         ...(displayDiff ? { displayDiff } : {}),
+        ...(safetyNotes.length ? { safetyNotes } : {}),
         patchId,
       };
     });

@@ -5,6 +5,7 @@ const CV_REVISION_REASON_LABELS: Record<string, string> = {
   cv_text_import: 'Before importing CV text',
   accept_all: 'Before accepting all suggestions',
   tailor_accept: 'Before applying tailored changes',
+  tailor_revert: 'Before undoing a tailored change',
   before_restore: 'Before restoring an earlier version',
 };
 
