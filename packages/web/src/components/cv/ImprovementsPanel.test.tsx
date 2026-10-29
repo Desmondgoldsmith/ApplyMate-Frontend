@@ -61,6 +61,21 @@ vi.mock('@/lib/api', () => ({
   },
 }));
 
+/** The panel only opens a preview when the result carries a visible change. */
+const summaryChange = {
+  section: 'summary',
+  before: { text: 'Old headline' },
+  after: { text: 'New headline' },
+  changedFields: [
+    {
+      fieldPath: 'summary',
+      before: 'Old headline',
+      after: 'New headline',
+      type: 'changed' as const,
+    },
+  ],
+};
+
 describe('ImprovementsPanel', () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -73,10 +88,7 @@ describe('ImprovementsPanel', () => {
       success: true,
       pointer: 'imp-1',
       improvementId: 'imp-1',
-      section: 'summary',
-      before: {},
-      after: {},
-      changedFields: [],
+      ...summaryChange,
       draftHash: null,
       message: '',
     });
@@ -106,7 +118,12 @@ describe('ImprovementsPanel', () => {
     expect(onDiffPreview).toHaveBeenCalledWith(
       expect.objectContaining({
         pointer: 'imp-1',
-        changedFields: [],
+        changedFields: [
+          expect.objectContaining({
+            before: 'Old headline',
+            after: 'New headline',
+          }),
+        ],
       }),
     );
   });
@@ -171,10 +188,7 @@ describe('ImprovementsPanel', () => {
       pointer: 'imp-1',
       improvementId: 'imp-1',
       suggestionId: 'imp-1',
-      section: 'summary',
-      before: {},
-      after: {},
-      changedFields: [],
+      ...summaryChange,
       draftHash: 'h1',
       message: '',
       duplicateSuppressed: true,
@@ -219,10 +233,7 @@ describe('ImprovementsPanel', () => {
       success: true,
       pointer: 'imp-1',
       improvementId: 'imp-1',
-      section: 'summary',
-      before: {},
-      after: {},
-      changedFields: [],
+      ...summaryChange,
       draftHash: 'h1',
       message: '',
       cacheHit: true,

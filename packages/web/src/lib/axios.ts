@@ -676,6 +676,14 @@ function getApiErrorMessageBase(error: unknown): string {
       return AUTH_RATE_LIMIT_USER_MESSAGE;
     }
 
+    const isClientTimeout =
+      ax.code === 'ECONNABORTED' ||
+      ax.code === 'ETIMEDOUT' ||
+      (typeof ax.message === 'string' && /\btimeout\b/i.test(ax.message));
+    if (isClientTimeout) {
+      return CV_AI_TIMEOUT_USER_MESSAGE;
+    }
+
     if (isBackendConnectionError(error)) {
       const nested = readNestedApiError(ax.response?.data);
       if (nested.code === BACKEND_TIMEOUT_ERROR_CODE) {
@@ -694,14 +702,6 @@ function getApiErrorMessageBase(error: unknown): string {
           ? Math.max(1, Math.ceil(sec / 60))
           : 1;
       return `Too many requests. Please wait about ${approxMin} minute(s), then try again.`;
-    }
-
-    const isClientTimeout =
-      ax.code === 'ECONNABORTED' ||
-      ax.code === 'ETIMEDOUT' ||
-      (typeof ax.message === 'string' && /\btimeout\b/i.test(ax.message));
-    if (isClientTimeout) {
-      return CV_AI_TIMEOUT_USER_MESSAGE;
     }
 
     if (nested.code === 'IMPROVEMENT_DRAFT_FIELD_MISMATCH') {

@@ -20,7 +20,7 @@ describe('buildGlobalFixPromptFromFindings', () => {
       'Add metrics to experience bullets.',
       'Shorten the summary.',
     ]);
-    expect(prompt).toContain('entire CV');
+    expect(prompt).toContain('entire resume');
     expect(prompt).toContain('Add metrics to experience bullets.');
     expect(prompt).toContain('Shorten the summary.');
   });

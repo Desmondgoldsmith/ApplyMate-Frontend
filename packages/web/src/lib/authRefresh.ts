@@ -352,7 +352,6 @@ export function startAuthTokenRefreshScheduler(): () => void {
   if (typeof window === 'undefined') return () => {};
 
   let timeoutId: number | undefined;
-  let intervalId: number | undefined;
 
   const tick = () => {
     const access = readApplymateTokenFromCookie();
@@ -378,7 +377,7 @@ export function startAuthTokenRefreshScheduler(): () => void {
   };
 
   reschedule();
-  intervalId = window.setInterval(tick, FALLBACK_REFRESH_INTERVAL_MS);
+  const intervalId = window.setInterval(tick, FALLBACK_REFRESH_INTERVAL_MS);
 
   const onVisibility = () => {
     if (document.visibilityState === 'visible') tick();
@@ -392,7 +391,7 @@ export function startAuthTokenRefreshScheduler(): () => void {
 
   return () => {
     if (timeoutId != null) window.clearTimeout(timeoutId);
-    if (intervalId != null) window.clearInterval(intervalId);
+    window.clearInterval(intervalId);
     document.removeEventListener('visibilitychange', onVisibility);
     unsubTokens();
   };
