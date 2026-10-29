@@ -1,0 +1,51 @@
+# Every push / PR: type check, lint, formatting, unit tests (web) and extension build.
+# The web app's production build runs on Vercel for each deploy.
+name: CI
+
+on:
+  pull_request:
+    branches: [main, master, dev]
+  push:
+    branches: [main, master, dev]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Typecheck, lint, format, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck (web)
+        run: npx tsc --noEmit -p packages/web/tsconfig.json
+
+      - name: Typecheck (extension)
+        run: npm run typecheck --workspace=@applymate/extension
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Prettier
+        run: npx prettier --check .
+
+      - name: Unit tests (web)
+        run: npm test --workspace=@applymate/web -- --reporter=dot
+
+      - name: Build extension
+        run: npm run build:extension
