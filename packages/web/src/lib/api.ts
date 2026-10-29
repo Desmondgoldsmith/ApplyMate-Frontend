@@ -422,6 +422,12 @@ function readCvContentVersion(v: unknown): number | undefined {
   return typeof v === 'number' && Number.isInteger(v) && v >= 0 ? v : undefined;
 }
 
+/**
+ * Multi-step AI requests (tailoring runs several model calls; accepts re-match the job). The API
+ * allows these 120s; stay just above so the server, not the browser, reports a timeout.
+ */
+const AI_LONG_REQUEST_TIMEOUT_MS = 125_000;
+
 /** Header carrying the `contentVersion` an editor save is based on. */
 const CV_BASE_VERSION_HEADER = 'X-CV-Base-Version';
 
@@ -7244,7 +7250,9 @@ const cv = {
     jobAnalysisId: string;
     selectedSkills: string[];
   }): Promise<TailorMutationResponse> => {
-    const res = await axiosClient.post<unknown>('/cv/tailor-draft', payload);
+    const res = await axiosClient.post<unknown>('/cv/tailor-draft', payload, {
+      timeout: AI_LONG_REQUEST_TIMEOUT_MS,
+    });
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeTailorMutationResponse(res.data);
   },
@@ -7256,6 +7264,7 @@ const cv = {
     const res = await axiosClient.post<unknown>(
       `/cv/tailor-draft/${encodeURIComponent(draftId)}/accept-section`,
       { sectionId, ...(opts?.overwriteEdits ? { overwriteEdits: true } : {}) },
+      { timeout: AI_LONG_REQUEST_TIMEOUT_MS },
     );
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeTailorMutationResponse(res.data);
@@ -7278,6 +7287,7 @@ const cv = {
     const res = await axiosClient.post<unknown>(
       `/cv/tailor-draft/${encodeURIComponent(draftId)}/accept-all`,
       opts?.overwriteEdits ? { overwriteEdits: true } : {},
+      { timeout: AI_LONG_REQUEST_TIMEOUT_MS },
     );
     throwIfApiFailureResponse(res.data, res.status);
     return normalizeTailorMutationResponse(res.data);
@@ -8327,6 +8337,7 @@ const jobs = {
       },
       {
         params: cvProfileId?.trim() ? { cvProfileId: cvProfileId.trim() } : {},
+        timeout: AI_LONG_REQUEST_TIMEOUT_MS,
       },
     );
     throwIfApiFailureResponse(res.data, res.status);
