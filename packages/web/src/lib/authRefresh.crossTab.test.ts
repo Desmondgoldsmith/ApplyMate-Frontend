@@ -219,14 +219,31 @@ describe('refreshAccessToken across tabs', { timeout: 20_000 }, () => {
     clearApplymateAuthCookies();
     writeApplymateAuthCookie(OLD_ACCESS);
     const tab = await openTab();
+    post.mockRejectedValueOnce(new Error('no API refresh cookie'));
 
     await expect(tab.refreshAccessToken()).resolves.toBe(false);
-    expect(refreshPosts()).toHaveLength(0);
+    expect(refreshPosts()).toEqual([
+      ['/auth/refresh', {}, { skipAuthRefresh: true }],
+    ]);
+    expect(tab.useAuthStore.getState().isAuthenticated).toBe(false);
 
     writeApplymateRefreshCookie(OLD_REFRESH);
     tab.useAuthStore.setState({ refreshToken: OLD_REFRESH });
 
     await expect(tab.refreshAccessToken()).resolves.toBe(true);
-    expect(refreshPosts()).toHaveLength(1);
+    expect(refreshPosts()).toHaveLength(2);
+  });
+
+  it('restores the session from the API cookie when no refresh token is readable', async () => {
+    installLockManager();
+    clearApplymateAuthCookies();
+    writeApplymateAuthCookie(OLD_ACCESS);
+    const tab = await openTab();
+
+    await expect(tab.refreshAccessToken()).resolves.toBe(true);
+    expect(refreshPosts()).toEqual([
+      ['/auth/refresh', {}, { skipAuthRefresh: true }],
+    ]);
+    expect(tab.useAuthStore.getState().accessToken).toBe(NEW_ACCESS);
   });
 });

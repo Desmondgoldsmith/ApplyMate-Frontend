@@ -60,6 +60,14 @@ export function isRefreshTokenReuseError(error: unknown): boolean {
   return blob.includes(REFRESH_TOKEN_REUSE_CODE);
 }
 
+/** API unreachable or failing (restart, deploy, proxy 502, rate limit) — the refresh token may still be valid. */
+function isTransientRefreshFailure(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false;
+  const status = error.response?.status;
+  if (status === undefined) return true;
+  return status >= 500 || status === 408 || status === 429;
+}
+
 /** Decode JWT `exp` (seconds since epoch); returns null when not a JWT. */
 export function decodeJwtExp(token: string): number | null {
   const parts = token.trim().split('.');
@@ -94,24 +102,31 @@ async function postRefreshWithApiCookie(): Promise<boolean> {
   const known = readKnownAuthTokens();
   return withAuthRefreshLock(async () => {
     if (adoptTokensRefreshedByAnotherTab(known)) return true;
-    try {
-      const res = await axiosClient.post<unknown>(
-        '/auth/refresh',
-        {},
-        { skipAuthRefresh: true },
-      );
-      throwIfApiFailureResponse(res.data, res.status);
-      const normalized = normalizeRefreshResponse(res.data);
-      const user = mapNormalizedUserToAuthUser(normalized.user);
-      useAuthStore
-        .getState()
-        .setAuth(user, normalized.accessToken, normalized.refreshToken);
-      broadcastAuthTokensUpdated();
-      return true;
-    } catch {
-      return false;
-    }
+    return (await postRefreshWithApiCookieHoldingLock()).ok;
   });
+}
+
+type RefreshAttempt = { ok: true } | { ok: false; error: unknown };
+
+/** Caller must hold the auth refresh lock (Web Locks are not re-entrant). */
+async function postRefreshWithApiCookieHoldingLock(): Promise<RefreshAttempt> {
+  try {
+    const res = await axiosClient.post<unknown>(
+      '/auth/refresh',
+      {},
+      { skipAuthRefresh: true },
+    );
+    throwIfApiFailureResponse(res.data, res.status);
+    const normalized = normalizeRefreshResponse(res.data);
+    const user = mapNormalizedUserToAuthUser(normalized.user);
+    useAuthStore
+      .getState()
+      .setAuth(user, normalized.accessToken, normalized.refreshToken);
+    broadcastAuthTokensUpdated();
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error };
+  }
 }
 
 /**
@@ -240,7 +255,15 @@ export async function refreshAccessToken(): Promise<boolean> {
     if (adoptTokensRefreshedByAnotherTab(known)) return true;
 
     const refreshToken = getRefreshTokenForRequest();
-    if (!refreshToken) return false;
+    if (!refreshToken) {
+      const viaCookie = await postRefreshWithApiCookieHoldingLock();
+      if (viaCookie.ok) return true;
+      /** Nothing left to refresh with: without this the caller keeps getting 401s on a dead session. */
+      if (!isTransientRefreshFailure(viaCookie.error)) {
+        forceAuthSignOut('expired');
+      }
+      return false;
+    }
 
     try {
       const normalized = await postRefresh(refreshToken);
@@ -257,7 +280,7 @@ export async function refreshAccessToken(): Promise<boolean> {
     } catch (error) {
       if (isRefreshTokenReuseError(error)) {
         forceAuthSignOut('reuse');
-      } else {
+      } else if (!isTransientRefreshFailure(error)) {
         forceAuthSignOut('expired');
       }
       return false;
@@ -307,10 +330,53 @@ function isLoginOrRegisterAttemptUrl(url: string | undefined): boolean {
 
 let refreshInterceptorInstalled = false;
 
+function readCurrentAccessToken(): string | null {
+  return (
+    useAuthStore.getState().accessToken?.trim() ||
+    readApplymateTokenFromCookie()?.trim() ||
+    null
+  );
+}
+
+function isAccessTokenExpired(token: string): boolean {
+  const exp = decodeJwtExp(token);
+  return exp != null && exp * 1000 <= Date.now() + 5_000;
+}
+
+function readSentBearer(config: InternalAxiosRequestConfig): string | null {
+  const raw = config.headers?.Authorization;
+  if (typeof raw !== 'string' || !raw.startsWith('Bearer ')) return null;
+  return raw.slice('Bearer '.length).trim() || null;
+}
+
 /** Attach 401 → refresh → retry once; sign out when refresh fails. */
 export function setupAuthRefreshInterceptor(client: AxiosInstance): void {
   if (refreshInterceptorInstalled) return;
   refreshInterceptorInstalled = true;
+
+  /**
+   * Runs before the header interceptor in `axios.ts` (axios runs later-registered request interceptors
+   * first). Requests wait for a rotation in flight — or start one when the access token is already
+   * expired — instead of firing with a dead token and each answering 401 (a burst on every page load).
+   */
+  client.interceptors.request.use(async (config) => {
+    if (
+      typeof window === 'undefined' ||
+      config.skipAuthRefresh ||
+      shouldSkipAuthRefresh(config.url)
+    ) {
+      return config;
+    }
+    if (refreshInFlight) {
+      await refreshInFlight.catch(() => false);
+      return config;
+    }
+    const access = readCurrentAccessToken();
+    if (access && isAccessTokenExpired(access) && getRefreshTokenForRequest()) {
+      await refreshAccessToken();
+    }
+    return config;
+  });
 
   client.interceptors.response.use(
     (response) => response,
@@ -338,6 +404,19 @@ export function setupAuthRefreshInterceptor(client: AxiosInstance): void {
       if (config._authRetry) {
         forceAuthSignOut('expired');
         return Promise.reject(error);
+      }
+
+      /** Tokens rotated while this request was in flight: retry with the new one, no second rotation. */
+      const sent = readSentBearer(config);
+      const current = readCurrentAccessToken();
+      if (
+        sent &&
+        current &&
+        sent !== current &&
+        !isAccessTokenExpired(current)
+      ) {
+        config._authRetry = true;
+        return client.request(config);
       }
 
       const refreshed = await refreshAccessToken();
