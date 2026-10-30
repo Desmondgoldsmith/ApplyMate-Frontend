@@ -36,11 +36,18 @@ function forwardRequestHeaders(req: NextRequest): Headers {
   return headers;
 }
 
+/**
+ * Node's fetch already decompressed the body (gzip / br from the API's compression), so the
+ * upstream Content-Encoding must not be forwarded — the browser would fail to decode the plain
+ * body and axios reports "Network Error" for every response larger than the 1KB threshold.
+ */
+const DECODED_BY_FETCH = new Set(['content-encoding']);
+
 function forwardResponseHeaders(upstream: Response): Headers {
   const headers = new Headers();
   upstream.headers.forEach((value, key) => {
     const lower = key.toLowerCase();
-    if (HOP_BY_HOP.has(lower)) return;
+    if (HOP_BY_HOP.has(lower) || DECODED_BY_FETCH.has(lower)) return;
     headers.set(key, value);
   });
   return headers;
