@@ -1,11 +1,12 @@
 'use client';
 
-import { LogOut, Settings, User } from 'lucide-react';
+import { LogOut, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -63,7 +64,7 @@ export function DashboardUserMenu({ className }: { className?: string }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-11 min-h-[44px] w-11 min-w-[44px] items-center justify-center rounded-full border border-white/10 bg-[#00C9B1]/15 text-[11px] font-semibold text-[#00C9B1] transition-colors hover:border-[#00C9B1]/40 hover:bg-[#00C9B1]/25 lg:h-8 lg:min-h-0 lg:w-8 lg:min-w-0"
+        className="flex h-11 min-h-[44px] w-11 min-w-[44px] items-center justify-center rounded-full border border-border-subtle bg-accent-subtle text-[11px] font-semibold text-accent-text transition-colors hover:border-accent-border hover:bg-accent-subtle lg:h-10 lg:min-h-0 lg:w-10 lg:min-w-0"
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label="Account menu"
@@ -77,54 +78,53 @@ export function DashboardUserMenu({ className }: { className?: string }) {
 
       {open ? (
         <div
-          className="absolute right-0 top-[calc(100%+0.5rem)] z-[80] w-52 overflow-hidden rounded-xl border border-white/10 bg-[#0c1010] py-1 shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
+          className="absolute right-0 top-[calc(100%+0.5rem)] z-[80] w-64 overflow-hidden rounded-xl border border-border-subtle bg-bg-surface py-1 shadow-overlay"
           role="menu"
         >
-          <div className="border-b border-white/[0.06] px-3 py-2">
-            <p className="truncate text-[13px] font-medium text-white">
+          <div className="border-b border-border-subtle px-3 py-2">
+            <p className="truncate text-[14px] font-semibold text-text-primary">
               {name}
             </p>
             {user?.email ? (
-              <p className="truncate text-[11px] text-white/40">{user.email}</p>
+              <p className="truncate text-[12px] text-text-secondary">
+                {user.email}
+              </p>
             ) : null}
             {marketingPaused ? (
               <Link
                 href="/dashboard/settings?tab=notifications"
-                className="mt-1 block truncate text-[11px] text-amber-200/90 hover:underline"
+                className="mt-1 block truncate text-[11px] text-warning-text hover:underline"
                 onClick={() => setOpen(false)}
               >
                 Marketing nudges paused
               </Link>
             ) : null}
           </div>
+          <div className="flex items-center justify-between gap-2 border-b border-border-subtle px-3 py-2.5">
+            <span className="text-[13px] font-medium text-text-secondary">
+              Theme
+            </span>
+            <ThemeToggle className="shadow-none" />
+          </div>
           <Link
             href="/dashboard/settings"
             role="menuitem"
-            className="flex min-h-[44px] items-center gap-2 px-3 py-2 text-[13px] font-medium text-white/80 transition-colors hover:bg-white/[0.05] hover:text-white"
+            className="flex min-h-[44px] items-center gap-2 px-3 py-2 text-[14px] font-medium text-text-primary transition-colors hover:bg-bg-hover"
             onClick={() => setOpen(false)}
           >
-            <User className="h-4 w-4 text-white/45" />
-            Profile
-          </Link>
-          <Link
-            href="/dashboard/settings"
-            role="menuitem"
-            className="flex min-h-[44px] items-center gap-2 px-3 py-2 text-[13px] font-medium text-white/80 transition-colors hover:bg-white/[0.05] hover:text-white"
-            onClick={() => setOpen(false)}
-          >
-            <Settings className="h-4 w-4 text-white/45" />
+            <Settings className="h-4 w-4 text-text-tertiary" />
             Settings
           </Link>
           <button
             type="button"
             role="menuitem"
-            className="flex w-full min-h-[44px] items-center gap-2 px-3 py-2 text-left text-[13px] font-medium text-white/80 transition-colors hover:bg-white/[0.05] hover:text-white"
+            className="flex w-full min-h-[44px] items-center gap-2 px-3 py-2 text-left text-[14px] font-medium text-text-primary transition-colors hover:bg-bg-hover"
             onClick={() => {
               setOpen(false);
               setLogoutOpen(true);
             }}
           >
-            <LogOut className="h-4 w-4 text-white/45" />
+            <LogOut className="h-4 w-4 text-text-tertiary" />
             Sign out
           </button>
         </div>

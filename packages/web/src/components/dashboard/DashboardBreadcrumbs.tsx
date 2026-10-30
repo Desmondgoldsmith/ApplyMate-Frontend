@@ -13,28 +13,28 @@ import { cn } from '@/lib/utils';
 
 function buildBaseTrail(pathname: string): BreadcrumbItem[] {
   const path = pathname.split('?')[0] ?? pathname;
-  const crumbs: BreadcrumbItem[] = [{ label: 'Dashboard', href: '/dashboard' }];
+  const crumbs: BreadcrumbItem[] = [{ label: 'Home', href: '/dashboard' }];
 
   if (path === '/dashboard') return crumbs;
 
   if (path.startsWith('/dashboard/job-board')) {
-    crumbs.push({ label: 'Job Board', href: '/dashboard/job-board' });
+    crumbs.push({ label: 'Find jobs', href: '/dashboard/job-board' });
     return crumbs;
   }
 
   if (path.startsWith('/dashboard/jobs/analyze')) {
-    crumbs.push({ label: 'Job Analyzer', href: '/dashboard/jobs/analyze' });
+    crumbs.push({ label: 'Check a job', href: '/dashboard/jobs/analyze' });
     return crumbs;
   }
 
   if (path === '/dashboard/jobs/archive') {
-    crumbs.push({ label: 'Job Hub', href: '/dashboard/jobs' });
+    crumbs.push({ label: 'My applications', href: '/dashboard/jobs' });
     crumbs.push({ label: 'Archived jobs' });
     return crumbs;
   }
 
   if (path.startsWith('/dashboard/jobs')) {
-    crumbs.push({ label: 'Job Hub', href: '/dashboard/jobs' });
+    crumbs.push({ label: 'My applications', href: '/dashboard/jobs' });
     return crumbs;
   }
 
@@ -54,12 +54,12 @@ function buildBaseTrail(pathname: string): BreadcrumbItem[] {
   }
 
   if (path.startsWith('/dashboard/cv-profiles')) {
-    crumbs.push({ label: 'Resume Profiles', href: '/dashboard/cv-profiles' });
+    crumbs.push({ label: 'CV versions', href: '/dashboard/cv-profiles' });
     return crumbs;
   }
 
   if (path.startsWith('/dashboard/cv')) {
-    crumbs.push({ label: 'Resume Clinic', href: '/dashboard/cv' });
+    crumbs.push({ label: 'My CV', href: '/dashboard/cv' });
     return crumbs;
   }
 
@@ -69,7 +69,7 @@ function buildBaseTrail(pathname: string): BreadcrumbItem[] {
   }
 
   if (path.startsWith('/dashboard/interview')) {
-    crumbs.push({ label: 'Interview prep', href: '/dashboard/interview' });
+    crumbs.push({ label: 'Interview practice', href: '/dashboard/interview' });
     return crumbs;
   }
 
@@ -118,7 +118,7 @@ export function DashboardBreadcrumbs({ className }: { className?: string }) {
         Boolean(searchParams.get('bookmarkId')?.trim()) ||
         Boolean(searchParams.get('jobListingId')?.trim()));
 
-    if (onJobHubDetail && base[base.length - 1]?.label === 'Job Hub') {
+    if (onJobHubDetail && base[base.length - 1]?.label === 'My applications') {
       return [...base, { label: 'Job details' }];
     }
 
@@ -130,8 +130,8 @@ export function DashboardBreadcrumbs({ className }: { className?: string }) {
   if (trail.length <= 1 && trail[0]?.href === '/dashboard') {
     return (
       <nav aria-label="Breadcrumb" className={cn('min-w-0', className)}>
-        <span className={cn(crumbClass, 'font-semibold text-white/95')}>
-          {trail[0]?.label ?? 'Dashboard'}
+        <span className={cn(crumbClass, 'font-semibold text-text-primary')}>
+          {trail[0]?.label ?? 'Home'}
         </span>
       </nav>
     );
@@ -149,7 +149,7 @@ export function DashboardBreadcrumbs({ className }: { className?: string }) {
             >
               {i > 0 ? (
                 <ChevronRight
-                  className="h-3.5 w-3.5 shrink-0 text-white/25"
+                  className="h-3.5 w-3.5 shrink-0 text-text-disabled"
                   aria-hidden
                 />
               ) : null}
@@ -158,7 +158,7 @@ export function DashboardBreadcrumbs({ className }: { className?: string }) {
                   href={item.href}
                   className={cn(
                     crumbClass,
-                    'text-white/55 transition hover:text-[#00C9B1]',
+                    'text-text-tertiary transition hover:text-accent-text',
                   )}
                 >
                   {item.label}
@@ -167,7 +167,9 @@ export function DashboardBreadcrumbs({ className }: { className?: string }) {
                 <span
                   className={cn(
                     crumbClass,
-                    isLast ? 'font-semibold text-white/95' : 'text-white/55',
+                    isLast
+                      ? 'font-semibold text-text-primary'
+                      : 'text-text-tertiary',
                   )}
                   aria-current={isLast ? 'page' : undefined}
                 >

@@ -31,7 +31,7 @@ const SPARK_ICON = (
 
 /**
  * Server-backed daily AI usage from `GET /users/me` (UTC day; FREE tier cap, PAID unlimited).
- * Premium pill: teal when under cap, amber pulse at limit; links to pricing for upgrades.
+ * Usage pill: accent under the cap, warning colours at the limit; links to pricing for upgrades.
  */
 export function AiUsageBadge({
   className = '',
@@ -57,12 +57,12 @@ export function AiUsageBadge({
         data-tour="ai-counter"
         className={cn(
           pillClass,
-          'border-white/10 bg-white/[0.04] text-[11px] font-medium text-white/45 sm:text-[13px]',
+          'border-border-subtle bg-bg-surface text-[11px] font-medium text-text-tertiary sm:text-[13px]',
         )}
         title={title}
       >
         {SPARK_ICON}
-        <span className="text-white/40">{compact ? '…' : 'Usage…'}</span>
+        <span className="text-text-tertiary">{compact ? '…' : 'Usage…'}</span>
       </div>
     );
   }
@@ -73,22 +73,24 @@ export function AiUsageBadge({
         data-tour="ai-counter"
         className={cn(
           pillClass,
-          'cursor-default border-[rgba(0,201,177,0.35)] bg-[rgba(0,201,177,0.08)] text-[#00C9B1]',
+          'cursor-default border-accent-border bg-accent-subtle text-accent-text',
         )}
         title={title}
       >
-        <span className="text-[#00C9B1]">{SPARK_ICON}</span>
+        <span className="text-accent-text">{SPARK_ICON}</span>
         {compact ? (
-          <span className="min-w-0 truncate text-[10px] font-medium leading-tight tabular-nums text-white/90 sm:text-[13px]">
+          <span className="min-w-0 truncate text-[10px] font-medium leading-tight tabular-nums text-text-primary sm:text-[13px]">
             Unlimited AI
-            <span className="hidden font-normal text-white/45 sm:inline sm:ml-1">
+            <span className="hidden font-normal text-text-tertiary sm:inline sm:ml-1">
               ({u.dayKey})
             </span>
           </span>
         ) : (
-          <span className="text-[13px] font-medium tabular-nums text-white/90">
+          <span className="text-[13px] font-medium tabular-nums text-text-primary">
             Unlimited AI
-            <span className="ml-1 font-normal text-white/45">({u.dayKey})</span>
+            <span className="ml-1 font-normal text-text-tertiary">
+              ({u.dayKey})
+            </span>
           </span>
         )}
       </div>
@@ -109,35 +111,37 @@ export function AiUsageBadge({
         pillClass,
         'cursor-pointer',
         atLimit
-          ? 'border-amber-500/40 bg-amber-500/10 text-amber-100 shadow-[0_0_12px_rgba(245,158,11,0.35)] motion-safe:animate-[dashboard-ai-pulse_2.4s_ease-in-out_infinite]'
-          : 'border-[rgba(0,201,177,0.35)] bg-[rgba(0,201,177,0.08)] text-white/90 hover:border-[#00C9B1]/55 hover:bg-[rgba(0,201,177,0.12)]',
+          ? 'border-warning-text/40 bg-warning-subtle text-warning-text'
+          : 'border-accent-border bg-accent-subtle text-text-primary hover:border-accent-border hover:bg-accent-subtle',
       )}
       title={
         atLimit ? "Today's free AI limit reached — click to view plans" : title
       }
     >
-      <span className={atLimit ? 'text-amber-400' : 'text-[#00C9B1]'}>
+      <span className={atLimit ? 'text-warning-text' : 'text-accent-text'}>
         {SPARK_ICON}
       </span>
       {compact ? (
         <span
           className={cn(
             'min-w-0 truncate text-[10px] font-semibold leading-tight tabular-nums sm:text-[13px] sm:font-medium sm:leading-normal',
-            atLimit ? 'text-amber-100' : 'text-white/90',
+            atLimit ? 'text-warning-text' : 'text-text-primary',
           )}
         >
           {u.used} / {limit}
-          <span className="font-normal text-white/50"> free AI today</span>
+          <span className="font-normal text-text-tertiary"> free AI today</span>
         </span>
       ) : (
         <span
           className={cn(
             'min-w-0 truncate text-[13px] font-medium tabular-nums',
-            atLimit ? 'text-amber-100' : 'text-white/90',
+            atLimit ? 'text-warning-text' : 'text-text-primary',
           )}
         >
           {u.used} / {limit}
-          <span className="ml-1 font-normal text-white/50">free AI today</span>
+          <span className="ml-1 font-normal text-text-tertiary">
+            free AI today
+          </span>
         </span>
       )}
     </Link>

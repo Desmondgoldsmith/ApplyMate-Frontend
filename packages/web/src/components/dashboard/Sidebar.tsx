@@ -15,6 +15,8 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 
+import { BrandMark } from '@/components/brand/BrandMark';
+import { CareerKiteMark } from '@/components/brand/CareerKiteMark';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import {
@@ -77,8 +79,8 @@ function CollapsedNavFlyout({
             }}
             className={cn(
               'pointer-events-none w-max max-w-[240px] select-none',
-              'rounded-lg border border-[#00C9B1]/50 bg-[#051815] px-3 py-2 text-left text-[12px] font-medium leading-snug text-[#e6fdf9]/95',
-              'shadow-[0_10px_40px_rgba(0,201,177,0.18)] ring-1 ring-[#00C9B1]/20',
+              'rounded-lg border border-accent-border bg-bg-surface px-3 py-2 text-left text-[12px] font-medium leading-snug text-text-primary',
+              'shadow-overlay',
             )}
           >
             {label}
@@ -181,24 +183,26 @@ export function Sidebar() {
     const link = (
       <Link
         href={item.href}
+        aria-label={collapsed && !opts.nested ? item.label : undefined}
+        aria-current={active ? 'page' : undefined}
         {...(tourAttr ? { 'data-tour': tourAttr } : {})}
         className={cn(
-          'relative flex min-h-[40px] w-full items-center gap-2 rounded-[10px] py-2 text-[13px] font-medium transition-colors',
+          'relative flex min-h-[42px] w-full items-center gap-2.5 rounded-xl py-2 text-[14px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus',
           collapsed && !opts.nested
-            ? 'justify-center px-0 text-white/45 hover:bg-white/[0.05] hover:text-white/80'
+            ? 'justify-center px-0 text-text-tertiary hover:bg-bg-hover hover:text-text-secondary'
             : active
               ? cn(
-                  'border-l-2 border-[#00C9B1] bg-[rgba(0,201,177,0.12)] text-[#00C9B1]',
+                  'border-l-2 border-accent-solid bg-accent-subtle text-accent-text',
                   opts.nested ? 'pl-8 pr-2' : 'pl-[10px]',
                 )
               : cn(
-                  'border-l-2 border-transparent text-white/45 hover:bg-white/[0.05] hover:text-white/80',
+                  'border-l-2 border-transparent text-text-tertiary hover:bg-bg-hover hover:text-text-secondary',
                   opts.nested ? 'pl-8 pr-2' : 'pl-3',
                 ),
           collapsed &&
             !opts.nested &&
             active &&
-            'bg-[rgba(0,201,177,0.12)] text-[#00C9B1]',
+            'bg-accent-subtle text-accent-text',
         )}
       >
         {active && !opts.nested ? (
@@ -210,7 +214,7 @@ export function Sidebar() {
         <Icon
           className={cn(
             'h-[18px] w-[18px] shrink-0',
-            active ? 'text-[#00C9B1]' : 'text-white/45',
+            active ? 'text-accent-text' : 'text-text-tertiary',
           )}
         />
         <AnimatePresence>
@@ -223,7 +227,7 @@ export function Sidebar() {
             >
               <span className="truncate">{item.label}</span>
               {showSoonBadge ? (
-                <span className="ml-auto shrink-0 rounded-full bg-[#00C9B1]/15 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-[#00C9B1]">
+                <span className="ml-auto shrink-0 rounded-full bg-accent-subtle px-1.5 py-px text-[10px] font-semibold text-accent-text">
                   Soon
                 </span>
               ) : null}
@@ -247,7 +251,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'relative z-10 hidden h-screen shrink-0 border-r border-[#00C9B1]/15 bg-[#0A0A0A]/95 backdrop-blur-md transition-[width] duration-300 lg:flex lg:flex-col',
+        'relative z-10 hidden h-screen shrink-0 border-r border-border-subtle bg-bg-surface transition-[width] duration-300 lg:flex lg:flex-col',
         collapsed ? 'w-[60px]' : 'w-[216px]',
       )}
     >
@@ -258,15 +262,18 @@ export function Sidebar() {
             collapsed && 'justify-center',
           )}
         >
-          <span className="h-5 w-5 rounded-full bg-[#00C9B1]" />
-          {!collapsed ? (
-            <span className="font-semibold text-white">CareerKite</span>
-          ) : null}
+          {collapsed ? (
+            <span className="text-text-primary">
+              <CareerKiteMark size={26} title="CareerKite" />
+            </span>
+          ) : (
+            <BrandMark size={28} />
+          )}
         </div>
         <button
           type="button"
           onClick={toggleSidebar}
-          className="text-white/60 transition-colors hover:text-[#00C9B1]"
+          className="text-text-secondary transition-colors hover:text-accent-text"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? (
@@ -284,7 +291,11 @@ export function Sidebar() {
             const groupActive = isDashboardNavEntryActive(pathname, item);
             if (collapsed) {
               return (
-                <div key={item.id} className="space-y-1">
+                <div
+                  key={item.id}
+                  className="space-y-1"
+                  data-tour={item.tourAttr}
+                >
                   {item.children.map((ch) => renderLeaf(ch, { nested: false }))}
                 </div>
               );
@@ -293,25 +304,26 @@ export function Sidebar() {
               <div key={item.id} className="space-y-0.5">
                 <button
                   type="button"
+                  data-tour={item.tourAttr}
                   onClick={() => setJobsOpen((o) => !o)}
                   className={cn(
-                    'flex w-full min-h-[40px] items-center gap-2 rounded-[10px] border-l-2 py-2 pl-3 pr-2 text-left text-[13px] font-medium transition-colors',
+                    'flex w-full min-h-[42px] items-center gap-2.5 rounded-xl border-l-2 py-2 pl-3 pr-2 text-left text-[14px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus',
                     groupActive
-                      ? 'border-[#00C9B1] bg-[rgba(0,201,177,0.08)] text-[#00C9B1]'
-                      : 'border-transparent text-white/45 hover:bg-white/[0.05] hover:text-white/80',
+                      ? 'border-accent-solid bg-accent-subtle text-accent-text'
+                      : 'border-transparent text-text-tertiary hover:bg-bg-hover hover:text-text-secondary',
                   )}
                   aria-expanded={jobsOpen}
                 >
                   <Icon
                     className={cn(
                       'h-[18px] w-[18px] shrink-0',
-                      groupActive ? 'text-[#00C9B1]' : 'text-white/45',
+                      groupActive ? 'text-accent-text' : 'text-text-tertiary',
                     )}
                   />
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
                   <ChevronDown
                     className={cn(
-                      'h-4 w-4 shrink-0 text-white/35 transition-transform',
+                      'h-4 w-4 shrink-0 text-text-tertiary transition-transform',
                       jobsOpen && 'rotate-180',
                     )}
                     aria-hidden
@@ -339,7 +351,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t border-[#00C9B1]/10 p-3">
+      <div className="border-t border-border-subtle p-3">
         <div className="mb-3 flex items-center gap-2">
           {showUserSkeleton ? (
             <>
@@ -353,13 +365,15 @@ export function Sidebar() {
             </>
           ) : (
             <>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#00C9B1]/20 text-[10px] font-bold leading-none text-[#00C9B1]">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-[10px] font-bold leading-none text-accent-text">
                 {initials}
               </div>
               {!collapsed ? (
                 <div className="min-w-0">
-                  <p className="truncate text-sm text-white">{displayName}</p>
-                  <p className="truncate text-xs text-white/45">
+                  <p className="truncate text-sm text-text-primary">
+                    {displayName}
+                  </p>
+                  <p className="truncate text-xs text-text-tertiary">
                     {user?.email}
                   </p>
                 </div>
@@ -372,7 +386,7 @@ export function Sidebar() {
             <button
               type="button"
               onClick={() => setLogoutOpen(true)}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-[10px] py-2 text-xs text-white/45 hover:bg-white/[0.05] hover:text-white/75"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-[10px] py-2 text-xs text-text-tertiary hover:bg-bg-hover hover:text-text-secondary"
               aria-label="Sign out"
             >
               <LogOut className="h-3.5 w-3.5" />
@@ -382,7 +396,7 @@ export function Sidebar() {
           <button
             type="button"
             onClick={() => setLogoutOpen(true)}
-            className="inline-flex items-center gap-2 text-xs text-white/45 hover:text-white/75"
+            className="inline-flex items-center gap-2 text-xs text-text-tertiary hover:text-text-secondary"
           >
             <LogOut className="h-3.5 w-3.5" />
             Sign Out

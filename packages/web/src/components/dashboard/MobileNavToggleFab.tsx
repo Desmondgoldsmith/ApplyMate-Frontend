@@ -20,10 +20,10 @@ export function MobileNavToggleFab() {
         bottom: navVisible ? '72px' : navBottomOffset,
       }}
       className={cn(
-        'fixed left-3 z-[88] flex h-11 w-11 touch-manipulation items-center justify-center rounded-full border shadow-[0_10px_28px_rgba(0,0,0,0.42)] transition-[border-color,background-color,bottom] duration-200 lg:hidden',
+        'fixed left-3 z-[88] flex h-11 w-11 touch-manipulation items-center justify-center rounded-full border shadow-overlay transition-[border-color,background-color,bottom] duration-200 lg:hidden',
         navVisible
-          ? 'border-[#00C9B1]/55 bg-[#00C9B1]/15 text-[#00C9B1]'
-          : 'border-white/15 bg-[#0C0F0F]/95 text-white/75',
+          ? 'border-accent-border bg-accent-subtle text-accent-text'
+          : 'border-border-default bg-bg-surface text-text-secondary',
       )}
     >
       {navVisible ? (

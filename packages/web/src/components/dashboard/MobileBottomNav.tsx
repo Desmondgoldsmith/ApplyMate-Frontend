@@ -20,7 +20,7 @@ const PRIMARY_MOBILE_NAV_IDS = [
   'overview',
   'job-workspace',
   'cv',
-  'cv-profiles',
+  'interviews',
 ] as const;
 
 export function MobileBottomNav() {
@@ -102,7 +102,7 @@ export function MobileBottomNav() {
             <motion.button
               type="button"
               aria-label="Close more menu"
-              className="fixed inset-0 z-[42] bg-black/55 lg:hidden"
+              className="fixed inset-0 z-[42] bg-bg-overlay lg:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -112,20 +112,20 @@ export function MobileBottomNav() {
             <motion.div
               style={{ bottom: submenuBottom }}
               data-tour="mobile-more-sheet"
-              className="fixed inset-x-0 z-[43] mx-2 rounded-2xl border border-[#00C9B1]/30 bg-[#0C0F0F]/98 p-2 shadow-[0_-10px_28px_rgba(0,0,0,0.38)] backdrop-blur-md lg:hidden"
+              className="fixed inset-x-0 z-[43] mx-2 rounded-2xl border border-accent-border bg-bg-surface p-2 shadow-overlay backdrop-blur-md lg:hidden"
               initial={{ y: 16, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 16, opacity: 0 }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             >
               <div className="mb-1 flex items-center justify-between px-2 py-1">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/45">
+                <p className="text-[13px] font-semibold text-text-secondary">
                   More
                 </p>
                 <button
                   type="button"
                   onClick={() => setMoreOpen(false)}
-                  className="rounded-md border border-white/12 p-1.5 text-white/55 hover:border-[#00C9B1]/40 hover:bg-[#00C9B1]/15 hover:text-[#00C9B1]"
+                  className="rounded-md border border-border-default p-1.5 text-text-tertiary hover:border-accent-border hover:bg-accent-subtle hover:text-accent-text"
                   aria-label="Close more menu"
                 >
                   <X className="h-4 w-4" />
@@ -143,10 +143,11 @@ export function MobileBottomNav() {
                       href={item.href}
                       {...(tourAttr ? { 'data-tour': tourAttr } : {})}
                       className={cn(
-                        'flex min-h-[3.7rem] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium leading-tight text-white/55 transition-colors',
+                        'flex min-h-[3.7rem] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium leading-tight text-text-tertiary transition-colors',
                         active &&
-                          'bg-[#00C9B1]/18 text-white shadow-[inset_0_0_0_1px_rgba(0,201,177,0.35)]',
-                        !active && 'hover:bg-white/[0.06] hover:text-white/80',
+                          'bg-accent-subtle text-text-primary shadow-[inset_0_0_0_1px_var(--ck-accent-border)]',
+                        !active &&
+                          'hover:bg-bg-hover hover:text-text-secondary',
                         soon && 'opacity-75',
                       )}
                       onClick={() => setMoreOpen(false)}
@@ -154,16 +155,14 @@ export function MobileBottomNav() {
                       <Icon
                         className={cn(
                           'h-[17px] w-[17px] shrink-0',
-                          active
-                            ? 'text-[#00C9B1]'
-                            : 'text-[rgba(240,244,242,0.35)]',
+                          active ? 'text-accent-text' : 'text-text-tertiary',
                         )}
                       />
                       <span className="line-clamp-2 w-full text-center">
                         {item.shortLabel}
                       </span>
                       {soon ? (
-                        <span className="text-[8px] font-semibold uppercase tracking-wide text-[#00C9B1]">
+                        <span className="text-[10px] font-semibold text-accent-text">
                           Soon
                         </span>
                       ) : null}
@@ -182,7 +181,7 @@ export function MobileBottomNav() {
             <motion.button
               type="button"
               aria-label="Close jobs menu"
-              className="fixed inset-0 z-[42] bg-black/55 lg:hidden"
+              className="fixed inset-0 z-[42] bg-bg-overlay lg:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -192,18 +191,20 @@ export function MobileBottomNav() {
             <motion.div
               style={{ bottom: submenuBottom }}
               data-tour="mobile-jobs-sheet"
-              className="fixed inset-x-0 z-[43] mx-2 max-h-[min(70vh,420px)] overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#0F1512] shadow-[0_-10px_28px_rgba(0,0,0,0.38)] backdrop-blur-md lg:hidden"
+              className="fixed inset-x-0 z-[43] mx-2 max-h-[min(70vh,420px)] overflow-hidden rounded-2xl border border-border-subtle bg-bg-surface shadow-overlay backdrop-blur-md lg:hidden"
               initial={{ y: 16, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 16, opacity: 0 }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             >
-              <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] px-3 py-2.5">
-                <p className="text-[15px] font-semibold text-[#F0F4F2]">Jobs</p>
+              <div className="flex items-center justify-between border-b border-border-subtle px-3 py-2.5">
+                <p className="text-[15px] font-semibold text-text-primary">
+                  Jobs
+                </p>
                 <button
                   type="button"
                   onClick={() => setJobsMenuOpen(false)}
-                  className="rounded-md border border-white/12 p-1.5 text-white/55 hover:border-[#00C9B1]/40 hover:bg-[rgba(0,201,177,0.05)] hover:text-[#00C9B1]"
+                  className="rounded-md border border-border-default p-1.5 text-text-tertiary hover:border-accent-border hover:bg-accent-subtle hover:text-accent-text"
                   aria-label="Close jobs menu"
                 >
                   <X className="h-4 w-4" />
@@ -222,11 +223,11 @@ export function MobileBottomNav() {
                         href={item.href}
                         {...(tourAttr ? { 'data-tour': tourAttr } : {})}
                         className={cn(
-                          'flex h-[60px] w-full min-w-0 items-center gap-3 rounded-[10px] border border-[rgba(255,255,255,0.08)] bg-[#0F1512] px-3 text-[13px] font-medium text-[rgba(240,244,242,0.60)] transition-colors',
+                          'flex h-[60px] w-full min-w-0 items-center gap-3 rounded-[10px] border border-border-subtle bg-bg-surface px-3 text-[13px] font-medium text-text-secondary transition-colors',
                           active &&
-                            'border-[#00C9B1]/40 bg-[rgba(0,201,177,0.05)] text-[#F0F4F2]',
+                            'border-accent-border bg-accent-subtle text-text-primary',
                           !active &&
-                            'hover:border-[#00C9B1]/40 hover:bg-[rgba(0,201,177,0.05)] hover:text-[#F0F4F2]',
+                            'hover:border-accent-border hover:bg-accent-subtle hover:text-text-primary',
                           soon && 'opacity-75',
                         )}
                         onClick={() => setJobsMenuOpen(false)}
@@ -234,16 +235,14 @@ export function MobileBottomNav() {
                         <Icon
                           className={cn(
                             'h-6 w-6 shrink-0',
-                            active
-                              ? 'text-[#00C9B1]'
-                              : 'text-[rgba(240,244,242,0.60)]',
+                            active ? 'text-accent-text' : 'text-text-secondary',
                           )}
                         />
                         <span className="min-w-0 flex-1 text-left">
                           {item.shortLabel}
                         </span>
                         {soon ? (
-                          <span className="text-[10px] font-semibold uppercase tracking-wide text-[#00C9B1]">
+                          <span className="text-[10px] font-semibold text-accent-text">
                             Soon
                           </span>
                         ) : null}
@@ -264,7 +263,7 @@ export function MobileBottomNav() {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-            className="fixed bottom-0 left-0 right-0 z-40 border-t border-[rgba(255,255,255,0.08)] bg-[#0F1512]/95 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-8px_24px_rgba(0,0,0,0.35)] backdrop-blur-md lg:hidden"
+            className="fixed bottom-0 left-0 right-0 z-40 border-t border-border-subtle bg-bg-surface pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 shadow-overlay backdrop-blur-md lg:hidden"
             aria-label="Main navigation"
             data-tour="mobile-bottom-nav"
           >
@@ -281,14 +280,14 @@ export function MobileBottomNav() {
                     <button
                       key={item.id}
                       type="button"
-                      data-tour="nav-jobs-workspace"
+                      data-tour={item.tourAttr}
                       onClick={() => setJobsMenuOpen((v) => !v)}
                       className={cn(
                         'flex min-h-[4.1rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium leading-tight transition-colors active:scale-[0.98]',
                         active
-                          ? 'text-[#00C9B1]'
-                          : 'text-[rgba(240,244,242,0.35)] hover:text-[rgba(240,244,242,0.60)]',
-                        !active && 'hover:bg-white/[0.04]',
+                          ? 'text-accent-text'
+                          : 'text-text-tertiary hover:text-text-secondary',
+                        !active && 'hover:bg-bg-hover',
                       )}
                       aria-expanded={jobsMenuOpen}
                       aria-haspopup="menu"
@@ -296,15 +295,13 @@ export function MobileBottomNav() {
                       <Briefcase
                         className={cn(
                           'h-[18px] w-[18px] shrink-0',
-                          active
-                            ? 'text-[#00C9B1]'
-                            : 'text-[rgba(240,244,242,0.35)]',
+                          active ? 'text-accent-text' : 'text-text-tertiary',
                         )}
                       />
                       <span
                         className={cn(
                           'line-clamp-2 w-full text-center',
-                          active && 'text-[#00C9B1]',
+                          active && 'text-accent-text',
                         )}
                       >
                         {item.shortLabel}
@@ -324,25 +321,23 @@ export function MobileBottomNav() {
                     className={cn(
                       'flex min-h-[4.1rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium leading-tight transition-colors active:scale-[0.98]',
                       active
-                        ? 'text-[#00C9B1]'
-                        : 'text-[rgba(240,244,242,0.35)] hover:text-[rgba(240,244,242,0.60)]',
-                      !active && 'hover:bg-white/[0.04]',
+                        ? 'text-accent-text'
+                        : 'text-text-tertiary hover:text-text-secondary',
+                      !active && 'hover:bg-bg-hover',
                       soon && 'opacity-75',
                     )}
                   >
                     <Icon
                       className={cn(
                         'h-[18px] w-[18px] shrink-0',
-                        active
-                          ? 'text-[#00C9B1]'
-                          : 'text-[rgba(240,244,242,0.35)]',
+                        active ? 'text-accent-text' : 'text-text-tertiary',
                       )}
                     />
                     <span className="line-clamp-2 w-full text-center">
                       {item.shortLabel}
                     </span>
                     {soon ? (
-                      <span className="text-[8px] font-semibold uppercase tracking-wide text-[#00C9B1]">
+                      <span className="text-[10px] font-semibold text-accent-text">
                         Soon
                       </span>
                     ) : null}
@@ -357,9 +352,9 @@ export function MobileBottomNav() {
                 className={cn(
                   'flex min-h-[4.1rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium leading-tight transition-colors',
                   moreActive || moreOpen
-                    ? 'text-[#00C9B1]'
-                    : 'text-[rgba(240,244,242,0.35)] hover:text-[rgba(240,244,242,0.60)]',
-                  !(moreActive || moreOpen) && 'hover:bg-white/[0.04]',
+                    ? 'text-accent-text'
+                    : 'text-text-tertiary hover:text-text-secondary',
+                  !(moreActive || moreOpen) && 'hover:bg-bg-hover',
                 )}
                 aria-label="More navigation options"
                 aria-expanded={moreOpen}
@@ -369,14 +364,14 @@ export function MobileBottomNav() {
                   className={cn(
                     'h-[18px] w-[18px] shrink-0',
                     moreActive || moreOpen
-                      ? 'text-[#00C9B1]'
-                      : 'text-[rgba(240,244,242,0.35)]',
+                      ? 'text-accent-text'
+                      : 'text-text-tertiary',
                   )}
                 />
                 <span
                   className={cn(
                     'w-full text-center',
-                    (moreActive || moreOpen) && 'text-[#00C9B1]',
+                    (moreActive || moreOpen) && 'text-accent-text',
                   )}
                 >
                   More

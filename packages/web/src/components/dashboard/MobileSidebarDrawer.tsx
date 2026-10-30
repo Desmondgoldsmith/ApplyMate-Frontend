@@ -21,6 +21,7 @@ import { clearJobHubBrowserStorage } from '@/lib/jobHubClear';
 import { getDisplayInitials, getDisplayName } from '@/lib/display-name';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
+import { BrandMark } from '@/components/brand/BrandMark';
 
 type Props = {
   open: boolean;
@@ -84,19 +85,19 @@ export function MobileSidebarDrawer({ open, onClose }: Props) {
           'flex min-h-[48px] items-center gap-3 rounded-[10px] py-2.5 text-[14px] font-medium transition-colors',
           nested ? 'pl-6 pr-3' : 'px-3',
           active
-            ? 'border-l-2 border-[#00C9B1] bg-[#00C9B1]/12 text-[#00C9B1]'
-            : 'border-l-2 border-transparent text-white/45 hover:bg-white/[0.05] hover:text-white/80',
+            ? 'border-l-2 border-accent-solid bg-accent-subtle text-accent-text'
+            : 'border-l-2 border-transparent text-text-tertiary hover:bg-bg-hover hover:text-text-secondary',
         )}
       >
         <Icon
           className={cn(
             'h-5 w-5 shrink-0',
-            active ? 'text-[#00C9B1]' : 'text-white/45',
+            active ? 'text-accent-text' : 'text-text-tertiary',
           )}
         />
         <span className="min-w-0 flex-1 truncate">{item.label}</span>
         {soon ? (
-          <span className="shrink-0 rounded-full bg-[#00C9B1]/15 px-1.5 py-px text-[9px] font-semibold uppercase text-[#00C9B1]">
+          <span className="shrink-0 rounded-full bg-accent-subtle px-1.5 py-px text-[10px] font-semibold text-accent-text">
             Soon
           </span>
         ) : null}
@@ -111,7 +112,7 @@ export function MobileSidebarDrawer({ open, onClose }: Props) {
           <motion.button
             type="button"
             aria-label="Close menu"
-            className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-[60] bg-bg-overlay backdrop-blur-sm lg:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -124,7 +125,7 @@ export function MobileSidebarDrawer({ open, onClose }: Props) {
       <AnimatePresence>
         {open ? (
           <motion.aside
-            className="fixed inset-y-0 left-0 z-[70] flex w-[min(88vw,300px)] max-w-[300px] flex-col border-r border-[#00C9B1]/15 bg-[#0A0A0A]/98 shadow-2xl backdrop-blur-md lg:hidden"
+            className="fixed inset-y-0 left-0 z-[70] flex w-[min(88vw,300px)] max-w-[300px] flex-col border-r border-border-subtle bg-bg-surface shadow-overlay lg:hidden"
             initial={{ x: '-100%' }}
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
@@ -134,17 +135,12 @@ export function MobileSidebarDrawer({ open, onClose }: Props) {
               ease: [0.22, 1, 0.36, 1],
             }}
           >
-            <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
-              <div className="flex items-center gap-2">
-                <span className="h-5 w-5 rounded-full bg-[#00C9B1]" />
-                <span className="text-[15px] font-semibold text-white/90">
-                  CareerKite
-                </span>
-              </div>
+            <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
+              <BrandMark size={28} />
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-11 w-11 items-center justify-center rounded-lg text-white/55 hover:bg-white/[0.06] hover:text-white"
+                className="flex h-11 w-11 items-center justify-center rounded-lg text-text-tertiary hover:bg-bg-hover hover:text-text-primary"
                 aria-label="Close navigation"
               >
                 <X className="h-5 w-5" />
@@ -166,15 +162,17 @@ export function MobileSidebarDrawer({ open, onClose }: Props) {
                         className={cn(
                           'flex w-full min-h-[48px] items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-[14px] font-medium transition-colors',
                           groupActive
-                            ? 'bg-[#00C9B1]/10 text-[#00C9B1]'
-                            : 'text-white/45 hover:bg-white/[0.05] hover:text-white/80',
+                            ? 'bg-accent-subtle text-accent-text'
+                            : 'text-text-tertiary hover:bg-bg-hover hover:text-text-secondary',
                         )}
                         aria-expanded={jobsOpen}
                       >
                         <item.icon
                           className={cn(
                             'h-5 w-5 shrink-0',
-                            groupActive ? 'text-[#00C9B1]' : 'text-white/45',
+                            groupActive
+                              ? 'text-accent-text'
+                              : 'text-text-tertiary',
                           )}
                         />
                         <span className="min-w-0 flex-1 truncate">
@@ -182,13 +180,13 @@ export function MobileSidebarDrawer({ open, onClose }: Props) {
                         </span>
                         <ChevronDown
                           className={cn(
-                            'h-4 w-4 shrink-0 text-white/35 transition-transform',
+                            'h-4 w-4 shrink-0 text-text-tertiary transition-transform',
                             jobsOpen && 'rotate-180',
                           )}
                         />
                       </button>
                       {jobsOpen ? (
-                        <div className="space-y-0.5 border-l border-white/[0.06] ml-3 pl-1">
+                        <div className="space-y-0.5 border-l border-border-subtle ml-3 pl-1">
                           {item.children.map((ch) =>
                             renderLeafDrawer(ch, true),
                           )}
@@ -201,16 +199,16 @@ export function MobileSidebarDrawer({ open, onClose }: Props) {
               })}
             </nav>
 
-            <div className="border-t border-[#00C9B1]/10 p-4">
+            <div className="border-t border-border-subtle p-4">
               <div className="mb-3 flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#00C9B1]/20 text-[11px] font-bold text-[#00C9B1]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-[11px] font-bold text-accent-text">
                   {initials}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-[13px] font-medium text-white">
+                  <p className="truncate text-[13px] font-medium text-text-primary">
                     {displayName}
                   </p>
-                  <p className="truncate text-xs text-white/40">
+                  <p className="truncate text-xs text-text-tertiary">
                     {user?.email}
                   </p>
                 </div>
@@ -218,7 +216,7 @@ export function MobileSidebarDrawer({ open, onClose }: Props) {
               <button
                 type="button"
                 onClick={() => setLogoutOpen(true)}
-                className="flex w-full min-h-[44px] items-center gap-2 rounded-lg px-2 text-[13px] font-medium text-white/45 hover:bg-white/[0.05] hover:text-white/75"
+                className="flex w-full min-h-[44px] items-center gap-2 rounded-lg px-2 text-[13px] font-medium text-text-tertiary hover:bg-bg-hover hover:text-text-secondary"
               >
                 <LogOut className="h-4 w-4" />
                 Sign out

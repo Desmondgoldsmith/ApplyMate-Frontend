@@ -21,13 +21,17 @@ export function ForcedThemeScope({
   className,
   children,
 }: {
-  theme: ResolvedTheme;
+  /** `null` keeps the same wrapper but follows the user's theme (avoids remounts when toggling). */
+  theme: ResolvedTheme | null;
   className?: string;
   children: ReactNode;
 }) {
   return (
     <ForcedThemeContext.Provider value={theme}>
-      <div data-theme={theme} className={cn('contents', className)}>
+      <div
+        data-theme={theme ?? undefined}
+        className={cn('contents', className)}
+      >
         {children}
       </div>
     </ForcedThemeContext.Provider>

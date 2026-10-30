@@ -130,8 +130,8 @@ export function NotificationBell() {
     : null;
 
   const panelHeader = (
-    <motion.div className="flex items-center justify-between gap-2 border-b border-white/10 px-3 py-2.5 md:py-2">
-      <p className="text-sm font-semibold text-white md:text-xs">
+    <motion.div className="flex items-center justify-between gap-2 border-b border-border-subtle px-3 py-2.5 md:py-2">
+      <p className="text-sm font-semibold text-text-primary md:text-xs">
         Notifications
       </p>
       <div className="flex items-center gap-2">
@@ -139,13 +139,13 @@ export function NotificationBell() {
           type="button"
           disabled={markAllRead.isPending || count === 0}
           onClick={() => markAllRead.mutate()}
-          className="text-[11px] font-semibold text-[#00C9B1] hover:underline disabled:opacity-40"
+          className="text-[11px] font-semibold text-accent-text hover:underline disabled:opacity-40"
         >
           Mark all read
         </button>
         <button
           type="button"
-          className="rounded-md p-1.5 text-white/50 hover:bg-white/[0.06] hover:text-white md:hidden"
+          className="rounded-md p-1.5 text-text-tertiary hover:bg-bg-hover hover:text-text-primary md:hidden"
           aria-label="Close notifications"
           onClick={() => setOpen(false)}
         >
@@ -171,59 +171,59 @@ export function NotificationBell() {
       onTouchMoveCapture={(e) => e.stopPropagation()}
     >
       {notifications.isLoading ? (
-        <motion.div className="flex items-center justify-center gap-2 py-10 text-sm text-white/50">
-          <Loader2 className="h-5 w-5 animate-spin text-[#00C9B1]" />
+        <motion.div className="flex items-center justify-center gap-2 py-10 text-sm text-text-tertiary">
+          <Loader2 className="h-5 w-5 animate-spin text-accent-text" />
           Loading…
         </motion.div>
       ) : listError ? (
-        <p className="px-3 py-4 text-sm text-rose-300">{listError}</p>
+        <p className="px-3 py-4 text-sm text-danger-text">{listError}</p>
       ) : rows.length === 0 ? (
-        <p className="px-3 py-8 text-center text-sm text-white/50">
+        <p className="px-3 py-8 text-center text-sm text-text-tertiary">
           You&apos;re all caught up! 🎉
         </p>
       ) : (
-        <ul className="divide-y divide-white/5">
+        <ul className="divide-y divide-border-subtle">
           {rows.map((n) => {
             const parts = splitNotificationMessage(n.message);
             return (
               <li key={n.id}>
                 <motion.div
                   className={cn(
-                    'px-3 py-3 transition hover:bg-white/[0.03]',
+                    'px-3 py-3 transition hover:bg-bg-surface',
                     !n.read &&
-                      'border-l-2 border-[#00C9B1] pl-[calc(0.75rem-2px)]',
+                      'border-l-2 border-accent-solid pl-[calc(0.75rem-2px)]',
                   )}
                 >
                   <div className="flex items-start gap-2">
                     <span
                       className={cn(
                         'mt-1 h-2 w-2 shrink-0 rounded-full',
-                        n.read ? 'bg-white/20' : 'bg-[#00C9B1]',
+                        n.read ? 'bg-border-strong' : 'bg-accent-solid',
                       )}
                       aria-hidden
                     />
                     <motion.div className="min-w-0 flex-1">
-                      <p className="line-clamp-2 text-sm font-semibold text-white/95">
+                      <p className="line-clamp-2 text-sm font-semibold text-text-primary">
                         {parts.title}
                       </p>
                       {!n.read ? (
-                        <span className="mt-1 inline-flex w-fit items-center rounded-full border border-[#00C9B1]/40 bg-[#00C9B1]/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#7AF7F7]">
+                        <span className="mt-1 inline-flex w-fit items-center rounded-full border border-accent-border bg-accent-subtle px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#7AF7F7]">
                           New
                         </span>
                       ) : null}
                       {parts.detail ? (
-                        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-white/60">
+                        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-text-secondary">
                           {parts.detail}
                         </p>
                       ) : null}
                       <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <span className="text-[11px] text-white/40">
+                        <span className="text-[11px] text-text-tertiary">
                           {formatRelativeTime(n.createdAt)}
                         </span>
                         <button
                           type="button"
                           onClick={() => void onNotificationClick(n)}
-                          className="rounded-md border border-[#00C9B1]/35 bg-[#00C9B1]/10 px-2.5 py-1.5 text-[11px] font-semibold text-[#66F3F3] transition hover:bg-[#00C9B1]/20 sm:py-1"
+                          className="rounded-md border border-accent-border bg-accent-subtle px-2.5 py-1.5 text-[11px] font-semibold text-accent-text transition hover:bg-accent-subtle sm:py-1"
                         >
                           {notificationActionLabel(n)}
                         </button>
@@ -244,13 +244,13 @@ export function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative rounded-lg p-2 text-white/60 transition-colors hover:text-[#00C9B1]"
+        className="relative rounded-lg p-2 text-text-secondary transition-colors hover:text-accent-text"
         aria-expanded={open}
         aria-label="Notifications"
       >
         <Bell className="h-4 w-4" />
         {badge ? (
-          <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white">
+          <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-danger-solid px-1 text-[10px] font-bold leading-none text-text-primary">
             {badge}
           </span>
         ) : null}
@@ -265,7 +265,7 @@ export function NotificationBell() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[118] bg-black/55 md:hidden"
+              className="fixed inset-0 z-[118] bg-bg-overlay md:hidden"
               onClick={() => setOpen(false)}
             />
             <motion.div
@@ -274,7 +274,7 @@ export function NotificationBell() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
-              className="fixed left-3 right-3 top-[calc(3.5rem+env(safe-area-inset-top,0px)+0.35rem)] z-[119] flex max-h-[min(58dvh,520px)] flex-col overflow-hidden rounded-xl border border-white/10 bg-[#0C0F0F] shadow-[0_16px_48px_rgba(0,0,0,0.5)] md:absolute md:inset-x-auto md:left-auto md:right-0 md:top-full md:mt-2 md:w-[min(calc(100vw-1.5rem),22rem)] md:max-h-[min(70vh,360px)]"
+              className="fixed left-3 right-3 top-[calc(3.5rem+env(safe-area-inset-top,0px)+0.35rem)] z-[119] flex max-h-[min(58dvh,520px)] flex-col overflow-hidden rounded-xl border border-border-subtle bg-bg-surface shadow-overlay md:absolute md:inset-x-auto md:left-auto md:right-0 md:top-full md:mt-2 md:w-[min(calc(100vw-1.5rem),22rem)] md:max-h-[min(70vh,360px)]"
               onMouseDownCapture={(e) => e.stopPropagation()}
               onTouchStartCapture={(e) => e.stopPropagation()}
             >

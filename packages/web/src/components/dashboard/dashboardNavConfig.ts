@@ -6,7 +6,7 @@ import {
   FileSearch,
   FileText,
   GraduationCap,
-  LayoutDashboard,
+  House,
   Library,
   Search,
   Settings,
@@ -24,7 +24,9 @@ export type DashboardNavItem = {
   always?: boolean;
   feature?: 'jobs' | 'interviews' | 'student';
   comingSoon?: boolean;
-  /** For tour / analytics */
+  /** Kept routable but left out of menus to keep navigation simple. */
+  hidden?: boolean;
+  /** Target for the welcome tour (`data-tour`); shared by sidebar and mobile bar. */
   tourAttr?: string;
   /** Nested job workspace links (sidebar accordion / mobile sheet) */
   children?: DashboardNavItem[];
@@ -33,46 +35,44 @@ export type DashboardNavItem = {
 export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
   {
     id: 'overview',
-    label: 'Overview',
+    label: 'Home',
     shortLabel: 'Home',
     href: '/dashboard',
-    icon: LayoutDashboard,
+    icon: House,
     always: true,
   },
   {
     id: 'job-workspace',
-    label: 'Jobs workspace',
+    label: 'Jobs',
     shortLabel: 'Jobs',
     href: '/dashboard/jobs',
     icon: Briefcase,
     feature: 'jobs',
+    tourAttr: 'nav-jobs',
     children: [
       {
         id: 'job-board',
-        label: 'Job Board',
-        shortLabel: 'Board',
+        label: 'Find jobs',
+        shortLabel: 'Find jobs',
         href: '/dashboard/job-board',
         icon: Search,
         feature: 'jobs',
-        tourAttr: 'nav-job-board',
       },
       {
         id: 'job-analyze',
-        label: 'Job Analyzer',
-        shortLabel: 'Analyze',
+        label: 'Check a job',
+        shortLabel: 'Check a job',
         href: '/dashboard/jobs/analyze?clean=1',
         icon: FileSearch,
         feature: 'jobs',
-        tourAttr: 'nav-job-analyzer',
       },
       {
         id: 'jobs',
-        label: 'Job Hub',
-        shortLabel: 'Hub',
+        label: 'My applications',
+        shortLabel: 'Applications',
         href: '/dashboard/jobs',
         icon: Briefcase,
         feature: 'jobs',
-        tourAttr: 'nav-job-hub',
       },
       {
         id: 'job-archive',
@@ -81,42 +81,44 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
         href: '/dashboard/jobs/archive',
         icon: Archive,
         feature: 'jobs',
+        hidden: true,
       },
       {
         id: 'career-achievements',
-        label: 'Career Achievements',
+        label: 'Career achievements',
         shortLabel: 'Wins',
         href: '/dashboard/career-achievements',
         icon: Trophy,
         feature: 'jobs',
+        hidden: true,
       },
     ],
   },
   {
     id: 'cv',
-    label: 'Resume Clinic',
-    shortLabel: 'Resume',
+    label: 'My CV',
+    shortLabel: 'My CV',
     href: '/dashboard/cv',
     icon: FileText,
     always: true,
-    tourAttr: 'nav-cv-clinic',
+    tourAttr: 'nav-cv',
   },
   {
     id: 'cv-profiles',
-    label: 'Resume Profiles',
-    shortLabel: 'Profiles',
+    label: 'CV versions',
+    shortLabel: 'Versions',
     href: '/dashboard/cv-profiles',
     icon: Library,
     always: true,
   },
   {
     id: 'interviews',
-    label: 'Interviews',
-    shortLabel: 'Prep',
+    label: 'Interview practice',
+    shortLabel: 'Practice',
     href: '/dashboard/interview',
     icon: BrainCircuit,
     feature: 'interviews',
-    tourAttr: 'nav-interview-prep',
+    tourAttr: 'nav-interviews',
   },
   {
     id: 'student',
@@ -126,6 +128,7 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
     icon: GraduationCap,
     feature: 'student',
     comingSoon: true,
+    hidden: true,
   },
   {
     id: 'settings',
@@ -156,6 +159,7 @@ export function getVisibleDashboardNavItems(
   features: string[],
 ): DashboardNavItem[] {
   return DASHBOARD_NAV_ITEMS.filter((item) => {
+    if (item.hidden) return false;
     if (item.always) return true;
     if (!item.feature) return false;
     return features.includes(item.feature);
@@ -164,6 +168,7 @@ export function getVisibleDashboardNavItems(
     return {
       ...item,
       children: item.children.filter((ch) => {
+        if (ch.hidden) return false;
         if (ch.always) return true;
         if (!ch.feature) return true;
         return features.includes(ch.feature);
@@ -187,10 +192,7 @@ export function isDashboardNavActive(pathname: string, href: string): boolean {
   if (h === '/dashboard/jobs') {
     if (p === '/dashboard/jobs' || p === '/dashboard/jobs/') return true;
     if (p.startsWith('/dashboard/jobs/')) {
-      return (
-        !p.startsWith('/dashboard/jobs/analyze') &&
-        !p.startsWith('/dashboard/jobs/archive')
-      );
+      return !p.startsWith('/dashboard/jobs/analyze');
     }
     return false;
   }
