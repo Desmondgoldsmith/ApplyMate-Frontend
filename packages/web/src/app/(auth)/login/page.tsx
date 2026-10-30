@@ -5,23 +5,23 @@ import { useRouter } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { z } from 'zod';
 
-import { AuthFormCard } from '@/components/auth/AuthFormCard';
-import { BrandMark } from '@/components/brand/BrandMark';
+import { AuthDivider } from '@/components/auth/AuthDivider';
+import { AuthLayout } from '@/components/auth/AuthLayout';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { useGoogleOAuthErrorToast } from '@/components/auth/useGoogleOAuthErrorToast';
 import { useSessionReuseToast } from '@/components/auth/useSessionReuseToast';
 import { AuthPasswordInput, AuthTextInput } from '@/components/auth/AuthInputs';
-import { AppShellBackdrop } from '@/components/layout/AppShellBackdrop';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { captureEvent } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { getLoginErrorMessage } from '@/lib/auth-login-message';
 import { handoffExtensionTokenIfRequested } from '@/lib/extensionAuthHandoff';
+import { SITE_NAME } from '@/lib/site';
 import { useAuthStore } from '@/store/useAuthStore';
 
 const schema = z.object({
-  email: z.string().email('Enter a valid email'),
+  email: z.string().email('Enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
@@ -38,6 +38,11 @@ function LoginPageContent() {
     Partial<Record<keyof FormValues, string>>
   >({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const updateField = (key: keyof FormValues, value: string) => {
+    setForm((s) => ({ ...s, [key]: value }));
+    if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }));
+  };
 
   const onSubmit = async () => {
     const parsed = schema.safeParse(form);
@@ -77,53 +82,51 @@ function LoginPageContent() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center px-4">
-      <AppShellBackdrop />
-      <div className="relative z-10 w-full max-w-[400px]">
-        <AuthFormCard>
-          <BrandMark className="mb-6" />
-          <h1 className="text-[28px] font-extrabold text-white">
-            Welcome back
-          </h1>
-          <p className="mb-6 text-sm text-white/50">
-            Sign in to your dashboard
-          </p>
-          <form
-            className="space-y-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void onSubmit();
-            }}
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Sign in to pick up where you left off."
+      footer={
+        <>
+          New to {SITE_NAME}?{' '}
+          <Link
+            href="/register"
+            className="font-semibold text-accent-text underline-offset-4 hover:underline"
           >
-            <AuthTextInput
-              placeholder="Email"
-              type="email"
-              value={form.email}
-              onChange={(v) => setForm((s) => ({ ...s, email: v }))}
-              error={errors.email}
-              autoComplete="email"
-            />
-            <AuthPasswordInput
-              value={form.password}
-              onChange={(v) => setForm((s) => ({ ...s, password: v }))}
-              error={errors.password}
-              autoComplete="current-password"
-            />
-            <Button fullWidth disabled={isSubmitting}>
-              {isSubmitting ? 'Signing in...' : 'Sign In'}
-            </Button>
-          </form>
-          <div className="my-4 text-center text-xs text-white/40">or</div>
-          <GoogleSignInButton mode="login" disabled={isSubmitting} />
-          <p className="mt-5 text-sm text-white/55">
-            Don&apos;t have an account?{' '}
-            <Link href="/register" className="text-[#9be8e8] hover:underline">
-              Register →
-            </Link>
-          </p>
-        </AuthFormCard>
-      </div>
-    </div>
+            Create an account
+          </Link>
+        </>
+      }
+    >
+      <GoogleSignInButton mode="login" disabled={isSubmitting} />
+      <AuthDivider />
+      <form
+        className="space-y-4"
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault();
+          void onSubmit();
+        }}
+      >
+        <AuthTextInput
+          label="Email"
+          type="email"
+          placeholder="you@example.com"
+          value={form.email}
+          onChange={(v) => updateField('email', v)}
+          error={errors.email}
+          autoComplete="email"
+        />
+        <AuthPasswordInput
+          value={form.password}
+          onChange={(v) => updateField('password', v)}
+          error={errors.password}
+          autoComplete="current-password"
+        />
+        <Button variant="accent" fullWidth disabled={isSubmitting}>
+          {isSubmitting ? 'Signing in…' : 'Sign in'}
+        </Button>
+      </form>
+    </AuthLayout>
   );
 }
 
@@ -131,7 +134,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center text-sm text-white/50">
+        <div className="flex min-h-screen items-center justify-center bg-bg-page text-sm text-text-secondary">
           Loading…
         </div>
       }

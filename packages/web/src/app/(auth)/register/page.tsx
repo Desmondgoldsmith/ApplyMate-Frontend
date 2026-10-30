@@ -6,13 +6,12 @@ import { useRouter } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { z } from 'zod';
 
-import { AuthFormCard } from '@/components/auth/AuthFormCard';
-import { BrandMark } from '@/components/brand/BrandMark';
+import { AuthDivider } from '@/components/auth/AuthDivider';
+import { AuthLayout } from '@/components/auth/AuthLayout';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { useGoogleOAuthErrorToast } from '@/components/auth/useGoogleOAuthErrorToast';
 import { useSessionReuseToast } from '@/components/auth/useSessionReuseToast';
 import { AuthPasswordInput, AuthTextInput } from '@/components/auth/AuthInputs';
-import { AppShellBackdrop } from '@/components/layout/AppShellBackdrop';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { captureEvent } from '@/lib/analytics';
@@ -33,6 +32,31 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+function PasswordLengthHint({ length }: { length: number }) {
+  const met = length >= PASSWORD_MIN;
+  return (
+    <span
+      className={cn(
+        'flex items-center gap-1.5 transition-colors',
+        met ? 'font-medium text-success-text' : 'text-text-tertiary',
+      )}
+    >
+      <span
+        className={cn(
+          'flex h-4 w-4 items-center justify-center rounded-full border transition-colors',
+          met
+            ? 'border-success-text bg-success-subtle'
+            : 'border-border-strong',
+        )}
+        aria-hidden
+      >
+        {met ? <Check className="h-2.5 w-2.5" strokeWidth={3.5} /> : null}
+      </span>
+      At least {PASSWORD_MIN} characters
+    </span>
+  );
+}
+
 function RegisterPageContent() {
   const router = useRouter();
   const toast = useToast();
@@ -44,6 +68,11 @@ function RegisterPageContent() {
     Partial<Record<keyof FormValues, string>>
   >({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const updateField = (key: keyof FormValues, value: string) => {
+    setForm((s) => ({ ...s, [key]: value }));
+    if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }));
+  };
 
   const onSubmit = async () => {
     const parsed = schema.safeParse(form);
@@ -80,76 +109,52 @@ function RegisterPageContent() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center px-4">
-      <AppShellBackdrop />
-      <div className="relative z-10 w-full max-w-[400px]">
-        <AuthFormCard>
-          <BrandMark className="mb-6" />
-          <h1 className="text-[28px] font-extrabold text-white">
-            Create your account
-          </h1>
-          <p className="mb-6 text-sm text-white/50">
-            Free to start. Get your CV score in about two minutes.
-          </p>
-          <form
-            className="space-y-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void onSubmit();
-            }}
+    <AuthLayout
+      title="Create your account"
+      subtitle="Free to start. Get your CV score in about two minutes."
+      footer={
+        <>
+          Already have an account?{' '}
+          <Link
+            href="/login"
+            className="font-semibold text-accent-text underline-offset-4 hover:underline"
           >
-            <AuthTextInput
-              placeholder="Email"
-              type="email"
-              value={form.email}
-              onChange={(v) => {
-                setForm((s) => ({ ...s, email: v }));
-                if (errors.email)
-                  setErrors((e) => ({ ...e, email: undefined }));
-              }}
-              error={errors.email}
-              autoComplete="email"
-            />
-            <AuthPasswordInput
-              value={form.password}
-              onChange={(v) => {
-                setForm((s) => ({ ...s, password: v }));
-                if (errors.password)
-                  setErrors((e) => ({ ...e, password: undefined }));
-              }}
-              error={errors.password}
-              autoComplete="new-password"
-            />
-            {!errors.password ? (
-              <p
-                className={cn(
-                  'flex items-center gap-1.5 text-xs transition-colors',
-                  form.password.length >= PASSWORD_MIN
-                    ? 'text-[#7EE8D8]'
-                    : 'text-white/40',
-                )}
-              >
-                {form.password.length >= PASSWORD_MIN ? (
-                  <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />
-                ) : null}
-                At least {PASSWORD_MIN} characters
-              </p>
-            ) : null}
-            <Button fullWidth disabled={isSubmitting}>
-              {isSubmitting ? 'Creating account...' : 'Register'}
-            </Button>
-          </form>
-          <div className="my-4 text-center text-xs text-white/40">or</div>
-          <GoogleSignInButton mode="register" disabled={isSubmitting} />
-          <p className="mt-5 text-sm text-white/55">
-            Already have an account?{' '}
-            <Link href="/login" className="text-[#9be8e8] hover:underline">
-              Sign in →
-            </Link>
-          </p>
-        </AuthFormCard>
-      </div>
-    </div>
+            Sign in
+          </Link>
+        </>
+      }
+    >
+      <GoogleSignInButton mode="register" disabled={isSubmitting} />
+      <AuthDivider />
+      <form
+        className="space-y-4"
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault();
+          void onSubmit();
+        }}
+      >
+        <AuthTextInput
+          label="Email"
+          type="email"
+          placeholder="you@example.com"
+          value={form.email}
+          onChange={(v) => updateField('email', v)}
+          error={errors.email}
+          autoComplete="email"
+        />
+        <AuthPasswordInput
+          value={form.password}
+          onChange={(v) => updateField('password', v)}
+          error={errors.password}
+          hint={<PasswordLengthHint length={form.password.length} />}
+          autoComplete="new-password"
+        />
+        <Button variant="accent" fullWidth disabled={isSubmitting}>
+          {isSubmitting ? 'Creating your account…' : 'Create account'}
+        </Button>
+      </form>
+    </AuthLayout>
   );
 }
 
@@ -157,7 +162,7 @@ export default function RegisterPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center text-sm text-white/50">
+        <div className="flex min-h-screen items-center justify-center bg-bg-page text-sm text-text-secondary">
           Loading…
         </div>
       }

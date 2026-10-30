@@ -70,13 +70,13 @@ export function GoogleSignInButton({
     <Button
       type="button"
       fullWidth
-      variant="ghost"
+      variant="outline"
       disabled={disabled || loading}
       onClick={handleClick}
       className="gap-2.5"
     >
       <GoogleIcon />
-      {loading ? 'Redirecting to Google…' : label}
+      {loading ? 'Opening Google…' : label}
     </Button>
   );
 }

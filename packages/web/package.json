@@ -17,6 +17,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@radix-ui/react-slot": "^1.2.4",
+    "@react-three/fiber": "^9.8.2",
     "@sentry/nextjs": "^10.47.0",
     "@splinetool/react-spline": "^4.1.0",
     "@tanstack/react-query": "^5.96.2",
@@ -38,6 +39,7 @@
     "recharts": "^2.15.4",
     "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7",
+    "three": "^0.187.0",
     "zod": "^4.3.6",
     "zustand": "^5.0.12"
   },
@@ -51,6 +53,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.187.0",
     "@vitejs/plugin-react": "^5.2.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.2",

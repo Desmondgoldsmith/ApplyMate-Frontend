@@ -33,8 +33,12 @@ vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }),
 }));
 
-vi.mock('@/components/layout/AppShellBackdrop', () => ({
-  AppShellBackdrop: () => null,
+vi.mock('@/components/auth/AuthSkyPanel', () => ({
+  AuthSkyPanel: () => null,
+}));
+
+vi.mock('@/components/theme/ThemeToggle', () => ({
+  ThemeToggle: () => null,
 }));
 
 describe('LoginPage', () => {
@@ -59,8 +63,8 @@ describe('LoginPage', () => {
 
     render(<LoginPage />);
 
-    await user.type(await screen.findByPlaceholderText('Email'), 'u@x.com');
-    await user.type(screen.getByPlaceholderText('Password'), 'secret12');
+    await user.type(await screen.findByLabelText('Email'), 'u@x.com');
+    await user.type(screen.getByLabelText('Password'), 'secret12');
     await user.click(screen.getByRole('button', { name: /^sign in$/i }));
 
     expect(login).toHaveBeenCalledWith({
@@ -77,8 +81,8 @@ describe('LoginPage', () => {
 
     render(<LoginPage />);
 
-    await user.type(await screen.findByPlaceholderText('Email'), 'u@x.com');
-    await user.type(screen.getByPlaceholderText('Password'), 'secret12');
+    await user.type(await screen.findByLabelText('Email'), 'u@x.com');
+    await user.type(screen.getByLabelText('Password'), 'secret12');
     await user.click(screen.getByRole('button', { name: /^sign in$/i }));
 
     expect(push).not.toHaveBeenCalled();
