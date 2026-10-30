@@ -28,7 +28,10 @@ Colours live in `src/app/globals.css` as `--ck-*` variables per `[data-theme]`, 
 
 ### Unconverted screens
 
-Screens still built on hard-coded dark colours are wrapped in `LegacyDarkScope` (pins `data-theme="dark"` + the old teal background). Currently: landing (permanent), onboarding and dashboard (until converted). When converting an area: replace literals with tokens, remove its `LegacyDarkScope`, check both themes in the browser.
+Screens still built on hard-coded dark colours are wrapped in `LegacyDarkScope` (pins `data-theme="dark"` + the old teal background). Currently: landing (permanent) and the dashboard (until converted). Auth and onboarding are fully on tokens. When converting an area: replace literals with tokens, remove its `LegacyDarkScope`, check both themes in the browser.
+
+- `ForcedThemeScope theme="dark"` pins a smaller island (e.g. the shared CV editor or `CVScoreCard` inside onboarding) and tells portals about it.
+- `Modal` and `InfoHint` wrap their portal content in `PortalThemeScope`, so a dialog opened from a dark-pinned area stays dark. New portals must do the same.
 
 ### Theme runtime
 
@@ -60,7 +63,9 @@ Screens still built on hard-coded dark colours are wrapped in `LegacyDarkScope` 
 
 - Screen transitions: fade + 16–20px slide, 0.2–0.3s, `ease: [0.22, 1, 0.36, 1]`. Respect `useReducedMotion()`.
 - Infinite animation only for loaders and ambient backdrops (and never under reduced motion).
-- 3D (`components/brand/Kite3D.tsx`, React Three Fiber): one hero moment per screen; lazy-load with `next/dynamic` (`ssr: false`), only on large screens with WebGL2 and motion allowed, with the static SVG mark as the fallback. Mutate objects in `useFrame` through refs, reuse vectors, cap `dpr` at 1.75. See the `threejs-*` skills.
+- 3D: use `KiteHero` (give it a height). It lazy-loads `Kite3D` only on large screens with WebGL2 and motion allowed, and shows the static mark otherwise. One hero moment per screen. When editing `Kite3D`: mutate objects in `useFrame` through refs, reuse vectors, cap `dpr` at 1.75; `<threeLine>` is not supported by the installed fiber, use `<primitive>`. See the `threejs-*` skills.
+- `SkyBackdrop` is the shared glow + wind background (auth panel, onboarding page).
+- Selected states use `border-border-focus` (lime alone is too faint on light backgrounds).
 
 ## Copy rules
 
