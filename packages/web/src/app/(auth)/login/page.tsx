@@ -6,6 +6,7 @@ import { Suspense, useState } from 'react';
 import { z } from 'zod';
 
 import { AuthFormCard } from '@/components/auth/AuthFormCard';
+import { BrandMark } from '@/components/brand/BrandMark';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { useGoogleOAuthErrorToast } from '@/components/auth/useGoogleOAuthErrorToast';
 import { useSessionReuseToast } from '@/components/auth/useSessionReuseToast';
@@ -80,10 +81,7 @@ function LoginPageContent() {
       <AppShellBackdrop />
       <div className="relative z-10 w-full max-w-[400px]">
         <AuthFormCard>
-          <div className="mb-6 flex items-center gap-2">
-            <span className="h-5 w-5 rounded-full bg-[#00C9B1]" />
-            <span className="font-semibold text-white">ApplyAI</span>
-          </div>
+          <BrandMark className="mb-6" />
           <h1 className="text-[28px] font-extrabold text-white">
             Welcome back
           </h1>

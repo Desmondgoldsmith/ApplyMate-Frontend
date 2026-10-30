@@ -35,9 +35,13 @@ export function AuthTextInput({
 }: AuthTextInputProps) {
   const genId = useId();
   const inputId = id ?? genId;
+  const errorId = `${inputId}-error`;
 
   return (
     <div>
+      <label htmlFor={inputId} className="sr-only">
+        {placeholder}
+      </label>
       <input
         id={inputId}
         type={type}
@@ -45,9 +49,15 @@ export function AuthTextInput({
         autoComplete={autoComplete}
         className={inputClass(Boolean(error))}
         value={value}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
         onChange={(e) => onChange(e.target.value)}
       />
-      {error ? <p className="mt-1 text-xs text-red-300">{error}</p> : null}
+      {error ? (
+        <p id={errorId} className="mt-1 text-xs text-red-300">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -69,9 +79,13 @@ export function AuthPasswordInput({
 }: AuthPasswordInputProps) {
   const [visible, setVisible] = useState(false);
   const genId = useId();
+  const errorId = `${genId}-error`;
 
   return (
     <div>
+      <label htmlFor={genId} className="sr-only">
+        {placeholder}
+      </label>
       <div className="relative">
         <input
           id={genId}
@@ -80,6 +94,8 @@ export function AuthPasswordInput({
           autoComplete={autoComplete}
           className={cn(inputClass(Boolean(error)), 'pr-12')}
           value={value}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
           onChange={(e) => onChange(e.target.value)}
         />
         <button
@@ -95,7 +111,11 @@ export function AuthPasswordInput({
           )}
         </button>
       </div>
-      {error ? <p className="mt-1 text-xs text-red-300">{error}</p> : null}
+      {error ? (
+        <p id={errorId} className="mt-1 text-xs text-red-300">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

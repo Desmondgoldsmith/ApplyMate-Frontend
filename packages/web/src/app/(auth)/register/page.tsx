@@ -1,11 +1,13 @@
 'use client';
 
+import { Check } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { z } from 'zod';
 
 import { AuthFormCard } from '@/components/auth/AuthFormCard';
+import { BrandMark } from '@/components/brand/BrandMark';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { useGoogleOAuthErrorToast } from '@/components/auth/useGoogleOAuthErrorToast';
 import { useSessionReuseToast } from '@/components/auth/useSessionReuseToast';
@@ -16,11 +18,17 @@ import { useToast } from '@/components/ui/Toast';
 import { captureEvent } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
+import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
 
+/** Must match `RegisterDto` on the API (min 8). */
+const PASSWORD_MIN = 8;
+
 const schema = z.object({
-  email: z.string().email('Enter a valid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string().email('Enter a valid email address'),
+  password: z
+    .string()
+    .min(PASSWORD_MIN, `Use at least ${PASSWORD_MIN} characters`),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -76,15 +84,12 @@ function RegisterPageContent() {
       <AppShellBackdrop />
       <div className="relative z-10 w-full max-w-[400px]">
         <AuthFormCard>
-          <div className="mb-6 flex items-center gap-2">
-            <span className="h-5 w-5 rounded-full bg-[#00C9B1]" />
-            <span className="font-semibold text-white">ApplyAI</span>
-          </div>
+          <BrandMark className="mb-6" />
           <h1 className="text-[28px] font-extrabold text-white">
             Create your account
           </h1>
           <p className="mb-6 text-sm text-white/50">
-            Sign up to start your dashboard
+            Free to start. Get your CV score in about two minutes.
           </p>
           <form
             className="space-y-3"
@@ -97,16 +102,39 @@ function RegisterPageContent() {
               placeholder="Email"
               type="email"
               value={form.email}
-              onChange={(v) => setForm((s) => ({ ...s, email: v }))}
+              onChange={(v) => {
+                setForm((s) => ({ ...s, email: v }));
+                if (errors.email)
+                  setErrors((e) => ({ ...e, email: undefined }));
+              }}
               error={errors.email}
               autoComplete="email"
             />
             <AuthPasswordInput
               value={form.password}
-              onChange={(v) => setForm((s) => ({ ...s, password: v }))}
+              onChange={(v) => {
+                setForm((s) => ({ ...s, password: v }));
+                if (errors.password)
+                  setErrors((e) => ({ ...e, password: undefined }));
+              }}
               error={errors.password}
               autoComplete="new-password"
             />
+            {!errors.password ? (
+              <p
+                className={cn(
+                  'flex items-center gap-1.5 text-xs transition-colors',
+                  form.password.length >= PASSWORD_MIN
+                    ? 'text-[#7EE8D8]'
+                    : 'text-white/40',
+                )}
+              >
+                {form.password.length >= PASSWORD_MIN ? (
+                  <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />
+                ) : null}
+                At least {PASSWORD_MIN} characters
+              </p>
+            ) : null}
             <Button fullWidth disabled={isSubmitting}>
               {isSubmitting ? 'Creating account...' : 'Register'}
             </Button>
