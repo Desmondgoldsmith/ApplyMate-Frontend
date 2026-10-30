@@ -297,7 +297,7 @@ function CvPreviewWatermarkFooter() {
       style={{ fontFamily: 'Arial, sans-serif' }}
       aria-hidden
     >
-      ApplyMate
+      CareerKite
     </div>
   );
 }

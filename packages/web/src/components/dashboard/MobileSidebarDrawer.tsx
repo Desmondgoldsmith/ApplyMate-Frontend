@@ -138,7 +138,7 @@ export function MobileSidebarDrawer({ open, onClose }: Props) {
               <div className="flex items-center gap-2">
                 <span className="h-5 w-5 rounded-full bg-[#00C9B1]" />
                 <span className="text-[15px] font-semibold text-white/90">
-                  ApplyMate
+                  CareerKite
                 </span>
               </div>
               <button
@@ -232,7 +232,7 @@ export function MobileSidebarDrawer({ open, onClose }: Props) {
         open={logoutOpen}
         onOpenChange={setLogoutOpen}
         title="Sign out?"
-        description="You will need to sign in again to use ApplyMate."
+        description="You will need to sign in again to use CareerKite."
         confirmLabel="Sign out"
         cancelLabel="Stay signed in"
         isPending={logoutMutation.isPending}

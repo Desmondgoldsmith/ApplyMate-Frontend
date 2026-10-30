@@ -33,7 +33,7 @@ export function notifyDueHubRemindersFromCache(queryClient: QueryClient): void {
       try {
         if (sessionStorage.getItem(flag)) continue;
         const body = r.title?.trim() || r.note?.trim() || 'Scheduled follow-up';
-        new Notification('ApplyMate reminder', { body });
+        new Notification('CareerKite reminder', { body });
         sessionStorage.setItem(flag, '1');
       } catch {
         /* ignore */

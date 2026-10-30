@@ -160,7 +160,7 @@ function AccountTab() {
           Account
         </h3>
         <p className="mt-1.5 text-sm text-white/45">
-          Manage how you appear in ApplyMate and update your sign-in details.
+          Manage how you appear in CareerKite and update your sign-in details.
         </p>
       </div>
       <form

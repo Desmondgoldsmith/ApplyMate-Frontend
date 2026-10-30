@@ -49,7 +49,7 @@ export function EditProfileModal({
       open={open}
       onOpenChange={onOpenChange}
       title="Edit profile"
-      description="Update the name shown across ApplyMate. Email is managed by your account provider."
+      description="Update the name shown across CareerKite. Email is managed by your account provider."
     >
       <form
         className="space-y-4"

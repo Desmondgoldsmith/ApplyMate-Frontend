@@ -138,7 +138,7 @@ export function maybeWarnInvalidHumanExperienceCopy(
   if (!enabled || raw == null || !String(raw).trim()) return;
   const cleaned = stripTechnicalTokens(String(raw).trim());
   if (!cleaned) {
-    console.warn(`[ApplyMate human copy] ${context}`, {
+    console.warn(`[CareerKite human copy] ${context}`, {
       issue: 'empty_after_strip',
       preview: String(raw).slice(0, 120),
     });
@@ -146,7 +146,7 @@ export function maybeWarnInvalidHumanExperienceCopy(
   }
   const v = validateHumanExperienceCopy(cleaned);
   if (!v.ok)
-    console.warn(`[ApplyMate human copy] ${context}`, {
+    console.warn(`[CareerKite human copy] ${context}`, {
       issues: v.issues,
       preview: cleaned.slice(0, 160),
     });

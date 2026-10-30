@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 
 import { JobsArchiveContent } from './JobsArchiveContent';
 
-export const metadata = { title: 'Archived jobs — ApplyMate' };
+export const metadata = { title: 'Archived jobs — CareerKite' };
 
 export default function JobsArchivePage() {
   return (

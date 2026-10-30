@@ -57,7 +57,7 @@ export function Showcase() {
                   style={{ boxShadow: '0 0 10px #00C9B1' }}
                 />
                 <span className="text-[14px] font-bold text-white">
-                  ApplyMate
+                  CareerKite
                 </span>
               </div>
               <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">

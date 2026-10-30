@@ -382,7 +382,7 @@ export function hybridWeightsTooltip(
   if (fromApi) {
     return `${fromApi}\n\nOverall ≈ ${structuralPercent}% × structure score + ${aiPercent}% × quality score (each sub-score is out of 100).`;
   }
-  return `ApplyMate uses fixed server weights (${structuralPercent}% structure, ${aiPercent}% quality) from scoringTransparency.weights — not your section scores.\n\nOverall ≈ ${structuralPercent}% × structure score + ${aiPercent}% × quality score (each sub-score is out of 100).`;
+  return `CareerKite uses fixed server weights (${structuralPercent}% structure, ${aiPercent}% quality) from scoringTransparency.weights — not your section scores.\n\nOverall ≈ ${structuralPercent}% × structure score + ${aiPercent}% × quality score (each sub-score is out of 100).`;
 }
 
 /** Example arithmetic line, e.g. "78 ≈ 30% × 75 + 70% × 79". */

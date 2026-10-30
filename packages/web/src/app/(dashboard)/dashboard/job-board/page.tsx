@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 
 import JobBoardContent from './JobBoardContent';
 
-export const metadata = { title: 'Job Board - ApplyMate' };
+export const metadata = { title: 'Job Board - CareerKite' };
 
 export default function JobBoardPage() {
   return (

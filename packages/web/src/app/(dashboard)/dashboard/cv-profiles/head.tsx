@@ -1,7 +1,7 @@
 export default function Head() {
   return (
     <>
-      <title>CV Profiles — ApplyMate</title>
+      <title>CV Profiles — CareerKite</title>
     </>
   );
 }

@@ -134,7 +134,7 @@ export function DashboardUserMenu({ className }: { className?: string }) {
         open={logoutOpen}
         onOpenChange={setLogoutOpen}
         title="Sign out?"
-        description="You will need to sign in again to use ApplyMate."
+        description="You will need to sign in again to use CareerKite."
         confirmLabel="Sign out"
         cancelLabel="Stay signed in"
         isPending={logoutMutation.isPending}

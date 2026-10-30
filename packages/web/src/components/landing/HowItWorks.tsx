@@ -100,7 +100,7 @@ export function HowItWorks() {
           step="01"
           icon={Puzzle}
           title="Install & Import"
-          description="Install the Chrome extension in seconds and upload your CV once. ApplyMate learns your skills, experience, and career goals."
+          description="Install the Chrome extension in seconds and upload your CV once. CareerKite learns your skills, experience, and career goals."
         >
           <BrowserToolbarMock />
         </StepCard>
@@ -109,7 +109,7 @@ export function HowItWorks() {
           step="02"
           icon={Zap}
           title="Get Matched Instantly"
-          description="Visit any job posting. ApplyMate instantly reads the description and shows your match score, skill gaps, and what the employer values most."
+          description="Visit any job posting. CareerKite instantly reads the description and shows your match score, skill gaps, and what the employer values most."
         >
           <div className="flex justify-center px-1">
             <MatchScoreBar
@@ -124,7 +124,7 @@ export function HowItWorks() {
           step="03"
           icon={Rocket}
           title="Apply in One Click"
-          description="Click Apply. ApplyMate fills every field, generates a tailored cover letter, and uploads it — you just review and submit."
+          description="Click Apply. CareerKite fills every field, generates a tailored cover letter, and uploads it — you just review and submit."
         >
           <TypingFormDemo />
         </StepCard>

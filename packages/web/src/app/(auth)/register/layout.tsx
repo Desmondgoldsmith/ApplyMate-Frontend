@@ -6,7 +6,7 @@ import { buildMarketingPageMetadata } from '@/lib/seo/metadata';
 export const metadata: Metadata = buildMarketingPageMetadata({
   title: 'Create account',
   description:
-    'Create your free ApplyMate account. Score your CV against roles, tailor applications, and manage your job search in one place.',
+    'Create your free CareerKite account. Score your CV against roles, tailor applications, and manage your job search in one place.',
   path: '/register',
 });
 

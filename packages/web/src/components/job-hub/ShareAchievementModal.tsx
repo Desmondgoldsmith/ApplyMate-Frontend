@@ -10,7 +10,7 @@ import { useToast } from '@/components/ui/Toast';
 import type { CareerBadge } from '@/lib/career';
 import { resolveLinkedInOpenUrl } from '@/lib/linkedinShare';
 
-const DEFAULT_SHARE = 'I just got a job using ApplyMate 🚀';
+const DEFAULT_SHARE = 'I just got a job using CareerKite 🚀';
 const X_INTENT_BASE = 'https://twitter.com/intent/tweet';
 
 function fireShareConfetti() {

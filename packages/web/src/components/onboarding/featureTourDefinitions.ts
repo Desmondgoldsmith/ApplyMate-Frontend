@@ -200,7 +200,7 @@ function dashboardStepsDesktop(): TourStepDef[] {
       selector: '[data-tour="todays-plan"]',
       title: 'Your daily action plan',
       description:
-        "Every morning, ApplyMate builds you a personalised list of the most important things to do in your job search today. Follow it and you'll always be moving forward.",
+        "Every morning, CareerKite builds you a personalised list of the most important things to do in your job search today. Follow it and you'll always be moving forward.",
       side: 'bottom',
       align: 'start',
       popoverOffset: 18,
@@ -301,7 +301,7 @@ function dashboardStepsMobile(): TourStepDef[] {
       selector: '[data-tour="todays-plan"]',
       title: 'Your daily action plan',
       description:
-        "Every morning, ApplyMate builds you a personalised list of the most important things to do in your job search today. Follow it and you'll always be moving forward.",
+        "Every morning, CareerKite builds you a personalised list of the most important things to do in your job search today. Follow it and you'll always be moving forward.",
       side: 'bottom',
       align: 'start',
       beforeHighlight: settleContent,

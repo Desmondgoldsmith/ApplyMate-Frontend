@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 const faqs = [
   {
-    q: 'Is ApplyMate just a form filler?',
+    q: 'Is CareerKite just a form filler?',
     a: 'No. It analyzes the job, scores your fit, surfaces gaps, and helps you decide whether to apply — then automates the heavy lifting.',
   },
   {
@@ -13,7 +13,7 @@ const faqs = [
   },
   {
     q: 'Do you store my CV?',
-    a: 'Your CV is stored securely so ApplyMate can match you to roles and generate tailored answers — you control it from your account.',
+    a: 'Your CV is stored securely so CareerKite can match you to roles and generate tailored answers — you control it from your account.',
   },
 ];
 

@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 
 import { JobsAnalyzeContent } from '@/components/jobs/analyze/JobsAnalyzeContent';
 
-export const metadata = { title: 'Analyze Job — ApplyMate' };
+export const metadata = { title: 'Analyze Job — CareerKite' };
 
 export default function JobsAnalyzePage() {
   return (

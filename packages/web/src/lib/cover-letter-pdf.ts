@@ -67,7 +67,7 @@ export function downloadCoverLetterPdf(opts: {
     y += lineHeight;
   }
 
-  const footer = 'Generated with ApplyMate';
+  const footer = 'Generated with CareerKite';
   const lastPage = doc.getNumberOfPages();
   doc.setPage(lastPage);
   doc.setFontSize(8);

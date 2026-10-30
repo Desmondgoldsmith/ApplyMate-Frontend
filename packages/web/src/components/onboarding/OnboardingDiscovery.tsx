@@ -173,7 +173,7 @@ export function OnboardingDiscovery({
   const greeting =
     firstName.trim().length > 0
       ? `Welcome, ${firstName.trim()}.`
-      : 'Welcome to ApplyMate.';
+      : 'Welcome to CareerKite.';
 
   const roleChips = useMemo(
     () => parseRolesFromText(targetRolesText),
@@ -258,7 +258,7 @@ export function OnboardingDiscovery({
               <Eyebrow>Welcome</Eyebrow>
               <h1 className={cn(ONBOARDING_TITLE_CLASS, 'mt-3')}>{greeting}</h1>
               <p className={ONBOARDING_SUBTITLE_CLASS}>
-                Let&apos;s set up ApplyMate around your job search. It takes
+                Let&apos;s set up CareerKite around your job search. It takes
                 about two minutes.
               </p>
               <ul className="mt-8 w-full space-y-2.5 text-left">

@@ -1,4 +1,4 @@
-/** User-facing copy for the dedicated follow-up queue page (ApplyMate dark / teal). */
+/** User-facing copy for the dedicated follow-up queue page (CareerKite dark / teal). */
 
 export const FOLLOW_UP_PAGE = {
   title: 'Follow-up queue',

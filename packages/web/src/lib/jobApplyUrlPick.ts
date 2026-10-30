@@ -1,6 +1,8 @@
 const URL_LIKE = /^https?:\/\//i;
 
 const BLOCKED_HOST_SUFFIXES = [
+  'careerkite.app',
+  'getcareerkite.com',
   'applymate.app',
   'applymate.local',
   'localhost',

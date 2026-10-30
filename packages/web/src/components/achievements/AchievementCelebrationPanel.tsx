@@ -31,7 +31,7 @@ function buildShareLines(
   const wins = career?.recentWins?.length
     ? career.recentWins
     : (achievements ?? []).slice(0, 6);
-  const lines: string[] = [`${name}'s ApplyMate achievements`, ''];
+  const lines: string[] = [`${name}'s CareerKite achievements`, ''];
   if (career?.level?.title?.trim() || career?.level?.number != null) {
     lines.push(
       `Level ${career.level.number ?? ''} ${career.level.title?.trim() ?? ''}`.trim(),
@@ -58,7 +58,7 @@ function buildShareLines(
       );
     }
   }
-  lines.push('', 'Tracked with ApplyMate — applymate.app');
+  lines.push('', 'Tracked with CareerKite');
   return lines;
 }
 

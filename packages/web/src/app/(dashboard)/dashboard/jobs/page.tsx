@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 
 import { JobHub } from './JobHub';
 
-export const metadata = { title: 'Job Hub — ApplyMate' };
+export const metadata = { title: 'Job Hub — CareerKite' };
 
 export default function JobsPage() {
   return (

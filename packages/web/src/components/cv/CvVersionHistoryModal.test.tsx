@@ -142,7 +142,7 @@ describe('CvVersionHistoryModal', () => {
 
     expect(
       await screen.findByText(
-        'No saved versions yet. ApplyMate saves one automatically before big changes like uploading a new CV.',
+        'No saved versions yet. CareerKite saves one automatically before big changes like uploading a new CV.',
       ),
     ).toBeInTheDocument();
   });

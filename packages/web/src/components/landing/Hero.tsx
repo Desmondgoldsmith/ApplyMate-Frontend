@@ -163,7 +163,7 @@ export function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.4, ease }}
             >
-              ApplyMate reads the job description, scores your CV match,
+              CareerKite reads the job description, scores your CV match,
               auto-fills the entire application, and writes your cover letter —
               all in seconds.
             </motion.p>
@@ -213,7 +213,7 @@ export function Hero() {
               <p className="text-[13px] text-[rgba(255,255,255,0.45)]">
                 Join{' '}
                 <span className="font-semibold text-[#00C9B1]">2,400+</span> job
-                seekers already using ApplyMate
+                seekers already using CareerKite
               </p>
             </motion.div>
           </div>

@@ -42,7 +42,7 @@ export function Testimonials() {
         transition={{ duration: 0.6, ease }}
         className="max-w-[720px] text-[32px] font-extrabold tracking-[-1px] text-white sm:text-[42px]"
       >
-        Job seekers love ApplyMate
+        Job seekers love CareerKite
       </motion.h2>
 
       <div className="mt-14 grid gap-6 lg:grid-cols-3">

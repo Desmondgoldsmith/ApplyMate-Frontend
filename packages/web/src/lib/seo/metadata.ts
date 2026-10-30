@@ -24,7 +24,7 @@ export function buildRootMetadata(): Metadata {
     description: SITE_DESCRIPTION,
     applicationName: SITE_NAME,
     keywords: [
-      'ApplyMate',
+      'CareerKite',
       'job application',
       'CV matcher',
       'resume tailoring',

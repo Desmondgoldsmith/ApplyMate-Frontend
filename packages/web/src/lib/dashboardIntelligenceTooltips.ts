@@ -61,7 +61,7 @@ export const TOOLTIP_BRIEFING_CONFIDENCE =
   'How much real activity we had to base this week’s summary on.';
 
 export const TOOLTIP_CV_SCORE =
-  'This score comes from your CV review in ApplyMate. Higher usually means a stronger profile for matching.';
+  'This score comes from your CV review in CareerKite. Higher usually means a stronger profile for matching.';
 
 export const TOOLTIP_JOB_MATCH_SCORE =
   'How well this role matches your profile from your saved analysis (0–100).';
@@ -159,4 +159,4 @@ export const TOOLTIP_GOAL_ALIGNMENT =
   'How well your saved jobs match the roles and industries you said you are looking for.';
 
 export const TOOLTIP_DAILY_STREAK =
-  'The number of days in a row you have been active on ApplyMate.';
+  'The number of days in a row you have been active on CareerKite.';

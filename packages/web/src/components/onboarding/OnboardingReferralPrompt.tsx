@@ -58,7 +58,7 @@ export function OnboardingReferralPrompt({
             className="flex items-center gap-2 text-[13px] text-white/60"
           >
             <Check className="h-4 w-4 text-[#00C9B1]" strokeWidth={3} />
-            Thanks for telling us how you found ApplyMate.
+            Thanks for telling us how you found CareerKite.
           </motion.p>
         ) : (
           <motion.div
@@ -66,7 +66,7 @@ export function OnboardingReferralPrompt({
             exit={reducedMotion ? undefined : { opacity: 0 }}
           >
             <p className="text-[13px] font-medium text-white/75">
-              One quick question: how did you hear about ApplyMate?{' '}
+              One quick question: how did you hear about CareerKite?{' '}
               <span className="font-normal text-white/40">(optional)</span>
             </p>
             <div className="mt-3 flex flex-wrap gap-2">

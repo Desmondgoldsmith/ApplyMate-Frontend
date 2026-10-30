@@ -28,7 +28,7 @@ export function searchAtGlanceHintForMetricKey(key: string): string {
 }
 
 export const MOVEMENT_SECTION_HINT =
-  'Numbers for the time range you pick (day / week / month). They reflect actions logged in ApplyMate.';
+  'Numbers for the time range you pick (day / week / month). They reflect actions logged in CareerKite.';
 
 export const MOVEMENT_ROLES_FORWARD_HINT =
   'Roles advanced toward interview or offer (applications + analyses + standalone bookmarks on the hub) updated in this period.';

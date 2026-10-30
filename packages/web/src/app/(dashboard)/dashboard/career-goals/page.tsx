@@ -204,7 +204,7 @@ export default function CareerGoalsPage() {
   useEffect(() => {
     if (!q.data) return;
     /* Populate controlled form when GET resolves or refetches — avoids derived-state flicker vs.first paint. */
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional hydration from React Query payload
+
     setForm(normalizeWorkspace(q.data));
     setSavedKey(stableGoalsKey(q.data));
   }, [q.data]);
@@ -289,7 +289,7 @@ export default function CareerGoalsPage() {
             Career goals
           </h1>
           <p className="mt-2 max-w-[72ch] text-[14px] leading-relaxed text-white/55">
-            Tell ApplyMate what roles and environments you want so we can align
+            Tell CareerKite what roles and environments you want so we can align
             matches, scoring, and dashboard coaching.
           </p>
           {form.updatedAt ? (

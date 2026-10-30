@@ -33,7 +33,7 @@ export function GettingStartedChecklist({
       className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-5 sm:p-6"
     >
       <p className="mb-4 text-[15px] font-semibold text-white/90">
-        Get the most out of ApplyMate
+        Get the most out of CareerKite
       </p>
       <div className="flex flex-row flex-wrap gap-x-6 gap-y-3">
         {items.map((item) => (

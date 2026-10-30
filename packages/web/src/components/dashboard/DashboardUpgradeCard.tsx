@@ -71,11 +71,11 @@ export function DashboardUpgradeCard({ className }: { className?: string }) {
           </div>
 
           <h3 className="mt-4 text-[17px] font-semibold tracking-tight text-white">
-            {isPaid ? "You're on Pro" : 'Unlock ApplyMate Pro'}
+            {isPaid ? "You're on Pro" : 'Unlock CareerKite Pro'}
           </h3>
           <p className="mt-2 text-[13px] font-medium leading-relaxed text-white/55">
             {isPaid
-              ? 'Enjoy unlimited AI, deeper match insights, and faster workflows. Thank you for supporting ApplyMate.'
+              ? 'Enjoy unlimited AI, deeper match insights, and faster workflows. Thank you for supporting CareerKite.'
               : 'Lift daily caps, go deeper on every job, and keep momentum when it matters most.'}
           </p>
 

@@ -381,7 +381,7 @@ export async function renderAchievementShareCardPng(
   ctx.font = '500 22px system-ui, sans-serif';
   ctx.fillStyle = 'rgba(255,255,255,0.42)';
   ctx.fillText(
-    'Celebrating your momentum — applymate.app',
+    'Celebrating your momentum with CareerKite',
     pad,
     progressY + 36,
   );

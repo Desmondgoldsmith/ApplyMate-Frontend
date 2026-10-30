@@ -39,7 +39,7 @@ export function Footer() {
               className="h-2 w-2 rounded-full bg-[#00C9B1]"
               style={{ boxShadow: '0 0 10px #00C9B1' }}
             />
-            <span className="text-[16px] font-bold text-white">ApplyMate</span>
+            <span className="text-[16px] font-bold text-white">CareerKite</span>
           </div>
           <p className="mt-4 max-w-[220px] text-[13px] leading-relaxed text-[rgba(255,255,255,0.35)]">
             AI-powered job applications
@@ -69,10 +69,10 @@ export function Footer() {
 
       <div className="mx-auto mt-14 flex max-w-[1200px] flex-col items-center justify-between gap-4 border-t border-[rgba(255,255,255,0.06)] pt-6 sm:flex-row">
         <p className="text-[12px] text-[rgba(255,255,255,0.2)]">
-          © 2026 ApplyMate. All rights reserved.
+          © 2026 CareerKite. All rights reserved.
         </p>
         <p className="text-[12px] text-[rgba(255,255,255,0.2)]">
-          Made with ApplyMate ✦
+          Made with CareerKite ✦
         </p>
       </div>
     </footer>

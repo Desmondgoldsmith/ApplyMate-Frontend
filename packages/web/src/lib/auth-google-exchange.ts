@@ -73,7 +73,7 @@ function parseApiErrorCode(data: unknown): string | undefined {
 }
 
 /**
- * Exchange a Google ID token for ApplyMate tokens + user (POST /auth/google).
+ * Exchange a Google ID token for CareerKite tokens + user (POST /auth/google).
  * Server-only — call from route handlers, not client components.
  */
 export async function exchangeGoogleIdTokenWithBackend(

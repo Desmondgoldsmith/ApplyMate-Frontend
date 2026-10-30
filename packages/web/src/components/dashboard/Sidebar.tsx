@@ -260,7 +260,7 @@ export function Sidebar() {
         >
           <span className="h-5 w-5 rounded-full bg-[#00C9B1]" />
           {!collapsed ? (
-            <span className="font-semibold text-white">ApplyMate</span>
+            <span className="font-semibold text-white">CareerKite</span>
           ) : null}
         </div>
         <button
@@ -394,7 +394,7 @@ export function Sidebar() {
         open={logoutOpen}
         onOpenChange={setLogoutOpen}
         title="Sign out?"
-        description="You will need to sign in again to use ApplyMate."
+        description="You will need to sign in again to use CareerKite."
         confirmLabel="Sign out"
         cancelLabel="Stay signed in"
         isPending={logoutMutation.isPending}

@@ -377,7 +377,7 @@ export function buildRecruiterScanShareSnippet(
     session.report.whatStandsOut.takeaways.find((t) => t.trim()) ?? '';
   const concern = session.report.whatCouldBeStronger.concerns[0]?.text ?? '';
   const lines = [
-    `Recruiter Scan on ApplyMate (${verdict}): ${headline}`,
+    `Recruiter Scan on CareerKite (${verdict}): ${headline}`,
     takeaway ? `They'd remember: ${takeaway}` : '',
     concern ? `Concern: ${concern}` : '',
   ].filter(Boolean);

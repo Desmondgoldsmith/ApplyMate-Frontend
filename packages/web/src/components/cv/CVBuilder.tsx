@@ -4533,7 +4533,7 @@ export function CVBuilder({
                 <p className="mb-2 text-sm font-semibold text-white">Project</p>
                 <Field
                   label="Project name"
-                  placeholder="e.g. ApplyMate job tracker"
+                  placeholder="e.g. CareerKite job tracker"
                   value={p.name}
                   onChange={(v) =>
                     update({

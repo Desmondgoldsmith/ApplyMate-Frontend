@@ -50,7 +50,7 @@ export function Navbar() {
             aria-hidden
           />
           <span className="text-[17px] font-bold tracking-tight text-white">
-            ApplyMate
+            CareerKite
           </span>
         </Link>
 

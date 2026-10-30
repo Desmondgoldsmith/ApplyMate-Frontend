@@ -12,14 +12,14 @@ function isLinkedInUrl(url: string): boolean {
 function isApplyMateUrl(url: string): boolean {
   try {
     const host = new URL(url).hostname.toLowerCase();
-    return host.includes('applymate');
+    return host.includes('careerkite') || host.includes('applymate');
   } catch {
-    return /applymate/i.test(url);
+    return /careerkite|applymate/i.test(url);
   }
 }
 
 /**
- * Resolves the URL for "Open link" on career badges — prefers LinkedIn over internal ApplyMate links.
+ * Resolves the URL for "Open link" on career badges — prefers LinkedIn over internal CareerKite links.
  */
 export function resolveLinkedInOpenUrl(
   shareText: string,

@@ -388,7 +388,7 @@ export function JobsArchiveContent() {
         open={purgeRow != null}
         onOpenChange={(o) => !o && setPurgeRow(null)}
         title="Delete permanently?"
-        description="This cannot be undone. The archived copy will be removed from ApplyMate."
+        description="This cannot be undone. The archived copy will be removed from CareerKite."
         confirmLabel="Delete forever"
         cancelLabel="Cancel"
         isPending={purge.isPending}

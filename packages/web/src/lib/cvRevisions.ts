@@ -16,7 +16,7 @@ export function cvRevisionReasonLabel(reason: CvRevisionReason): string {
 }
 
 export const CV_VERSIONS_EMPTY_MESSAGE =
-  'No saved versions yet. ApplyMate saves one automatically before big changes like uploading a new CV.';
+  'No saved versions yet. CareerKite saves one automatically before big changes like uploading a new CV.';
 
 export const CV_VERSION_NOT_AVAILABLE_MESSAGE = 'Version not available';
 

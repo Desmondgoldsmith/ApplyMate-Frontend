@@ -1,7 +1,7 @@
 export default function Head() {
   return (
     <>
-      <title>CV Clinic — ApplyMate</title>
+      <title>CV Clinic — CareerKite</title>
     </>
   );
 }
