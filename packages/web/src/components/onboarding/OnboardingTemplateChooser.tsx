@@ -1,9 +1,12 @@
 'use client';
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Expand, Loader2, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { CVDocumentPreview } from '@/components/cv/CVDocumentPreview';
+import { PortalThemeScope } from '@/components/theme/ThemeScope';
 import { Button } from '@/components/ui/Button';
 import {
   CV_TEMPLATE_IDS,
@@ -78,7 +81,102 @@ function ScaledPreview({
   );
 }
 
-/** "Choose a design" — every template is rendered with the user's own CV. */
+/** Width of an element, kept current as the layout changes. */
+function useElementWidth<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => setWidth(el.clientWidth);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, width] as const;
+}
+
+/** Full-size A4 view of one design, scaled to fit the screen width. */
+function FullSizePreview({
+  data,
+  template,
+  onClose,
+}: {
+  data: CVBuilderData;
+  template: CvTemplateId;
+  onClose: () => void;
+}) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const [frameRef, frameWidth] = useElementWidth<HTMLDivElement>();
+
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = overflow;
+      previous?.focus();
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <PortalThemeScope>
+      <div
+        className="fixed inset-0 z-[120] flex flex-col bg-bg-overlay backdrop-blur-sm"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${TEMPLATE_META[template].name} design, full size`}
+        onClick={onClose}
+        data-lenis-prevent
+      >
+        <div className="flex shrink-0 items-center justify-between px-4 py-3 sm:px-6">
+          <p className="rounded-full bg-bg-raised px-3 py-1.5 text-[14px] font-semibold text-text-primary shadow-raised">
+            {TEMPLATE_META[template].name} design
+          </p>
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            aria-label="Close preview"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-bg-raised text-text-primary shadow-raised transition-colors hover:bg-bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
+          >
+            <X className="h-5 w-5" aria-hidden />
+          </button>
+        </div>
+        <div
+          className="min-h-0 flex-1 overflow-y-auto px-4 pb-8 sm:px-6"
+          data-lenis-prevent-wheel
+        >
+          <div
+            ref={frameRef}
+            className="mx-auto w-full max-w-[794px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {frameWidth > 0 ? (
+              <div className="overflow-hidden rounded-lg shadow-overlay">
+                <ScaledPreview
+                  data={data}
+                  template={template}
+                  width={frameWidth}
+                />
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </PortalThemeScope>,
+    document.body,
+  );
+}
+
+/** "Choose a design": a large live preview plus every design, rendered with the user's CV. */
 export function OnboardingTemplateChooser({
   data,
   selected,
@@ -97,92 +195,135 @@ export function OnboardingTemplateChooser({
   confirmLabel?: string;
 }) {
   const reducedMotion = useReducedMotion();
+  const [fullSize, setFullSize] = useState(false);
+  const closeFullSize = useCallback(() => setFullSize(false), []);
+  const [previewRef, previewWidth] = useElementWidth<HTMLDivElement>();
   const previewFor = (t: CvTemplateId) =>
     data ? ensureCvPreviewData(data) : cvTemplatePreviewSampleDataFor(t);
+  const usingSample = !data;
 
   return (
-    <div className="w-full">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div
-          className="grid grid-cols-2 gap-3 sm:grid-cols-3"
-          role="radiogroup"
-          aria-label="CV designs"
-        >
-          {ORDERED_TEMPLATES.map((t, i) => {
-            const isSelected = t === selected;
-            const meta = TEMPLATE_META[t];
-            return (
-              <motion.button
-                key={t}
+    <div className="w-full text-left">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] lg:items-start">
+        {/* Large live preview: first on small screens, right-hand column on large ones. */}
+        <div className="lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1">
+          <div className="rounded-3xl border border-border-subtle bg-bg-surface p-4 shadow-raised">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[15px] font-semibold text-text-primary">
+                  {TEMPLATE_META[selected].name}
+                </p>
+                <p className="text-[13px] text-text-secondary">
+                  {usingSample
+                    ? 'Shown with sample content'
+                    : 'Shown with your own CV'}
+                </p>
+              </div>
+              <button
                 type="button"
-                role="radio"
-                aria-checked={isSelected}
-                onClick={() => onSelect(t)}
-                initial={reducedMotion ? false : { opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  delay: reducedMotion ? 0 : i * 0.05,
-                  duration: 0.3,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                whileHover={reducedMotion ? undefined : { y: -3 }}
-                className={cn(
-                  'group relative flex flex-col items-center overflow-hidden rounded-2xl border p-3 text-left transition-[border-color,box-shadow,background-color] duration-200',
-                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus',
-                  isSelected
-                    ? 'border-border-focus bg-accent-subtle shadow-[0_0_0_1px_var(--ck-border-focus),0_0_0_5px_var(--ck-accent-subtle)]'
-                    : 'border-border-default bg-bg-surface shadow-raised hover:border-border-strong',
-                )}
+                onClick={() => setFullSize(true)}
+                className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-xl border border-border-default bg-bg-surface px-3 text-[13px] font-semibold text-text-primary transition-colors hover:border-border-strong hover:bg-bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
               >
-                {meta.badge ? (
-                  <span className="absolute left-2.5 top-2.5 z-10 rounded-full border border-border-default bg-bg-raised px-2 py-0.5 text-[11px] font-semibold text-text-primary shadow-raised">
-                    {meta.badge}
-                  </span>
-                ) : null}
-                {isSelected ? (
-                  <span className="absolute right-2.5 top-2.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-accent-solid text-text-on-accent shadow-raised">
-                    <Check className="h-3.5 w-3.5" strokeWidth={3.5} />
-                  </span>
-                ) : null}
-                <div className="w-full overflow-hidden rounded-md border border-border-subtle transition-transform duration-300 group-hover:scale-[1.02]">
-                  <ScaledPreview
-                    data={previewFor(t)}
-                    template={t}
-                    width={150}
-                  />
-                </div>
-                <span className="mt-3 w-full text-[14px] font-semibold text-text-primary">
-                  {meta.name}
-                </span>
-                <span className="mt-0.5 w-full text-[12px] leading-snug text-text-secondary">
-                  {meta.blurb}
-                </span>
-              </motion.button>
-            );
-          })}
+                <Expand className="h-4 w-4" aria-hidden />
+                View full size
+              </button>
+            </div>
+            <div
+              ref={previewRef}
+              className="mx-auto w-full max-w-[360px] lg:max-w-none"
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.button
+                  key={selected}
+                  type="button"
+                  onClick={() => setFullSize(true)}
+                  aria-label={`View the ${TEMPLATE_META[selected].name} design full size`}
+                  initial={reducedMotion ? false : { opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={reducedMotion ? undefined : { opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 0.2 }}
+                  className="block w-full cursor-zoom-in overflow-hidden rounded-md border border-border-subtle shadow-overlay focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
+                >
+                  {previewWidth > 0 ? (
+                    <ScaledPreview
+                      data={previewFor(selected)}
+                      template={selected}
+                      width={previewWidth}
+                    />
+                  ) : (
+                    <div className="aspect-[794/1123] w-full bg-white" />
+                  )}
+                </motion.button>
+              </AnimatePresence>
+            </div>
+          </div>
         </div>
 
-        <div className="hidden lg:block">
-          <div className="sticky top-6 rounded-2xl border border-border-subtle bg-bg-surface p-4 shadow-raised">
-            <p className="mb-3 text-[13px] font-semibold text-text-secondary">
-              {TEMPLATE_META[selected].name} preview
-            </p>
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={selected}
-                initial={reducedMotion ? false : { opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={reducedMotion ? undefined : { opacity: 0, scale: 0.98 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden rounded-md border border-border-subtle shadow-overlay"
-              >
-                <ScaledPreview
-                  data={previewFor(selected)}
-                  template={selected}
-                  width={306}
-                />
-              </motion.div>
-            </AnimatePresence>
+        {/* Design options: a swipeable strip on phones, a grid on larger screens. */}
+        <div className="lg:col-start-1 lg:row-start-1">
+          <p className="mb-3 text-[14px] font-semibold text-text-primary">
+            {ORDERED_TEMPLATES.length} designs.{' '}
+            <span className="font-normal text-text-secondary">
+              Tap one to preview it.
+            </span>
+          </p>
+          <div
+            className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 sm:pb-0"
+            role="radiogroup"
+            aria-label="CV designs"
+          >
+            {ORDERED_TEMPLATES.map((t, i) => {
+              const isSelected = t === selected;
+              const meta = TEMPLATE_META[t];
+              return (
+                <motion.button
+                  key={t}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  onClick={() => onSelect(t)}
+                  initial={reducedMotion ? false : { opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    delay: reducedMotion ? 0 : i * 0.05,
+                    duration: 0.3,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  whileHover={reducedMotion ? undefined : { y: -3 }}
+                  className={cn(
+                    'group relative flex w-[150px] shrink-0 snap-start flex-col items-center overflow-hidden rounded-2xl border p-3 text-left transition-[border-color,box-shadow,background-color] duration-200 sm:w-auto',
+                    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus',
+                    isSelected
+                      ? 'border-border-focus bg-accent-subtle shadow-[0_0_0_1px_var(--ck-border-focus),0_0_0_5px_var(--ck-accent-subtle)]'
+                      : 'border-border-default bg-bg-surface shadow-raised hover:border-border-strong',
+                  )}
+                >
+                  {meta.badge ? (
+                    <span className="absolute left-2.5 top-2.5 z-10 rounded-full border border-border-default bg-bg-raised px-2 py-0.5 text-[11px] font-semibold text-text-primary shadow-raised">
+                      {meta.badge}
+                    </span>
+                  ) : null}
+                  {isSelected ? (
+                    <span className="absolute right-2.5 top-2.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-accent-solid text-text-on-accent shadow-raised">
+                      <Check className="h-3.5 w-3.5" strokeWidth={3.5} />
+                    </span>
+                  ) : null}
+                  <div className="w-full overflow-hidden rounded-md border border-border-subtle transition-transform duration-300 group-hover:scale-[1.02]">
+                    <ScaledPreview
+                      data={previewFor(t)}
+                      template={t}
+                      width={124}
+                    />
+                  </div>
+                  <span className="mt-3 w-full text-[14px] font-semibold text-text-primary">
+                    {meta.name}
+                  </span>
+                  <span className="mt-0.5 w-full text-[12px] leading-snug text-text-secondary">
+                    {meta.blurb}
+                  </span>
+                </motion.button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -204,6 +345,14 @@ export function OnboardingTemplateChooser({
           {confirmLabel ?? `Use ${TEMPLATE_META[selected].name}`}
         </Button>
       </div>
+
+      {fullSize ? (
+        <FullSizePreview
+          data={previewFor(selected)}
+          template={selected}
+          onClose={closeFullSize}
+        />
+      ) : null}
     </div>
   );
 }
