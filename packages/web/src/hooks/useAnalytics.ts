@@ -4,6 +4,7 @@ import { queryKeys } from '@/lib/queryKeys';
 import { useQuery } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
+import { refetchOnMountUnlessJustFailed } from '@/lib/queryRefetch';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export function useAnalytics() {
@@ -14,7 +15,7 @@ export function useAnalytics() {
     queryFn: api.analytics.getOverview,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
-    refetchOnMount: true,
+    refetchOnMount: refetchOnMountUnlessJustFailed,
     refetchOnWindowFocus: true,
     enabled: Boolean(accessToken),
   });

@@ -4,6 +4,7 @@ import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQuery, type QueryClient } from '@tanstack/react-query';
 
 import { useToast } from '@/components/ui/Toast';
+import { refetchOnMountUnlessJustFailed } from '@/lib/queryRefetch';
 import {
   api,
   type GrowthEventName,
@@ -23,7 +24,7 @@ export function useGrowthDailyDirection() {
     queryFn: () => api.growth.getDailyDirection(),
     staleTime: 120_000,
     gcTime: 5 * 60_000,
-    refetchOnMount: true,
+    refetchOnMount: refetchOnMountUnlessJustFailed,
     refetchOnWindowFocus: true,
   });
 }
@@ -34,7 +35,7 @@ export function useGrowthProgress(window: GrowthProgressWindow) {
     queryFn: () => api.growth.getProgress(window),
     staleTime: 120_000,
     gcTime: 5 * 60_000,
-    refetchOnMount: true,
+    refetchOnMount: refetchOnMountUnlessJustFailed,
     refetchOnWindowFocus: true,
   });
 }
@@ -45,7 +46,7 @@ export function useGrowthMomentumNudges() {
     queryFn: () => api.growth.getMomentumNudges(),
     staleTime: 120_000,
     gcTime: 5 * 60_000,
-    refetchOnMount: true,
+    refetchOnMount: refetchOnMountUnlessJustFailed,
     refetchOnWindowFocus: true,
   });
 }
@@ -56,7 +57,7 @@ export function useGrowthAchievements() {
     queryFn: () => api.growth.getAchievements(),
     staleTime: 120_000,
     gcTime: 5 * 60_000,
-    refetchOnMount: true,
+    refetchOnMount: refetchOnMountUnlessJustFailed,
     refetchOnWindowFocus: true,
   });
 }

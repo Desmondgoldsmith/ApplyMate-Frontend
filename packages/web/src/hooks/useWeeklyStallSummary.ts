@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
+import { refetchOnMountUnlessJustFailed } from '@/lib/queryRefetch';
 import {
   clampWeeklyStallLimit,
   weeklyStallSummaryQueryKey,
@@ -15,7 +16,7 @@ export function useWeeklyStallSummary(params?: { limit?: number }) {
     queryFn: () => api.dashboard.getWeeklyStallSummary({ limit }),
     staleTime: 60_000,
     gcTime: 5 * 60_000,
-    refetchOnMount: true,
+    refetchOnMount: refetchOnMountUnlessJustFailed,
     refetchOnWindowFocus: true,
   });
 }

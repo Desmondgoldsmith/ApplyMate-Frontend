@@ -4,6 +4,7 @@ import { queryKeys } from '@/lib/queryKeys';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
+import { refetchOnMountUnlessJustFailed } from '@/lib/queryRefetch';
 import { useAuthStore } from '@/store/useAuthStore';
 
 /** Matches backend max for GET /jobs/history (clamp in hook). */
@@ -31,7 +32,7 @@ export function useJobHistory(params?: {
     queryFn: () => api.jobs.getHistory(params),
     enabled: authSessionReady && Boolean(accessToken),
     staleTime: 60_000,
-    refetchOnMount: true,
+    refetchOnMount: refetchOnMountUnlessJustFailed,
     refetchOnWindowFocus: true,
   });
 }
@@ -50,7 +51,7 @@ export function useJobHistoryPage(
     queryFn: () => api.jobs.getHistoryPaginated({ limit, offset }),
     enabled: authSessionReady && Boolean(accessToken),
     staleTime: 60_000,
-    refetchOnMount: true,
+    refetchOnMount: refetchOnMountUnlessJustFailed,
     refetchOnWindowFocus: true,
     placeholderData: keepPreviousData,
   });

@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
+import { refetchOnMountUnlessJustFailed } from '@/lib/queryRefetch';
 import { dashboardQuietApplicationsQueryKey } from '@/lib/today-plan';
 
 export function useDashboardQuietApplications(params: {
@@ -33,7 +34,7 @@ export function useDashboardQuietApplications(params: {
       }),
     staleTime: 60_000,
     gcTime: 5 * 60_000,
-    refetchOnMount: true,
+    refetchOnMount: refetchOnMountUnlessJustFailed,
     refetchOnWindowFocus: true,
   });
 }

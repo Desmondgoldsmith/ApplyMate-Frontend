@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
+import { refetchOnMountUnlessJustFailed } from '@/lib/queryRefetch';
 import { todayPlanQueryKey } from '@/lib/today-plan';
 
 export function useTodayPlan(params: {
@@ -40,7 +41,7 @@ export function useTodayPlan(params: {
     /** Fresh counts (pipeline snapshot, digest) when returning from Job Hub / interviews — client navigation does not refocus the window. */
     staleTime: 60_000,
     gcTime: 5 * 60_000,
-    refetchOnMount: true,
+    refetchOnMount: refetchOnMountUnlessJustFailed,
     refetchOnWindowFocus: true,
     enabled: params.enabled !== false,
   });

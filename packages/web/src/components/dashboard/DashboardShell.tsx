@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 
 import { FunnelPageAnalytics } from '@/components/analytics/FunnelPageAnalytics';
 import { BreadcrumbProvider } from '@/components/dashboard/BreadcrumbContext';
@@ -15,10 +15,21 @@ import { AppShellBackdrop } from '@/components/layout/AppShellBackdrop';
 import { LocationBootstrap } from '@/components/location/LocationBootstrap';
 import { FeatureTour } from '@/components/onboarding/FeatureTour';
 import { DashboardOnboardingGate } from '@/components/dashboard/DashboardOnboardingGate';
+import { forceAuthSignOut } from '@/lib/authRefresh';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export function DashboardShell({ children }: { children: ReactNode }) {
   const accessToken = useAuthStore((s) => s.accessToken);
+  const authSessionReady = useAuthStore((s) => s.authSessionReady);
+  /** Session restore finished without a token (expired / revoked): every dashboard request would 401. */
+  const signedOut = authSessionReady && !accessToken;
+
+  useEffect(() => {
+    if (signedOut) forceAuthSignOut('expired');
+  }, [signedOut]);
+
+  if (signedOut) return null;
+
   return (
     <div className="relative flex h-screen min-h-0 overflow-hidden bg-transparent">
       <FunnelPageAnalytics surface="dashboard" />
