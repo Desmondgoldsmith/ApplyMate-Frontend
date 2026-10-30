@@ -71,9 +71,10 @@ Thumbs.db
 !.vscode/extensions.json
 
 # -----------------------------------------------------------------------------
-# Cursor (local AI rules & skills — optional on repo)
+# Cursor (local AI rules stay local; shared project skills are committed)
 # -----------------------------------------------------------------------------
-.cursor/
+.cursor/*
+!.cursor/skills/
 
 # -----------------------------------------------------------------------------
 # Deploy / hosting
