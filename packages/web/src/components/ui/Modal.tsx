@@ -5,6 +5,7 @@ import type { ReactNode, WheelEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { PortalThemeScope } from '@/components/theme/ThemeScope';
 import { cn } from '@/lib/utils';
 
 type ModalProps = {
@@ -73,97 +74,102 @@ export function Modal({
   if (!open || !mounted || typeof document === 'undefined') return null;
 
   return createPortal(
-    <div
-      className={cn(
-        'fixed inset-0 flex bg-black/60 p-4 backdrop-blur-sm',
-        scrollBody ? 'overflow-hidden' : 'overflow-y-auto',
-        layerZIndex == null && 'z-[100]',
-      )}
-      style={layerZIndex != null ? { zIndex: layerZIndex } : undefined}
-      data-lenis-prevent
-      data-lenis-prevent-wheel
-      onWheelCapture={onOverlayWheelCapture}
-    >
+    <PortalThemeScope>
       <div
         className={cn(
-          'relative flex w-full items-center justify-center py-6',
-          scrollBody ? 'h-full min-h-0' : 'min-h-full',
+          'fixed inset-0 flex bg-black/60 p-4 backdrop-blur-sm',
+          scrollBody ? 'overflow-hidden' : 'overflow-y-auto',
+          layerZIndex == null && 'z-[100]',
         )}
+        style={layerZIndex != null ? { zIndex: layerZIndex } : undefined}
+        data-lenis-prevent
+        data-lenis-prevent-wheel
+        onWheelCapture={onOverlayWheelCapture}
       >
-        <button
-          type="button"
-          aria-label="Close dialog"
-          className="absolute inset-0"
-          onClick={() =>
-            closeOnOverlayClick ? onOpenChange(false) : undefined
-          }
-        />
         <div
-          role="dialog"
-          aria-modal="true"
-          onClick={(e) => e.stopPropagation()}
           className={cn(
-            'relative z-10 flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-[#00C9B1]/20 bg-[#0C0F0F] shadow-xl',
-            scrollBody && 'max-h-[85vh] sm:max-h-[min(90dvh,880px)]',
-            !scrollBody && 'app-scrollbar',
-            className,
+            'relative flex w-full items-center justify-center py-6',
+            scrollBody ? 'h-full min-h-0' : 'min-h-full',
           )}
         >
-          {showCloseButton && !(title || description) ? (
-            <button
-              type="button"
-              aria-label="Close dialog"
-              className="absolute right-3 top-3 z-20 rounded-lg border border-white/[0.08] bg-[#111616] p-1.5 text-white/70 transition hover:border-white/[0.14] hover:bg-white/[0.06] hover:text-white"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-4 w-4" aria-hidden />
-            </button>
-          ) : null}
-          {title || description ? (
+          <button
+            type="button"
+            aria-label="Close dialog"
+            className="absolute inset-0"
+            onClick={() =>
+              closeOnOverlayClick ? onOpenChange(false) : undefined
+            }
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+            className={cn(
+              'relative z-10 flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-[#00C9B1]/20 bg-[#0C0F0F] shadow-xl',
+              scrollBody && 'max-h-[85vh] sm:max-h-[min(90dvh,880px)]',
+              !scrollBody && 'app-scrollbar',
+              className,
+            )}
+          >
+            {showCloseButton && !(title || description) ? (
+              <button
+                type="button"
+                aria-label="Close dialog"
+                className="absolute right-3 top-3 z-20 rounded-lg border border-white/[0.08] bg-[#111616] p-1.5 text-white/70 transition hover:border-white/[0.14] hover:bg-white/[0.06] hover:text-white"
+                onClick={() => onOpenChange(false)}
+              >
+                <X className="h-4 w-4" aria-hidden />
+              </button>
+            ) : null}
+            {title || description ? (
+              <div
+                className={cn(
+                  'relative shrink-0 border-b border-white/[0.06] px-6 pb-4 pt-6 pr-14',
+                  scrollBody && 'sticky top-0 z-[1] bg-inherit',
+                )}
+              >
+                {showCloseButton ? (
+                  <button
+                    type="button"
+                    aria-label="Close dialog"
+                    className="absolute right-4 top-4 z-20 rounded-lg border border-white/[0.08] bg-[#111616]/90 p-1.5 text-white/70 backdrop-blur-sm transition hover:border-white/[0.14] hover:bg-white/[0.08] hover:text-white"
+                    onClick={() => onOpenChange(false)}
+                  >
+                    <X className="h-4 w-4" aria-hidden />
+                  </button>
+                ) : null}
+                {title ? (
+                  <h2
+                    className={cn(
+                      'text-lg font-bold text-white',
+                      titleClassName,
+                    )}
+                  >
+                    {title}
+                  </h2>
+                ) : null}
+                {description ? (
+                  <p className="mt-2 text-sm text-white/55">{description}</p>
+                ) : null}
+              </div>
+            ) : null}
             <div
               className={cn(
-                'relative shrink-0 border-b border-white/[0.06] px-6 pb-4 pt-6 pr-14',
-                scrollBody && 'sticky top-0 z-[1] bg-inherit',
+                'px-6 pb-6',
+                title || description ? 'pt-4' : 'pt-6',
+                scrollBody &&
+                  'app-scrollbar flex-1 min-h-0 overflow-y-auto overscroll-contain',
+                bodyClassName,
               )}
+              data-lenis-prevent
+              data-lenis-prevent-wheel
             >
-              {showCloseButton ? (
-                <button
-                  type="button"
-                  aria-label="Close dialog"
-                  className="absolute right-4 top-4 z-20 rounded-lg border border-white/[0.08] bg-[#111616]/90 p-1.5 text-white/70 backdrop-blur-sm transition hover:border-white/[0.14] hover:bg-white/[0.08] hover:text-white"
-                  onClick={() => onOpenChange(false)}
-                >
-                  <X className="h-4 w-4" aria-hidden />
-                </button>
-              ) : null}
-              {title ? (
-                <h2
-                  className={cn('text-lg font-bold text-white', titleClassName)}
-                >
-                  {title}
-                </h2>
-              ) : null}
-              {description ? (
-                <p className="mt-2 text-sm text-white/55">{description}</p>
-              ) : null}
+              {children}
             </div>
-          ) : null}
-          <div
-            className={cn(
-              'px-6 pb-6',
-              title || description ? 'pt-4' : 'pt-6',
-              scrollBody &&
-                'app-scrollbar flex-1 min-h-0 overflow-y-auto overscroll-contain',
-              bodyClassName,
-            )}
-            data-lenis-prevent
-            data-lenis-prevent-wheel
-          >
-            {children}
           </div>
         </div>
       </div>
-    </div>,
+    </PortalThemeScope>,
     document.body,
   );
 }

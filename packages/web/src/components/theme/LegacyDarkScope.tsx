@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { PageBackground } from '@/components/landing/PageBackground';
+import { ForcedThemeScope } from '@/components/theme/ThemeScope';
 
 /**
  * Pins a subtree to the original dark look (teal glow background, dark
@@ -10,11 +11,11 @@ import { PageBackground } from '@/components/landing/PageBackground';
  */
 export function LegacyDarkScope({ children }: { children: ReactNode }) {
   return (
-    <div data-theme="dark" className="contents text-white">
+    <ForcedThemeScope theme="dark" className="text-white">
       <div className="pointer-events-none fixed inset-0 -z-10" aria-hidden>
         <PageBackground />
       </div>
       {children}
-    </div>
+    </ForcedThemeScope>
   );
 }

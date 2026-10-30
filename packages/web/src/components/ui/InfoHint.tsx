@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 
+import { PortalThemeScope } from '@/components/theme/ThemeScope';
 import { Modal } from '@/components/ui/Modal';
 import { usePrefersFinePointer } from '@/hooks/usePrefersFinePointer';
 import { cn } from '@/lib/utils';
@@ -149,26 +150,28 @@ export function InfoHint({
   const tooltip =
     !useSheet && open && typeof document !== 'undefined'
       ? createPortal(
-          <div
-            ref={panelRef}
-            id={tooltipId}
-            role="tooltip"
-            style={{
-              position: 'fixed',
-              top: coords.top,
-              left: coords.left,
-              zIndex: 9999,
-            }}
-            className={cn(
-              'pointer-events-auto w-max max-w-[min(17rem,85vw)] whitespace-pre-line rounded-md border px-2.5 py-2 text-left text-[11px] font-medium leading-snug',
-              VARIANT_PANEL[variant],
-              tooltipClassName,
-            )}
-            onPointerEnter={clearCloseTimer}
-            onPointerLeave={scheduleClose}
-          >
-            {text}
-          </div>,
+          <PortalThemeScope>
+            <div
+              ref={panelRef}
+              id={tooltipId}
+              role="tooltip"
+              style={{
+                position: 'fixed',
+                top: coords.top,
+                left: coords.left,
+                zIndex: 9999,
+              }}
+              className={cn(
+                'pointer-events-auto w-max max-w-[min(17rem,85vw)] whitespace-pre-line rounded-md border px-2.5 py-2 text-left text-[11px] font-medium leading-snug',
+                VARIANT_PANEL[variant],
+                tooltipClassName,
+              )}
+              onPointerEnter={clearCloseTimer}
+              onPointerLeave={scheduleClose}
+            >
+              {text}
+            </div>
+          </PortalThemeScope>,
           document.body,
         )
       : null;
