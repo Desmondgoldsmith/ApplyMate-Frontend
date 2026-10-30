@@ -63,6 +63,11 @@ const TOUR_START_DELAY_MS = 1200;
 const TOUR_DOM_RETRY_MS = 500;
 const TOUR_DOM_MAX_ATTEMPTS = 16;
 
+/** Home has its own WelcomeTour; this driver.js tour now only covers the other pages. */
+function isRetiredTour(id: TourId): boolean {
+  return id === 'dashboard';
+}
+
 function isNarrowViewport(): boolean {
   return (
     typeof window !== 'undefined' &&
@@ -310,7 +315,7 @@ export function FeatureTour() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (isNarrowViewport()) return;
-    if (!user?.id || !tourId) return;
+    if (!user?.id || !tourId || isRetiredTour(tourId)) return;
     if (user.onboardingCompleted !== true) return;
 
     const restarted = tourRestartNonceRef.current > 0;

@@ -11,7 +11,8 @@ import { MobileBottomNav } from '@/components/dashboard/MobileBottomNav';
 import { MobileNavToggleFab } from '@/components/dashboard/MobileNavToggleFab';
 import { MobileShellProvider } from '@/components/dashboard/MobileShellContext';
 import { Sidebar } from '@/components/dashboard/Sidebar';
-import { AppShellBackdrop } from '@/components/layout/AppShellBackdrop';
+import { WalkthroughVideoHost } from '@/components/dashboard/WalkthroughVideoHost';
+import { WelcomeTour } from '@/components/dashboard/welcome-tour/WelcomeTour';
 import { LocationBootstrap } from '@/components/location/LocationBootstrap';
 import { FeatureTour } from '@/components/onboarding/FeatureTour';
 import { DashboardOnboardingGate } from '@/components/dashboard/DashboardOnboardingGate';
@@ -31,16 +32,19 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   if (signedOut) return null;
 
   return (
-    <div className="relative flex h-screen min-h-0 overflow-hidden bg-transparent">
+    <div className="relative flex h-screen min-h-0 overflow-hidden bg-bg-page text-text-primary">
       <FunnelPageAnalytics surface="dashboard" />
       <DashboardOnboardingGate />
-      <AppShellBackdrop />
       <Sidebar />
       <BreadcrumbProvider>
         <MobileShellProvider>
           <div className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             <Header />
             <FeatureTour />
+            <Suspense fallback={null}>
+              <WelcomeTour />
+            </Suspense>
+            <WalkthroughVideoHost />
             <LocationBootstrap enabled={Boolean(accessToken)} />
             <Suspense
               fallback={

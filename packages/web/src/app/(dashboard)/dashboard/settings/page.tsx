@@ -402,8 +402,7 @@ function FeaturesTab() {
       <GlowCard contentClassName="p-5 sm:p-6">
         <h4 className="text-sm font-semibold text-white">Product tour</h4>
         <p className="mt-1 text-sm text-white/45">
-          Replay the guided walkthrough of your dashboard — AI credits, jobs, CV
-          Clinic, and Pro.
+          Replay the short guided tour of your dashboard.
         </p>
         <button
           type="button"
@@ -411,8 +410,7 @@ function FeaturesTab() {
           onClick={() => {
             resetGlobalTourFlags(user?.id);
             window.dispatchEvent(new CustomEvent('applymate:tour-restart'));
-            toast.success('Tour reset — opening your dashboard');
-            router.push('/dashboard');
+            router.push('/dashboard?tour=1');
           }}
         >
           Restart product tour
