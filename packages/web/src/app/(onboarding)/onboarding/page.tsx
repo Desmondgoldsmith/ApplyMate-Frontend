@@ -2,7 +2,7 @@
 
 import { queryKeys } from '@/lib/queryKeys';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowRight,
   Check,
@@ -27,6 +27,7 @@ import {
   useState,
 } from 'react';
 
+import { CareerKiteMark } from '@/components/brand/CareerKiteMark';
 import type { CvParseSuccessPayload } from '@/components/dashboard/CVUploadZone';
 import { OnboardingComplete } from '@/components/onboarding/OnboardingComplete';
 import { OnboardingCvReview } from '@/components/onboarding/OnboardingCvReview';
@@ -44,7 +45,6 @@ import {
 } from '@/components/onboarding/onboardingLayout';
 import { getOnboardingTemplateLabel } from '@/components/onboarding/TemplatePicker';
 import { Button } from '@/components/ui/Button';
-import { GlowCard } from '@/components/ui/GlowCard';
 import { useToast } from '@/components/ui/Toast';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
 import {
@@ -131,8 +131,8 @@ const CVChatInterface = dynamic(
 function OnboardingPanelLoading({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-      <Loader2 className="h-8 w-8 animate-spin text-[#00C9B1]" />
-      <p className="text-sm text-white/55">{label}</p>
+      <Loader2 className="h-8 w-8 animate-spin text-accent-text" />
+      <p className="text-sm text-text-tertiary">{label}</p>
     </div>
   );
 }
@@ -186,6 +186,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const toast = useToast();
   const queryClient = useQueryClient();
+  const reducedMotion = useReducedMotion();
   const { data: me, isSuccess: meOk } = useCurrentUser();
   const saveProgress = useSaveOnboardingProgress();
   const onboardingStatus = useOnboardingStatus();
@@ -213,6 +214,8 @@ export default function OnboardingPage() {
   const [selectedTemplate, setSelectedTemplate] =
     useState<CvTemplateId>('modern');
   const [templateSaving, setTemplateSaving] = useState(false);
+  /** AI chat and scratch paths pick a design before building (upload/paste pick after review). */
+  const [entryDesignChosen, setEntryDesignChosen] = useState(false);
   const [onboardingSaved, setOnboardingSaved] = useState(false);
   const [pasteStage, setPasteStage] = useState<PasteStage>('input');
   const [uploadedScore, setUploadedScore] = useState<CVScorePayload | null>(
@@ -288,6 +291,7 @@ export default function OnboardingPage() {
     enabled:
       Boolean(accessToken) &&
       step === 2 &&
+      entryDesignChosen &&
       (cvPath === 'manual' || cvPath === 'chat'),
     staleTime: 60_000,
   });
@@ -636,6 +640,7 @@ export default function OnboardingPage() {
   const resetCvStep = useCallback(() => {
     setCvPath(null);
     setCvEntryPhase('paths');
+    setEntryDesignChosen(false);
     setUploadPhase('zone');
     setUploadedScore(null);
     setUploadParsedProfile(null);
@@ -920,14 +925,19 @@ export default function OnboardingPage() {
     ],
   );
 
-  const designStage =
+  const entryDesignStage =
     step === 2 &&
-    ((cvPath === 'upload' && uploadPhase === 'design') ||
-      (cvPath === 'paste' && pasteStage === 'design'));
+    (cvPath === 'chat' || cvPath === 'manual') &&
+    !entryDesignChosen;
+  const designStage =
+    entryDesignStage ||
+    (step === 2 &&
+      ((cvPath === 'upload' && uploadPhase === 'design') ||
+        (cvPath === 'paste' && pasteStage === 'design')));
+  const manualResumeEditorShell =
+    step === 2 && cvPath === 'manual' && entryDesignChosen;
   const wideStep2 =
-    step === 2 && (cvPath === 'chat' || cvPath === 'manual' || designStage);
-
-  const manualResumeEditorShell = step === 2 && cvPath === 'manual';
+    step === 2 && (cvPath === 'chat' || manualResumeEditorShell || designStage);
 
   const progressHint =
     step === 1
@@ -940,10 +950,12 @@ export default function OnboardingPage() {
   const stepProgress =
     step === 1
       ? discoveryStep === 0
-        ? 0.12
-        : discoveryStep === 2
-          ? 0.5
-          : 0.85
+        ? 0.1
+        : discoveryStep === 1
+          ? 0.35
+          : discoveryStep === 2
+            ? 0.6
+            : 0.85
       : step === 2
         ? cvPath === null
           ? 0.12
@@ -959,7 +971,9 @@ export default function OnboardingPage() {
                 : pasteStage === 'review'
                   ? 0.65
                   : 0.88
-              : 0.5
+              : entryDesignChosen
+                ? 0.6
+                : 0.35
         : 1;
 
   return (
@@ -967,6 +981,7 @@ export default function OnboardingPage() {
       step={step}
       wide={wideStep2}
       hideProgressChrome={manualResumeEditorShell}
+      forcedTheme={manualResumeEditorShell ? 'dark' : undefined}
       fillViewportHeight={manualResumeEditorShell}
       progressHint={manualResumeEditorShell ? undefined : progressHint}
       stepProgress={stepProgress}
@@ -989,9 +1004,15 @@ export default function OnboardingPage() {
               targetRolesText={targetRolesText}
               onTargetRolesChange={setTargetRolesText}
               savePending={saveProgress.isPending}
-              onBack={() => setDiscoveryStep((d) => (d === 3 ? 2 : 0))}
+              onBack={() =>
+                setDiscoveryStep((d) => (d === 3 ? 2 : d === 2 ? 1 : 0))
+              }
               onNext={async () => {
                 if (discoveryStep === 0) {
+                  setDiscoveryStep(1);
+                  return;
+                }
+                if (discoveryStep === 1) {
                   setDiscoveryStep(2);
                   return;
                 }
@@ -1038,7 +1059,7 @@ export default function OnboardingPage() {
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className={cn(
               'mx-auto w-full',
-              cvPath === 'manual'
+              manualResumeEditorShell
                 ? 'flex min-h-0 max-w-[min(100%,1320px)] flex-1 flex-col overflow-hidden'
                 : designStage
                   ? 'max-w-[1040px]'
@@ -1080,10 +1101,7 @@ export default function OnboardingPage() {
                       }
                     }}
                   />
-                  <p className="text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-[#00C9B1]">
-                    Your CV
-                  </p>
-                  <h2 className={cn(ONBOARDING_TITLE_CLASS, 'mt-3')}>
+                  <h2 className={ONBOARDING_TITLE_CLASS}>
                     How would you like to add your CV?
                   </h2>
                   <p className={ONBOARDING_SUBTITLE_CLASS}>
@@ -1133,7 +1151,7 @@ export default function OnboardingPage() {
 
                 <button
                   type="button"
-                  className="mx-auto mt-6 flex min-h-[44px] w-full items-center justify-center text-center text-[13px] text-white/45 transition hover:text-white/75"
+                  className="mx-auto mt-6 flex min-h-[44px] w-full items-center justify-center text-center text-[13px] text-text-tertiary transition hover:text-text-secondary"
                   onClick={async () => {
                     setFinalScore(null);
                     setCompletionProfile(null);
@@ -1147,8 +1165,35 @@ export default function OnboardingPage() {
               </>
             ) : null}
 
+            {entryDesignStage ? (
+              <div className="flex w-full flex-col items-center pt-2 text-center">
+                <OnboardingBackLink
+                  onClick={() => {
+                    setCvPath(null);
+                    setCvEntryPhase('paths');
+                  }}
+                />
+                <StageHeading
+                  title="Choose a design"
+                  subtitle={
+                    cvPath === 'chat'
+                      ? "Pick a look first. We'll write your CV into it as we chat."
+                      : 'Pick a look first. You can switch designs any time in the editor.'
+                  }
+                />
+                <OnboardingTemplateChooser
+                  data={null}
+                  selected={selectedTemplate}
+                  onSelect={setSelectedTemplate}
+                  onConfirm={() => setEntryDesignChosen(true)}
+                  saving={false}
+                  confirmLabel={`Continue with ${getOnboardingTemplateLabel(selectedTemplate)}`}
+                />
+              </div>
+            ) : null}
+
             <AnimatePresence initial={false}>
-              {cvPath === 'chat' ? (
+              {cvPath === 'chat' && entryDesignChosen ? (
                 <motion.div
                   key="chat"
                   initial={{ height: 0, opacity: 0 }}
@@ -1160,33 +1205,32 @@ export default function OnboardingPage() {
                 >
                   <div className="app-scrollbar flex min-h-0 w-full flex-1 flex-col items-center overflow-y-auto pt-2">
                     <OnboardingBackLink
-                      onClick={() => {
-                        setCvPath(null);
-                        setCvEntryPhase('paths');
-                      }}
+                      label="Back to designs"
+                      onClick={() => setEntryDesignChosen(false)}
                     />
                     {onboardingCvProfileQuery.isError ? (
-                      <GlowCard contentClassName="p-6 text-center">
-                        <p className="text-sm text-white/70">
+                      <Panel className="p-6 text-center">
+                        <p className="text-sm text-text-secondary">
                           We couldn&apos;t prepare your resume workspace. Check
                           your connection and try again.
                         </p>
                         <Button
-                          className="mt-4"
+                          variant="accent"
+                          className="mt-4 px-7"
                           onClick={() =>
                             void onboardingCvProfileQuery.refetch()
                           }
                         >
                           Retry
                         </Button>
-                      </GlowCard>
+                      </Panel>
                     ) : onboardingCvProfileQuery.isPending ? (
-                      <GlowCard contentClassName="flex flex-col items-center justify-center gap-3 p-12 text-center">
-                        <Loader2 className="h-9 w-9 animate-spin text-[#00C9B1]" />
-                        <p className="text-sm text-white/55">
+                      <Panel className="flex flex-col items-center justify-center gap-3 p-12 text-center">
+                        <Loader2 className="h-9 w-9 animate-spin text-accent-text" />
+                        <p className="text-sm text-text-tertiary">
                           Preparing your resume workspace…
                         </p>
-                      </GlowCard>
+                      </Panel>
                     ) : (
                       <div className="w-full">
                         <CVChatInterface
@@ -1286,14 +1330,11 @@ export default function OnboardingPage() {
                         />
                       </>
                     ) : !pasteSubmitting ? (
-                      <GlowCard
-                        className="border border-[rgba(0,201,177,0.15)]"
-                        contentClassName="flex min-h-0 flex-col overflow-hidden p-5"
-                      >
-                        <p className="text-[15px] font-semibold text-white">
+                      <Panel className="flex min-h-0 flex-col overflow-hidden p-5">
+                        <p className="text-[15px] font-semibold text-text-primary">
                           Paste your CV
                         </p>
-                        <p className="mt-1 text-xs text-white/55">
+                        <p className="mt-1 text-xs text-text-tertiary">
                           Your full CV, LinkedIn profile or job history notes,
                           up to {CV_CHAT_INPUT_MAX_CHARS.toLocaleString()}{' '}
                           characters.
@@ -1305,24 +1346,25 @@ export default function OnboardingPage() {
                           placeholder="Paste your CV text here. Include your job titles, companies, dates, education and skills. The more you share, the better the result."
                           rows={12}
                           data-lenis-prevent-wheel
-                          className="app-scrollbar mt-3 min-h-[220px] max-h-[min(55vh,520px)] flex-1 w-full resize-y overflow-y-auto rounded-xl border border-[rgba(255,255,255,0.10)] bg-[#111616] px-3 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-[#00C9B1]/40"
+                          className="app-scrollbar mt-3 min-h-[220px] max-h-[min(55vh,520px)] w-full flex-1 resize-y overflow-y-auto rounded-xl border border-border-strong bg-bg-sunken px-3.5 py-3 text-[14px] leading-relaxed text-text-primary outline-none transition-[border-color,box-shadow] placeholder:text-text-tertiary focus:border-border-focus focus:shadow-[0_0_0_3px_var(--ck-accent-subtle)]"
                         />
                         <p
                           className={cn(
                             'mt-2 text-right text-[11px]',
                             isCvChatInputOverLimit(pasteText.length)
-                              ? 'text-rose-400/90'
-                              : 'text-white/45',
+                              ? 'text-danger-text'
+                              : 'text-text-tertiary',
                           )}
                         >
                           {formatCvChatCharCount(pasteText.length)}
                         </p>
                         {pasteError ? (
-                          <p className="mt-2 text-sm text-[#EF4444]">
+                          <p className="mt-2 text-sm text-danger-text">
                             {pasteError}
                           </p>
                         ) : null}
                         <Button
+                          variant="accent"
                           fullWidth
                           className="mt-4 inline-flex items-center justify-center gap-2"
                           disabled={
@@ -1340,7 +1382,7 @@ export default function OnboardingPage() {
                         </Button>
                         <button
                           type="button"
-                          className="mx-auto mt-4 block w-full text-center text-[13px] text-white/45 hover:text-white/75"
+                          className="mx-auto mt-4 block w-full text-center text-[13px] text-text-tertiary hover:text-text-secondary"
                           onClick={async () => {
                             setFinalScore(null);
                             setCompletionProfile(null);
@@ -1354,22 +1396,19 @@ export default function OnboardingPage() {
                         >
                           I&apos;ll add my CV later
                         </button>
-                      </GlowCard>
+                      </Panel>
                     ) : (
-                      <GlowCard
-                        className="border border-[rgba(0,201,177,0.15)]"
-                        contentClassName="p-10 text-center"
-                      >
-                        <p className="flex items-center justify-center gap-2 text-lg font-semibold text-white">
-                          <Sparkles className="h-5 w-5 text-[#00C9B1]" />
+                      <Panel className="p-10 text-center">
+                        <p className="flex items-center justify-center gap-2 text-lg font-semibold text-text-primary">
+                          <Sparkles className="h-5 w-5 text-accent-text" />
                           Reading your CV…
                         </p>
-                        <p className="mt-1 text-[12px] text-white/40">
+                        <p className="mt-1 text-[12px] text-text-tertiary">
                           Usually takes 15–30 seconds
                         </p>
-                        <div className="mx-auto mt-6 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-white/[0.08]">
+                        <div className="mx-auto mt-6 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-bg-hover">
                           <motion.div
-                            className="h-full bg-[#00C9B1]"
+                            className="h-full bg-accent-solid"
                             animate={{ x: ['-100%', '100%'] }}
                             transition={{
                               duration: 1.2,
@@ -1379,10 +1418,10 @@ export default function OnboardingPage() {
                             style={{ width: '40%' }}
                           />
                         </div>
-                        <p className="mt-6 text-sm text-white/55">
+                        <p className="mt-6 text-sm text-text-tertiary">
                           {PASTE_STATUS_MESSAGES[pasteStatusIdx]}
                         </p>
-                      </GlowCard>
+                      </Panel>
                     )}
                   </div>
                 </motion.div>
@@ -1390,7 +1429,7 @@ export default function OnboardingPage() {
             </AnimatePresence>
 
             <AnimatePresence initial={false}>
-              {cvPath === 'manual' ? (
+              {cvPath === 'manual' && entryDesignChosen ? (
                 <motion.div
                   key="manual"
                   initial={{ opacity: 0 }}
@@ -1420,42 +1459,44 @@ export default function OnboardingPage() {
                     )}
                   >
                     {onboardingCvProfileQuery.isError ? (
-                      <GlowCard contentClassName="p-6 text-center">
-                        <p className="text-sm text-white/70">
+                      <Panel className="p-6 text-center">
+                        <p className="text-sm text-text-secondary">
                           We couldn&apos;t prepare your resume workspace. Check
                           your connection and try again.
                         </p>
                         <Button
-                          className="mt-4"
+                          variant="accent"
+                          className="mt-4 px-7"
                           onClick={() =>
                             void onboardingCvProfileQuery.refetch()
                           }
                         >
                           Retry
                         </Button>
-                      </GlowCard>
+                      </Panel>
                     ) : onboardingCvProfileQuery.isPending ? (
-                      <GlowCard contentClassName="flex flex-col items-center justify-center gap-4 p-16 text-center">
-                        <Loader2 className="h-10 w-10 animate-spin text-[#00C9B1]" />
-                        <p className="text-sm text-white/55">
+                      <Panel className="flex flex-col items-center justify-center gap-4 p-16 text-center">
+                        <Loader2 className="h-10 w-10 animate-spin text-accent-text" />
+                        <p className="text-sm text-text-tertiary">
                           Preparing your resume workspace…
                         </p>
-                      </GlowCard>
+                      </Panel>
                     ) : cvSectionsQuery.isPending ? (
-                      <GlowCard contentClassName="flex flex-col items-center justify-center gap-4 p-16 text-center">
-                        <Loader2 className="h-10 w-10 animate-spin text-[#00C9B1]" />
-                        <p className="text-sm text-white/55">
+                      <Panel className="flex flex-col items-center justify-center gap-4 p-16 text-center">
+                        <Loader2 className="h-10 w-10 animate-spin text-accent-text" />
+                        <p className="text-sm text-text-tertiary">
                           Loading your resume…
                         </p>
-                      </GlowCard>
+                      </Panel>
                     ) : cvSectionsQuery.isError ? (
-                      <GlowCard contentClassName="p-6 text-center">
-                        <p className="text-sm text-white/70">
+                      <Panel className="p-6 text-center">
+                        <p className="text-sm text-text-secondary">
                           We couldn&apos;t load the editor. Check your
                           connection and try again.
                         </p>
                         <Button
-                          className="mt-4"
+                          variant="accent"
+                          className="mt-4 px-7"
                           onClick={() => {
                             void onboardingCvProfileQuery.refetch();
                             void cvSectionsQuery.refetch();
@@ -1463,17 +1504,14 @@ export default function OnboardingPage() {
                         >
                           Retry
                         </Button>
-                      </GlowCard>
+                      </Panel>
                     ) : onboardingCvProfileQuery.data ? (
                       <OnboardingResumeClinic
                         profileId={onboardingCvProfileQuery.data}
                         sections={manualBuilderSections}
                         selectedTemplate={selectedTemplate}
                         onTemplateIdChange={setSelectedTemplate}
-                        onBack={() => {
-                          setCvPath(null);
-                          setCvEntryPhase('paths');
-                        }}
+                        onBack={() => setEntryDesignChosen(false)}
                         onDashboardSaved={() => {
                           void queryClient.invalidateQueries({
                             queryKey: queryKeys.cv.sectionsRoot(),
@@ -1581,28 +1619,47 @@ export default function OnboardingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center"
+            role="status"
+            aria-live="polite"
           >
-            <Loader2 className="h-12 w-12 animate-spin text-[#00C9B1]" />
-            <p className="mt-8 text-2xl font-bold text-white">
+            <motion.span
+              className="text-text-primary"
+              animate={
+                reducedMotion
+                  ? undefined
+                  : { y: [0, -10, 0], rotate: [0, -3, 0] }
+              }
+              transition={{
+                duration: 2.4,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            >
+              <CareerKiteMark size={84} variant="full" />
+            </motion.span>
+            <p className="mt-7 font-display text-[28px] font-bold tracking-[-0.03em] text-text-primary">
               {manualSubmitting
                 ? 'Saving and scoring your CV…'
                 : 'Building your CV…'}
             </p>
-            <ul className="mt-10 w-full space-y-3 text-left text-sm">
+            <p className="mt-2 text-[14px] text-text-secondary">
+              Usually under a minute. Please keep this tab open.
+            </p>
+            <ul className="mt-8 w-full space-y-3 rounded-2xl border border-border-subtle bg-bg-surface p-5 text-left text-[14px] shadow-raised">
               {PROCESSING_STEPS.map((label, i) => (
                 <li
                   key={label}
-                  className="flex items-center gap-2 text-white/70"
+                  className="flex items-center gap-2 text-text-secondary"
                 >
                   {i < processingStepIdx ? (
                     <Check
-                      className="h-4 w-4 shrink-0 text-[#22C55E]"
+                      className="h-4 w-4 shrink-0 text-success-text"
                       strokeWidth={3}
                     />
                   ) : i === processingStepIdx ? (
-                    <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#00C9B1]" />
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin text-accent-text" />
                   ) : (
-                    <span className="h-4 w-4 shrink-0 rounded-full border border-white/25" />
+                    <span className="h-4 w-4 shrink-0 rounded-full border border-border-strong" />
                   )}
                   {label}
                 </li>
@@ -1635,6 +1692,25 @@ export default function OnboardingPage() {
   );
 }
 
+function Panel({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        'w-full rounded-3xl border border-border-subtle bg-bg-surface shadow-raised',
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 function StageHeading({
   title,
   subtitle,
@@ -1644,10 +1720,7 @@ function StageHeading({
 }) {
   return (
     <div className="mb-7 flex w-full flex-col items-center text-center">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#00C9B1]">
-        Your CV
-      </p>
-      <h2 className={cn(ONBOARDING_TITLE_CLASS, 'mt-3')}>{title}</h2>
+      <h2 className={ONBOARDING_TITLE_CLASS}>{title}</h2>
       <p className={ONBOARDING_SUBTITLE_CLASS}>{subtitle}</p>
     </div>
   );
@@ -1684,18 +1757,19 @@ function CvEntryPathCard({
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.99 }}
       className={cn(
-        'group relative flex w-full min-h-[44px] items-center gap-4 overflow-hidden rounded-2xl border px-4 py-4 text-left transition-colors duration-200 sm:px-5',
+        'group relative flex w-full min-h-[44px] items-center gap-4 overflow-hidden rounded-2xl border px-4 py-4 text-left shadow-raised transition-[border-color,background-color] duration-200 sm:px-5',
+        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus',
         recommended
-          ? 'border-[rgba(0,201,177,0.5)] bg-[linear-gradient(135deg,rgba(0,201,177,0.12),rgba(0,201,177,0.03))] shadow-[0_10px_34px_rgba(0,201,177,0.12)] hover:border-[#00C9B1]'
-          : 'border-white/[0.08] bg-white/[0.025] hover:border-white/[0.2] hover:bg-white/[0.045]',
+          ? 'border-accent-solid bg-accent-subtle'
+          : 'border-border-default bg-bg-surface hover:border-border-strong',
       )}
     >
       <span
         className={cn(
           'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors',
           recommended
-            ? 'bg-[#00C9B1] text-[#080A0A]'
-            : 'bg-[rgba(0,201,177,0.12)] text-[#00C9B1] group-hover:bg-[rgba(0,201,177,0.2)]',
+            ? 'bg-brand-gradient text-text-on-accent'
+            : 'bg-accent-subtle text-accent-text',
         )}
         aria-hidden
       >
@@ -1703,22 +1777,24 @@ function CvEntryPathCard({
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-2">
-          <span className="text-[15px] font-semibold text-white">{label}</span>
+          <span className="text-[16px] font-semibold text-text-primary">
+            {label}
+          </span>
           {recommended ? (
-            <span className="rounded-full bg-[#F59E0B]/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#FBBF24]">
+            <span className="rounded-full bg-accent-solid px-2 py-0.5 text-[11px] font-semibold text-text-on-accent">
               Recommended
             </span>
           ) : null}
         </span>
-        <span className="mt-0.5 block text-[13px] leading-snug text-white/55">
+        <span className="mt-0.5 block text-[13px] leading-snug text-text-secondary">
           {description}
         </span>
       </span>
-      <span className="hidden shrink-0 rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-white/65 sm:inline">
+      <span className="hidden shrink-0 rounded-full border border-border-subtle bg-bg-sunken px-2.5 py-1 text-[12px] font-medium text-text-secondary sm:inline">
         {timeLabel}
       </span>
       <ChevronRight
-        className="h-5 w-5 shrink-0 text-white/30 transition-all group-hover:translate-x-0.5 group-hover:text-[#00C9B1]"
+        className="h-5 w-5 shrink-0 text-text-tertiary transition-all group-hover:translate-x-0.5 group-hover:text-text-primary"
         aria-hidden
       />
     </motion.button>

@@ -24,7 +24,7 @@ export function OnboardingBackLink({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        'group mb-8 flex min-h-[44px] cursor-pointer items-center gap-1.5 self-start text-[13px] text-[rgba(255,255,255,0.45)] transition-colors duration-200 hover:text-[rgba(255,255,255,0.8)] disabled:cursor-not-allowed disabled:opacity-50',
+        'group mb-6 flex min-h-[44px] cursor-pointer items-center gap-1.5 self-start rounded-lg px-1 text-[14px] font-medium text-text-secondary transition-colors duration-200 hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
     >

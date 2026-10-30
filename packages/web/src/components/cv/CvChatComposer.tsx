@@ -28,7 +28,7 @@ export function CvChatComposer({
   onSend,
   disabled = false,
   sending = false,
-  placeholder = 'Type an answer or paste your full resume…',
+  placeholder = 'Type an answer or paste your full CV…',
   showPasteHint = true,
   className,
   textareaClassName,
@@ -40,7 +40,7 @@ export function CvChatComposer({
   return (
     <div className={className}>
       {showPasteHint ? (
-        <p className="mb-2 text-[11px] leading-snug text-white/45">
+        <p className="mb-2 text-[12px] leading-snug text-text-tertiary">
           {CV_CHAT_PASTE_HINT}
         </p>
       ) : null}
@@ -60,16 +60,17 @@ export function CvChatComposer({
           maxLength={CV_CHAT_INPUT_MAX_CHARS}
           data-lenis-prevent-wheel
           className={cn(
-            'min-h-[96px] max-h-[min(50vh,480px)] min-w-0 flex-1 touch-pan-y resize-y overflow-y-auto rounded-xl border px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-[#00C9B1]/40 disabled:opacity-50',
+            'min-h-[96px] max-h-[min(50vh,480px)] min-w-0 flex-1 touch-pan-y resize-y overflow-y-auto rounded-xl border px-3 py-2.5 text-[14px] text-text-primary outline-none transition-[border-color,box-shadow] placeholder:text-text-tertiary focus:border-border-focus focus:shadow-[0_0_0_3px_var(--ck-accent-subtle)] disabled:opacity-50',
             overLimit
-              ? 'border-rose-400/50 focus:ring-rose-400/30'
-              : 'border-[rgba(255,255,255,0.10)] bg-[#111616]',
+              ? 'border-danger-text bg-bg-sunken'
+              : 'border-border-strong bg-bg-sunken',
             textareaClassName,
           )}
         />
         <Button
           type="button"
-          className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-0"
+          variant="accent"
+          className="mb-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl p-0"
           disabled={!canSend}
           onClick={onSend}
           aria-label="Send"
@@ -84,7 +85,7 @@ export function CvChatComposer({
       <p
         className={cn(
           'mt-1.5 text-right text-[11px]',
-          overLimit ? 'text-rose-400/90' : 'text-white/40',
+          overLimit ? 'text-danger-text' : 'text-text-tertiary',
         )}
       >
         {formatCvChatCharCount(value.length)}

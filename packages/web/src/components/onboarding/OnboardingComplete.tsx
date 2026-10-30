@@ -20,11 +20,14 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
+import { CareerKiteMark } from '@/components/brand/CareerKiteMark';
 import { CVScoreCard } from '@/components/cv/CVScoreCard';
 import { ChromeIcon } from '@/components/landing/ChromeIcon';
 import { OnboardingReferralPrompt } from '@/components/onboarding/OnboardingReferralPrompt';
+import { ForcedThemeScope } from '@/components/theme/ThemeScope';
+import { Button } from '@/components/ui/Button';
 import { api, type CVImprovementItem, type CVScorePayload } from '@/lib/api';
 import { cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
 import { todayPlanQueryKey } from '@/lib/today-plan';
@@ -43,18 +46,18 @@ function scoreBand(score: number): {
   if (score >= 80)
     return {
       label: 'Strong CV',
-      color: '#22C55E',
+      color: 'var(--ck-success-text)',
       line: 'Recruiters will find what they need quickly. A few tweaks will make it even sharper.',
     };
   if (score >= 60)
     return {
       label: 'Good foundation',
-      color: '#00C9B1',
+      color: 'var(--ck-accent-text)',
       line: 'Solid start. The fixes below will lift your score the most.',
     };
   return {
     label: 'Needs some work',
-    color: '#F59E0B',
+    color: 'var(--ck-warning-text)',
     line: "Don't worry, most of this is quick to fix. Start with the items below.",
   };
 }
@@ -80,8 +83,9 @@ function topFixes(items: CVImprovementItem[] | undefined, limit = 3) {
     .slice(0, limit);
 }
 
-function ScoreRing({ score, color }: { score: number; color: string }) {
+function ScoreRing({ score }: { score: number }) {
   const reducedMotion = useReducedMotion();
+  const gradientId = `ck-score-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const value = useMotionValue(reducedMotion ? score : 0);
   const rounded = useTransform(value, (v) => Math.round(v));
   const radius = 54;
@@ -103,12 +107,18 @@ function ScoreRing({ score, color }: { score: number; color: string }) {
   return (
     <div className="relative h-[136px] w-[136px] shrink-0">
       <svg viewBox="0 0 128 128" className="h-full w-full -rotate-90">
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#c8f74a" />
+            <stop offset="1" stopColor="#17b26a" />
+          </linearGradient>
+        </defs>
         <circle
           cx="64"
           cy="64"
           r={radius}
           fill="none"
-          stroke="rgba(255,255,255,0.08)"
+          stroke="var(--ck-bg-hover)"
           strokeWidth="10"
         />
         <motion.circle
@@ -116,21 +126,21 @@ function ScoreRing({ score, color }: { score: number; color: string }) {
           cy="64"
           r={radius}
           fill="none"
-          stroke={color}
+          stroke={`url(#${gradientId})`}
           strokeWidth="10"
           strokeLinecap="round"
           strokeDasharray={circumference}
           style={{
             strokeDashoffset: dash,
-            filter: `drop-shadow(0 0 10px ${color}66)`,
+            filter: 'drop-shadow(0 0 10px var(--ck-glow-a))',
           }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <motion.span className="text-[38px] font-extrabold leading-none tabular-nums text-white">
+        <motion.span className="font-display text-[42px] font-bold leading-none tracking-[-0.03em] tabular-nums text-text-primary">
           {rounded}
         </motion.span>
-        <span className="mt-1 text-[12px] text-white/45">out of 100</span>
+        <span className="mt-1 text-[12px] text-text-tertiary">out of 100</span>
       </div>
     </div>
   );
@@ -150,20 +160,20 @@ function NextStep({
   onClick?: () => void;
 }) {
   const className =
-    'group flex w-full items-center gap-3.5 rounded-2xl border border-white/[0.08] bg-white/[0.025] px-4 py-3.5 text-left transition-colors duration-150 hover:border-[rgba(0,201,177,0.35)] hover:bg-[rgba(0,201,177,0.05)]';
+    'group flex w-full items-center gap-3.5 rounded-2xl border border-border-subtle bg-bg-surface px-4 py-3.5 text-left shadow-raised transition-colors duration-150 hover:border-accent-border hover:bg-accent-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus';
   const inner = (
     <>
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[rgba(0,201,177,0.12)] text-[#00C9B1]">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-subtle text-accent-text">
         {icon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[14px] font-semibold text-white">
+        <span className="block text-[14px] font-semibold text-text-primary">
           {title}
         </span>
-        <span className="block text-[12px] text-white/50">{body}</span>
+        <span className="block text-[13px] text-text-secondary">{body}</span>
       </span>
       <ArrowRight
-        className="h-4 w-4 shrink-0 text-white/30 transition-all group-hover:translate-x-0.5 group-hover:text-[#00C9B1]"
+        className="h-4 w-4 shrink-0 text-text-tertiary transition-all group-hover:translate-x-0.5 group-hover:text-accent-text"
         aria-hidden
       />
     </>
@@ -285,7 +295,7 @@ export function OnboardingComplete({
         spread: 75,
         startVelocity: 38,
         origin: { y: 0.3 },
-        colors: ['#00C9B1', '#5EEAD4', '#FFFFFF', '#F59E0B'],
+        colors: ['#b9f542', '#d6ff5e', '#17b26a', '#3ad68a', '#ffffff'],
         disableForReducedMotion: true,
       });
     }, 900);
@@ -303,13 +313,21 @@ export function OnboardingComplete({
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       className="mx-auto flex w-full max-w-[600px] flex-col items-center text-center"
     >
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#00C9B1]">
+      <motion.span
+        initial={reducedMotion ? false : { opacity: 0, y: 24, rotate: -8 }}
+        animate={{ opacity: 1, y: 0, rotate: 0 }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        className="text-text-primary"
+      >
+        <CareerKiteMark size={64} variant="full" />
+      </motion.span>
+      <p className="mt-4 text-[14px] font-semibold text-accent-text">
         {hasCv ? 'Your CV is ready' : 'Your workspace is ready'}
       </p>
-      <h1 className="mt-3 text-[28px] font-extrabold leading-tight text-white sm:text-[34px]">
+      <h1 className="mt-5 font-display text-[32px] font-bold leading-[1.08] tracking-[-0.03em] text-text-primary sm:text-[40px]">
         {title}
       </h1>
-      <p className="mx-auto mt-3 max-w-[440px] text-[15px] leading-relaxed text-white/55">
+      <p className="mx-auto mt-3 max-w-[440px] text-[15px] leading-relaxed text-text-secondary">
         {hasCv
           ? "Here's how your CV scores today, and what to do next."
           : 'Add your CV whenever you like. Everything else is ready to explore.'}
@@ -324,26 +342,26 @@ export function OnboardingComplete({
             duration: 0.45,
             ease: [0.22, 1, 0.36, 1],
           }}
-          className="mt-8 w-full overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0C0F0F]/90 text-left shadow-[0_24px_70px_rgba(0,0,0,0.4)]"
+          className="mt-8 w-full overflow-hidden rounded-3xl border border-border-subtle bg-bg-surface text-left shadow-overlay"
         >
           <div className="flex flex-col items-center gap-5 p-6 sm:flex-row sm:items-center sm:gap-6">
-            <ScoreRing score={score} color={band.color} />
+            <ScoreRing score={score} />
             <div className="min-w-0 text-center sm:text-left">
-              <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-white/45">
+              <p className="text-[13px] font-semibold text-text-secondary">
                 CV score
               </p>
               <p
-                className="mt-1 text-[22px] font-bold"
+                className="mt-0.5 font-display text-[24px] font-bold tracking-[-0.02em]"
                 style={{ color: band.color }}
               >
                 {band.label}
               </p>
-              <p className="mt-1.5 text-[14px] leading-relaxed text-white/60">
+              <p className="mt-1.5 text-[14px] leading-relaxed text-text-secondary">
                 {band.line}
               </p>
               {templateLabel ? (
-                <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-white/[0.1] px-2.5 py-1 text-[12px] text-white/55">
-                  <Sparkles className="h-3 w-3 text-[#00C9B1]" aria-hidden />
+                <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border-subtle bg-bg-sunken px-2.5 py-1 text-[12px] font-medium text-text-secondary">
+                  <Sparkles className="h-3 w-3 text-accent-text" aria-hidden />
                   {templateLabel} design
                 </p>
               ) : null}
@@ -351,8 +369,8 @@ export function OnboardingComplete({
           </div>
 
           {fixes.length > 0 ? (
-            <div className="border-t border-white/[0.06] px-6 py-5">
-              <p className="text-[13px] font-semibold text-white">
+            <div className="border-t border-border-subtle px-6 py-5">
+              <p className="text-[13px] font-semibold text-text-primary">
                 Top {fixes.length === 1 ? 'fix' : `${fixes.length} fixes`} to
                 raise your score
               </p>
@@ -365,14 +383,14 @@ export function OnboardingComplete({
                     transition={{ delay: reducedMotion ? 0 : 0.6 + i * 0.1 }}
                     className="flex items-start gap-3"
                   >
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgba(0,201,177,0.15)] text-[11px] font-bold text-[#00C9B1]">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-[11px] font-bold text-accent-text">
                       {i + 1}
                     </span>
-                    <span className="min-w-0 text-[13px] leading-relaxed text-white/75">
+                    <span className="min-w-0 text-[13px] leading-relaxed text-text-secondary">
                       {f.text}
                       {f.section ? (
-                        <span className="ml-1.5 text-[11px] capitalize text-white/35">
-                          · {f.section}
+                        <span className="ml-2 inline-block rounded-full bg-bg-sunken px-2 py-px align-middle text-[11px] font-medium capitalize text-text-secondary">
+                          {f.section}
                         </span>
                       ) : null}
                     </span>
@@ -382,12 +400,12 @@ export function OnboardingComplete({
             </div>
           ) : null}
 
-          <div className="border-t border-white/[0.06]">
+          <div className="border-t border-border-subtle">
             <button
               type="button"
               onClick={() => setShowDetails((v) => !v)}
               aria-expanded={showDetails}
-              className="flex w-full items-center justify-between px-6 py-3.5 text-[13px] text-white/55 transition hover:text-white"
+              className="flex w-full items-center justify-between px-6 py-3.5 text-[13px] font-medium text-text-secondary transition hover:text-text-primary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-border-focus"
             >
               How is this score calculated?
               <ChevronDown
@@ -399,48 +417,46 @@ export function OnboardingComplete({
               />
             </button>
             {showDetails && finalScore ? (
-              <div className="px-4 pb-5">
-                <CVScoreCard
-                  mode="compact"
-                  hideJobMatch
-                  score={score}
-                  breakdown={finalScore.breakdown}
-                  scorePayload={finalScore}
-                  improvementsCount={finalScore.improvements?.length}
-                />
-              </div>
+              <ForcedThemeScope theme="dark">
+                <div className="mx-4 mb-5 rounded-2xl bg-[#0e110f] p-1">
+                  <CVScoreCard
+                    mode="compact"
+                    hideJobMatch
+                    score={score}
+                    breakdown={finalScore.breakdown}
+                    scorePayload={finalScore}
+                    improvementsCount={finalScore.improvements?.length}
+                  />
+                </div>
+              </ForcedThemeScope>
             ) : null}
           </div>
         </motion.section>
       ) : null}
 
       {hasCv && score == null ? (
-        <p className="mt-8 flex items-center gap-2 text-[14px] text-white/50">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#00C9B1]" />
+        <p className="mt-8 flex items-center gap-2 text-[14px] text-text-secondary">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-accent-solid" />
           Your score is still being calculated. It will appear on your
           dashboard.
         </p>
       ) : null}
 
       <div className="mt-8 w-full max-w-[420px]">
-        <motion.button
+        <Button
           type="button"
+          variant="accent"
+          fullWidth
           disabled={!accessToken}
           onClick={() => router.push('/dashboard')}
-          whileHover={{ y: -1 }}
-          whileTap={{ scale: 0.98 }}
-          className="group inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#00C9B1] px-8 text-[15px] font-semibold text-[#080A0A] shadow-[0_10px_34px_rgba(0,201,177,0.3)] transition-shadow hover:shadow-[0_12px_40px_rgba(0,201,177,0.45)] disabled:opacity-50"
+          className="h-[52px] text-[16px]"
         >
           Go to my dashboard
-          <ArrowRight
-            className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
-            strokeWidth={2.5}
-          />
-        </motion.button>
+        </Button>
       </div>
 
       <div className="mt-8 w-full text-left">
-        <p className="mb-3 text-center text-[12px] font-semibold uppercase tracking-[0.1em] text-white/40">
+        <p className="mb-3 text-center text-[14px] font-semibold text-text-secondary">
           Or jump straight in
         </p>
         <div className="space-y-2.5">

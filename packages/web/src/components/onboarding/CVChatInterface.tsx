@@ -1,11 +1,11 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Sparkles } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { CvChatComposer } from '@/components/cv/CvChatComposer';
 import { Button } from '@/components/ui/Button';
-import { GlowCard } from '@/components/ui/GlowCard';
 import {
   api,
   type ChatConversationHistoryItem,
@@ -19,7 +19,7 @@ import {
 import { cn } from '@/lib/utils';
 
 const OPENING =
-  "Hi! I'm going to help you build a great resume. Share your background in your own words, or paste an existing resume. I'll only ask about what's still missing.";
+  "Hi! I'm going to help you build a great CV. Share your background in your own words, or paste an existing CV. I'll only ask about what's still missing.";
 
 const CHAT_HISTORY_STORAGE_KEY = 'applymate:onboarding:chat-history';
 
@@ -60,7 +60,7 @@ function AssistantMessageBody({
   return (
     <>
       {content ? <p className="leading-relaxed">{content}</p> : null}
-      <p className={cn('font-medium text-[#00C9B1]', content ? 'mt-2' : '')}>
+      <p className={cn('font-medium text-accent-text', content ? 'mt-2' : '')}>
         {question}
       </p>
     </>
@@ -75,11 +75,19 @@ function summarizeExtracted(d: ChatCreateCVPayload): { label: string }[] {
       : 0;
   const edu = Array.isArray(d.education) ? d.education.length : 0;
   const projects = Array.isArray(d.projects) ? d.projects.length : 0;
+  const countSkills = (list: unknown): number =>
+    Array.isArray(list)
+      ? list.reduce<number>((total, item) => {
+          const nested =
+            item && typeof item === 'object'
+              ? (item as { skills?: unknown }).skills
+              : undefined;
+          return total + (Array.isArray(nested) ? nested.length : 1);
+        }, 0)
+      : 0;
   const skills =
-    (Array.isArray(d.skills) ? d.skills.length : 0) +
-    (Array.isArray((d as { primarySkills?: unknown }).primarySkills)
-      ? ((d as { primarySkills: unknown[] }).primarySkills?.length ?? 0)
-      : 0);
+    countSkills(d.skills) +
+    countSkills((d as { primarySkills?: unknown }).primarySkills);
   const lines: { label: string }[] = [];
   if (exp > 0)
     lines.push({
@@ -90,8 +98,11 @@ function summarizeExtracted(d: ChatCreateCVPayload): { label: string }[] {
     lines.push({
       label: `${projects} project${projects === 1 ? '' : 's'} captured`,
     });
-  if (skills > 0) lines.push({ label: `${skills} skills identified` });
-  if (lines.length === 0) lines.push({ label: 'Resume data captured' });
+  if (skills > 0)
+    lines.push({
+      label: `${skills} skill${skills === 1 ? '' : 's'} identified`,
+    });
+  if (lines.length === 0) lines.push({ label: 'CV details captured' });
   return lines;
 }
 
@@ -238,14 +249,11 @@ export function CVChatInterface({
   const onOpeningComplete = useCallback(() => setOpeningDone(true), []);
 
   return (
-    <GlowCard
-      className="min-h-0 border border-[rgba(0,201,177,0.15)]"
-      contentClassName="flex min-h-0 min-w-0 flex-col p-0"
-    >
-      <div className="border-b border-[rgba(0,201,177,0.12)] px-4 py-3">
-        <p className="text-center text-[11px] leading-snug text-white/45">
-          Answer naturally or paste your full resume. Follow-ups focus on gaps
-          only.
+    <div className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl border border-border-subtle bg-bg-surface shadow-overlay">
+      <div className="border-b border-border-subtle bg-bg-sunken px-4 py-3">
+        <p className="text-center text-[13px] leading-snug text-text-secondary">
+          Answer naturally or paste your full CV. I&apos;ll only ask about
+          what&apos;s missing.
         </p>
       </div>
 
@@ -256,7 +264,7 @@ export function CVChatInterface({
       >
         {!openingDone ? (
           <div className="flex justify-start">
-            <div className="max-w-[85%] rounded-[12px] rounded-bl-[4px] border border-[rgba(0,201,177,0.15)] bg-[#111616] px-4 py-3 text-sm text-white">
+            <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-border-subtle bg-bg-sunken px-4 py-3 text-[14px] text-text-primary">
               <TypingOpening text={OPENING} onDone={onOpeningComplete} />
             </div>
           </div>
@@ -273,10 +281,10 @@ export function CVChatInterface({
               >
                 <div
                   className={cn(
-                    'max-w-[85%] px-4 py-3 text-sm text-white',
+                    'max-w-[85%] px-4 py-3 text-[14px] leading-relaxed text-text-primary',
                     m.role === 'user'
-                      ? 'rounded-[12px] rounded-br-[4px] border border-[rgba(0,201,177,0.3)] bg-[rgba(0,201,177,0.15)]'
-                      : 'rounded-[12px] rounded-bl-[4px] border border-[rgba(0,201,177,0.15)] bg-[#111616]',
+                      ? 'rounded-2xl rounded-br-md border border-accent-border bg-accent-subtle'
+                      : 'rounded-2xl rounded-bl-md border border-border-subtle bg-bg-sunken',
                   )}
                 >
                   {m.role === 'assistant' ? (
@@ -294,12 +302,12 @@ export function CVChatInterface({
 
         {isTyping ? (
           <div className="flex justify-start">
-            <div className="flex max-w-[85%] items-center gap-2 rounded-[12px] rounded-bl-[4px] border border-[rgba(0,201,177,0.15)] bg-[#111616] px-4 py-3">
+            <div className="flex max-w-[85%] items-center gap-2 rounded-2xl rounded-bl-md border border-border-subtle bg-bg-sunken px-4 py-3">
               <span className="flex gap-1">
                 {[0, 1, 2].map((i) => (
                   <motion.span
                     key={i}
-                    className="h-2 w-2 rounded-full bg-[#00C9B1]"
+                    className="h-2 w-2 rounded-full bg-accent-solid"
                     animate={{ opacity: [0.35, 1, 0.35] }}
                     transition={{
                       duration: 1,
@@ -315,42 +323,43 @@ export function CVChatInterface({
       </div>
 
       {extractedData ? (
-        <div className="border-t border-[rgba(0,201,177,0.12)] bg-[#0C0F0F] px-4 py-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#00C9B1]">
-            Ready to build
+        <div className="border-t border-border-subtle bg-accent-subtle px-4 py-4">
+          <p className="font-display text-[18px] font-bold tracking-[-0.02em] text-text-primary">
+            Ready to build your CV
           </p>
-          <ul className="mt-3 space-y-2 text-sm text-white/80">
+          <ul className="mt-3 space-y-2 text-sm text-text-secondary">
             {summarizeExtracted(extractedData).map((line) => (
               <li key={line.label} className="flex items-center gap-2">
-                <span className="text-[#22C55E]">✓</span> {line.label}
+                <span className="text-success-text">✓</span> {line.label}
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-[11px] text-white/35">
-            Template: {selectedTemplate}
+          <p className="mt-2 text-[12px] capitalize text-text-secondary">
+            Design: {selectedTemplate}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button
               type="button"
-              className="gap-1"
+              variant="accent"
+              className="gap-1.5 px-6"
               onClick={() =>
                 onComplete({ ...extractedData, template: selectedTemplate })
               }
             >
-              ✨ Build my resume now →
+              <Sparkles className="h-4 w-4" aria-hidden />
+              Build my CV now
             </Button>
             <Button
               type="button"
-              variant="ghost"
-              className="border border-white/10"
+              variant="outline"
+              className="px-6"
               onClick={() => {
                 setExtractedData(null);
                 setMessages((m) => [
                   ...m,
                   {
                     role: 'assistant',
-                    content:
-                      'Sure. Tell me anything else you want on your resume.',
+                    content: 'Sure. Tell me anything else you want on your CV.',
                   },
                 ]);
               }}
@@ -360,7 +369,7 @@ export function CVChatInterface({
           </div>
         </div>
       ) : (
-        <div className="border-t border-[rgba(0,201,177,0.12)] p-4">
+        <div className="border-t border-border-subtle p-4">
           <CvChatComposer
             value={input}
             onChange={setInput}
@@ -370,13 +379,13 @@ export function CVChatInterface({
           />
           <button
             type="button"
-            className="mt-3 w-full text-center text-[13px] text-white/45 transition hover:text-white/75"
+            className="mt-3 min-h-[44px] w-full text-center text-[14px] font-medium text-text-secondary transition hover:text-text-primary"
             onClick={onSkip}
           >
-            Skip chat →
+            Skip for now
           </button>
         </div>
       )}
-    </GlowCard>
+    </div>
   );
 }

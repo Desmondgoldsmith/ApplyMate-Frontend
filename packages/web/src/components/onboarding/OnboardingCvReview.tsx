@@ -3,7 +3,6 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   AlertTriangle,
-  ArrowRight,
   Briefcase,
   GraduationCap,
   Mail,
@@ -13,8 +12,8 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import { Button } from '@/components/ui/Button';
 import type { CVBuilderData } from '@/lib/cvBuilder';
-import { cn } from '@/lib/utils';
 
 const MAX_SKILLS = 14;
 
@@ -55,15 +54,15 @@ function Block({
         duration: 0.35,
         ease: [0.22, 1, 0.36, 1],
       }}
-      className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4"
+      className="rounded-2xl border border-border-subtle bg-bg-surface p-4 shadow-raised"
     >
-      <h3 className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.1em] text-white/50">
-        <span className="text-[#00C9B1]" aria-hidden>
+      <h3 className="flex items-center gap-2 text-[13px] font-semibold text-text-secondary">
+        <span className="text-accent-text" aria-hidden>
           {icon}
         </span>
         {title}
         {count ? (
-          <span className="ml-auto rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium normal-case tracking-normal text-white/55">
+          <span className="ml-auto rounded-full bg-bg-hover px-2 py-0.5 text-[12px] font-medium text-text-secondary">
             {count}
           </span>
         ) : null}
@@ -101,23 +100,24 @@ export function OnboardingCvReview({
   if (error && !data) {
     return (
       <div
-        className="w-full rounded-2xl border border-white/[0.08] bg-white/[0.03] px-5 py-8 text-center"
+        className="w-full rounded-2xl border border-border-subtle bg-bg-surface px-5 py-8 text-center"
         role="alert"
       >
-        <p className="text-[15px] font-semibold text-white">
+        <p className="text-[15px] font-semibold text-text-primary">
           We couldn&apos;t load your CV just now
         </p>
-        <p className="mt-1.5 text-[13px] text-white/55">
+        <p className="mt-1.5 text-[13px] text-text-tertiary">
           Your CV is saved. Check your connection and try again.
         </p>
         {onRetry ? (
-          <button
+          <Button
             type="button"
+            variant="accent"
             onClick={onRetry}
-            className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-[#00C9B1] px-6 text-[14px] font-semibold text-[#080A0A]"
+            className="mt-5 px-7"
           >
             Try again
-          </button>
+          </Button>
         ) : null}
       </div>
     );
@@ -133,7 +133,7 @@ export function OnboardingCvReview({
         {[88, 140, 96, 110].map((h, i) => (
           <div
             key={i}
-            className="animate-pulse rounded-2xl border border-white/[0.06] bg-white/[0.03]"
+            className="animate-pulse rounded-2xl border border-border-subtle bg-bg-surface"
             style={{ height: h }}
           />
         ))}
@@ -174,29 +174,31 @@ export function OnboardingCvReview({
         initial={reducedMotion ? false : { opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        className="relative overflow-hidden rounded-2xl border border-[rgba(0,201,177,0.25)] bg-[linear-gradient(135deg,rgba(0,201,177,0.12),rgba(0,201,177,0.02))] p-5"
+        className="relative overflow-hidden rounded-2xl border border-accent-border bg-accent-subtle p-5"
       >
         <div className="flex items-center gap-4">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#00C9B1] text-lg font-bold uppercase text-[#080A0A]">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center bg-brand-gradient rounded-2xl text-lg font-bold uppercase text-text-on-accent">
             {initials(p.name) || <Sparkles className="h-6 w-6" />}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-[18px] font-bold text-white">
+            <p className="truncate font-display text-[20px] font-bold tracking-[-0.02em] text-text-primary">
               {p.name.trim() || 'Your name'}
             </p>
             {p.headline.trim() ? (
-              <p className="truncate text-[14px] text-white/65">{p.headline}</p>
+              <p className="truncate text-[14px] text-text-secondary">
+                {p.headline}
+              </p>
             ) : null}
           </div>
         </div>
         {contact.length > 0 ? (
-          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-[12px] text-white/60">
+          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-[12px] text-text-secondary">
             {contact.map((c) => (
               <span
                 key={c.text}
                 className="inline-flex min-w-0 items-center gap-1.5"
               >
-                <span className="text-[#00C9B1]">{c.icon}</span>
+                <span className="text-accent-text">{c.icon}</span>
                 <span className="truncate">{c.text}</span>
               </span>
             ))}
@@ -205,9 +207,9 @@ export function OnboardingCvReview({
       </motion.div>
 
       {thin ? (
-        <div className="mt-3 flex items-start gap-2.5 rounded-2xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-4 py-3 text-[13px] text-amber-100/90">
+        <div className="mt-3 flex items-start gap-2.5 rounded-2xl border border-border-subtle bg-warning-subtle px-4 py-3 text-[13px] font-medium text-warning-text">
           <AlertTriangle
-            className="mt-0.5 h-4 w-4 shrink-0 text-[#F59E0B]"
+            className="mt-0.5 h-4 w-4 shrink-0 text-warning-text"
             aria-hidden
           />
           We couldn&apos;t find your work history or education. You can add them
@@ -230,21 +232,21 @@ export function OnboardingCvReview({
                   className="flex items-start justify-between gap-3"
                 >
                   <span className="min-w-0">
-                    <span className="block truncate text-[14px] font-semibold text-white">
+                    <span className="block truncate text-[14px] font-semibold text-text-primary">
                       {x.title || 'Role'}
                     </span>
-                    <span className="block truncate text-[13px] text-white/55">
+                    <span className="block truncate text-[13px] text-text-tertiary">
                       {x.company}
                     </span>
                   </span>
-                  <span className="shrink-0 text-[12px] tabular-nums text-white/45">
+                  <span className="shrink-0 text-[12px] tabular-nums text-text-tertiary">
                     {dateRange(x.startDate, x.endDate, x.current)}
                   </span>
                 </li>
               ))}
             </ul>
             {experience.length > 5 ? (
-              <p className="mt-2 text-[12px] text-white/40">
+              <p className="mt-2 text-[12px] text-text-tertiary">
                 +{experience.length - 5} more
               </p>
             ) : null}
@@ -264,17 +266,17 @@ export function OnboardingCvReview({
                   className="flex items-start justify-between gap-3"
                 >
                   <span className="min-w-0">
-                    <span className="block truncate text-[14px] font-semibold text-white">
+                    <span className="block truncate text-[14px] font-semibold text-text-primary">
                       {[x.degree, x.field].filter((v) => v.trim()).join(', ') ||
                         x.school}
                     </span>
                     {x.degree.trim() || x.field.trim() ? (
-                      <span className="block truncate text-[13px] text-white/55">
+                      <span className="block truncate text-[13px] text-text-tertiary">
                         {x.school}
                       </span>
                     ) : null}
                   </span>
-                  <span className="shrink-0 text-[12px] tabular-nums text-white/45">
+                  <span className="shrink-0 text-[12px] tabular-nums text-text-tertiary">
                     {[x.startYear, x.endYear]
                       .filter((v) => v.trim())
                       .join(' – ')}
@@ -296,13 +298,13 @@ export function OnboardingCvReview({
               {skills.slice(0, MAX_SKILLS).map((s) => (
                 <span
                   key={s}
-                  className="rounded-full border border-white/[0.1] bg-white/[0.04] px-2.5 py-1 text-[12px] text-white/75"
+                  className="rounded-full border border-border-subtle bg-bg-sunken px-2.5 py-1 text-[12px] text-text-secondary"
                 >
                   {s}
                 </span>
               ))}
               {skills.length > MAX_SKILLS ? (
-                <span className="rounded-full px-2 py-1 text-[12px] text-white/45">
+                <span className="rounded-full px-2 py-1 text-[12px] text-text-tertiary">
                   +{skills.length - MAX_SKILLS} more
                 </span>
               ) : null}
@@ -316,7 +318,7 @@ export function OnboardingCvReview({
             title="Summary"
             delay={0.26}
           >
-            <p className="line-clamp-3 text-[13px] leading-relaxed text-white/65">
+            <p className="line-clamp-3 text-[13px] leading-relaxed text-text-secondary">
               {summary}
             </p>
           </Block>
@@ -329,7 +331,7 @@ export function OnboardingCvReview({
             <button
               type="button"
               onClick={onFixInEditor}
-              className="text-white/55 underline-offset-4 transition hover:text-white hover:underline"
+              className="font-medium text-text-secondary underline-offset-4 transition hover:text-text-primary hover:underline"
             >
               Something wrong? Fix it in the editor
             </button>
@@ -338,28 +340,20 @@ export function OnboardingCvReview({
             <button
               type="button"
               onClick={onUploadAnother}
-              className="text-white/40 underline-offset-4 transition hover:text-white/75 hover:underline"
+              className="font-medium text-text-secondary underline-offset-4 transition hover:text-text-primary hover:underline"
             >
               {uploadAnotherLabel}
             </button>
           ) : null}
         </div>
-        <motion.button
+        <Button
           type="button"
+          variant="accent"
           onClick={onContinue}
-          whileHover={{ y: -1 }}
-          whileTap={{ scale: 0.98 }}
-          className={cn(
-            'group inline-flex h-12 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#00C9B1] px-6 text-[14px] font-semibold text-[#080A0A] sm:w-auto',
-            'shadow-[0_8px_30px_rgba(0,201,177,0.25)] transition-shadow hover:shadow-[0_10px_36px_rgba(0,201,177,0.38)]',
-          )}
+          className="w-full shrink-0 whitespace-nowrap px-7 sm:w-auto"
         >
           {continueLabel}
-          <ArrowRight
-            className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
-            strokeWidth={2.5}
-          />
-        </motion.button>
+        </Button>
       </div>
     </div>
   );

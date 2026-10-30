@@ -152,31 +152,31 @@ export function OnboardingCvUpload({
             initial={reducedMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reducedMotion ? undefined : { opacity: 0 }}
-            className="w-full rounded-3xl border border-[rgba(0,201,177,0.2)] bg-[#0C0F0F]/90 p-6 text-left shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:p-7"
+            className="w-full rounded-3xl border border-border-subtle bg-bg-surface p-6 text-left shadow-overlay sm:p-7"
             role="status"
             aria-live="polite"
           >
             <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[rgba(0,201,177,0.12)] ring-1 ring-[rgba(0,201,177,0.3)]">
-                <FileText className="h-5 w-5 text-[#00C9B1]" />
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-subtle ring-1 ring-accent-border">
+                <FileText className="h-5 w-5 text-accent-text" />
               </span>
               <div className="min-w-0">
-                <p className="truncate text-[14px] font-semibold text-white">
+                <p className="truncate text-[14px] font-semibold text-text-primary">
                   {fileName ?? 'Your CV'}
                 </p>
-                <p className="text-[12px] text-white/45">
+                <p className="text-[12px] text-text-tertiary">
                   {finishing
                     ? 'Done! Opening your results…'
                     : 'Usually takes 15–30 seconds'}
                 </p>
               </div>
-              <span className="ml-auto text-[13px] font-semibold tabular-nums text-[#7EE8D8]">
+              <span className="ml-auto text-[13px] font-semibold tabular-nums text-accent-text">
                 {Math.round(progress)}%
               </span>
             </div>
-            <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-white/[0.07]">
+            <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-bg-hover">
               <motion.div
-                className="relative h-full rounded-full bg-gradient-to-r from-[#00C9B1] to-[#5EEAD4]"
+                className="relative h-full rounded-full bg-brand-gradient"
                 animate={{ width: `${Math.max(3, progress)}%` }}
                 transition={{
                   duration: reducedMotion ? 0 : 0.4,
@@ -206,23 +206,23 @@ export function OnboardingCvUpload({
                     className={cn(
                       'flex items-center gap-2.5 text-[13px] transition-colors duration-300',
                       done
-                        ? 'text-white/70'
+                        ? 'text-text-secondary'
                         : current
-                          ? 'text-white'
-                          : 'text-white/30',
+                          ? 'text-text-primary'
+                          : 'text-text-tertiary',
                     )}
                   >
                     {done ? (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#00C9B1]">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent-solid">
                         <Check
-                          className="h-3 w-3 text-[#080A0A]"
+                          className="h-3 w-3 text-text-on-accent"
                           strokeWidth={3.5}
                         />
                       </span>
                     ) : current ? (
-                      <Loader2 className="h-5 w-5 animate-spin text-[#00C9B1]" />
+                      <Loader2 className="h-5 w-5 animate-spin text-accent-text" />
                     ) : (
-                      <span className="h-5 w-5 rounded-full border border-white/15" />
+                      <span className="h-5 w-5 rounded-full border border-border-default" />
                     )}
                     {s.label}
                   </li>
@@ -260,15 +260,15 @@ export function OnboardingCvUpload({
                 if (file) start(file);
               }}
               className={cn(
-                'group relative flex w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed px-6 py-12 text-center outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#00C9B1]/60',
+                'group relative flex w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed px-6 py-12 text-center outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-border-focus',
                 dragging
-                  ? 'scale-[1.01] border-[#00C9B1] bg-[rgba(0,201,177,0.08)]'
-                  : 'border-[rgba(0,201,177,0.28)] bg-[#0C0F0F]/80 hover:border-[rgba(0,201,177,0.55)] hover:bg-[rgba(0,201,177,0.04)]',
+                  ? 'scale-[1.01] border-accent-solid bg-accent-subtle'
+                  : 'border-border-strong bg-bg-surface shadow-raised hover:border-accent-solid hover:bg-accent-subtle',
                 outOfCredits && 'pointer-events-none opacity-60',
               )}
             >
               <motion.span
-                className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[rgba(0,201,177,0.12)] ring-1 ring-[rgba(0,201,177,0.3)]"
+                className="bg-brand-gradient flex h-16 w-16 items-center justify-center rounded-2xl text-text-on-accent shadow-raised"
                 animate={
                   reducedMotion
                     ? undefined
@@ -278,14 +278,14 @@ export function OnboardingCvUpload({
                 }
                 transition={{ duration: 0.2, ease: 'easeOut' }}
               >
-                <UploadCloud className="h-8 w-8 text-[#00C9B1]" />
+                <UploadCloud className="h-8 w-8" />
               </motion.span>
-              <p className="mt-5 text-[17px] font-semibold text-white">
+              <p className="mt-5 font-display text-[20px] font-bold tracking-[-0.02em] text-text-primary">
                 {dragging ? 'Drop it here' : 'Drag your CV here'}
               </p>
-              <p className="mt-1.5 text-[13px] text-white/50">
+              <p className="mt-1.5 text-[14px] text-text-secondary">
                 or{' '}
-                <span className="font-semibold text-[#00C9B1] underline-offset-4 group-hover:underline">
+                <span className="font-semibold text-accent-text underline-offset-4 group-hover:underline">
                   browse your files
                 </span>
               </p>
@@ -293,12 +293,12 @@ export function OnboardingCvUpload({
                 {['PDF', 'Word (.docx)', 'Text'].map((t) => (
                   <span
                     key={t}
-                    className="rounded-full border border-white/[0.1] bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium text-white/55"
+                    className="rounded-full border border-border-subtle bg-bg-sunken px-2.5 py-1 text-[12px] font-medium text-text-secondary"
                   >
                     {t}
                   </span>
                 ))}
-                <span className="rounded-full border border-white/[0.1] bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium text-white/55">
+                <span className="rounded-full border border-border-subtle bg-bg-sunken px-2.5 py-1 text-[12px] font-medium text-text-secondary">
                   Up to 5 MB
                 </span>
               </div>
@@ -316,13 +316,13 @@ export function OnboardingCvUpload({
             />
             {error || outOfCredits ? (
               <p
-                className="mt-3 rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 px-3 py-2 text-left text-[13px] text-[#FCA5A5]"
+                className="mt-3 rounded-xl border border-danger-border bg-danger-subtle px-3 py-2 text-left text-[13px] text-danger-text"
                 role="alert"
               >
                 {error ?? DAILY_AI_LIMIT_REACHED_MESSAGE}
               </p>
             ) : null}
-            <p className="mt-4 flex items-center justify-center gap-1.5 text-[12px] text-white/40">
+            <p className="mt-4 flex items-center justify-center gap-1.5 text-[13px] text-text-tertiary">
               <Lock className="h-3.5 w-3.5" aria-hidden />
               Your CV stays private. Only you can see it.
             </p>

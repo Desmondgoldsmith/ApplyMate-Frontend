@@ -4,6 +4,9 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { Check } from 'lucide-react';
 
 import { BrandMark } from '@/components/brand/BrandMark';
+import { SkyBackdrop } from '@/components/brand/SkyBackdrop';
+import { ForcedThemeScope } from '@/components/theme/ThemeScope';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { cn } from '@/lib/utils';
 
 const STEP_LABELS = ['About you', 'Your CV', "You're ready"] as const;
@@ -21,6 +24,8 @@ type OnboardingShellProps = {
   hideProgressChrome?: boolean;
   /** Flex column layout so children can use flex-1 min-h-0 for nested scroll panes. */
   fillViewportHeight?: boolean;
+  /** Pin the whole screen to one theme (the shared CV editor is still dark-only). */
+  forcedTheme?: 'dark';
 };
 
 function OnboardingStepper({
@@ -37,9 +42,9 @@ function OnboardingStepper({
   const within = Math.min(1, Math.max(0, stepProgress));
   const overall = Math.min(1, (step - 1 + (step === 3 ? 1 : within)) / 3);
   return (
-    <div className="w-full max-w-[520px]">
+    <div className="w-full">
       <div
-        className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]"
+        className="relative h-1.5 w-full overflow-hidden rounded-full bg-bg-hover"
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={100}
@@ -47,7 +52,7 @@ function OnboardingStepper({
         aria-valuetext={progressHint}
       >
         <motion.div
-          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#00C9B1] to-[#5EEAD4] shadow-[0_0_12px_rgba(0,201,177,0.6)]"
+          className="bg-brand-gradient absolute inset-y-0 left-0 rounded-full"
           initial={false}
           animate={{ width: `${Math.max(4, overall * 100)}%` }}
           transition={
@@ -57,7 +62,7 @@ function OnboardingStepper({
           }
         />
       </div>
-      <ol className="mt-3 grid grid-cols-3 text-[11px] font-medium sm:text-[12px]">
+      <ol className="mt-2.5 grid grid-cols-3 text-[12px] font-medium">
         {STEP_LABELS.map((label, i) => {
           const n = (i + 1) as 1 | 2 | 3;
           const done = step > n;
@@ -70,10 +75,10 @@ function OnboardingStepper({
                 i === 1 && 'justify-center',
                 i === 2 && 'justify-end',
                 current
-                  ? 'text-white'
+                  ? 'text-text-primary'
                   : done
-                    ? 'text-[#7EE8D8]'
-                    : 'text-white/35',
+                    ? 'text-accent-text'
+                    : 'text-text-tertiary',
               )}
               aria-current={current ? 'step' : undefined}
             >
@@ -81,10 +86,10 @@ function OnboardingStepper({
                 className={cn(
                   'flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold transition-colors duration-300',
                   done
-                    ? 'bg-[#00C9B1] text-[#080A0A]'
+                    ? 'bg-accent-solid text-text-on-accent'
                     : current
-                      ? 'bg-white text-[#080A0A]'
-                      : 'bg-white/10 text-white/50',
+                      ? 'border border-text-primary text-text-primary'
+                      : 'border border-border-strong text-text-tertiary',
                 )}
                 aria-hidden
               >
@@ -99,35 +104,6 @@ function OnboardingStepper({
   );
 }
 
-function AmbientBackdrop({ reducedMotion }: { reducedMotion: boolean | null }) {
-  return (
-    <div
-      className="pointer-events-none fixed inset-0 -z-0 overflow-hidden"
-      aria-hidden
-    >
-      <motion.div
-        className="absolute -left-[15%] -top-[20%] h-[55vmax] w-[55vmax] rounded-full bg-[radial-gradient(closest-side,rgba(0,201,177,0.14),transparent)] blur-2xl"
-        animate={reducedMotion ? undefined : { x: [0, 40, 0], y: [0, 30, 0] }}
-        transition={
-          reducedMotion
-            ? undefined
-            : { duration: 22, repeat: Infinity, ease: 'easeInOut' }
-        }
-      />
-      <motion.div
-        className="absolute -bottom-[25%] -right-[10%] h-[50vmax] w-[50vmax] rounded-full bg-[radial-gradient(closest-side,rgba(94,234,212,0.08),transparent)] blur-2xl"
-        animate={reducedMotion ? undefined : { x: [0, -30, 0], y: [0, -40, 0] }}
-        transition={
-          reducedMotion
-            ? undefined
-            : { duration: 26, repeat: Infinity, ease: 'easeInOut' }
-        }
-      />
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_75%)]" />
-    </div>
-  );
-}
-
 export function OnboardingShell({
   step,
   children,
@@ -136,44 +112,54 @@ export function OnboardingShell({
   stepProgress = 0,
   hideProgressChrome,
   fillViewportHeight,
+  forcedTheme,
 }: OnboardingShellProps) {
   const reducedMotion = useReducedMotion();
 
-  return (
+  const shell = (
     <div
       className={cn(
-        'relative isolate bg-[#0A0A0A] text-white',
+        'relative isolate bg-bg-page text-text-primary',
         fillViewportHeight
-          ? 'flex h-[100dvh] max-h-[100dvh] min-h-0 flex-col overflow-hidden px-6 py-4 sm:px-6 sm:py-5'
-          : 'flex min-h-screen flex-col px-5 pb-12 pt-7 sm:px-6 sm:pb-16 sm:pt-9',
+          ? 'flex h-[100dvh] max-h-[100dvh] min-h-0 flex-col overflow-hidden px-4 py-3 sm:px-6 sm:py-4'
+          : 'flex min-h-screen flex-col px-5 pb-12 pt-5 sm:px-8 sm:pb-16',
       )}
     >
       {!fillViewportHeight ? (
-        <AmbientBackdrop reducedMotion={reducedMotion} />
+        <SkyBackdrop className="fixed -z-10 [&_svg]:opacity-50" />
       ) : null}
       {!hideProgressChrome ? (
-        <header className="relative z-10 flex shrink-0 flex-col items-center">
-          <BrandMark className="mb-6" />
-          <OnboardingStepper
-            step={step}
-            stepProgress={stepProgress}
-            reducedMotion={reducedMotion}
-            progressHint={progressHint}
-          />
+        <header className="relative z-10 mx-auto grid w-full max-w-[1120px] shrink-0 grid-cols-[1fr_auto] items-center gap-x-4 gap-y-5 sm:grid-cols-[1fr_minmax(0,460px)_1fr]">
+          <BrandMark />
+          <div className="col-span-2 row-start-2 sm:col-span-1 sm:col-start-2 sm:row-start-1">
+            <OnboardingStepper
+              step={step}
+              stepProgress={stepProgress}
+              reducedMotion={reducedMotion}
+              progressHint={progressHint}
+            />
+          </div>
+          <ThemeToggle className="justify-self-end sm:col-start-3" />
         </header>
       ) : null}
 
       <div
         className={cn(
           'relative z-10 mx-auto w-full min-h-0',
-          wide ? 'max-w-[min(100%,1320px)]' : 'max-w-[600px]',
+          wide ? 'max-w-[min(100%,1320px)]' : 'max-w-[640px]',
           fillViewportHeight
             ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
-            : 'flex flex-1 flex-col justify-center py-8',
+            : 'flex flex-1 flex-col justify-center py-10',
         )}
       >
         {children}
       </div>
     </div>
+  );
+
+  return forcedTheme ? (
+    <ForcedThemeScope theme={forcedTheme}>{shell}</ForcedThemeScope>
+  ) : (
+    shell
   );
 }

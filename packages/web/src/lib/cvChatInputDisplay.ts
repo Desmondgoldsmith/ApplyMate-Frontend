@@ -1,7 +1,7 @@
 import { CV_CHAT_INPUT_MAX_CHARS } from '@/lib/cv-chat-input.constants';
 
 export const CV_CHAT_PASTE_HINT =
-  "You can paste your entire resume here. We'll only ask about what's missing.";
+  "You can paste your entire CV here. We'll only ask about what's missing.";
 
 export function formatCvChatCharCount(length: number): string {
   if (length >= CV_CHAT_INPUT_MAX_CHARS * 0.9) {

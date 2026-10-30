@@ -48,16 +48,16 @@ export function OnboardingReferralPrompt({
   };
 
   return (
-    <div className="w-full rounded-2xl border border-white/[0.07] bg-white/[0.02] px-4 py-4 text-left">
+    <div className="w-full rounded-2xl border border-border-subtle bg-bg-surface px-4 py-4 text-left shadow-raised">
       <AnimatePresence mode="wait" initial={false}>
         {saved ? (
           <motion.p
             key="thanks"
             initial={reducedMotion ? false : { opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-2 text-[13px] text-white/60"
+            className="flex items-center gap-2 text-[13px] text-text-secondary"
           >
-            <Check className="h-4 w-4 text-[#00C9B1]" strokeWidth={3} />
+            <Check className="h-4 w-4 text-accent-text" strokeWidth={3} />
             Thanks for telling us how you found CareerKite.
           </motion.p>
         ) : (
@@ -65,9 +65,9 @@ export function OnboardingReferralPrompt({
             key="ask"
             exit={reducedMotion ? undefined : { opacity: 0 }}
           >
-            <p className="text-[13px] font-medium text-white/75">
+            <p className="text-[13px] font-medium text-text-secondary">
               One quick question: how did you hear about CareerKite?{' '}
-              <span className="font-normal text-white/40">(optional)</span>
+              <span className="font-normal text-text-tertiary">(optional)</span>
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {REFERRAL_OPTIONS.map((opt) => (
@@ -81,10 +81,10 @@ export function OnboardingReferralPrompt({
                     if (opt !== 'Other') void save(opt);
                   }}
                   className={cn(
-                    'rounded-full border px-3 py-1.5 text-[12px] transition-colors duration-150 disabled:opacity-50',
+                    'min-h-[36px] rounded-full border px-3 text-[13px] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus disabled:opacity-50',
                     picked === opt
-                      ? 'border-[#00C9B1] bg-[rgba(0,201,177,0.12)] text-white'
-                      : 'border-white/[0.12] text-white/65 hover:border-white/[0.25] hover:text-white',
+                      ? 'border-accent-solid bg-accent-subtle font-semibold text-text-primary'
+                      : 'border-border-default text-text-secondary hover:border-border-strong hover:text-text-primary',
                   )}
                 >
                   {opt}
@@ -108,12 +108,12 @@ export function OnboardingReferralPrompt({
                   onChange={(e) => setOther(e.target.value)}
                   placeholder="Where did you hear about us?"
                   maxLength={500}
-                  className="h-10 flex-1 rounded-lg border border-white/[0.12] bg-white/[0.04] px-3 text-[13px] text-white outline-none placeholder:text-white/35 focus:border-[#00C9B1]"
+                  className="h-11 flex-1 rounded-xl border border-border-strong bg-bg-sunken px-3 text-[14px] text-text-primary outline-none placeholder:text-text-tertiary focus:border-border-focus focus:bg-bg-surface"
                 />
                 <button
                   type="submit"
                   disabled={saving || other.trim().length < 2}
-                  className="h-10 rounded-lg bg-[rgba(0,201,177,0.15)] px-4 text-[13px] font-semibold text-[#00C9B1] disabled:opacity-40"
+                  className="h-11 rounded-xl bg-accent-solid px-5 text-[14px] font-semibold text-text-on-accent hover:bg-accent-solid-hover disabled:opacity-40"
                 >
                   Send
                 </button>
