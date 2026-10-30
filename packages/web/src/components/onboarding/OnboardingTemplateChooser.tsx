@@ -97,6 +97,26 @@ function useElementWidth<T extends HTMLElement>() {
   return [ref, width] as const;
 }
 
+/** A design thumbnail that fills the width of its card. */
+function FluidPreview({
+  data,
+  template,
+}: {
+  data: CVBuilderData;
+  template: CvTemplateId;
+}) {
+  const [ref, width] = useElementWidth<HTMLDivElement>();
+  return (
+    <div ref={ref} className="w-full">
+      {width > 0 ? (
+        <ScaledPreview data={data} template={template} width={width} />
+      ) : (
+        <div className="aspect-[794/1123] w-full bg-white" />
+      )}
+    </div>
+  );
+}
+
 /** Full-size A4 view of one design, scaled to fit the screen width. */
 function FullSizePreview({
   data,
@@ -204,9 +224,9 @@ export function OnboardingTemplateChooser({
 
   return (
     <div className="w-full text-left">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] lg:items-start">
-        {/* Large live preview: first on small screens, right-hand column on large ones. */}
-        <div className="lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-[minmax(0,1fr)_minmax(220px,300px)] sm:items-start lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] lg:gap-6">
+        {/* Large live preview: under the designs on phones, beside them from tablet width up. */}
+        <div className="order-2 sm:sticky sm:top-6 sm:order-none sm:col-start-2 sm:row-start-1">
           <div className="rounded-3xl border border-border-subtle bg-bg-surface p-4 shadow-raised">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
@@ -230,7 +250,7 @@ export function OnboardingTemplateChooser({
             </div>
             <div
               ref={previewRef}
-              className="mx-auto w-full max-w-[360px] lg:max-w-none"
+              className="mx-auto w-full max-w-[360px] sm:max-w-none"
             >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.button
@@ -260,15 +280,18 @@ export function OnboardingTemplateChooser({
         </div>
 
         {/* Design options: a swipeable strip on phones, a grid on larger screens. */}
-        <div className="lg:col-start-1 lg:row-start-1">
+        <div className="order-1 min-w-0 sm:order-none sm:col-start-1 sm:row-start-1">
           <p className="mb-3 text-[14px] font-semibold text-text-primary">
             {ORDERED_TEMPLATES.length} designs.{' '}
-            <span className="font-normal text-text-secondary">
+            <span className="font-normal text-text-secondary sm:hidden">
+              Swipe to see them all, tap one to preview it.
+            </span>
+            <span className="hidden font-normal text-text-secondary sm:inline">
               Tap one to preview it.
             </span>
           </p>
           <div
-            className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 sm:pb-0"
+            className="-mx-5 flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3"
             role="radiogroup"
             aria-label="CV designs"
           >
@@ -309,11 +332,7 @@ export function OnboardingTemplateChooser({
                     </span>
                   ) : null}
                   <div className="w-full overflow-hidden rounded-md border border-border-subtle transition-transform duration-300 group-hover:scale-[1.02]">
-                    <ScaledPreview
-                      data={previewFor(t)}
-                      template={t}
-                      width={124}
-                    />
+                    <FluidPreview data={previewFor(t)} template={t} />
                   </div>
                   <span className="mt-3 w-full text-[14px] font-semibold text-text-primary">
                     {meta.name}
