@@ -2,14 +2,16 @@
 
 import { Suspense } from 'react';
 
-import { DashboardOverviewContent } from '@/components/dashboard/overview/DashboardOverviewContent';
-import { DashboardOverviewLoadingSkeleton } from '@/components/dashboard/overview/DashboardOverviewLoadingSkeleton';
+import { DashboardHome } from '@/components/dashboard/home/DashboardHome';
 
-/** Dashboard overview — layout shell; sections live in `DashboardOverviewContent`. */
-export default function DashboardOverviewPage() {
+/**
+ * Home. The previous all-in-one overview (`DashboardOverviewContent`) is kept
+ * in the codebase but no longer rendered; it stacked ~30 sections on one page.
+ */
+export default function DashboardHomePage() {
   return (
-    <Suspense fallback={<DashboardOverviewLoadingSkeleton />}>
-      <DashboardOverviewContent />
+    <Suspense fallback={null}>
+      <DashboardHome />
     </Suspense>
   );
 }

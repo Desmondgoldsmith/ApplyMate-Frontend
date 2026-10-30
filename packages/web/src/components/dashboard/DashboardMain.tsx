@@ -8,12 +8,6 @@ import { DashboardMainContext } from '@/components/dashboard/DashboardMainContex
 import { useMobileShell } from '@/components/dashboard/MobileShellContext';
 import { cn } from '@/lib/utils';
 
-/** Home overview uses split panes with independent scroll on large screens. */
-function isDashboardOverviewPath(pathname: string): boolean {
-  const p = pathname.split('?')[0] ?? pathname;
-  return p === '/dashboard' || p === '/dashboard/';
-}
-
 function isCvClinicPath(pathname: string): boolean {
   const p = pathname.split('?')[0] ?? pathname;
   return p === '/dashboard/cv' || p.startsWith('/dashboard/cv/');
@@ -32,7 +26,6 @@ export function DashboardMain({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const profileId = searchParams.get('profileId');
-  const overviewSplit = isDashboardOverviewPath(pathname);
   const cvClinicPath = isCvClinicPath(pathname);
   const cvEditorMobile = isCvClinicEditorPath(pathname, profileId);
   const { navVisible } = useMobileShell();
@@ -58,11 +51,9 @@ export function DashboardMain({ children }: { children: ReactNode }) {
           navVisible
             ? 'pb-[max(6.25rem,calc(5.25rem+env(safe-area-inset-bottom)))] sm:pb-28'
             : mobileScrollEndPad,
-          overviewSplit
-            ? 'scroll-content-end-pad overflow-y-auto lg:overflow-hidden'
-            : cvEditorMobile
-              ? 'lg:overflow-y-auto'
-              : 'scroll-content-end-pad overflow-y-auto',
+          cvEditorMobile
+            ? 'lg:overflow-y-auto'
+            : 'scroll-content-end-pad overflow-y-auto',
         )}
         data-lenis-prevent
       >
