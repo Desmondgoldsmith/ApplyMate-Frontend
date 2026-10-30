@@ -1,7 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle2, Info, XCircle } from 'lucide-react';
+import { CheckCircle2, Info, X, XCircle } from 'lucide-react';
 import { useMemo } from 'react';
 import { create } from 'zustand';
 
@@ -40,22 +40,19 @@ export const useToastStore = create<ToastState>((set) => ({
 function getStyle(type: ToastType) {
   if (type === 'success') {
     return {
-      border: 'border-[#00C9B1]/40',
-      accent: 'bg-[#00C9B1]',
-      icon: <CheckCircle2 className="h-4 w-4 text-[#00C9B1]" />,
+      iconWell: 'bg-success-subtle text-success-text',
+      icon: <CheckCircle2 className="h-4 w-4" aria-hidden />,
     };
   }
   if (type === 'error') {
     return {
-      border: 'border-[#ff6432]/40',
-      accent: 'bg-[#ff6432]',
-      icon: <XCircle className="h-4 w-4 text-[#ff6432]" />,
+      iconWell: 'bg-danger-subtle text-danger-text',
+      icon: <XCircle className="h-4 w-4" aria-hidden />,
     };
   }
   return {
-    border: 'border-white/20',
-    accent: 'bg-white/40',
-    icon: <Info className="h-4 w-4 text-white/70" />,
+    iconWell: 'bg-bg-sunken text-text-secondary',
+    icon: <Info className="h-4 w-4" aria-hidden />,
   };
 }
 
@@ -73,22 +70,25 @@ export function ToastViewport() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
               transition={{ duration: 0.2 }}
-              className={`pointer-events-auto relative overflow-hidden rounded-xl border bg-[#111616] p-3 ${style.border}`}
+              role={toast.type === 'error' ? 'alert' : 'status'}
+              className="pointer-events-auto relative overflow-hidden rounded-2xl border border-border-subtle bg-bg-raised p-3 shadow-overlay"
             >
-              <span
-                className={`absolute left-0 top-0 h-full w-1 ${style.accent}`}
-              />
               <button
                 type="button"
                 onClick={() => dismiss(toast.id)}
-                className="absolute right-2 top-2 text-xs text-white/45 hover:text-white/85"
+                aria-label="Dismiss"
+                className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg text-text-tertiary transition-colors hover:bg-bg-hover hover:text-text-primary focus-visible:outline-2 focus-visible:outline-border-focus"
               >
-                x
+                <X className="h-3.5 w-3.5" aria-hidden />
               </button>
-              <div className="ml-2 flex flex-col gap-2 pr-6 text-sm text-white/85">
-                <div className="flex items-start gap-2">
-                  {style.icon}
-                  <p>{toast.message}</p>
+              <div className="flex flex-col gap-2 pr-8 text-sm text-text-primary">
+                <div className="flex items-start gap-2.5">
+                  <span
+                    className={`mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${style.iconWell}`}
+                  >
+                    {style.icon}
+                  </span>
+                  <p className="pt-0.5 leading-snug">{toast.message}</p>
                 </div>
                 {toast.action ? (
                   <button
@@ -97,7 +97,7 @@ export function ToastViewport() {
                       toast.action?.onClick();
                       dismiss(toast.id);
                     }}
-                    className="self-start rounded-lg border border-[#00C9B1]/40 bg-[#00C9B1]/10 px-3 py-1.5 text-xs font-semibold text-[#00C9B1] transition hover:bg-[#00C9B1]/20"
+                    className="ml-8 self-start rounded-lg border border-accent-border bg-accent-subtle px-3 py-1.5 text-xs font-semibold text-accent-text transition-colors hover:border-accent-solid"
                   >
                     {toast.action.label}
                   </button>

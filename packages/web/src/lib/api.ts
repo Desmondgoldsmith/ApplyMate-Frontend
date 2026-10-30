@@ -91,6 +91,7 @@ import {
   type CvScoringTransparency,
 } from './cvHybridScoring';
 import type { CvSectionScoreExplainer } from './cvSectionScoreExplainer';
+import type { ThemePreference } from './theme/themePreference';
 import {
   normalizeCareerDashboard,
   parseMarkAcceptedResult,
@@ -136,6 +137,8 @@ export type UserUiPrefs = {
   tourPagesCompleted?: TourPagesCompletedPrefs;
   /** Cross-device job board location preference (Phase 1). */
   jobSearchLocation?: string;
+  /** Signed-in app colour theme; absent until the user picks one. */
+  theme?: ThemePreference;
   [key: string]: unknown;
 };
 

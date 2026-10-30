@@ -78,7 +78,7 @@ function OAuthCompleteContent() {
   }, [clearAuth, hydrateFromStorage, router, searchParams, setAuth]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center text-sm text-white/60">
+    <div className="flex min-h-screen items-center justify-center text-sm text-text-secondary">
       Completing sign-in…
     </div>
   );
@@ -89,7 +89,7 @@ export default function OAuthCompletePage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center text-sm text-white/60">
+        <div className="flex min-h-screen items-center justify-center text-sm text-text-secondary">
           Completing sign-in…
         </div>
       }

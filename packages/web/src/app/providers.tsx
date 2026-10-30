@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { PostHogProvider } from '@/components/analytics/PostHogProvider';
 import { ExtensionAuthBridge } from '@/components/extension/ExtensionAuthBridge';
-import { ForceDarkTheme } from '@/components/theme/ForceDarkTheme';
+import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { SmoothScrollProvider } from '@/components/smooth-scroll-provider';
 import { ToastViewport } from '@/components/ui/Toast';
 import {
@@ -83,12 +83,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
     >
       <QueryClientProvider client={queryClient}>
         <PostHogProvider>
-          <ForceDarkTheme />
-          <ExtensionAuthBridge />
-          <SmoothScrollProvider>
-            {children}
-            <ToastViewport />
-          </SmoothScrollProvider>
+          <ThemeProvider>
+            <ExtensionAuthBridge />
+            <SmoothScrollProvider>
+              {children}
+              <ToastViewport />
+            </SmoothScrollProvider>
+          </ThemeProvider>
         </PostHogProvider>
       </QueryClientProvider>
     </SessionProvider>

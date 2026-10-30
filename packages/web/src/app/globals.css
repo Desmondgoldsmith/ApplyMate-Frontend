@@ -2,7 +2,177 @@
 @import 'lenis/dist/lenis.css';
 @import '../styles/dashboard-premium.css';
 
-/* ApplyMate landing — design tokens */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/*
+ * CareerKite theme roles. Components use the semantic utilities generated
+ * below (`bg-bg-surface`, `text-text-secondary`, `border-border-default`…),
+ * never raw colours, so a `data-theme` switch repaints everything.
+ * Every text/background pair is measured to WCAG AA (4.5:1 text, 3:1 UI);
+ * re-measure when changing a value.
+ */
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+  --ck-bg-page: #f6f7f1;
+  --ck-bg-surface: #ffffff;
+  --ck-bg-raised: #ffffff;
+  --ck-bg-sunken: #eef0e8;
+  --ck-bg-hover: #eceee5;
+  --ck-bg-overlay: rgb(20 23 20 / 0.45);
+
+  --ck-text-primary: #141714;
+  --ck-text-secondary: #4b524c;
+  --ck-text-tertiary: #646b65;
+  --ck-text-disabled: #9da39c;
+  --ck-text-inverse: #f4f6ef;
+  --ck-text-on-accent: #141714;
+
+  --ck-border-subtle: #e3e6dc;
+  --ck-border-default: #d2d6ca;
+  --ck-border-strong: #7b827b;
+  --ck-border-focus: #16804c;
+
+  --ck-accent-subtle: #f0fad2;
+  --ck-accent-border: #c7e88a;
+  --ck-accent-solid: #b9f542;
+  --ck-accent-solid-hover: #a6e82a;
+  --ck-accent-text: #3d6600;
+
+  --ck-success-subtle: #e4f6ec;
+  --ck-success-text: #0d7344;
+  --ck-danger-subtle: #fdecee;
+  --ck-danger-border: #f2b8bf;
+  --ck-danger-solid: #c42b3a;
+  --ck-danger-text: #b42332;
+  --ck-warning-subtle: #fff4d6;
+  --ck-warning-text: #805300;
+
+  --ck-shadow-raised:
+    0 1px 2px rgb(20 23 20 / 0.06), 0 8px 24px -8px rgb(20 23 20 / 0.12);
+  --ck-shadow-overlay:
+    0 2px 6px rgb(20 23 20 / 0.08), 0 24px 56px -16px rgb(20 23 20 / 0.22);
+  --ck-glow-a: rgb(185 245 66 / 0.32);
+  --ck-glow-b: rgb(29 191 115 / 0.18);
+  --ck-mark-dot: #17b26a;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --ck-bg-page: #0e110f;
+  --ck-bg-surface: #161a17;
+  --ck-bg-raised: #1d221e;
+  --ck-bg-sunken: #121513;
+  --ck-bg-hover: #232924;
+  --ck-bg-overlay: rgb(0 0 0 / 0.6);
+
+  --ck-text-primary: #f2f4ec;
+  --ck-text-secondary: #b6bcb3;
+  --ck-text-tertiary: #929990;
+  --ck-text-disabled: #5d645e;
+  --ck-text-inverse: #141714;
+  --ck-text-on-accent: #141714;
+
+  --ck-border-subtle: #252b26;
+  --ck-border-default: #323933;
+  --ck-border-strong: #687068;
+  --ck-border-focus: #b9f542;
+
+  --ck-accent-subtle: #1e2912;
+  --ck-accent-border: #3d5419;
+  --ck-accent-solid: #b9f542;
+  --ck-accent-solid-hover: #cbff5c;
+  --ck-accent-text: #c4f55c;
+
+  --ck-success-subtle: #10261b;
+  --ck-success-text: #4fd99a;
+  --ck-danger-subtle: #2d1416;
+  --ck-danger-border: #5c262b;
+  --ck-danger-solid: #c9353c;
+  --ck-danger-text: #ff8f8f;
+  --ck-warning-subtle: #2a2110;
+  --ck-warning-text: #f2c14e;
+
+  --ck-shadow-raised:
+    0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -12px rgb(0 0 0 / 0.6);
+  --ck-shadow-overlay:
+    0 2px 8px rgb(0 0 0 / 0.5), 0 28px 64px -16px rgb(0 0 0 / 0.7);
+  --ck-glow-a: rgb(185 245 66 / 0.14);
+  --ck-glow-b: rgb(29 191 115 / 0.12);
+  --ck-mark-dot: #b9f542;
+}
+
+@theme inline {
+  --color-bg-page: var(--ck-bg-page);
+  --color-bg-surface: var(--ck-bg-surface);
+  --color-bg-raised: var(--ck-bg-raised);
+  --color-bg-sunken: var(--ck-bg-sunken);
+  --color-bg-hover: var(--ck-bg-hover);
+  --color-bg-overlay: var(--ck-bg-overlay);
+
+  --color-text-primary: var(--ck-text-primary);
+  --color-text-secondary: var(--ck-text-secondary);
+  --color-text-tertiary: var(--ck-text-tertiary);
+  --color-text-disabled: var(--ck-text-disabled);
+  --color-text-inverse: var(--ck-text-inverse);
+  --color-text-on-accent: var(--ck-text-on-accent);
+
+  --color-border-subtle: var(--ck-border-subtle);
+  --color-border-default: var(--ck-border-default);
+  --color-border-strong: var(--ck-border-strong);
+  --color-border-focus: var(--ck-border-focus);
+
+  --color-accent-subtle: var(--ck-accent-subtle);
+  --color-accent-border: var(--ck-accent-border);
+  --color-accent-solid: var(--ck-accent-solid);
+  --color-accent-solid-hover: var(--ck-accent-solid-hover);
+  --color-accent-text: var(--ck-accent-text);
+
+  --color-success-subtle: var(--ck-success-subtle);
+  --color-success-text: var(--ck-success-text);
+  --color-danger-subtle: var(--ck-danger-subtle);
+  --color-danger-border: var(--ck-danger-border);
+  --color-danger-solid: var(--ck-danger-solid);
+  --color-danger-text: var(--ck-danger-text);
+  --color-warning-subtle: var(--ck-warning-subtle);
+  --color-warning-text: var(--ck-warning-text);
+
+  --shadow-raised: var(--ck-shadow-raised);
+  --shadow-overlay: var(--ck-shadow-overlay);
+
+  --font-display:
+    var(--font-bricolage), var(--font-plus-jakarta-sans), system-ui, sans-serif;
+}
+
+/* Kite gradient: the brand's one signature colour moment. Same in both themes. */
+@utility bg-brand-gradient {
+  background-image: linear-gradient(135deg in oklab, #c8f74a 0%, #17b26a 100%);
+}
+
+/* Sign-in sky: thin "wind" strokes drifting behind the kite. */
+.ck-wind-line {
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-dasharray: 2 18 60 40;
+  opacity: 0.35;
+  animation: ck-wind 14s linear infinite;
+}
+.ck-wind-line-slow {
+  animation-duration: 22s;
+}
+@keyframes ck-wind {
+  to {
+    stroke-dashoffset: -480;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ck-wind-line {
+    animation: none;
+  }
+}
+
+/* Landing page design tokens (always dark; see LegacyDarkScope) */
 :root {
   --ai-bg: #060a0a;
   --ai-teal: #00aeaf;
@@ -157,8 +327,8 @@ html.lenis {
 }
 
 body {
-  background: transparent;
-  color: var(--foreground);
+  background: var(--ck-bg-page);
+  color: var(--ck-text-primary);
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
@@ -315,9 +485,9 @@ input.auth-input:-webkit-autofill,
 input.auth-input:-webkit-autofill:hover,
 input.auth-input:-webkit-autofill:focus,
 input.auth-input:-webkit-autofill:active {
-  -webkit-text-fill-color: #ffffff;
-  caret-color: #ffffff;
-  box-shadow: 0 0 0 1000px #111616 inset !important;
+  -webkit-text-fill-color: var(--ck-text-primary);
+  caret-color: var(--ck-text-primary);
+  box-shadow: 0 0 0 1000px var(--ck-bg-sunken) inset !important;
   transition: background-color 99999s ease-out;
 }
 

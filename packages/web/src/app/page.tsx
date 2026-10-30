@@ -5,6 +5,7 @@ import {
   SoftwareApplicationJsonLd,
   WebSiteJsonLd,
 } from '@/components/seo/JsonLd';
+import { LegacyDarkScope } from '@/components/theme/LegacyDarkScope';
 import { buildMarketingPageMetadata } from '@/lib/seo/metadata';
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from '@/lib/site';
 
@@ -16,12 +17,12 @@ export const metadata = buildMarketingPageMetadata({
 
 export default function HomePage() {
   return (
-    <>
+    <LegacyDarkScope>
       <OrganizationJsonLd />
       <WebSiteJsonLd />
       <SoftwareApplicationJsonLd />
       <MarketingAnalytics />
       <LandingPage />
-    </>
+    </LegacyDarkScope>
   );
 }
