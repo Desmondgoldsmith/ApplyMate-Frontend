@@ -8,7 +8,8 @@ const KEY = 'applymate_onboarding_wizard_v1';
 
 export type CvPath = 'upload' | 'build' | 'chat' | 'paste' | 'manual' | null;
 export type BuildPhase = 'pick' | 'builder';
-export type UploadPhase = 'zone' | 'summary' | 'score';
+/** `score` is legacy (pre-redesign saved state); `design` is the template step after review. */
+export type UploadPhase = 'zone' | 'summary' | 'score' | 'design';
 
 export type CvEntryPhase = 'template' | 'paths';
 
@@ -55,7 +56,8 @@ export function readStoredWizard(): Partial<StoredWizardState> | null {
     if (
       o.uploadPhase === 'zone' ||
       o.uploadPhase === 'summary' ||
-      o.uploadPhase === 'score'
+      o.uploadPhase === 'score' ||
+      o.uploadPhase === 'design'
     )
       out.uploadPhase = o.uploadPhase;
     if (o.cvEntryPhase === 'template' || o.cvEntryPhase === 'paths')

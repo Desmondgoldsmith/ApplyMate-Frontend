@@ -235,6 +235,9 @@ export const queryKeys = {
       ['onboarding', 'status', accessToken] as const,
     cvDefaultProfile: (accessToken = '') =>
       ['onboarding', 'cv-default-profile', accessToken] as const,
+    /** Profile + sections for the "Check what we found" / design steps. */
+    cvReview: (profileId: string) =>
+      ['onboarding', 'cv-review', profileId] as const,
   },
 
   coaching: {

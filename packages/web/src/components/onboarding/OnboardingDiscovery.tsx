@@ -1,17 +1,18 @@
 'use client';
 
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowRight,
+  CalendarClock,
   Check,
-  GraduationCap,
-  MoreHorizontal,
+  Compass,
+  FileCheck2,
+  MessagesSquare,
+  Plus,
   Rocket,
-  Search,
-  Sparkles,
-  Users,
+  Target,
   X,
 } from 'lucide-react';
 
@@ -21,170 +22,128 @@ import {
   ONBOARDING_SUBTITLE_CLASS,
   ONBOARDING_TITLE_CLASS,
 } from '@/components/onboarding/onboardingLayout';
-import { InfoHint } from '@/components/ui/InfoHint';
 import { cn } from '@/lib/utils';
 
-function MessageCircleIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-    >
-      <path
-        d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+/** Discovery screens in order. `1` (focus) and `4` (referral) are retired but may exist in old saved state. */
+export const DISCOVERY_STEPS = [0, 2, 3] as const;
+export type DiscoveryStep = (typeof DISCOVERY_STEPS)[number];
 
-function LinkedInIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-    >
-      <path
-        d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 1 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M2 9h4v12H2z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      <circle cx="4" cy="4" r="2" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
+export function normalizeDiscoveryStep(raw: number): DiscoveryStep {
+  if (raw >= 3) return 3;
+  if (raw >= 1) return 2;
+  return 0;
 }
-
-function VideoSocialIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-    >
-      <rect
-        x="3"
-        y="5"
-        width="18"
-        height="14"
-        rx="3"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path d="M10 9.5V14.5L15 12L10 9.5Z" fill="currentColor" />
-    </svg>
-  );
-}
-
-const REFERRAL_OPTIONS: ReadonlyArray<{
-  value: string;
-  label: string;
-  Icon: ComponentType<{ className?: string }>;
-}> = [
-  { value: 'Google search', label: 'Google search', Icon: Search },
-  { value: 'LinkedIn', label: 'LinkedIn', Icon: LinkedInIcon },
-  { value: 'Twitter / X', label: 'Twitter / X', Icon: Sparkles },
-  { value: 'Friend or colleague', label: 'Friend or colleague', Icon: Users },
-  { value: 'Product Hunt', label: 'Product Hunt', Icon: VideoSocialIcon },
-  {
-    value: 'Blog or article',
-    label: 'Blog or article',
-    Icon: MessageCircleIcon,
-  },
-  { value: 'Other', label: 'Other', Icon: MoreHorizontal },
-];
 
 const SUGGESTED_ROLES = [
-  'Product Manager',
   'Software Engineer',
-  'UX Designer',
-  'Marketing Manager',
+  'Product Manager',
   'Data Analyst',
+  'UX Designer',
+  'Project Manager',
+  'Marketing Manager',
+  'Business Analyst',
+  'Sales Executive',
 ] as const;
 
-function sectionLabel(text: string) {
+const WELCOME_POINTS: ReadonlyArray<{
+  Icon: ComponentType<{ className?: string }>;
+  title: string;
+  body: string;
+}> = [
+  {
+    Icon: FileCheck2,
+    title: 'A CV score with clear fixes',
+    body: 'See what recruiters notice and what to improve first.',
+  },
+  {
+    Icon: Target,
+    title: 'Jobs matched to your CV',
+    body: 'Know your fit and skill gaps before you apply.',
+  },
+  {
+    Icon: MessagesSquare,
+    title: 'Interview practice for your roles',
+    body: 'Rehearse with an AI interviewer that knows your CV.',
+  },
+];
+
+const URGENCY_OPTIONS: ReadonlyArray<{
+  value: JobSearchUrgency;
+  Icon: ComponentType<{ className?: string }>;
+  title: string;
+  body: string;
+}> = [
+  {
+    value: 'asap',
+    Icon: Rocket,
+    title: 'As soon as possible',
+    body: "I'm applying now or about to start.",
+  },
+  {
+    value: 'few_months',
+    Icon: CalendarClock,
+    title: 'In the next few months',
+    body: 'I want to be ready when the right role appears.',
+  },
+  {
+    value: 'exploring',
+    Icon: Compass,
+    title: 'Just exploring',
+    body: "I'm seeing what's out there for now.",
+  },
+];
+
+function Eyebrow({ children }: { children: ReactNode }) {
   return (
-    <p
-      className="text-center text-[11px] font-medium uppercase text-[#00C9B1]"
-      style={{ letterSpacing: '0.12em' }}
-    >
-      {text}
+    <p className="text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-[#00C9B1]">
+      {children}
     </p>
   );
 }
 
-function OnboardingPrimaryCta({
+function PrimaryCta({
   children,
   disabled,
   onClick,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   disabled?: boolean;
   onClick: () => void | Promise<void>;
 }) {
   return (
-    <div className="mt-8 flex w-full justify-center sm:mt-8">
-      <button
+    <div className="mt-9 flex w-full justify-center">
+      <motion.button
         type="button"
         disabled={disabled}
         onClick={() => void onClick()}
+        whileHover={disabled ? undefined : { y: -1 }}
+        whileTap={disabled ? undefined : { scale: 0.98 }}
         className={cn(
-          'flex h-[52px] min-h-[52px] w-full min-w-[200px] cursor-pointer items-center justify-center gap-2 rounded-xl px-8 text-[15px] font-semibold text-white transition-all duration-200 sm:w-auto',
-          'bg-[#00C9B1] active:scale-[0.99]',
-          'disabled:cursor-not-allowed disabled:opacity-[0.35]',
-          'hover:scale-[1.01] hover:brightness-[1.08] hover:shadow-[0_0_24px_rgba(0,201,177,0.25)]',
+          'group flex h-[52px] w-full min-w-[220px] items-center justify-center gap-2 rounded-xl px-8 text-[15px] font-semibold text-[#080A0A] sm:w-auto',
+          'bg-[#00C9B1] shadow-[0_8px_30px_rgba(0,201,177,0.25)] transition-[box-shadow,filter,opacity] duration-200',
+          'hover:shadow-[0_10px_36px_rgba(0,201,177,0.38)] hover:brightness-105',
+          'disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none',
         )}
       >
         {children}
-        <ArrowRight className="h-4 w-4 opacity-90" strokeWidth={2.5} />
-      </button>
+        <ArrowRight
+          className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+          strokeWidth={2.5}
+        />
+      </motion.button>
     </div>
   );
 }
 
 type OnboardingDiscoveryProps = {
   firstName: string;
-  discoveryStep: number;
-  focusHired: boolean;
-  focusStudent: boolean;
-  onToggleHired: () => void;
-  onToggleStudent: () => void;
+  discoveryStep: DiscoveryStep;
   jobSearchUrgency: JobSearchUrgency | null;
   onSelectUrgency: (v: JobSearchUrgency) => void;
   targetRolesText: string;
   onTargetRolesChange: (v: string) => void;
-  referralSource: string;
-  onReferralSourceChange: (v: string) => void;
-  referralOther: string;
-  onReferralOtherChange: (v: string) => void;
   onBack: () => void;
-  /** Pass referral pick when auto-advancing so parent state is not stale. */
-  onNext: (opts?: {
-    referralSkipped?: boolean;
-    referralSource?: string;
-    referralOther?: string;
-  }) => void | Promise<void>;
+  onNext: () => void | Promise<void>;
   savePending: boolean;
 };
 
@@ -199,55 +158,29 @@ function parseRolesFromText(text: string): string[] {
 export function OnboardingDiscovery({
   firstName,
   discoveryStep,
-  focusHired,
-  focusStudent: _focusStudent,
-  onToggleHired,
-  onToggleStudent: _onToggleStudent,
   jobSearchUrgency,
   onSelectUrgency,
   targetRolesText,
   onTargetRolesChange,
-  referralSource,
-  onReferralSourceChange,
-  referralOther,
-  onReferralOtherChange,
   onBack,
   onNext,
   savePending,
 }: OnboardingDiscoveryProps) {
   const reducedMotion = useReducedMotion();
   const [roleInput, setRoleInput] = useState('');
-  const [showTapHint, setShowTapHint] = useState(false);
   const urgencyTimerRef = useRef<number | null>(null);
-  const referralTimerRef = useRef<number | null>(null);
 
   const greeting =
     firstName.trim().length > 0
       ? `Welcome, ${firstName.trim()}.`
       : 'Welcome to ApplyMate.';
 
-  const focusValid = focusHired;
-  const timelineValid = jobSearchUrgency !== null;
   const roleChips = useMemo(
     () => parseRolesFromText(targetRolesText),
     [targetRolesText],
   );
   const pendingRole = roleInput.trim();
   const rolesValid = roleChips.length >= 1 || pendingRole.length >= 2;
-  const referralValid =
-    referralSource.trim().length > 0 &&
-    (referralSource !== 'Other' || referralOther.trim().length > 0);
-
-  const canNext =
-    discoveryStep === 0
-      ? true
-      : discoveryStep === 1
-        ? focusValid
-        : discoveryStep === 2
-          ? timelineValid
-          : discoveryStep === 3
-            ? rolesValid
-            : referralValid;
 
   const clearUrgencyTimer = useCallback(() => {
     if (urgencyTimerRef.current != null) {
@@ -256,48 +189,15 @@ export function OnboardingDiscovery({
     }
   }, []);
 
-  const clearReferralTimer = useCallback(() => {
-    if (referralTimerRef.current != null) {
-      window.clearTimeout(referralTimerRef.current);
-      referralTimerRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      clearUrgencyTimer();
-      clearReferralTimer();
-    };
-  }, [clearReferralTimer, clearUrgencyTimer]);
-
-  useEffect(() => {
-    if (discoveryStep !== 2) {
-      setShowTapHint(false);
-      return;
-    }
-    if (jobSearchUrgency !== null) {
-      setShowTapHint(false);
-      return;
-    }
-    const id = window.setTimeout(() => setShowTapHint(true), 2000);
-    return () => window.clearTimeout(id);
-  }, [discoveryStep, jobSearchUrgency]);
+  useEffect(() => clearUrgencyTimer, [clearUrgencyTimer]);
 
   const handleUrgencyPick = (v: JobSearchUrgency) => {
     clearUrgencyTimer();
     onSelectUrgency(v);
-    urgencyTimerRef.current = window.setTimeout(() => {
-      void onNext();
-    }, 300);
-  };
-
-  const handleReferralPick = (value: string) => {
-    clearReferralTimer();
-    onReferralSourceChange(value);
-    if (value !== 'Other') {
-      onReferralOtherChange('');
-      void onNext({ referralSource: value });
-    }
+    urgencyTimerRef.current = window.setTimeout(
+      () => void onNext(),
+      reducedMotion ? 0 : 320,
+    );
   };
 
   const pushRoleChip = (raw: string) => {
@@ -309,8 +209,7 @@ export function OnboardingDiscovery({
       return;
     }
     if (existing.length >= 10) return;
-    const next = [...existing, t].join(', ');
-    onTargetRolesChange(next);
+    onTargetRolesChange([...existing, t].join(', '));
     setRoleInput('');
   };
 
@@ -319,8 +218,11 @@ export function OnboardingDiscovery({
   };
 
   const removeRoleChip = (label: string) => {
-    const next = parseRolesFromText(targetRolesText).filter((x) => x !== label);
-    onTargetRolesChange(next.join(', '));
+    onTargetRolesChange(
+      parseRolesFromText(targetRolesText)
+        .filter((x) => x !== label)
+        .join(', '),
+    );
   };
 
   const onRolesKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -330,47 +232,18 @@ export function OnboardingDiscovery({
     }
   };
 
-  useEffect(() => {
-    clearReferralTimer();
-    if (discoveryStep !== 4 || referralSource !== 'Other') return;
-    if (referralOther.trim().length < 2) return;
-    referralTimerRef.current = window.setTimeout(() => {
-      void onNext({
-        referralSource: 'Other',
-        referralOther: referralOther.trim(),
-      });
-    }, 500);
-    return () => clearReferralTimer();
-  }, [
-    clearReferralTimer,
-    discoveryStep,
-    onNext,
-    referralOther,
-    referralSource,
-  ]);
-
   const stepMotionProps = reducedMotion
     ? { initial: false, animate: { opacity: 1, x: 0 } }
     : {
-        initial: { opacity: 0, x: 20 },
+        initial: { opacity: 0, x: 18 },
         animate: { opacity: 1, x: 0 },
-        exit: { opacity: 0, x: -20 },
-        transition: { duration: 0.2, ease: 'easeOut' as const },
+        exit: { opacity: 0, x: -18 },
+        transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const },
       };
 
-  const primaryCtaLabel =
-    discoveryStep === 1 && !focusValid
-      ? 'Select an option to continue'
-      : discoveryStep === 3 && roleChips.length === 0 && pendingRole.length >= 2
-        ? 'Add role & continue'
-        : 'Next';
-
-  const handlePrimaryNext = () => {
-    if (discoveryStep === 3 && pendingRole.length >= 2) {
-      commitPendingRole();
-    }
-    void onNext();
-  };
+  const suggestions = SUGGESTED_ROLES.filter(
+    (r) => !roleChips.some((c) => c.toLowerCase() === r.toLowerCase()),
+  );
 
   return (
     <div className="flex w-full flex-col items-center text-center">
@@ -378,125 +251,94 @@ export function OnboardingDiscovery({
         <motion.div
           key={discoveryStep}
           {...stepMotionProps}
-          className="flex w-full max-w-[480px] flex-col items-center sm:max-w-[560px]"
+          className="flex w-full max-w-[560px] flex-col items-center"
         >
           {discoveryStep === 0 ? (
             <>
-              {sectionLabel('Welcome')}
-              <motion.div
-                className="mx-auto mb-3 flex h-8 w-8 items-center justify-center text-[#00C9B1]"
-                animate={reducedMotion ? undefined : { y: [0, -4, 0] }}
-                transition={
-                  reducedMotion
-                    ? undefined
-                    : { duration: 3, repeat: Infinity, ease: 'easeInOut' }
-                }
-                aria-hidden
-              >
-                <Sparkles className="h-8 w-8" strokeWidth={1.5} />
-              </motion.div>
-              <h1 className={ONBOARDING_TITLE_CLASS}>{greeting}</h1>
+              <Eyebrow>Welcome</Eyebrow>
+              <h1 className={cn(ONBOARDING_TITLE_CLASS, 'mt-3')}>{greeting}</h1>
               <p className={ONBOARDING_SUBTITLE_CLASS}>
-                We tailor ApplyMate to your goals in about two minutes.
+                Let&apos;s set up ApplyMate around your job search. It takes
+                about two minutes.
               </p>
-            </>
-          ) : null}
-
-          {discoveryStep === 1 ? (
-            <>
-              <OnboardingBackLink onClick={onBack} />
-              {sectionLabel('Your focus')}
-              <h1 className={cn(ONBOARDING_TITLE_CLASS, 'mt-3')}>
-                What would you like the most help with right now?
-              </h1>
-              <p className={ONBOARDING_SUBTITLE_CLASS}>
-                Select one or both. We&apos;ll tailor your workspace around it.
-              </p>
-              <div className="mt-8 flex w-full flex-col gap-3 sm:mt-8">
-                <OutcomeCard
-                  icon={Rocket}
-                  title="Get hired faster"
-                  description="Resume that stands out, job tailoring, smarter job tracking, and interview prep. All working together."
-                  selected={focusHired}
-                  onClick={onToggleHired}
-                />
-                <OutcomeCard
-                  icon={GraduationCap}
-                  title="Student career launchpad"
-                  description="Guided support if you're studying or just starting out. Launching soon."
-                  selected={false}
-                  comingSoon
-                  disabled
-                  onClick={() => {}}
-                />
-              </div>
+              <ul className="mt-8 w-full space-y-2.5 text-left">
+                {WELCOME_POINTS.map(({ Icon, title, body }, i) => (
+                  <motion.li
+                    key={title}
+                    initial={reducedMotion ? false : { opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      delay: reducedMotion ? 0 : 0.12 + i * 0.08,
+                      duration: 0.35,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                    className="flex items-center gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-3.5 backdrop-blur-sm"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[rgba(0,201,177,0.12)] ring-1 ring-[rgba(0,201,177,0.25)]">
+                      <Icon className="h-[18px] w-[18px] text-[#00C9B1]" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[14px] font-semibold text-white">
+                        {title}
+                      </span>
+                      <span className="mt-0.5 block text-[13px] text-white/55">
+                        {body}
+                      </span>
+                    </span>
+                  </motion.li>
+                ))}
+              </ul>
             </>
           ) : null}
 
           {discoveryStep === 2 ? (
             <>
               <OnboardingBackLink onClick={onBack} />
-              {sectionLabel('Timing')}
+              <Eyebrow>Your timeline</Eyebrow>
               <h1 className={cn(ONBOARDING_TITLE_CLASS, 'mt-3')}>
-                When would you like to start your next opportunity?
+                When do you want to start a new role?
               </h1>
               <p className={ONBOARDING_SUBTITLE_CLASS}>
-                No wrong answers. This helps us prioritise what matters to you.
+                We&apos;ll pace reminders and suggestions to match. You can
+                change this later.
               </p>
-              <div className="mt-2 flex justify-center">
-                <InfoHint text="Your timing choice tunes recommendations and reminders. You can change it later in Settings." />
+              <div
+                className="mt-8 flex w-full flex-col gap-3"
+                role="radiogroup"
+                aria-label="When do you want to start a new role?"
+              >
+                {URGENCY_OPTIONS.map(({ value, Icon, title, body }) => (
+                  <ChoiceCard
+                    key={value}
+                    Icon={Icon}
+                    title={title}
+                    body={body}
+                    selected={jobSearchUrgency === value}
+                    onClick={() => handleUrgencyPick(value)}
+                  />
+                ))}
               </div>
-              <div className="mt-8 grid w-full grid-cols-1 gap-3 sm:mt-8 sm:grid-cols-2 sm:gap-3">
-                <UrgencyCard
-                  label="As soon as possible"
-                  description={"I'm actively applying or about to be."}
-                  selected={jobSearchUrgency === 'asap'}
-                  onClick={() => handleUrgencyPick('asap')}
-                />
-                <UrgencyCard
-                  label="In the next few months"
-                  description={
-                    "I'm preparing and want to be ready when the right role appears."
-                  }
-                  selected={jobSearchUrgency === 'few_months'}
-                  onClick={() => handleUrgencyPick('few_months')}
-                />
-                <UrgencyCard
-                  label={"I'm exploring for now"}
-                  description={
-                    "I'm learning what's out there and building my profile."
-                  }
-                  selected={jobSearchUrgency === 'exploring'}
-                  onClick={() => handleUrgencyPick('exploring')}
-                />
-              </div>
-              {showTapHint ? (
-                <p className="mt-3 text-[11px] text-[rgba(255,255,255,0.35)]">
-                  Tap an option to continue
-                </p>
-              ) : (
-                <p className="mt-3 text-[11px] text-transparent">.</p>
-              )}
             </>
           ) : null}
 
           {discoveryStep === 3 ? (
             <>
               <OnboardingBackLink onClick={onBack} />
-              {sectionLabel('Your target')}
+              <Eyebrow>Your target roles</Eyebrow>
               <h1 className={cn(ONBOARDING_TITLE_CLASS, 'mt-3')}>
-                What role or position are you targeting?
+                What roles are you aiming for?
               </h1>
               <p className={ONBOARDING_SUBTITLE_CLASS}>
-                Add one or more job titles. We use this to personalise matches
-                and suggestions later.
+                Add one or more job titles. We use them to find matching jobs
+                and tailor your suggestions.
               </p>
-              <div className="mb-2 flex justify-center">
-                <InfoHint text="Target roles guide job matching, priority suggestions, and resume wording hints." />
-              </div>
-              <div className="mt-8 w-full sm:mt-8">
+              <div className="mt-8 w-full">
+                <label htmlFor="onb-role-input" className="sr-only">
+                  Job title
+                </label>
                 <div className="flex gap-2">
                   <input
+                    id="onb-role-input"
                     type="text"
                     value={roleInput}
                     onChange={(e) => setRoleInput(e.target.value)}
@@ -504,259 +346,174 @@ export function OnboardingDiscovery({
                     onBlur={() => {
                       if (pendingRole.length >= 2) commitPendingRole();
                     }}
-                    placeholder="e.g. Product Manager"
-                    aria-describedby="onb-role-hint"
-                    className="h-12 min-h-[48px] flex-1 rounded-[10px] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] px-4 text-left text-[14px] text-white outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-[rgba(255,255,255,0.3)] focus:border-[#00C9B1] focus:shadow-[0_0_0_3px_rgba(0,201,177,0.15)]"
+                    placeholder="Type a job title, e.g. Frontend Developer"
+                    autoComplete="off"
+                    className="h-12 min-h-[48px] flex-1 rounded-xl border border-white/[0.12] bg-white/[0.04] px-4 text-left text-[14px] text-white outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-white/35 focus:border-[#00C9B1] focus:shadow-[0_0_0_3px_rgba(0,201,177,0.15)]"
                   />
                   <button
                     type="button"
                     disabled={pendingRole.length < 2}
                     onClick={commitPendingRole}
-                    className="h-12 shrink-0 rounded-[10px] border border-[rgba(0,201,177,0.35)] bg-[rgba(0,201,177,0.12)] px-4 text-[13px] font-semibold text-[#00C9B1] transition enabled:hover:bg-[rgba(0,201,177,0.2)] disabled:cursor-not-allowed disabled:opacity-35"
+                    className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border border-[rgba(0,201,177,0.35)] bg-[rgba(0,201,177,0.12)] px-4 text-[13px] font-semibold text-[#00C9B1] transition enabled:hover:bg-[rgba(0,201,177,0.2)] disabled:cursor-not-allowed disabled:opacity-35"
                   >
+                    <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
                     Add
                   </button>
                 </div>
-                <p
-                  id="onb-role-hint"
-                  className="mt-2 text-left text-[12px] text-[rgba(255,255,255,0.45)]"
-                >
-                  Type a job title and tap{' '}
-                  <span className="font-medium text-white/70">Add</span>, or
-                  pick one below.
+                <p className="mt-2 text-left text-[12px] text-white/45">
+                  Press Enter to add each title.
                 </p>
-                {roleChips.length > 0 ? (
-                  <div className="mt-3 flex flex-wrap justify-center gap-2">
+                <div className="mt-4 flex min-h-[32px] flex-wrap justify-center gap-2">
+                  <AnimatePresence initial={false}>
                     {roleChips.map((chip) => (
-                      <span
+                      <motion.span
                         key={chip}
-                        className="inline-flex items-center gap-1.5 rounded-[20px] border border-[rgba(0,201,177,0.35)] bg-[rgba(0,201,177,0.15)] px-3 py-1 text-[12px] font-medium text-[#00C9B1]"
+                        layout={!reducedMotion}
+                        initial={
+                          reducedMotion ? false : { opacity: 0, scale: 0.85 }
+                        }
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={
+                          reducedMotion
+                            ? undefined
+                            : { opacity: 0, scale: 0.85 }
+                        }
+                        transition={{ duration: 0.18 }}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(0,201,177,0.4)] bg-[rgba(0,201,177,0.14)] py-1 pl-3 pr-1.5 text-[13px] font-medium text-[#7EE8D8]"
                       >
+                        <Check
+                          className="h-3.5 w-3.5"
+                          strokeWidth={3}
+                          aria-hidden
+                        />
                         {chip}
                         <button
                           type="button"
                           aria-label={`Remove ${chip}`}
-                          className="cursor-pointer rounded-full p-0.5 text-[#00C9B1] hover:bg-[rgba(0,201,177,0.2)]"
+                          className="rounded-full p-1 text-[#7EE8D8] hover:bg-[rgba(0,201,177,0.22)]"
                           onClick={() => removeRoleChip(chip)}
                         >
-                          <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+                          <X className="h-3 w-3" strokeWidth={3} />
                         </button>
-                      </span>
+                      </motion.span>
                     ))}
-                  </div>
+                  </AnimatePresence>
+                </div>
+                {suggestions.length > 0 ? (
+                  <>
+                    <p className="mt-5 text-[12px] font-medium text-white/45">
+                      Suggestions
+                    </p>
+                    <div className="mt-2 flex flex-wrap justify-center gap-2">
+                      {suggestions.map((r) => (
+                        <button
+                          key={r}
+                          type="button"
+                          className="inline-flex items-center gap-1 rounded-full border border-white/[0.12] bg-white/[0.03] px-3 py-1.5 text-[13px] text-white/70 transition-colors duration-150 hover:border-[rgba(0,201,177,0.4)] hover:bg-[rgba(0,201,177,0.08)] hover:text-white"
+                          onClick={() => pushRoleChip(r)}
+                        >
+                          <Plus
+                            className="h-3 w-3"
+                            strokeWidth={2.5}
+                            aria-hidden
+                          />
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  </>
                 ) : null}
-                <p className="mt-4 text-[12px] text-[rgba(255,255,255,0.35)]">
-                  Popular roles. Tap to add.
-                </p>
-                <div className="mt-2 flex flex-wrap justify-center gap-2">
-                  {SUGGESTED_ROLES.map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      className="cursor-pointer rounded-full border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] px-3 py-1.5 text-[12px] text-[rgba(255,255,255,0.65)] transition-colors duration-150 hover:border-[rgba(255,255,255,0.22)] hover:bg-[rgba(255,255,255,0.06)]"
-                      onClick={() => pushRoleChip(r)}
-                    >
-                      {r}
-                    </button>
-                  ))}
-                </div>
               </div>
-            </>
-          ) : null}
-
-          {discoveryStep === 4 ? (
-            <>
-              <OnboardingBackLink onClick={onBack} />
-              {sectionLabel('Almost there')}
-              <h1 className={cn(ONBOARDING_TITLE_CLASS, 'mt-3')}>
-                How did you hear about us?
-              </h1>
-              <p className={ONBOARDING_SUBTITLE_CLASS}>
-                Helpful for us. Pick the closest match.
-              </p>
-              <div className="mt-8 grid w-full grid-cols-2 gap-3 sm:mt-8">
-                {REFERRAL_OPTIONS.map(({ value, label, Icon }) => {
-                  const selected = referralSource === value;
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => handleReferralPick(value)}
-                      className={cn(
-                        'flex min-h-[64px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border px-2 py-2 transition-all duration-150',
-                        selected
-                          ? 'border-[#00C9B1] bg-[rgba(0,201,177,0.08)] [border-width:1.5px]'
-                          : 'border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:bg-[rgba(255,255,255,0.06)]',
-                      )}
-                    >
-                      <Icon className="h-5 w-5 text-[#00C9B1]" />
-                      <span className="text-center text-[14px] font-medium text-white">
-                        {label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              {referralSource === 'Other' ? (
-                <div className="mt-4 w-full">
-                  <label className="sr-only" htmlFor="onb-referral-other">
-                    Tell us more
-                  </label>
-                  <input
-                    id="onb-referral-other"
-                    type="text"
-                    value={referralOther}
-                    onChange={(e) => onReferralOtherChange(e.target.value)}
-                    placeholder="Where did you find us?"
-                    className="h-12 w-full min-h-[48px] rounded-[10px] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] px-4 text-[14px] text-white outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-[rgba(255,255,255,0.3)] focus:border-[#00C9B1] focus:shadow-[0_0_0_3px_rgba(0,201,177,0.15)]"
-                  />
-                </div>
-              ) : null}
             </>
           ) : null}
         </motion.div>
       </AnimatePresence>
 
-      {discoveryStep !== 2 && discoveryStep !== 4 ? (
-        <OnboardingPrimaryCta
-          disabled={!canNext || savePending}
-          onClick={handlePrimaryNext}
-        >
-          {primaryCtaLabel}
-        </OnboardingPrimaryCta>
+      {discoveryStep === 0 ? (
+        <>
+          <PrimaryCta disabled={savePending} onClick={onNext}>
+            Get started
+          </PrimaryCta>
+          <p className="mt-5 text-[12px] text-white/35">
+            Free to start · No credit card needed
+          </p>
+        </>
       ) : null}
 
-      {discoveryStep === 0 ? (
-        <p className="mt-6 text-[12px] text-[rgba(255,255,255,0.3)]">
-          No credit card required · Takes 2 minutes
-        </p>
+      {discoveryStep === 3 ? (
+        <PrimaryCta
+          disabled={!rolesValid || savePending}
+          onClick={() => {
+            if (pendingRole.length >= 2) commitPendingRole();
+            return onNext();
+          }}
+        >
+          Continue
+        </PrimaryCta>
       ) : null}
     </div>
   );
 }
 
-function OutcomeCard({
-  icon: Icon,
+function ChoiceCard({
+  Icon,
   title,
-  description,
+  body,
   selected,
   onClick,
-  comingSoon = false,
-  disabled = false,
 }: {
-  icon: ComponentType<{ className?: string }>;
+  Icon: ComponentType<{ className?: string }>;
   title: string;
-  description: string;
+  body: string;
   selected: boolean;
   onClick: () => void;
-  comingSoon?: boolean;
-  disabled?: boolean;
 }) {
   return (
     <motion.button
       type="button"
-      whileTap={disabled ? undefined : { scale: 0.98 }}
-      transition={{ duration: 0.1 }}
-      onClick={disabled ? undefined : onClick}
-      disabled={disabled}
-      aria-pressed={selected}
-      aria-disabled={disabled}
+      role="radio"
+      aria-checked={selected}
+      whileHover={{ y: -1 }}
+      whileTap={{ scale: 0.985 }}
+      transition={{ duration: 0.12 }}
+      onClick={onClick}
       className={cn(
-        'relative flex w-full gap-4 rounded-xl border py-5 pl-5 pr-14 text-left transition-all duration-150',
-        disabled
-          ? 'cursor-not-allowed border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] opacity-70'
-          : selected
-            ? 'cursor-pointer border-[#00C9B1] bg-[rgba(0,201,177,0.08)] [border-width:1.5px]'
-            : 'cursor-pointer border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:bg-[rgba(255,255,255,0.06)]',
+        'relative flex w-full items-center gap-4 rounded-2xl border px-4 py-4 text-left transition-colors duration-150',
+        selected
+          ? 'border-[#00C9B1] bg-[rgba(0,201,177,0.08)] shadow-[0_0_0_1px_rgba(0,201,177,0.5)]'
+          : 'border-white/[0.08] bg-white/[0.03] hover:border-white/[0.2] hover:bg-white/[0.05]',
       )}
     >
-      <div
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(0,201,177,0.15)]"
+      <span
+        className={cn(
+          'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors',
+          selected
+            ? 'bg-[#00C9B1] text-[#080A0A]'
+            : 'bg-[rgba(0,201,177,0.12)] text-[#00C9B1]',
+        )}
         aria-hidden
       >
-        <Icon className="h-[18px] w-[18px] text-[#00C9B1]" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-[15px] font-semibold text-white">{title}</p>
-          {comingSoon ? (
-            <span className="rounded-full border border-[rgba(0,201,177,0.35)] bg-[rgba(0,201,177,0.12)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#00C9B1]">
-              Coming soon
-            </span>
-          ) : null}
-        </div>
-        <p className="mt-1 text-[13px] leading-snug text-[rgba(255,255,255,0.5)]">
-          {description}
-        </p>
-      </div>
-      {!disabled ? <SelectionRing selected={selected} /> : null}
-    </motion.button>
-  );
-}
-
-function SelectionRing({ selected }: { selected: boolean }) {
-  return (
-    <span
-      className={cn(
-        'pointer-events-none absolute right-4 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border transition-all duration-200',
-        selected
-          ? 'border-[#00C9B1] bg-[#00C9B1]'
-          : 'border-[rgba(255,255,255,0.15)] bg-transparent',
-      )}
-      aria-hidden
-    >
-      <motion.span
-        initial={false}
-        animate={{ scale: selected ? 1 : 0.85, opacity: selected ? 1 : 0 }}
-        transition={{ duration: 0.2 }}
-        className="flex items-center justify-center"
+        <Icon className="h-5 w-5" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[15px] font-semibold text-white">
+          {title}
+        </span>
+        <span className="mt-0.5 block text-[13px] text-white/55">{body}</span>
+      </span>
+      <span
+        className={cn(
+          'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all duration-200',
+          selected
+            ? 'border-[#00C9B1] bg-[#00C9B1]'
+            : 'border-white/[0.2] bg-transparent',
+        )}
+        aria-hidden
       >
         {selected ? (
-          <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
+          <Check className="h-3.5 w-3.5 text-[#080A0A]" strokeWidth={3} />
         ) : null}
-      </motion.span>
-    </span>
-  );
-}
-
-function UrgencyCard({
-  label,
-  description,
-  selected,
-  onClick,
-}: {
-  label: string;
-  description: string;
-  selected: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <motion.button
-      type="button"
-      whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.1 }}
-      onClick={onClick}
-      aria-pressed={selected}
-      className={cn(
-        'relative flex w-full cursor-pointer gap-3 rounded-xl border py-5 pl-5 pr-14 text-left transition-all duration-150',
-        selected
-          ? 'border-[#00C9B1] bg-[rgba(0,201,177,0.08)] [border-width:1.5px]'
-          : 'border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:bg-[rgba(255,255,255,0.06)]',
-      )}
-    >
-      <div
-        className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(0,201,177,0.15)]"
-        aria-hidden
-      >
-        <Sparkles className="h-[18px] w-[18px] text-[#00C9B1]" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[15px] font-semibold text-white">{label}</p>
-        <p className="mt-1 text-[13px] text-[rgba(255,255,255,0.5)]">
-          {description}
-        </p>
-      </div>
-      <SelectionRing selected={selected} />
+      </span>
     </motion.button>
   );
 }

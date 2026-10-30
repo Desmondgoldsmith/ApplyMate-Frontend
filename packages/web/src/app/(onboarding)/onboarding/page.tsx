@@ -6,14 +6,15 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowRight,
   Check,
-  CheckCircle2,
+  ChevronRight,
   ClipboardPaste,
   Loader2,
+  MessageSquareText,
   PenLine,
-  Pencil,
   Sparkles,
   UploadCloud,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import {
@@ -26,23 +27,22 @@ import {
   useState,
 } from 'react';
 
-import { OnboardingResumeClinic } from '@/components/onboarding/OnboardingResumeClinic';
-import { CvParseImportSummaryPanel } from '@/components/cv/CvParseImportSummaryPanel';
-import { CVScoreCard } from '@/components/cv/CVScoreCard';
+import type { CvParseSuccessPayload } from '@/components/dashboard/CVUploadZone';
+import { OnboardingComplete } from '@/components/onboarding/OnboardingComplete';
+import { OnboardingCvReview } from '@/components/onboarding/OnboardingCvReview';
+import { OnboardingCvUpload } from '@/components/onboarding/OnboardingCvUpload';
 import {
-  CVUploadZone,
-  type CvParseSuccessPayload,
-} from '@/components/dashboard/CVUploadZone';
-import { CVChatInterface } from '@/components/onboarding/CVChatInterface';
-import { OnboardingDiscovery } from '@/components/onboarding/OnboardingDiscovery';
+  normalizeDiscoveryStep,
+  OnboardingDiscovery,
+  type DiscoveryStep,
+} from '@/components/onboarding/OnboardingDiscovery';
 import { OnboardingBackLink } from '@/components/onboarding/OnboardingBackLink';
+import { OnboardingTemplateChooser } from '@/components/onboarding/OnboardingTemplateChooser';
 import {
-  ONBOARDING_SECTION_HEADING_CLASS,
-  ONBOARDING_SECTION_SUBHEADING_CLASS,
   ONBOARDING_SUBTITLE_CLASS,
   ONBOARDING_TITLE_CLASS,
 } from '@/components/onboarding/onboardingLayout';
-import { TemplatePicker } from '@/components/onboarding/TemplatePicker';
+import { getOnboardingTemplateLabel } from '@/components/onboarding/TemplatePicker';
 import { Button } from '@/components/ui/Button';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { useToast } from '@/components/ui/Toast';
@@ -58,7 +58,6 @@ import {
   type CVProfile,
   type CVScorePayload,
   type CVSectionRecord,
-  type CvParseImportSummary,
 } from '@/lib/api';
 import { trackConversionFunnelEvent } from '@/lib/analytics';
 import { refreshCvStateAfterCvParseSuccess } from '@/lib/cvParseCacheReconcile';
@@ -74,6 +73,7 @@ import {
 } from '@/lib/cvChatInputDisplay';
 import {
   saveCVBuilderData,
+  transformSectionsToCVBuilderData,
   type CVBuilderData,
   type CvBuilderSaveStatus,
   type CvTemplateId,
@@ -104,21 +104,56 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
 
+/** The editor and the AI chat are heavy and only needed on two of the CV paths. */
+const OnboardingResumeClinic = dynamic(
+  () =>
+    import('@/components/onboarding/OnboardingResumeClinic').then(
+      (m) => m.OnboardingResumeClinic,
+    ),
+  {
+    ssr: false,
+    loading: () => <OnboardingPanelLoading label="Opening the editor…" />,
+  },
+);
+const CVChatInterface = dynamic(
+  () =>
+    import('@/components/onboarding/CVChatInterface').then(
+      (m) => m.CVChatInterface,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <OnboardingPanelLoading label="Starting your CV assistant…" />
+    ),
+  },
+);
+
+function OnboardingPanelLoading({ label }: { label: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+      <Loader2 className="h-8 w-8 animate-spin text-[#00C9B1]" />
+      <p className="text-sm text-white/55">{label}</p>
+    </div>
+  );
+}
+
 type FeatureId = 'jobs' | 'cv' | 'interviews' | 'student';
 type OnboardingStep = 1 | 2 | 3;
+type UploadStage = 'zone' | 'summary' | 'design';
+type PasteStage = 'input' | 'review' | 'design';
 
 const PASTE_STATUS_MESSAGES = [
-  'Extracting your experience…',
-  'Writing professional bullets…',
+  'Finding your experience…',
   'Organising your skills…',
+  'Structuring your CV…',
   'Almost done…',
 ];
 
 const PROCESSING_STEPS = [
   'Structuring your experience',
-  'Writing professional bullets',
+  'Writing clear bullet points',
   'Organising your skills',
-  'Scoring your resume',
+  'Scoring your CV',
 ];
 
 async function syncSuggestedCvProfileMetadata(
@@ -147,16 +182,6 @@ async function syncSuggestedCvProfileMetadata(
   }
 }
 
-function formatOnboardingLayoutLabel(detectedLayout: string): string {
-  const labels: Record<string, string> = {
-    'single-column': 'single column',
-    'two-column-sidebar': 'two column with sidebar',
-    'two-column-equal': 'two column',
-    unknown: 'unknown',
-  };
-  return labels[detectedLayout] ?? detectedLayout;
-}
-
 export default function OnboardingPage() {
   const router = useRouter();
   const toast = useToast();
@@ -172,7 +197,7 @@ export default function OnboardingPage() {
   const sessionBootRef = useRef(false);
 
   const [step, setStep] = useState<OnboardingStep>(1);
-  const [discoveryStep, setDiscoveryStep] = useState(0);
+  const [discoveryStep, setDiscoveryStep] = useState<DiscoveryStep>(0);
   const [focusHired, setFocusHired] = useState(true);
   const [focusStudent, setFocusStudent] = useState(false);
   const [jobSearchUrgency, setJobSearchUrgency] =
@@ -184,27 +209,23 @@ export default function OnboardingPage() {
   const [manualSaveStatus, setManualSaveStatus] =
     useState<CvBuilderSaveStatus>('idle');
   const [cvPath, setCvPath] = useState<CvPath>(null);
-  const [cvEntryPhase, setCvEntryPhase] = useState<CvEntryPhase>('template');
+  const [cvEntryPhase, setCvEntryPhase] = useState<CvEntryPhase>('paths');
   const [selectedTemplate, setSelectedTemplate] =
     useState<CvTemplateId>('modern');
+  const [templateSaving, setTemplateSaving] = useState(false);
+  const [onboardingSaved, setOnboardingSaved] = useState(false);
+  const [pasteStage, setPasteStage] = useState<PasteStage>('input');
   const [uploadedScore, setUploadedScore] = useState<CVScorePayload | null>(
     null,
   );
   const [uploadParsedProfile, setUploadParsedProfile] =
     useState<CVProfile | null>(null);
-  const [sectionCount, setSectionCount] = useState(0);
-  const [uploadPhase, setUploadPhase] = useState<'zone' | 'summary' | 'score'>(
-    'zone',
-  );
-  const [uploadImportSummary, setUploadImportSummary] =
-    useState<CvParseImportSummary | null>(null);
+  const [uploadPhase, setUploadPhase] = useState<UploadStage>('zone');
 
   const [pasteText, setPasteText] = useState('');
   const [pasteSubmitting, setPasteSubmitting] = useState(false);
   const [pasteError, setPasteError] = useState<string | null>(null);
   const [pasteStatusIdx, setPasteStatusIdx] = useState(0);
-  const [pasteImportSummary, setPasteImportSummary] =
-    useState<CvParseImportSummary | null>(null);
   const [pasteParsedProfile, setPasteParsedProfile] =
     useState<CVProfile | null>(null);
   const [pasteParsedProfileId, setPasteParsedProfileId] = useState<
@@ -306,19 +327,13 @@ export default function OnboardingPage() {
     } else if (s.cvPath === 'build') {
       setCvPath(null);
     }
-    if (
-      !(
-        s.cvPath === 'upload' ||
-        s.cvPath === 'chat' ||
-        s.cvPath === 'paste' ||
-        s.cvPath === 'manual'
-      )
-    ) {
-      if (s.cvEntryPhase === 'template' || s.cvEntryPhase === 'paths')
-        setCvEntryPhase(s.cvEntryPhase);
-    }
-    if (s.uploadPhase === 'zone' || s.uploadPhase === 'score')
-      setUploadPhase(s.uploadPhase);
+    if (s.uploadPhase === 'zone') setUploadPhase('zone');
+    else if (
+      s.uploadPhase === 'summary' ||
+      s.uploadPhase === 'score' ||
+      s.uploadPhase === 'design'
+    )
+      setUploadPhase('summary');
     if (
       typeof s.selectedTemplate === 'string' &&
       isCvTemplateId(s.selectedTemplate)
@@ -330,7 +345,7 @@ export default function OnboardingPage() {
       s.discoveryStep >= 0 &&
       s.discoveryStep <= 4
     ) {
-      setDiscoveryStep(s.discoveryStep);
+      setDiscoveryStep(normalizeDiscoveryStep(s.discoveryStep));
     }
     if (
       s.jobSearchUrgency === 'asap' ||
@@ -475,14 +490,12 @@ export default function OnboardingPage() {
           try {
             const scoreData = await api.cv.getScore();
             setUploadedScore(scoreData);
-            const list = await api.cv.getSections(true);
-            setSectionCount(Array.isArray(list) ? list.length : 0);
             try {
               setUploadParsedProfile(await api.cv.getProfile());
             } catch {
               setUploadParsedProfile(null);
             }
-            setUploadPhase(st?.uploadPhase === 'zone' ? 'zone' : 'score');
+            setUploadPhase(st?.uploadPhase === 'zone' ? 'zone' : 'summary');
           } catch {
             setUploadPhase('zone');
           }
@@ -516,65 +529,44 @@ export default function OnboardingPage() {
     }
   }, [queryClient]);
 
+  /** Shows the review right away; score, naming and progress save run in the background. */
   const onUploadParsed = useCallback(
     async (parse?: CvParseSuccessPayload) => {
-      const fresh = parse?.profile;
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.cv.profileDefault(),
-      });
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.cv.sectionsRoot(),
-      });
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.cv.scoreRoot(),
-      });
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.analytics.root(),
-      });
-      const list = await queryClient.fetchQuery({
-        queryKey: queryKeys.cv.sectionsActive(true),
-        queryFn: () => api.cv.getSections(true),
-      });
-      setSectionCount(Array.isArray(list) ? list.length : 0);
-      try {
-        const scoreData = await api.cv.getScore();
-        setUploadedScore(scoreData);
-      } catch {
-        setUploadedScore({ score: null });
-      }
-      void triggerPostCvScore();
-      if (fresh) {
-        setUploadParsedProfile(fresh);
+      let profile = parse?.profile ?? null;
+      if (profile) setUploadParsedProfile(profile);
+      setUploadPhase('summary');
+      if (!profile) {
         try {
-          await syncSuggestedCvProfileMetadata(
-            fresh.id,
-            fresh,
-            targetRolesText,
-          );
-        } catch {
-          /* optional */
-        }
-      } else {
-        try {
-          const profile = await api.cv.getProfile();
+          profile = await api.cv.getProfile();
           setUploadParsedProfile(profile);
-          await syncSuggestedCvProfileMetadata(
-            profile.id,
-            profile,
-            targetRolesText,
-          );
         } catch {
-          /* optional */
+          /* review shows its loading state until sections arrive */
         }
       }
-      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
-      setUploadImportSummary(parse?.importSummary ?? null);
-      setUploadPhase(parse?.importSummary ? 'summary' : 'score');
-      try {
-        await saveProgress.mutateAsync({ step: 2, hasCV: true });
-      } catch {
-        // non-critical — do not block the upload flow
+      for (const queryKey of [
+        queryKeys.cv.profileDefault(),
+        queryKeys.cv.scoreRoot(),
+        queryKeys.analytics.root(),
+        queryKeys.cv.profiles(),
+      ]) {
+        void queryClient.invalidateQueries({ queryKey });
       }
+      void api.cv
+        .getScore(profile?.id)
+        .then(setUploadedScore, () => setUploadedScore({ score: null }));
+      void triggerPostCvScore();
+      if (profile) {
+        void syncSuggestedCvProfileMetadata(
+          profile.id,
+          profile,
+          targetRolesText,
+        ).catch(() => {
+          /* optional */
+        });
+      }
+      void saveProgress.mutateAsync({ step: 2, hasCV: true }).catch(() => {
+        // non-critical — do not block the upload flow
+      });
     },
     [queryClient, triggerPostCvScore, saveProgress, targetRolesText],
   );
@@ -614,9 +606,11 @@ export default function OnboardingPage() {
     if (step !== 3) return;
     if (ranFinalize.current) return;
     ranFinalize.current = true;
-    void finalizeOnboarding().catch(() => {
-      /* best-effort */
-    });
+    void finalizeOnboarding()
+      .then(() => setOnboardingSaved(true))
+      .catch(() => {
+        /* best-effort */
+      });
   }, [finalizeOnboarding, step]);
 
   const openResumeEditor = useCallback(
@@ -721,12 +715,35 @@ export default function OnboardingPage() {
     setStep(3);
   }, [saveProgress]);
 
-  useEffect(() => {
-    const t = uploadParsedProfile?.template;
-    if (isCvTemplateId(t)) {
-      setSelectedTemplate(t);
-    }
-  }, [uploadParsedProfile?.template]);
+  /** The CV being reviewed / styled in step 2 (upload or paste path). */
+  const reviewProfile =
+    cvPath === 'upload'
+      ? uploadParsedProfile
+      : cvPath === 'paste'
+        ? pasteParsedProfile
+        : null;
+  const reviewProfileId =
+    (cvPath === 'paste' ? pasteParsedProfileId : reviewProfile?.id)?.trim() ||
+    null;
+  const reviewActive =
+    step === 2 &&
+    ((cvPath === 'upload' && uploadPhase !== 'zone') ||
+      (cvPath === 'paste' && pasteStage !== 'input'));
+  const reviewSectionsQuery = useQuery({
+    queryKey: queryKeys.onboarding.cvReview(reviewProfileId ?? ''),
+    queryFn: () => api.cv.getProfileById(reviewProfileId ?? ''),
+    enabled: Boolean(accessToken) && reviewActive && Boolean(reviewProfileId),
+    staleTime: 30_000,
+  });
+  const reviewData = useMemo((): CVBuilderData | null => {
+    const detail = reviewSectionsQuery.data;
+    if (!detail || !Array.isArray(detail.sections)) return null;
+    return transformSectionsToCVBuilderData(
+      detail.profile ?? reviewProfile,
+      detail.sections,
+      { email: me?.email ?? authUser?.email ?? undefined },
+    );
+  }, [authUser?.email, me?.email, reviewProfile, reviewSectionsQuery.data]);
 
   useEffect(() => {
     if (!pasteSubmitting) return;
@@ -797,7 +814,14 @@ export default function OnboardingPage() {
         setProcessing(false);
       }
     },
-    [queryClient, saveProgress, targetRolesText, toast, triggerPostCvScore],
+    [
+      queryClient,
+      saveProgress,
+      selectedTemplate,
+      targetRolesText,
+      toast,
+      triggerPostCvScore,
+    ],
   );
 
   const submitPaste = useCallback(async () => {
@@ -813,7 +837,6 @@ export default function OnboardingPage() {
     try {
       let profile: CVProfile | undefined;
       let profileId: string | undefined;
-      let importSummary: CvParseImportSummary | null = null;
       for (let attempt = 0; attempt < 5; attempt++) {
         try {
           const r = await api.cv.parseTextCV({
@@ -822,7 +845,6 @@ export default function OnboardingPage() {
           });
           profile = r.profile;
           profileId = r.profileId;
-          importSummary = r.importSummary;
           break;
         } catch (e) {
           if (!isTransientAiStructuredOutputError(e) || attempt === 4) throw e;
@@ -835,29 +857,110 @@ export default function OnboardingPage() {
       await refreshCvStateAfterCvParseSuccess(queryClient, profile);
       setPasteParsedProfile(profile);
       setPasteParsedProfileId(profileId);
-      setPasteImportSummary(importSummary);
       setPasteSubmitting(false);
-      if (!importSummary) {
-        await runProcessingThenFinish({ source: 'paste', profileId, profile });
-      }
+      setPasteStage('review');
     } catch (e) {
       setPasteSubmitting(false);
       setPasteError(
-        getApiErrorMessage(e) || 'Could not parse your text. Try again.',
+        getApiErrorMessage(e) ||
+          "We couldn't read that text. Check it includes your work history and try again.",
       );
     }
-  }, [pasteText, queryClient, runProcessingThenFinish, selectedTemplate]);
+  }, [pasteText, queryClient, selectedTemplate]);
 
-  const wideStep2 = step === 2 && (cvPath === 'chat' || cvPath === 'manual');
+  /** Saves the chosen design, then finishes the CV step (paste paths still run scoring). */
+  const confirmDesign = useCallback(
+    async (source: 'upload' | 'paste') => {
+      const profileId = reviewProfileId;
+      if (!profileId) return;
+      setTemplateSaving(true);
+      try {
+        await api.cv.updateTemplate(selectedTemplate, profileId);
+      } catch {
+        // design is cosmetic and editable later — never block finishing onboarding
+      }
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cv.profiles() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.profileDefault(),
+      });
+      try {
+        if (source === 'paste' && pasteParsedProfile) {
+          await runProcessingThenFinish({
+            source: 'paste',
+            profileId,
+            profile: { ...pasteParsedProfile, template: selectedTemplate },
+          });
+          return;
+        }
+        await saveProgress.mutateAsync({ step: 2, hasCV: true });
+        setCompletionSource('upload');
+        setFinalScore(uploadedScore);
+        setCompletionProfile(
+          uploadParsedProfile
+            ? { ...uploadParsedProfile, template: selectedTemplate }
+            : null,
+        );
+        setStep(3);
+      } catch (e) {
+        toast.error(getApiErrorMessage(e));
+      } finally {
+        setTemplateSaving(false);
+      }
+    },
+    [
+      pasteParsedProfile,
+      queryClient,
+      reviewProfileId,
+      runProcessingThenFinish,
+      saveProgress,
+      selectedTemplate,
+      toast,
+      uploadParsedProfile,
+      uploadedScore,
+    ],
+  );
+
+  const designStage =
+    step === 2 &&
+    ((cvPath === 'upload' && uploadPhase === 'design') ||
+      (cvPath === 'paste' && pasteStage === 'design'));
+  const wideStep2 =
+    step === 2 && (cvPath === 'chat' || cvPath === 'manual' || designStage);
 
   const manualResumeEditorShell = step === 2 && cvPath === 'manual';
 
   const progressHint =
     step === 1
-      ? 'Part 1 of 3 · Your Goals'
+      ? 'Part 1 of 3 · About you'
       : step === 2
-        ? 'Part 2 of 3 · Your Resume'
-        : "Part 3 of 3 · You're Ready";
+        ? 'Part 2 of 3 · Your CV'
+        : "Part 3 of 3 · You're ready";
+
+  /** How far through the current part the user is, so the progress bar moves on every screen. */
+  const stepProgress =
+    step === 1
+      ? discoveryStep === 0
+        ? 0.12
+        : discoveryStep === 2
+          ? 0.5
+          : 0.85
+      : step === 2
+        ? cvPath === null
+          ? 0.12
+          : cvPath === 'upload'
+            ? uploadPhase === 'zone'
+              ? 0.35
+              : uploadPhase === 'summary'
+                ? 0.65
+                : 0.88
+            : cvPath === 'paste'
+              ? pasteStage === 'input'
+                ? 0.35
+                : pasteStage === 'review'
+                  ? 0.65
+                  : 0.88
+              : 0.5
+        : 1;
 
   return (
     <OnboardingShell
@@ -866,6 +969,7 @@ export default function OnboardingPage() {
       hideProgressChrome={manualResumeEditorShell}
       fillViewportHeight={manualResumeEditorShell}
       progressHint={manualResumeEditorShell ? undefined : progressHint}
+      stepProgress={stepProgress}
     >
       <AnimatePresence mode="wait">
         {step === 1 ? (
@@ -874,53 +978,40 @@ export default function OnboardingPage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="w-full"
           >
             <OnboardingDiscovery
               firstName={firstName}
               discoveryStep={discoveryStep}
-              focusHired={focusHired}
-              focusStudent={focusStudent}
-              onToggleHired={() => setFocusHired((v) => !v)}
-              onToggleStudent={() => {
-                /* Student launchpad coming soon */
-              }}
               jobSearchUrgency={jobSearchUrgency}
               onSelectUrgency={(v) => setJobSearchUrgency(v)}
               targetRolesText={targetRolesText}
               onTargetRolesChange={setTargetRolesText}
-              referralSource={referralSource}
-              onReferralSourceChange={(v) => {
-                setReferralSource(v);
-                if (v !== 'Other') setReferralOther('');
-              }}
-              referralOther={referralOther}
-              onReferralOtherChange={setReferralOther}
               savePending={saveProgress.isPending}
-              onBack={() => setDiscoveryStep((d) => Math.max(0, d - 1))}
-              onNext={async (opts) => {
-                if (discoveryStep < 4) {
-                  setDiscoveryStep((d) => d + 1);
+              onBack={() => setDiscoveryStep((d) => (d === 3 ? 2 : 0))}
+              onNext={async () => {
+                if (discoveryStep === 0) {
+                  setDiscoveryStep(2);
+                  return;
+                }
+                if (discoveryStep === 2) {
+                  setDiscoveryStep(3);
                   return;
                 }
                 setCvPath(null);
-                setCvEntryPhase('template');
+                setCvEntryPhase('paths');
                 setStep(2);
                 try {
-                  const refSource =
-                    opts?.referralSkipped === true
-                      ? 'Skipped'
-                      : (opts?.referralSource ?? referralSource);
-                  const refOther = opts?.referralOther ?? referralOther;
+                  // Referral is asked (optionally) on the final screen instead.
                   const discovery = buildOnboardingDiscoveryApiFields({
                     focusHired,
                     focusStudent: false,
                     jobSearchUrgency,
                     targetRolesText,
-                    referralSource: refSource,
-                    referralOther: refOther,
-                    referralSkipped: opts?.referralSkipped === true,
+                    referralSource,
+                    referralOther,
+                    referralSkipped: !referralSource.trim(),
                   });
                   await saveProgress.mutateAsync({
                     step: 2,
@@ -949,20 +1040,22 @@ export default function OnboardingPage() {
               'mx-auto w-full',
               cvPath === 'manual'
                 ? 'flex min-h-0 max-w-[min(100%,1320px)] flex-1 flex-col overflow-hidden'
-                : cvPath === 'paste' || cvPath === 'chat'
-                  ? 'flex min-h-0 max-w-[680px] flex-1 flex-col overflow-hidden'
-                  : 'max-w-[680px] space-y-6',
+                : designStage
+                  ? 'max-w-[1040px]'
+                  : cvPath === 'paste' || cvPath === 'chat'
+                    ? 'flex min-h-0 max-w-[680px] flex-1 flex-col overflow-hidden'
+                    : 'max-w-[620px] space-y-6',
             )}
           >
-            {cvPath === null && cvEntryPhase === 'template' ? (
+            {cvPath === null ? (
               <>
                 <div className="flex w-full flex-col items-center text-center">
                   <OnboardingBackLink
                     disabled={saveProgress.isPending}
                     onClick={async () => {
                       setCvPath(null);
-                      setCvEntryPhase('template');
-                      setDiscoveryStep(4);
+                      setCvEntryPhase('paths');
+                      setDiscoveryStep(3);
                       setStep(1);
                       try {
                         const discovery = buildOnboardingDiscoveryApiFields({
@@ -972,6 +1065,7 @@ export default function OnboardingPage() {
                           targetRolesText,
                           referralSource,
                           referralOther,
+                          referralSkipped: !referralSource.trim(),
                         });
                         await saveProgress.mutateAsync({
                           step: 1,
@@ -986,107 +1080,60 @@ export default function OnboardingPage() {
                       }
                     }}
                   />
-                  <p
-                    className="mt-3 text-center text-[11px] font-medium uppercase text-[#00C9B1]"
-                    style={{ letterSpacing: '0.12em' }}
-                  >
-                    Your resume
+                  <p className="text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-[#00C9B1]">
+                    Your CV
                   </p>
                   <h2 className={cn(ONBOARDING_TITLE_CLASS, 'mt-3')}>
-                    Pick your starting template
+                    How would you like to add your CV?
                   </h2>
                   <p className={ONBOARDING_SUBTITLE_CLASS}>
-                    You can change this later. It only affects layout.
+                    We&apos;ll read it, show you what we found and score it, so
+                    you see results straight away.
                   </p>
-                </div>
-                <div className="mt-8 w-full">
-                  <TemplatePicker
-                    layout="onboardingGrid"
-                    selectedTemplate={selectedTemplate}
-                    showHeader={false}
-                    onSelect={(t) => {
-                      if (!isCvTemplateId(t)) return;
-                      setSelectedTemplate(t);
-                      setCvEntryPhase('paths');
-                    }}
-                  />
-                </div>
-                <p className="mt-4 text-center text-[12px] text-[rgba(255,255,255,0.35)]">
-                  Tap a template to continue. You can change it anytime in the
-                  clinic.
-                </p>
-              </>
-            ) : null}
-
-            {cvPath === null && cvEntryPhase === 'paths' ? (
-              <>
-                <div className="flex w-full flex-col items-center text-center">
-                  <OnboardingBackLink
-                    onClick={() => setCvEntryPhase('template')}
-                  />
-                  <p
-                    className="text-center text-[11px] font-medium uppercase text-[#00C9B1]"
-                    style={{ letterSpacing: '0.12em' }}
-                  >
-                    Your resume
-                  </p>
-                  <h2 className={cn(ONBOARDING_TITLE_CLASS, 'mt-3')}>
-                    How would you like to add your career information?
-                  </h2>
-                  <p className={ONBOARDING_SUBTITLE_CLASS}>
-                    Pick what feels easiest. We&apos;ll score your resume so you
-                    see value right away.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setCvEntryPhase('template')}
-                    className="mx-auto mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[rgba(0,201,177,0.25)] bg-[rgba(0,201,177,0.15)] px-2.5 py-1 text-[11px] font-medium text-[#00C9B1] transition hover:bg-[rgba(0,201,177,0.22)]"
-                  >
-                    <Pencil className="h-3 w-3" strokeWidth={2} />
-                    Template:{' '}
-                    <span className="capitalize">{selectedTemplate}</span>
-                  </button>
                 </div>
 
-                <div className="mt-8 flex w-full flex-col gap-3 sm:mt-8">
-                  <CvEntryPathCard
-                    icon={<UploadCloud className="h-6 w-6 text-[#00C9B1]" />}
-                    label="Upload my resume"
-                    description="PDF or Word. We parse it, you review, then we score it."
-                    timeLabel="~1 min"
-                    onClick={() => setCvPath('upload')}
-                    active={cvPath === 'upload'}
-                  />
-                  <CvEntryPathCard
-                    icon={<PenLine className="h-6 w-6 text-[#00C9B1]" />}
-                    label="Do it manually"
-                    description="Edit your resume in the preview. Same editor as the clinic."
-                    timeLabel="~3 min"
-                    onClick={() => setCvPath('manual')}
-                    active={cvPath === 'manual'}
-                  />
+                <div className="mt-8 flex w-full flex-col gap-3">
                   <CvEntryPathCard
                     recommended
-                    icon={<Sparkles className="h-6 w-6 text-[#00C9B1]" />}
-                    label="Create with AI"
-                    description="A quick conversational flow. We draft your resume and score it when you're done."
-                    timeLabel="~2 min"
+                    index={0}
+                    icon={<UploadCloud className="h-6 w-6" />}
+                    label="Upload my CV"
+                    description="PDF or Word. Fastest if you already have one."
+                    timeLabel="About 1 min"
+                    onClick={() => setCvPath('upload')}
+                  />
+                  <CvEntryPathCard
+                    index={1}
+                    icon={<ClipboardPaste className="h-6 w-6" />}
+                    label="Paste the text"
+                    description="Copy from a document or your LinkedIn profile."
+                    timeLabel="About 1 min"
+                    onClick={() => {
+                      setPasteStage('input');
+                      setCvPath('paste');
+                    }}
+                  />
+                  <CvEntryPathCard
+                    index={2}
+                    icon={<MessageSquareText className="h-6 w-6" />}
+                    label="Create one with AI"
+                    description="Answer a few questions and we'll write your CV for you."
+                    timeLabel="About 3 min"
                     onClick={() => setCvPath('chat')}
-                    active={cvPath === 'chat'}
+                  />
+                  <CvEntryPathCard
+                    index={3}
+                    icon={<PenLine className="h-6 w-6" />}
+                    label="Start from scratch"
+                    description="Fill in each section yourself in our editor."
+                    timeLabel="About 5 min"
+                    onClick={() => setCvPath('manual')}
                   />
                 </div>
 
                 <button
                   type="button"
-                  className="mx-auto mt-4 flex min-h-[44px] w-full cursor-pointer items-center justify-center text-center text-[13px] text-[rgba(255,255,255,0.35)] transition hover:text-[rgba(255,255,255,0.55)]"
-                  onClick={() => setCvPath('paste')}
-                >
-                  Prefer to paste text instead?
-                </button>
-
-                <button
-                  type="button"
-                  className="mx-auto mt-6 flex min-h-[44px] w-full cursor-pointer items-center justify-center text-center text-[13px] text-[rgba(255,255,255,0.45)] transition hover:text-[rgba(255,255,255,0.75)]"
+                  className="mx-auto mt-6 flex min-h-[44px] w-full items-center justify-center text-center text-[13px] text-white/45 transition hover:text-white/75"
                   onClick={async () => {
                     setFinalScore(null);
                     setCompletionProfile(null);
@@ -1095,7 +1142,7 @@ export default function OnboardingPage() {
                     setStep(3);
                   }}
                 >
-                  Skip for now →
+                  I&apos;ll add my CV later
                 </button>
               </>
             ) : null}
@@ -1190,48 +1237,72 @@ export default function OnboardingPage() {
                   <div className="app-scrollbar flex min-h-0 w-full flex-1 flex-col items-center overflow-y-auto pt-2">
                     <OnboardingBackLink
                       onClick={() => {
+                        if (pasteStage === 'design') {
+                          setPasteStage('review');
+                          return;
+                        }
+                        if (pasteStage === 'review') {
+                          setPasteStage('input');
+                          return;
+                        }
                         setCvPath(null);
                         setCvEntryPhase('paths');
                         setPasteError(null);
-                        setPasteImportSummary(null);
                         setPasteParsedProfile(null);
                         setPasteParsedProfileId(null);
                       }}
                     />
-                    {pasteImportSummary &&
-                    pasteParsedProfile &&
-                    !pasteSubmitting ? (
-                      <CvParseImportSummaryPanel
-                        embedded
-                        importSummary={pasteImportSummary}
-                        onContinue={() => {
-                          const id = pasteParsedProfileId?.trim();
-                          const profile = pasteParsedProfile;
-                          setPasteImportSummary(null);
-                          if (id && profile) {
-                            void runProcessingThenFinish({
-                              source: 'paste',
-                              profileId: id,
-                              profile,
-                            });
+                    {pasteStage === 'review' && !pasteSubmitting ? (
+                      <>
+                        <StageHeading
+                          title="Check what we found"
+                          subtitle="Here's what we pulled from your text. If anything's off, you can fix it in the editor."
+                        />
+                        <OnboardingCvReview
+                          data={reviewData}
+                          loading={reviewSectionsQuery.isPending}
+                          error={reviewSectionsQuery.isError}
+                          onRetry={() => void reviewSectionsQuery.refetch()}
+                          onContinue={() => setPasteStage('design')}
+                          onFixInEditor={() =>
+                            void openResumeEditor(pasteParsedProfileId)
                           }
-                        }}
-                        continueLabel="Continue to scoring"
-                      />
+                          onUploadAnother={() => setPasteStage('input')}
+                          uploadAnotherLabel="Edit the text"
+                        />
+                      </>
+                    ) : pasteStage === 'design' && !pasteSubmitting ? (
+                      <>
+                        <StageHeading
+                          title="Choose a design"
+                          subtitle="Every design below is your own CV. Pick the one you like best."
+                        />
+                        <OnboardingTemplateChooser
+                          data={reviewData}
+                          selected={selectedTemplate}
+                          onSelect={setSelectedTemplate}
+                          onConfirm={() => void confirmDesign('paste')}
+                          saving={templateSaving}
+                        />
+                      </>
                     ) : !pasteSubmitting ? (
                       <GlowCard
                         className="border border-[rgba(0,201,177,0.15)]"
                         contentClassName="flex min-h-0 flex-col overflow-hidden p-5"
                       >
-                        <p className="text-xs text-white/55">
-                          Paste your full resume, LinkedIn export, or notes. Up
-                          to {CV_CHAT_INPUT_MAX_CHARS.toLocaleString()}{' '}
-                          characters
+                        <p className="text-[15px] font-semibold text-white">
+                          Paste your CV
+                        </p>
+                        <p className="mt-1 text-xs text-white/55">
+                          Your full CV, LinkedIn profile or job history notes,
+                          up to {CV_CHAT_INPUT_MAX_CHARS.toLocaleString()}{' '}
+                          characters.
                         </p>
                         <textarea
                           value={pasteText}
                           onChange={(e) => setPasteText(e.target.value)}
-                          placeholder="Paste your resume text, LinkedIn About section, or job history notes. The more you share, the better your resume will be."
+                          aria-label="CV text"
+                          placeholder="Paste your CV text here. Include your job titles, companies, dates, education and skills. The more you share, the better the result."
                           rows={12}
                           data-lenis-prevent-wheel
                           className="app-scrollbar mt-3 min-h-[220px] max-h-[min(55vh,520px)] flex-1 w-full resize-y overflow-y-auto rounded-xl border border-[rgba(255,255,255,0.10)] bg-[#111616] px-3 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-[#00C9B1]/40"
@@ -1261,7 +1332,7 @@ export default function OnboardingPage() {
                           onClick={() => void submitPaste()}
                         >
                           <Sparkles className="h-4 w-4 shrink-0" />
-                          Structure and build my resume
+                          Build my CV from this text
                           <ArrowRight
                             className="h-4 w-4 shrink-0"
                             strokeWidth={2.5}
@@ -1281,7 +1352,7 @@ export default function OnboardingPage() {
                             setStep(3);
                           }}
                         >
-                          Skip for now →
+                          I&apos;ll add my CV later
                         </button>
                       </GlowCard>
                     ) : (
@@ -1291,7 +1362,10 @@ export default function OnboardingPage() {
                       >
                         <p className="flex items-center justify-center gap-2 text-lg font-semibold text-white">
                           <Sparkles className="h-5 w-5 text-[#00C9B1]" />
-                          Reading and structuring your resume…
+                          Reading your CV…
+                        </p>
+                        <p className="mt-1 text-[12px] text-white/40">
+                          Usually takes 15–30 seconds
                         </p>
                         <div className="mx-auto mt-6 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-white/[0.08]">
                           <motion.div
@@ -1431,152 +1505,68 @@ export default function OnboardingPage() {
                   className="min-h-0 overflow-x-hidden overflow-y-visible"
                 >
                   <div className="flex w-full flex-col items-center pt-2 text-center">
+                    <OnboardingBackLink
+                      onClick={() => {
+                        if (uploadPhase === 'design') {
+                          setUploadPhase('summary');
+                          return;
+                        }
+                        resetCvStep();
+                      }}
+                    />
                     {uploadPhase === 'zone' ? (
                       <>
-                        <OnboardingBackLink onClick={resetCvStep} />
-                        <h3 className={ONBOARDING_SECTION_HEADING_CLASS}>
-                          Upload your resume
-                        </h3>
-                        <p className={ONBOARDING_SECTION_SUBHEADING_CLASS}>
-                          PDF or Word. We&apos;ll extract the structure
-                          automatically.
-                        </p>
-                        <div className="w-full">
-                          <CVUploadZone
-                            onSuccess={(data) => {
-                              void onUploadParsed(data);
-                            }}
-                          />
-                        </div>
+                        <StageHeading
+                          title="Upload your CV"
+                          subtitle="We'll read it and show you what we found, so you can check it before moving on."
+                        />
+                        <OnboardingCvUpload
+                          onSuccess={(data) => {
+                            void onUploadParsed(data);
+                          }}
+                        />
                       </>
                     ) : null}
-                    {uploadPhase === 'summary' && uploadImportSummary ? (
-                      <div className="space-y-4">
-                        <button
-                          type="button"
-                          className="text-sm text-white/45 transition hover:text-white"
-                          onClick={() => {
-                            setUploadPhase('zone');
-                            setUploadImportSummary(null);
-                            setUploadParsedProfile(null);
-                            setUploadedScore(null);
-                          }}
-                        >
-                          ← Upload another file
-                        </button>
-                        <CvParseImportSummaryPanel
-                          embedded
-                          importSummary={uploadImportSummary}
-                          onContinue={() => setUploadPhase('score')}
-                          continueLabel="See your score"
+                    {uploadPhase === 'summary' ? (
+                      <>
+                        <StageHeading
+                          title="Check what we found"
+                          subtitle="Make sure the important details look right. You can fix anything later in the editor."
                         />
-                      </div>
-                    ) : null}
-                    {uploadPhase === 'score' && uploadedScore ? (
-                      <div className="space-y-4">
-                        <button
-                          type="button"
-                          className="text-sm text-white/45 transition hover:text-white"
-                          onClick={() => {
+                        <OnboardingCvReview
+                          data={reviewData}
+                          loading={
+                            !uploadParsedProfile ||
+                            reviewSectionsQuery.isPending
+                          }
+                          error={reviewSectionsQuery.isError}
+                          onRetry={() => void reviewSectionsQuery.refetch()}
+                          onContinue={() => setUploadPhase('design')}
+                          onFixInEditor={() =>
+                            void openResumeEditor(uploadParsedProfile?.id)
+                          }
+                          onUploadAnother={() => {
                             setUploadPhase('zone');
-                            setUploadedScore(null);
                             setUploadParsedProfile(null);
-                            setUploadImportSummary(null);
+                            setUploadedScore(null);
                           }}
-                        >
-                          ← Upload another file
-                        </button>
-                        <GlowCard contentClassName="p-7">
-                          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-                            <div className="flex items-start gap-3">
-                              <CheckCircle2 className="h-8 w-8 shrink-0 text-[#22C55E]" />
-                              <div>
-                                <p className="text-base font-bold text-white">
-                                  Resume parsed successfully
-                                </p>
-                                <p className="mt-1 text-sm text-white/45">
-                                  {sectionCount} sections detected
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="mt-6">
-                            {uploadedScore.score !== null &&
-                            uploadedScore.score !== undefined ? (
-                              <CVScoreCard
-                                mode="compact"
-                                hideJobMatch
-                                score={uploadedScore.score}
-                                breakdown={uploadedScore.breakdown}
-                                scorePayload={uploadedScore}
-                                improvementsCount={
-                                  uploadedScore.improvements?.length
-                                }
-                              />
-                            ) : (
-                              <p className="text-sm text-white/45">
-                                Calculating your score…
-                              </p>
-                            )}
-                          </div>
-                          {uploadParsedProfile?.originalTemplate ? (
-                            <div className="mt-4 border-t border-white/[0.08] pt-4">
-                              <div className="flex items-center gap-2">
-                                <div className="h-2 w-2 shrink-0 rounded-full bg-[#00C9B1]" />
-                                <p className="text-xs text-white/55">
-                                  We matched your resume format to our{' '}
-                                  <span className="capitalize text-white">
-                                    {uploadParsedProfile.originalTemplate}
-                                  </span>{' '}
-                                  template
-                                  {uploadParsedProfile.detectedLayout &&
-                                  uploadParsedProfile.detectedLayout !==
-                                    'unknown' ? (
-                                    <span className="text-white/30">
-                                      {' '}
-                                      (
-                                      {formatOnboardingLayoutLabel(
-                                        uploadParsedProfile.detectedLayout,
-                                      )}{' '}
-                                      detected)
-                                    </span>
-                                  ) : null}
-                                </p>
-                              </div>
-                              <p className="ml-4 mt-1 text-xs text-white/30">
-                                You can switch templates or restore this format
-                                anytime in your resume editor.
-                              </p>
-                            </div>
-                          ) : null}
-                          <div className="mt-6 flex flex-wrap gap-3 border-t border-white/[0.08] pt-4">
-                            <Button
-                              variant="ghost"
-                              className="text-sm"
-                              onClick={() =>
-                                void openResumeEditor(uploadParsedProfile?.id)
-                              }
-                            >
-                              Edit my resume →
-                            </Button>
-                            <Button
-                              className="text-sm"
-                              onClick={async () => {
-                                await saveProgress.mutateAsync({
-                                  step: 2,
-                                  hasCV: true,
-                                });
-                                setCompletionSource('upload');
-                                setFinalScore(uploadedScore);
-                                setCompletionProfile(uploadParsedProfile);
-                                setStep(3);
-                              }}
-                            >
-                              Continue →
-                            </Button>
-                          </div>
-                        </GlowCard>
-                      </div>
+                        />
+                      </>
+                    ) : null}
+                    {uploadPhase === 'design' ? (
+                      <>
+                        <StageHeading
+                          title="Choose a design"
+                          subtitle="Every design below is your own CV. Pick the one you like best."
+                        />
+                        <OnboardingTemplateChooser
+                          data={reviewData}
+                          selected={selectedTemplate}
+                          onSelect={setSelectedTemplate}
+                          onConfirm={() => void confirmDesign('upload')}
+                          saving={templateSaving}
+                        />
+                      </>
                     ) : null}
                   </div>
                 </motion.div>
@@ -1595,8 +1585,8 @@ export default function OnboardingPage() {
             <Loader2 className="h-12 w-12 animate-spin text-[#00C9B1]" />
             <p className="mt-8 text-2xl font-bold text-white">
               {manualSubmitting
-                ? 'Saving and scoring your resume…'
-                : 'Building your resume…'}
+                ? 'Saving and scoring your CV…'
+                : 'Building your CV…'}
             </p>
             <ul className="mt-10 w-full space-y-3 text-left text-sm">
               {PROCESSING_STEPS.map((label, i) => (
@@ -1622,13 +1612,21 @@ export default function OnboardingPage() {
         ) : null}
 
         {step === 3 && !processing && !manualSubmitting ? (
-          <CompletionPanel
-            primaryGoal={primaryGoal}
+          <OnboardingComplete
+            firstName={firstName}
             finalScore={finalScore}
-            completionProfile={completionProfile}
+            profileId={completionProfile?.id ?? null}
             completionSource={completionSource}
-            selectedTemplate={completionProfile?.template ?? selectedTemplate}
+            templateLabel={
+              completionSource === 'skip'
+                ? null
+                : getOnboardingTemplateLabel(
+                    completionProfile?.template ?? selectedTemplate,
+                  )
+            }
             accessToken={accessToken}
+            onboardingSaved={onboardingSaved}
+            initialReferral={referralSource.trim() || undefined}
             onOpenResumeEditor={openResumeEditor}
           />
         ) : null}
@@ -1637,212 +1635,92 @@ export default function OnboardingPage() {
   );
 }
 
+function StageHeading({
+  title,
+  subtitle,
+}: {
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="mb-7 flex w-full flex-col items-center text-center">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#00C9B1]">
+        Your CV
+      </p>
+      <h2 className={cn(ONBOARDING_TITLE_CLASS, 'mt-3')}>{title}</h2>
+      <p className={ONBOARDING_SUBTITLE_CLASS}>{subtitle}</p>
+    </div>
+  );
+}
+
 function CvEntryPathCard({
   recommended,
+  index,
   icon,
   label,
   description,
   timeLabel,
   onClick,
-  active,
 }: {
   recommended?: boolean;
+  index: number;
   icon: ReactNode;
   label: string;
   description: string;
   timeLabel: string;
   onClick: () => void;
-  active: boolean;
 }) {
   return (
-    <GlowCard
+    <motion.button
+      type="button"
+      onClick={onClick}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        delay: 0.06 * index,
+        duration: 0.3,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.99 }}
       className={cn(
-        'cursor-pointer border transition-colors duration-150',
+        'group relative flex w-full min-h-[44px] items-center gap-4 overflow-hidden rounded-2xl border px-4 py-4 text-left transition-colors duration-200 sm:px-5',
         recommended
-          ? 'border-[rgba(0,201,177,0.45)] shadow-[0_0_0_1.5px_rgba(0,201,177,0.4),0_4px_20px_rgba(0,201,177,0.1)]'
-          : active
-            ? 'border-[rgba(0,201,177,0.45)] bg-[rgba(0,201,177,0.06)]'
-            : 'border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.18)] hover:bg-[rgba(255,255,255,0.04)]',
+          ? 'border-[rgba(0,201,177,0.5)] bg-[linear-gradient(135deg,rgba(0,201,177,0.12),rgba(0,201,177,0.03))] shadow-[0_10px_34px_rgba(0,201,177,0.12)] hover:border-[#00C9B1]'
+          : 'border-white/[0.08] bg-white/[0.025] hover:border-white/[0.2] hover:bg-white/[0.045]',
       )}
-      contentClassName="relative p-5 sm:p-5"
     >
-      <button
-        type="button"
-        onClick={onClick}
-        className="flex w-full min-h-[44px] flex-col gap-3 text-left sm:flex-row sm:items-start sm:gap-4"
+      <span
+        className={cn(
+          'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors',
+          recommended
+            ? 'bg-[#00C9B1] text-[#080A0A]'
+            : 'bg-[rgba(0,201,177,0.12)] text-[#00C9B1] group-hover:bg-[rgba(0,201,177,0.2)]',
+        )}
+        aria-hidden
       >
-        <div className="flex min-w-0 flex-1 gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[rgba(0,201,177,0.15)]">
-            {icon}
-          </div>
-          <div className="min-w-0 flex-1">
-            {recommended ? (
-              <p className="mb-1 flex flex-wrap items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#F59E0B]">
-                <Sparkles className="h-3 w-3" strokeWidth={2.5} aria-hidden />
-                Recommended
-              </p>
-            ) : null}
-            <p className="text-base font-bold text-white">{label}</p>
-            <p className="mt-1 text-[13px] leading-snug text-[rgba(255,255,255,0.55)]">
-              {description}
-            </p>
-          </div>
-        </div>
-        <span className="shrink-0 self-start rounded-full bg-[rgba(255,255,255,0.08)] px-2.5 py-1 text-[11px] font-medium text-white sm:ml-auto sm:self-center">
-          {timeLabel}
-        </span>
-      </button>
-    </GlowCard>
-  );
-}
-
-function CompletionPanel({
-  primaryGoal,
-  finalScore,
-  completionProfile,
-  completionSource,
-  selectedTemplate,
-  accessToken,
-  onOpenResumeEditor,
-}: {
-  primaryGoal: string;
-  finalScore: CVScorePayload | null;
-  completionProfile: CVProfile | null;
-  completionSource: 'skip' | 'upload' | 'chat' | 'paste' | 'manual';
-  selectedTemplate: string;
-  accessToken: string | null;
-  onOpenResumeEditor: (
-    profileId: string | null | undefined,
-  ) => void | Promise<void>;
-}) {
-  const router = useRouter();
-  const sub =
-    primaryGoal === 'jobs'
-      ? "Let's find you a job that fits."
-      : primaryGoal === 'cv'
-        ? "Let's make your resume impossible to ignore."
-        : primaryGoal === 'interviews'
-          ? "Let's get you interview-ready."
-          : primaryGoal === 'student'
-            ? "Let's build your career from the ground up."
-            : 'Your dashboard is ready.';
-
-  const cta = { label: 'Go to dashboard →', href: '/dashboard' };
-
-  const structured = completionProfile?.structured;
-  const expN = Array.isArray(structured?.experience)
-    ? structured!.experience!.length
-    : 0;
-  const skillN =
-    (Array.isArray(structured?.skills) ? structured!.skills!.length : 0) +
-    (Array.isArray(structured?.primarySkills)
-      ? structured!.primarySkills!.length
-      : 0);
-
-  return (
-    <motion.div
-      key="s3"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="mx-auto flex max-w-lg flex-col items-center text-center"
-    >
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-        className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border-2 border-[rgba(0,201,177,0.4)] bg-[rgba(0,201,177,0.12)]"
-      >
-        <CheckCircle2 className="h-10 w-10 text-[#00C9B1]" />
-      </motion.div>
-
-      <h2 className="text-[32px] font-extrabold text-white">
-        You&apos;re all set.
-      </h2>
-      {completionSource === 'skip' ? (
-        <p className="mt-3 max-w-md text-sm text-white/45">{sub}</p>
-      ) : null}
-
-      {completionSource !== 'skip' && finalScore ? (
-        <>
-          <div className="mt-6 w-full">
-            {finalScore.score !== null && finalScore.score !== undefined ? (
-              <CVScoreCard
-                mode="compact"
-                hideJobMatch
-                score={finalScore.score}
-                breakdown={finalScore.breakdown}
-                scorePayload={finalScore}
-                improvementsCount={finalScore.improvements?.length}
-              />
-            ) : (
-              <p className="text-sm text-white/45">Calculating your score…</p>
-            )}
-          </div>
-          {completionProfile?.originalTemplate ? (
-            <div className="mt-4 w-full border-t border-white/[0.08] pt-4 text-left">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 shrink-0 rounded-full bg-[#00C9B1]" />
-                <p className="text-xs text-white/55">
-                  We matched your resume format to our{' '}
-                  <span className="capitalize text-white">
-                    {completionProfile.originalTemplate}
-                  </span>{' '}
-                  template
-                  {completionProfile.detectedLayout &&
-                  completionProfile.detectedLayout !== 'unknown' ? (
-                    <span className="text-white/30">
-                      {' '}
-                      (
-                      {formatOnboardingLayoutLabel(
-                        completionProfile.detectedLayout,
-                      )}{' '}
-                      detected)
-                    </span>
-                  ) : null}
-                </p>
-              </div>
-              <p className="ml-4 mt-1 text-xs text-white/30">
-                You can switch templates or restore this format anytime in your
-                resume editor.
-              </p>
-            </div>
-          ) : null}
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <span className="rounded-full border border-[rgba(0,201,177,0.3)] bg-[rgba(0,201,177,0.08)] px-3 py-1.5 text-xs text-[#00C9B1]">
-              ✓ {selectedTemplate} template
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex flex-wrap items-center gap-2">
+          <span className="text-[15px] font-semibold text-white">{label}</span>
+          {recommended ? (
+            <span className="rounded-full bg-[#F59E0B]/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#FBBF24]">
+              Recommended
             </span>
-            {skillN > 0 ? (
-              <span className="rounded-full border border-[rgba(0,201,177,0.3)] bg-[rgba(0,201,177,0.08)] px-3 py-1.5 text-xs text-[#00C9B1]">
-                ✓ {skillN} skills detected
-              </span>
-            ) : null}
-            {expN > 0 ? (
-              <span className="rounded-full border border-[#22C55E]/35 bg-[#22C55E]/10 px-3 py-1.5 text-xs text-[#86EFAC]">
-                ✓ {expN} experience {expN === 1 ? 'entry' : 'entries'}
-              </span>
-            ) : null}
-          </div>
-        </>
-      ) : null}
-
-      <div className="mt-9 w-full max-w-sm space-y-3">
-        <Button
-          fullWidth
-          disabled={!accessToken}
-          onClick={() => router.push(cta.href)}
-        >
-          {cta.label}
-        </Button>
-        {completionSource !== 'skip' && finalScore && completionProfile?.id ? (
-          <button
-            type="button"
-            className="block w-full text-center text-[13px] text-white/45 hover:text-white/75"
-            onClick={() => void onOpenResumeEditor(completionProfile.id)}
-          >
-            Open resume editor →
-          </button>
-        ) : null}
-      </div>
-    </motion.div>
+          ) : null}
+        </span>
+        <span className="mt-0.5 block text-[13px] leading-snug text-white/55">
+          {description}
+        </span>
+      </span>
+      <span className="hidden shrink-0 rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-white/65 sm:inline">
+        {timeLabel}
+      </span>
+      <ChevronRight
+        className="h-5 w-5 shrink-0 text-white/30 transition-all group-hover:translate-x-0.5 group-hover:text-[#00C9B1]"
+        aria-hidden
+      />
+    </motion.button>
   );
 }
