@@ -6,36 +6,28 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Award,
   BookOpen,
-  Briefcase,
-  FileText,
+  Check,
   FolderKanban,
-  GraduationCap,
   HeartHandshake,
   Languages,
   Lightbulb,
+  Loader2,
   Plus,
   Sparkles,
   UserCheck,
-  Wrench,
   type LucideIcon,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/Button';
-import { AddSectionPreviewCard } from '@/components/cv/AddSectionPreviewCard';
 import { Modal } from '@/components/ui/Modal';
 import { api } from '@/lib/api';
 import type { CVSectionRecord } from '@/lib/api';
 import { insertNewSectionIdProfessionally } from '@/lib/cvSectionProfessionalOrder';
 import { useToast } from '@/components/ui/Toast';
 import { getApiErrorMessage } from '@/lib/axios';
+import { savePendingCvEdits } from '@/lib/cvPendingEdits';
+import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
-
-const CORE: { id: string; label: string }[] = [
-  { id: 'summary', label: 'Summary' },
-  { id: 'experience', label: 'Experience' },
-  { id: 'education', label: 'Education' },
-  { id: 'skills', label: 'Skills' },
-];
 
 const OPTIONAL: { type: string; label: string }[] = [
   { type: 'projects', label: 'Projects' },
@@ -68,12 +60,6 @@ async function reorderNewSectionProfessionally(
 const LABEL_BY_TYPE = Object.fromEntries(
   OPTIONAL.map(({ type, label }) => [type, label]),
 );
-const CORE_ICON_BY_ID: Record<string, LucideIcon> = {
-  summary: FileText,
-  experience: Briefcase,
-  education: GraduationCap,
-  skills: Wrench,
-};
 const OPTIONAL_ICON_BY_TYPE: Record<string, LucideIcon> = {
   projects: FolderKanban,
   certifications: Award,
@@ -85,22 +71,16 @@ const OPTIONAL_ICON_BY_TYPE: Record<string, LucideIcon> = {
   publications: BookOpen,
   custom: Plus,
 };
-const PREVIEW_BY_KEY: Record<string, string[]> = {
-  summary: ['Professional snapshot', 'Strengths + impact'],
-  experience: ['Role, company, period', 'Measurable achievements'],
-  education: ['Degree and school', 'Date range'],
-  skills: ['Skill groups', 'Core tools / stack'],
-  projects: ['Project title + outcome', 'Tech and contribution'],
-  certifications: ['Certificate + issuer', 'Date / credential'],
-  languages: ['Language + proficiency', 'CEFR / fluency level'],
-  achievements: ['Award / milestone', 'Context and result'],
-  references: ['Name + role', 'Contact details'],
-  volunteering: ['Organization + role', 'Impact bullets'],
-  interests: ['Relevant interests', 'Culture-fit signals'],
-  publications: ['Title + venue', 'Date / link'],
-  custom: ['Choose your own block', 'Tailor to your story'],
+const HINT_BY_TYPE: Record<string, string> = {
+  projects: 'Things you built or led',
+  certifications: 'Courses and certificates',
+  languages: 'Languages you speak',
+  achievements: 'Awards and big wins',
+  references: 'People who can vouch for you',
+  volunteering: 'Community or unpaid work',
+  interests: 'Hobbies that show who you are',
+  publications: 'Articles, papers or talks',
 };
-
 const SECTION_TYPE_MAP = {
   projects: 'projects',
   certifications: 'certifications',
@@ -175,7 +155,7 @@ export function AddSectionModal({
   open,
   onOpenChange,
   profileId,
-  existingTypes,
+  existingTypes: _existingTypes,
   existingSections,
   layerZIndex,
 }: AddSectionModalProps) {
@@ -204,13 +184,6 @@ export function AddSectionModal({
     sessionOnCv.forEach((t) => s.add(t));
     return s;
   }, [existingSections, sessionOnCv]);
-
-  /**
-   * Core sections (Summary, Experience, Education, Skills) are always shown on the CV —
-   * deletion is disabled and any legacy `visible:false` row is ignored by the preview.
-   * Render them as plainly checked so users don't see a confusing "Restore" affordance.
-   */
-  const hiddenCoreByKey = useMemo<Record<string, string>>(() => ({}), []);
 
   const invalidateAfterSectionChange = (id: string) => {
     // Legacy + current query keys used in this workspace.
@@ -273,6 +246,7 @@ export function AddSectionModal({
 
     setBusy(sectionKey);
     try {
+      await savePendingCvEdits();
       const nice =
         sectionKey === 'custom'
           ? customSectionName.trim() || 'Custom section'
@@ -378,128 +352,102 @@ export function AddSectionModal({
       open={open}
       onOpenChange={onOpenChange}
       title="Add a section"
-      titleClassName="text-2xl font-extrabold tracking-tight"
-      description="Core sections are always on your CV. Optional blocks can be added or removed."
+      titleClassName="font-display text-[22px] font-bold text-text-primary"
+      description="Tap a section to add it. You can fill it in straight away on your CV."
       scrollBody
-      className="max-w-3xl border border-border-subtle bg-[#1a1a1a] shadow-2xl"
+      className="max-w-2xl border border-border-subtle bg-bg-surface shadow-2xl"
       layerZIndex={layerZIndex}
     >
-      <div className="pr-1">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-text-tertiary">
-          Core
-        </p>
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-4">
-          {CORE.map((s) => (
-            <AddSectionPreviewCard
-              key={s.id}
-              label={s.label}
-              icon={CORE_ICON_BY_ID[s.id] ?? FileText}
-              checked={!hiddenCoreByKey[s.id]}
-              locked
-              preview={PREVIEW_BY_KEY[s.id] ?? PREVIEW_BY_KEY.summary}
-              footer={
-                hiddenCoreByKey[s.id] ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    disabled={busy !== null}
-                    onClick={async () => {
-                      if (!profileId?.trim()) return;
-                      const rowId = hiddenCoreByKey[s.id];
-                      if (!rowId) return;
-                      setBusy(s.id);
-                      try {
-                        await api.cv.updateSection(
-                          rowId,
-                          { visible: true },
-                          profileId,
-                        );
-                        invalidateAfterSectionChange(profileId);
-                        await queryClient.refetchQueries({
-                          queryKey: queryKeys.cv.profile(profileId),
-                          type: 'active',
-                        });
-                        await queryClient.refetchQueries({
-                          queryKey: queryKeys.cv.profile(profileId),
-                          type: 'inactive',
-                        });
-                        toast.success(`${s.label} restored`);
-                        onOpenChange(false);
-                      } catch (e) {
-                        toast.error(getApiErrorMessage(e));
-                      } finally {
-                        setBusy(null);
-                      }
-                    }}
-                    className="h-8 w-full rounded-lg border border-accent-border px-3 text-[11px] font-semibold text-accent-text hover:bg-accent-subtle"
-                  >
-                    {busy === s.id ? 'Restoring…' : 'Restore section'}
-                  </Button>
-                ) : (
-                  <p className="text-[11px] font-medium text-text-tertiary">
-                    Always included in your CV
-                  </p>
-                )
-              }
-            />
-          ))}
-        </div>
-
-        <p className="mt-8 text-[10px] font-semibold uppercase tracking-[0.22em] text-text-tertiary">
-          Optional
-        </p>
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {OPTIONAL.map((s) => {
-            const on = presentTypes.has(s.type);
-            const Icon = OPTIONAL_ICON_BY_TYPE[s.type] ?? Plus;
-            return (
-              <AddSectionPreviewCard
-                key={s.type}
-                label={s.label}
-                icon={Icon}
-                checked={on}
-                preview={PREVIEW_BY_KEY[s.type] ?? PREVIEW_BY_KEY.custom}
-                customBody={
-                  on ? (
-                    <p className="text-[11px] font-medium text-text-tertiary">
-                      Already available in your CV preview
-                    </p>
-                  ) : s.type === 'custom' ? (
-                    <div className="space-y-2">
-                      <input
-                        type="text"
-                        value={customSectionName}
-                        onChange={(e) => setCustomSectionName(e.target.value)}
-                        placeholder="Section name (e.g. Conferences)"
-                        className="w-full rounded-md border border-border-default bg-bg-surface px-2 py-1.5 text-[11px] text-text-primary placeholder:text-text-tertiary focus:border-accent-border focus:outline-none"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        disabled={busy !== null}
-                        onClick={() => void add(s.type)}
-                        className="h-8 w-full rounded-lg border border-accent-border px-4 text-xs font-semibold text-accent-text hover:bg-accent-subtle"
-                      >
-                        {busy === s.type ? 'Adding…' : 'Create custom section'}
-                      </Button>
-                    </div>
+      <ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+        {OPTIONAL.filter((s) => s.type !== 'custom').map((s) => {
+          const on = presentTypes.has(s.type);
+          const Icon = OPTIONAL_ICON_BY_TYPE[s.type] ?? Plus;
+          const adding = busy === s.type;
+          return (
+            <li key={s.type}>
+              <button
+                type="button"
+                disabled={on || busy !== null}
+                onClick={() => void add(s.type)}
+                className={cn(
+                  'group flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition',
+                  on
+                    ? 'cursor-default border-border-subtle bg-bg-sunken'
+                    : 'border-border-default bg-bg-surface hover:border-accent-border hover:bg-accent-subtle disabled:opacity-60',
+                )}
+              >
+                <span
+                  className={cn(
+                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+                    on
+                      ? 'bg-success-subtle text-success-text'
+                      : 'bg-accent-subtle text-accent-text',
+                  )}
+                >
+                  {on ? (
+                    <Check className="h-5 w-5" aria-hidden />
+                  ) : adding ? (
+                    <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
                   ) : (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      disabled={busy !== null}
-                      onClick={() => void add(s.type)}
-                      className="h-8 w-full rounded-lg border border-accent-border px-4 text-xs font-semibold text-accent-text hover:bg-accent-subtle"
-                    >
-                      {busy === s.type ? 'Adding…' : `Add ${s.label}`}
-                    </Button>
-                  )
-                }
-              />
-            );
-          })}
+                    <Icon className="h-5 w-5" aria-hidden />
+                  )}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-semibold text-text-primary">
+                    {s.label}
+                  </span>
+                  <span className="block text-[13px] text-text-secondary">
+                    {on ? 'On your CV' : HINT_BY_TYPE[s.type]}
+                  </span>
+                </span>
+                {on ? null : (
+                  <Plus
+                    className="h-4 w-4 shrink-0 text-text-tertiary transition group-hover:text-accent-text"
+                    aria-hidden
+                  />
+                )}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+
+      <form
+        className="mt-4 rounded-xl border border-dashed border-border-default p-3.5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (customSectionName.trim()) void add('custom');
+        }}
+      >
+        <label
+          htmlFor="add-section-custom-name"
+          className="block text-[15px] font-semibold text-text-primary"
+        >
+          Something else?
+        </label>
+        <p className="text-[13px] text-text-secondary">
+          Name your own section, like Conferences or Hobbies.
+        </p>
+        <div className="mt-2.5 flex gap-2">
+          <input
+            id="add-section-custom-name"
+            type="text"
+            value={customSectionName}
+            maxLength={60}
+            onChange={(e) => setCustomSectionName(e.target.value)}
+            placeholder="Section name"
+            className="h-11 min-w-0 flex-1 rounded-lg border border-border-default bg-bg-surface px-3 text-[15px] text-text-primary placeholder:text-text-tertiary focus:border-accent-solid focus:outline-none"
+          />
+          <Button
+            type="submit"
+            variant="accent"
+            disabled={busy !== null || !customSectionName.trim()}
+            className="h-11 shrink-0 px-5 text-[14px]"
+          >
+            {busy === 'custom' ? 'Adding…' : 'Add'}
+          </Button>
         </div>
-      </div>
+      </form>
     </Modal>
   );
 }
