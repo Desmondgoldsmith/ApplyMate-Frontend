@@ -133,7 +133,7 @@ describe('CVScoreCard Phase 1 (ATS + job match)', () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/Cached quality review/i)).toBeInTheDocument();
     const hint = screen.getByRole('button', {
-      name: /how your resume score is calculated/i,
+      name: /how your CV score is calculated/i,
     });
     fireEvent.pointerEnter(hint.parentElement!);
     expect(await screen.findByText(/Blended CV score/i)).toBeInTheDocument();
@@ -189,7 +189,7 @@ describe('CVScoreCard Phase 1 (ATS + job match)', () => {
         }}
       />,
     );
-    expect(screen.getByText(/Resume score/i)).toBeInTheDocument();
+    expect(screen.getByText(/CV score/i)).toBeInTheDocument();
     expect(
       screen.queryByText(
         /Quality review unavailable — showing structure check only/i,

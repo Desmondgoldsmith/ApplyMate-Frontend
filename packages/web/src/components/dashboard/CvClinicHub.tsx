@@ -1,18 +1,14 @@
 'use client';
 
 import {
-  Briefcase,
   FileText,
-  History,
-  LayoutGrid,
-  List,
   MoreVertical,
   Pencil,
   Plus,
-  ScrollText,
   Search,
+  Star,
+  UploadCloud,
 } from 'lucide-react';
-import Link from 'next/link';
 import type { MouseEvent as ReactMouseEvent, ReactNode } from 'react';
 import {
   useCallback,
@@ -24,226 +20,77 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 
-import { ScrollContentEnd } from '@/components/ui/ScrollContentEnd';
+import { PortalThemeScope } from '@/components/theme/ThemeScope';
+import { Button } from '@/components/ui/Button';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
-import { GlowCard } from '@/components/ui/GlowCard';
 import { Modal } from '@/components/ui/Modal';
+import { ScrollContentEnd } from '@/components/ui/ScrollContentEnd';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import {
-  CvProfileMergeCheckbox,
-  CvProfileMergeToolbar,
-  MergeCvProfilesModal,
-  useCvProfileMergeSelection,
-} from '@/components/dashboard/MergeCvProfilesModal';
 import { useClientPagination } from '@/hooks/useClientPagination';
 import { useDeleteCVProfile } from '@/hooks/useDeleteCVProfile';
 import { useRenameCVProfile } from '@/hooks/useRenameCVProfile';
-import { useJobHistory } from '@/hooks/useJobHistory';
-import { ensureArray } from '@/lib/ensure-array';
-import type { CvProfileSummary, JobHistoryItem } from '@/lib/api';
+import type { CvProfileSummary } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
 import { formatRelativeEdited } from '@/lib/format-relative-edited';
 import { cn } from '@/lib/utils';
 
-const ACTION_TILE =
-  'group relative flex w-full items-center gap-3.5 overflow-hidden rounded-xl border border-white/[0.08] bg-[#0C0F0F] p-3.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition hover:border-[#00C9B1]/30 hover:bg-[#0f1414] sm:p-4';
-
-const SECTION_SHELL =
-  'overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0C0F0F] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]';
-
-type ViewMode = 'cards' | 'table';
-
-function HubViewToggle({
-  value,
-  onChange,
-  idPrefix,
-}: {
-  value: ViewMode;
-  onChange: (v: ViewMode) => void;
-  idPrefix: string;
-}) {
-  return (
-    <div
-      className="inline-flex rounded-xl border border-white/[0.08] bg-black/30 p-0.5"
-      role="group"
-      aria-label="View mode"
-    >
-      <button
-        type="button"
-        id={`${idPrefix}-cards`}
-        aria-pressed={value === 'cards'}
-        onClick={() => onChange('cards')}
-        className={cn(
-          'inline-flex h-8 w-8 items-center justify-center rounded-lg transition',
-          value === 'cards'
-            ? 'bg-[#00C9B1]/20 text-[#00C9B1]'
-            : 'text-white/45 hover:text-white/75',
-        )}
-        title="Card view"
-      >
-        <LayoutGrid className="h-4 w-4" />
-      </button>
-      <button
-        type="button"
-        id={`${idPrefix}-table`}
-        aria-pressed={value === 'table'}
-        onClick={() => onChange('table')}
-        className={cn(
-          'inline-flex h-8 w-8 items-center justify-center rounded-lg transition',
-          value === 'table'
-            ? 'bg-[#00C9B1]/20 text-[#00C9B1]'
-            : 'text-white/45 hover:text-white/75',
-        )}
-        title="Table view"
-      >
-        <List className="h-4 w-4" />
-      </button>
-    </div>
-  );
-}
-
-function HubActionTile({
-  icon,
-  iconWrapClassName,
-  title,
-  description,
-  onClick,
-}: {
-  icon: ReactNode;
-  iconWrapClassName: string;
-  title: string;
-  description: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={title}
-      onClick={onClick}
-      className={ACTION_TILE}
-    >
-      <span
-        className={cn(
-          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 transition group-hover:opacity-95 sm:h-11 sm:w-11',
-          iconWrapClassName,
-        )}
-      >
-        {icon}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-white sm:text-[15px]">
-          {title}
-        </p>
-        <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-white/45">
-          {description}
-        </p>
-      </div>
-    </button>
-  );
-}
-
-function HubActionLink({
-  href,
-  icon,
-  iconWrapClassName,
-  title,
-  description,
-}: {
-  href: string;
-  icon: ReactNode;
-  iconWrapClassName: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <Link href={href} className={cn(ACTION_TILE, 'no-underline')}>
-      <span
-        className={cn(
-          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 transition group-hover:opacity-95 sm:h-11 sm:w-11',
-          iconWrapClassName,
-        )}
-      >
-        {icon}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-white sm:text-[15px]">
-          {title}
-        </p>
-        <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-white/45">
-          {description}
-        </p>
-      </div>
-    </Link>
-  );
-}
-
-type CvClinicHubProps = {
-  profiles: CvProfileSummary[];
-  loading?: boolean;
-  onNewCv: () => void;
-  onOpenCv: (profileId: string) => void;
-};
-
-const HUB_PAGE_SIZE = 10;
+const PAGE_SIZE = 9;
+/** Search only helps once there are enough CVs to lose one. */
+const SEARCH_THRESHOLD = 5;
 
 function norm(s: string) {
   return s.trim().toLowerCase();
 }
 
-function jobCoverLetterHref(jobAnalysisId: string) {
-  return `/dashboard/jobs?jobId=${encodeURIComponent(jobAnalysisId)}&tab=cover`;
-}
-
-function HubPagination({
-  page,
-  setPage,
-  totalPages,
-  rangeStart,
-  rangeEnd,
-  total,
-  showPager,
+function ActionTile({
+  icon,
+  title,
+  description,
+  onClick,
+  primary,
 }: {
-  page: number;
-  setPage: (n: number | ((p: number) => number)) => void;
-  totalPages: number;
-  rangeStart: number;
-  rangeEnd: number;
-  total: number;
-  showPager: boolean;
+  icon: ReactNode;
+  title: string;
+  description: string;
+  onClick: () => void;
+  primary?: boolean;
 }) {
-  if (!showPager) return null;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
-      <p className="text-xs text-white/40">
-        Showing {rangeStart}–{rangeEnd} of {total}
-      </p>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          disabled={page <= 1}
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          className="rounded-lg border border-white/[0.1] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:border-white/20 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Previous
-        </button>
-        <span className="text-xs tabular-nums text-white/45">
-          {page} / {totalPages}
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'group flex min-h-[88px] w-full items-center gap-4 rounded-3xl border p-5 text-left shadow-raised transition-colors',
+        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus',
+        primary
+          ? 'border-accent-border bg-accent-subtle hover:border-border-focus'
+          : 'border-border-subtle bg-bg-surface hover:border-border-strong hover:bg-bg-hover',
+      )}
+    >
+      <span
+        className={cn(
+          'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl',
+          primary
+            ? 'bg-accent-solid text-text-on-accent'
+            : 'bg-bg-sunken text-text-primary',
+        )}
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-display text-[17px] font-bold tracking-[-0.01em] text-text-primary">
+          {title}
         </span>
-        <button
-          type="button"
-          disabled={page >= totalPages}
-          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          className="rounded-lg border border-white/[0.1] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:border-white/20 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Next
-        </button>
-      </div>
-    </div>
+        <span className="mt-0.5 block text-[14px] leading-snug text-text-secondary">
+          {description}
+        </span>
+      </span>
+    </button>
   );
 }
 
-function HubProfileActions({
+function ProfileActions({
   profile,
   profiles,
   onOpenCv,
@@ -255,7 +102,6 @@ function HubProfileActions({
   const toast = useToast();
   const del = useDeleteCVProfile();
   const rename = useRenameCVProfile();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<{
     top: number;
     right: number;
@@ -268,103 +114,117 @@ function HubProfileActions({
   );
   const [renameValue, setRenameValue] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
+  const closeMenu = useCallback(() => setMenuAnchor(null), []);
 
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!menuAnchor) return;
     const onDoc = (e: Event) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-        setMenuAnchor(null);
+        closeMenu();
       }
     };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeMenu();
+    };
     document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
-  }, [menuOpen]);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [menuAnchor, closeMenu]);
 
   useLayoutEffect(() => {
-    if (!menuOpen || !menuAnchor) return;
-    const close = () => {
-      setMenuOpen(false);
-      setMenuAnchor(null);
-    };
-    window.addEventListener('scroll', close, true);
-    window.addEventListener('resize', close);
+    if (!menuAnchor) return;
+    window.addEventListener('scroll', closeMenu, true);
+    window.addEventListener('resize', closeMenu);
     return () => {
-      window.removeEventListener('scroll', close, true);
-      window.removeEventListener('resize', close);
+      window.removeEventListener('scroll', closeMenu, true);
+      window.removeEventListener('resize', closeMenu);
     };
-  }, [menuOpen, menuAnchor]);
+  }, [menuAnchor, closeMenu]);
 
-  const openMenu = useCallback((e: ReactMouseEvent) => {
+  const openMenu = useCallback((e: ReactMouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    const el = e.currentTarget as HTMLElement;
-    const rect = el.getBoundingClientRect();
+    const rect = e.currentTarget.getBoundingClientRect();
     setMenuAnchor({
-      top: rect.bottom + 4,
+      top: rect.bottom + 6,
       right: window.innerWidth - rect.right,
     });
-    setMenuOpen(true);
   }, []);
+
+  const menuItemClass =
+    'flex min-h-[44px] w-full items-center px-4 text-left text-[14px] transition-colors disabled:cursor-not-allowed disabled:opacity-40';
 
   return (
     <>
-      <div
-        className="flex shrink-0 items-center gap-1"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
+      <div className="flex shrink-0 items-center gap-1">
+        <Button
           type="button"
+          variant="outline"
           onClick={() => onOpenCv(profile.id)}
-          className="inline-flex items-center gap-1 rounded-lg border border-[#00C9B1]/35 bg-[#00C9B1]/10 px-2.5 py-1.5 text-xs font-semibold text-[#00C9B1] transition hover:bg-[#00C9B1]/20"
+          className="gap-1.5 px-4"
         >
-          <Pencil className="h-3 w-3" />
+          <Pencil className="h-4 w-4" aria-hidden />
           Edit
-        </button>
+        </Button>
         <button
           type="button"
-          aria-label="More actions"
-          className="rounded-lg p-1.5 text-white/45 transition hover:bg-white/5 hover:text-white"
+          aria-label={`More actions for ${profile.name}`}
+          aria-haspopup="menu"
+          aria-expanded={Boolean(menuAnchor)}
+          className="flex h-11 w-11 items-center justify-center rounded-xl text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
           onClick={openMenu}
         >
-          <MoreVertical className="h-4 w-4" />
+          <MoreVertical className="h-5 w-5" aria-hidden />
         </button>
       </div>
-      {typeof document !== 'undefined' && menuOpen && menuAnchor
+      {typeof document !== 'undefined' && menuAnchor
         ? createPortal(
-            <div
-              ref={menuRef}
-              className="fixed z-[200] min-w-[10rem] rounded-xl border border-[rgba(0,201,177,0.15)] bg-[#161B1B] py-1 shadow-lg"
-              style={{ top: menuAnchor.top, right: menuAnchor.right }}
-            >
-              <button
-                type="button"
-                className="block w-full px-3 py-2 text-left text-xs text-white/80 hover:bg-white/5"
-                onClick={() => {
-                  setMenuOpen(false);
-                  setMenuAnchor(null);
-                  setRenameTarget(profile);
-                  setRenameValue(profile.name);
-                }}
+            <PortalThemeScope>
+              <div
+                ref={menuRef}
+                role="menu"
+                className="fixed z-[200] min-w-[11rem] overflow-hidden rounded-2xl border border-border-default bg-bg-raised py-1 shadow-overlay"
+                style={{ top: menuAnchor.top, right: menuAnchor.right }}
               >
-                Rename
-              </button>
-              <button
-                type="button"
-                disabled={profiles.length <= 1 || del.isPending}
-                className="block w-full px-3 py-2 text-left text-xs text-red-300 hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-40"
-                onClick={() => {
-                  if (profiles.length <= 1) {
-                    toast.error('You need at least one resume profile.');
-                    return;
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={cn(
+                    menuItemClass,
+                    'text-text-primary hover:bg-bg-hover',
+                  )}
+                  onClick={() => {
+                    closeMenu();
+                    setRenameTarget(profile);
+                    setRenameValue(profile.name);
+                  }}
+                >
+                  Rename
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  disabled={profiles.length <= 1 || del.isPending}
+                  title={
+                    profiles.length <= 1
+                      ? 'You need at least one CV'
+                      : undefined
                   }
-                  setMenuOpen(false);
-                  setMenuAnchor(null);
-                  setDeleteTarget(profile);
-                }}
-              >
-                Delete
-              </button>
-            </div>,
+                  className={cn(
+                    menuItemClass,
+                    'text-danger-text hover:bg-danger-subtle',
+                  )}
+                  onClick={() => {
+                    closeMenu();
+                    setDeleteTarget(profile);
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </PortalThemeScope>,
             document.body,
           )
         : null}
@@ -373,10 +233,10 @@ function HubProfileActions({
         onOpenChange={(o) => {
           if (!o) setDeleteTarget(null);
         }}
-        title="Delete resume?"
+        title="Delete this CV?"
         description={
           deleteTarget
-            ? `Permanently remove “${deleteTarget.name}”? This cannot be undone.`
+            ? `“${deleteTarget.name}” will be removed for good. This can’t be undone.`
             : undefined
         }
         confirmLabel="Delete"
@@ -385,7 +245,7 @@ function HubProfileActions({
           if (!deleteTarget) return;
           try {
             await del.mutateAsync(deleteTarget.id);
-            toast.success('Resume deleted');
+            toast.success('CV deleted');
             setDeleteTarget(null);
           } catch (e) {
             toast.error(getApiErrorMessage(e));
@@ -395,7 +255,7 @@ function HubProfileActions({
       <Modal
         open={Boolean(renameTarget)}
         onOpenChange={(o) => !o && setRenameTarget(null)}
-        title="Rename resume"
+        title="Rename CV"
       >
         <form
           className="space-y-4"
@@ -408,7 +268,7 @@ function HubProfileActions({
               { id: renameTarget.id, name },
               {
                 onSuccess: () => {
-                  toast.success('Resume renamed');
+                  toast.success('CV renamed');
                   setRenameTarget(null);
                 },
                 onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -416,504 +276,267 @@ function HubProfileActions({
             );
           }}
         >
-          <input
-            value={renameValue}
-            onChange={(e) => setRenameValue(e.target.value)}
-            className="w-full rounded-xl border border-white/15 bg-[#0C0F0F] px-3 py-2.5 text-sm text-white outline-none focus:border-[#00C9B1]/50"
-            autoFocus
-          />
-          <button
+          <label className="block">
+            <span className="mb-1.5 block text-[14px] font-semibold text-text-primary">
+              Name
+            </span>
+            <input
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              maxLength={120}
+              className="h-12 w-full rounded-xl border border-border-strong bg-bg-sunken px-3.5 text-[15px] text-text-primary outline-none transition-[border-color,box-shadow] focus:border-border-focus focus:shadow-[0_0_0_3px_var(--ck-accent-subtle)]"
+              autoFocus
+            />
+          </label>
+          <Button
             type="submit"
+            variant="accent"
+            fullWidth
             disabled={!renameValue.trim() || rename.isPending}
-            className="w-full rounded-xl bg-[#00C9B1] py-2.5 text-sm font-semibold text-[#080A0A] disabled:opacity-50"
           >
-            Save
-          </button>
+            {rename.isPending ? 'Saving…' : 'Save name'}
+          </Button>
         </form>
       </Modal>
     </>
   );
 }
 
+function ProfileCard({
+  profile,
+  profiles,
+  onOpenCv,
+}: {
+  profile: CvProfileSummary;
+  profiles: CvProfileSummary[];
+  onOpenCv: (profileId: string) => void;
+}) {
+  const headline = (profile.headline ?? '').trim();
+  return (
+    <li className="flex h-full flex-col rounded-3xl border border-border-subtle bg-bg-surface p-5 shadow-raised transition-colors hover:border-border-strong">
+      <div className="flex items-start gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-bg-sunken text-text-secondary">
+          <FileText className="h-5 w-5" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <button
+            type="button"
+            onClick={() => onOpenCv(profile.id)}
+            className="line-clamp-2 text-left text-[16px] font-semibold leading-snug text-text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
+          >
+            {profile.name}
+          </button>
+          {headline ? (
+            <p className="mt-1 line-clamp-1 text-[14px] text-text-secondary">
+              {headline}
+            </p>
+          ) : null}
+        </div>
+        {profile.isDefault ? (
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-accent-subtle px-2.5 py-1 text-[12px] font-semibold text-accent-text">
+            <Star className="h-3 w-3" aria-hidden />
+            Main CV
+          </span>
+        ) : null}
+      </div>
+      <dl className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-text-secondary">
+        {profile.score != null ? (
+          <div className="flex items-center gap-1">
+            <dt className="sr-only">Score</dt>
+            <dd className="font-semibold tabular-nums text-text-primary">
+              {profile.score}
+              <span className="font-normal text-text-tertiary">/100</span>
+            </dd>
+          </div>
+        ) : null}
+        {profile.template ? (
+          <div>
+            <dt className="sr-only">Design</dt>
+            <dd className="capitalize">{profile.template} design</dd>
+          </div>
+        ) : null}
+        <div>
+          <dt className="sr-only">Last edited</dt>
+          <dd>{formatRelativeEdited(profile.updatedAt)}</dd>
+        </div>
+      </dl>
+      <div className="mt-auto flex justify-end pt-4">
+        <ProfileActions
+          profile={profile}
+          profiles={profiles}
+          onOpenCv={onOpenCv}
+        />
+      </div>
+    </li>
+  );
+}
+
+type CvClinicHubProps = {
+  profiles: CvProfileSummary[];
+  loading?: boolean;
+  onNewCv: () => void;
+  onUploadCv?: () => void;
+  onOpenCv: (profileId: string) => void;
+};
+
+/** The My CV start page: start or upload a CV, then pick one to edit. */
 export function CvClinicHub({
   profiles,
   loading = false,
   onNewCv,
+  onUploadCv,
   onOpenCv,
 }: CvClinicHubProps) {
-  const history = useJobHistory();
-  const jobItems = ensureArray<JobHistoryItem>(history.data);
+  const [search, setSearch] = useState('');
 
-  const [cvSearch, setCvSearch] = useState('');
-  const [clSearch, setClSearch] = useState('');
-  const [cvView, setCvView] = useState<ViewMode>('cards');
-  const [clView, setClView] = useState<ViewMode>('cards');
-  const [mergeOpen, setMergeOpen] = useState(false);
-  const mergeSelection = useCvProfileMergeSelection(profiles);
-
-  const coverLetterRows = useMemo(
-    () =>
-      jobItems
-        .filter((j) => j.hasCoverLetter)
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        ),
-    [jobItems],
-  );
-
-  const filteredProfiles = useMemo(() => {
-    const q = norm(cvSearch);
+  const filtered = useMemo(() => {
+    const q = norm(search);
     if (!q) return profiles;
-    return profiles.filter((p) => {
-      const hay = [p.name, p.headline ?? '', p.location ?? '', p.template ?? '']
+    return profiles.filter((p) =>
+      [p.name, p.headline ?? '', p.location ?? '', p.template ?? '']
         .map(norm)
-        .join(' ');
-      return hay.includes(q);
-    });
-  }, [profiles, cvSearch]);
+        .join(' ')
+        .includes(q),
+    );
+  }, [profiles, search]);
 
-  const filteredLetters = useMemo(() => {
-    const q = norm(clSearch);
-    if (!q) return coverLetterRows;
-    return coverLetterRows.filter((j) => {
-      const hay = norm(`${j.company} ${j.jobTitle} ${j.title ?? ''}`);
-      return hay.includes(q);
-    });
-  }, [coverLetterRows, clSearch]);
-
-  const cvPagination = useClientPagination(filteredProfiles, HUB_PAGE_SIZE);
-  const clPagination = useClientPagination(filteredLetters, HUB_PAGE_SIZE);
-  const pagedProfiles = cvPagination.pageItems;
-  const pagedLetters = clPagination.pageItems;
+  const pagination = useClientPagination(filtered, PAGE_SIZE);
+  const showSearch = profiles.length >= SEARCH_THRESHOLD;
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 pb-6 pt-2 sm:gap-10 sm:pb-8">
-      <header className="space-y-2 px-4 sm:px-0" data-tour="cv-clinic-intro">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#00C9B1]">
-          Resume workspace
-        </p>
-        <h1 className="text-xl font-extrabold tracking-tight text-white sm:text-3xl">
-          What would you like to do?
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 pb-8 pt-2 sm:px-0">
+      <header data-tour="cv-clinic-intro">
+        <h1 className="font-display text-[30px] font-bold leading-tight tracking-[-0.03em] text-text-primary sm:text-[36px]">
+          My CV
         </h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-white/50">
-          Start a resume, upload an existing one, or jump to jobs and analyses.
-          Open anything below to keep editing — your work saves automatically.
+        <p className="mt-2 max-w-[60ch] text-[15px] leading-relaxed text-text-secondary">
+          Edit, check and download your CVs. Changes save automatically.
         </p>
       </header>
 
       <section
-        aria-label="Quick actions"
-        className="grid gap-3 px-4 sm:grid-cols-2 sm:gap-4 sm:px-0"
+        aria-label="Start a CV"
+        className={cn('grid gap-3', onUploadCv && 'sm:grid-cols-2')}
         data-tour="cv-clinic-actions"
       >
-        <HubActionTile
-          icon={<Plus className="h-5 w-5" strokeWidth={2.25} />}
-          iconWrapClassName="bg-[#00C9B1]/15 text-[#00C9B1] ring-[#00C9B1]/25 group-hover:bg-[#00C9B1]/20"
-          title="New resume"
-          description="Pick a template, then build with AI or start blank"
+        <ActionTile
+          primary
+          icon={<Plus className="h-6 w-6" strokeWidth={2.25} aria-hidden />}
+          title="New CV"
+          description="Pick a design, then write it with AI or start blank."
           onClick={onNewCv}
         />
-        <HubActionLink
-          href="/dashboard/analyses"
-          icon={<History className="h-5 w-5" />}
-          iconWrapClassName="bg-emerald-500/10 text-emerald-300 ring-emerald-400/20 group-hover:bg-emerald-500/15"
-          title="Analysis history"
-          description="Match scores, notes, and cover letters from analyzed jobs"
-        />
+        {onUploadCv ? (
+          <ActionTile
+            icon={<UploadCloud className="h-6 w-6" aria-hidden />}
+            title="Upload a CV"
+            description="PDF or Word. We’ll read it and score it for you."
+            onClick={onUploadCv}
+          />
+        ) : null}
       </section>
-
-      <div
-        className={cn(
-          SECTION_SHELL,
-          'mx-4 flex flex-col gap-3 p-4 sm:mx-0 sm:flex-row sm:items-center sm:justify-between sm:p-5',
-        )}
-      >
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#00C9B1]/90">
-            Tip
-          </p>
-          <p className="mt-1 text-sm leading-relaxed text-white/55">
-            Open any resume below to edit, score, and export. Cover letters open
-            on the letter tab in Jobs.
-          </p>
-        </div>
-        <Link
-          href="/dashboard/jobs"
-          className="inline-flex w-fit shrink-0 items-center justify-center gap-2 self-start rounded-lg border border-[#00C9B1]/30 bg-[#00C9B1]/10 px-3.5 py-2 text-xs font-semibold text-[#00C9B1] transition hover:bg-[#00C9B1]/15 sm:self-center sm:text-sm"
-        >
-          <Briefcase className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          Jobs workspace
-        </Link>
-      </div>
 
       <section
         aria-labelledby="cv-library-heading"
-        className={cn(SECTION_SHELL, 'space-y-4 p-4 sm:p-5')}
         data-tour="cv-clinic-library"
       >
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2
               id="cv-library-heading"
-              className="text-lg font-bold text-white sm:text-xl"
+              className="font-display text-[20px] font-bold tracking-[-0.02em] text-text-primary"
             >
-              Recent resumes
+              Your CVs
             </h2>
-            <p className="mt-0.5 text-sm text-white/45">
-              Open a resume to enter the Resume Clinic editor
+            <p className="mt-0.5 text-[14px] text-text-secondary">
+              Open one to edit it.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative min-w-[12rem] flex-1 sm:max-w-xs">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
+          {showSearch ? (
+            <label className="relative w-full sm:max-w-xs">
+              <span className="sr-only">Search your CVs</span>
+              <Search
+                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary"
+                aria-hidden
+              />
               <input
                 type="search"
-                value={cvSearch}
-                onChange={(e) => setCvSearch(e.target.value)}
-                placeholder="Search CVs…"
-                className="h-10 w-full rounded-xl border border-white/[0.1] bg-black/40 py-2 pl-9 pr-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-[#00C9B1]/45 focus:ring-2 focus:ring-[#00C9B1]/15"
-                aria-label="Search CVs"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search your CVs"
+                className="h-11 w-full rounded-xl border border-border-default bg-bg-surface pl-10 pr-3 text-[15px] text-text-primary outline-none transition-[border-color,box-shadow] placeholder:text-text-tertiary focus:border-border-focus focus:shadow-[0_0_0_3px_var(--ck-accent-subtle)]"
               />
-            </div>
-            <HubViewToggle value={cvView} onChange={setCvView} idPrefix="cv" />
-          </div>
+            </label>
+          ) : null}
         </div>
-
-        {profiles.length > 1 ? (
-          <CvProfileMergeToolbar
-            selectedCount={mergeSelection.selectedList.length}
-            canMerge={mergeSelection.canMerge}
-            overLimit={mergeSelection.overLimit}
-            onClear={mergeSelection.clear}
-            onMerge={() => setMergeOpen(true)}
-          />
-        ) : null}
 
         {loading ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[0, 1, 2].map((i) => (
-              <Skeleton key={i} height={140} borderRadius={16} />
+              <Skeleton key={i} height={168} borderRadius={24} />
             ))}
           </div>
-        ) : filteredProfiles.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-white/[0.1] bg-black/20 px-6 py-10 text-center">
-            <FileText className="mx-auto h-9 w-9 text-white/20" />
-            <p className="mt-3 text-sm font-medium text-white/70">
-              No resumes match your search
+        ) : filtered.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-border-default bg-bg-surface px-6 py-12 text-center">
+            <FileText
+              className="mx-auto h-9 w-9 text-text-tertiary"
+              aria-hidden
+            />
+            <p className="mt-3 text-[15px] font-semibold text-text-primary">
+              {profiles.length === 0
+                ? 'No CVs yet'
+                : 'No CVs match that search'}
             </p>
-            <p className="mt-1 text-xs text-white/40">
-              Try another term or clear the search box
+            <p className="mt-1 text-[14px] text-text-secondary">
+              {profiles.length === 0
+                ? 'Create one or upload the CV you already have.'
+                : 'Try a different word, or clear the search.'}
             </p>
           </div>
-        ) : cvView === 'cards' ? (
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {pagedProfiles.map((p) => (
-              <li key={p.id}>
-                <div className="group flex h-full w-full flex-col rounded-xl border border-white/[0.08] bg-black/20 p-4 text-left transition hover:border-[#00C9B1]/30 hover:bg-white/[0.02]">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex min-w-0 flex-1 items-start gap-2">
-                      {profiles.length > 1 ? (
-                        <CvProfileMergeCheckbox
-                          checked={mergeSelection.selectedIds.has(p.id)}
-                          disabled={
-                            !mergeSelection.selectedIds.has(p.id) &&
-                            mergeSelection.selectedList.length >= 6
-                          }
-                          onChange={() => mergeSelection.toggle(p.id)}
-                          label={`Select ${p.name} for merge`}
-                        />
-                      ) : null}
-                      <button
-                        type="button"
-                        onClick={() => onOpenCv(p.id)}
-                        className="min-w-0 flex-1 text-left font-semibold text-white group-hover:text-[#00C9B1]"
-                      >
-                        {p.name}
-                      </button>
-                    </div>
-                    {p.isDefault ? (
-                      <span className="shrink-0 rounded-full bg-[#00C9B1]/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#00C9B1]">
-                        Default
-                      </span>
-                    ) : null}
-                  </div>
-                  {(p.headline ?? '').trim() ? (
-                    <p className="mt-2 line-clamp-2 text-xs text-white/50">
-                      {p.headline}
-                    </p>
-                  ) : (
-                    <p className="mt-2 text-xs italic text-white/30">
-                      No headline yet
-                    </p>
-                  )}
-                  <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/[0.06] pt-3 text-[11px] text-white/40">
-                    {p.template ? (
-                      <span className="capitalize text-white/55">
-                        {p.template}
-                      </span>
-                    ) : null}
-                    {p.score != null ? (
-                      <span className="font-semibold tabular-nums text-[#00C9B1]">
-                        {p.score}/100
-                      </span>
-                    ) : null}
-                    <span className="text-white/35">
-                      · {formatRelativeEdited(p.updatedAt)}
-                    </span>
-                  </div>
-                  <div className="mt-4 flex justify-end border-t border-white/[0.06] pt-3">
-                    <HubProfileActions
-                      profile={p}
-                      profiles={profiles}
-                      onOpenCv={onOpenCv}
-                    />
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
         ) : (
-          <GlowCard
-            className="overflow-hidden border border-white/[0.08]"
-            contentClassName="p-0"
-          >
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[520px] text-left text-sm">
-                <thead>
-                  <tr className="border-b border-white/[0.08] bg-white/[0.03] text-[11px] font-semibold uppercase tracking-wide text-white/45">
-                    {profiles.length > 1 ? (
-                      <th className="w-10 px-2 py-3" />
-                    ) : null}
-                    <th className="px-4 py-3">Name</th>
-                    <th className="px-4 py-3">Headline</th>
-                    <th className="px-4 py-3">Template</th>
-                    <th className="px-4 py-3">Score</th>
-                    <th className="px-4 py-3">Updated</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pagedProfiles.map((p) => (
-                    <tr
-                      key={p.id}
-                      className="border-b border-white/[0.05] transition hover:bg-white/[0.03]"
-                    >
-                      {profiles.length > 1 ? (
-                        <td className="px-2 py-3">
-                          <CvProfileMergeCheckbox
-                            checked={mergeSelection.selectedIds.has(p.id)}
-                            disabled={
-                              !mergeSelection.selectedIds.has(p.id) &&
-                              mergeSelection.selectedList.length >= 6
-                            }
-                            onChange={() => mergeSelection.toggle(p.id)}
-                            label={`Select ${p.name} for merge`}
-                          />
-                        </td>
-                      ) : null}
-                      <td className="px-4 py-3 font-medium text-white">
-                        <button
-                          type="button"
-                          className="text-left hover:text-[#00C9B1]"
-                          onClick={() => onOpenCv(p.id)}
-                        >
-                          {p.name}
-                        </button>
-                      </td>
-                      <td className="max-w-[200px] truncate px-4 py-3 text-white/50">
-                        {p.headline?.trim() || '—'}
-                      </td>
-                      <td className="px-4 py-3 capitalize text-white/55">
-                        {p.template ?? '—'}
-                      </td>
-                      <td className="px-4 py-3 tabular-nums text-[#00C9B1]">
-                        {p.score != null ? `${p.score}/100` : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-white/40">
-                        {p.updatedAt
-                          ? new Date(p.updatedAt).toLocaleDateString()
-                          : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <HubProfileActions
-                          profile={p}
-                          profiles={profiles}
-                          onOpenCv={onOpenCv}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </GlowCard>
-        )}
-        <HubPagination {...cvPagination} />
-      </section>
-
-      <section
-        aria-labelledby="cl-heading"
-        className={cn(SECTION_SHELL, 'space-y-4 p-4 sm:p-5')}
-      >
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2
-              id="cl-heading"
-              className="text-lg font-bold text-white sm:text-xl"
-            >
-              Cover letters
-            </h2>
-            <p className="mt-0.5 text-sm text-white/45">
-              Opens directly on the cover letter tab in Jobs
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative min-w-[12rem] flex-1 sm:max-w-xs">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
-              <input
-                type="search"
-                value={clSearch}
-                onChange={(e) => setClSearch(e.target.value)}
-                placeholder="Search cover letters…"
-                className="h-10 w-full rounded-xl border border-white/[0.1] bg-black/40 py-2 pl-9 pr-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-[#00C9B1]/45 focus:ring-2 focus:ring-[#00C9B1]/15"
-                aria-label="Search cover letters"
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {pagination.pageItems.map((p) => (
+              <ProfileCard
+                key={p.id}
+                profile={p}
+                profiles={profiles}
+                onOpenCv={onOpenCv}
               />
-            </div>
-            <HubViewToggle value={clView} onChange={setClView} idPrefix="cl" />
-          </div>
-        </div>
-
-        {history.isLoading ? (
-          <div className="space-y-2">
-            {[0, 1, 2].map((i) => (
-              <Skeleton key={i} height={72} borderRadius={12} />
-            ))}
-          </div>
-        ) : filteredLetters.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-white/[0.1] bg-black/20 px-6 py-10 text-center">
-            <ScrollText className="mx-auto h-9 w-9 text-white/20" />
-            <p className="mt-3 text-sm font-medium text-white/70">
-              {coverLetterRows.length === 0
-                ? 'No saved cover letters yet'
-                : 'No matches for your search'}
-            </p>
-            <p className="mt-1 text-xs text-white/40">
-              {coverLetterRows.length === 0
-                ? 'Run a job analysis and generate a letter. It will show up here.'
-                : 'Try another company or role keyword.'}
-            </p>
-            <Link
-              href="/dashboard/jobs"
-              className="mt-5 inline-flex w-auto items-center justify-center gap-2 rounded-lg bg-[#00C9B1] px-4 py-2 text-sm font-semibold text-[#080A0A] transition hover:bg-[#00C9B1]/90"
-            >
-              <Briefcase className="h-4 w-4" />
-              Go to Jobs
-            </Link>
-            <p className="mt-4 text-[11px] text-white/30">
-              Or browse{' '}
-              <Link
-                href="/dashboard/analyses"
-                className="text-[#00C9B1] hover:underline"
-              >
-                all job analyses
-              </Link>
-              .
-            </p>
-          </div>
-        ) : clView === 'cards' ? (
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {pagedLetters.map((j) => (
-              <li key={j.id}>
-                <Link
-                  href={jobCoverLetterHref(j.id)}
-                  className="group flex h-full flex-col rounded-xl border border-white/[0.08] bg-black/20 p-4 transition hover:border-[#00C9B1]/30 hover:bg-white/[0.02]"
-                >
-                  <p className="font-semibold text-white group-hover:text-[#00C9B1]">
-                    {j.company || 'Company'}
-                  </p>
-                  <p className="mt-1 line-clamp-2 text-sm text-white/55">
-                    {j.jobTitle || j.title || 'Role'}
-                  </p>
-                  <div className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-3 text-[11px] text-white/40">
-                    <span className="inline-flex items-center gap-1 text-[#00C9B1]/90">
-                      <ScrollText className="h-3.5 w-3.5" />
-                      Cover letter
-                    </span>
-                    <span>
-                      {j.createdAt
-                        ? new Date(j.createdAt).toLocaleDateString()
-                        : ''}
-                    </span>
-                  </div>
-                </Link>
-              </li>
             ))}
           </ul>
-        ) : (
-          <GlowCard
-            className="overflow-hidden border border-white/[0.08]"
-            contentClassName="p-0"
-          >
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[480px] text-left text-sm">
-                <thead>
-                  <tr className="border-b border-white/[0.08] bg-white/[0.03] text-[11px] font-semibold uppercase tracking-wide text-white/45">
-                    <th className="px-4 py-3">Company</th>
-                    <th className="px-4 py-3">Role</th>
-                    <th className="px-4 py-3">Match</th>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3 text-right"> </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pagedLetters.map((j) => (
-                    <tr
-                      key={j.id}
-                      className="border-b border-white/[0.05] transition hover:bg-white/[0.03]"
-                    >
-                      <td className="px-4 py-3 font-medium text-white">
-                        {j.company || '—'}
-                      </td>
-                      <td className="max-w-[220px] truncate px-4 py-3 text-white/55">
-                        {j.jobTitle || j.title || '—'}
-                      </td>
-                      <td className="px-4 py-3 tabular-nums text-white/60">
-                        {j.matchScore ?? '—'}%
-                      </td>
-                      <td className="px-4 py-3 text-white/40">
-                        {j.createdAt
-                          ? new Date(j.createdAt).toLocaleDateString()
-                          : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Link
-                          href={jobCoverLetterHref(j.id)}
-                          className="inline-block rounded-lg border border-[#00C9B1]/35 bg-[#00C9B1]/10 px-3 py-1.5 text-xs font-semibold text-[#00C9B1] transition hover:bg-[#00C9B1]/20"
-                        >
-                          Open
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </GlowCard>
         )}
-        <HubPagination {...clPagination} />
-      </section>
 
-      <MergeCvProfilesModal
-        open={mergeOpen}
-        onOpenChange={(open) => {
-          setMergeOpen(open);
-          if (!open) mergeSelection.clear();
-        }}
-        profileIds={mergeSelection.selectedList}
-        profiles={profiles}
-        onMerged={onOpenCv}
-      />
+        {pagination.showPager ? (
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <p className="text-[13px] text-text-secondary">
+              {pagination.rangeStart}–{pagination.rangeEnd} of{' '}
+              {pagination.total}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pagination.page <= 1}
+                onClick={() => pagination.setPage((p) => Math.max(1, p - 1))}
+              >
+                Previous
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pagination.page >= pagination.totalPages}
+                onClick={() =>
+                  pagination.setPage((p) =>
+                    Math.min(pagination.totalPages, p + 1),
+                  )
+                }
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </section>
       <ScrollContentEnd className="max-lg:h-2" />
     </div>
   );

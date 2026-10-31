@@ -78,7 +78,7 @@ export function AIGlobalAssistantPanel({
   const desktopLg = useDesktopLgMedia();
   const { navBottomOffset } = useMobileShell();
   const [text, setText] = useState('');
-  const [pendingScopeLabel, setPendingScopeLabel] = useState('Entire resume');
+  const [pendingScopeLabel, setPendingScopeLabel] = useState('Entire CV');
   const [pendingOperation, setPendingOperation] = useState<
     CvGlobalAssistantOperationKey | undefined
   >(undefined);
@@ -95,7 +95,7 @@ export function AIGlobalAssistantPanel({
     if (!s) return;
     setText(s);
     setPendingOperation(undefined);
-    setPendingScopeLabel('Entire resume');
+    setPendingScopeLabel('Entire CV');
     onSeedCommandConsumed?.();
   }, [open, seedCommand, onSeedCommandConsumed]);
 
@@ -139,8 +139,8 @@ export function AIGlobalAssistantPanel({
             }
             onOpenChange(true);
           }}
-          title="Global assistant — long-press to drag"
-          aria-label="Open global assistant"
+          aria-label="Ask AI to change your CV"
+          data-tour="cv-ask-ai"
           style={
             desktopLg
               ? {
@@ -159,22 +159,16 @@ export function AIGlobalAssistantPanel({
                 }
           }
           className={cn(
-            'fixed z-[90] touch-none select-none',
-            'inline-flex items-center justify-center rounded-full border border-[rgba(16,185,129,0.45)] bg-[#0C0F0F] text-emerald-300 shadow-[0_10px_28px_rgba(0,0,0,0.42)] transition-[border-color,box-shadow] hover:border-emerald-300/75 hover:shadow-[0_12px_32px_rgba(0,0,0,0.5)]',
-            desktopLg
-              ? 'h-10 min-w-0 gap-1.5 px-3 text-xs font-semibold touch-manipulation'
-              : 'h-11 w-11 touch-manipulation',
+            'fixed z-[90] touch-none touch-manipulation select-none',
+            'inline-flex items-center justify-center gap-2 rounded-full border border-border-default bg-bg-raised font-semibold text-text-primary shadow-overlay transition-colors hover:bg-bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus',
+            desktopLg ? 'h-11 px-4 text-[14px]' : 'h-12 px-4 text-[14px]',
           )}
         >
           <Sparkles
-            className={cn(
-              'shrink-0',
-              desktopLg ? 'h-4 w-4' : 'h-[18px] w-[18px]',
-            )}
+            className="h-[18px] w-[18px] shrink-0 text-accent-text"
+            aria-hidden
           />
-          <span className={cn(desktopLg ? 'inline' : 'hidden')}>
-            Global assistant
-          </span>
+          <span>Ask AI</span>
         </button>
       ) : null}
 
@@ -205,11 +199,11 @@ export function AIGlobalAssistantPanel({
               }
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="rounded-2xl border border-white/[0.08] bg-[#0C0F0F] p-3 shadow-[0_14px_32px_rgba(0,0,0,0.45)]">
+              <div className="rounded-2xl border border-border-subtle bg-bg-surface p-3 shadow-[0_14px_32px_rgba(0,0,0,0.45)]">
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">
-                      Global assistant
+                    <p className="text-xs font-semibold uppercase tracking-wide text-success-text">
+                      Ask AI
                     </p>
                     <CvAssistantScopeBadge
                       label={pendingScopeLabel}
@@ -218,7 +212,7 @@ export function AIGlobalAssistantPanel({
                   </div>
                   <button
                     type="button"
-                    className="rounded-md p-1 text-white/50 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-40"
+                    className="rounded-md p-1 text-text-tertiary transition hover:bg-bg-hover hover:text-text-primary disabled:opacity-40"
                     disabled={busy}
                     onClick={() => onOpenChange(false)}
                   >
@@ -227,7 +221,7 @@ export function AIGlobalAssistantPanel({
                 </div>
 
                 {operationsLoading && presetOps.length === 0 ? (
-                  <p className="mb-2 flex items-center gap-2 text-[11px] text-white/45">
+                  <p className="mb-2 flex items-center gap-2 text-[11px] text-text-tertiary">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     Loading presets…
                   </p>
@@ -236,7 +230,7 @@ export function AIGlobalAssistantPanel({
                     className="mb-2 max-h-40 space-y-1 overflow-y-auto overscroll-y-contain touch-pan-y [-webkit-overflow-scrolling:touch]"
                     data-lenis-prevent-wheel
                   >
-                    <p className="text-[10px] font-medium uppercase tracking-wide text-white/35">
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-text-tertiary">
                       Quick commands
                     </p>
                     {presetOps.map((op) => (
@@ -248,12 +242,12 @@ export function AIGlobalAssistantPanel({
                         className={cn(
                           'flex w-full flex-col rounded-lg border px-2.5 py-2 text-left transition disabled:opacity-50',
                           pendingOperation === op.operation
-                            ? 'border-[#00C9B1]/50 bg-[#00C9B1]/10'
-                            : 'border-white/[0.08] hover:border-[#00C9B1]/40 hover:bg-[#00C9B1]/08',
+                            ? 'border-accent-border bg-accent-subtle'
+                            : 'border-border-subtle hover:border-accent-border hover:bg-accent-subtle',
                         )}
                       >
                         <span className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] font-semibold text-white/85">
+                          <span className="text-[11px] font-semibold text-text-primary">
                             {op.label}
                           </span>
                           <CvAssistantScopeBadge
@@ -265,7 +259,7 @@ export function AIGlobalAssistantPanel({
                           />
                         </span>
                         {op.description ? (
-                          <span className="mt-0.5 text-[10px] leading-snug text-white/45">
+                          <span className="mt-0.5 text-[10px] leading-snug text-text-tertiary">
                             {op.description}
                           </span>
                         ) : null}
@@ -281,16 +275,16 @@ export function AIGlobalAssistantPanel({
                   onChange={(e) => {
                     setText(e.target.value);
                     setPendingOperation(undefined);
-                    setPendingScopeLabel('Entire resume');
+                    setPendingScopeLabel('Entire CV');
                   }}
                   rows={3}
                   disabled={busy}
-                  placeholder="e.g. Standardise all date formats across my resume"
-                  className="w-full resize-y rounded-xl border border-white/[0.12] bg-[#111616] px-3 py-2 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-[#00C9B1]/35 disabled:opacity-60"
+                  placeholder="e.g. Standardise all date formats across my CV"
+                  className="w-full resize-y rounded-xl border border-border-default bg-bg-sunken px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:ring-2 focus:ring-border-focus disabled:opacity-60"
                 />
 
                 {busy ? (
-                  <p className="mt-2 flex items-center gap-2 text-[11px] text-white/50">
+                  <p className="mt-2 flex items-center gap-2 text-[11px] text-text-tertiary">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     {inProgressLabel}
                   </p>

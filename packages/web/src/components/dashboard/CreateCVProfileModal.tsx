@@ -59,7 +59,7 @@ function StepDots({ current }: { current: FlowStep }) {
           key={i}
           className={cn(
             'h-1.5 w-1.5 rounded-full transition-colors',
-            i <= activeIdx ? 'bg-[#00C9B1]' : 'bg-white/10',
+            i <= activeIdx ? 'bg-accent-solid' : 'bg-bg-hover',
           )}
         />
       ))}
@@ -212,7 +212,7 @@ export function CreateCVProfileModal({
       bodyClassName="flex min-h-0 flex-1 flex-col p-0 pt-0"
     >
       <GlowCard
-        className="flex min-h-0 flex-1 flex-col border border-[rgba(0,201,177,0.15)] shadow-[0_0_40px_rgba(0,201,177,0.12)]"
+        className="flex min-h-0 flex-1 flex-col border border-accent-border shadow-[0_0_40px_rgba(0,201,177,0.12)]"
         contentClassName="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-5 sm:p-6"
       >
         <CvCreationModalHeader
@@ -237,7 +237,7 @@ export function CreateCVProfileModal({
                 if (e.key === 'Enter' && name.trim()) setStep('template');
               }}
               placeholder="e.g. Frontend Engineer resume"
-              className="w-full rounded-xl border border-[rgba(0,201,177,0.15)] bg-[#111616] px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/25 focus:border-[#00C9B1] focus:ring-2 focus:ring-[rgba(0,201,177,0.2)]"
+              className="w-full rounded-xl border border-accent-border bg-bg-sunken px-3 py-2.5 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:border-accent-solid focus:ring-2 focus:ring-accent-border"
               autoFocus
             />
           ) : null}
@@ -257,14 +257,14 @@ export function CreateCVProfileModal({
                 type="button"
                 data-testid="cv-create-method-upload"
                 onClick={() => setStep('upload')}
-                className="flex flex-col items-start gap-3 rounded-xl border border-[rgba(0,201,177,0.2)] bg-[#111616]/80 p-4 text-left transition hover:border-[#00C9B1]/45 hover:bg-[#00C9B1]/5"
+                className="flex flex-col items-start gap-3 rounded-xl border border-accent-border bg-bg-sunken p-4 text-left transition hover:border-accent-border hover:bg-accent-subtle"
               >
-                <UploadCloud className="h-8 w-8 text-[#00C9B1]" />
+                <UploadCloud className="h-8 w-8 text-accent-text" />
                 <div>
-                  <p className="text-sm font-semibold text-white">
+                  <p className="text-sm font-semibold text-text-primary">
                     Upload my resume
                   </p>
-                  <p className="mt-1 text-xs text-white/45">
+                  <p className="mt-1 text-xs text-text-tertiary">
                     Parse your existing resume instantly with AI
                   </p>
                 </div>
@@ -273,14 +273,14 @@ export function CreateCVProfileModal({
                 type="button"
                 data-testid="cv-create-method-scratch"
                 onClick={() => setStep('buildMethod')}
-                className="flex flex-col items-start gap-3 rounded-xl border border-[rgba(0,201,177,0.2)] bg-[#111616]/80 p-4 text-left transition hover:border-[#00C9B1]/45 hover:bg-[#00C9B1]/5"
+                className="flex flex-col items-start gap-3 rounded-xl border border-accent-border bg-bg-sunken p-4 text-left transition hover:border-accent-border hover:bg-accent-subtle"
               >
-                <Sparkles className="h-8 w-8 text-[#00C9B1]" />
+                <Sparkles className="h-8 w-8 text-accent-text" />
                 <div>
-                  <p className="text-sm font-semibold text-white">
+                  <p className="text-sm font-semibold text-text-primary">
                     Start from scratch
                   </p>
-                  <p className="mt-1 text-xs text-white/45">
+                  <p className="mt-1 text-xs text-text-tertiary">
                     Build with AI chat or fill in the form manually
                   </p>
                 </div>
@@ -291,8 +291,8 @@ export function CreateCVProfileModal({
           {step === 'buildMethod' ? (
             createProfile.isPending ? (
               <div className="flex flex-col items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-[#00C9B1]" />
-                <p className="mt-4 text-sm font-semibold text-white/70">
+                <Loader2 className="h-8 w-8 animate-spin text-accent-text" />
+                <p className="mt-4 text-sm font-semibold text-text-secondary">
                   Creating your resume…
                 </p>
               </div>
@@ -302,17 +302,17 @@ export function CreateCVProfileModal({
                   type="button"
                   data-testid="cv-create-ai-chat"
                   onClick={handleStartAiChat}
-                  className="relative flex flex-col items-start gap-3 rounded-xl border border-[rgba(0,201,177,0.2)] bg-[#111616]/80 p-4 text-left transition hover:border-[#00C9B1]/45 hover:bg-[#00C9B1]/5"
+                  className="relative flex flex-col items-start gap-3 rounded-xl border border-accent-border bg-bg-sunken p-4 text-left transition hover:border-accent-border hover:bg-accent-subtle"
                 >
-                  <span className="absolute right-3 top-3 rounded-full bg-[#00C9B1]/15 px-2 py-0.5 text-[10px] font-semibold text-[#00C9B1]">
+                  <span className="absolute right-3 top-3 rounded-full bg-accent-subtle px-2 py-0.5 text-[10px] font-semibold text-accent-text">
                     Recommended
                   </span>
-                  <MessageSquare className="h-8 w-8 text-[#00C9B1]" />
+                  <MessageSquare className="h-8 w-8 text-accent-text" />
                   <div>
-                    <p className="text-sm font-semibold text-white">
+                    <p className="text-sm font-semibold text-text-primary">
                       Chat with AI
                     </p>
-                    <p className="mt-1 text-xs text-white/45">
+                    <p className="mt-1 text-xs text-text-tertiary">
                       Answer a few questions and our AI will build your resume
                       for you.
                     </p>
@@ -334,14 +334,14 @@ export function CreateCVProfileModal({
                       },
                     );
                   }}
-                  className="flex flex-col items-start gap-3 rounded-xl border border-[rgba(0,201,177,0.2)] bg-[#111616]/80 p-4 text-left transition hover:border-[#00C9B1]/45 hover:bg-[#00C9B1]/5"
+                  className="flex flex-col items-start gap-3 rounded-xl border border-accent-border bg-bg-sunken p-4 text-left transition hover:border-accent-border hover:bg-accent-subtle"
                 >
-                  <FileText className="h-8 w-8 text-[#00C9B1]" />
+                  <FileText className="h-8 w-8 text-accent-text" />
                   <div>
-                    <p className="text-sm font-semibold text-white">
+                    <p className="text-sm font-semibold text-text-primary">
                       Fill in manually
                     </p>
-                    <p className="mt-1 text-xs text-white/45">
+                    <p className="mt-1 text-xs text-text-tertiary">
                       Use our structured form at your own pace.
                     </p>
                   </div>
@@ -353,8 +353,8 @@ export function CreateCVProfileModal({
           {step === 'aiChat' ? (
             aiChatBuilding ? (
               <div className="flex flex-col items-center justify-center py-16">
-                <Loader2 className="h-8 w-8 animate-spin text-[#00C9B1]" />
-                <p className="mt-4 text-sm font-semibold text-white/70">
+                <Loader2 className="h-8 w-8 animate-spin text-accent-text" />
+                <p className="mt-4 text-sm font-semibold text-text-secondary">
                   Building your resume…
                 </p>
               </div>
@@ -407,11 +407,11 @@ export function CreateCVProfileModal({
         </div>
 
         {step === 'name' ? (
-          <div className="mt-6 flex shrink-0 flex-wrap justify-end gap-3 border-t border-white/[0.06] pt-4">
+          <div className="mt-6 flex shrink-0 flex-wrap justify-end gap-3 border-t border-border-subtle pt-4">
             <Button
               type="button"
               variant="ghost"
-              className="border border-white/10"
+              className="border border-border-subtle"
               onClick={close}
             >
               Cancel
@@ -427,7 +427,7 @@ export function CreateCVProfileModal({
         ) : null}
 
         {step === 'template' ? (
-          <div className="mt-6 flex shrink-0 justify-end border-t border-white/[0.06] pt-4">
+          <div className="mt-6 flex shrink-0 justify-end border-t border-border-subtle pt-4">
             <Button type="button" onClick={() => setStep('method')}>
               Next →
             </Button>

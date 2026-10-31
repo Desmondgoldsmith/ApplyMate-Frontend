@@ -18,7 +18,7 @@ export type CvReferencesLayout = 'onyx-grid' | 'compact' | 'inline-separated';
 
 function entryFocusStyle(focused: boolean): CSSProperties {
   return {
-    outline: focused ? '1.5px dashed #00C9B1' : 'none',
+    outline: focused ? '1.5px dashed #17B26A' : 'none',
     outlineOffset: '3px',
     borderRadius: '3px',
     position: 'relative',
@@ -38,7 +38,7 @@ export function CvEditableReferencesList({
   layout,
   className,
   textClassName = 'text-[9pt] text-black',
-  emptyClassName = 'text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline',
+  emptyClassName = 'text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline',
 }: CvEditableReferencesListProps) {
   const ctx = useCVEdit();
   const inline = Boolean(ctx?.isEditing && ctx?.onUpdate);

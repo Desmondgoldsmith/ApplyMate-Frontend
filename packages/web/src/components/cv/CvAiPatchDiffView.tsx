@@ -77,7 +77,7 @@ export function CvAiPatchDiffView({
       {beforeText ? (
         <div
           className={cn(
-            'rounded-md border border-rose-300 bg-rose-50 leading-snug text-rose-700',
+            'rounded-md border border-danger-border bg-rose-50 leading-snug text-rose-700',
             pad,
             textSize,
           )}
@@ -97,7 +97,7 @@ export function CvAiPatchDiffView({
       {afterText ? (
         <div
           className={cn(
-            'rounded-md border border-emerald-300 bg-emerald-50 leading-snug text-emerald-800',
+            'rounded-md border border-success-border bg-emerald-50 leading-snug text-emerald-800',
             pad,
             textSize,
           )}

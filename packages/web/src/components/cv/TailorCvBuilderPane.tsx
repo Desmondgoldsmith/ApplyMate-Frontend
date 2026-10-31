@@ -66,14 +66,14 @@ export function TailorCvBuilderPane({
   if (profileQ.isLoading) {
     return (
       <div className="flex h-full min-h-[240px] items-center justify-center bg-[#080a0a]">
-        <Loader2 className="h-8 w-8 animate-spin text-[#00C9B1]" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent-text" />
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="flex h-full min-h-[240px] items-center justify-center px-6 text-center text-sm text-white/50">
+      <div className="flex h-full min-h-[240px] items-center justify-center px-6 text-center text-sm text-text-tertiary">
         Could not load your CV. Close and try again.
       </div>
     );

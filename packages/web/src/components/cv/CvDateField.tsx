@@ -12,7 +12,7 @@ import {
 import { cn } from '@/lib/utils';
 
 const fieldClass =
-  'w-full rounded-lg border border-[rgba(255,255,255,0.10)] bg-[#0c1010] px-3 py-2 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-[rgba(0,201,177,0.45)] focus:shadow-[0_0_0_3px_rgba(0,201,177,0.1)]';
+  'w-full rounded-lg border border-border-subtle bg-bg-surface px-3 py-2 text-sm text-text-primary outline-none transition placeholder:text-text-tertiary focus:border-accent-border focus:shadow-[0_0_0_3px_rgba(23,178,106,0.1)]';
 
 function yearOptions(): number[] {
   const current = new Date().getFullYear();
@@ -85,7 +85,7 @@ export function CvDateField({
 
   return (
     <div ref={rootRef}>
-      <label className="mb-1 block text-xs text-white/45">{label}</label>
+      <label className="mb-1 block text-xs text-text-tertiary">{label}</label>
       <div className="flex gap-1.5">
         <input
           type="text"
@@ -104,43 +104,46 @@ export function CvDateField({
           disabled={disabled}
           aria-label={`Pick ${label}`}
           aria-expanded={open}
-          className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.10)] bg-[#0c1010] text-white/50 transition hover:border-[#00C9B1]/40 hover:text-[#00C9B1] disabled:opacity-40"
+          className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-lg border border-border-subtle bg-bg-surface text-text-tertiary transition hover:border-accent-border hover:text-accent-text disabled:opacity-40"
           onClick={() => setOpen((v) => !v)}
         >
           <Calendar className="h-4 w-4" />
         </button>
       </div>
       {displayHint && displayHint !== value.trim() ? (
-        <p id={`${panelId}-hint`} className="mt-1 text-[10px] text-white/35">
+        <p
+          id={`${panelId}-hint`}
+          className="mt-1 text-[10px] text-text-tertiary"
+        >
           Shows as: {displayHint}
         </p>
       ) : null}
       {helper ? (
-        <p className="mt-1 text-[10px] text-white/30">{helper}</p>
+        <p className="mt-1 text-[10px] text-text-disabled">{helper}</p>
       ) : null}
       {open && mounted
         ? createPortal(
             <div
-              className="fixed inset-0 z-[2000] flex items-end justify-center bg-black/40 p-3 sm:items-center"
+              className="fixed inset-0 z-[2000] flex items-end justify-center bg-bg-overlay p-3 sm:items-center"
               onClick={() => setOpen(false)}
             >
               <div
-                className="w-[min(320px,calc(100vw-24px))] rounded-xl border border-white/10 bg-[#0C0F0F] p-4 shadow-2xl"
+                className="w-[min(320px,calc(100vw-24px))] rounded-xl border border-border-subtle bg-bg-surface p-4 shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-label={`${label} picker`}
               >
-                <p className="text-sm font-medium text-white/85">
+                <p className="text-sm font-medium text-text-primary">
                   {preferYear ? 'Select year' : 'Select month'}
                 </p>
-                <p className="mt-1 text-[11px] text-white/40">
+                <p className="mt-1 text-[11px] text-text-tertiary">
                   {preferYear
                     ? 'Pick the year, or type it in the field.'
                     : 'Use the month picker, or type a year like 2018.'}
                 </p>
                 {preferYear ? (
                   <select
-                    className="mt-3 w-full rounded-lg border border-white/12 bg-[#111616] px-3 py-2.5 text-sm text-white outline-none focus:border-[#00C9B1]/45"
+                    className="mt-3 w-full rounded-lg border border-border-default bg-bg-sunken px-3 py-2.5 text-sm text-text-primary outline-none focus:border-accent-border"
                     value={selectedYear}
                     onChange={(e) => applyYear(Number(e.target.value))}
                   >
@@ -157,14 +160,14 @@ export function CvDateField({
                 ) : (
                   <input
                     type="month"
-                    className="mt-3 w-full rounded-lg border border-white/12 bg-[#111616] px-3 py-2.5 text-sm text-white outline-none focus:border-[#00C9B1]/45 [color-scheme:dark]"
+                    className="mt-3 w-full rounded-lg border border-border-default bg-bg-sunken px-3 py-2.5 text-sm text-text-primary outline-none focus:border-accent-border [color-scheme:dark]"
                     value={monthInputValue}
                     onChange={(e) => applyMonth(e.target.value)}
                   />
                 )}
                 <button
                   type="button"
-                  className="mt-3 w-full rounded-lg border border-white/12 py-2 text-xs text-white/55 hover:bg-white/5"
+                  className="mt-3 w-full rounded-lg border border-border-default py-2 text-xs text-text-tertiary hover:bg-bg-surface"
                   onClick={() => setOpen(false)}
                 >
                   Done

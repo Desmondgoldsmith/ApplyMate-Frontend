@@ -41,14 +41,14 @@ export function CvDiffMobileActionBar({
       role="region"
       aria-label="Review AI suggestion"
     >
-      <div className="pointer-events-auto w-full max-w-md rounded-2xl border border-emerald-500/35 bg-[#0C1010]/98 p-3 shadow-[0_12px_40px_rgba(0,0,0,0.55)] backdrop-blur-md">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-emerald-400/90">
+      <div className="pointer-events-auto w-full max-w-md rounded-2xl border border-success-border bg-bg-surface p-3 shadow-[0_12px_40px_rgba(0,0,0,0.55)] backdrop-blur-md">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-success-text">
           AI suggestion ready
         </p>
-        <p className="mt-0.5 text-[13px] font-medium text-white/90">
+        <p className="mt-0.5 text-[13px] font-medium text-text-primary">
           Review changes to your {label}
         </p>
-        <p className="mt-1 text-[11px] leading-snug text-white/45">
+        <p className="mt-1 text-[11px] leading-snug text-text-tertiary">
           Accept to apply, or reject to keep your current text. You can also
           review in the preview above.
         </p>

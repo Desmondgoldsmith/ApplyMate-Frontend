@@ -30,7 +30,7 @@ export function CvCreationModalHeader({
   return (
     <div
       className={cn(
-        'shrink-0 border-b border-white/[0.06] px-1 pb-4 pt-1',
+        'shrink-0 border-b border-border-subtle px-1 pb-4 pt-1',
         className,
       )}
     >
@@ -40,7 +40,7 @@ export function CvCreationModalHeader({
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex shrink-0 items-center gap-1 rounded-lg px-1.5 py-1 text-sm font-medium text-white/50 transition hover:bg-white/[0.04] hover:text-white"
+              className="inline-flex shrink-0 items-center gap-1 rounded-lg px-1.5 py-1 text-sm font-medium text-text-tertiary transition hover:bg-bg-hover hover:text-text-primary"
             >
               <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
               {backLabel}
@@ -55,7 +55,7 @@ export function CvCreationModalHeader({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-[#111616] text-white/60 transition hover:border-white/[0.14] hover:text-white"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border-subtle bg-bg-sunken text-text-secondary transition hover:border-border-default hover:text-text-primary"
           >
             <X className="h-4 w-4" />
           </button>
@@ -64,12 +64,12 @@ export function CvCreationModalHeader({
         )}
       </div>
       {title ? (
-        <h2 className="mt-3 text-lg font-bold leading-snug text-white">
+        <h2 className="mt-3 text-lg font-bold leading-snug text-text-primary">
           {title}
         </h2>
       ) : null}
       {subtitle ? (
-        <p className="mt-1.5 text-[13px] leading-relaxed text-white/55">
+        <p className="mt-1.5 text-[13px] leading-relaxed text-text-tertiary">
           {subtitle}
         </p>
       ) : null}

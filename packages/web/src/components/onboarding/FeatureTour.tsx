@@ -63,9 +63,9 @@ const TOUR_START_DELAY_MS = 1200;
 const TOUR_DOM_RETRY_MS = 500;
 const TOUR_DOM_MAX_ATTEMPTS = 16;
 
-/** Home has its own WelcomeTour; this driver.js tour now only covers the other pages. */
+/** Home and the CV editor have their own WelcomeTour; this driver.js tour covers the other pages. */
 function isRetiredTour(id: TourId): boolean {
-  return id === 'dashboard';
+  return id === 'dashboard' || id === 'cv-clinic';
 }
 
 function isNarrowViewport(): boolean {

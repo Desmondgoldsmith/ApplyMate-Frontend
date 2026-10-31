@@ -13,9 +13,9 @@ export const CvTripleShellPreviewColumn = memo(
     previewFrame,
   }: CvTripleShellPreviewColumnProps) {
     return (
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#080B0B] max-lg:min-h-[calc(100dvh-3.5rem)]">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-bg-surface max-lg:min-h-[calc(100dvh-3.5rem)]">
         {centerHeaderActions ? (
-          <div className="flex shrink-0 items-center justify-end border-b border-white/[0.06] px-3 py-2 max-lg:hidden">
+          <div className="flex shrink-0 items-center justify-end border-b border-border-subtle px-3 py-2 max-lg:hidden">
             <div className="flex items-center gap-2">{centerHeaderActions}</div>
           </div>
         ) : null}

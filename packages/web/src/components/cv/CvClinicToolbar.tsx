@@ -29,10 +29,10 @@ import { cn } from '@/lib/utils';
 /** "Build with AI" was removed from this toolbar — use CV Library / New CV or the mobile overflow menu to start an AI CV. */
 
 const cvProfileSelectClassName = cn(
-  'h-8 max-w-[min(11rem,26vw)] min-w-0 flex-1 cursor-pointer truncate rounded-lg border border-white/[0.10] bg-white/[0.05] py-0 pl-2 pr-7 text-[12px] font-semibold text-white/90 outline-none transition sm:max-w-[13rem]',
-  'hover:border-white/20 focus:border-[#00C9B1] focus:ring-2 focus:ring-[#00C9B1]/25',
-  'accent-[#00C9B1]',
-  '[&>option]:bg-[#0F1512] [&>option]:text-white',
+  'h-8 max-w-[min(11rem,26vw)] min-w-0 flex-1 cursor-pointer truncate rounded-lg border border-border-subtle bg-bg-surface py-0 pl-2 pr-7 text-[12px] font-semibold text-text-primary outline-none transition sm:max-w-[13rem]',
+  'hover:border-border-default focus:border-accent-solid focus:ring-2 focus:ring-border-focus',
+  'accent-[#17B26A]',
+  '[&>option]:bg-bg-surface [&>option]:text-text-primary',
 );
 
 export type CvClinicToolbarVisibility = {
@@ -90,7 +90,7 @@ function ToolbarDivider({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'mx-1.5 hidden h-5 w-px shrink-0 self-center bg-white/[0.08] min-[900px]:block',
+        'mx-1.5 hidden h-5 w-px shrink-0 self-center bg-bg-hover min-[900px]:block',
         className,
       )}
       aria-hidden
@@ -99,7 +99,7 @@ function ToolbarDivider({ className }: { className?: string }) {
 }
 
 const ghostToolClass =
-  'inline-flex h-8 max-w-full shrink min-w-0 items-center gap-1 whitespace-nowrap rounded-lg border-0 bg-transparent px-2 text-[12px] font-medium text-white/65 transition-colors duration-150 hover:bg-white/[0.06] hover:text-white/95 disabled:pointer-events-none disabled:opacity-40 sm:px-2.5';
+  'inline-flex h-8 max-w-full shrink min-w-0 items-center gap-1 whitespace-nowrap rounded-lg border-0 bg-transparent px-2 text-[12px] font-medium text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary disabled:pointer-events-none disabled:opacity-40 sm:px-2.5';
 
 function ToolbarToolButton({
   label,
@@ -197,7 +197,7 @@ export function CvClinicToolbar({
     <div
       data-testid="cv-clinic-toolbar"
       className={cn(
-        'sticky top-0 z-50 flex min-h-[52px] shrink-0 items-center overflow-x-hidden border-b border-white/[0.07] bg-[#0F1512] px-3 sm:px-4',
+        'sticky top-0 z-50 flex min-h-[52px] shrink-0 items-center overflow-x-hidden border-b border-border-subtle bg-bg-surface px-3 sm:px-4',
         allowWrap && 'min-h-0 flex-wrap gap-y-2 py-2',
       )}
     >
@@ -214,10 +214,10 @@ export function CvClinicToolbar({
               {v.libraryLink ? (
                 <Link
                   href={libraryHref}
-                  className="inline-flex h-8 shrink-0 items-center gap-0.5 rounded-lg pl-0.5 pr-1.5 py-0 text-[12px] font-medium text-white/45 transition hover:bg-white/[0.04] hover:text-white/80 sm:pr-2 sm:text-[13px]"
-                  title="Back to resume library"
+                  className="inline-flex h-8 shrink-0 items-center gap-0.5 rounded-lg pl-0.5 pr-1.5 py-0 text-[12px] font-medium text-text-tertiary transition hover:bg-bg-hover hover:text-text-secondary sm:pr-2 sm:text-[13px]"
+                  title="Back to CV library"
                 >
-                  <ChevronLeft className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+                  <ChevronLeft className="h-3.5 w-3.5 shrink-0 text-accent-text" />
                   <span className="hidden sm:inline">Library</span>
                 </Link>
               ) : null}
@@ -230,7 +230,7 @@ export function CvClinicToolbar({
                   }}
                   className={cvProfileSelectClassName}
                   style={{ colorScheme: 'dark' }}
-                  aria-label="Current resume"
+                  aria-label="Current CV"
                 >
                   {profileOptions.map((p) => (
                     <option
@@ -248,13 +248,13 @@ export function CvClinicToolbar({
                 <button
                   type="button"
                   onClick={onNewCv}
-                  className="inline-flex h-8 shrink-0 items-center rounded-lg border border-white/[0.15] bg-transparent px-2.5 text-[12px] font-medium text-white/80 transition hover:border-white/30 hover:bg-white/[0.04] sm:px-3 sm:text-[13px]"
+                  className="inline-flex h-8 shrink-0 items-center rounded-lg border border-border-default bg-transparent px-2.5 text-[12px] font-medium text-text-secondary transition hover:border-border-strong hover:bg-bg-hover sm:px-3 sm:text-[13px]"
                 >
                   + New resume
                 </button>
               ) : null}
               {!showLeftCluster && leftTitle ? (
-                <p className="min-w-0 truncate text-[11px] font-medium uppercase tracking-wide text-white/40">
+                <p className="min-w-0 truncate text-[11px] font-medium uppercase tracking-wide text-text-tertiary">
                   {leftTitle}
                 </p>
               ) : !showLeftCluster ? (
@@ -274,19 +274,21 @@ export function CvClinicToolbar({
               'basis-full justify-start min-[900px]:basis-auto min-[900px]:justify-center',
           )}
         >
-          <ToolbarToolButton
-            label="Template"
-            compact={compactToolLabels}
-            onClick={onOpenTemplatePicker}
-          >
-            <LayoutTemplate className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
-          </ToolbarToolButton>
+          <span data-tour="cv-template" className="inline-flex">
+            <ToolbarToolButton
+              label="Design"
+              compact={compactToolLabels}
+              onClick={onOpenTemplatePicker}
+            >
+              <LayoutTemplate className="h-3.5 w-3.5 shrink-0 text-accent-text" />
+            </ToolbarToolButton>
+          </span>
           <ToolbarToolButton
             label="Sections"
             compact={compactToolLabels}
             onClick={onOpenSectionModal}
           >
-            <ListPlus className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+            <ListPlus className="h-3.5 w-3.5 shrink-0 text-accent-text" />
           </ToolbarToolButton>
           <ToolbarToolButton
             label="Scan"
@@ -296,12 +298,12 @@ export function CvClinicToolbar({
             className={compactToolLabels ? 'gap-0' : undefined}
           >
             {isAtsScanPending ? (
-              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[#00C9B1]" />
+              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-accent-text" />
             ) : (
-              <FileSearch className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+              <FileSearch className="h-3.5 w-3.5 shrink-0 text-accent-text" />
             )}
             {!compactToolLabels ? (
-              <InfoHint text="Runs a full resume scan with formatting recommendations and suggestions — heuristic checks, not a guarantee of employer ATS behavior." />
+              <InfoHint text="Runs a full CV scan with formatting recommendations and suggestions — heuristic checks, not a guarantee of employer ATS behavior." />
             ) : null}
           </ToolbarToolButton>
           <div className="relative" ref={moreRef}>
@@ -311,73 +313,73 @@ export function CvClinicToolbar({
               onClick={() => setMoreOpen((o) => !o)}
               aria-expanded={moreOpen}
             >
-              <MoreHorizontal className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+              <MoreHorizontal className="h-3.5 w-3.5 shrink-0 text-accent-text" />
             </ToolbarToolButton>
             {moreOpen && moreMenuPos
               ? createPortal(
                   <div
                     data-cv-toolbar-more-menu
                     role="menu"
-                    className="fixed z-[500] min-w-[11rem] rounded-xl border border-white/[0.1] bg-[#0F1512] py-1 shadow-xl"
+                    className="fixed z-[500] min-w-[11rem] rounded-xl border border-border-subtle bg-bg-surface py-1 shadow-xl"
                     style={{ top: moreMenuPos.top, left: moreMenuPos.left }}
                   >
                     {onOpenSectionOrder ? (
                       <button
                         type="button"
                         disabled={isSectionOrderPending}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-white/85 hover:bg-white/[0.04] disabled:opacity-40"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-text-primary hover:bg-bg-hover disabled:opacity-40"
                         onClick={() => {
                           setMoreOpen(false);
                           onOpenSectionOrder();
                         }}
                       >
-                        <Rows3 className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+                        <Rows3 className="h-3.5 w-3.5 shrink-0 text-accent-text" />
                         Reorder
                       </button>
                     ) : null}
                     <button
                       type="button"
                       disabled={isSpellChecking}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-white/85 hover:bg-white/[0.04] disabled:opacity-40"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-text-primary hover:bg-bg-hover disabled:opacity-40"
                       onClick={() => {
                         setMoreOpen(false);
                         onSpellCheck();
                       }}
                     >
                       {isSpellChecking ? (
-                        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[#00C9B1]" />
+                        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-accent-text" />
                       ) : (
-                        <FileText className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+                        <FileText className="h-3.5 w-3.5 shrink-0 text-accent-text" />
                       )}
                       Spelling
                     </button>
                     <button
                       type="button"
                       disabled={!canUndo}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-white/85 hover:bg-white/[0.04] disabled:opacity-40"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-text-primary hover:bg-bg-hover disabled:opacity-40"
                       onClick={() => {
                         setMoreOpen(false);
                         onUndo?.();
                       }}
                     >
-                      <Undo2 className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+                      <Undo2 className="h-3.5 w-3.5 shrink-0 text-accent-text" />
                       Undo{' '}
-                      <span className="ml-auto text-[10px] text-white/35">
+                      <span className="ml-auto text-[10px] text-text-tertiary">
                         Ctrl+Z
                       </span>
                     </button>
                     <button
                       type="button"
                       disabled={!canRedo}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-white/85 hover:bg-white/[0.04] disabled:opacity-40"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-text-primary hover:bg-bg-hover disabled:opacity-40"
                       onClick={() => {
                         setMoreOpen(false);
                         onRedo?.();
                       }}
                     >
-                      <Redo2 className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+                      <Redo2 className="h-3.5 w-3.5 shrink-0 text-accent-text" />
                       Redo{' '}
-                      <span className="ml-auto text-[10px] text-white/35">
+                      <span className="ml-auto text-[10px] text-text-tertiary">
                         Ctrl+Y
                       </span>
                     </button>
@@ -385,13 +387,13 @@ export function CvClinicToolbar({
                       <button
                         type="button"
                         role="menuitem"
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-white/85 hover:bg-white/[0.04]"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-text-primary hover:bg-bg-hover"
                         onClick={() => {
                           setMoreOpen(false);
                           onOpenVersionHistory();
                         }}
                       >
-                        <History className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+                        <History className="h-3.5 w-3.5 shrink-0 text-accent-text" />
                         Version history
                       </button>
                     ) : null}
@@ -418,29 +420,33 @@ export function CvClinicToolbar({
             </div>
           ) : null}
           {v.pdfDocx ? (
-            <>
+            <span
+              data-tour="cv-download"
+              className="inline-flex items-center gap-1.5"
+            >
               <button
                 type="button"
-                className="inline-flex h-[30px] shrink-0 items-center gap-0.5 rounded-[7px] border border-[#00C9B1]/30 bg-[#00C9B1]/12 px-2.5 text-[11px] font-semibold tracking-wide text-[#00C9B1] transition hover:brightness-110 disabled:pointer-events-none disabled:opacity-40 sm:gap-1 sm:px-3 sm:text-[12px]"
+                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-accent-solid px-3.5 text-[13px] font-semibold text-text-on-accent transition-colors hover:bg-accent-solid-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus disabled:pointer-events-none disabled:opacity-50"
                 disabled={isExportPending}
                 onClick={onExportPdf}
               >
                 {isExportPending ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                 ) : (
-                  <FileDown className="h-3.5 w-3.5" />
+                  <FileDown className="h-4 w-4" aria-hidden />
                 )}
-                PDF
+                Download PDF
               </button>
               <button
                 type="button"
-                className="inline-flex h-[30px] shrink-0 items-center gap-0.5 rounded-[7px] border border-white/[0.14] bg-white/[0.06] px-2.5 text-[11px] font-semibold tracking-wide text-white/75 transition hover:brightness-110 disabled:pointer-events-none disabled:opacity-40 sm:gap-1 sm:px-3 sm:text-[12px]"
+                title="Download as a Word document"
+                className="inline-flex h-9 shrink-0 items-center rounded-xl border border-border-default bg-bg-surface px-3 text-[13px] font-semibold text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus disabled:pointer-events-none disabled:opacity-50"
                 disabled={isExportPending}
                 onClick={onExportDocx}
               >
-                DOCX
+                Word
               </button>
-            </>
+            </span>
           ) : null}
           {showInsightsToggle ? (
             <button
@@ -448,15 +454,15 @@ export function CvClinicToolbar({
               className={cn(
                 ghostToolClass,
                 'border border-transparent',
-                !rightPanelCollapsed && 'bg-[#00C9B1]/10 text-[#00C9B1]',
+                !rightPanelCollapsed && 'bg-accent-subtle text-accent-text',
               )}
               onClick={onToggleInsights}
               title={rightPanelCollapsed ? 'Show insights' : 'Hide insights'}
             >
               {rightPanelCollapsed ? (
-                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-accent-text" />
               ) : (
-                <ChevronLeft className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+                <ChevronLeft className="h-3.5 w-3.5 shrink-0 text-accent-text" />
               )}
               Insights
             </button>
@@ -464,26 +470,26 @@ export function CvClinicToolbar({
           {builderSaveStatus !== 'idle' ? (
             <span
               data-testid="cv-builder-save-status"
-              className="shrink-0 text-[11px] text-white/40"
+              className="shrink-0 text-[11px] text-text-tertiary"
             >
               {builderSaveStatus === 'saving' ? (
                 <span className="inline-flex items-center gap-1">
                   <Loader2 className="h-3 w-3 animate-spin" /> Saving…
                 </span>
               ) : builderSaveStatus === 'saved' ? (
-                <span className="text-[#22C55E]">Saved</span>
+                <span className="text-success-text">Saved</span>
               ) : builderSaveStatus === 'dirty' ? (
-                <span className="text-amber-400/90">Unsaved</span>
+                <span className="text-warning-text">Unsaved</span>
               ) : builderSaveStatus === 'error' ? (
-                <span className="text-rose-400/90">Save error</span>
+                <span className="text-danger-text">Save error</span>
               ) : null}
             </span>
           ) : (
             <span
-              className="relative hidden shrink-0 pl-2.5 text-[11px] text-white/30 before:absolute before:left-0 before:top-1/2 before:h-1.5 before:w-1.5 before:-translate-y-1/2 before:rounded-full before:bg-[#00C9B1]/80 before:content-[''] sm:inline"
+              className="relative hidden shrink-0 pl-2.5 text-[11px] text-text-disabled before:absolute before:left-0 before:top-1/2 before:h-1.5 before:w-1.5 before:-translate-y-1/2 before:rounded-full before:bg-accent-subtle before:content-[''] sm:inline"
               data-testid="cv-toolbar-autosave-idle"
             >
-              Auto-save on
+              All changes saved
             </span>
           )}
         </div>

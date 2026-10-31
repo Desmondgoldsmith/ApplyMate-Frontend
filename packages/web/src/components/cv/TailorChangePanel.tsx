@@ -141,7 +141,7 @@ function TailorSuggestionCard({
       <Badge variant="amber">Pending</Badge>
     ) : entry.status === 'accepted' ? (
       <Badge
-        className="border-emerald-400/30 bg-emerald-500/15 text-emerald-300"
+        className="border-success-border bg-success-subtle text-success-text"
         variant="teal"
       >
         Accepted
@@ -151,7 +151,7 @@ function TailorSuggestionCard({
     );
 
   return (
-    <article className="rounded-xl border border-white/[0.08] bg-white/[0.02]">
+    <article className="rounded-xl border border-border-subtle bg-bg-surface">
       <button
         type="button"
         className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
@@ -159,11 +159,11 @@ function TailorSuggestionCard({
         aria-expanded={expanded}
       >
         <div>
-          <p className="text-[14px] font-semibold text-white">
+          <p className="text-[14px] font-semibold text-text-primary">
             {sectionTitle(entry.sectionType)}
           </p>
           {entry.summary?.trim() ? (
-            <p className="mt-0.5 line-clamp-2 text-[12px] text-white/45">
+            <p className="mt-0.5 line-clamp-2 text-[12px] text-text-tertiary">
               {entry.summary.trim()}
             </p>
           ) : null}
@@ -172,7 +172,7 @@ function TailorSuggestionCard({
           {statusBadge}
           <ChevronDown
             className={cn(
-              'h-4 w-4 text-white/40 transition',
+              'h-4 w-4 text-text-tertiary transition',
               expanded && 'rotate-180',
             )}
           />
@@ -180,7 +180,7 @@ function TailorSuggestionCard({
       </button>
 
       {expanded ? (
-        <div className="mt-3 space-y-3 border-t border-white/[0.06] px-4 pb-4 pt-3">
+        <div className="mt-3 space-y-3 border-t border-border-subtle px-4 pb-4 pt-3">
           <TailorChangeHighlights
             sectionType={entry.sectionType}
             beforeRaw={entry.before}
@@ -194,7 +194,7 @@ function TailorSuggestionCard({
             <div className="flex gap-2">
               <Button
                 type="button"
-                className="flex-1 gap-1.5 bg-emerald-600 text-white hover:bg-emerald-500"
+                className="flex-1 gap-1.5 bg-emerald-600 text-text-primary hover:bg-emerald-500"
                 disabled={accepting || rejecting || reverting}
                 onClick={() => void accept()}
               >
@@ -208,7 +208,7 @@ function TailorSuggestionCard({
               <Button
                 type="button"
                 variant="ghost"
-                className="flex-1 gap-1.5 border border-rose-400/30 text-rose-300"
+                className="flex-1 gap-1.5 border border-danger-border text-danger-text"
                 disabled={accepting || rejecting || reverting}
                 onClick={() => void reject()}
               >
@@ -224,7 +224,7 @@ function TailorSuggestionCard({
             <Button
               type="button"
               variant="ghost"
-              className="gap-1.5 border border-amber-400/35 text-amber-100"
+              className="gap-1.5 border border-warning-border text-warning-text"
               disabled={accepting || rejecting || reverting}
               onClick={() => void revert()}
             >
@@ -291,17 +291,17 @@ export function TailorChangePanel({
   return (
     <div
       className={cn(
-        'flex h-full min-h-0 flex-col rounded-2xl border border-white/[0.08] bg-[#090C0D]',
+        'flex h-full min-h-0 flex-col rounded-2xl border border-border-subtle bg-[#090C0D]',
         className,
       )}
     >
-      <header className="shrink-0 border-b border-white/[0.08] px-4 py-3">
-        <h2 className="text-[15px] font-semibold text-white">
+      <header className="shrink-0 border-b border-border-subtle px-4 py-3">
+        <h2 className="text-[15px] font-semibold text-text-primary">
           Tailor suggestions
         </h2>
-        <p className="mt-0.5 text-[12px] text-white/45">{titleLine}</p>
+        <p className="mt-0.5 text-[12px] text-text-tertiary">{titleLine}</p>
         {draft ? (
-          <p className="mt-2 text-[11px] font-medium text-[#00C9B1]">
+          <p className="mt-2 text-[11px] font-medium text-accent-text">
             {pendingCount} pending · accept updates your CV instantly
           </p>
         ) : null}
@@ -309,7 +309,7 @@ export function TailorChangePanel({
 
       <div className="app-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
         {!draft ? (
-          <p className="text-sm text-white/45">No tailor draft loaded.</p>
+          <p className="text-sm text-text-tertiary">No tailor draft loaded.</p>
         ) : (
           <>
             <PreTailorGapChecklist
@@ -318,7 +318,7 @@ export function TailorChangePanel({
               plannedSections={draft.plannedSections}
             />
             {sorted.length === 0 ? (
-              <p className="text-sm text-white/45">
+              <p className="text-sm text-text-tertiary">
                 No section suggestions in this draft.
               </p>
             ) : (

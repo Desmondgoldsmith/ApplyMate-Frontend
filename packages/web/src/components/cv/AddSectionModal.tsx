@@ -381,11 +381,11 @@ export function AddSectionModal({
       titleClassName="text-2xl font-extrabold tracking-tight"
       description="Core sections are always on your CV. Optional blocks can be added or removed."
       scrollBody
-      className="max-w-3xl border border-white/[0.08] bg-[#1a1a1a] shadow-2xl"
+      className="max-w-3xl border border-border-subtle bg-[#1a1a1a] shadow-2xl"
       layerZIndex={layerZIndex}
     >
       <div className="pr-1">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/40">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-text-tertiary">
           Core
         </p>
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-4">
@@ -431,12 +431,12 @@ export function AddSectionModal({
                         setBusy(null);
                       }
                     }}
-                    className="h-8 w-full rounded-lg border border-[#2DD4BF]/70 px-3 text-[11px] font-semibold text-[#2DD4BF] hover:bg-[#2DD4BF]/10"
+                    className="h-8 w-full rounded-lg border border-accent-border px-3 text-[11px] font-semibold text-accent-text hover:bg-accent-subtle"
                   >
                     {busy === s.id ? 'Restoring…' : 'Restore section'}
                   </Button>
                 ) : (
-                  <p className="text-[11px] font-medium text-white/45">
+                  <p className="text-[11px] font-medium text-text-tertiary">
                     Always included in your CV
                   </p>
                 )
@@ -445,7 +445,7 @@ export function AddSectionModal({
           ))}
         </div>
 
-        <p className="mt-8 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/40">
+        <p className="mt-8 text-[10px] font-semibold uppercase tracking-[0.22em] text-text-tertiary">
           Optional
         </p>
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -461,7 +461,7 @@ export function AddSectionModal({
                 preview={PREVIEW_BY_KEY[s.type] ?? PREVIEW_BY_KEY.custom}
                 customBody={
                   on ? (
-                    <p className="text-[11px] font-medium text-white/45">
+                    <p className="text-[11px] font-medium text-text-tertiary">
                       Already available in your CV preview
                     </p>
                   ) : s.type === 'custom' ? (
@@ -471,14 +471,14 @@ export function AddSectionModal({
                         value={customSectionName}
                         onChange={(e) => setCustomSectionName(e.target.value)}
                         placeholder="Section name (e.g. Conferences)"
-                        className="w-full rounded-md border border-white/[0.12] bg-[#0C0F0F]/90 px-2 py-1.5 text-[11px] text-white placeholder:text-white/35 focus:border-[#2DD4BF]/70 focus:outline-none"
+                        className="w-full rounded-md border border-border-default bg-bg-surface px-2 py-1.5 text-[11px] text-text-primary placeholder:text-text-tertiary focus:border-accent-border focus:outline-none"
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         disabled={busy !== null}
                         onClick={() => void add(s.type)}
-                        className="h-8 w-full rounded-lg border border-[#2DD4BF]/70 px-4 text-xs font-semibold text-[#2DD4BF] hover:bg-[#2DD4BF]/10"
+                        className="h-8 w-full rounded-lg border border-accent-border px-4 text-xs font-semibold text-accent-text hover:bg-accent-subtle"
                       >
                         {busy === s.type ? 'Adding…' : 'Create custom section'}
                       </Button>
@@ -489,7 +489,7 @@ export function AddSectionModal({
                       variant="ghost"
                       disabled={busy !== null}
                       onClick={() => void add(s.type)}
-                      className="h-8 w-full rounded-lg border border-[#2DD4BF]/70 px-4 text-xs font-semibold text-[#2DD4BF] hover:bg-[#2DD4BF]/10"
+                      className="h-8 w-full rounded-lg border border-accent-border px-4 text-xs font-semibold text-accent-text hover:bg-accent-subtle"
                     >
                       {busy === s.type ? 'Adding…' : `Add ${s.label}`}
                     </Button>

@@ -54,13 +54,13 @@ function CvProfilesPageInner() {
     >
       <div className="flex min-w-0 flex-wrap items-end justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#00C9B1]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-accent-text">
             CV profiles
           </p>
-          <h2 className="mt-1 text-2xl font-extrabold text-white">
+          <h2 className="mt-1 text-2xl font-extrabold text-text-primary">
             All your CVs
           </h2>
-          <p className="mt-1 text-sm text-white/50">
+          <p className="mt-1 text-sm text-text-tertiary">
             {isBootstrapping
               ? 'Loading…'
               : totalShown > 0
@@ -78,11 +78,11 @@ function CvProfilesPageInner() {
       </div>
 
       {listInconsistent ? (
-        <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-xs leading-relaxed text-amber-100/90">
+        <div className="rounded-xl border border-warning-border bg-warning-subtle px-4 py-3 text-xs leading-relaxed text-warning-text">
           <p className="font-semibold text-amber-50">List mismatch</p>
-          <p className="mt-1 text-amber-100/80">
+          <p className="mt-1 text-warning-text">
             GET{' '}
-            <code className="rounded bg-black/30 px-1 py-0.5 text-[11px]">
+            <code className="rounded bg-bg-sunken px-1 py-0.5 text-[11px]">
               /cv/profiles
             </code>{' '}
             returned no rows, but your primary CV exists. Re-running onboarding
@@ -90,9 +90,9 @@ function CvProfilesPageInner() {
             can still edit in{' '}
             <Link
               href="/dashboard/cv"
-              className="font-semibold text-[#00C9B1] hover:underline"
+              className="font-semibold text-accent-text hover:underline"
             >
-              CV Clinic
+              CV editor
             </Link>
             .
           </p>
@@ -101,19 +101,19 @@ function CvProfilesPageInner() {
 
       {!isBootstrapping && totalShown > 0 && selectedId && summaryRow ? (
         <GlowCard
-          className="min-w-0 border border-[rgba(0,201,177,0.15)]"
+          className="min-w-0 border border-accent-border"
           contentClassName="min-w-0 p-5 sm:p-6"
         >
           {showProfilePicker ? (
             <label className="mb-4 block min-w-0">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-white/45">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-text-tertiary">
                 Active profile
               </span>
               <div className="relative mt-1.5 min-w-0">
                 <select
                   value={selectedId}
                   onChange={(e) => setSelectedId(e.target.value)}
-                  className="w-full min-w-0 appearance-none rounded-xl border border-white/15 bg-[#0C0F0F] py-2.5 pl-3 pr-9 text-sm font-medium text-white outline-none focus:border-[#00C9B1]/50"
+                  className="w-full min-w-0 appearance-none rounded-xl border border-border-default bg-bg-surface py-2.5 pl-3 pr-9 text-sm font-medium text-text-primary outline-none focus:border-accent-border"
                 >
                   {displayRows.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -123,14 +123,14 @@ function CvProfilesPageInner() {
                   ))}
                 </select>
                 <ChevronDown
-                  className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40"
+                  className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary"
                   aria-hidden
                 />
               </div>
             </label>
           ) : null}
 
-          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-white/45">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-text-tertiary">
             Preview
           </p>
           {detailQ.isLoading && !detailQ.data ? (
@@ -140,10 +140,10 @@ function CvProfilesPageInner() {
             </div>
           ) : (
             <>
-              <p className="mt-2 break-words text-lg font-bold text-white">
+              <p className="mt-2 break-words text-lg font-bold text-text-primary">
                 {summaryRow.name}
               </p>
-              <p className="mt-1 break-words text-sm text-white/55">
+              <p className="mt-1 break-words text-sm text-text-tertiary">
                 {detailQ.data?.profile?.headline?.trim() ||
                   summaryRow.headline?.trim() ||
                   'No headline yet'}
@@ -151,23 +151,23 @@ function CvProfilesPageInner() {
               {(
                 detailQ.data?.profile?.location ?? summaryRow.location
               )?.trim() ? (
-                <p className="mt-1 break-words text-xs text-white/45">
+                <p className="mt-1 break-words text-xs text-text-tertiary">
                   {(detailQ.data?.profile?.location ??
                     summaryRow.location)!.trim()}
                 </p>
               ) : null}
-              <p className="mt-2 break-words text-xs text-white/45">
+              <p className="mt-2 break-words text-xs text-text-tertiary">
                 {summaryRow.score != null && Number.isFinite(summaryRow.score)
                   ? `Score ${summaryRow.score}/100`
                   : 'Not scored yet'}
                 {' · '}
                 Template:{' '}
-                <span className="text-white/70">
+                <span className="text-text-secondary">
                   {summaryRow.template ?? '—'}
                 </span>
                 {' · '}
                 Sections:{' '}
-                <span className="text-white/70">
+                <span className="text-text-secondary">
                   {detailQ.data?.sections?.length ?? '—'}
                 </span>
                 {' · '}
@@ -176,7 +176,7 @@ function CvProfilesPageInner() {
               <div className="mt-4 flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap">
                 <Link
                   href={`/dashboard/cv?profileId=${encodeURIComponent(selectedId)}`}
-                  className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-[#00C9B1] px-4 py-2.5 text-xs font-semibold text-[#080A0A] transition hover:bg-[#00C9B1] sm:w-auto"
+                  className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-accent-solid px-4 py-2.5 text-xs font-semibold text-text-on-accent transition hover:bg-accent-solid sm:w-auto"
                 >
                   Open in CV builder →
                 </Link>
@@ -184,7 +184,7 @@ function CvProfilesPageInner() {
                   type="button"
                   variant="ghost"
                   disabled={pdfPending}
-                  className="inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl border border-[rgba(0,201,177,0.35)] px-4 py-2.5 text-xs font-semibold text-[#00C9B1] hover:bg-[rgba(0,201,177,0.12)] sm:w-auto"
+                  className="inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl border border-accent-border px-4 py-2.5 text-xs font-semibold text-accent-text hover:bg-accent-subtle sm:w-auto"
                   onClick={() => {
                     setPdfPending(true);
                     void openCvPdfInNewTab(

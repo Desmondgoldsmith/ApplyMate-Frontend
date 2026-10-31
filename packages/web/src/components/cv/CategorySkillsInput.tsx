@@ -56,13 +56,15 @@ export const CategorySkillsInput = memo(function CategorySkillsInput({
 
   return (
     <div>
-      <label className="mb-1 block text-xs text-white/45">{label}</label>
-      <p className="mb-1.5 text-[10px] leading-snug text-white/30">{hint}</p>
+      <label className="mb-1 block text-xs text-text-tertiary">{label}</label>
+      <p className="mb-1.5 text-[10px] leading-snug text-text-disabled">
+        {hint}
+      </p>
       <input
         type="text"
         className={cn(
-          'w-full rounded-lg border border-[rgba(255,255,255,0.10)] bg-[#0c1010] px-3 py-2 text-sm text-white outline-none',
-          'placeholder:text-white/30 focus:border-[#00C9B1]/50',
+          'w-full rounded-lg border border-border-subtle bg-bg-surface px-3 py-2 text-sm text-text-primary outline-none',
+          'placeholder:text-text-tertiary focus:border-accent-border',
         )}
         value={text}
         placeholder="e.g. React, TypeScript, AWS"
@@ -89,12 +91,12 @@ export const CategorySkillsInput = memo(function CategorySkillsInput({
           {skills.map((s, i) => (
             <span
               key={`${s}-${i}`}
-              className="inline-flex items-center gap-1 rounded-full bg-[#00C9B1]/15 px-2 py-0.5 text-[11px] text-[#00C9B1]"
+              className="inline-flex items-center gap-1 rounded-full bg-accent-subtle px-2 py-0.5 text-[11px] text-accent-text"
             >
-              <CvRichTextSpan html={s} className="text-[#00C9B1]" />
+              <CvRichTextSpan html={s} className="text-accent-text" />
               <button
                 type="button"
-                className="text-white/50 hover:text-white"
+                className="text-text-tertiary hover:text-text-primary"
                 onClick={() => onChange(skills.filter((x) => x !== s))}
                 aria-label={`Remove ${skillLabelForCommaField(s)}`}
               >

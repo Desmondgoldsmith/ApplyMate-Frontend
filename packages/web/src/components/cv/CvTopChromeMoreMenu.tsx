@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils';
 
 const MENU_MIN_PX = 192;
 const MENU_ITEM_CLASS =
-  'flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-white/85 transition hover:bg-white/[0.04]';
+  'flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-text-primary transition hover:bg-bg-hover';
 
 type CvTopChromeMoreMenuProps = {
   targetId: string;
@@ -174,7 +174,7 @@ export function CvTopChromeMoreMenu({
           className={MENU_ITEM_CLASS}
           onClick={() => closeAnd(onSelect)}
         >
-          <Icon className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+          <Icon className="h-3.5 w-3.5 shrink-0 text-accent-text" />
           {label}
         </button>
       ))}
@@ -187,7 +187,7 @@ export function CvTopChromeMoreMenu({
           title="Undo (Ctrl+Z)"
           onClick={() => closeAnd(onUndo)}
         >
-          <Undo2 className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+          <Undo2 className="h-3.5 w-3.5 shrink-0 text-accent-text" />
           Undo
         </button>
       ) : null}
@@ -200,7 +200,7 @@ export function CvTopChromeMoreMenu({
           title="Redo (Ctrl+Y)"
           onClick={() => closeAnd(onRedo)}
         >
-          <Redo2 className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+          <Redo2 className="h-3.5 w-3.5 shrink-0 text-accent-text" />
           Redo
         </button>
       ) : null}
@@ -212,9 +212,9 @@ export function CvTopChromeMoreMenu({
         onClick={() => closeAnd(onTriggerSpellCheck)}
       >
         {spellChecking ? (
-          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[#00C9B1]" />
+          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-accent-text" />
         ) : (
-          <FileText className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+          <FileText className="h-3.5 w-3.5 shrink-0 text-accent-text" />
         )}
         Check spelling
       </button>
@@ -240,9 +240,9 @@ export function CvTopChromeMoreMenu({
         }}
       >
         {runScan.isPending ? (
-          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[#00C9B1]" />
+          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-accent-text" />
         ) : (
-          <FileSearch className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+          <FileSearch className="h-3.5 w-3.5 shrink-0 text-accent-text" />
         )}
         CV scan
       </button>
@@ -259,21 +259,21 @@ export function CvTopChromeMoreMenu({
           type="button"
           variant="ghost"
           className={cn(
-            'h-8 shrink-0 gap-1 border border-white/10 px-2.5 text-xs text-white/80',
+            'h-8 shrink-0 gap-1 border border-border-subtle px-2.5 text-xs text-text-secondary',
             inlineMenu && 'w-full justify-start',
           )}
           aria-expanded={open}
           aria-haspopup="menu"
           onClick={() => setOpen((o) => !o)}
         >
-          <MoreHorizontal className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+          <MoreHorizontal className="h-3.5 w-3.5 shrink-0 text-accent-text" />
           More
         </Button>
         {inlineMenu && open ? (
           <div
             data-cv-mobile-more-menu
             role="menu"
-            className="mt-1.5 w-full overflow-hidden rounded-xl border border-white/10 bg-[#111616] py-1 shadow-inner"
+            className="mt-1.5 w-full overflow-hidden rounded-xl border border-border-subtle bg-bg-sunken py-1 shadow-inner"
           >
             {menuButtons}
           </div>
@@ -284,7 +284,7 @@ export function CvTopChromeMoreMenu({
             <div
               data-cv-mobile-more-menu
               role="menu"
-              className="fixed z-[500] min-w-[11.5rem] rounded-xl border border-white/10 bg-[#0C0F0F] py-1 shadow-[0_12px_40px_rgba(0,0,0,0.55)] ring-1 ring-black/30"
+              className="fixed z-[500] min-w-[11.5rem] rounded-xl border border-border-subtle bg-bg-surface py-1 shadow-[0_12px_40px_rgba(0,0,0,0.55)] ring-1 ring-black/30"
               style={{ top: menuPos.top, left: menuPos.left }}
             >
               {menuButtons}

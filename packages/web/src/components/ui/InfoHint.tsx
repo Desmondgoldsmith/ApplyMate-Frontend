@@ -37,8 +37,8 @@ type InfoHintProps = {
 
 const VARIANT_PANEL: Record<NonNullable<InfoHintProps['variant']>, string> = {
   accent:
-    'border-[#00C9B1]/50 bg-[#051815] text-[#e6fdf9]/95 shadow-[0_10px_40px_rgba(0,201,177,0.18)] ring-1 ring-[#00C9B1]/20',
-  muted: 'border-white/12 bg-[#0b1111] text-white/75 shadow-xl',
+    'border-accent-border bg-bg-surface text-text-primary shadow-[0_10px_40px_rgba(0,201,177,0.18)] ring-1 ring-border-focus',
+  muted: 'border-border-default bg-[#0b1111] text-text-secondary shadow-xl',
 };
 
 const CLOSE_DELAY_MS = 140;
@@ -217,11 +217,11 @@ export function InfoHint({
             }
           }}
           className={cn(
-            'inline-flex items-center justify-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C9B1]/40',
+            'inline-flex items-center justify-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-border-focus',
             useSheet ? 'h-7 w-7 min-h-[28px] min-w-[28px]' : 'h-4.5 w-4.5',
             variant === 'accent'
-              ? 'text-[#7ef4e6]/90 hover:text-[#00C9B1]'
-              : 'text-white/45 hover:text-[#00C9B1]',
+              ? 'text-accent-text hover:text-accent-text'
+              : 'text-text-tertiary hover:text-accent-text',
             buttonClassName,
           )}
         >
@@ -240,7 +240,7 @@ export function InfoHint({
           scrollBody
           className="max-w-md"
         >
-          <p className="whitespace-pre-line text-sm leading-relaxed text-white/70">
+          <p className="whitespace-pre-line text-sm leading-relaxed text-text-secondary">
             {text}
           </p>
         </Modal>

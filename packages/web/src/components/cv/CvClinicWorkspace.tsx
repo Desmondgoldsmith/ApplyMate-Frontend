@@ -137,6 +137,7 @@ import {
   toolbarVisibilityForSurface,
   type CvBuilderSurfaceContext,
 } from '@/lib/cvBuilderSurface';
+import { getFormatRecommendation } from '@/lib/cvFormatRecommendation';
 import { truthfulnessFieldsFromResponse } from '@/lib/cvTruthfulnessUi';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -144,43 +145,6 @@ import { useAuthStore } from '@/store/useAuthStore';
 const CV_CLINIC_RIGHT_PCT_KEY = 'cv_clinic_right_pct';
 const CV_RIGHT_PANEL_COLLAPSED_KEY = 'applymate:cv:rightPanelCollapsed';
 const ONBOARDING_CV_EDIT_HINT_KEY = 'applymate_onb_cv_edit_hint_v1';
-
-function getFormatRecommendation(expCount: number): {
-  label: string;
-  recommended: CvTemplateId;
-  reason: string;
-} {
-  if (expCount === 0) {
-    return {
-      label: 'Student / No Experience',
-      recommended: 'modern',
-      reason:
-        'The Modern template leads with skills and education, ideal when experience is limited',
-    };
-  }
-  if (expCount <= 2) {
-    return {
-      label: 'Early Career (0-3 years)',
-      recommended: 'modern',
-      reason:
-        'Hybrid format recommended: showcase skills prominently alongside your experience',
-    };
-  }
-  if (expCount <= 5) {
-    return {
-      label: 'Mid Career (3-8 years)',
-      recommended: 'classic',
-      reason:
-        'Chronological format: your experience depth is your strongest asset',
-    };
-  }
-  return {
-    label: 'Senior (8+ years)',
-    recommended: 'professional',
-    reason:
-      'Professional format: structured layout that showcases seniority and specialisation',
-  };
-}
 
 export type CvClinicWorkspaceProps = {
   /** clinic = dashboard CV Clinic; onboarding = resume step; tailoring = job tailor review. */
@@ -512,7 +476,7 @@ export function CvClinicWorkspace({
         return;
       }
       toast.info(
-        'Global assistant is in Resume Clinic. Use the section assistant on each block here.',
+        'Global assistant is in CV editor. Use the section assistant on each block here.',
       );
     },
     [showGlobalAssistant, toast],
@@ -923,8 +887,12 @@ export function CvClinicWorkspace({
   }, [sections]);
 
   const formatRecommendation = useMemo(
-    () => getFormatRecommendation(experienceItemCount),
-    [experienceItemCount],
+    () =>
+      getFormatRecommendation({
+        careerStage: displayScoreBreakdown?.careerStage,
+        experienceCount: experienceItemCount,
+      }),
+    [displayScoreBreakdown?.careerStage, experienceItemCount],
   );
   const isOnRecommendedTemplate =
     selectedTemplate === formatRecommendation.recommended;
@@ -1057,9 +1025,7 @@ export function CvClinicWorkspace({
             ),
             nonce: Date.now(),
           });
-          toast.success(
-            commitResult.message || 'Changes saved to your resume.',
-          );
+          toast.success(commitResult.message || 'Changes saved to your CV.');
         } catch (e) {
           toast.error(
             getApiErrorMessage(e) ||
@@ -1783,7 +1749,7 @@ export function CvClinicWorkspace({
         queryFn: () => api.cv.getSuggestions(profileId, false),
       });
       const n = impr.pendingSuggestionsCount ?? impr.improvements.length;
-      toast.success(`Resume scan complete: ${n} suggestions found`);
+      toast.success(`CV scan complete: ${n} suggestions found`);
     } catch (e) {
       toast.error(getApiErrorMessage(e));
     }
@@ -1871,7 +1837,7 @@ export function CvClinicWorkspace({
     isOnboarding && onBack ? (
       <button
         type="button"
-        className="group flex shrink-0 cursor-pointer items-center gap-1.5 text-left text-[13px] text-[rgba(255,255,255,0.45)] transition-colors duration-200 hover:text-[rgba(255,255,255,0.8)]"
+        className="group flex shrink-0 cursor-pointer items-center gap-1.5 text-left text-[13px] text-text-tertiary transition-colors duration-200 hover:text-text-secondary"
         onClick={onBack}
       >
         <ArrowLeft
@@ -1895,7 +1861,7 @@ export function CvClinicWorkspace({
         </Button>
         <button
           type="button"
-          className="h-8 shrink-0 px-2 text-[11px] text-white/45 transition hover:text-white/80"
+          className="h-8 shrink-0 px-2 text-[11px] text-text-tertiary transition hover:text-text-secondary"
           onClick={onSkip}
         >
           Skip
@@ -1959,7 +1925,7 @@ export function CvClinicWorkspace({
           recruiterScanClarification
             ? 'Recruiter Scan · role context'
             : globalAssistantClarification
-              ? 'Global assistant · entire resume or findings flow'
+              ? 'Global assistant · entire CV or findings flow'
               : assistantClarification
                 ? `Section assistant · ${assistantChangedFieldLabel(assistantClarification.targetSection)}`
                 : null
@@ -1998,7 +1964,7 @@ export function CvClinicWorkspace({
       />
 
       <div className="flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col overflow-hidden">
-        <div className="hidden shrink-0 overflow-x-auto border-b border-white/[0.06] bg-[#0C0F0F] lg:block">
+        <div className="hidden shrink-0 overflow-x-auto border-b border-border-subtle bg-bg-surface lg:block">
           <CvClinicToolbar
             visibility={toolbarVisibility}
             leftSlot={toolbarLeftSlot}
@@ -2028,11 +1994,11 @@ export function CvClinicWorkspace({
           />
         </div>
         {isOnboarding && onBack ? (
-          <div className="shrink-0 border-b border-white/[0.06] bg-[#0C0F0F] px-3 py-2 lg:hidden">
+          <div className="shrink-0 border-b border-border-subtle bg-bg-surface px-3 py-2 lg:hidden">
             <div className="flex min-w-0 items-center gap-2">
               <button
                 type="button"
-                className="group flex h-8 shrink-0 cursor-pointer items-center gap-1 px-1 text-[11px] text-white/45 transition hover:text-white/80"
+                className="group flex h-8 shrink-0 cursor-pointer items-center gap-1 px-1 text-[11px] text-text-tertiary transition hover:text-text-secondary"
                 onClick={onBack}
                 aria-label="Back to previous step"
               >
@@ -2054,7 +2020,7 @@ export function CvClinicWorkspace({
                   </Button>
                   <button
                     type="button"
-                    className="h-8 shrink-0 px-2 text-[11px] text-white/45 transition hover:text-white/80"
+                    className="h-8 shrink-0 px-2 text-[11px] text-text-tertiary transition hover:text-text-secondary"
                     onClick={onSkip}
                   >
                     Skip
@@ -2071,11 +2037,12 @@ export function CvClinicWorkspace({
             onOpenChange={setMobileInsightsOpen}
             icon={BarChart3}
             label="Score and tips"
+            shortLabel="Score"
             fabId="onboarding-cv-insights"
             stackIndex={0}
           >
             <div className="space-y-3 pb-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-white/50">
+              <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
                 Score breakdown & tips
               </p>
               {renderInsightsPanel()}
@@ -2100,13 +2067,13 @@ export function CvClinicWorkspace({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, ease: 'easeOut' }}
-              className="pointer-events-none absolute bottom-6 left-1/2 z-20 w-[min(calc(100%-32px),320px)] -translate-x-1/2 rounded-xl border border-[rgba(0,201,177,0.35)] bg-[#0C1010]/95 px-4 py-3 text-center shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-md"
+              className="pointer-events-none absolute bottom-6 left-1/2 z-20 w-[min(calc(100%-32px),320px)] -translate-x-1/2 rounded-xl border border-accent-border bg-bg-surface px-4 py-3 text-center shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-md"
               role="status"
             >
-              <p className="text-[13px] font-medium leading-snug text-white">
-                Click anywhere on the resume to start editing
+              <p className="text-[13px] font-medium leading-snug text-text-primary">
+                Click anywhere on the CV to start editing
               </p>
-              <p className="mt-1 text-[11px] text-[rgba(255,255,255,0.45)]">
+              <p className="mt-1 text-[11px] text-text-tertiary">
                 We&apos;ll highlight incomplete sections after you begin.
               </p>
             </motion.div>

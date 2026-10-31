@@ -10,6 +10,7 @@ import {
   isCvContentConflictError,
   type CvContentVersionRef,
 } from '@/lib/cvContentConflict';
+import { flushCvInlineEdits } from '@/lib/cvUndoRedo';
 import {
   computeCvBuilderSaveFingerprint,
   logCvBuilderSavePerfDev,
@@ -170,6 +171,33 @@ export function useCVAutosave(props: UseCVAutosaveParams): UseCVAutosaveResult {
       }
     }
   }, [mode, profileId, setDirty, setSaveStatus, contentVersionRef]);
+
+  useEffect(() => {
+    if (mode !== 'dashboard') return;
+    const hasOpenField = () => {
+      const active = document.activeElement;
+      return active instanceof HTMLElement && active.isContentEditable;
+    };
+    const onVisibility = () => {
+      if (document.visibilityState !== 'hidden') return;
+      flushCvInlineEdits();
+      void flushDashboardAutosave();
+    };
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      const unsaved =
+        hasOpenField() || dirtyRef.current || saveInFlightRef.current;
+      flushCvInlineEdits();
+      if (!unsaved) return;
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
+  }, [mode, flushDashboardAutosave]);
 
   useEffect(() => {
     if (mode !== 'dashboard' || !profileId?.trim()) return;

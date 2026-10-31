@@ -29,15 +29,15 @@ const VERDICT_META: Record<
 > = {
   strong: {
     label: 'Strong first impression',
-    className: 'border-emerald-400/40 bg-emerald-500/15 text-emerald-200',
+    className: 'border-success-border bg-success-subtle text-success-text',
   },
   mixed: {
     label: 'Mixed first impression',
-    className: 'border-amber-400/35 bg-amber-500/12 text-amber-100',
+    className: 'border-warning-border bg-warning-subtle text-warning-text',
   },
   weak: {
     label: 'Weak first impression',
-    className: 'border-rose-400/35 bg-rose-500/12 text-rose-200',
+    className: 'border-danger-border bg-danger-subtle text-danger-text',
   },
 };
 
@@ -47,15 +47,15 @@ const SEVERITY_META: Record<
 > = {
   minor: {
     label: 'Minor',
-    className: 'border-white/15 bg-white/[0.04] text-white/55',
+    className: 'border-border-default bg-bg-surface text-text-tertiary',
   },
   moderate: {
     label: 'Moderate',
-    className: 'border-amber-400/30 bg-amber-500/10 text-amber-100',
+    className: 'border-warning-border bg-warning-subtle text-warning-text',
   },
   critical: {
     label: 'Critical',
-    className: 'border-rose-400/35 bg-rose-500/12 text-rose-200',
+    className: 'border-danger-border bg-danger-subtle text-danger-text',
   },
 };
 
@@ -129,33 +129,33 @@ export function RecruiterScanReportPanel({
           initial={{ opacity: 0, x: 24 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 16 }}
-          className="pointer-events-auto flex h-[100dvh] min-h-0 w-full max-w-md flex-col overflow-hidden border-white/[0.08] bg-[#0C0F0F] shadow-[0_20px_48px_rgba(0,0,0,0.55)] sm:h-full sm:max-h-full sm:rounded-2xl sm:border"
+          className="pointer-events-auto flex h-[100dvh] min-h-0 w-full max-w-md flex-col overflow-hidden border-border-subtle bg-bg-surface shadow-[0_20px_48px_rgba(0,0,0,0.55)] sm:h-full sm:max-h-full sm:rounded-2xl sm:border"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="shrink-0 border-b border-white/[0.06] px-4 py-3">
+          <div className="shrink-0 border-b border-border-subtle px-4 py-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                  <ScanEye className="h-4 w-4 shrink-0 text-[#00C9B1]" />
-                  <p className="text-sm font-semibold text-white/90">
+                  <ScanEye className="h-4 w-4 shrink-0 text-accent-text" />
+                  <p className="text-sm font-semibold text-text-primary">
                     Recruiter Scan
                   </p>
                   <span
                     className={cn(
-                      'inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold',
+                      'inline-flex rounded-full border px-2 py-0.5 text-[12px] font-semibold',
                       verdict.className,
                     )}
                   >
                     {verdict.label}
                   </span>
                 </div>
-                <p className="text-sm font-medium leading-snug text-white/85">
+                <p className="text-sm font-medium leading-snug text-text-primary">
                   {report.firstImpression.headline}
                 </p>
               </div>
               <button
                 type="button"
-                className="shrink-0 rounded-md p-1 text-white/50 hover:bg-white/[0.06] hover:text-white disabled:opacity-40"
+                className="shrink-0 rounded-md p-1 text-text-tertiary hover:bg-bg-hover hover:text-text-primary disabled:opacity-40"
                 aria-label="Close recruiter scan"
                 disabled={busy}
                 onClick={onClose}
@@ -167,30 +167,30 @@ export function RecruiterScanReportPanel({
 
           <div className="app-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-y-contain [overflow-scrolling:touch] [-webkit-overflow-scrolling:touch]">
             {busy ? (
-              <p className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-2 text-[11px] text-white/55">
+              <p className="flex items-center gap-2 border-b border-border-subtle px-4 py-2 text-[13px] text-text-tertiary">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 {CV_ASSISTANT_APPLYING_FIXES_MESSAGE}
               </p>
             ) : null}
 
-            <div className="border-b border-white/[0.06] px-4 py-3">
-              <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-orange-300/90">
+            <div className="border-b border-border-subtle px-4 py-3">
+              <p className="mb-1 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-warning-text">
                 <Clock className="h-3.5 w-3.5" />
                 First 6 seconds
               </p>
-              <p className="rounded-lg border border-orange-400/20 bg-orange-500/[0.06] px-3 py-2 font-mono text-[11px] leading-relaxed text-white/80">
+              <p className="rounded-lg border border-warning-border bg-warning-subtle px-3 py-2 font-mono text-[13px] leading-relaxed text-text-secondary">
                 {report.firstImpression.sixSecondSnapshot ||
                   'No snapshot returned.'}
               </p>
-              <p className="mt-2 text-[10px] text-white/40">
-                Orange glow on your resume preview shows where attention landed
+              <p className="mt-2 text-[12px] text-text-tertiary">
+                Orange glow on your CV preview shows where attention landed
                 (hover sections for notes).
               </p>
             </div>
 
             {readingOrder.length > 0 ? (
-              <div className="border-b border-white/[0.06] px-4 py-3">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-white/45">
+              <div className="border-b border-border-subtle px-4 py-3">
+                <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-text-tertiary">
                   Reading order
                 </p>
                 <ol className="space-y-1.5">
@@ -205,22 +205,22 @@ export function RecruiterScanReportPanel({
                           type="button"
                           disabled={!onJumpToSection}
                           onClick={() => onJumpToSection?.(previewKey)}
-                          className="flex w-full items-start gap-2 rounded-lg border border-white/[0.07] bg-white/[0.02] px-2 py-1.5 text-left transition hover:border-[#00C9B1]/35 disabled:cursor-default"
+                          className="flex w-full items-start gap-2 rounded-lg border border-border-subtle bg-bg-surface px-2 py-1.5 text-left transition hover:border-accent-border disabled:cursor-default"
                         >
-                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange-500/20 text-[10px] font-bold text-orange-200">
+                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-warning-subtle text-[12px] font-bold text-warning-text">
                             {entry.readOrder}
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="flex items-center justify-between gap-2">
-                              <span className="text-xs font-medium text-white/85">
+                              <span className="text-xs font-medium text-text-primary">
                                 {entry.label}
                               </span>
-                              <span className="shrink-0 text-[10px] text-orange-300/80">
+                              <span className="shrink-0 text-[12px] text-warning-text">
                                 {entry.attentionScore}%
                               </span>
                             </span>
                             {entry.focalPoint ? (
-                              <span className="mt-0.5 block text-[10px] text-white/50">
+                              <span className="mt-0.5 block text-[12px] text-text-tertiary">
                                 Focus: {entry.focalPoint}
                               </span>
                             ) : null}
@@ -233,7 +233,7 @@ export function RecruiterScanReportPanel({
               </div>
             ) : null}
 
-            <div className="sticky top-0 z-10 flex shrink-0 gap-1 border-b border-white/[0.06] bg-[#0C0F0F] px-3 py-2">
+            <div className="sticky top-0 z-10 flex shrink-0 gap-1 border-b border-border-subtle bg-bg-surface px-3 py-2">
               {(
                 [
                   ['impression', 'First impression'],
@@ -246,10 +246,10 @@ export function RecruiterScanReportPanel({
                   type="button"
                   onClick={() => setTab(id)}
                   className={cn(
-                    'flex-1 rounded-lg px-2 py-1.5 text-[10px] font-semibold transition',
+                    'flex-1 rounded-lg px-2 py-1.5 text-[12px] font-semibold transition',
                     tab === id
-                      ? 'bg-[#00C9B1]/15 text-[#44E6D6]'
-                      : 'text-white/45 hover:bg-white/[0.04] hover:text-white/70',
+                      ? 'bg-accent-subtle text-accent-text'
+                      : 'text-text-tertiary hover:bg-bg-hover hover:text-text-secondary',
                   )}
                 >
                   {label}
@@ -259,7 +259,7 @@ export function RecruiterScanReportPanel({
 
             <div className="px-4 py-3 pb-6">
               {tab === 'impression' ? (
-                <p className="text-sm leading-relaxed text-white/75">
+                <p className="text-sm leading-relaxed text-text-secondary">
                   {report.firstImpression.narrative || 'No narrative returned.'}
                 </p>
               ) : null}
@@ -267,14 +267,14 @@ export function RecruiterScanReportPanel({
               {tab === 'standsOut' ? (
                 <div className="space-y-3">
                   <div>
-                    <p className="mb-2 text-[11px] font-semibold text-emerald-300/90">
+                    <p className="mb-2 text-[13px] font-semibold text-success-text">
                       Top 3 takeaways they&apos;d remember
                     </p>
                     <ul className="space-y-2">
                       {report.whatStandsOut.takeaways.map((t, i) => (
                         <li
                           key={`takeaway-${i}`}
-                          className="rounded-lg border border-emerald-400/20 bg-emerald-500/[0.06] px-3 py-2 text-xs text-white/85"
+                          className="rounded-lg border border-success-border bg-success-subtle px-3 py-2 text-xs text-text-primary"
                         >
                           {t.trim() || '—'}
                         </li>
@@ -283,20 +283,20 @@ export function RecruiterScanReportPanel({
                   </div>
                   {report.whatStandsOut.highlights.length > 0 ? (
                     <div>
-                      <p className="mb-2 text-[11px] font-semibold text-white/50">
+                      <p className="mb-2 text-[13px] font-semibold text-text-tertiary">
                         Highlights
                       </p>
                       <ul className="space-y-2">
                         {report.whatStandsOut.highlights.map((h, i) => (
                           <li
                             key={`highlight-${i}`}
-                            className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2"
+                            className="rounded-lg border border-border-subtle bg-bg-surface px-3 py-2"
                           >
-                            <p className="text-xs font-medium text-white/85">
+                            <p className="text-xs font-medium text-text-primary">
                               {h.text}
                             </p>
                             {h.why ? (
-                              <p className="mt-1 text-[11px] text-white/50">
+                              <p className="mt-1 text-[13px] text-text-tertiary">
                                 {h.why}
                               </p>
                             ) : null}
@@ -318,23 +318,23 @@ export function RecruiterScanReportPanel({
                         return (
                           <li
                             key={`concern-${i}`}
-                            className="rounded-lg border border-white/[0.08] bg-white/[0.03] p-3"
+                            className="rounded-lg border border-border-subtle bg-bg-surface p-3"
                           >
                             <div className="mb-1 flex flex-wrap items-center gap-2">
                               <span
                                 className={cn(
-                                  'rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase',
+                                  'rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase',
                                   sev.className,
                                 )}
                               >
                                 {sev.label}
                               </span>
                             </div>
-                            <p className="text-xs leading-relaxed text-white/85">
+                            <p className="text-xs leading-relaxed text-text-primary">
                               {c.text}
                             </p>
                             {c.fix ? (
-                              <p className="mt-1.5 text-[11px] text-[#00C9B1]/90">
+                              <p className="mt-1.5 text-[13px] text-accent-text">
                                 Fix: {c.fix}
                               </p>
                             ) : null}
@@ -343,16 +343,16 @@ export function RecruiterScanReportPanel({
                       })}
                     </ul>
                   ) : (
-                    <p className="text-xs text-white/55">
+                    <p className="text-xs text-text-tertiary">
                       No major concerns flagged.
                     </p>
                   )}
                   {report.whatCouldBeStronger.actions.length > 0 ? (
                     <div>
-                      <p className="mb-1.5 text-[11px] font-semibold text-amber-200/90">
+                      <p className="mb-1.5 text-[13px] font-semibold text-warning-text">
                         Suggested actions
                       </p>
-                      <ul className="list-disc space-y-1 pl-4 text-xs text-white/75">
+                      <ul className="list-disc space-y-1 pl-4 text-xs text-text-secondary">
                         {report.whatCouldBeStronger.actions.map((a, i) => (
                           <li key={`action-${i}`}>{a}</li>
                         ))}
@@ -364,11 +364,11 @@ export function RecruiterScanReportPanel({
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-white/[0.06] bg-[#0C0F0F] px-4 py-3">
+          <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-border-subtle bg-bg-surface px-4 py-3">
             <Button
               type="button"
               variant="ghost"
-              className="border border-white/10 text-xs"
+              className="border border-border-subtle text-xs"
               disabled={busy}
               onClick={() => void copyShare()}
             >
@@ -378,7 +378,7 @@ export function RecruiterScanReportPanel({
             <Button
               type="button"
               variant="ghost"
-              className="border border-white/10 text-xs"
+              className="border border-border-subtle text-xs"
               disabled={busy}
               onClick={onScanAgain}
             >
@@ -387,7 +387,7 @@ export function RecruiterScanReportPanel({
             <Button
               type="button"
               variant="ghost"
-              className="border border-white/10 text-xs"
+              className="border border-border-subtle text-xs"
               disabled={busy}
               onClick={onClose}
             >

@@ -40,12 +40,14 @@
   --ck-accent-text: #3d6600;
 
   --ck-success-subtle: #e4f6ec;
+  --ck-success-border: #a8dcbf;
   --ck-success-text: #0d7344;
   --ck-danger-subtle: #fdecee;
   --ck-danger-border: #f2b8bf;
   --ck-danger-solid: #c42b3a;
   --ck-danger-text: #b42332;
   --ck-warning-subtle: #fff4d6;
+  --ck-warning-border: #ecd08a;
   --ck-warning-text: #805300;
 
   --ck-shadow-raised:
@@ -85,12 +87,14 @@
   --ck-accent-text: #c4f55c;
 
   --ck-success-subtle: #10261b;
+  --ck-success-border: #1f5a3c;
   --ck-success-text: #4fd99a;
   --ck-danger-subtle: #2d1416;
   --ck-danger-border: #5c262b;
   --ck-danger-solid: #c9353c;
   --ck-danger-text: #ff8f8f;
   --ck-warning-subtle: #2a2110;
+  --ck-warning-border: #5c4718;
   --ck-warning-text: #f2c14e;
 
   --ck-shadow-raised:
@@ -129,12 +133,14 @@
   --color-accent-text: var(--ck-accent-text);
 
   --color-success-subtle: var(--ck-success-subtle);
+  --color-success-border: var(--ck-success-border);
   --color-success-text: var(--ck-success-text);
   --color-danger-subtle: var(--ck-danger-subtle);
   --color-danger-border: var(--ck-danger-border);
   --color-danger-solid: var(--ck-danger-solid);
   --color-danger-text: var(--ck-danger-text);
   --color-warning-subtle: var(--ck-warning-subtle);
+  --color-warning-border: var(--ck-warning-border);
   --color-warning-text: var(--ck-warning-text);
 
   --shadow-raised: var(--ck-shadow-raised);
@@ -447,6 +453,24 @@ body {
   box-shadow: inset 0 0 0 1px rgba(0, 174, 175, 0.2);
 }
 
+/* Calm variant for app screens: a plain theme border, no spinning glow or hover lift. */
+.animated-border-card.ck-calm-card {
+  border-radius: 20px;
+  background: var(--ck-border-subtle);
+}
+.animated-border-card.ck-calm-card:hover {
+  transform: none;
+  box-shadow: var(--ck-shadow-raised);
+}
+.animated-border-card.ck-calm-card .animated-border-rotating,
+.animated-border-card.ck-calm-card .animated-border-mouse-glow {
+  display: none;
+}
+.animated-border-card.ck-calm-card .card-content {
+  background: var(--ck-bg-surface);
+  box-shadow: none;
+}
+
 /** CV Clinic mobile header — dropdowns must escape the card (see globals .card-content overflow). */
 .animated-border-card.cv-mobile-top-chrome .card-content {
   overflow: visible;
@@ -586,12 +610,9 @@ input.auth-input:-webkit-autofill:active {
   }
 }
 
-/* iOS Safari zooms focused fields under 16px — keep CV inputs at readable size on touch layouts. */
+/* iOS Safari zooms focused fields under 16px — keep form inputs readable on touch layouts.
+   Text edited on the CV page itself keeps the template's size so editing never reflows the CV. */
 @media (max-width: 1023px) {
-  [data-cv-document-root] input,
-  [data-cv-document-root] textarea,
-  [data-cv-document-root] select,
-  [data-cv-document-root] [contenteditable='true'],
   .cv-builder-form-root input,
   .cv-builder-form-root textarea,
   .cv-builder-form-root select {

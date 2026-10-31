@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import { WALKTHROUGH_VIDEO_ID } from '@/lib/walkthroughVideo';
+import { pageTourForPath } from '@/components/dashboard/welcome-tour/pageTours';
 import { openWalkthroughVideo, startWelcomeTour } from '@/lib/welcomeEvents';
 import { cn } from '@/lib/utils';
 
@@ -36,7 +37,8 @@ export function HelpMenu() {
 
   const takeTour = () => {
     setOpen(false);
-    if (pathname === '/dashboard') {
+    // Pages with their own tour (Home, the CV editor) replay it in place.
+    if (pageTourForPath(pathname)) {
       startWelcomeTour();
       return;
     }

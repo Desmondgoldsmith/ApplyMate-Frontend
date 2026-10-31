@@ -140,12 +140,9 @@ export function DashboardCvProfilesPanel({
     : undefined;
 
   return (
-    <GlowCard
-      className="border border-[rgba(0,201,177,0.15)]"
-      contentClassName="p-5"
-    >
+    <GlowCard className="border border-accent-border" contentClassName="p-5">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-base font-bold text-white">CV Profiles</h2>
+        <h2 className="text-base font-bold text-text-primary">CV Profiles</h2>
         <Button
           type="button"
           className="h-9 gap-1.5 px-3 text-xs font-semibold"
@@ -156,7 +153,7 @@ export function DashboardCvProfilesPanel({
         </Button>
       </div>
       {!isLoading && profiles.length > 0 ? (
-        <p className="mb-3 shrink-0 text-[11px] leading-relaxed text-white/35">
+        <p className="mb-3 shrink-0 text-[11px] leading-relaxed text-text-tertiary">
           CV scores come from AI analysis of your CV. New or edited profiles can
           take a short moment to show a score — we refresh this list when you
           come back to the tab and after you run a CV scan.
@@ -164,7 +161,7 @@ export function DashboardCvProfilesPanel({
       ) : null}
 
       {!isLoading && profiles.length > 1 ? (
-        <p className="mb-2 text-[11px] text-white/35">
+        <p className="mb-2 text-[11px] text-text-tertiary">
           Select two or more CVs to merge into a new profile. Originals are not
           changed.
         </p>
@@ -187,11 +184,11 @@ export function DashboardCvProfilesPanel({
           </>
         ) : profiles.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center">
-            <FileText className="h-8 w-8 text-[#00C9B1]" strokeWidth={1.5} />
-            <p className="mt-3 text-sm font-semibold text-white">
+            <FileText className="h-8 w-8 text-accent-text" strokeWidth={1.5} />
+            <p className="mt-3 text-sm font-semibold text-text-primary">
               No CV profiles yet
             </p>
-            <p className="mt-1 max-w-xs text-xs text-white/45">
+            <p className="mt-1 max-w-xs text-xs text-text-tertiary">
               Create your first CV to get started
             </p>
             <Button type="button" className="mt-5" onClick={onNewCv}>
@@ -208,7 +205,7 @@ export function DashboardCvProfilesPanel({
             return (
               <GlowCard
                 key={p.id}
-                className="h-auto shrink-0 border border-[rgba(0,201,177,0.1)] bg-[#111616]"
+                className="h-auto shrink-0 border border-accent-border bg-bg-sunken"
                 contentClassName="relative p-4"
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
@@ -227,27 +224,27 @@ export function DashboardCvProfilesPanel({
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         {p.isDefault ? (
-                          <Star className="h-3.5 w-3.5 shrink-0 fill-[#00C9B1] text-[#00C9B1]" />
+                          <Star className="h-3.5 w-3.5 shrink-0 fill-accent-solid text-accent-text" />
                         ) : null}
-                        <p className="truncate text-[15px] font-semibold text-white">
+                        <p className="truncate text-[15px] font-semibold text-text-primary">
                           {p.name}
                         </p>
                         {p.isDefault ? (
-                          <span className="shrink-0 rounded-full border border-[rgba(0,201,177,0.3)] bg-[rgba(0,201,177,0.12)] px-2 py-0.5 text-[11px] font-semibold text-[#00C9B1]">
+                          <span className="shrink-0 rounded-full border border-accent-border bg-accent-subtle px-2 py-0.5 text-[11px] font-semibold text-accent-text">
                             ★ Default
                           </span>
                         ) : null}
                         {p.originalTemplate ? (
-                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/[0.08] px-2 py-0.5 text-[10px] text-white/30">
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border-subtle px-2 py-0.5 text-[10px] text-text-disabled">
                             <Upload
-                              className="h-2.5 w-2.5 shrink-0 text-white/35"
+                              className="h-2.5 w-2.5 shrink-0 text-text-tertiary"
                               aria-hidden
                             />
                             Uploaded
                           </span>
                         ) : null}
                       </div>
-                      <p className="mt-1 text-xs text-white/45">
+                      <p className="mt-1 text-xs text-text-tertiary">
                         {score !== null && Number.isFinite(score)
                           ? `Score: ${score}/100`
                           : 'Not scored yet'}
@@ -260,7 +257,7 @@ export function DashboardCvProfilesPanel({
                     <button
                       type="button"
                       aria-label="More actions"
-                      className="rounded-lg p-1.5 text-white/45 transition hover:bg-white/5 hover:text-white"
+                      className="rounded-lg p-1.5 text-text-tertiary transition hover:bg-bg-surface hover:text-text-primary"
                       onClick={(ev) => openMenu(ev, p.id)}
                     >
                       <MoreVertical className="h-4 w-4" />
@@ -270,7 +267,7 @@ export function DashboardCvProfilesPanel({
 
                 <div className="mt-3">
                   <div className="flex items-center justify-between gap-2 text-xs">
-                    <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/10">
+                    <div className="h-1 flex-1 overflow-hidden rounded-full bg-bg-hover">
                       <div
                         className={cn(
                           'h-full rounded-full transition-all',
@@ -279,7 +276,7 @@ export function DashboardCvProfilesPanel({
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <span className="shrink-0 tabular-nums text-white/55">
+                    <span className="shrink-0 tabular-nums text-text-tertiary">
                       {score !== null && Number.isFinite(score)
                         ? `${score}/100`
                         : '—'}
@@ -290,14 +287,14 @@ export function DashboardCvProfilesPanel({
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link
                     href={`/dashboard/cv?profileId=${encodeURIComponent(p.id)}`}
-                    className="inline-flex items-center rounded-lg border border-[rgba(0,201,177,0.3)] bg-[rgba(0,201,177,0.08)] px-3 py-1.5 text-xs font-semibold text-[#00C9B1] transition hover:bg-[rgba(0,201,177,0.15)]"
+                    className="inline-flex items-center rounded-lg border border-accent-border bg-accent-subtle px-3 py-1.5 text-xs font-semibold text-accent-text transition hover:bg-accent-subtle"
                   >
                     Edit →
                   </Link>
                   <Button
                     type="button"
                     variant="ghost"
-                    className="h-auto border border-white/10 px-3 py-1.5 text-xs font-semibold text-white/70 hover:border-[#00C9B1]/35 hover:text-[#00C9B1]"
+                    className="h-auto border border-border-subtle px-3 py-1.5 text-xs font-semibold text-text-secondary hover:border-accent-border hover:text-accent-text"
                     disabled={pdfOpeningId === p.id}
                     onClick={() => {
                       setPdfOpeningId(p.id);
@@ -320,7 +317,7 @@ export function DashboardCvProfilesPanel({
                   <Button
                     type="button"
                     variant="ghost"
-                    className="h-auto border border-white/10 px-3 py-1.5 text-xs"
+                    className="h-auto border border-border-subtle px-3 py-1.5 text-xs"
                     disabled={
                       duplicate.isPending && duplicate.variables === p.id
                     }
@@ -349,7 +346,7 @@ export function DashboardCvProfilesPanel({
           type="button"
           variant="ghost"
           fullWidth
-          className="mt-4 border border-[rgba(0,201,177,0.2)]"
+          className="mt-4 border border-accent-border"
           onClick={onNewCv}
         >
           <Plus className="mr-1 h-4 w-4" />
@@ -361,7 +358,7 @@ export function DashboardCvProfilesPanel({
         ? createPortal(
             <div
               ref={menuRef}
-              className="fixed z-[200] min-w-[10rem] rounded-xl border border-[rgba(0,201,177,0.15)] bg-[#161B1B] py-1 shadow-lg"
+              className="fixed z-[200] min-w-[10rem] rounded-xl border border-accent-border bg-bg-raised py-1 shadow-lg"
               style={{ top: menuAnchor.top, right: menuAnchor.right }}
             >
               {!menuProfile.isDefault ? (
@@ -371,7 +368,7 @@ export function DashboardCvProfilesPanel({
                     setDefault.isPending &&
                     setDefault.variables === menuProfile.id
                   }
-                  className="block w-full px-3 py-2 text-left text-xs text-white/80 hover:bg-white/5 disabled:opacity-50"
+                  className="block w-full px-3 py-2 text-left text-xs text-text-secondary hover:bg-bg-surface disabled:opacity-50"
                   onClick={() => {
                     setDefault.mutate(menuProfile.id, {
                       onSuccess: () => {
@@ -388,7 +385,7 @@ export function DashboardCvProfilesPanel({
               ) : null}
               <button
                 type="button"
-                className="block w-full px-3 py-2 text-left text-xs text-white/80 hover:bg-white/5"
+                className="block w-full px-3 py-2 text-left text-xs text-text-secondary hover:bg-bg-surface"
                 onClick={() => openRename(menuProfile)}
               >
                 Rename
@@ -396,7 +393,7 @@ export function DashboardCvProfilesPanel({
               <button
                 type="button"
                 disabled={profiles.length <= 1 || del.isPending}
-                className="block w-full px-3 py-2 text-left text-xs text-red-300 hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-40"
+                className="block w-full px-3 py-2 text-left text-xs text-danger-text hover:bg-danger-subtle disabled:cursor-not-allowed disabled:opacity-40"
                 onClick={() => {
                   if (profiles.length <= 1) {
                     toast.error('You need at least one CV profile.');
@@ -449,7 +446,7 @@ export function DashboardCvProfilesPanel({
           type="text"
           value={renameValue}
           onChange={(e) => setRenameValue(e.target.value)}
-          className="mt-2 w-full rounded-xl border border-[rgba(0,201,177,0.15)] bg-[#111616] px-3 py-2 text-sm text-white outline-none focus:border-[#00C9B1]"
+          className="mt-2 w-full rounded-xl border border-accent-border bg-bg-sunken px-3 py-2 text-sm text-text-primary outline-none focus:border-accent-solid"
         />
         <div className="mt-4 flex justify-end gap-2">
           <Button

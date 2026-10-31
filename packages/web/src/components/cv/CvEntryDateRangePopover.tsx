@@ -48,7 +48,7 @@ export function CvEntryDateRangePopover({
   };
 
   return (
-    <div className="w-[min(300px,calc(100vw-24px))] rounded-xl border border-white/10 bg-white p-3 shadow-xl">
+    <div className="w-[min(300px,calc(100vw-24px))] rounded-xl border border-border-subtle bg-white p-3 shadow-xl">
       <p className="text-[11px] font-semibold text-black/80">
         {mode === 'single' ? 'Date' : 'Date range'}
       </p>
@@ -63,7 +63,7 @@ export function CvEntryDateRangePopover({
           {mode === 'single' ? 'Date' : 'Start'}
           {preferYear ? (
             <select
-              className="mt-1 w-full rounded-lg border border-black/10 bg-white px-2.5 py-2 text-xs text-black outline-none focus:border-[#00C9B1]"
+              className="mt-1 w-full rounded-lg border border-black/10 bg-white px-2.5 py-2 text-xs text-black outline-none focus:border-accent-solid"
               value={startYear}
               onChange={(e) => {
                 const y = String(e.target.value);
@@ -80,7 +80,7 @@ export function CvEntryDateRangePopover({
           ) : (
             <input
               type="month"
-              className="mt-1 w-full rounded-lg border border-black/10 bg-white px-2.5 py-2 text-xs text-black outline-none focus:border-[#00C9B1] [color-scheme:light]"
+              className="mt-1 w-full rounded-lg border border-black/10 bg-white px-2.5 py-2 text-xs text-black outline-none focus:border-accent-solid [color-scheme:light]"
               value={startMonth}
               onChange={(e) => {
                 const v = e.target.value;
@@ -96,7 +96,7 @@ export function CvEntryDateRangePopover({
             End
             {preferYear ? (
               <select
-                className="mt-1 w-full rounded-lg border border-black/10 bg-white px-2.5 py-2 text-xs text-black outline-none focus:border-[#00C9B1]"
+                className="mt-1 w-full rounded-lg border border-black/10 bg-white px-2.5 py-2 text-xs text-black outline-none focus:border-accent-solid"
                 value={endYear}
                 onChange={(e) => finish(start, String(e.target.value))}
               >
@@ -110,7 +110,7 @@ export function CvEntryDateRangePopover({
             ) : (
               <input
                 type="month"
-                className="mt-1 w-full rounded-lg border border-black/10 bg-white px-2.5 py-2 text-xs text-black outline-none focus:border-[#00C9B1] [color-scheme:light]"
+                className="mt-1 w-full rounded-lg border border-black/10 bg-white px-2.5 py-2 text-xs text-black outline-none focus:border-accent-solid [color-scheme:light]"
                 value={endMonth}
                 onChange={(e) => finish(start, e.target.value)}
               />
@@ -132,7 +132,7 @@ export function CvEntryDateRangePopover({
         <button
           type="button"
           className={cn(
-            'rounded-md bg-[#00C9B1] px-2.5 py-1 text-[11px] font-semibold text-[#0C0F0F] hover:bg-[#00b39d]',
+            'rounded-md bg-accent-solid px-2.5 py-1 text-[11px] font-semibold text-[#0C0F0F] hover:bg-[#00b39d]',
           )}
           onClick={() => onClose?.()}
         >

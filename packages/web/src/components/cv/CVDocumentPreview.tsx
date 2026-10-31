@@ -392,7 +392,7 @@ function EditableHeaderPhoto({
             <div className="absolute inset-0 flex items-center justify-center gap-2 rounded-[inherit] bg-black/40 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
               <button
                 type="button"
-                className="rounded-lg bg-[#00C9B1] p-2 text-white"
+                className="rounded-lg bg-[#17B26A] p-2 text-white"
                 onClick={(e) => {
                   e.stopPropagation();
                   replace();
@@ -437,7 +437,7 @@ function experienceItemWrapClass(
   const itemActive = activeSection === itemKey;
   return cn(
     'relative rounded-[4px] transition-[box-shadow] duration-200',
-    itemActive ? 'ring-1 ring-inset ring-[rgba(0,201,177,0.35)]' : '',
+    itemActive ? 'ring-1 ring-inset ring-[rgba(23,178,106,0.35)]' : '',
   );
 }
 
@@ -510,7 +510,7 @@ function sectionBox(
       className={cn(
         'relative transition-[box-shadow] duration-200',
         isActive && !isDiff
-          ? 'rounded-[4px] ring-1 ring-inset ring-[rgba(0,201,177,0.35)]'
+          ? 'rounded-[4px] ring-1 ring-inset ring-[rgba(23,178,106,0.35)]'
           : '',
         isDiff ? 'rounded-[4px] pb-1' : '',
         className,
@@ -950,7 +950,7 @@ function ClassicDoc({
         {inline &&
         dragOverSectionId === sectionId &&
         draggingSectionIdRef.current !== sectionId ? (
-          <div className="mb-1 rounded-md border-2 border-dashed border-[#00C9B1]/70 bg-[#00C9B1]/8 px-2 py-1 text-[10px] font-semibold tracking-wide text-[#007A7A]">
+          <div className="mb-1 rounded-md border-2 border-dashed border-[#17B26A]/70 bg-[#17B26A]/8 px-2 py-1 text-[10px] font-semibold tracking-wide text-[#0D7344]">
             Drop section here
           </div>
         ) : null}
@@ -989,7 +989,7 @@ function ClassicDoc({
                 title="Drag section to reorder"
                 aria-label={`Drag ${fallback} section to reorder`}
                 draggable
-                className="absolute left-0 cursor-grab rounded-sm border border-[#00C9B1]/45 bg-white/95 p-0.5 text-[#00C9B1] shadow-sm shadow-[#00C9B1]/15 transition hover:border-[#00C9B1]/70 hover:bg-[#00C9B1]/10 hover:text-[#007A7A] active:cursor-grabbing"
+                className="absolute left-0 cursor-grab rounded-sm border border-[#17B26A]/45 bg-white/95 p-0.5 text-[#17B26A] shadow-sm shadow-[#17B26A]/15 transition hover:border-[#17B26A]/70 hover:bg-[#17B26A]/10 hover:text-[#0D7344] active:cursor-grabbing"
                 onMouseDown={(e) => e.stopPropagation()}
                 onDragStart={(e) => {
                   draggingSectionIdRef.current = sectionId;
@@ -1149,7 +1149,7 @@ function ClassicDoc({
                   style={{
                     outline:
                       ctx.focusedEntryId === 'summary-body'
-                        ? '1.5px dashed #00C9B1'
+                        ? '1.5px dashed #17B26A'
                         : 'none',
                     outlineOffset: '3px',
                     borderRadius: '3px',
@@ -1222,7 +1222,7 @@ function ClassicDoc({
                 style={{
                   outline:
                     ctx?.focusedEntryId === e.id
-                      ? '1.5px dashed #00C9B1'
+                      ? '1.5px dashed #17B26A'
                       : 'none',
                   outlineOffset: '3px',
                   borderRadius: '3px',
@@ -1444,7 +1444,7 @@ function ClassicDoc({
                       <button
                         type="button"
                         className={cn(
-                          'flex h-7 w-7 items-center justify-center rounded-full bg-[#00C9B1] text-lg font-bold leading-none text-white shadow-sm hover:bg-[#009697]',
+                          'flex h-7 w-7 items-center justify-center rounded-full bg-[#17B26A] text-lg font-bold leading-none text-white shadow-sm hover:bg-[#128A52]',
                           addButtonVisibilityClass(activeSection, 'education'),
                         )}
                         aria-label="Add education entry"
@@ -1496,7 +1496,7 @@ function ClassicDoc({
         ) : inline && ctx ? (
           <button
             type="button"
-            className="text-left text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+            className="text-left text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
             onClick={() =>
               ctx.onUpdate({
                 education: {
@@ -1547,7 +1547,7 @@ function ClassicDoc({
         {data.skills.categories.length === 0 && inline && ctx ? (
           <button
             type="button"
-            className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+            className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
             onClick={() =>
               ctx.onUpdate({
                 skills: {
@@ -1572,7 +1572,7 @@ function ClassicDoc({
               style={{
                 outline:
                   ctx?.focusedEntryId === cat.id
-                    ? '1.5px dashed #00C9B1'
+                    ? '1.5px dashed #17B26A'
                     : 'none',
                 outlineOffset: '3px',
                 borderRadius: '3px',
@@ -1741,7 +1741,7 @@ function ClassicDoc({
               style={{
                 outline:
                   ctx?.focusedEntryId === x.id
-                    ? '1.5px dashed #00C9B1'
+                    ? '1.5px dashed #17B26A'
                     : 'none',
                 outlineOffset: '3px',
                 borderRadius: '3px',
@@ -2151,7 +2151,7 @@ function ClassicDoc({
                     <button
                       type="button"
                       className={cn(
-                        'flex h-7 w-7 items-center justify-center rounded-full bg-[#00C9B1] text-lg font-bold leading-none text-white shadow-sm hover:bg-[#009697]',
+                        'flex h-7 w-7 items-center justify-center rounded-full bg-[#17B26A] text-lg font-bold leading-none text-white shadow-sm hover:bg-[#128A52]',
                         addButtonVisibilityClass(activeSection, 'experience'),
                       )}
                       aria-label="Add experience entry"
@@ -2223,7 +2223,7 @@ function ClassicDoc({
         ) : inline && ctx ? (
           <button
             type="button"
-            className="text-left text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+            className="text-left text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
             onClick={() =>
               ctx.onUpdate({
                 experience: {
@@ -2321,7 +2321,7 @@ function ClassicDoc({
                     style={{
                       outline:
                         ctx?.focusedEntryId === proj.id
-                          ? '1.5px dashed #00C9B1'
+                          ? '1.5px dashed #17B26A'
                           : 'none',
                       outlineOffset: '3px',
                       borderRadius: '3px',
@@ -2706,7 +2706,7 @@ function ClassicDoc({
               {inline && ctx && data.projects.length === 0 ? (
                 <button
                   type="button"
-                  className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                  className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                   onClick={() =>
                     ctx.onUpdate({
                       projects: [
@@ -2762,7 +2762,7 @@ function ClassicDoc({
               {certListClassic.length === 0 && inline && ctx ? (
                 <button
                   type="button"
-                  className="text-sm italic text-[#00C9B1] hover:underline"
+                  className="text-sm italic text-[#17B26A] hover:underline"
                   onClick={() =>
                     ctx.onUpdate({
                       certifications: [
@@ -2793,7 +2793,7 @@ function ClassicDoc({
                     style={{
                       outline:
                         ctx?.focusedEntryId === c.id
-                          ? '1.5px dashed #00C9B1'
+                          ? '1.5px dashed #17B26A'
                           : 'none',
                       outlineOffset: '3px',
                       borderRadius: '3px',
@@ -2916,7 +2916,7 @@ function ClassicDoc({
                             <button
                               type="button"
                               className={cn(
-                                'flex h-7 w-7 items-center justify-center rounded-full bg-[#00C9B1] text-lg font-bold leading-none text-white shadow-sm hover:bg-[#009697]',
+                                'flex h-7 w-7 items-center justify-center rounded-full bg-[#17B26A] text-lg font-bold leading-none text-white shadow-sm hover:bg-[#128A52]',
                                 addButtonVisibilityClass(
                                   activeSection,
                                   'certifications',
@@ -3023,7 +3023,7 @@ function ClassicDoc({
                   style={{
                     outline:
                       ctx?.focusedEntryId === a.id
-                        ? '1.5px dashed #00C9B1'
+                        ? '1.5px dashed #17B26A'
                         : 'none',
                     outlineOffset: '3px',
                     borderRadius: '3px',
@@ -3218,7 +3218,7 @@ function ClassicDoc({
                     style={{
                       outline:
                         ctx?.focusedEntryId === l.id
-                          ? '1.5px dashed #00C9B1'
+                          ? '1.5px dashed #17B26A'
                           : 'none',
                       outlineOffset: '3px',
                       borderRadius: '3px',
@@ -3325,7 +3325,7 @@ function ClassicDoc({
                 <li className="list-none">
                   <button
                     type="button"
-                    className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                    className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                     onClick={() =>
                       ctx.onUpdate({
                         languages: [
@@ -3389,7 +3389,7 @@ function ClassicDoc({
             {inline && ctx && data.customSections.length === 0 ? (
               <button
                 type="button"
-                className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                 onClick={() =>
                   ctx.onUpdate({
                     customSections: [{ id: newLocalId(), title: '', body: '' }],
@@ -3510,7 +3510,7 @@ function ClassicDoc({
                     {block.items.length === 0 && inline && ctx ? (
                       <button
                         type="button"
-                        className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                        className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                         onClick={() =>
                           ctx.onUpdate({
                             parsedCustomSections: data.parsedCustomSections.map(
@@ -3555,7 +3555,7 @@ function ClassicDoc({
                           style={{
                             outline:
                               ctx?.focusedEntryId === item.id
-                                ? '1.5px dashed #00C9B1'
+                                ? '1.5px dashed #17B26A'
                                 : 'none',
                             outlineOffset: '3px',
                             borderRadius: '3px',
@@ -4597,7 +4597,7 @@ function ModernDoc({
         {inline &&
         dragOverSectionId === sectionId &&
         draggingSectionIdRef.current !== sectionId ? (
-          <div className="mb-1 rounded-md border-2 border-dashed border-[#00C9B1]/70 bg-[#00C9B1]/8 px-2 py-1 text-[10px] font-semibold tracking-wide text-[#007A7A]">
+          <div className="mb-1 rounded-md border-2 border-dashed border-[#17B26A]/70 bg-[#17B26A]/8 px-2 py-1 text-[10px] font-semibold tracking-wide text-[#0D7344]">
             Drop section here
           </div>
         ) : null}
@@ -4638,7 +4638,7 @@ function ModernDoc({
               title="Drag section to reorder"
               aria-label={`Drag ${fallback} section to reorder`}
               draggable
-              className="absolute left-0 cursor-grab rounded-sm border border-[#00C9B1]/45 bg-white/95 p-0.5 text-[#00C9B1] shadow-sm shadow-[#00C9B1]/15 transition hover:border-[#00C9B1]/70 hover:bg-[#00C9B1]/10 hover:text-[#007A7A] active:cursor-grabbing"
+              className="absolute left-0 cursor-grab rounded-sm border border-[#17B26A]/45 bg-white/95 p-0.5 text-[#17B26A] shadow-sm shadow-[#17B26A]/15 transition hover:border-[#17B26A]/70 hover:bg-[#17B26A]/10 hover:text-[#0D7344] active:cursor-grabbing"
               onMouseDown={(e) => e.stopPropagation()}
               onDragStart={(e) => {
                 draggingSectionIdRef.current = sectionId;
@@ -5024,7 +5024,7 @@ function ModernDoc({
             <button
               type="button"
               data-entry-id="__skills-empty__"
-              className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+              className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
               onClick={(e) => {
                 e.stopPropagation();
                 ctx.setFocusedSection('skills');
@@ -5190,7 +5190,7 @@ function ModernDoc({
           <li className="list-none">
             <button
               type="button"
-              className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+              className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
               onClick={() =>
                 ctx.onUpdate({
                   languages: [
@@ -5220,7 +5220,7 @@ function ModernDoc({
                 style={{
                   outline:
                     ctx?.focusedEntryId === l.id
-                      ? '1.5px dashed #00C9B1'
+                      ? '1.5px dashed #17B26A'
                       : 'none',
                   outlineOffset: '3px',
                   borderRadius: '3px',
@@ -5355,7 +5355,7 @@ function ModernDoc({
         {certListModern.length === 0 && inline && ctx ? (
           <button
             type="button"
-            className="text-sm italic text-[#00C9B1] hover:underline"
+            className="text-sm italic text-[#17B26A] hover:underline"
             onClick={() =>
               ctx.onUpdate({
                 certifications: [
@@ -5385,7 +5385,7 @@ function ModernDoc({
                 style={{
                   outline:
                     ctx?.focusedEntryId === c.id
-                      ? '1.5px dashed #00C9B1'
+                      ? '1.5px dashed #17B26A'
                       : 'none',
                   outlineOffset: '3px',
                   borderRadius: '3px',
@@ -5637,7 +5637,7 @@ function ModernDoc({
                   style={{
                     outline:
                       ctx.focusedEntryId === 'summary-body'
-                        ? '1.5px dashed #00C9B1'
+                        ? '1.5px dashed #17B26A'
                         : 'none',
                     outlineOffset: '3px',
                     borderRadius: '3px',
@@ -5704,7 +5704,7 @@ function ModernDoc({
                   style={{
                     outline:
                       ctx?.focusedEntryId === x.id
-                        ? '1.5px dashed #00C9B1'
+                        ? '1.5px dashed #17B26A'
                         : 'none',
                     outlineOffset: '3px',
                     borderRadius: '3px',
@@ -6163,7 +6163,7 @@ function ModernDoc({
                   style={{
                     outline:
                       ctx?.focusedEntryId === e.id
-                        ? '1.5px dashed #00C9B1'
+                        ? '1.5px dashed #17B26A'
                         : 'none',
                     outlineOffset: '3px',
                     borderRadius: '3px',
@@ -6429,7 +6429,7 @@ function ModernDoc({
                         <button
                           type="button"
                           className={cn(
-                            'flex h-7 w-7 items-center justify-center rounded-full bg-[#00C9B1] text-lg font-bold leading-none text-white shadow-sm hover:bg-[#009697]',
+                            'flex h-7 w-7 items-center justify-center rounded-full bg-[#17B26A] text-lg font-bold leading-none text-white shadow-sm hover:bg-[#128A52]',
                             addButtonVisibilityClass(
                               activeSection,
                               'education',
@@ -6486,7 +6486,7 @@ function ModernDoc({
             ) : inline && ctx ? (
               <button
                 type="button"
-                className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                 onClick={() =>
                   ctx.onUpdate({
                     education: {
@@ -6555,7 +6555,7 @@ function ModernDoc({
                   return (
                     <button
                       type="button"
-                      className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                      className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                       onClick={() =>
                         ctx.onUpdate({
                           projects: [
@@ -6602,7 +6602,7 @@ function ModernDoc({
                         style={{
                           outline:
                             ctx.focusedEntryId === pr.id
-                              ? '1.5px dashed #00C9B1'
+                              ? '1.5px dashed #17B26A'
                               : 'none',
                           outlineOffset: '3px',
                           borderRadius: '3px',
@@ -6998,7 +6998,7 @@ function ModernDoc({
                   return (
                     <button
                       type="button"
-                      className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                      className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                       onClick={() =>
                         ctx.onUpdate({
                           achievements: [
@@ -7032,7 +7032,7 @@ function ModernDoc({
                         style={{
                           outline:
                             ctx.focusedEntryId === a.id
-                              ? '1.5px dashed #00C9B1'
+                              ? '1.5px dashed #17B26A'
                               : 'none',
                           outlineOffset: '3px',
                           borderRadius: '3px',
@@ -7283,7 +7283,7 @@ function ModernDoc({
             {inline && ctx && data.customSections.length === 0 ? (
               <button
                 type="button"
-                className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                 onClick={() =>
                   ctx.onUpdate({
                     customSections: [{ id: newLocalId(), title: '', body: '' }],
@@ -7429,7 +7429,7 @@ function ModernDoc({
                     {block.items.length === 0 && inline && ctx ? (
                       <button
                         type="button"
-                        className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                        className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                         onClick={() =>
                           ctx.onUpdate({
                             parsedCustomSections: data.parsedCustomSections.map(
@@ -7474,7 +7474,7 @@ function ModernDoc({
                           style={{
                             outline:
                               ctx?.focusedEntryId === item.id
-                                ? '1.5px dashed #00C9B1'
+                                ? '1.5px dashed #17B26A'
                                 : 'none',
                             outlineOffset: '3px',
                             borderRadius: '3px',
@@ -8362,7 +8362,7 @@ function CreativeDoc({
         {inline &&
         dragOverSectionId === sectionId &&
         draggingSectionIdRef.current !== sectionId ? (
-          <div className="mb-1 rounded-md border-2 border-dashed border-[#00C9B1]/70 bg-[#00C9B1]/8 px-2 py-1 text-[10px] font-semibold tracking-wide text-[#007A7A]">
+          <div className="mb-1 rounded-md border-2 border-dashed border-[#17B26A]/70 bg-[#17B26A]/8 px-2 py-1 text-[10px] font-semibold tracking-wide text-[#0D7344]">
             Drop section here
           </div>
         ) : null}
@@ -8403,7 +8403,7 @@ function CreativeDoc({
               title="Drag section to reorder"
               aria-label={`Drag ${fallback} section to reorder`}
               draggable
-              className="absolute left-0 cursor-grab rounded-sm border border-[#00C9B1]/45 bg-white/95 p-0.5 text-[#00C9B1] shadow-sm shadow-[#00C9B1]/15 transition hover:border-[#00C9B1]/70 hover:bg-[#00C9B1]/10 hover:text-[#007A7A] active:cursor-grabbing"
+              className="absolute left-0 cursor-grab rounded-sm border border-[#17B26A]/45 bg-white/95 p-0.5 text-[#17B26A] shadow-sm shadow-[#17B26A]/15 transition hover:border-[#17B26A]/70 hover:bg-[#17B26A]/10 hover:text-[#0D7344] active:cursor-grabbing"
               onMouseDown={(e) => e.stopPropagation()}
               onDragStart={(e) => {
                 draggingSectionIdRef.current = sectionId;
@@ -8842,7 +8842,7 @@ function CreativeDoc({
                         style={{
                           outline:
                             ctx.focusedEntryId === 'summary-body'
-                              ? '1.5px dashed #00C9B1'
+                              ? '1.5px dashed #17B26A'
                               : 'none',
                           outlineOffset: '3px',
                           borderRadius: '3px',
@@ -8919,7 +8919,7 @@ function CreativeDoc({
                           style={{
                             outline:
                               ctx?.focusedEntryId === x.id
-                                ? '1.5px dashed #00C9B1'
+                                ? '1.5px dashed #17B26A'
                                 : 'none',
                             outlineOffset: '3px',
                             borderRadius: '3px',
@@ -9440,7 +9440,7 @@ function CreativeDoc({
                           style={{
                             outline:
                               ctx?.focusedEntryId === e.id
-                                ? '1.5px dashed #00C9B1'
+                                ? '1.5px dashed #17B26A'
                                 : 'none',
                             outlineOffset: '3px',
                             borderRadius: '3px',
@@ -9756,7 +9756,7 @@ function CreativeDoc({
                                 <button
                                   type="button"
                                   className={cn(
-                                    'flex h-7 w-7 items-center justify-center rounded-full bg-[#00C9B1] text-lg font-bold leading-none text-white shadow-sm hover:bg-[#009697]',
+                                    'flex h-7 w-7 items-center justify-center rounded-full bg-[#17B26A] text-lg font-bold leading-none text-white shadow-sm hover:bg-[#128A52]',
                                     addButtonVisibilityClass(
                                       activeSection,
                                       'education',
@@ -9813,7 +9813,7 @@ function CreativeDoc({
                     ) : inline && ctx ? (
                       <button
                         type="button"
-                        className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                        className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                         onClick={() =>
                           ctx.onUpdate({
                             education: {
@@ -9865,7 +9865,7 @@ function CreativeDoc({
                     {data.skills.categories.length === 0 && inline && ctx ? (
                       <button
                         type="button"
-                        className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                        className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                         onClick={() =>
                           ctx.onUpdate({
                             skills: {
@@ -9892,7 +9892,7 @@ function CreativeDoc({
                           style={{
                             outline:
                               ctx?.focusedEntryId === cat.id
-                                ? '1.5px dashed #00C9B1'
+                                ? '1.5px dashed #17B26A'
                                 : 'none',
                             outlineOffset: '3px',
                             borderRadius: '3px',
@@ -10129,7 +10129,7 @@ function CreativeDoc({
                           style={{
                             outline:
                               ctx?.focusedEntryId === proj.id
-                                ? '1.5px dashed #00C9B1'
+                                ? '1.5px dashed #17B26A'
                                 : 'none',
                             outlineOffset: '3px',
                             borderRadius: '3px',
@@ -10544,7 +10544,7 @@ function CreativeDoc({
                     {inline && ctx && data.projects.length === 0 ? (
                       <button
                         type="button"
-                        className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                        className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                         onClick={() =>
                           ctx.onUpdate({
                             projects: [
@@ -10594,7 +10594,7 @@ function CreativeDoc({
                     {certListCreative.length === 0 && inline && ctx ? (
                       <button
                         type="button"
-                        className="text-sm italic text-[#00C9B1] hover:underline"
+                        className="text-sm italic text-[#17B26A] hover:underline"
                         onClick={() =>
                           ctx.onUpdate({
                             certifications: [
@@ -10625,7 +10625,7 @@ function CreativeDoc({
                           style={{
                             outline:
                               ctx?.focusedEntryId === c.id
-                                ? '1.5px dashed #00C9B1'
+                                ? '1.5px dashed #17B26A'
                                 : 'none',
                             outlineOffset: '3px',
                             borderRadius: '3px',
@@ -10755,7 +10755,7 @@ function CreativeDoc({
                                   <button
                                     type="button"
                                     className={cn(
-                                      'flex h-7 w-7 items-center justify-center rounded-full bg-[#00C9B1] text-lg font-bold leading-none text-white shadow-sm hover:bg-[#009697]',
+                                      'flex h-7 w-7 items-center justify-center rounded-full bg-[#17B26A] text-lg font-bold leading-none text-white shadow-sm hover:bg-[#128A52]',
                                       addButtonVisibilityClass(
                                         activeSection,
                                         'certifications',
@@ -10862,7 +10862,7 @@ function CreativeDoc({
                           style={{
                             outline:
                               ctx?.focusedEntryId === l.id
-                                ? '1.5px dashed #00C9B1'
+                                ? '1.5px dashed #17B26A'
                                 : 'none',
                             outlineOffset: '3px',
                             borderRadius: '3px',
@@ -10973,7 +10973,7 @@ function CreativeDoc({
                       <li className="list-none">
                         <button
                           type="button"
-                          className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                          className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                           onClick={() =>
                             ctx.onUpdate({
                               languages: [
@@ -11042,7 +11042,7 @@ function CreativeDoc({
                         style={{
                           outline:
                             ctx?.focusedEntryId === a.id
-                              ? '1.5px dashed #00C9B1'
+                              ? '1.5px dashed #17B26A'
                               : 'none',
                           outlineOffset: '3px',
                           borderRadius: '3px',
@@ -11259,7 +11259,7 @@ function CreativeDoc({
                   {inline && ctx && data.customSections.length === 0 ? (
                     <button
                       type="button"
-                      className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                      className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                       onClick={() =>
                         ctx.onUpdate({
                           customSections: [
@@ -11420,7 +11420,7 @@ function CreativeDoc({
                             {block.items.length === 0 && inline && ctx ? (
                               <button
                                 type="button"
-                                className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                                className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                                 onClick={() =>
                                   ctx.onUpdate({
                                     parsedCustomSections:
@@ -11467,7 +11467,7 @@ function CreativeDoc({
                                   style={{
                                     outline:
                                       ctx?.focusedEntryId === item.id
-                                        ? '1.5px dashed #00C9B1'
+                                        ? '1.5px dashed #17B26A'
                                         : 'none',
                                     outlineOffset: '3px',
                                     borderRadius: '3px',
@@ -12279,7 +12279,7 @@ function ProfessionalDoc({
         {inline &&
         dragOverSectionId === sectionId &&
         draggingSectionIdRef.current !== sectionId ? (
-          <div className="mb-1 rounded-md border-2 border-dashed border-[#00C9B1]/70 bg-[#00C9B1]/8 px-2 py-1 text-[10px] font-semibold tracking-wide text-[#007A7A]">
+          <div className="mb-1 rounded-md border-2 border-dashed border-[#17B26A]/70 bg-[#17B26A]/8 px-2 py-1 text-[10px] font-semibold tracking-wide text-[#0D7344]">
             Drop section here
           </div>
         ) : null}
@@ -12317,7 +12317,7 @@ function ProfessionalDoc({
               title="Drag section to reorder"
               aria-label={`Drag ${fallback} section to reorder`}
               draggable
-              className="absolute left-0 cursor-grab rounded-sm border border-[#00C9B1]/45 bg-white/95 p-0.5 text-[#00C9B1] shadow-sm shadow-[#00C9B1]/15 transition hover:border-[#00C9B1]/70 hover:bg-[#00C9B1]/10 hover:text-[#007A7A] active:cursor-grabbing"
+              className="absolute left-0 cursor-grab rounded-sm border border-[#17B26A]/45 bg-white/95 p-0.5 text-[#17B26A] shadow-sm shadow-[#17B26A]/15 transition hover:border-[#17B26A]/70 hover:bg-[#17B26A]/10 hover:text-[#0D7344] active:cursor-grabbing"
               onMouseDown={(e) => e.stopPropagation()}
               onDragStart={(e) => {
                 draggingSectionIdRef.current = sectionId;
@@ -12408,7 +12408,7 @@ function ProfessionalDoc({
                     style={{
                       outline:
                         ctx?.focusedEntryId === e.id
-                          ? '1.5px dashed #00C9B1'
+                          ? '1.5px dashed #17B26A'
                           : 'none',
                       outlineOffset: '3px',
                       borderRadius: '3px',
@@ -12661,7 +12661,7 @@ function ProfessionalDoc({
                           <button
                             type="button"
                             className={cn(
-                              'flex h-7 w-7 items-center justify-center rounded-full bg-[#00C9B1] text-lg font-bold leading-none text-white shadow-sm hover:bg-[#009697]',
+                              'flex h-7 w-7 items-center justify-center rounded-full bg-[#17B26A] text-lg font-bold leading-none text-white shadow-sm hover:bg-[#128A52]',
                               addButtonVisibilityClass(
                                 activeSection,
                                 'education',
@@ -12718,7 +12718,7 @@ function ProfessionalDoc({
             ) : inline && ctx ? (
               <button
                 type="button"
-                className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                 onClick={() =>
                   ctx.onUpdate({
                     education: {
@@ -12786,7 +12786,7 @@ function ProfessionalDoc({
                   return (
                     <button
                       type="button"
-                      className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                      className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                       onClick={() =>
                         ctx.onUpdate({
                           achievements: [
@@ -12825,7 +12825,7 @@ function ProfessionalDoc({
                         style={{
                           outline:
                             ctx.focusedEntryId === a.id
-                              ? '1.5px dashed #00C9B1'
+                              ? '1.5px dashed #17B26A'
                               : 'none',
                           outlineOffset: '3px',
                           borderRadius: '3px',
@@ -13083,7 +13083,7 @@ function ProfessionalDoc({
                 <div className="space-y-1.5">
                   <button
                     type="button"
-                    className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                    className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                     onClick={(e) => {
                       e.stopPropagation();
                       ctx.setFocusedSection('skills');
@@ -13159,7 +13159,7 @@ function ProfessionalDoc({
                   style={{
                     outline:
                       ctx?.focusedEntryId === cat.id
-                        ? '1.5px dashed #00C9B1'
+                        ? '1.5px dashed #17B26A'
                         : 'none',
                     outlineOffset: '3px',
                     borderRadius: '3px',
@@ -13344,7 +13344,7 @@ function ProfessionalDoc({
                   style={{
                     outline:
                       ctx?.focusedEntryId === x.id
-                        ? '1.5px dashed #00C9B1'
+                        ? '1.5px dashed #17B26A'
                         : 'none',
                     outlineOffset: '3px',
                     borderRadius: '3px',
@@ -13790,7 +13790,7 @@ function ProfessionalDoc({
                         <button
                           type="button"
                           className={cn(
-                            'flex h-7 w-7 items-center justify-center rounded-full bg-[#00C9B1] text-lg font-bold leading-none text-white shadow-sm hover:bg-[#009697]',
+                            'flex h-7 w-7 items-center justify-center rounded-full bg-[#17B26A] text-lg font-bold leading-none text-white shadow-sm hover:bg-[#128A52]',
                             addButtonVisibilityClass(
                               activeSection,
                               'experience',
@@ -13867,7 +13867,7 @@ function ProfessionalDoc({
             ) : inline && ctx ? (
               <button
                 type="button"
-                className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                 onClick={() =>
                   ctx.onUpdate({
                     experience: {
@@ -13940,7 +13940,7 @@ function ProfessionalDoc({
                   return (
                     <button
                       type="button"
-                      className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                      className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                       onClick={() =>
                         ctx.onUpdate({
                           projects: [
@@ -13988,7 +13988,7 @@ function ProfessionalDoc({
                         style={{
                           outline:
                             ctx.focusedEntryId === pr.id
-                              ? '1.5px dashed #00C9B1'
+                              ? '1.5px dashed #17B26A'
                               : 'none',
                           outlineOffset: '3px',
                           borderRadius: '3px',
@@ -14402,7 +14402,7 @@ function ProfessionalDoc({
                   return (
                     <button
                       type="button"
-                      className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                      className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                       onClick={() =>
                         ctx.onUpdate({
                           certifications: [
@@ -14434,7 +14434,7 @@ function ProfessionalDoc({
                     style={{
                       outline:
                         ctx?.focusedEntryId === c.id
-                          ? '1.5px dashed #00C9B1'
+                          ? '1.5px dashed #17B26A'
                           : 'none',
                       outlineOffset: '3px',
                       borderRadius: '3px',
@@ -14696,7 +14696,7 @@ function ProfessionalDoc({
                 <li className="list-none pl-0">
                   <button
                     type="button"
-                    className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                    className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                     onClick={() =>
                       ctx.onUpdate({
                         languages: [
@@ -14722,7 +14722,7 @@ function ProfessionalDoc({
                     style={{
                       outline:
                         ctx?.focusedEntryId === l.id
-                          ? '1.5px dashed #00C9B1'
+                          ? '1.5px dashed #17B26A'
                           : 'none',
                       outlineOffset: '3px',
                       borderRadius: '3px',
@@ -14915,7 +14915,7 @@ function ProfessionalDoc({
                   style={{
                     outline:
                       ctx.focusedEntryId === 'summary-body'
-                        ? '1.5px dashed #00C9B1'
+                        ? '1.5px dashed #17B26A'
                         : 'none',
                     outlineOffset: '3px',
                     borderRadius: '3px',
@@ -14995,7 +14995,7 @@ function ProfessionalDoc({
                     {block.items.length === 0 && inline && ctx ? (
                       <button
                         type="button"
-                        className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                        className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                         onClick={() =>
                           ctx.onUpdate({
                             parsedCustomSections: data.parsedCustomSections.map(
@@ -15040,7 +15040,7 @@ function ProfessionalDoc({
                           style={{
                             outline:
                               ctx?.focusedEntryId === item.id
-                                ? '1.5px dashed #00C9B1'
+                                ? '1.5px dashed #17B26A'
                                 : 'none',
                             outlineOffset: '3px',
                             borderRadius: '3px',
@@ -15515,7 +15515,7 @@ function ProfessionalDoc({
             {inline && ctx && data.customSections.length === 0 ? (
               <button
                 type="button"
-                className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                 onClick={() =>
                   ctx.onUpdate({
                     customSections: [{ id: newLocalId(), title: '', body: '' }],

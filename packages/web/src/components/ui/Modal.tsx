@@ -77,7 +77,7 @@ export function Modal({
     <PortalThemeScope>
       <div
         className={cn(
-          'fixed inset-0 flex bg-black/60 p-4 backdrop-blur-sm',
+          'fixed inset-0 flex bg-bg-overlay p-4 backdrop-blur-sm',
           scrollBody ? 'overflow-hidden' : 'overflow-y-auto',
           layerZIndex == null && 'z-[100]',
         )}
@@ -105,7 +105,7 @@ export function Modal({
             aria-modal="true"
             onClick={(e) => e.stopPropagation()}
             className={cn(
-              'relative z-10 flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-[#00C9B1]/20 bg-[#0C0F0F] shadow-xl',
+              'relative z-10 flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-accent-border bg-bg-surface shadow-xl',
               scrollBody && 'max-h-[85vh] sm:max-h-[min(90dvh,880px)]',
               !scrollBody && 'app-scrollbar',
               className,
@@ -115,7 +115,7 @@ export function Modal({
               <button
                 type="button"
                 aria-label="Close dialog"
-                className="absolute right-3 top-3 z-20 rounded-lg border border-white/[0.08] bg-[#111616] p-1.5 text-white/70 transition hover:border-white/[0.14] hover:bg-white/[0.06] hover:text-white"
+                className="absolute right-3 top-3 z-20 rounded-lg border border-border-subtle bg-bg-sunken p-1.5 text-text-secondary transition hover:border-border-default hover:bg-bg-hover hover:text-text-primary"
                 onClick={() => onOpenChange(false)}
               >
                 <X className="h-4 w-4" aria-hidden />
@@ -124,7 +124,7 @@ export function Modal({
             {title || description ? (
               <div
                 className={cn(
-                  'relative shrink-0 border-b border-white/[0.06] px-6 pb-4 pt-6 pr-14',
+                  'relative shrink-0 border-b border-border-subtle px-6 pb-4 pt-6 pr-14',
                   scrollBody && 'sticky top-0 z-[1] bg-inherit',
                 )}
               >
@@ -132,7 +132,7 @@ export function Modal({
                   <button
                     type="button"
                     aria-label="Close dialog"
-                    className="absolute right-4 top-4 z-20 rounded-lg border border-white/[0.08] bg-[#111616]/90 p-1.5 text-white/70 backdrop-blur-sm transition hover:border-white/[0.14] hover:bg-white/[0.08] hover:text-white"
+                    className="absolute right-4 top-4 z-20 rounded-lg border border-border-subtle bg-bg-sunken p-1.5 text-text-secondary backdrop-blur-sm transition hover:border-border-default hover:bg-bg-hover hover:text-text-primary"
                     onClick={() => onOpenChange(false)}
                   >
                     <X className="h-4 w-4" aria-hidden />
@@ -141,7 +141,7 @@ export function Modal({
                 {title ? (
                   <h2
                     className={cn(
-                      'text-lg font-bold text-white',
+                      'text-lg font-bold text-text-primary',
                       titleClassName,
                     )}
                   >
@@ -149,7 +149,9 @@ export function Modal({
                   </h2>
                 ) : null}
                 {description ? (
-                  <p className="mt-2 text-sm text-white/55">{description}</p>
+                  <p className="mt-2 text-sm text-text-tertiary">
+                    {description}
+                  </p>
                 ) : null}
               </div>
             ) : null}

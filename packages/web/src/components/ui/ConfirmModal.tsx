@@ -50,7 +50,7 @@ export function ConfirmModal({
           disabled={isPending}
           className={
             variant === 'danger'
-              ? 'border border-red-400/40 bg-red-500/15 text-red-200 hover:bg-red-500/25'
+              ? 'border border-danger-border bg-danger-subtle text-danger-text hover:bg-danger-subtle'
               : undefined
           }
           onClick={async () => {

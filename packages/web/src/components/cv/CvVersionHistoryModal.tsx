@@ -120,27 +120,30 @@ export function CvVersionHistoryModal({
   let body: ReactNode;
   if (!id || (revisionsQ.isError && isNotFoundError(revisionsQ.error))) {
     body = (
-      <p className="py-6 text-center text-sm text-white/55">
+      <p className="py-6 text-center text-sm text-text-tertiary">
         {CV_VERSION_NOT_AVAILABLE_MESSAGE}
       </p>
     );
   } else if (revisionsQ.isPending) {
     body = (
-      <div className="flex items-center justify-center gap-2 py-8 text-sm text-white/55">
-        <Loader2 className="h-4 w-4 animate-spin text-[#00C9B1]" aria-hidden />
+      <div className="flex items-center justify-center gap-2 py-8 text-sm text-text-tertiary">
+        <Loader2
+          className="h-4 w-4 animate-spin text-accent-text"
+          aria-hidden
+        />
         Loading versions…
       </div>
     );
   } else if (revisionsQ.isError) {
     body = (
       <div className="space-y-3 py-4 text-center">
-        <p className="text-sm text-rose-300">
+        <p className="text-sm text-danger-text">
           {getApiErrorMessage(revisionsQ.error)}
         </p>
         <Button
           type="button"
           variant="ghost"
-          className="border border-white/10 text-xs"
+          className="border border-border-subtle text-xs"
           onClick={() => void revisionsQ.refetch()}
         >
           Try again
@@ -149,7 +152,7 @@ export function CvVersionHistoryModal({
     );
   } else if (revisions.length === 0) {
     body = (
-      <p className="py-6 text-center text-sm leading-relaxed text-white/55">
+      <p className="py-6 text-center text-sm leading-relaxed text-text-tertiary">
         {CV_VERSIONS_EMPTY_MESSAGE}
       </p>
     );
@@ -158,13 +161,16 @@ export function CvVersionHistoryModal({
       <ul className="divide-y divide-white/[0.06]" aria-label="Saved versions">
         {revisions.map((rev) => (
           <li key={rev.id} className="flex items-center gap-3 py-3">
-            <History className="h-4 w-4 shrink-0 text-[#00C9B1]" aria-hidden />
+            <History
+              className="h-4 w-4 shrink-0 text-accent-text"
+              aria-hidden
+            />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-white/90">
+              <p className="text-sm font-medium text-text-primary">
                 {cvRevisionReasonLabel(rev.reason)}
               </p>
               <p
-                className="text-xs text-white/45"
+                className="text-xs text-text-tertiary"
                 title={formatFullDate(rev.createdAt)}
               >
                 {formatRelativeEdited(rev.createdAt)}
@@ -176,7 +182,7 @@ export function CvVersionHistoryModal({
             <Button
               type="button"
               variant="ghost"
-              className="shrink-0 border border-white/10 text-xs"
+              className="shrink-0 border border-border-subtle text-xs"
               disabled={restoreDisabled}
               onClick={() => setConfirmTarget(rev)}
             >
@@ -202,7 +208,7 @@ export function CvVersionHistoryModal({
         scrollBody
       >
         {restoreBlockedReason && revisions.length > 0 ? (
-          <p className="mb-2 rounded-lg border border-amber-400/25 bg-amber-500/10 px-3 py-2 text-xs text-amber-100/90">
+          <p className="mb-2 rounded-lg border border-warning-border bg-warning-subtle px-3 py-2 text-xs text-warning-text">
             {restoreBlockedReason}
           </p>
         ) : null}

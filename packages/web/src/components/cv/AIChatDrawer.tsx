@@ -139,21 +139,23 @@ export function AIChatDrawer({
             animate={{ x: 0 }}
             exit={{ x: 380 }}
             transition={{ type: 'spring', damping: 30, stiffness: 320 }}
-            className="fixed right-0 top-0 z-[81] flex h-full w-[min(100vw,420px)] flex-col border-l border-white/[0.08] bg-[#0C0F0F] shadow-[-10px_0_40px_rgba(0,0,0,0.45)]"
+            className="fixed right-0 top-0 z-[81] flex h-full w-[min(100vw,420px)] flex-col border-l border-border-subtle bg-bg-surface shadow-[-10px_0_40px_rgba(0,0,0,0.45)]"
           >
-            <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
+            <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
               <div>
                 <h2
                   id="build-with-ai-title"
-                  className="text-sm font-semibold text-white"
+                  className="text-sm font-semibold text-text-primary"
                 >
                   Build with AI
                 </h2>
-                <p className="text-[11px] text-white/45">{progressLabel}</p>
+                <p className="text-[11px] text-text-tertiary">
+                  {progressLabel}
+                </p>
               </div>
               <button
                 type="button"
-                className="rounded-lg p-1.5 text-white/50 transition hover:bg-white/[0.06] hover:text-white"
+                className="rounded-lg p-1.5 text-text-tertiary transition hover:bg-bg-hover hover:text-text-primary"
                 onClick={() => onOpenChange(false)}
                 aria-label="Close"
               >
@@ -175,10 +177,10 @@ export function AIChatDrawer({
                 >
                   <div
                     className={cn(
-                      'max-w-[88%] rounded-[12px] px-3.5 py-2.5 text-sm text-white',
+                      'max-w-[88%] rounded-[12px] px-3.5 py-2.5 text-sm text-text-primary',
                       m.role === 'user'
-                        ? 'rounded-br-[4px] border border-[rgba(0,201,177,0.35)] bg-[rgba(0,201,177,0.14)]'
-                        : 'rounded-bl-[4px] border border-[rgba(0,201,177,0.16)] bg-[#111616]',
+                        ? 'rounded-br-[4px] border border-accent-border bg-accent-subtle'
+                        : 'rounded-bl-[4px] border border-accent-border bg-bg-sunken',
                     )}
                   >
                     {m.content}
@@ -187,25 +189,25 @@ export function AIChatDrawer({
               ))}
               {sending ? (
                 <div className="flex justify-start">
-                  <div className="rounded-[12px] rounded-bl-[4px] border border-[rgba(0,201,177,0.16)] bg-[#111616] px-3.5 py-2.5 text-sm text-white/70">
+                  <div className="rounded-[12px] rounded-bl-[4px] border border-accent-border bg-bg-sunken px-3.5 py-2.5 text-sm text-text-secondary">
                     AI is thinking...
                   </div>
                 </div>
               ) : null}
             </div>
 
-            <div className="border-t border-white/[0.06] px-4 py-3">
+            <div className="border-t border-border-subtle px-4 py-3">
               {extractedData ? (
-                <div className="mb-3 rounded-lg border border-[rgba(16,185,129,0.35)] bg-[rgba(16,185,129,0.08)] p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">
+                <div className="mb-3 rounded-lg border border-success-border bg-success-subtle p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-success-text">
                     Ready to build
                   </p>
-                  <ul className="mt-2 space-y-1 text-xs text-white/75">
+                  <ul className="mt-2 space-y-1 text-xs text-text-secondary">
                     {summarizeExtracted(extractedData).map((line) => (
                       <li key={line}>- {line}</li>
                     ))}
                   </ul>
-                  <p className="mt-2 text-[10px] text-white/40">
+                  <p className="mt-2 text-[10px] text-text-tertiary">
                     Template: {selectedTemplate}
                   </p>
                 </div>
@@ -216,7 +218,7 @@ export function AIChatDrawer({
                 onSend={() => void send()}
                 sending={sending}
                 disabled={building}
-                textareaClassName="border-white/[0.12] bg-[#111616]"
+                textareaClassName="border-border-default bg-bg-sunken"
               />
               {extractedData ? (
                 <Button

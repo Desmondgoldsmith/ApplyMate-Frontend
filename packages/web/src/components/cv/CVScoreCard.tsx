@@ -54,9 +54,9 @@ const RING_STROKE = 6;
 const RING_C = 2 * Math.PI * RING_R;
 
 function sectionScoreBarColor(score: number): string {
-  if (score >= 80) return '#00C9B1';
-  if (score >= 60) return '#FBBF24';
-  return '#F87171';
+  if (score >= 80) return 'var(--ck-success-text)';
+  if (score >= 60) return 'var(--ck-warning-text)';
+  return 'var(--ck-danger-text)';
 }
 
 const CAREER_STAGE_LABELS: Record<string, string> = {
@@ -338,16 +338,16 @@ function CvHybridScoringBlock({
       <div className={cn('mt-3 w-full min-w-0', compact ? 'px-1' : 'px-0.5')}>
         <div
           className={cn(
-            'rounded-xl border bg-amber-500/[0.06]',
-            insufficient ? 'border-[#00C9B1]/25' : 'border-amber-500/20',
+            'rounded-xl border bg-warning-subtle',
+            insufficient ? 'border-accent-border' : 'border-warning-border',
             compact ? 'px-2.5 py-2' : 'px-3 py-2.5',
           )}
         >
           <p
             className={cn(
               'font-medium leading-snug',
-              insufficient ? 'text-[#7ef4e6]' : 'text-amber-100/90',
-              compact ? 'text-[10px]' : 'text-[11px]',
+              insufficient ? 'text-accent-text' : 'text-warning-text',
+              compact ? 'text-[12px]' : 'text-[13px]',
             )}
           >
             {insufficient
@@ -357,8 +357,8 @@ function CvHybridScoringBlock({
           {!insufficient ? (
             <p
               className={cn(
-                'mt-1 leading-snug text-white/45',
-                compact ? 'text-[9px]' : 'text-[10px]',
+                'mt-1 leading-snug text-text-tertiary',
+                compact ? 'text-[11px]' : 'text-[12px]',
               )}
             >
               The AI quality review refreshes automatically once AI is available
@@ -368,8 +368,8 @@ function CvHybridScoringBlock({
           ) : structural != null ? (
             <p
               className={cn(
-                'mt-1 text-white/45',
-                compact ? 'text-[9px]' : 'text-[10px]',
+                'mt-1 text-text-tertiary',
+                compact ? 'text-[11px]' : 'text-[12px]',
               )}
             >
               Structure score: {structural}/100.
@@ -425,18 +425,27 @@ function CvHybridScoringBlock({
         compact ? 'px-1' : 'px-0.5',
       )}
     >
-      <div
+      <details
         className={cn(
-          'rounded-xl border border-white/[0.08] bg-white/[0.03]',
+          'group rounded-xl border border-border-subtle bg-bg-surface',
           compact ? 'px-2.5 py-2' : 'px-3 py-2.5',
         )}
       >
+        <summary className="flex min-h-[36px] cursor-pointer list-none items-center justify-between gap-2 text-[13px] font-semibold text-text-secondary hover:text-text-primary [&::-webkit-details-marker]:hidden">
+          How is this score worked out?
+          <span
+            aria-hidden
+            className="text-text-tertiary transition-transform group-open:rotate-180"
+          >
+            ▾
+          </span>
+        </summary>
         {weightsSummary ? (
           <div className="text-center">
             <p
               className={cn(
-                'leading-snug text-white/55',
-                compact ? 'text-[10px]' : 'text-[11px]',
+                'leading-snug text-text-tertiary',
+                compact ? 'text-[12px]' : 'text-[13px]',
               )}
             >
               Blended from two scores
@@ -444,8 +453,8 @@ function CvHybridScoringBlock({
             <div className="mt-1 flex flex-col items-center justify-center gap-0.5">
               <p
                 className={cn(
-                  'font-medium tabular-nums text-white/40',
-                  compact ? 'text-[9px]' : 'text-[10px]',
+                  'font-medium tabular-nums text-text-tertiary',
+                  compact ? 'text-[11px]' : 'text-[12px]',
                 )}
               >
                 {weightsSummary}
@@ -467,11 +476,11 @@ function CvHybridScoringBlock({
             <div
               className={cn(
                 'mt-2 grid grid-cols-3 gap-1 text-center tabular-nums',
-                compact ? 'text-[10px]' : 'text-[11px]',
+                compact ? 'text-[12px]' : 'text-[13px]',
               )}
             >
-              <div className="min-w-0 rounded-lg bg-white/[0.04] px-1 py-1.5">
-                <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-white/35">
+              <div className="min-w-0 rounded-lg bg-bg-surface px-1 py-1.5">
+                <p className="text-[11px] font-medium uppercase leading-tight tracking-wide text-text-tertiary">
                   Structure score
                 </p>
                 {t?.structural.short ? (
@@ -484,7 +493,9 @@ function CvHybridScoringBlock({
                     />
                   </div>
                 ) : null}
-                <p className="mt-0.5 text-[9px] text-white/30">out of 100</p>
+                <p className="mt-0.5 text-[11px] text-text-disabled">
+                  out of 100
+                </p>
                 <p
                   className="mt-0.5 text-base font-semibold leading-none"
                   style={{ color: sectionScoreBarColor(structural) }}
@@ -492,8 +503,8 @@ function CvHybridScoringBlock({
                   {structural}
                 </p>
               </div>
-              <div className="min-w-0 rounded-lg bg-white/[0.04] px-1 py-1.5">
-                <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-white/35">
+              <div className="min-w-0 rounded-lg bg-bg-surface px-1 py-1.5">
+                <p className="text-[11px] font-medium uppercase leading-tight tracking-wide text-text-tertiary">
                   Quality score
                 </p>
                 {t?.ai.short ? (
@@ -506,7 +517,9 @@ function CvHybridScoringBlock({
                     />
                   </div>
                 ) : null}
-                <p className="mt-0.5 text-[9px] text-white/30">out of 100</p>
+                <p className="mt-0.5 text-[11px] text-text-disabled">
+                  out of 100
+                </p>
                 <p
                   className="mt-0.5 text-base font-semibold leading-none"
                   style={{ color: sectionScoreBarColor(ai) }}
@@ -514,14 +527,14 @@ function CvHybridScoringBlock({
                   {ai}
                 </p>
               </div>
-              <div className="rounded-lg border border-[#00C9B1]/20 bg-[#00C9B1]/[0.06] px-1.5 py-1.5">
-                <p className="text-[9px] font-medium uppercase tracking-wide text-[#00C9B1]/80">
+              <div className="rounded-lg border border-accent-border bg-accent-subtle px-1.5 py-1.5">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-accent-text">
                   Overall score
                 </p>
-                <p className="mt-0.5 text-[9px] text-[#00C9B1]/60">
+                <p className="mt-0.5 text-[11px] text-accent-text">
                   weighted blend
                 </p>
-                <p className="mt-0.5 text-base font-semibold leading-none text-white">
+                <p className="mt-0.5 text-base font-semibold leading-none text-text-primary">
                   {Math.round(overallScore)}
                 </p>
               </div>
@@ -529,8 +542,8 @@ function CvHybridScoringBlock({
             {formulaExample ? (
               <p
                 className={cn(
-                  'mt-2 text-center font-medium tabular-nums text-white/35',
-                  compact ? 'text-[9px]' : 'text-[10px]',
+                  'mt-2 text-center font-medium tabular-nums text-text-tertiary',
+                  compact ? 'text-[11px]' : 'text-[12px]',
                 )}
               >
                 How we calculated this: {formulaExample}
@@ -540,8 +553,8 @@ function CvHybridScoringBlock({
         ) : null}
 
         {hybrid.aiCached && t?.cache.short ? (
-          <div className="mt-2 flex items-center justify-center gap-1.5 border-t border-white/[0.06] pt-2">
-            <span className="text-[10px] font-medium text-white/35">
+          <div className="mt-2 flex items-center justify-center gap-1.5 border-t border-border-subtle pt-2">
+            <span className="text-[12px] font-medium text-text-tertiary">
               Cached quality review
             </span>
             <InfoHint
@@ -551,25 +564,25 @@ function CvHybridScoringBlock({
             />
           </div>
         ) : null}
-      </div>
+      </details>
 
       {summary ? (
         <div
           className={cn(
-            'rounded-xl border-l-2 border-[#00C9B1]/50 bg-white/[0.03] py-2 pl-3 pr-2.5',
-            compact ? 'text-[10px]' : 'text-[11px]',
+            'rounded-xl border-l-2 border-accent-border bg-bg-surface py-2 pl-3 pr-2.5',
+            compact ? 'text-[12px]' : 'text-[13px]',
           )}
         >
-          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-white/35">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-text-tertiary">
             AI review
           </p>
-          <p className="leading-relaxed text-white/60">{summary}</p>
+          <p className="leading-relaxed text-text-secondary">{summary}</p>
         </div>
       ) : null}
 
       {showQualityDimensions && dimensionEntries.length > 0 ? (
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-2.5">
-          <p className="mb-2 text-[9px] font-semibold uppercase tracking-wide text-white/35">
+        <div className="rounded-xl border border-border-subtle bg-bg-surface p-2.5">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-tertiary">
             Quality dimensions
           </p>
           <div className="space-y-2">
@@ -582,20 +595,20 @@ function CvHybridScoringBlock({
                 <div className="mb-1 flex items-center justify-between gap-2">
                   <span
                     className={cn(
-                      'truncate text-white/55',
-                      compact ? 'text-[10px]' : 'text-[11px]',
+                      'truncate text-text-tertiary',
+                      compact ? 'text-[12px]' : 'text-[13px]',
                     )}
                   >
                     {formatAiDimensionLabel(key)}
                   </span>
                   <span
-                    className="shrink-0 text-[11px] font-semibold tabular-nums"
+                    className="shrink-0 text-[13px] font-semibold tabular-nums"
                     style={{ color: sectionScoreBarColor(dim.score) }}
                   >
                     {dim.score}
                   </span>
                 </div>
-                <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
+                <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-bg-hover">
                   <div
                     className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500"
                     style={{
@@ -822,8 +835,8 @@ export function CVScoreCard({
     <div
       className={cn(
         compactLayout
-          ? 'mb-4 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3'
-          : 'mt-5 border-t border-white/[0.08] pt-4',
+          ? 'mb-4 rounded-lg border border-border-subtle bg-bg-surface p-3'
+          : 'mt-5 border-t border-border-subtle pt-4',
       )}
     >
       <div
@@ -833,8 +846,8 @@ export function CVScoreCard({
           <div className="flex min-w-0 max-w-[min(100%,14rem)] items-center gap-1 sm:max-w-none">
             <span
               className={cn(
-                'font-semibold uppercase tracking-widest text-white/40',
-                compactLayout ? 'text-[9px]' : 'text-[10px]',
+                'font-semibold uppercase tracking-widest text-text-tertiary',
+                compactLayout ? 'text-[11px]' : 'text-[12px]',
               )}
             >
               {atsSectionTitle}
@@ -850,17 +863,21 @@ export function CVScoreCard({
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
             <span
               className={cn('font-bold', compactLayout ? 'text-xs' : 'text-sm')}
-              style={{ color: br.ats.compatible ? '#22C55E' : '#F59E0B' }}
+              style={{
+                color: br.ats.compatible
+                  ? 'var(--ck-success-text)'
+                  : 'var(--ck-warning-text)',
+              }}
             >
               {br.ats.score}/100
             </span>
             <span
               className={cn(
                 'shrink-0 rounded-full px-2 py-0.5 font-semibold',
-                compactLayout ? 'text-[9px]' : 'text-[10px]',
+                compactLayout ? 'text-[11px]' : 'text-[12px]',
                 br.ats.compatible
-                  ? 'bg-green-500/15 text-green-400'
-                  : 'bg-amber-500/15 text-amber-400',
+                  ? 'bg-success-subtle text-success-text'
+                  : 'bg-warning-subtle text-warning-text',
               )}
               title={br.ats.compatible ? atsPassedTooltip : undefined}
             >
@@ -879,15 +896,15 @@ export function CVScoreCard({
           )}
         >
           <span
-            className="mt-0.5 shrink-0 text-xs text-green-400"
+            className="mt-0.5 shrink-0 text-xs text-success-text"
             title={atsPassedTooltip}
           >
             ✓
           </span>
           <span
             className={cn(
-              'min-w-0 break-words leading-relaxed text-white/50',
-              compactLayout ? 'text-[10px]' : 'text-xs',
+              'min-w-0 break-words leading-relaxed text-text-tertiary',
+              compactLayout ? 'text-[12px]' : 'text-xs',
             )}
           >
             {check}
@@ -899,15 +916,15 @@ export function CVScoreCard({
         <div
           key={`i-${i}`}
           className={cn(
-            'flex items-start gap-2 rounded-lg border border-amber-500/15 bg-amber-500/[0.06]',
+            'flex items-start gap-2 rounded-lg border border-warning-border bg-warning-subtle',
             compactLayout ? 'mb-1.5 p-2' : 'mb-2 p-2.5',
           )}
         >
-          <span className="mt-0.5 shrink-0 text-xs text-amber-400">⚠</span>
+          <span className="mt-0.5 shrink-0 text-xs text-warning-text">⚠</span>
           <span
             className={cn(
-              'min-w-0 break-words leading-relaxed text-white/60',
-              compactLayout ? 'text-[10px]' : 'text-xs',
+              'min-w-0 break-words leading-relaxed text-text-secondary',
+              compactLayout ? 'text-[12px]' : 'text-xs',
             )}
           >
             {issue}
@@ -920,14 +937,14 @@ export function CVScoreCard({
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <p
               className={cn(
-                'font-semibold uppercase tracking-widest text-white/45',
-                compactLayout ? 'text-[9px]' : 'text-[10px]',
+                'font-semibold uppercase tracking-widest text-text-tertiary',
+                compactLayout ? 'text-[11px]' : 'text-[12px]',
               )}
             >
               Structural ATS checks
             </p>
             {br.ats.structureScore != null ? (
-              <span className="text-[11px] font-semibold tabular-nums text-white/55">
+              <span className="text-[13px] font-semibold tabular-nums text-text-tertiary">
                 {br.ats.structureScore}/100
               </span>
             ) : null}
@@ -940,29 +957,29 @@ export function CVScoreCard({
                 className={cn(
                   'flex items-start gap-2 rounded-lg border',
                   high
-                    ? 'mb-2 border-rose-500/20 bg-rose-500/[0.07] p-2.5'
-                    : 'mb-2 border-amber-500/15 bg-amber-500/[0.06] p-2.5',
+                    ? 'mb-2 border-danger-border bg-danger-subtle p-2.5'
+                    : 'mb-2 border-warning-border bg-warning-subtle p-2.5',
                   compactLayout && 'p-2',
                 )}
               >
                 <span
                   className={cn(
                     'mt-0.5 shrink-0 text-xs',
-                    high ? 'text-rose-300' : 'text-amber-400',
+                    high ? 'text-danger-text' : 'text-warning-text',
                   )}
                 >
                   ⚠
                 </span>
                 <div className="min-w-0">
                   {issue.affectedSection ? (
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-white/40">
+                    <p className="text-[12px] font-semibold uppercase tracking-wide text-text-tertiary">
                       {issue.affectedSection}
                     </p>
                   ) : null}
                   <p
                     className={cn(
                       'leading-relaxed text-white/62',
-                      compactLayout ? 'text-[10px]' : 'text-xs',
+                      compactLayout ? 'text-[12px]' : 'text-xs',
                     )}
                   >
                     {issue.suggestion}
@@ -986,10 +1003,7 @@ export function CVScoreCard({
 
   return (
     <GlowCard
-      className={cn(
-        'border border-[rgba(0,201,177,0.15)]',
-        'overflow-x-visible',
-      )}
+      className={cn('border border-accent-border', 'overflow-x-visible')}
       contentClassName={cn(
         mode === 'compact' ? 'p-2.5 sm:p-3' : 'p-4',
         /* Let section breakdown rows paint to the edge; GlowCard defaults to overflow-x-hidden. */
@@ -1003,11 +1017,11 @@ export function CVScoreCard({
           <div className="mb-2 flex items-center justify-center gap-1">
             <span
               className={cn(
-                'font-semibold uppercase tracking-[0.08em] text-white/40',
-                mode === 'compact' ? 'text-[9px]' : 'text-[10px]',
+                'font-semibold uppercase tracking-[0.08em] text-text-tertiary',
+                mode === 'compact' ? 'text-[11px]' : 'text-[12px]',
               )}
             >
-              Resume score
+              CV score
             </span>
             {hybrid
               ? (() => {
@@ -1021,7 +1035,7 @@ export function CVScoreCard({
                   return hint ? (
                     <InfoHint
                       text={hint}
-                      buttonAriaLabel="How your resume score is calculated"
+                      buttonAriaLabel="How your CV score is calculated"
                       tooltipClassName="max-w-[min(22rem,92vw)]"
                     />
                   ) : null;
@@ -1052,7 +1066,7 @@ export function CVScoreCard({
                   cy={RING_CY}
                   r={RING_R}
                   fill="none"
-                  stroke="#00C9B1"
+                  stroke="var(--ck-accent-solid)"
                   strokeWidth={RING_STROKE}
                   strokeDasharray={RING_C}
                   strokeDashoffset={
@@ -1074,33 +1088,33 @@ export function CVScoreCard({
                   {roundedScore}
                 </text>
               </motion.svg>
-              <span className="mt-0.5 text-xs text-white/40">/100</span>
+              <span className="mt-0.5 text-xs text-text-tertiary">/100</span>
             </>
           ) : (
             <div
-              className="flex max-w-[15rem] flex-col items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-4 text-center"
+              className="flex max-w-[15rem] flex-col items-center gap-1.5 rounded-xl border border-border-subtle bg-bg-surface px-3 py-4 text-center"
               role="status"
             >
-              <span className="text-[11px] font-semibold text-white/70">
+              <span className="text-[13px] font-semibold text-text-secondary">
                 Score not available yet
               </span>
-              <span className="text-[10px] leading-snug text-white/40">
-                Run a scan to generate your resume score. The AI review appears
-                here when it&apos;s ready.
+              <span className="text-[12px] leading-snug text-text-tertiary">
+                Run a scan to generate your CV score. The AI review appears here
+                when it&apos;s ready.
               </span>
             </div>
           )}
           {br.careerStage && !isLikelyParseFailure ? (
-            <div className="mt-2 text-center text-[10px] font-medium uppercase tracking-[0.08em] text-white/35">
+            <div className="mt-2 text-center text-[12px] font-medium uppercase tracking-[0.08em] text-text-tertiary">
               {CAREER_STAGE_LABELS[br.careerStage] ?? br.careerStage}
             </div>
           ) : null}
           {isLikelyParseFailure ? (
             <div
-              className="mt-2 rounded-md border border-amber-500/20 bg-amber-500/[0.08] px-2.5 py-1 text-center text-[11px] text-amber-200/90"
+              className="mt-2 rounded-md border border-warning-border bg-warning-subtle px-2.5 py-1 text-center text-[13px] text-warning-text"
               role="status"
             >
-              Resume sections may not have loaded correctly
+              CV sections may not have loaded correctly
             </div>
           ) : null}
           {hybrid ? (
@@ -1112,23 +1126,23 @@ export function CVScoreCard({
             />
           ) : null}
           {scorePreview && !hideJobMatch ? (
-            <span className="mt-2 max-w-[14rem] text-center text-[10px] font-semibold leading-snug text-amber-200/90">
-              <span className="rounded-full border border-amber-500/35 bg-amber-500/10 px-2 py-0.5">
+            <span className="mt-2 max-w-[14rem] text-center text-[12px] font-semibold leading-snug text-warning-text">
+              <span className="rounded-full border border-warning-border bg-warning-subtle px-2 py-0.5">
                 Preview (not saved)
               </span>
-              <span className="mt-1 block font-normal text-white/40">
-                Stored resume score updates only when you run a full scan
-                without pasted job text.
+              <span className="mt-1 block font-normal text-text-tertiary">
+                Stored CV score updates only when you run a full scan without
+                pasted job text.
               </span>
             </span>
           ) : null}
         </div>
 
-        <div className="min-w-0 flex-1 overflow-x-visible border-t border-white/[0.07] pt-3">
-          <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35 sm:px-4">
+        <div className="min-w-0 flex-1 overflow-x-visible border-t border-border-subtle pt-3">
+          <p className="mb-2 px-3 text-[12px] font-semibold uppercase tracking-[0.1em] text-text-tertiary sm:px-4">
             Section breakdown
           </p>
-          <div className="overflow-x-visible rounded-xl border border-white/[0.06] bg-white/[0.015] py-1">
+          <div className="overflow-x-visible rounded-xl border border-border-subtle bg-white/[0.015] py-1">
             {sectionOrder.map(({ key, label }) => {
               const section = br.sections[key];
               if (!section) return null;
@@ -1161,28 +1175,28 @@ export function CVScoreCard({
                   className="box-border w-full min-w-0 px-3 py-1.5 sm:px-4"
                   title={`${label}${weightPct != null ? ` · ${weightPct}% weight` : ''} · ${sc}% score`}
                 >
-                  <div className="flex w-full min-w-0 items-center gap-1.5 text-[10px] leading-tight sm:gap-2 sm:text-[11px]">
-                    <span className="min-w-0 flex-1 truncate text-left font-medium text-[rgba(255,255,255,0.78)]">
+                  <div className="flex w-full min-w-0 items-center gap-1.5 text-[12px] leading-tight sm:gap-2 sm:text-[13px]">
+                    <span className="min-w-0 flex-1 truncate text-left font-medium text-text-secondary">
                       {label}
                     </span>
                     {weightPct != null ? (
-                      <span className="shrink-0 whitespace-nowrap text-[rgba(255,255,255,0.32)]">
+                      <span className="shrink-0 whitespace-nowrap text-text-tertiary">
                         {weightPct}% weight
                       </span>
                     ) : (
-                      <span className="shrink-0 whitespace-nowrap text-[rgba(255,255,255,0.22)]">
+                      <span className="shrink-0 whitespace-nowrap text-text-disabled">
                         —
                       </span>
                     )}
                     <span
-                      className="shrink-0 whitespace-nowrap text-right text-[11px] font-semibold tabular-nums sm:text-[12px]"
+                      className="shrink-0 whitespace-nowrap text-right text-[13px] font-semibold tabular-nums sm:text-[12px]"
                       style={{ color: barColor }}
                     >
                       {sc}%
                     </span>
                   </div>
                   <div
-                    className="relative mt-1 h-1 w-full min-w-0 overflow-hidden rounded-[4px] bg-[rgba(255,255,255,0.08)]"
+                    className="relative mt-1 h-1 w-full min-w-0 overflow-hidden rounded-[4px] bg-bg-surface"
                     aria-hidden
                   >
                     <div
@@ -1220,28 +1234,28 @@ export function CVScoreCard({
           </div>
 
           {!hideJobMatch && showJobMatchPanel ? (
-            <div className="mt-2 border-t border-white/[0.07] px-4 pb-1 pt-3">
-              <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-white/30">
+            <div className="mt-2 border-t border-border-subtle px-4 pb-1 pt-3">
+              <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-text-disabled">
                 Job match
               </p>
-              <p className="mt-1 text-xl font-bold tabular-nums text-[#00C9B1]">
+              <p className="mt-1 text-xl font-bold tabular-nums text-accent-text">
                 {Math.round(jobMatch?.score ?? 0)}%
               </p>
-              <p className="mt-1 text-[11px] leading-relaxed text-white/35">
+              <p className="mt-1 text-[13px] leading-relaxed text-text-tertiary">
                 Heuristic alignment with the job text you provided, not a hiring
                 decision or interview guarantee.
               </p>
               {jobMatch?.feedback?.trim() ? (
-                <p className="mb-3 text-xs leading-relaxed text-white/65">
+                <p className="mb-3 text-xs leading-relaxed text-text-secondary">
                   {jobMatch.feedback.trim()}
                 </p>
               ) : null}
               {missingSkillsDisplay.length > 0 ? (
                 <div className="mb-3">
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                  <p className="mb-1 text-[12px] font-semibold uppercase tracking-wider text-text-tertiary">
                     Missing or weak keywords
                   </p>
-                  <ul className="list-inside list-disc space-y-1 text-[11px] text-white/60">
+                  <ul className="list-inside list-disc space-y-1 text-[13px] text-text-secondary">
                     {missingSkillsDisplay.map((s, i) => (
                       <li key={`ms-${i}`}>{s}</li>
                     ))}
@@ -1250,10 +1264,10 @@ export function CVScoreCard({
               ) : null}
               {alignmentDisplay.length > 0 ? (
                 <div className="mb-3">
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                  <p className="mb-1 text-[12px] font-semibold uppercase tracking-wider text-text-tertiary">
                     Alignment insights
                   </p>
-                  <ul className="space-y-1 text-[11px] leading-relaxed text-white/60">
+                  <ul className="space-y-1 text-[13px] leading-relaxed text-text-secondary">
                     {alignmentDisplay.map((s, i) => (
                       <li key={`al-${i}`}>{s}</li>
                     ))}
@@ -1262,10 +1276,10 @@ export function CVScoreCard({
               ) : null}
               {recommendationsDisplay.length > 0 ? (
                 <div>
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                  <p className="mb-1 text-[12px] font-semibold uppercase tracking-wider text-text-tertiary">
                     Recommendations
                   </p>
-                  <ul className="space-y-1 text-[11px] leading-relaxed text-[#86EFAC]/90">
+                  <ul className="space-y-1 text-[13px] leading-relaxed text-success-text">
                     {recommendationsDisplay.map((s, i) => (
                       <li key={`rc-${i}`}>{s}</li>
                     ))}
@@ -1279,7 +1293,7 @@ export function CVScoreCard({
           mode === 'full' &&
           showJobMatchSkippedNote &&
           !showJobMatchPanel ? (
-            <p className="mt-3 text-[11px] leading-relaxed text-white/45">
+            <p className="mt-3 text-[13px] leading-relaxed text-text-tertiary">
               {jobMatch?.feedback?.trim() ||
                 'Add a job description (about 40+ characters) or a target role to see job match in your score.'}
             </p>
@@ -1298,12 +1312,12 @@ export function CVScoreCard({
               <p
                 style={{
                   fontSize: 12,
-                  color: '#F59E0B',
+                  color: 'var(--ck-warning-text)',
                   marginBottom: 4,
                   fontWeight: 600,
                 }}
               >
-                Score may not reflect your actual resume
+                Score may not reflect your actual CV
               </p>
               <p
                 style={{
@@ -1312,9 +1326,9 @@ export function CVScoreCard({
                   lineHeight: 1.5,
                 }}
               >
-                If you uploaded a resume, some sections may not have been
-                extracted correctly. Re-upload your resume from the resume
-                editor page to get an accurate score.
+                If you uploaded a CV, some sections may not have been extracted
+                correctly. Re-upload your CV from the CV editor page to get an
+                accurate score.
               </p>
             </div>
           ) : null}
@@ -1324,7 +1338,7 @@ export function CVScoreCard({
           {mode === 'compact' &&
           improvementsCount != null &&
           improvementsCount > 0 ? (
-            <p className="mt-4 text-[13px] text-white/45">
+            <p className="mt-4 text-[13px] text-text-tertiary">
               {improvementsCount} improvement
               {improvementsCount === 1 ? '' : 's'} available →
             </p>
@@ -1333,15 +1347,15 @@ export function CVScoreCard({
       </div>
 
       {mode === 'full' && strengthsDisplay.length > 0 ? (
-        <div className="mt-6 border-t border-white/[0.08] pt-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#22C55E]/90">
+        <div className="mt-6 border-t border-border-subtle pt-4">
+          <p className="text-[13px] font-semibold uppercase tracking-[0.1em] text-success-text/90">
             Strengths
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             {strengthsDisplay.map((s) => (
               <span
                 key={s}
-                className="inline-flex items-center gap-1 rounded-full border border-[#22C55E]/35 bg-[#22C55E]/10 px-2.5 py-1 text-xs text-[#86EFAC]"
+                className="inline-flex items-center gap-1 rounded-full border border-success-border bg-success-subtle px-2.5 py-1 text-xs text-success-text"
               >
                 <Check className="h-3 w-3 shrink-0" strokeWidth={3} />
                 {s}
@@ -1359,10 +1373,10 @@ export function CVScoreCard({
               className={cn(
                 'text-xs',
                 f.type === 'error'
-                  ? 'text-[#EF4444]'
+                  ? 'text-danger-text'
                   : f.type === 'warning'
-                    ? 'text-[#F59E0B]'
-                    : 'text-white/45',
+                    ? 'text-warning-text'
+                    : 'text-text-tertiary',
               )}
             >
               {f.text}

@@ -115,18 +115,18 @@ function PriorityBadge({
     priority ?? (severity === 'HIGH' ? 1 : severity === 'MEDIUM' ? 2 : 3);
   if (p === 1)
     return (
-      <span className="inline-flex items-center rounded-full border border-[rgba(248,113,113,0.25)] bg-[rgba(248,113,113,0.12)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em] text-[#F87171]">
+      <span className="inline-flex items-center rounded-full border border-[rgba(248,113,113,0.25)] bg-[rgba(248,113,113,0.12)] px-2 py-0.5 text-[12px] font-semibold uppercase tracking-[0.04em] text-danger-text">
         High priority
       </span>
     );
   if (p === 2)
     return (
-      <span className="inline-flex items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-400">
+      <span className="inline-flex items-center rounded-full bg-warning-subtle px-2 py-0.5 text-[12px] font-semibold text-warning-text">
         Medium
       </span>
     );
   return (
-    <span className="inline-flex items-center rounded-full bg-teal-500/15 px-2 py-0.5 text-[10px] font-semibold text-teal-400">
+    <span className="inline-flex items-center rounded-full bg-teal-500/15 px-2 py-0.5 text-[12px] font-semibold text-teal-400">
       Low
     </span>
   );
@@ -175,7 +175,6 @@ function ImprovementsPanelInner({
         pre.add(stableKey(item, i));
     });
     setResolvedSet(pre);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [improvements]);
 
   useEffect(() => {
@@ -619,24 +618,24 @@ function ImprovementsPanelInner({
   if (improvements.length === 0 || unresolvedItems.length === 0) {
     return (
       <GlowCard
-        className="border border-[rgba(0,201,177,0.12)]"
+        className="border border-accent-border"
         contentClassName="flex flex-col items-center justify-center py-10 text-center"
       >
         <motion.div
           initial={{ scale: 0.85, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 420, damping: 22 }}
-          className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15 ring-2 ring-emerald-400/35"
+          className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-success-subtle ring-2 ring-emerald-400/35"
         >
           <CheckCircle2
-            className="h-6 w-6 text-emerald-400"
+            className="h-6 w-6 text-success-text"
             strokeWidth={2.25}
           />
         </motion.div>
-        <p className="text-sm font-semibold text-white/90">
+        <p className="text-sm font-semibold text-text-primary">
           Your CV looks great — no open suggestions.
         </p>
-        <p className="mt-1 max-w-[240px] text-xs leading-relaxed text-white/45">
+        <p className="mt-1 max-w-[240px] text-xs leading-relaxed text-text-tertiary">
           Run another scan anytime after you edit your CV to discover new
           opportunities.
         </p>
@@ -645,14 +644,14 @@ function ImprovementsPanelInner({
   }
 
   return (
-    <GlowCard className="border border-white/[0.08]" contentClassName="p-0">
+    <GlowCard className="border border-border-subtle" contentClassName="p-0">
       <div className="flex w-full min-w-0 items-center justify-between gap-3 px-3 pb-2.5 pt-2 sm:px-4">
-        <span className="min-w-0 truncate text-[10px] font-semibold uppercase tracking-[0.1em] text-white/45 sm:text-[11px]">
+        <span className="min-w-0 truncate text-[12px] font-semibold uppercase tracking-[0.1em] text-text-tertiary sm:text-[13px]">
           Suggested improvements
         </span>
         {unresolvedItems.length > 0 ? (
           <span
-            className="pointer-events-none inline-flex min-w-[1.25rem] shrink-0 items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm"
+            className="pointer-events-none inline-flex min-w-[1.25rem] shrink-0 items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[12px] font-bold leading-none text-text-primary shadow-sm"
             aria-label={`${unresolvedItems.length} pending suggestions`}
           >
             {unresolvedItems.length > 99 ? '99+' : unresolvedItems.length}
@@ -661,9 +660,9 @@ function ImprovementsPanelInner({
       </div>
 
       {showBulkActions ? (
-        <div className="space-y-2 border-b border-white/[0.06] px-3 pb-3 sm:px-4">
+        <div className="space-y-2 border-b border-border-subtle px-3 pb-3 sm:px-4">
           {acceptAllHelper ? (
-            <p className="text-[10px] leading-snug text-white/45">
+            <p className="text-[12px] leading-snug text-text-tertiary">
               {acceptAllHelper}
             </p>
           ) : null}
@@ -675,7 +674,7 @@ function ImprovementsPanelInner({
                 Boolean(bulkBusy) || acceptAllBlocked || applyingSet.size > 0
               }
               onClick={() => void handleAcceptAll()}
-              className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#00C9B1] px-3 text-[11px] font-semibold text-[#080B0A] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-[8rem] sm:flex-none"
+              className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent-solid px-3 text-[13px] font-semibold text-text-on-accent transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-[8rem] sm:flex-none"
             >
               {bulkBusy === 'accept' ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -689,7 +688,7 @@ function ImprovementsPanelInner({
               data-testid="cv-improvement-reject-all"
               disabled={Boolean(bulkBusy) || applyingSet.size > 0}
               onClick={() => void handleRejectAll()}
-              className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-white/[0.12] bg-transparent px-3 text-[11px] font-medium text-white/55 transition hover:border-white/25 hover:text-white/85 disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-[8rem] sm:flex-none"
+              className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border-default bg-transparent px-3 text-[13px] font-medium text-text-tertiary transition hover:border-border-strong hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-[8rem] sm:flex-none"
             >
               {bulkBusy === 'reject' ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -698,13 +697,13 @@ function ImprovementsPanelInner({
             </button>
           </div>
           {acceptAllLoadingActive ? (
-            <p className="flex items-center gap-2 text-[10px] text-white/50">
+            <p className="flex items-center gap-2 text-[12px] text-text-tertiary">
               <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
               {CV_SUGGESTION_ACCEPT_ALL_MESSAGES[acceptAllLoadingPhraseIndex]}
             </p>
           ) : null}
           {acceptAllBlocked ? (
-            <p className="text-[10px] leading-snug text-amber-200/85">
+            <p className="text-[12px] leading-snug text-warning-text">
               {AI_QUOTA_UPGRADE_HINT}
             </p>
           ) : null}
@@ -717,11 +716,11 @@ function ImprovementsPanelInner({
             type="button"
             onClick={() => setNavIndex((v) => Math.max(0, v - 1))}
             disabled={clampedNav === 0}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-white/[0.10] bg-transparent text-white/50 transition hover:border-white/25 hover:text-white disabled:opacity-30"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-border-subtle bg-transparent text-text-tertiary transition hover:border-border-strong hover:text-text-primary disabled:opacity-30"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
           </button>
-          <span className="text-xs text-white/35">
+          <span className="text-xs text-text-tertiary">
             {clampedNav + 1} of {unresolvedItems.length}
           </span>
           <button
@@ -730,7 +729,7 @@ function ImprovementsPanelInner({
               setNavIndex((v) => Math.min(unresolvedItems.length - 1, v + 1))
             }
             disabled={clampedNav === unresolvedItems.length - 1}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-white/[0.10] bg-transparent text-white/50 transition hover:border-white/25 hover:text-white disabled:opacity-30"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-border-subtle bg-transparent text-text-tertiary transition hover:border-border-strong hover:text-text-primary disabled:opacity-30"
           >
             <ChevronRight className="h-3.5 w-3.5" />
           </button>
@@ -756,9 +755,9 @@ function ImprovementsPanelInner({
               '';
 
             return (
-              <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] p-3.5">
+              <div className="rounded-[10px] border border-border-subtle bg-bg-surface p-3.5">
                 {item.section && (
-                  <span className="mb-1.5 block text-[10px] font-medium uppercase tracking-[0.08em] text-white/30">
+                  <span className="mb-1.5 block text-[12px] font-medium uppercase tracking-[0.08em] text-text-disabled">
                     {item.section}
                   </span>
                 )}
@@ -769,7 +768,7 @@ function ImprovementsPanelInner({
                     severity={item.severity}
                   />
                   {isAiOriginSuggestionId(item.id) ? (
-                    <span className="inline-flex items-center gap-0.5 rounded-full border border-[#00C9B1]/25 bg-[#00C9B1]/10 px-2 py-0.5 text-[10px] font-semibold text-[#7ef4e6]">
+                    <span className="inline-flex items-center gap-0.5 rounded-full border border-accent-border bg-accent-subtle px-2 py-0.5 text-[12px] font-semibold text-accent-text">
                       <Sparkles className="h-3 w-3" aria-hidden />
                       Quality review
                     </span>
@@ -778,29 +777,29 @@ function ImprovementsPanelInner({
 
                 {Array.isArray(item.pendingFieldPaths) &&
                   item.pendingFieldPaths.length > 0 && (
-                    <p className="mb-2 text-[11px] font-medium text-[#00C9B1]/85">
+                    <p className="mb-2 text-[13px] font-medium text-accent-text">
                       {item.pendingFieldPaths.length} change
                       {item.pendingFieldPaths.length === 1 ? '' : 's'} remaining
                     </p>
                   )}
 
-                <p className="text-sm font-semibold leading-snug text-white/92">
+                <p className="text-sm font-semibold leading-snug text-text-primary">
                   {normalizeText(item.issue ?? item.message)}
                 </p>
 
                 {item.suggestion && (
-                  <p className="mt-2 text-xs leading-relaxed text-white/50">
+                  <p className="mt-2 text-xs leading-relaxed text-text-tertiary">
                     {normalizeText(item.suggestion)}
                   </p>
                 )}
 
                 {!aiFixable ? (
-                  <p className="mt-2.5 rounded-md border border-amber-500/20 bg-amber-500/8 px-2.5 py-2 text-[11px] leading-relaxed text-amber-200/90">
+                  <p className="mt-2.5 rounded-md border border-warning-border bg-warning-subtle px-2.5 py-2 text-[13px] leading-relaxed text-warning-text">
                     This needs information only you have — please add it
                     yourself.
                   </p>
                 ) : templateWithPlaceholder ? (
-                  <p className="mt-2.5 rounded-md border border-[#00C9B1]/20 bg-[#00C9B1]/8 px-2.5 py-2 text-[11px] leading-relaxed text-[#a8f5ea]/95">
+                  <p className="mt-2.5 rounded-md border border-accent-border bg-accent-subtle px-2.5 py-2 text-[13px] leading-relaxed text-text-primary">
                     Fix with AI adds bracketed placeholders like [ADD %] —
                     replace them with your real numbers in the preview before
                     accepting.
@@ -810,7 +809,7 @@ function ImprovementsPanelInner({
                 {targetPath && onJumpToTarget ? (
                   <button
                     type="button"
-                    className="mt-2 text-[11px] font-medium text-[#00C9B1] underline-offset-2 hover:underline"
+                    className="mt-2 text-[13px] font-medium text-accent-text underline-offset-2 hover:underline"
                     onClick={() =>
                       onJumpToTarget(targetPath, item.section ?? undefined)
                     }
@@ -820,18 +819,18 @@ function ImprovementsPanelInner({
                 ) : null}
 
                 {item.example && (
-                  <div className="mt-2.5 rounded-md border border-white/[0.06] bg-white/[0.03] p-2.5">
-                    <p className="mb-1.5 text-[10px] font-medium uppercase tracking-[0.08em] text-[rgba(0,201,177,0.60)]">
+                  <div className="mt-2.5 rounded-md border border-border-subtle bg-bg-surface p-2.5">
+                    <p className="mb-1.5 text-[12px] font-medium uppercase tracking-[0.08em] text-[rgba(23,178,106,0.60)]">
                       Example
                     </p>
-                    <p className="whitespace-pre-line text-[11px] leading-relaxed text-white/45">
+                    <p className="whitespace-pre-line text-[13px] leading-relaxed text-text-tertiary">
                       {item.example}
                     </p>
                   </div>
                 )}
 
                 {error && (
-                  <p className="mt-2 text-[11px] text-rose-400">{error}</p>
+                  <p className="mt-2 text-[13px] text-danger-text">{error}</p>
                 )}
 
                 <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -841,7 +840,7 @@ function ImprovementsPanelInner({
                       data-testid="cv-improvement-apply-ai"
                       onClick={() => void handleApplyWithAI(idx)}
                       disabled={applying}
-                      className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border-0 bg-[#00C9B1] text-xs font-semibold text-[#080B0A] transition hover:brightness-110 disabled:opacity-50 sm:min-w-[7rem] sm:flex-1"
+                      className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border-0 bg-accent-solid text-xs font-semibold text-text-on-accent transition hover:brightness-110 disabled:opacity-50 sm:min-w-[7rem] sm:flex-1"
                     >
                       {applying ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -860,7 +859,7 @@ function ImprovementsPanelInner({
                     data-testid="cv-improvement-self-fix"
                     onClick={() => void handleSelfFix(idx)}
                     disabled={applying}
-                    className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-white/[0.12] bg-transparent text-xs font-medium text-white/55 transition hover:border-white/25 hover:text-white/85 disabled:opacity-50 sm:min-w-[7rem] sm:flex-1"
+                    className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-border-default bg-transparent text-xs font-medium text-text-tertiary transition hover:border-border-strong hover:text-text-primary disabled:opacity-50 sm:min-w-[7rem] sm:flex-1"
                   >
                     I&apos;ll fix it myself
                   </button>
@@ -869,7 +868,7 @@ function ImprovementsPanelInner({
                     data-testid="cv-improvement-mark-done"
                     onClick={() => void handleMarkDone(idx)}
                     disabled={applying}
-                    className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.02] text-xs font-medium text-white/40 transition hover:text-white/65 disabled:opacity-50 sm:min-w-[7rem] sm:flex-1"
+                    className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-border-subtle bg-bg-surface text-xs font-medium text-text-tertiary transition hover:text-text-secondary disabled:opacity-50 sm:min-w-[7rem] sm:flex-1"
                   >
                     <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} />
                     Dismiss

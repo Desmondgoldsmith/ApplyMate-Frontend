@@ -150,14 +150,14 @@ export function InlineLinkField({
     <span className={cn('relative inline-block align-baseline', className)}>
       <span
         ref={popoverRef}
-        className="absolute bottom-full left-1/2 z-30 mb-1 flex w-[min(18rem,calc(100vw-2rem))] -translate-x-1/2 flex-col rounded-lg border border-[#00C9B1]/35 bg-[#0C0F0F] p-2.5 text-left shadow-xl"
+        className="absolute bottom-full left-1/2 z-30 mb-1 flex w-[min(18rem,calc(100vw-2rem))] -translate-x-1/2 flex-col rounded-lg border border-[#17B26A]/35 bg-[#0C0F0F] p-2.5 text-left shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <span className="text-[9px] font-semibold uppercase tracking-wide text-white/70">
           Label
         </span>
         <input
-          className="mt-1 rounded border border-black/15 bg-white px-1.5 py-1 text-[11px] text-[#111111] outline-none placeholder:text-black/40 focus:border-[#00C9B1]/60"
+          className="mt-1 rounded border border-black/15 bg-white px-1.5 py-1 text-[11px] text-[#111111] outline-none placeholder:text-black/40 focus:border-[#17B26A]/60"
           value={labelDraft}
           onChange={(e) => setLabelDraft(e.target.value)}
         />
@@ -165,14 +165,14 @@ export function InlineLinkField({
           URL / Email
         </span>
         <input
-          className="mt-1 rounded border border-black/15 bg-white px-1.5 py-1 text-[11px] text-[#111111] outline-none placeholder:text-black/40 focus:border-[#00C9B1]/60"
+          className="mt-1 rounded border border-black/15 bg-white px-1.5 py-1 text-[11px] text-[#111111] outline-none placeholder:text-black/40 focus:border-[#17B26A]/60"
           value={hrefDraft}
           placeholder={placeholder}
           onChange={(e) => setHrefDraft(e.target.value)}
         />
         <button
           type="button"
-          className="mt-2 self-end rounded-md bg-[#00C9B1]/20 px-2 py-1 text-[10px] font-semibold text-[#00C9B1]"
+          className="mt-2 self-end rounded-md bg-[#17B26A]/20 px-2 py-1 text-[10px] font-semibold text-[#17B26A]"
           onClick={() => commit()}
         >
           Done

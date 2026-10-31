@@ -17,7 +17,8 @@ import { cn } from '@/lib/utils';
 
 const toFormattedHtml = toDisplayRichHtml;
 
-const TEAL_UNDER = 'rgba(0, 174, 175, 0.5)';
+/** Underline drawn as a shadow so an active field is exactly the size of the printed text. */
+const EDIT_UNDERLINE = 'inset 0 -1px 0 0 rgba(23, 178, 106, 0.55)';
 const TOOLBAR_INTERACTING_FLAG = '__cvToolbarInteracting';
 
 function isToolbarInteractionActive(): boolean {
@@ -112,7 +113,6 @@ function InlineFieldInner({
   const lastDataRevisionRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- keep draft synced when parent value changes
     if (!editing) setDraft(value);
   }, [value, editing]);
 
@@ -125,7 +125,7 @@ function InlineFieldInner({
     }
     if (lastDataRevisionRef.current === rev) return;
     lastDataRevisionRef.current = rev;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- resync after undo/redo
+
     setEditing(false);
     setDraft(value);
     editSessionDirtyRef.current = false;
@@ -139,7 +139,7 @@ function InlineFieldInner({
     if (autoStartedRef.current) return;
     if (value.trim().length > 0) return;
     autoStartedRef.current = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time UX auto-focus for empty freshly added rows
+
     setEditing(true);
   }, [startEditingWhenEmpty, value]);
 
@@ -256,8 +256,8 @@ function InlineFieldInner({
           data-entry-id={entryId}
           title={placeholder}
           className={cn(
-            'cursor-text rounded-sm px-0.5 outline-none transition-colors',
-            'hover:bg-[rgba(0,201,177,0.06)] focus-visible:ring-1 focus-visible:ring-[#00C9B1]/50',
+            'cursor-text rounded-sm outline-none transition-colors',
+            'hover:bg-[rgba(23,178,106,0.08)] focus-visible:ring-1 focus-visible:ring-[rgba(23,178,106,0.6)]',
             showSpellUnderline &&
               'decoration-rose-500/90 underline decoration-wavy decoration-1 underline-offset-2',
             layout === 'block' && 'block w-full min-w-0 max-w-full',
@@ -325,7 +325,7 @@ function InlineFieldInner({
   }
 
   const editSurface =
-    'm-0 border-0 border-b px-0 py-0 font-[inherit] text-inherit shadow-none outline-none ring-0 bg-transparent box-border placeholder:text-gray-400 placeholder:italic';
+    'm-0 border-0 px-0 py-0 font-[inherit] text-inherit outline-none ring-0 bg-transparent box-border placeholder:text-gray-400 placeholder:italic';
   const onFieldFocus = (e: FocusEvent<HTMLElement>) => {
     if (!ctx?.isEditing) return;
     const inferredSection =
@@ -369,10 +369,10 @@ function InlineFieldInner({
           suppressContentEditableWarning
           className={cn(
             editSurface,
-            'block min-h-[1.25em] w-full min-w-0 max-w-full border-b text-inherit whitespace-pre-wrap break-words empty:before:content-[attr(data-placeholder)] empty:before:italic empty:before:pointer-events-none [&_a]:text-[#1D4ED8] [&_a]:underline',
+            'block min-h-[1lh] w-full min-w-0 max-w-full text-inherit whitespace-pre-wrap break-words empty:before:content-[attr(data-placeholder)] empty:before:italic empty:before:pointer-events-none [&_a]:text-[#1D4ED8] [&_a]:underline',
             placeholderBeforeClass,
           )}
-          style={{ borderBottomColor: TEAL_UNDER, caretColor: '#111111' }}
+          style={{ boxShadow: EDIT_UNDERLINE, caretColor: '#111111' }}
           data-placeholder={placeholder}
           data-bullet-entry={dataBulletEntry}
           data-bullet-idx={dataBulletIdx}
@@ -413,10 +413,10 @@ function InlineFieldInner({
         suppressContentEditableWarning
         className={cn(
           editSurface,
-          'inline-block min-w-[2ch] max-w-full border-b text-inherit empty:before:content-[attr(data-placeholder)] empty:before:italic empty:before:pointer-events-none [&_a]:text-[#1D4ED8] [&_a]:underline',
+          'inline-block min-w-[2ch] max-w-full text-inherit empty:before:content-[attr(data-placeholder)] empty:before:italic empty:before:pointer-events-none [&_a]:text-[#1D4ED8] [&_a]:underline',
           placeholderBeforeClass,
         )}
-        style={{ borderBottomColor: TEAL_UNDER, caretColor: '#111111' }}
+        style={{ boxShadow: EDIT_UNDERLINE, caretColor: '#111111' }}
         data-placeholder={placeholder}
         data-bullet-entry={dataBulletEntry}
         data-bullet-idx={dataBulletIdx}

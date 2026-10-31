@@ -20,9 +20,9 @@ export function CvDiffActionPair({
 }) {
   const busy = useContext(CvDiffActionsBusyContext);
   const rejectCls =
-    'rounded-md border border-rose-300 bg-white px-2.5 py-1 text-[10px] font-semibold text-rose-600 transition hover:bg-rose-50 disabled:pointer-events-none disabled:opacity-40';
+    'rounded-md border border-danger-border bg-white px-2.5 py-1 text-[10px] font-semibold text-rose-600 transition hover:bg-rose-50 disabled:pointer-events-none disabled:opacity-40';
   const acceptCls =
-    'rounded-md border border-emerald-300 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold text-emerald-700 transition hover:bg-emerald-500/20 disabled:pointer-events-none disabled:opacity-40';
+    'rounded-md border border-success-border bg-success-subtle px-2.5 py-1 text-[10px] font-semibold text-emerald-700 transition hover:bg-success-subtle disabled:pointer-events-none disabled:opacity-40';
   return (
     <div className={className}>
       <button

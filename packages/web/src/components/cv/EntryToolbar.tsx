@@ -488,14 +488,14 @@ export function EntryToolbar({
       }
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="flex max-w-full flex-nowrap items-center rounded-full border border-white/10 bg-white shadow-xl">
+      <div className="flex max-w-full flex-nowrap items-center rounded-full border border-border-subtle bg-white shadow-xl">
         {!hideAddButton && addSecondaryEntryLabel && onAddSecondaryEntry ? (
           <>
             <button
               type="button"
               onClick={onAddEntry}
               title={addEntryLabel}
-              className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-l-full bg-[#00C9B1] px-3 py-1.5 text-sm font-semibold text-white"
+              className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-l-full bg-accent-solid px-3 py-1.5 text-sm font-semibold text-text-on-accent"
             >
               {addEntryLabel}
             </button>
@@ -503,7 +503,7 @@ export function EntryToolbar({
               type="button"
               onClick={onAddSecondaryEntry}
               title={addSecondaryEntryLabel}
-              className="bg-[#4F46E5] px-3 py-1.5 text-sm font-semibold text-white"
+              className="bg-[#4F46E5] px-3 py-1.5 text-sm font-semibold text-text-primary"
             >
               {addSecondaryEntryLabel}
             </button>
@@ -513,12 +513,12 @@ export function EntryToolbar({
             type="button"
             onClick={onAddEntry}
             title={addEntryLabel}
-            className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-l-full bg-[#00C9B1] px-3 py-1.5 text-sm font-semibold leading-none text-white"
+            className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-l-full bg-accent-solid px-3 py-1.5 text-sm font-semibold leading-none text-text-on-accent"
           >
             {addEntryLabel}
           </button>
         ) : (
-          <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-l-full bg-[#00C9B1] px-2 py-1.5 text-[10px] font-semibold leading-none text-white">
+          <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-l-full bg-accent-solid px-2 py-1.5 text-[10px] font-semibold leading-none text-text-on-accent">
             Edit
           </span>
         )}
@@ -601,7 +601,7 @@ export function EntryToolbar({
       {showTextTools && mounted
         ? createPortal(
             <div
-              className={`${panelPositionClass} w-[340px] rounded-xl border border-white/10 bg-white p-3 shadow-xl`}
+              className={`${panelPositionClass} w-[340px] rounded-xl border border-border-subtle bg-white p-3 shadow-xl`}
               style={panelStyle(340)}
               onClick={(e) => e.stopPropagation()}
             >
@@ -671,7 +671,7 @@ export function EntryToolbar({
                       value={linkDraft}
                       onChange={(e) => setLinkDraft(e.target.value)}
                       placeholder="https://example.com"
-                      className="h-9 flex-1 rounded-md border border-black/15 bg-white px-2 text-sm text-[#111111] outline-none placeholder:text-black/40 focus:border-[#00C9B1]"
+                      className="h-9 flex-1 rounded-md border border-black/15 bg-white px-2 text-sm text-[#111111] outline-none placeholder:text-black/40 focus:border-accent-solid"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -688,7 +688,7 @@ export function EntryToolbar({
                     </button>
                     <button
                       type="button"
-                      className="h-9 rounded-md bg-[#10B981] px-3 text-xs font-semibold text-white"
+                      className="h-9 rounded-md bg-[#10B981] px-3 text-xs font-semibold text-text-primary"
                       onClick={applyLink}
                     >
                       OK
@@ -741,7 +741,7 @@ export function EntryToolbar({
       {showSettings && mounted
         ? createPortal(
             <div
-              className={`${panelPositionClass} w-[260px] rounded-xl border border-white/10 bg-white p-2 shadow-xl`}
+              className={`${panelPositionClass} w-[260px] rounded-xl border border-border-subtle bg-white p-2 shadow-xl`}
               style={panelStyle(260)}
               onClick={(e) => e.stopPropagation()}
             >
@@ -759,7 +759,7 @@ export function EntryToolbar({
                       type="checkbox"
                       checked={opt.enabled}
                       onChange={(e) => opt.onToggle(e.target.checked)}
-                      className="h-4 w-4 accent-[#00C9B1]"
+                      className="h-4 w-4 accent-[#17B26A]"
                     />
                   </label>
                 ))}
@@ -791,7 +791,7 @@ export function EntryToolbar({
                 </button>
                 <button
                   type="button"
-                  className="rounded-md bg-rose-500 px-2 py-1 text-xs font-semibold text-white"
+                  className="rounded-md bg-rose-500 px-2 py-1 text-xs font-semibold text-text-primary"
                   onClick={() => {
                     onDelete();
                     setConfirmDelete(false);

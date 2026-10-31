@@ -76,7 +76,7 @@ export function cvTemplateSectionBox(
       className={cn(
         'relative transition-[box-shadow] duration-200',
         isActive && !isDiff
-          ? 'rounded-[4px] ring-1 ring-inset ring-[rgba(0,201,177,0.35)]'
+          ? 'rounded-[4px] ring-1 ring-inset ring-[rgba(23,178,106,0.35)]'
           : '',
         isDiff ? 'rounded-[4px] pb-1' : '',
         className,

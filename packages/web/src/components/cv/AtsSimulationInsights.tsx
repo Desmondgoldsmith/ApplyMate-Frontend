@@ -59,15 +59,15 @@ function MetricCell({
     <div
       data-testid={testId}
       className={cn(
-        'rounded-lg border border-white/[0.06] bg-white/[0.02] px-2 py-1.5',
+        'rounded-lg border border-border-subtle bg-bg-surface px-2 py-1.5',
         compact ? 'min-w-0' : '',
       )}
       title={hint}
     >
-      <p className="text-[9px] font-semibold uppercase tracking-wider text-white/35">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
         {label}
       </p>
-      <p className="mt-0.5 text-sm font-bold tabular-nums text-white/90">
+      <p className="mt-0.5 text-sm font-bold tabular-nums text-text-primary">
         {value}
       </p>
     </div>
@@ -148,17 +148,17 @@ export function AtsSimulationInsights({
   return (
     <div
       className={cn(
-        'space-y-3 border-t border-white/[0.06] pt-3',
+        'space-y-3 border-t border-border-subtle pt-3',
         compact ? 'mt-2' : 'mt-3',
       )}
       data-testid="ats-simulation-root"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-[#00C9B1]/85">
+        <p className="text-[12px] font-semibold uppercase tracking-widest text-accent-text">
           ATS simulation (job-aware)
         </p>
         {simulation.overallScore !== undefined ? (
-          <span className="text-[10px] tabular-nums text-white/50">
+          <span className="text-[12px] tabular-nums text-text-tertiary">
             Model overall {Math.round(simulation.overallScore)}%
             {simulation.coveragePercent !== undefined
               ? ` · Coverage ${Math.round(simulation.coveragePercent)}%`
@@ -220,7 +220,7 @@ export function AtsSimulationInsights({
 
       {seniorityDetail ? (
         <p
-          className="text-[11px] leading-relaxed text-white/55"
+          className="text-[13px] leading-relaxed text-text-tertiary"
           data-testid="ats-seniority-detail"
         >
           {seniorityDetail}
@@ -229,30 +229,30 @@ export function AtsSimulationInsights({
 
       {dims && Object.keys(dims).length > 0 ? (
         <div className="space-y-1.5" data-testid="ats-simulation-dimensions">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-white/35">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
             Dimension weights
           </p>
           <div className="space-y-1">
             {Object.entries(dims).map(([name, b]) => (
               <div key={name} className="flex items-center gap-2">
                 <span
-                  className="min-w-0 flex-1 truncate text-[10px] text-white/55"
+                  className="min-w-0 flex-1 truncate text-[12px] text-text-tertiary"
                   title={name}
                 >
                   {name.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ')}
                 </span>
-                <span className="shrink-0 text-[10px] tabular-nums text-white/45">
+                <span className="shrink-0 text-[12px] tabular-nums text-text-tertiary">
                   {formatWeightPct(b.weight)}
                 </span>
-                <div className="h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-white/[0.08]">
+                <div className="h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-bg-hover">
                   <div
-                    className="h-full rounded-full bg-[#00C9B1]/80"
+                    className="h-full rounded-full bg-accent-subtle"
                     style={{
                       width: `${Math.min(100, Math.max(0, b.score0to100))}%`,
                     }}
                   />
                 </div>
-                <span className="w-8 shrink-0 text-right text-[10px] font-semibold tabular-nums text-white/75">
+                <span className="w-8 shrink-0 text-right text-[12px] font-semibold tabular-nums text-text-secondary">
                   {b.score0to100}%
                 </span>
               </div>
@@ -263,28 +263,28 @@ export function AtsSimulationInsights({
 
       {simulation.hardSkillMatches && simulation.hardSkillMatches.length > 0 ? (
         <div data-testid="ats-hard-skill-matches">
-          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wider text-white/35">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
             Hard skill ontology matches
           </p>
-          <p className="mb-1.5 text-[10px] leading-snug text-white/38">
+          <p className="mb-1.5 text-[12px] leading-snug text-white/38">
             Canonical skills from the job — separate from lexical keyword hits
             above.
           </p>
-          <ul className="max-h-28 space-y-1 overflow-y-auto text-[11px] text-white/60">
+          <ul className="max-h-28 space-y-1 overflow-y-auto text-[13px] text-text-secondary">
             {simulation.hardSkillMatches.slice(0, 24).map((m, i) => (
               <li key={`${m.term ?? i}-${i}`} className="flex flex-wrap gap-1">
                 <span
                   className={
                     m.matched === true
-                      ? 'text-emerald-300/90'
-                      : 'text-amber-200/85'
+                      ? 'text-success-text'
+                      : 'text-warning-text'
                   }
                 >
                   {m.matched === true ? '✓' : '○'}
                 </span>
                 <span>{m.term ?? m.canonical ?? '—'}</span>
                 {m.canonical && m.term && m.canonical !== m.term ? (
-                  <span className="text-white/35">({m.canonical})</span>
+                  <span className="text-text-tertiary">({m.canonical})</span>
                 ) : null}
               </li>
             ))}
@@ -295,7 +295,7 @@ export function AtsSimulationInsights({
       {missingGroups.length > 0 ? (
         <div data-testid="ats-missing-keywords">
           <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-amber-200/90">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-warning-text">
               Missing keywords (lexical)
             </p>
             {assistPrompt && onRequestKeywordAssist ? (
@@ -303,27 +303,27 @@ export function AtsSimulationInsights({
                 type="button"
                 data-testid="ats-draft-keywords-assistant"
                 onClick={() => onRequestKeywordAssist(assistPrompt)}
-                className="inline-flex items-center gap-1 rounded-md border border-[#00C9B1]/35 bg-[#00C9B1]/10 px-2 py-0.5 text-[10px] font-semibold text-[#00C9B1] transition hover:bg-[#00C9B1]/15"
+                className="inline-flex items-center gap-1 rounded-md border border-accent-border bg-accent-subtle px-2 py-0.5 text-[12px] font-semibold text-accent-text transition hover:bg-accent-subtle"
               >
                 <Sparkles className="h-3 w-3" aria-hidden />
                 Draft in Assistant
               </button>
             ) : null}
           </div>
-          <p className="mb-1.5 text-[10px] leading-snug text-white/40">
+          <p className="mb-1.5 text-[12px] leading-snug text-text-tertiary">
             JD token/phrase gaps vs your CV text. Hard skill ontology matches
             are listed separately.
           </p>
           {missingGroups.map((g) => (
             <div key={g.label} className="mb-2">
-              <p className="mb-1 text-[10px] font-medium text-white/45">
+              <p className="mb-1 text-[12px] font-medium text-text-tertiary">
                 {g.label}
               </p>
               <div className="flex flex-wrap gap-1">
                 {g.words.slice(0, 20).map((w) => (
                   <span
                     key={`${g.label}-${w}`}
-                    className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-100/90"
+                    className="rounded-full border border-warning-border bg-warning-subtle px-2 py-0.5 text-[12px] text-warning-text"
                   >
                     {w}
                   </span>
@@ -336,19 +336,19 @@ export function AtsSimulationInsights({
 
       {presentGroups.length > 0 ? (
         <div data-testid="ats-matched-keywords">
-          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wider text-emerald-200/85">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-success-text">
             Matched keywords
           </p>
           {presentGroups.map((g) => (
             <div key={g.label} className="mb-2">
-              <p className="mb-1 text-[10px] font-medium text-white/45">
+              <p className="mb-1 text-[12px] font-medium text-text-tertiary">
                 {g.label}
               </p>
               <div className="flex flex-wrap gap-1">
                 {g.words.slice(0, 24).map((w) => (
                   <span
                     key={`${g.label}-${w}`}
-                    className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-100/90"
+                    className="rounded-full border border-success-border bg-success-subtle px-2 py-0.5 text-[12px] text-success-text"
                   >
                     {w}
                   </span>
@@ -361,10 +361,10 @@ export function AtsSimulationInsights({
 
       {topRecommendations.length > 0 ? (
         <div data-testid="ats-simulation-recommendations">
-          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wider text-white/35">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
             Top ATS actions
           </p>
-          <ol className="list-inside list-decimal space-y-1 text-[11px] leading-relaxed text-white/65">
+          <ol className="list-inside list-decimal space-y-1 text-[13px] leading-relaxed text-text-secondary">
             {topRecommendations.map((r, i) => (
               <li key={`${i}-${r.slice(0, 32)}`}>{r}</li>
             ))}

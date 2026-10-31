@@ -116,7 +116,7 @@ export function AISectionAssistantPanel({
           }
           className={cn(
             'fixed z-[90] touch-none select-none',
-            'inline-flex items-center justify-center rounded-full border border-[rgba(16,185,129,0.45)] bg-[#0C0F0F] text-emerald-300 shadow-[0_10px_28px_rgba(0,0,0,0.42)] transition-[border-color,box-shadow] hover:border-emerald-300/75 hover:shadow-[0_12px_32px_rgba(0,0,0,0.5)]',
+            'inline-flex items-center justify-center rounded-full border border-success-border bg-bg-surface text-success-text shadow-[0_10px_28px_rgba(0,0,0,0.42)] transition-[border-color,box-shadow] hover:border-success-border hover:shadow-[0_12px_32px_rgba(0,0,0,0.5)]',
             desktopLg
               ? 'h-10 min-w-0 gap-1.5 px-3 text-xs font-semibold touch-manipulation'
               : 'h-11 w-11 touch-manipulation',
@@ -158,10 +158,10 @@ export function AISectionAssistantPanel({
               }
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="rounded-2xl border border-white/[0.08] bg-[#0C0F0F] p-3 shadow-[0_14px_32px_rgba(0,0,0,0.45)]">
+              <div className="rounded-2xl border border-border-subtle bg-bg-surface p-3 shadow-[0_14px_32px_rgba(0,0,0,0.45)]">
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-success-text">
                       AI Section Assistant
                     </p>
                     <CvAssistantScopeBadge
@@ -171,35 +171,37 @@ export function AISectionAssistantPanel({
                   </div>
                   <button
                     type="button"
-                    className="rounded-md p-1 text-white/50 transition hover:bg-white/[0.06] hover:text-white"
+                    className="rounded-md p-1 text-text-tertiary transition hover:bg-bg-hover hover:text-text-primary"
                     onClick={() => onOpenChange(false)}
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
                 {clarificationQuestion ? (
-                  <div className="mb-2 rounded-lg border border-amber-400/35 bg-amber-500/10 p-2">
-                    <p className="text-[11px] font-semibold text-amber-300">
+                  <div className="mb-2 rounded-lg border border-warning-border bg-warning-subtle p-2">
+                    <p className="text-[11px] font-semibold text-warning-text">
                       Clarification needed
                     </p>
-                    <p className="mt-1 text-xs text-white/80">
+                    <p className="mt-1 text-xs text-text-secondary">
                       {clarificationQuestion}
                     </p>
                     <input
                       value={clarifyAnswer}
                       onChange={(e) => setClarifyAnswer(e.target.value)}
                       placeholder="Type your answer..."
-                      className="mt-2 h-9 w-full rounded-lg border border-white/[0.12] bg-[#111616] px-2.5 text-xs text-white outline-none focus:ring-2 focus:ring-[#00C9B1]/35"
+                      className="mt-2 h-9 w-full rounded-lg border border-border-default bg-bg-sunken px-2.5 text-xs text-text-primary outline-none focus:ring-2 focus:ring-border-focus"
                     />
                   </div>
                 ) : null}
                 {targetSectionLabel ? (
-                  <p className="mb-2 text-[11px] text-white/45">
+                  <p className="mb-2 text-[11px] text-text-tertiary">
                     Target:{' '}
-                    <span className="text-white/70">{targetSectionLabel}</span>
+                    <span className="text-text-secondary">
+                      {targetSectionLabel}
+                    </span>
                   </p>
                 ) : (
-                  <p className="mb-2 text-[11px] text-white/45">
+                  <p className="mb-2 text-[11px] text-text-tertiary">
                     Use the assistant pin on a section, or open this from a
                     section context.
                   </p>
@@ -210,7 +212,7 @@ export function AISectionAssistantPanel({
                   onChange={(e) => setText(e.target.value)}
                   rows={3}
                   placeholder="e.g. Complete my summary using my experience and skills"
-                  className="w-full resize-y rounded-xl border border-white/[0.12] bg-[#111616] px-3 py-2 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-[#00C9B1]/35"
+                  className="w-full resize-y rounded-xl border border-border-default bg-bg-sunken px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:ring-2 focus:ring-border-focus"
                 />
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {QUICK_PROMPTS.map((q) => (
@@ -219,7 +221,7 @@ export function AISectionAssistantPanel({
                       type="button"
                       onClick={() => setText(q)}
                       className={cn(
-                        'rounded-full border border-white/[0.10] px-2 py-1 text-[10px] text-white/65 transition hover:border-[#00C9B1]/55 hover:text-white',
+                        'rounded-full border border-border-subtle px-2 py-1 text-[10px] text-text-secondary transition hover:border-accent-border hover:text-text-primary',
                       )}
                     >
                       {q}

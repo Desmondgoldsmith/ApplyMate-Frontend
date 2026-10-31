@@ -34,21 +34,21 @@ export function CvImprovementDiffTruthPanel({
   return (
     <div
       className={cn(
-        'mb-4 space-y-3 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3.5',
+        'mb-4 space-y-3 rounded-xl border border-border-subtle bg-bg-surface p-3.5',
         className,
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-start gap-2">
           <Info
-            className="mt-0.5 h-4 w-4 shrink-0 text-[#00C9B1]/80"
+            className="mt-0.5 h-4 w-4 shrink-0 text-accent-text"
             aria-hidden
           />
           <div className="flex min-w-0 flex-1 flex-col gap-1.5">
             {TRANSPARENCY_LINES.map((line) => (
               <p
                 key={line}
-                className="text-[11px] leading-relaxed text-white/55"
+                className="text-[11px] leading-relaxed text-text-tertiary"
               >
                 {line}
               </p>
@@ -56,7 +56,7 @@ export function CvImprovementDiffTruthPanel({
           </div>
         </div>
         {showFactBadge ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300/95">
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-success-border bg-success-subtle px-2 py-0.5 text-[10px] font-semibold text-success-text">
             <ShieldCheck className="h-3 w-3" aria-hidden />
             Fact-checked
           </span>
@@ -66,19 +66,19 @@ export function CvImprovementDiffTruthPanel({
       {showAdjustNotice ? (
         <div
           role="status"
-          className="rounded-lg border border-amber-500/20 bg-amber-500/[0.07] px-3 py-2.5"
+          className="rounded-lg border border-warning-border bg-warning-subtle px-3 py-2.5"
         >
-          <p className="text-[11px] font-semibold text-amber-100/90">
+          <p className="text-[11px] font-semibold text-warning-text">
             Some suggested changes were removed or adjusted so they match
             what&apos;s already on your CV.
           </p>
           {typeof unsupported === 'number' && unsupported > 0 ? (
-            <p className="mt-1 text-[10px] text-amber-100/65">
+            <p className="mt-1 text-[10px] text-warning-text">
               Unsupported or reverted edits detected: {unsupported}
             </p>
           ) : null}
           {warnings.length > 0 ? (
-            <ul className="mt-2 list-inside list-disc space-y-1 text-[10px] leading-snug text-amber-100/75">
+            <ul className="mt-2 list-inside list-disc space-y-1 text-[10px] leading-snug text-warning-text">
               {warnings.map((w, i) => (
                 <li key={`${i}-${w.slice(0, 24)}`} className="pl-0.5">
                   {w}
@@ -91,7 +91,7 @@ export function CvImprovementDiffTruthPanel({
 
       {performance?.cacheHit === true ? (
         <p
-          className="text-[10px] leading-relaxed text-white/40"
+          className="text-[10px] leading-relaxed text-text-tertiary"
           data-testid="cv-apply-cache-hit-note"
         >
           Using a previously generated preview.
@@ -102,7 +102,7 @@ export function CvImprovementDiffTruthPanel({
         performance.promptTokenCount !== undefined ||
         performance.completionTokenCount !== undefined) ? (
         <p
-          className="text-[10px] leading-relaxed text-white/40"
+          className="text-[10px] leading-relaxed text-text-tertiary"
           data-testid="cv-ai-telemetry-note"
         >
           Optimized for speed and accuracy.

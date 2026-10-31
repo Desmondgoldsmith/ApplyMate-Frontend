@@ -163,7 +163,7 @@ export function CvSectionAssistantInline({
     >
       <div className="mb-1.5 flex items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#00C9B1]" />
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent-solid" />
           <p className="text-[10px] font-semibold tracking-tight text-slate-700">
             {sectionTitle}
           </p>
@@ -195,9 +195,9 @@ export function CvSectionAssistantInline({
             <button
               type="button"
               onClick={() => setText(s.prompt)}
-              className="flex w-full items-start gap-2 rounded-lg border border-transparent px-1.5 py-1 text-left text-[11px] leading-snug text-slate-700 transition hover:border-[#00C9B1]/25 hover:bg-[#00C9B1]/08"
+              className="flex w-full items-start gap-2 rounded-lg border border-transparent px-1.5 py-1 text-left text-[11px] leading-snug text-slate-700 transition hover:border-accent-border hover:bg-accent-subtle"
             >
-              <span className="mt-0.5 shrink-0 text-[#00C9B1]">
+              <span className="mt-0.5 shrink-0 text-accent-text">
                 {i % 3 === 0 ? (
                   <Wand2 className="h-3.5 w-3.5" />
                 ) : i % 3 === 1 ? (
@@ -221,7 +221,7 @@ export function CvSectionAssistantInline({
         onChange={(e) => setText(e.target.value)}
         rows={2}
         placeholder="Enter a custom request…"
-        className="mb-2 w-full resize-y rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5 text-[11px] text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#00C9B1]/50 focus:ring-2 focus:ring-[#00C9B1]/25"
+        className="mb-2 w-full resize-y rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5 text-[11px] text-slate-900 outline-none placeholder:text-slate-400 focus:border-accent-border focus:ring-2 focus:ring-border-focus"
       />
 
       {busy && busyMessage ? (
@@ -266,9 +266,9 @@ export function CvSectionAssistantInline({
           onPointerDown={(e) => e.stopPropagation()}
           className={cn(
             'relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-white',
-            'bg-[#00C9B1] text-white shadow-[0_2px_10px_rgba(0,0,0,0.22)] ring-2 ring-[#007a7b]/35',
+            'bg-accent-solid text-text-on-accent shadow-[0_2px_10px_rgba(0,0,0,0.22)] ring-2 ring-[#007a7b]/35',
             'transition-shadow hover:shadow-[0_3px_14px_rgba(0,0,0,0.28)] hover:ring-[#005f60]/45',
-            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00C9B1]',
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus',
             'animate-cv-assistant-pin',
           )}
         >

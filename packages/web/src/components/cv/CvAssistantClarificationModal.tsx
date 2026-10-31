@@ -44,7 +44,7 @@ const CLARIFICATION_QUICK_PROMPTS: { label: string; answer: string }[] = [
   {
     label: 'Keep it factual',
     answer:
-      "Only use information already in my resume. Don't invent or exaggerate anything.",
+      "Only use information already in my CV. Don't invent or exaggerate anything.",
   },
 ];
 
@@ -79,7 +79,7 @@ export function CvAssistantClarificationModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className={cn(
-          'fixed inset-0 flex items-end justify-center bg-black/50 p-3 sm:items-center',
+          'fixed inset-0 flex items-end justify-center bg-bg-overlay p-3 sm:items-center',
           layerZIndex == null && 'z-[130]',
         )}
         style={layerZIndex != null ? { zIndex: layerZIndex } : undefined}
@@ -93,18 +93,20 @@ export function CvAssistantClarificationModal({
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 8 }}
-          className="w-full max-w-md overflow-hidden rounded-2xl border border-white/[0.1] bg-[#0C0F0F] shadow-[0_20px_48px_rgba(0,0,0,0.55)]"
+          className="w-full max-w-md overflow-hidden rounded-2xl border border-border-subtle bg-bg-surface shadow-[0_20px_48px_rgba(0,0,0,0.55)]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="border-b border-white/[0.06] px-4 py-3">
+          <div className="border-b border-border-subtle px-4 py-3">
             <p
               id="cv-assistant-clarify-title"
-              className="text-sm font-semibold text-white/90"
+              className="text-sm font-semibold text-text-primary"
             >
               Assistant needs a quick clarification
             </p>
             {scopeHint ? (
-              <p className="mt-0.5 text-[11px] text-white/45">{scopeHint}</p>
+              <p className="mt-0.5 text-[11px] text-text-tertiary">
+                {scopeHint}
+              </p>
             ) : null}
           </div>
 
@@ -114,20 +116,20 @@ export function CvAssistantClarificationModal({
           >
             {past.length > 0 ? (
               <div className="space-y-2">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-white/35">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
                   Earlier in this request
                 </p>
                 {past.map((entry, i) => (
                   <div
                     key={`clarify-history-${i}`}
-                    className="rounded-lg border border-white/[0.07] bg-white/[0.03] p-2.5 text-xs"
+                    className="rounded-lg border border-border-subtle bg-bg-surface p-2.5 text-xs"
                   >
-                    <p className="font-medium text-white/55">Q</p>
-                    <p className="mt-0.5 leading-relaxed text-white/75">
+                    <p className="font-medium text-text-tertiary">Q</p>
+                    <p className="mt-0.5 leading-relaxed text-text-secondary">
                       {entry.question}
                     </p>
-                    <p className="mt-2 font-medium text-emerald-300/80">A</p>
-                    <p className="mt-0.5 leading-relaxed text-white/80">
+                    <p className="mt-2 font-medium text-success-text">A</p>
+                    <p className="mt-0.5 leading-relaxed text-text-secondary">
                       {entry.answer}
                     </p>
                   </div>
@@ -135,17 +137,17 @@ export function CvAssistantClarificationModal({
               </div>
             ) : null}
 
-            <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-2.5">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-200/90">
+            <div className="rounded-lg border border-warning-border bg-warning-subtle p-2.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-warning-text">
                 Question
               </p>
-              <p className="mt-1 text-sm leading-relaxed text-white/85">
+              <p className="mt-1 text-sm leading-relaxed text-text-primary">
                 {trimmedQuestion}
               </p>
             </div>
 
             <div>
-              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-white/35">
+              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
                 Not sure? Tap a quick reply
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -155,7 +157,7 @@ export function CvAssistantClarificationModal({
                     type="button"
                     disabled={busy}
                     onClick={() => setAnswer(qp.answer)}
-                    className="rounded-full border border-[#00C9B1]/30 bg-[#00C9B1]/10 px-2.5 py-1 text-[11px] font-medium text-[#7ef4e6] transition hover:border-[#00C9B1]/55 hover:bg-[#00C9B1]/15 disabled:opacity-50"
+                    className="rounded-full border border-accent-border bg-accent-subtle px-2.5 py-1 text-[11px] font-medium text-accent-text transition hover:border-accent-border hover:bg-accent-subtle disabled:opacity-50"
                   >
                     {qp.label}
                   </button>
@@ -164,7 +166,7 @@ export function CvAssistantClarificationModal({
             </div>
 
             <label className="block">
-              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-white/40">
+              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
                 Your answer
               </span>
               <textarea
@@ -173,23 +175,23 @@ export function CvAssistantClarificationModal({
                 rows={3}
                 disabled={busy}
                 placeholder="Type your answer here, or tap a quick reply above…"
-                className="w-full resize-y rounded-xl border border-white/[0.12] bg-[#111616] px-3 py-2 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-[#00C9B1]/35 disabled:opacity-60"
+                className="w-full resize-y rounded-xl border border-border-default bg-bg-sunken px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:ring-2 focus:ring-border-focus disabled:opacity-60"
               />
             </label>
 
             {busy && busyLabel ? (
-              <p className="flex items-center gap-2 text-[11px] text-white/50">
+              <p className="flex items-center gap-2 text-[11px] text-text-tertiary">
                 <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
                 {busyLabel}
               </p>
             ) : null}
           </div>
 
-          <div className="flex flex-wrap justify-end gap-2 border-t border-white/[0.06] px-4 py-3">
+          <div className="flex flex-wrap justify-end gap-2 border-t border-border-subtle px-4 py-3">
             <Button
               type="button"
               variant="ghost"
-              className="border border-white/10 text-xs"
+              className="border border-border-subtle text-xs"
               disabled={busy}
               onClick={onCancel}
             >

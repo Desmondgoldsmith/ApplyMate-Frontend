@@ -184,11 +184,11 @@ export const BuilderRichTextField = memo(function BuilderRichTextField({
 
   return (
     <div className={cn('space-y-1.5', className)}>
-      <div className="flex flex-wrap items-center gap-1 rounded-lg border border-white/10 bg-[#0a0e0e] px-1.5 py-1">
+      <div className="flex flex-wrap items-center gap-1 rounded-lg border border-border-subtle bg-bg-surface px-1.5 py-1">
         <button
           type="button"
           title="Bold"
-          className="rounded p-1 text-white/60 hover:bg-white/10 hover:text-white"
+          className="rounded p-1 text-text-secondary hover:bg-bg-hover hover:text-text-primary"
           onMouseDown={onToolbarMouseDown}
           onClick={() => wrapSelection('bold')}
         >
@@ -197,7 +197,7 @@ export const BuilderRichTextField = memo(function BuilderRichTextField({
         <button
           type="button"
           title="Italic"
-          className="rounded p-1 text-white/60 hover:bg-white/10 hover:text-white"
+          className="rounded p-1 text-text-secondary hover:bg-bg-hover hover:text-text-primary"
           onMouseDown={onToolbarMouseDown}
           onClick={() => wrapSelection('italic')}
         >
@@ -206,7 +206,7 @@ export const BuilderRichTextField = memo(function BuilderRichTextField({
         <button
           type="button"
           title="Underline"
-          className="rounded p-1 text-white/60 hover:bg-white/10 hover:text-white"
+          className="rounded p-1 text-text-secondary hover:bg-bg-hover hover:text-text-primary"
           onMouseDown={onToolbarMouseDown}
           onClick={() => wrapSelection('underline')}
         >
@@ -215,7 +215,7 @@ export const BuilderRichTextField = memo(function BuilderRichTextField({
         <button
           type="button"
           title="Insert link"
-          className="rounded p-1 text-white/60 hover:bg-white/10 hover:text-white"
+          className="rounded p-1 text-text-secondary hover:bg-bg-hover hover:text-text-primary"
           onMouseDown={onToolbarMouseDown}
           onClick={() => {
             syncAnchorState();
@@ -227,7 +227,7 @@ export const BuilderRichTextField = memo(function BuilderRichTextField({
         {hasAnchor ? (
           <button
             type="button"
-            className="rounded px-2 py-0.5 text-[10px] font-semibold text-rose-300 hover:bg-rose-500/10"
+            className="rounded px-2 py-0.5 text-[10px] font-semibold text-danger-text hover:bg-danger-subtle"
             onMouseDown={(e) => e.preventDefault()}
             onClick={removeLink}
           >
@@ -242,11 +242,11 @@ export const BuilderRichTextField = memo(function BuilderRichTextField({
             value={linkDraft}
             onChange={(e) => setLinkDraft(e.target.value)}
             placeholder="https://example.com"
-            className="h-8 min-w-0 flex-1 rounded-md border border-white/15 bg-[#111616] px-2 text-xs text-white outline-none focus:border-[#00C9B1]"
+            className="h-8 min-w-0 flex-1 rounded-md border border-border-default bg-bg-sunken px-2 text-xs text-text-primary outline-none focus:border-accent-solid"
           />
           <button
             type="button"
-            className="text-xs font-semibold text-[#00C9B1]"
+            className="text-xs font-semibold text-accent-text"
             onMouseDown={(e) => e.preventDefault()}
             onClick={applyLink}
           >
@@ -254,7 +254,7 @@ export const BuilderRichTextField = memo(function BuilderRichTextField({
           </button>
           <button
             type="button"
-            className="text-xs text-white/45"
+            className="text-xs text-text-tertiary"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => setShowLink(false)}
           >
@@ -269,9 +269,9 @@ export const BuilderRichTextField = memo(function BuilderRichTextField({
         suppressContentEditableWarning
         data-placeholder={placeholder}
         className={cn(
-          'rounded-lg border border-[rgba(255,255,255,0.10)] bg-[#0c1010] px-3 py-2 text-sm max-lg:text-base text-white outline-none',
-          'empty:before:pointer-events-none empty:before:text-white/30 empty:before:content-[attr(data-placeholder)]',
-          '[&_a]:text-[#00C9B1] [&_a]:underline',
+          'rounded-lg border border-border-subtle bg-bg-surface px-3 py-2 text-sm max-lg:text-base text-text-primary outline-none',
+          'empty:before:pointer-events-none empty:before:text-text-disabled empty:before:content-[attr(data-placeholder)]',
+          '[&_a]:text-accent-text [&_a]:underline',
           minHeightClass,
         )}
         onFocus={() => {

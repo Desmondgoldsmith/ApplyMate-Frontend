@@ -19,7 +19,7 @@ const TEMPLATE_LABELS: Record<CvTemplateId, string> = {
   onyx: 'Onyx',
 };
 
-const TEAL = '#00C9B1';
+const TEAL = '#17B26A';
 
 export type TemplatePickerModalProps = {
   open: boolean;
@@ -78,14 +78,14 @@ export function TemplatePickerModal({
                   onOpenChange(false);
                 }}
                 className={cn(
-                  'flex flex-col overflow-hidden rounded-xl border bg-[#080B0B] text-left transition',
+                  'flex flex-col overflow-hidden rounded-xl border bg-bg-surface text-left transition',
                   selected === tid
-                    ? 'border-[#00C9B1] ring-1 ring-[#00C9B1]/40'
-                    : 'border-white/[0.08] hover:border-white/20',
+                    ? 'border-accent-solid ring-1 ring-border-focus'
+                    : 'border-border-subtle hover:border-border-default',
                 )}
               >
                 <div
-                  className="pointer-events-none relative mx-auto mt-2 overflow-hidden rounded border border-white/10 bg-white"
+                  className="pointer-events-none relative mx-auto mt-2 overflow-hidden rounded border border-border-subtle bg-white"
                   style={{ width: 120, height: 170 }}
                 >
                   <div
@@ -100,14 +100,14 @@ export function TemplatePickerModal({
                     <CVDocumentPreview data={data} template={tid} />
                   </div>
                 </div>
-                <span className="border-t border-white/[0.06] px-2 py-2 text-center text-xs font-medium capitalize text-white/80">
+                <span className="border-t border-border-subtle px-2 py-2 text-center text-xs font-medium capitalize text-text-secondary">
                   {TEMPLATE_LABELS[tid]}
                 </span>
               </motion.button>
             ))}
           </div>
           {showFooterHint ? (
-            <p className="mt-3 text-center text-[11px] text-white/35">
+            <p className="mt-3 text-center text-[13px] text-text-tertiary">
               Tap a template to apply it. You can switch layouts anytime.
             </p>
           ) : null}

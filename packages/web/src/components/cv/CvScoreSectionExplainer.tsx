@@ -41,18 +41,18 @@ export function CvScoreSectionExplainer({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         className={cn(
-          'flex w-full min-w-0 items-center gap-1 rounded-md border border-white/[0.08] bg-white/[0.03] px-1.5 py-0.5 text-left transition-colors hover:border-[#00C9B1]/30 hover:bg-[#00C9B1]/[0.06]',
-          compact ? 'text-[10px]' : 'text-[11px]',
+          'flex w-full min-w-0 items-center gap-1 rounded-md border border-border-subtle bg-bg-surface px-1.5 py-0.5 text-left transition-colors hover:border-accent-border hover:bg-accent-subtle',
+          compact ? 'text-[12px]' : 'text-[13px]',
         )}
       >
         <ChevronDown
           className={cn(
-            'h-3 w-3 shrink-0 text-white/40 transition-transform',
+            'h-3 w-3 shrink-0 text-text-tertiary transition-transform',
             open && 'rotate-180',
           )}
           aria-hidden
         />
-        <span className="min-w-0 flex-1 truncate text-white/45">
+        <span className="min-w-0 flex-1 truncate text-text-tertiary">
           Why {score}% on {sectionLabel}?
         </span>
       </button>
@@ -60,8 +60,8 @@ export function CvScoreSectionExplainer({
       {open ? (
         <div
           className={cn(
-            'mt-1.5 space-y-2 rounded-lg border border-white/[0.08] bg-[#0a0f0f] p-2.5',
-            compact ? 'text-[10px]' : 'text-[11px]',
+            'mt-1.5 space-y-2 rounded-lg border border-border-subtle bg-[#0a0f0f] p-2.5',
+            compact ? 'text-[12px]' : 'text-[13px]',
           )}
         >
           <ExplainerBlock
@@ -84,7 +84,7 @@ export function CvScoreSectionExplainer({
                   type="button"
                   disabled={busy != null}
                   onClick={() => void onFixWithAi(suggestionId)}
-                  className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border-0 bg-[#00C9B1] text-[11px] font-semibold text-[#080B0A] transition hover:brightness-110 disabled:opacity-50 sm:min-w-[8.5rem] sm:flex-none"
+                  className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border-0 bg-accent-solid text-[13px] font-semibold text-text-on-accent transition hover:brightness-110 disabled:opacity-50 sm:min-w-[8.5rem] sm:flex-none"
                 >
                   {busy === 'ai' ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
@@ -99,7 +99,7 @@ export function CvScoreSectionExplainer({
                   type="button"
                   disabled={busy != null}
                   onClick={() => void onFixMyself(suggestionId)}
-                  className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-white/[0.12] bg-transparent text-[11px] font-medium text-white/55 transition hover:border-white/25 hover:text-white/85 disabled:opacity-50 sm:min-w-[8.5rem] sm:flex-none"
+                  className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border-default bg-transparent text-[13px] font-medium text-text-tertiary transition hover:border-border-strong hover:text-text-primary disabled:opacity-50 sm:min-w-[8.5rem] sm:flex-none"
                 >
                   {busy === 'self' ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
@@ -121,7 +121,7 @@ function ExplainerBlock({ title, body }: { title: string; body: string }) {
 
   return (
     <div>
-      <p className="font-semibold uppercase tracking-[0.06em] text-white/35">
+      <p className="font-semibold uppercase tracking-[0.06em] text-text-tertiary">
         {title}
       </p>
       <div className="mt-1">

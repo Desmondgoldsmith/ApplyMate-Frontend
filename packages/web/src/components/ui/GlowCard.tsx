@@ -19,11 +19,11 @@ export function GlowCard({
   return (
     <AnimatedBorderCard
       className={cn(
-        'min-w-0 max-w-full w-full overflow-x-hidden transition-shadow duration-300 ease-out hover:shadow-[0_12px_40px_rgba(0,201,177,0.08)]',
+        'ck-calm-card min-w-0 max-w-full w-full overflow-x-hidden shadow-raised',
         className,
       )}
       contentClassName={cn(
-        'min-w-0 max-w-full overflow-x-hidden rounded-[20px] bg-[#0C0F0F]',
+        'min-w-0 max-w-full overflow-x-hidden rounded-[20px] bg-bg-surface',
         contentClassName,
       )}
       radiusPx={20}

@@ -237,13 +237,13 @@ function experienceItemWrapClass(
   const itemActive = activeSection === itemKey;
   return cn(
     'relative rounded-[4px] transition-[box-shadow] duration-200',
-    itemActive ? 'ring-1 ring-inset ring-[rgba(0,201,177,0.35)]' : '',
+    itemActive ? 'ring-1 ring-inset ring-[rgba(23,178,106,0.35)]' : '',
   );
 }
 
 function entryFocusStyle(focused: boolean): CSSProperties {
   return {
-    outline: focused ? '1.5px dashed #00C9B1' : 'none',
+    outline: focused ? '1.5px dashed #17B26A' : 'none',
     outlineOffset: '3px',
     borderRadius: '3px',
     position: 'relative',
@@ -357,7 +357,7 @@ function EditableHeaderPhoto({
             <div className="absolute inset-0 flex items-center justify-center gap-2 rounded-[inherit] bg-black/40 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
               <button
                 type="button"
-                className="rounded-lg bg-[#00C9B1] p-2 text-white"
+                className="rounded-lg bg-[#17B26A] p-2 text-white"
                 onClick={(e) => {
                   e.stopPropagation();
                   replace();
@@ -664,7 +664,7 @@ export function OnyxCvDocument({
         {inline &&
         dragOverSectionId === sectionId &&
         draggingSectionIdRef.current !== sectionId ? (
-          <div className="mb-1 rounded-md border-2 border-dashed border-[#00C9B1]/70 bg-[#00C9B1]/8 px-2 py-1 text-[10px] font-semibold tracking-wide text-[#007A7A]">
+          <div className="mb-1 rounded-md border-2 border-dashed border-[#17B26A]/70 bg-[#17B26A]/8 px-2 py-1 text-[10px] font-semibold tracking-wide text-[#0D7344]">
             Drop section here
           </div>
         ) : null}
@@ -703,7 +703,7 @@ export function OnyxCvDocument({
               aria-label={`Drag ${fallback} section to reorder`}
               draggable
               className={cn(
-                'shrink-0 cursor-grab rounded-sm border border-[#00C9B1]/45 p-0.5 text-[#00C9B1] shadow-sm shadow-[#00C9B1]/15 transition hover:border-[#00C9B1]/70 hover:bg-[#00C9B1]/10 hover:text-[#007A7A] active:cursor-grabbing',
+                'shrink-0 cursor-grab rounded-sm border border-[#17B26A]/45 p-0.5 text-[#17B26A] shadow-sm shadow-[#17B26A]/15 transition hover:border-[#17B26A]/70 hover:bg-[#17B26A]/10 hover:text-[#0D7344] active:cursor-grabbing',
                 sidebar ? 'bg-[#313131]/95' : 'bg-white/95',
               )}
               onMouseDown={(e) => e.stopPropagation()}
@@ -1182,7 +1182,7 @@ export function OnyxCvDocument({
             ) : inline && ctx ? (
               <button
                 type="button"
-                className="text-xs italic text-white/50 hover:text-[#00C9B1] hover:underline"
+                className="text-xs italic text-white/50 hover:text-[#17B26A] hover:underline"
                 onClick={() =>
                   ctx.onUpdate({
                     education: {
@@ -1233,7 +1233,7 @@ export function OnyxCvDocument({
               {allSkillCats.length === 0 ? (
                 <button
                   type="button"
-                  className="text-xs italic text-white/50 hover:text-[#00C9B1] hover:underline"
+                  className="text-xs italic text-white/50 hover:text-[#17B26A] hover:underline"
                   onClick={() => {
                     const id = newLocalId();
                     ctx.onUpdate({
@@ -1847,7 +1847,7 @@ export function OnyxCvDocument({
             ) : inline && ctx ? (
               <button
                 type="button"
-                className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+                className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
                 onClick={() =>
                   ctx.onUpdate({
                     experience: {

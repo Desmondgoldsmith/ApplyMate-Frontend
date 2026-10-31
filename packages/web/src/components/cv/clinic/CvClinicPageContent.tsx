@@ -58,7 +58,6 @@ import {
 } from '@/components/dashboard/CVUploadZone';
 import { CreateCVProfileModal } from '@/components/dashboard/CreateCVProfileModal';
 import { CvClinicHub } from '@/components/dashboard/CvClinicHub';
-import { MobileExperienceBanner } from '@/components/dashboard/MobileExperienceBanner';
 import { Button } from '@/components/ui/Button';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { MobileDockFab } from '@/components/ui/MobileDockFab';
@@ -100,6 +99,7 @@ import { parseCvMode } from '@/lib/cv-mode.types';
 import { inferCvProfileNameFromProfile } from '@/lib/infer-cv-profile-name';
 import { buildCvNamingForExport } from '@/lib/cv-profile-naming';
 import { normalizeCvDiffPreviewParams } from '@/lib/cvAiPatchDisplay';
+import { getFormatRecommendation } from '@/lib/cvFormatRecommendation';
 import { cvDiffPreviewBuilderSection } from '@/lib/cvDiffPreviewSection';
 import {
   assistantChangedFieldLabel,
@@ -214,16 +214,18 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
 
 const CV_CLINIC_RIGHT_PCT_KEY = 'cv_clinic_right_pct';
+/** Quiet time after the last saved edit before the score refreshes on its own. */
+const AUTO_RESCORE_AFTER_EDIT_MS = 6000;
 const CV_TAILOR_RIGHT_PCT_KEY = 'cv_tailor_right_pct';
 const CV_RIGHT_PANEL_COLLAPSED_KEY = 'applymate:cv:rightPanelCollapsed';
 
 /** Dark native select — teal focus/accent matches brand (avoids default browser blue). */
 const cvProfileSelectClassName = cn(
-  'rounded-lg border border-white/[0.08] px-3 py-1.5 text-sm',
-  'bg-[#0C0F0F] text-white/80',
-  'accent-[#00C9B1]',
-  'focus:outline-none focus:border-[#00C9B1] focus:ring-2 focus:ring-[#00C9B1]/25',
-  '[&>option]:bg-[#0C0F0F] [&>option]:text-white',
+  'rounded-lg border border-border-subtle px-3 py-1.5 text-sm',
+  'bg-bg-surface text-text-secondary',
+  'accent-[#17B26A]',
+  'focus:outline-none focus:border-accent-solid focus:ring-2 focus:ring-border-focus',
+  '[&>option]:bg-bg-surface [&>option]:text-text-primary',
 );
 
 const cvDashboardTemplateStorageKey = (profileId: string) =>
@@ -248,43 +250,6 @@ function writeCvDashboardTemplate(profileId: string, t: CvTemplateId): void {
   } catch {
     /* quota / private mode */
   }
-}
-
-function getFormatRecommendation(expCount: number): {
-  label: string;
-  recommended: CvTemplateId;
-  reason: string;
-} {
-  if (expCount === 0) {
-    return {
-      label: 'Student / No Experience',
-      recommended: 'modern',
-      reason:
-        'The Modern template leads with skills and education, ideal when experience is limited',
-    };
-  }
-  if (expCount <= 2) {
-    return {
-      label: 'Early Career (0-3 years)',
-      recommended: 'modern',
-      reason:
-        'Hybrid format recommended: showcase skills prominently alongside your experience',
-    };
-  }
-  if (expCount <= 5) {
-    return {
-      label: 'Mid Career (3-8 years)',
-      recommended: 'classic',
-      reason:
-        'Chronological format: your experience depth is your strongest asset',
-    };
-  }
-  return {
-    label: 'Senior (8+ years)',
-    recommended: 'professional',
-    reason:
-      'Professional format: structured layout that showcases seniority and specialisation',
-  };
 }
 
 function formatLayoutLabel(detectedLayout: string): string {
@@ -937,20 +902,29 @@ export function CvClinicPageContent() {
   useEffect(() => {
     if (!hasCv || !targetId?.trim() || !improvements.data?.needsScoring) return;
     if (runScan.isPending || improvements.isFetching) return;
-    if (resolveCvDisplayScore(score.data) != null) return;
+    if (builderSaveStatus === 'dirty' || builderSaveStatus === 'saving') return;
     const marker = `${targetId}:${improvements.dataUpdatedAt}`;
     if (autoRescoreMarkerRef.current === marker) return;
-    autoRescoreMarkerRef.current = marker;
-    void (async () => {
-      try {
-        await runScan.mutateAsync(targetId);
-        await queryClient.invalidateQueries({
-          queryKey: cvSuggestionsQueryKey(targetId),
-        });
-      } catch {
-        /* Keep autoRescoreMarkerRef set for this marker so a failing detailed score does not loop POSTs while needsScoring stays true. User can run Scan from the toolbar to retry. */
-      }
-    })();
+    // A score already on screen is out of date after an edit: refresh it once the user pauses,
+    // so the number never silently describes an older version of the CV.
+    const hasScore = resolveCvDisplayScore(score.data) != null;
+    const timer = window.setTimeout(
+      () => {
+        autoRescoreMarkerRef.current = marker;
+        void (async () => {
+          try {
+            await runScan.mutateAsync(targetId);
+            await queryClient.invalidateQueries({
+              queryKey: cvSuggestionsQueryKey(targetId),
+            });
+          } catch {
+            /* Marker stays set so a failing score does not loop; Scan in the toolbar retries. */
+          }
+        })();
+      },
+      hasScore ? AUTO_RESCORE_AFTER_EDIT_MS : 0,
+    );
+    return () => window.clearTimeout(timer);
   }, [
     hasCv,
     targetId,
@@ -960,6 +934,7 @@ export function CvClinicPageContent() {
     runScan,
     queryClient,
     score.data,
+    builderSaveStatus,
   ]);
 
   useEffect(() => {
@@ -1328,8 +1303,12 @@ export function CvClinicPageContent() {
   }, [profile?.originalTemplate, profile?.structured, sections]);
 
   const formatRecommendation = useMemo(
-    () => getFormatRecommendation(experienceItemCount),
-    [experienceItemCount],
+    () =>
+      getFormatRecommendation({
+        careerStage: displayScoreBreakdown?.careerStage,
+        experienceCount: experienceItemCount,
+      }),
+    [displayScoreBreakdown?.careerStage, experienceItemCount],
   );
   const isOnRecommendedTemplate = template === formatRecommendation.recommended;
 
@@ -1509,7 +1488,7 @@ export function CvClinicPageContent() {
     async (format: 'pdf' | 'docx') => {
       if (isPartialExtractionBanner) {
         const ok = window.confirm(
-          'Your resume appears to be missing experience and skills data. ' +
+          'Your CV appears to be missing experience and skills data. ' +
             'The exported file may be incomplete.\n\n' +
             'Download anyway?',
         );
@@ -1569,7 +1548,7 @@ export function CvClinicPageContent() {
               )
             : undefined,
         });
-        toast.success(`Resume downloaded as ${format.toUpperCase()}`);
+        toast.success(`CV downloaded as ${format.toUpperCase()}`);
       } catch (e) {
         toast.error(getCvExportErrorMessage(e));
       } finally {
@@ -1601,7 +1580,7 @@ export function CvClinicPageContent() {
           setTemplate(t);
           if (targetId?.trim()) writeCvDashboardTemplate(targetId, t);
         }
-        toast.success('Restored to your original resume format');
+        toast.success('Restored to your original CV format');
       }
     } catch (e) {
       toast.error(getApiErrorMessage(e) || 'Failed to restore original format');
@@ -1700,7 +1679,7 @@ export function CvClinicPageContent() {
               setInstantPreviewPatch(null);
               clearAssistantPreview();
               toast.success(
-                commitResult.message || 'Changes saved to your resume.',
+                commitResult.message || 'Changes saved to your CV.',
               );
             } else {
               const remainingPatch = mergeGlobalAssistantPatches(
@@ -1726,9 +1705,7 @@ export function CvClinicPageContent() {
           } else {
             setInstantPreviewPatch(null);
             clearAssistantPreview();
-            toast.success(
-              commitResult.message || 'Changes saved to your resume.',
-            );
+            toast.success(commitResult.message || 'Changes saved to your CV.');
           }
 
           const highlightId = assistantTargetSectionToEditorId(
@@ -1827,7 +1804,7 @@ export function CvClinicPageContent() {
           if (shouldShowTruthfulnessAdjustNotice(product)) {
             toast.info(
               product.truthfulnessWarnings?.find((w) => w.trim())?.trim() ??
-                'Some edits were checked against your resume and adjusted before applying.',
+                'Some edits were checked against your CV and adjusted before applying.',
             );
           }
           void finishAcceptEditorSync(
@@ -1926,7 +1903,7 @@ export function CvClinicPageContent() {
         if (shouldShowTruthfulnessAdjustNotice(result)) {
           toast.info(
             result.truthfulnessWarnings?.find((w) => w.trim())?.trim() ??
-              'Some edits were checked against your resume and adjusted before applying.',
+              'Some edits were checked against your CV and adjusted before applying.',
           );
         }
         logCvMutationCommitDev(
@@ -2569,16 +2546,16 @@ export function CvClinicPageContent() {
         title={`Restore to ${orig} (your uploaded format)`}
         disabled={restoreMutation.isPending}
         onClick={() => void handleRestoreOriginal()}
-        className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(0,201,177,0.3)] px-3 py-1.5 text-xs font-semibold text-white/55 transition hover:border-[#00C9B1]/50 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-full border border-accent-border px-3 py-1.5 text-xs font-semibold text-text-tertiary transition hover:border-accent-border hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50"
       >
         {restoreMutation.isPending ? (
           <>
-            <Loader2 className="h-3 w-3 shrink-0 animate-spin text-[#00C9B1]" />
+            <Loader2 className="h-3 w-3 shrink-0 animate-spin text-accent-text" />
             Restoring…
           </>
         ) : (
           <>
-            <RotateCcw className="h-3 w-3 shrink-0 text-[#00C9B1]" />
+            <RotateCcw className="h-3 w-3 shrink-0 text-accent-text" />
             Restore original
           </>
         )}
@@ -2595,7 +2572,7 @@ export function CvClinicPageContent() {
     const d = profile?.detectedLayout?.trim();
     if (!d || d === 'unknown') return null;
     return (
-      <p className="text-[11px] text-white/25">
+      <p className="text-[11px] text-text-disabled">
         Original format detected: {formatLayoutLabel(d)}
       </p>
     );
@@ -2614,10 +2591,10 @@ export function CvClinicPageContent() {
       await queryClient.refetchQueries({ queryKey: queryKeys.cv.profiles() });
       const id = profile.id?.trim();
       if (id && id !== 'cv-profile') {
-        toast.success('Resume created. Opening editor…');
+        toast.success('CV created. Opening editor…');
         router.push(`/dashboard/cv?profileId=${encodeURIComponent(id)}`);
       } else {
-        toast.success('Resume created. Choose it below to open the editor.');
+        toast.success('CV created. Choose it below to open the editor.');
       }
     } catch (e) {
       toast.error(getApiErrorMessage(e));
@@ -2711,8 +2688,8 @@ export function CvClinicPageContent() {
         className={cn(
           'cv-mobile-top-chrome',
           profileOptions.length === 1 && profiles.length === 0
-            ? 'border border-amber-500/25 bg-amber-500/[0.04]'
-            : 'border border-[rgba(0,201,177,0.12)]',
+            ? 'border border-warning-border bg-warning-subtle'
+            : 'border border-accent-border',
         )}
         contentClassName="p-2 sm:p-2.5"
       >
@@ -2720,21 +2697,21 @@ export function CvClinicPageContent() {
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
             <Link
               href="/dashboard/cv"
-              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-white/10 px-2 text-[11px] font-medium text-white/70 transition hover:border-[#00C9B1]/40 hover:text-white"
-              title="Resume library"
+              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-border-subtle px-2 text-[11px] font-medium text-text-secondary transition hover:border-accent-border hover:text-text-primary"
+              title="CV library"
             >
-              <ChevronLeft className="h-3.5 w-3.5 shrink-0 text-[#00C9B1]" />
+              <ChevronLeft className="h-3.5 w-3.5 shrink-0 text-accent-text" />
               <span className="hidden sm:inline">Library</span>
             </Link>
             {profileOptions.length === 1 && profiles.length === 0 ? (
-              <p className="min-w-0 flex-1 text-[10px] leading-snug text-amber-100/90">
-                Profile list empty but this resume loaded. Check API URL if you
+              <p className="min-w-0 flex-1 text-[10px] leading-snug text-warning-text">
+                Profile list empty but this CV loaded. Check API URL if you
                 expect multiple profiles.
               </p>
             ) : profileOptions.length >= 1 ? (
               <>
-                <span className="hidden shrink-0 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/40 sm:inline">
-                  Resume
+                <span className="hidden shrink-0 text-[10px] font-semibold uppercase tracking-[0.1em] text-text-tertiary sm:inline">
+                  CV
                 </span>
                 <select
                   className={cn(
@@ -2760,7 +2737,7 @@ export function CvClinicPageContent() {
                   <Button
                     type="button"
                     variant="ghost"
-                    className="h-8 shrink-0 border border-white/10 px-2 text-[11px]"
+                    className="h-8 shrink-0 border border-border-subtle px-2 text-[11px]"
                     onClick={() => setRenameOpen(true)}
                   >
                     Rename
@@ -2771,36 +2748,36 @@ export function CvClinicPageContent() {
             <Button
               type="button"
               variant="ghost"
-              className="h-8 shrink-0 border border-[rgba(0,201,177,0.25)] px-2.5 text-xs"
+              className="h-8 shrink-0 border border-accent-border px-2.5 text-xs"
               onClick={() => setCreateCvOpen(true)}
             >
               + New resume
             </Button>
             <Link
               href="/dashboard/cv-profiles"
-              className="ml-auto hidden shrink-0 text-[11px] font-medium text-[#00C9B1] hover:underline sm:inline"
+              className="ml-auto hidden shrink-0 text-[11px] font-medium text-accent-text hover:underline sm:inline"
             >
               Manage profiles
             </Link>
           </div>
 
-          <div className="h-px w-full bg-white/[0.08]" />
+          <div className="h-px w-full bg-bg-hover" />
 
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 sm:gap-x-3">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-white/35">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
                 Score
               </span>
               {scoreInitialLoading ? (
                 <Skeleton height={22} width={44} borderRadius={6} />
               ) : toolbarScoreValue == null ? (
-                <span className="text-sm font-semibold text-white/45 sm:text-base">
+                <span className="text-sm font-semibold text-text-tertiary sm:text-base">
                   Calculating…
                 </span>
               ) : (
-                <span className="text-sm font-extrabold tabular-nums text-[#00C9B1] sm:text-base">
+                <span className="text-sm font-extrabold tabular-nums text-accent-text sm:text-base">
                   {toolbarScoreValue}
-                  <span className="text-xs font-medium text-white/45">
+                  <span className="text-xs font-medium text-text-tertiary">
                     /100
                   </span>
                 </span>
@@ -2809,7 +2786,7 @@ export function CvClinicPageContent() {
             <Button
               type="button"
               variant="ghost"
-              className="h-8 shrink-0 border border-[rgba(0,201,177,0.35)] px-2.5 text-xs"
+              className="h-8 shrink-0 border border-accent-border px-2.5 text-xs"
               disabled={runScan.isPending}
               onClick={async () => {
                 try {
@@ -2838,21 +2815,25 @@ export function CvClinicPageContent() {
               )}
             </Button>
             {improvements.data?.needsScoring ? (
-              <span className="text-[10px] text-amber-200/80">
-                Updating tips…
+              <span className="text-[12px] text-text-secondary">
+                {runScan.isPending
+                  ? 'Updating your score…'
+                  : 'Score updates when you pause'}
               </span>
             ) : pendingSuggestionsCountResolved > 0 ? (
-              <span className="text-[10px] text-white/40">
+              <span className="text-[10px] text-text-tertiary">
                 {pendingSuggestionsCountResolved} tips
               </span>
             ) : null}
             <span
-              className="hidden h-5 w-px shrink-0 bg-white/10 sm:block"
+              className="hidden h-5 w-px shrink-0 bg-bg-hover sm:block"
               aria-hidden
             />
-            <span className="hidden text-[10px] text-white/35 sm:inline">
+            <span className="hidden text-[10px] text-text-tertiary sm:inline">
               Export{' '}
-              <span className="capitalize text-white/50">({template})</span>
+              <span className="capitalize text-text-tertiary">
+                ({template})
+              </span>
             </span>
             <div className="flex flex-wrap items-center gap-1.5 sm:ml-auto">
               <Button
@@ -2870,7 +2851,7 @@ export function CvClinicPageContent() {
               <Button
                 type="button"
                 variant="ghost"
-                className="h-8 border border-white/10 px-2.5 text-xs sm:px-3"
+                className="h-8 border border-border-subtle px-2.5 text-xs sm:px-3"
                 disabled={isExportPending}
                 onClick={() => void handleExport('docx')}
               >
@@ -2948,7 +2929,7 @@ export function CvClinicPageContent() {
         queryFn: () => api.cv.getSuggestions(targetId ?? undefined, false),
       });
       const n = impr.pendingSuggestionsCount ?? impr.improvements.length;
-      toast.success(`Resume scan complete: ${n} suggestions found`);
+      toast.success(`CV scan complete: ${n} suggestions found`);
     } catch (e) {
       toast.error(getApiErrorMessage(e));
     }
@@ -3201,18 +3182,18 @@ export function CvClinicPageContent() {
         animate={{ opacity: 1, y: 0 }}
         className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center"
       >
-        <FileText className="h-12 w-12 text-[#00C9B1]" />
-        <h2 className="mt-4 text-2xl font-extrabold text-white">
+        <FileText className="h-12 w-12 text-accent-text" />
+        <h2 className="mt-4 text-2xl font-extrabold text-text-primary">
           You don&apos;t have a resume yet
         </h2>
-        <p className="mt-2 max-w-md text-sm text-white/50">
-          Upload an existing resume or build one from scratch.
+        <p className="mt-2 max-w-md text-sm text-text-tertiary">
+          Upload an existing CV or build one from scratch.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Button onClick={() => setShowUpload(true)}>Upload my resume</Button>
+          <Button onClick={() => setShowUpload(true)}>Upload my CV</Button>
           <Button
             variant="ghost"
-            className="border border-[rgba(0,201,177,0.35)]"
+            className="border border-accent-border"
             onClick={() => setPickTemplate(true)}
           >
             Build from scratch
@@ -3237,7 +3218,9 @@ export function CvClinicPageContent() {
 
         {pickTemplate ? (
           <div className="mt-10 w-full max-w-3xl space-y-4">
-            <p className="text-sm font-semibold text-white">Pick a template</p>
+            <p className="text-sm font-semibold text-text-primary">
+              Pick a template
+            </p>
             <div className="flex flex-wrap justify-center gap-2">
               {(['classic', 'modern', 'creative', 'professional'] as const).map(
                 (t) => (
@@ -3282,7 +3265,7 @@ export function CvClinicPageContent() {
         <Modal
           open={showUpload}
           onOpenChange={setShowUpload}
-          title="Upload your resume"
+          title="Upload your CV"
           className="max-w-lg"
         >
           <CVUploadZone
@@ -3300,6 +3283,7 @@ export function CvClinicPageContent() {
           profiles={profileOptions}
           loading={profilesQuery.isFetching && profileOptions.length === 0}
           onNewCv={() => setCreateCvOpen(true)}
+          onUploadCv={() => setShowUpload(true)}
           onOpenCv={(id) =>
             router.push(`/dashboard/cv?profileId=${encodeURIComponent(id)}`)
           }
@@ -3323,12 +3307,6 @@ export function CvClinicPageContent() {
         open={createCvOpen}
         onOpenChange={setCreateCvOpen}
       />
-      {targetId ? (
-        <MobileExperienceBanner
-          surface="cv-clinic"
-          className="mx-3 mb-2 max-lg:mx-4 lg:hidden"
-        />
-      ) : null}
       {targetId ? (
         <>
           <AIGlobalAssistantPanel
@@ -3356,7 +3334,7 @@ export function CvClinicPageContent() {
               recruiterScanClarification
                 ? 'Recruiter Scan · role context'
                 : globalAssistantClarification
-                  ? 'Global assistant · entire resume or findings flow'
+                  ? 'Global assistant · entire CV or findings flow'
                   : assistantClarification
                     ? `Section assistant · ${assistantChangedFieldLabel(assistantClarification.targetSection)}`
                     : null
@@ -3431,8 +3409,8 @@ export function CvClinicPageContent() {
       <Modal
         open={renameOpen}
         onOpenChange={setRenameOpen}
-        title="Rename this resume"
-        description="Shown in your resume list and in the selector above (1–100 characters)."
+        title="Rename this CV"
+        description="Shown in your CV list and in the selector above (1–100 characters)."
         className="max-w-md"
       >
         <div className="space-y-3">
@@ -3441,14 +3419,14 @@ export function CvClinicPageContent() {
             value={renameValue}
             onChange={(e) => setRenameValue(e.target.value)}
             maxLength={100}
-            className="w-full rounded-xl border border-white/10 bg-[#111616] px-3 py-2.5 text-sm text-white outline-none focus:border-[#00C9B1]"
-            placeholder="e.g. Frontend engineer resume"
+            className="w-full rounded-xl border border-border-subtle bg-bg-sunken px-3 py-2.5 text-sm text-text-primary outline-none focus:border-accent-solid"
+            placeholder="e.g. Frontend engineer CV"
           />
           <div className="flex flex-wrap justify-end gap-2">
             <Button
               type="button"
               variant="ghost"
-              className="border border-white/10"
+              className="border border-border-subtle"
               onClick={() => setRenameOpen(false)}
             >
               Cancel
@@ -3466,7 +3444,7 @@ export function CvClinicPageContent() {
                   { id: targetId, name },
                   {
                     onSuccess: () => {
-                      toast.success('Resume renamed');
+                      toast.success('CV renamed');
                       setRenameOpen(false);
                       void queryClient.invalidateQueries({
                         queryKey: queryKeys.cv.profiles(),
@@ -3523,14 +3501,14 @@ export function CvClinicPageContent() {
             setCvServerHydrateNonce((n) => n + 1);
           }
         }}
-        continueLabel="Open resume editor"
+        continueLabel="Open CV editor"
       />
 
       <Modal
         open={showReuploadModal}
         onOpenChange={setShowReuploadModal}
-        title="Re-upload your resume"
-        description="Upload your resume again to re-extract experience, education, and skills."
+        title="Re-upload your CV"
+        description="Upload your CV again to re-extract experience, education, and skills."
         className="max-w-lg"
       >
         <CVUploadZone
@@ -3560,8 +3538,10 @@ export function CvClinicPageContent() {
             open={mobileCvToolsOpen}
             onOpenChange={setMobileCvToolsOpen}
             icon={SlidersHorizontal}
-            label="Resume tools"
+            label="CV tools"
+            shortLabel="Tools"
             fabId="cv-tools"
+            tourAttr="cv-tools-mobile"
             stackIndex={0}
           >
             {cvTopChrome}
@@ -3571,20 +3551,23 @@ export function CvClinicPageContent() {
             onOpenChange={setMobileCvInsightsOpen}
             icon={BarChart3}
             label="Score and tips"
+            shortLabel="Score"
+            tourAttr="cv-insights"
             badge={
               displayScoreValue ??
               (pendingSuggestionsCountResolved > 0
                 ? pendingSuggestionsCountResolved
                 : undefined)
             }
+            badgeTone={displayScoreValue != null ? 'neutral' : 'alert'}
             fabId="cv-insights"
             stackIndex={1}
           >
             <div className="space-y-3 pb-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-white/50">
+              <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
                 Score breakdown & tips
               </p>
-              <div className="flex border-b border-white/[0.06]">
+              <div className="flex border-b border-border-subtle">
                 <button
                   type="button"
                   onClick={() =>
@@ -3593,8 +3576,8 @@ export function CvClinicPageContent() {
                   className={cn(
                     'flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-widest transition',
                     tripleRightTab === 'analysis'
-                      ? 'border-b-2 border-[#00C9B1] text-[#00C9B1]'
-                      : 'text-white/40',
+                      ? 'border-b-2 border-accent-solid text-accent-text'
+                      : 'text-text-tertiary',
                   )}
                 >
                   Analysis
@@ -3607,13 +3590,13 @@ export function CvClinicPageContent() {
                   className={cn(
                     'relative flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-widest transition',
                     tripleRightTab === 'improvements'
-                      ? 'border-b-2 border-[#00C9B1] text-[#00C9B1]'
-                      : 'text-white/40',
+                      ? 'border-b-2 border-accent-solid text-accent-text'
+                      : 'text-text-tertiary',
                   )}
                 >
                   Tips
                   {improvementsBadgeCount > 0 ? (
-                    <span className="ml-1 rounded-full bg-rose-500 px-1.5 text-[9px] font-bold text-white">
+                    <span className="ml-1 rounded-full bg-rose-500 px-1.5 text-[9px] font-bold text-text-primary">
                       {improvementsBadgeCount}
                     </span>
                   ) : null}
@@ -3629,7 +3612,7 @@ export function CvClinicPageContent() {
                     }
                   >
                     {scoreRefreshing ? (
-                      <p className="mb-2 text-[10px] font-medium text-white/40">
+                      <p className="mb-2 text-[10px] font-medium text-text-tertiary">
                         Updating score…
                       </p>
                     ) : null}
@@ -3647,7 +3630,9 @@ export function CvClinicPageContent() {
                     />
                   </div>
                 ) : (
-                  <p className="text-sm text-white/45">Calculating score…</p>
+                  <p className="text-sm text-text-tertiary">
+                    Calculating score…
+                  </p>
                 )
               ) : (
                 <ImprovementsPanel
@@ -3667,25 +3652,25 @@ export function CvClinicPageContent() {
 
       {isPartialExtractionBanner ? (
         <GlowCard
-          className="border border-[rgba(245,158,11,0.2)]"
+          className="border border-warning-border"
           contentClassName="px-5 py-3.5"
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-[#F59E0B]">
-                Your resume was not fully extracted
+              <p className="text-sm font-semibold text-warning-text">
+                Your CV was not fully extracted
               </p>
-              <p className="mt-1 text-xs leading-relaxed text-white/55">
+              <p className="mt-1 text-xs leading-relaxed text-text-tertiary">
                 Experience, education, and other sections may be missing.
-                Re-upload your resume to extract all content correctly.
+                Re-upload your CV to extract all content correctly.
               </p>
             </div>
             <button
               type="button"
               onClick={() => setShowReuploadModal(true)}
-              className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#00C9B1] px-4 py-2 text-[13px] font-semibold text-black transition hover:bg-[#00C4C5]"
+              className="inline-flex shrink-0 items-center justify-center rounded-full bg-accent-solid px-4 py-2 text-[13px] font-semibold text-text-on-accent transition hover:bg-[#00C4C5]"
             >
-              Re-upload resume
+              Re-upload CV
             </button>
           </div>
         </GlowCard>
@@ -3693,42 +3678,42 @@ export function CvClinicPageContent() {
 
       {targetId ? (
         <GlowCard
-          className="hidden border border-[rgba(0,201,177,0.12)] lg:hidden"
+          className="hidden border border-accent-border lg:hidden"
           contentClassName="p-0"
         >
           <button
             type="button"
             onClick={() => setInsightsOpen((v) => !v)}
-            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition hover:bg-white/[0.02]"
+            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition hover:bg-bg-surface"
           >
-            <span className="text-xs font-semibold text-white/70">
+            <span className="text-xs font-semibold text-text-secondary">
               Score breakdown & tips
             </span>
             {!scoreInitialLoading &&
             score.data &&
             score.data.score !== null &&
             score.data.score !== undefined ? (
-              <span className="rounded-full bg-[rgba(0,201,177,0.12)] px-2 py-0.5 text-[10px] font-bold tabular-nums text-[#00C9B1]">
+              <span className="rounded-full bg-accent-subtle px-2 py-0.5 text-[10px] font-bold tabular-nums text-accent-text">
                 {score.data.score}/100
               </span>
             ) : !scoreInitialLoading ? (
-              <span className="animate-pulse rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold text-white/45">
+              <span className="animate-pulse rounded-full bg-bg-hover px-2 py-0.5 text-[10px] font-semibold text-text-tertiary">
                 Calculating…
               </span>
             ) : null}
             {pendingSuggestionsCountResolved > 0 ? (
-              <span className="text-[10px] text-white/35">
+              <span className="text-[10px] text-text-tertiary">
                 · {pendingSuggestionsCountResolved} tip
                 {pendingSuggestionsCountResolved === 1 ? '' : 's'}
               </span>
             ) : null}
             {!isOnRecommendedTemplate ? (
-              <span className="text-[10px] text-[#00C9B1]/60">
+              <span className="text-[10px] text-accent-text">
                 · format suggestion
               </span>
             ) : null}
             <ChevronDown
-              className={`ml-auto h-4 w-4 shrink-0 text-white/30 transition-transform duration-200 ${insightsOpen ? 'rotate-180' : ''}`}
+              className={`ml-auto h-4 w-4 shrink-0 text-text-disabled transition-transform duration-200 ${insightsOpen ? 'rotate-180' : ''}`}
             />
           </button>
 
@@ -3742,8 +3727,8 @@ export function CvClinicPageContent() {
                 transition={{ duration: 0.2, ease: 'easeOut' }}
                 className="overflow-hidden"
               >
-                <div className="flex min-h-0 flex-col border-t border-white/[0.06]">
-                  <div className="flex shrink-0 border-b border-white/[0.06]">
+                <div className="flex min-h-0 flex-col border-t border-border-subtle">
+                  <div className="flex shrink-0 border-b border-border-subtle">
                     <button
                       type="button"
                       onClick={() =>
@@ -3752,8 +3737,8 @@ export function CvClinicPageContent() {
                       className={cn(
                         'flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-widest transition',
                         tripleRightTab === 'analysis'
-                          ? 'border-b-2 border-[#00C9B1] text-[#00C9B1]'
-                          : 'text-white/40 hover:text-white/70',
+                          ? 'border-b-2 border-accent-solid text-accent-text'
+                          : 'text-text-tertiary hover:text-text-secondary',
                       )}
                     >
                       Analysis
@@ -3766,15 +3751,15 @@ export function CvClinicPageContent() {
                       className={cn(
                         'relative flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-widest transition',
                         tripleRightTab === 'improvements'
-                          ? 'border-b-2 border-[#00C9B1] text-[#00C9B1]'
-                          : 'text-white/40 hover:text-white/70',
+                          ? 'border-b-2 border-accent-solid text-accent-text'
+                          : 'text-text-tertiary hover:text-text-secondary',
                       )}
                     >
                       Improvements
                       {improvementsBadgeCount > 0 ? (
                         <span
                           className={cn(
-                            'pointer-events-none absolute right-1 top-0.5 z-10 inline-flex h-4 min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold leading-none text-white shadow',
+                            'pointer-events-none absolute right-1 top-0.5 z-10 inline-flex h-4 min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold leading-none text-text-primary shadow',
                             tripleRightTab !== 'improvements' &&
                               improvementsAttentionPulse &&
                               'animate-pulse',
@@ -3802,7 +3787,7 @@ export function CvClinicPageContent() {
                               }
                             >
                               {scoreRefreshing ? (
-                                <p className="mb-2 text-[10px] font-medium text-white/40">
+                                <p className="mb-2 text-[10px] font-medium text-text-tertiary">
                                   Updating score…
                                 </p>
                               ) : null}
@@ -3856,7 +3841,7 @@ export function CvClinicPageContent() {
                               ) : (
                                 <>
                                   <Sparkles className="h-4 w-4" /> Analyze this
-                                  Resume
+                                  CV
                                 </>
                               )}
                             </Button>
@@ -3865,13 +3850,13 @@ export function CvClinicPageContent() {
                           <Skeleton height={120} borderRadius={12} />
                         )}
                         {!isOnRecommendedTemplate ? (
-                          <div className="flex flex-col gap-3 rounded-xl border border-[rgba(0,201,177,0.15)] bg-white/[0.02] p-4">
+                          <div className="flex flex-col gap-3 rounded-xl border border-accent-border bg-bg-surface p-4">
                             <div className="min-w-0">
-                              <p className="text-xs font-semibold text-[#00C9B1]">
+                              <p className="text-xs font-semibold text-accent-text">
                                 Format suggestion for{' '}
                                 {formatRecommendation.label}
                               </p>
-                              <p className="mt-1 text-[11px] leading-relaxed text-white/50">
+                              <p className="mt-1 text-[11px] leading-relaxed text-text-tertiary">
                                 {formatRecommendation.reason}
                               </p>
                             </div>
@@ -3882,7 +3867,7 @@ export function CvClinicPageContent() {
                                   formatRecommendation.recommended,
                                 )
                               }
-                              className="inline-flex shrink-0 items-center justify-center rounded-full border border-[rgba(0,201,177,0.3)] bg-[rgba(0,201,177,0.12)] px-4 py-1.5 text-xs font-semibold text-[#00C9B1] transition hover:border-[#00C9B1]/50"
+                              className="inline-flex shrink-0 items-center justify-center rounded-full border border-accent-border bg-accent-subtle px-4 py-1.5 text-xs font-semibold text-accent-text transition hover:border-accent-border"
                             >
                               Try {formatRecommendation.recommended}
                             </button>
@@ -3892,13 +3877,13 @@ export function CvClinicPageContent() {
                     ) : (
                       <>
                         {completenessGroups.length > 0 ? (
-                          <div className="rounded-xl border border-[rgba(245,158,11,0.22)] bg-[rgba(245,158,11,0.06)] p-3">
+                          <div className="rounded-xl border border-warning-border bg-warning-subtle p-3">
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
-                                <p className="text-xs font-semibold text-amber-300">
+                                <p className="text-xs font-semibold text-warning-text">
                                   Sections to complete
                                 </p>
-                                <p className="mt-1 text-[11px] text-white/55">
+                                <p className="mt-1 text-[11px] text-text-tertiary">
                                   {completeness?.score != null
                                     ? `Completeness ${completeness.score}% · ${completenessGroups.length} section${
                                         completenessGroups.length === 1
@@ -3909,16 +3894,16 @@ export function CvClinicPageContent() {
                                 </p>
                               </div>
                             </div>
-                            <ul className="mt-2 space-y-2 text-[11px] text-white/75">
+                            <ul className="mt-2 space-y-2 text-[11px] text-text-secondary">
                               {completenessGroups.map((sec) => (
                                 <li key={sec.sectionKey}>
                                   <div className="flex items-center justify-between gap-2">
-                                    <span className="font-semibold text-white/85">
+                                    <span className="font-semibold text-text-primary">
                                       {sec.sectionLabel}
                                     </span>
                                     <button
                                       type="button"
-                                      className="shrink-0 rounded-md border border-amber-300/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-200 transition hover:border-amber-200/55"
+                                      className="shrink-0 rounded-md border border-warning-border bg-warning-subtle px-2 py-0.5 text-[10px] font-semibold text-warning-text transition hover:border-amber-200/55"
                                       onClick={() =>
                                         jumpToSectionRef.current?.(
                                           resolveJumpSectionKey(sec.sectionKey),
@@ -3932,7 +3917,7 @@ export function CvClinicPageContent() {
                                       Open
                                     </button>
                                   </div>
-                                  <ul className="mt-0.5 list-disc space-y-0.5 pl-4 text-[10px] text-white/60">
+                                  <ul className="mt-0.5 list-disc space-y-0.5 pl-4 text-[10px] text-text-secondary">
                                     {sec.fields.map((f) => (
                                       <li
                                         key={`${sec.sectionKey}-${f.fieldPath}`}
@@ -3952,10 +3937,10 @@ export function CvClinicPageContent() {
                           <div className="rounded-xl border border-[rgba(244,63,94,0.22)] bg-[rgba(244,63,94,0.05)] p-3">
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
-                                <p className="text-xs font-semibold text-rose-200">
+                                <p className="text-xs font-semibold text-danger-text">
                                   Spelling & grammar
                                 </p>
-                                <p className="mt-1 text-[11px] text-white/55">
+                                <p className="mt-1 text-[11px] text-text-tertiary">
                                   {qualitySignals.isSpellChecking
                                     ? 'Checking…'
                                     : `${qualitySignals.spellIssueCount} spelling · ${qualitySignals.grammarIssueCount} grammar`}
@@ -3965,7 +3950,7 @@ export function CvClinicPageContent() {
                                 <button
                                   type="button"
                                   title="Apply every spelling suggestion"
-                                  className="rounded-md border border-emerald-300/40 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
+                                  className="rounded-md border border-success-border bg-success-subtle px-2 py-1 text-[10px] font-semibold text-success-text disabled:cursor-not-allowed disabled:opacity-40"
                                   disabled={
                                     qualitySignals.spellIssueCount <= 0 ||
                                     qualitySignals.isSpellChecking
@@ -3979,7 +3964,7 @@ export function CvClinicPageContent() {
                                 <button
                                   type="button"
                                   title="Re-run spell + grammar check"
-                                  className="rounded-md border border-white/[0.12] bg-white/[0.04] px-2 py-1 text-[10px] font-semibold text-white/70 disabled:cursor-not-allowed disabled:opacity-40"
+                                  className="rounded-md border border-border-default bg-bg-surface px-2 py-1 text-[10px] font-semibold text-text-secondary disabled:cursor-not-allowed disabled:opacity-40"
                                   disabled={qualitySignals.isSpellChecking}
                                   onClick={() =>
                                     setSpellCheckTrigger((n) => n + 1)
@@ -3990,8 +3975,8 @@ export function CvClinicPageContent() {
                               </div>
                             </div>
                             {qualitySignals.isSpellChecking ? (
-                              <p className="mt-2 text-[10px] text-white/40">
-                                Looking through your resume…
+                              <p className="mt-2 text-[10px] text-text-tertiary">
+                                Looking through your CV…
                               </p>
                             ) : (
                               <div className="mt-2 space-y-3">
@@ -4005,12 +3990,12 @@ export function CvClinicPageContent() {
                                   return (
                                     <div key={sectionKey}>
                                       <div className="flex items-center justify-between gap-2">
-                                        <p className="text-[11px] font-semibold text-white/85">
+                                        <p className="text-[11px] font-semibold text-text-primary">
                                           {sectionLabel}
                                         </p>
                                         <button
                                           type="button"
-                                          className="rounded-md border border-white/[0.12] bg-white/[0.04] px-1.5 py-0.5 text-[9px] font-semibold text-white/60 transition hover:border-white/[0.2]"
+                                          className="rounded-md border border-border-default bg-bg-surface px-1.5 py-0.5 text-[9px] font-semibold text-text-secondary transition hover:border-border-default"
                                           onClick={() =>
                                             jumpToSectionRef.current?.(
                                               resolveJumpSectionKey(sectionKey),
@@ -4044,30 +4029,30 @@ export function CvClinicPageContent() {
                                                   ? `${sectionKey}-${issue.issueId}`
                                                   : `${sectionKey}-${idx}-${original}`
                                               }
-                                              className="rounded-lg border border-white/[0.08] bg-[#111616] p-2"
+                                              className="rounded-lg border border-border-subtle bg-bg-sunken p-2"
                                             >
                                               <div className="flex flex-wrap items-start justify-between gap-2">
                                                 <div className="min-w-0">
-                                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-rose-300">
+                                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-danger-text">
                                                     {kind}
                                                   </p>
-                                                  <p className="mt-0.5 break-words text-[11px] text-white/85">
-                                                    <span className="rounded bg-rose-500/15 px-1 text-rose-200 line-through decoration-rose-400/70">
+                                                  <p className="mt-0.5 break-words text-[11px] text-text-primary">
+                                                    <span className="rounded bg-danger-subtle px-1 text-danger-text line-through decoration-rose-400/70">
                                                       {original}
                                                     </span>
                                                     {suggestion ? (
                                                       <>
-                                                        <span className="mx-1 text-white/40">
+                                                        <span className="mx-1 text-text-tertiary">
                                                           →
                                                         </span>
-                                                        <span className="rounded bg-emerald-500/15 px-1 text-emerald-200">
+                                                        <span className="rounded bg-success-subtle px-1 text-success-text">
                                                           {suggestion}
                                                         </span>
                                                       </>
                                                     ) : null}
                                                   </p>
                                                   {issue.message ? (
-                                                    <p className="mt-1 text-[10px] text-white/50">
+                                                    <p className="mt-1 text-[10px] text-text-tertiary">
                                                       {issue.message}
                                                     </p>
                                                   ) : null}
@@ -4076,7 +4061,7 @@ export function CvClinicPageContent() {
                                                   {suggestion ? (
                                                     <button
                                                       type="button"
-                                                      className="rounded-md border border-emerald-300/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300"
+                                                      className="rounded-md border border-success-border bg-success-subtle px-2 py-0.5 text-[10px] font-semibold text-success-text"
                                                       onClick={() =>
                                                         onApplySpellIssue(issue)
                                                       }
@@ -4086,7 +4071,7 @@ export function CvClinicPageContent() {
                                                   ) : null}
                                                   <button
                                                     type="button"
-                                                    className="rounded-md border border-white/[0.12] bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold text-white/60"
+                                                    className="rounded-md border border-border-default bg-bg-surface px-2 py-0.5 text-[10px] font-semibold text-text-secondary"
                                                     onClick={() =>
                                                       onDismissSpellIssue(issue)
                                                     }
@@ -4106,20 +4091,20 @@ export function CvClinicPageContent() {
                             )}
                           </div>
                         ) : (
-                          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                          <div className="rounded-xl border border-border-subtle bg-bg-surface p-3">
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
-                                <p className="text-xs font-semibold text-white/80">
+                                <p className="text-xs font-semibold text-text-secondary">
                                   Spelling & grammar
                                 </p>
-                                <p className="mt-1 text-[11px] text-white/45">
-                                  Run Re-check to scan this resume for spelling
-                                  and grammar. No issues right now.
+                                <p className="mt-1 text-[11px] text-text-tertiary">
+                                  Run Re-check to scan this CV for spelling and
+                                  grammar. No issues right now.
                                 </p>
                               </div>
                               <button
                                 type="button"
-                                className="shrink-0 rounded-md border border-white/[0.12] bg-white/[0.04] px-2 py-1 text-[10px] font-semibold text-white/70"
+                                className="shrink-0 rounded-md border border-border-default bg-bg-surface px-2 py-1 text-[10px] font-semibold text-text-secondary"
                                 onClick={() =>
                                   setSpellCheckTrigger((n) => n + 1)
                                 }
@@ -4241,7 +4226,7 @@ export function CvClinicPageContent() {
               onHistoryApplied={handleHistoryApplied}
             />
           ) : (
-            <div className="flex h-full min-h-0 items-center justify-center text-sm text-white/45">
+            <div className="flex h-full min-h-0 items-center justify-center text-sm text-text-tertiary">
               Loading template…
             </div>
           )}

@@ -23,12 +23,13 @@ function kindBadgeClass(
   kind: CvParseImportSummary['sections'][number]['kind'],
 ): string {
   if (kind === 'custom') {
-    return 'border-[#00C9B1]/40 bg-[#00C9B1]/12 text-[#7ee8d8]';
+    return 'border-accent-border bg-accent-subtle text-accent-text';
   }
   if (kind === 'optional')
-    return 'border-white/12 bg-white/[0.04] text-white/55';
-  if (kind === 'links') return 'border-white/12 bg-white/[0.04] text-white/45';
-  return 'border-white/10 bg-white/[0.03] text-white/50';
+    return 'border-border-default bg-bg-surface text-text-tertiary';
+  if (kind === 'links')
+    return 'border-border-default bg-bg-surface text-text-tertiary';
+  return 'border-border-subtle bg-bg-surface text-text-tertiary';
 }
 
 function kindBadgeLabel(
@@ -42,7 +43,7 @@ function kindBadgeLabel(
 export function CvParseImportSummaryPanel({
   importSummary,
   onContinue,
-  continueLabel = 'Open resume editor',
+  continueLabel = 'Open CV editor',
   className,
   embedded = false,
 }: CvParseImportSummaryPanelProps) {
@@ -57,15 +58,15 @@ export function CvParseImportSummaryPanel({
       {!embedded ? (
         <div className="flex items-start gap-3">
           <Sparkles
-            className="mt-0.5 h-6 w-6 shrink-0 text-[#00C9B1]"
+            className="mt-0.5 h-6 w-6 shrink-0 text-accent-text"
             aria-hidden
           />
           <div className="min-w-0 flex-1">
-            <h3 className="text-lg font-bold leading-snug text-white">
+            <h3 className="text-lg font-bold leading-snug text-text-primary">
               {message}
             </h3>
             {customCount > 0 ? (
-              <p className="mt-2 text-sm text-white/50">
+              <p className="mt-2 text-sm text-text-tertiary">
                 {customCount === 1
                   ? 'One specialised section'
                   : `${customCount} specialised sections`}{' '}
@@ -76,23 +77,25 @@ export function CvParseImportSummaryPanel({
           </div>
         </div>
       ) : (
-        <div className="flex items-start gap-3 rounded-xl border border-[#00C9B1]/15 bg-[#00C9B1]/5 px-3.5 py-3">
+        <div className="flex items-start gap-3 rounded-xl border border-accent-border bg-accent-subtle px-3.5 py-3">
           <Sparkles
-            className="mt-0.5 h-5 w-5 shrink-0 text-[#00C9B1]"
+            className="mt-0.5 h-5 w-5 shrink-0 text-accent-text"
             aria-hidden
           />
-          <p className="text-sm leading-relaxed text-white/75">{message}</p>
+          <p className="text-sm leading-relaxed text-text-secondary">
+            {message}
+          </p>
         </div>
       )}
 
       {embedded ? (
-        <p className="mt-3 text-[11px] font-medium uppercase tracking-[0.1em] text-white/35">
+        <p className="mt-3 text-[11px] font-medium uppercase tracking-[0.1em] text-text-tertiary">
           {sectionCount} section{sectionCount === 1 ? '' : 's'} imported
         </p>
       ) : null}
 
       {customCount > 0 && embedded ? (
-        <p className="mt-2 text-xs leading-relaxed text-white/45">
+        <p className="mt-2 text-xs leading-relaxed text-text-tertiary">
           {customCount === 1
             ? 'One specialised section'
             : `${customCount} specialised sections`}{' '}
@@ -115,12 +118,12 @@ export function CvParseImportSummaryPanel({
             className={cn(
               'flex items-center justify-between gap-3 rounded-xl border px-3.5 py-3 transition-colors',
               row.kind === 'custom'
-                ? 'border-[#00C9B1]/30 bg-[#00C9B1]/8'
-                : 'border-white/[0.08] bg-[#0a0e0e]/80',
+                ? 'border-accent-border bg-accent-subtle'
+                : 'border-border-subtle bg-bg-surface',
             )}
           >
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white/92">
+              <p className="truncate text-sm font-semibold text-text-primary">
                 {row.label}
               </p>
               <span
@@ -132,7 +135,7 @@ export function CvParseImportSummaryPanel({
                 {kindBadgeLabel(row.kind)}
               </span>
             </div>
-            <span className="shrink-0 text-xs font-medium text-white/45">
+            <span className="shrink-0 text-xs font-medium text-text-tertiary">
               {itemCountLabel(row.itemCount)}
             </span>
           </li>
@@ -142,7 +145,7 @@ export function CvParseImportSummaryPanel({
       {onContinue ? (
         <div
           className={cn(
-            'mt-6 flex justify-end border-t border-white/[0.08] pt-4',
+            'mt-6 flex justify-end border-t border-border-subtle pt-4',
             embedded && 'sticky bottom-0 bg-inherit',
           )}
         >

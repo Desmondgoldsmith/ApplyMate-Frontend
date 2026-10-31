@@ -18,8 +18,8 @@ export function CvParseImportSummaryModal({
   onOpenChange,
   importSummary,
   onContinue,
-  continueLabel = 'Open resume editor',
-  title = 'Resume imported',
+  continueLabel = 'Open CV editor',
+  title = 'CV imported',
 }: CvParseImportSummaryModalProps) {
   if (!importSummary) return null;
 
@@ -29,7 +29,7 @@ export function CvParseImportSummaryModal({
       onOpenChange={onOpenChange}
       title={title}
       description="Review what we extracted, then open the editor."
-      className="max-w-lg border border-[#00C9B1]/15 shadow-[0_0_40px_rgba(0,201,177,0.1)]"
+      className="max-w-lg border border-accent-border shadow-[0_0_40px_rgba(23,178,106,0.1)]"
       scrollBody
     >
       <CvParseImportSummaryPanel

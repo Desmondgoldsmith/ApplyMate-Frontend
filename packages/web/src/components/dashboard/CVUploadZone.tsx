@@ -195,7 +195,7 @@ export function CVUploadZone({
         )
           upload(file);
       }}
-      className={`flex w-full flex-col items-center justify-center rounded-2xl border border-dashed border-[#00C9B1]/25 bg-[#111616] p-6 text-center ${
+      className={`flex w-full flex-col items-center justify-center rounded-2xl border border-dashed border-accent-border bg-bg-sunken p-6 text-center ${
         isPending ? 'min-h-[220px] h-auto' : 'h-[200px]'
       } ${
         !aiUsage.isPaidTier &&
@@ -210,24 +210,26 @@ export function CVUploadZone({
       ) : skillsFound !== null ? (
         <div className="space-y-3">
           <div className="space-y-2">
-            <div className="mx-auto h-10 w-10 rounded-full bg-[#00C9B1]/20 text-[#00C9B1]">
+            <div className="mx-auto h-10 w-10 rounded-full bg-accent-subtle text-accent-text">
               ✓
             </div>
-            <p className="font-semibold text-white">
+            <p className="font-semibold text-text-primary">
               Resume parsed successfully
             </p>
-            <p className="text-sm text-[#9be8e8]">{skillsFound} skills found</p>
+            <p className="text-sm text-accent-text">
+              {skillsFound} skills found
+            </p>
           </div>
           {lastPartial && !partialDismissed ? (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-left">
+            <div className="rounded-xl border border-warning-border bg-warning-subtle px-3 py-2 text-left">
               <div className="flex items-start justify-between gap-2">
-                <p className="text-xs leading-relaxed text-amber-100/90">
+                <p className="text-xs leading-relaxed text-warning-text">
                   Your resume was not fully extracted. Experience or education
                   may be missing. Try another file or re-upload.
                 </p>
                 <button
                   type="button"
-                  className="shrink-0 text-[11px] text-amber-200/80 underline"
+                  className="shrink-0 text-[11px] text-warning-text underline"
                   onClick={() => setPartialDismissed(true)}
                 >
                   Dismiss
@@ -251,15 +253,15 @@ export function CVUploadZone({
         </div>
       ) : (
         <>
-          <UploadCloud className="mb-2 h-8 w-8 text-[#00C9B1]" />
-          <p className="font-medium text-white">Drop your resume here</p>
-          <p className="mb-3 text-sm text-white/50">
+          <UploadCloud className="mb-2 h-8 w-8 text-accent-text" />
+          <p className="font-medium text-text-primary">Drop your resume here</p>
+          <p className="mb-3 text-sm text-text-tertiary">
             PDF, DOCX, or TXT. Max 5MB.
           </p>
           {!aiUsage.isPaidTier &&
           !aiUsage.isLoading &&
           (aiUsage.remaining ?? 0) === 0 ? (
-            <p className="mb-2 text-xs text-amber-200/90">
+            <p className="mb-2 text-xs text-warning-text">
               {DAILY_AI_LIMIT_REACHED_MESSAGE}
             </p>
           ) : null}

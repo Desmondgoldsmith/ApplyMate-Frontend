@@ -149,13 +149,16 @@ export function MergeCvProfilesModal({
       description="Creates a new CV — your originals stay unchanged."
     >
       <div className="mt-3 space-y-4">
-        <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-white/40">
+        <div className="rounded-xl border border-border-subtle bg-bg-surface px-3 py-2.5">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-text-tertiary">
             Merging {sortedIds.length} profiles
           </p>
           <ul className="mt-2 space-y-1">
             {names.map((name, i) => (
-              <li key={sortedIds[i] ?? i} className="text-sm text-white/75">
+              <li
+                key={sortedIds[i] ?? i}
+                className="text-sm text-text-secondary"
+              >
                 • {name}
               </li>
             ))}
@@ -163,7 +166,7 @@ export function MergeCvProfilesModal({
         </div>
 
         <label className="block">
-          <span className="text-xs font-semibold text-white/55">
+          <span className="text-xs font-semibold text-text-tertiary">
             Merge instructions (optional)
           </span>
           <textarea
@@ -172,24 +175,24 @@ export function MergeCvProfilesModal({
             disabled={busy}
             rows={3}
             placeholder="e.g. Emphasise full-stack; dedupe the Acme role."
-            className="mt-1.5 w-full resize-y rounded-xl border border-white/[0.1] bg-[#0C0F0F] px-3 py-2 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#00C9B1]/45"
+            className="mt-1.5 w-full resize-y rounded-xl border border-border-subtle bg-bg-surface px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:border-accent-border"
           />
         </label>
 
         {!preview && previewMutation.isPending ? (
-          <div className="flex items-center justify-center gap-2 py-8 text-sm text-white/50">
-            <Loader2 className="h-4 w-4 animate-spin text-[#00C9B1]" />
+          <div className="flex items-center justify-center gap-2 py-8 text-sm text-text-tertiary">
+            <Loader2 className="h-4 w-4 animate-spin text-accent-text" />
             Generating merge preview…
           </div>
         ) : null}
 
         {previewError && !preview ? (
-          <div className="rounded-xl border border-rose-500/25 bg-rose-500/10 px-3 py-2.5 text-xs text-rose-100/90">
+          <div className="rounded-xl border border-danger-border bg-danger-subtle px-3 py-2.5 text-xs text-danger-text">
             {previewError}
             <Button
               type="button"
               variant="ghost"
-              className="mt-3 h-8 border border-white/10 text-xs"
+              className="mt-3 h-8 border border-border-subtle text-xs"
               disabled={previewMutation.isPending}
               onClick={() => void runPreview()}
             >
@@ -200,21 +203,21 @@ export function MergeCvProfilesModal({
 
         {preview ? (
           <GlowCard
-            className="border border-[#00C9B1]/20"
+            className="border border-accent-border"
             contentClassName="p-4 sm:p-5"
           >
             <div className="flex items-start gap-2">
-              <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[#00C9B1]" />
+              <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-accent-text" />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-white">
+                <p className="text-sm font-semibold text-text-primary">
                   Merge preview
                 </p>
                 {summaryPreview ? (
-                  <p className="mt-2 line-clamp-4 text-xs leading-relaxed text-white/55">
+                  <p className="mt-2 line-clamp-4 text-xs leading-relaxed text-text-tertiary">
                     {summaryPreview}
                   </p>
                 ) : (
-                  <p className="mt-2 text-xs text-white/40">
+                  <p className="mt-2 text-xs text-text-tertiary">
                     Combined content across {preview.sections.length} section
                     {preview.sections.length === 1 ? '' : 's'}.
                   </p>
@@ -230,12 +233,12 @@ export function MergeCvProfilesModal({
                 {preview.sections.map((row) => (
                   <li
                     key={`${row.type}-${row.label}-${row.order}`}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-white/[0.08] bg-[#080b0b]/60 px-3 py-2"
+                    className="flex items-center justify-between gap-3 rounded-lg border border-border-subtle bg-bg-surface px-3 py-2"
                   >
-                    <p className="truncate text-sm font-medium text-white/85">
+                    <p className="truncate text-sm font-medium text-text-primary">
                       {row.label}
                     </p>
-                    <span className="shrink-0 text-xs text-white/40">
+                    <span className="shrink-0 text-xs text-text-tertiary">
                       {itemCountLabel(row.itemCount)}
                     </span>
                   </li>
@@ -243,8 +246,8 @@ export function MergeCvProfilesModal({
               </ul>
             ) : null}
 
-            <label className="mt-4 block border-t border-white/[0.08] pt-4">
-              <span className="text-xs font-semibold text-white/55">
+            <label className="mt-4 block border-t border-border-subtle pt-4">
+              <span className="text-xs font-semibold text-text-tertiary">
                 CV name
               </span>
               <input
@@ -252,17 +255,17 @@ export function MergeCvProfilesModal({
                 value={mergeName}
                 onChange={(e) => setMergeName(e.target.value.slice(0, 100))}
                 disabled={busy}
-                className="mt-1.5 w-full rounded-xl border border-white/[0.1] bg-[#0C0F0F] px-3 py-2 text-sm text-white outline-none focus:border-[#00C9B1]/45"
+                className="mt-1.5 w-full rounded-xl border border-border-subtle bg-bg-surface px-3 py-2 text-sm text-text-primary outline-none focus:border-accent-border"
               />
             </label>
           </GlowCard>
         ) : null}
 
-        <div className="flex flex-wrap justify-end gap-2 border-t border-white/[0.08] pt-4">
+        <div className="flex flex-wrap justify-end gap-2 border-t border-border-subtle pt-4">
           <Button
             type="button"
             variant="ghost"
-            className="border border-white/10"
+            className="border border-border-subtle"
             disabled={busy}
             onClick={() => onOpenChange(false)}
           >
@@ -272,7 +275,7 @@ export function MergeCvProfilesModal({
             <Button
               type="button"
               variant="ghost"
-              className="border border-white/10"
+              className="border border-border-subtle"
               disabled={busy}
               onClick={() => void runPreview()}
             >
@@ -357,11 +360,11 @@ export function CvProfileMergeToolbar({
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#00C9B1]/25 bg-[#00C9B1]/[0.06] px-3 py-2',
+        'flex flex-wrap items-center justify-between gap-2 rounded-xl border border-accent-border bg-accent-subtle px-3 py-2',
         className,
       )}
     >
-      <p className="text-xs text-white/70">
+      <p className="text-xs text-text-secondary">
         {selectedCount} selected
         {overLimit
           ? ` — select at most ${CV_MERGE_MAX_PROFILES} to merge`
@@ -371,7 +374,7 @@ export function CvProfileMergeToolbar({
         <Button
           type="button"
           variant="ghost"
-          className="h-8 border border-white/10 px-2.5 text-xs"
+          className="h-8 border border-border-subtle px-2.5 text-xs"
           disabled={busy}
           onClick={onClear}
         >
@@ -413,7 +416,7 @@ export function CvProfileMergeCheckbox({
         disabled={disabled}
         onChange={onChange}
         aria-label={label}
-        className="h-4 w-4 rounded border-white/20 bg-[#0C0F0F] text-[#00C9B1] focus:ring-[#00C9B1]/40"
+        className="h-4 w-4 rounded border-border-default bg-bg-surface text-accent-text focus:ring-border-focus"
       />
     </label>
   );

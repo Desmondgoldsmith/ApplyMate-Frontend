@@ -29,6 +29,7 @@ import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
 
+import { A4FitFrame } from '@/components/cv/A4FitFrame';
 import { DashboardMainContext } from '@/components/dashboard/DashboardMainContext';
 import { Button } from '@/components/ui/Button';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -190,7 +191,7 @@ function mergeNewSectionsIntoData(
 }
 
 const fieldClass =
-  'w-full rounded-lg border border-[rgba(255,255,255,0.10)] bg-[#111616] px-3 py-2 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-[#00C9B1]/40';
+  'w-full rounded-lg border border-border-subtle bg-bg-sunken px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:ring-2 focus:ring-border-focus';
 
 const CEFR_LEVEL_OPTIONS = ['', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
 
@@ -316,12 +317,12 @@ function CvTemplatePickerCard({
       className={cn(
         'relative aspect-[1/1.4] w-full overflow-hidden rounded-lg border-2 text-left transition',
         selected
-          ? 'border-[#00C9B1]'
-          : 'border-white/[0.08] hover:border-white/20',
+          ? 'border-accent-solid'
+          : 'border-border-subtle hover:border-border-default',
       )}
     >
       <div
-        className="absolute inset-x-0 overflow-hidden bg-[#080A0A]"
+        className="absolute inset-x-0 overflow-hidden bg-bg-surface"
         style={{ top: 0, bottom: TEMPLATE_CARD_LABEL_H }}
       >
         <div
@@ -337,10 +338,12 @@ function CvTemplatePickerCard({
         </div>
       </div>
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/85 to-transparent px-2 py-1.5">
-        <p className="truncate text-[10px] font-semibold text-white">
+        <p className="truncate text-[10px] font-semibold text-text-primary">
           {TEMPLATE_LABELS[tid]}
         </p>
-        {selected ? <p className="text-[9px] text-[#00C9B1]">Active</p> : null}
+        {selected ? (
+          <p className="text-[9px] text-accent-text">Active</p>
+        ) : null}
       </div>
     </button>
   );
@@ -2011,7 +2014,7 @@ export function CVBuilder({
                 .replace(/_/g, ' ')
                 .replace(/\b\w/g, (l) => l.toUpperCase()) ||
               id;
-            toastRef.current?.success(`${label} removed from your resume`);
+            toastRef.current?.success(`${label} removed from your CV`);
             await refreshCvState(queryClient, profileId, {
               refreshProfile: true,
               refreshSections: true,
@@ -2192,7 +2195,7 @@ export function CVBuilder({
       void (async () => {
         const pid = profileId?.trim();
         if (!pid) {
-          toast.error('Save your resume first.');
+          toast.error('Save your CV first.');
           return;
         }
         const sectionKey = issue.sectionId;
@@ -2533,7 +2536,7 @@ export function CVBuilder({
       if (allSections.length === 0) {
         setPreviewSectionOrder(lastConfirmedPreviewOrderRef.current);
         toast.error(
-          'Your resume sections are still loading. Wait a moment, then try reordering again.',
+          'Your CV sections are still loading. Wait a moment, then try reordering again.',
         );
         return;
       }
@@ -2622,8 +2625,8 @@ export function CVBuilder({
         className={cn(
           'rounded-full px-3 py-1.5 text-xs font-semibold capitalize transition',
           template === t
-            ? 'bg-[#00C9B1] text-white'
-            : 'border border-[rgba(0,201,177,0.3)] text-white/45 hover:border-[#00C9B1]/50',
+            ? 'bg-accent-solid text-text-on-accent'
+            : 'border border-accent-border text-text-tertiary hover:border-accent-border',
         )}
       >
         {t}
@@ -2713,7 +2716,7 @@ export function CVBuilder({
                 api.cv.acceptGeneratorSummary(profileId.trim(), { text }),
               onRehydrated: () => onAiStructuredPersisted?.(),
             });
-            toast.success('Summary saved to your resume');
+            toast.success('Summary saved to your CV');
           } catch (e) {
             toast.error(
               getApiErrorMessage(e) || 'Could not save summary. Try again.',
@@ -2769,7 +2772,7 @@ export function CVBuilder({
               }),
             onRehydrated: () => onAiStructuredPersisted?.(),
           });
-          toast.success('Bullet saved to your resume');
+          toast.success('Bullet saved to your CV');
           return null;
         } catch (e) {
           toast.error(
@@ -3044,7 +3047,7 @@ export function CVBuilder({
     lastSpellFixAllTriggerRef.current = spellFixAllTrigger;
     const pid = profileId?.trim();
     if (!pid) {
-      toast.error('Save your resume first.');
+      toast.error('Save your CV first.');
       return;
     }
     const issuesSnapshot = Object.values(
@@ -3260,7 +3263,7 @@ export function CVBuilder({
   const leftPanel = (
     <div
       className={cn(
-        'flex min-h-0 flex-col bg-[#0C0F0F]',
+        'flex min-h-0 flex-col bg-bg-surface',
         showTripleChrome && 'overflow-hidden',
         mode === 'dashboard'
           ? showTripleChrome
@@ -3275,7 +3278,7 @@ export function CVBuilder({
     >
       <div
         className={cn(
-          'z-20 shrink-0 border-b border-white/10 bg-[#0C0F0F]/95 px-4 pb-2.5 pt-0 backdrop-blur-md sm:px-5',
+          'z-20 shrink-0 border-b border-border-subtle bg-bg-surface px-4 pb-2.5 pt-0 backdrop-blur-md sm:px-5',
           !showTripleChrome && 'sticky top-0',
         )}
       >
@@ -3283,21 +3286,21 @@ export function CVBuilder({
           <div className="mb-2 flex flex-col gap-2 pt-3">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
-                <h2 className="shrink-0 text-base font-bold text-white sm:text-[17px]">
-                  Edit your resume
+                <h2 className="shrink-0 text-base font-bold text-text-primary sm:text-[17px]">
+                  Edit your CV
                 </h2>
                 {saveStatus !== 'idle' ? (
-                  <p className="text-[10px] text-white/40">
+                  <p className="text-[10px] text-text-tertiary">
                     {saveStatus === 'saving' ? (
                       <span className="inline-flex items-center gap-1">
                         <Loader2 className="h-3 w-3 animate-spin" /> Saving…
                       </span>
                     ) : saveStatus === 'saved' ? (
-                      <span className="text-[#22C55E]">Saved</span>
+                      <span className="text-success-text">Saved</span>
                     ) : saveStatus === 'dirty' ? (
-                      <span className="text-amber-400/90">Unsaved changes</span>
+                      <span className="text-warning-text">Unsaved changes</span>
                     ) : saveStatus === 'error' ? (
-                      <span className="text-rose-400/90">
+                      <span className="text-danger-text">
                         {contentConflict
                           ? 'Not saved — this CV changed elsewhere'
                           : 'Save failed — keep editing or retry'}
@@ -3319,7 +3322,7 @@ export function CVBuilder({
                     : 'Expand editor for more space'
                 }
                 className={cn(
-                  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[rgba(0,201,177,0.25)] bg-white/[0.04] text-white/70 transition hover:border-[#00C9B1]/45 hover:bg-[#00C9B1]/10 hover:text-[#00C9B1]',
+                  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-accent-border bg-bg-surface text-text-secondary transition hover:border-accent-border hover:bg-accent-subtle hover:text-accent-text',
                   showTripleChrome && 'hidden',
                 )}
                 onClick={() => setEditorExpanded((v) => !v)}
@@ -3353,13 +3356,13 @@ export function CVBuilder({
         {mode === 'dashboard' && contentConflict ? (
           <div
             role="alert"
-            className="mb-2 rounded-lg border border-amber-400/30 bg-amber-400/[0.07] px-3 py-2.5"
+            className="mb-2 rounded-lg border border-warning-border bg-warning-subtle px-3 py-2.5"
           >
-            <p className="flex items-center gap-1.5 text-[12px] font-semibold text-amber-200">
+            <p className="flex items-center gap-1.5 text-[12px] font-semibold text-warning-text">
               <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden />
               This CV was changed somewhere else
             </p>
-            <p className="mt-1 text-[11px] leading-relaxed text-white/65">
+            <p className="mt-1 text-[11px] leading-relaxed text-text-secondary">
               Another tab, an applied suggestion, an import or a restored
               version updated it after you opened this editor. Your latest edits
               haven&apos;t been saved yet.
@@ -3391,58 +3394,58 @@ export function CVBuilder({
         ) : null}
 
         {mode === 'onboarding' && saveStatus !== 'idle' ? (
-          <p className="mb-3 px-1 text-[11px] text-white/40">
+          <p className="mb-3 px-1 text-[11px] text-text-tertiary">
             {saveStatus === 'saving' ? (
               <span className="inline-flex items-center gap-1">
                 <Loader2 className="h-3 w-3 animate-spin" /> Saving...
               </span>
             ) : saveStatus === 'saved' ? (
-              <span className="text-[#22C55E]">Saved ✓</span>
+              <span className="text-success-text">Saved ✓</span>
             ) : saveStatus === 'dirty' ? (
-              <span className="text-amber-400/90">Unsaved changes</span>
+              <span className="text-warning-text">Unsaved changes</span>
             ) : saveStatus === 'error' ? (
-              <span className="text-rose-400/90">Save failed</span>
+              <span className="text-danger-text">Save failed</span>
             ) : null}
           </p>
         ) : null}
 
         {mode === 'dashboard' && !showTripleChrome ? (
-          <details className="mb-2 group rounded-lg border border-[rgba(0,201,177,0.18)] bg-[rgba(0,201,177,0.06)] px-2.5 py-1.5">
-            <summary className="cursor-pointer list-none text-[11px] font-semibold text-[#00C9B1] [&::-webkit-details-marker]:hidden">
+          <details className="mb-2 group rounded-lg border border-accent-border bg-accent-subtle px-2.5 py-1.5">
+            <summary className="cursor-pointer list-none text-[11px] font-semibold text-accent-text [&::-webkit-details-marker]:hidden">
               <span className="inline-flex items-center gap-1">
                 What to fill in first
                 <ChevronDown className="h-3.5 w-3.5 shrink-0 transition group-open:rotate-180" />
               </span>
             </summary>
-            <p className="mt-2 border-t border-white/10 pt-2 text-[11px] leading-relaxed text-white/65">
-              <span className="text-white">Full name</span> and{' '}
-              <span className="text-white">email</span> are required. Add{' '}
-              <span className="text-white">experience</span>,{' '}
-              <span className="text-white">education</span>, and{' '}
-              <span className="text-white">skills</span> before{' '}
-              <span className="text-white">Generate summary</span> so AI has
-              context.
+            <p className="mt-2 border-t border-border-subtle pt-2 text-[11px] leading-relaxed text-text-secondary">
+              <span className="text-text-primary">Full name</span> and{' '}
+              <span className="text-text-primary">email</span> are required. Add{' '}
+              <span className="text-text-primary">experience</span>,{' '}
+              <span className="text-text-primary">education</span>, and{' '}
+              <span className="text-text-primary">skills</span> before{' '}
+              <span className="text-text-primary">Generate summary</span> so AI
+              has context.
             </p>
           </details>
         ) : mode !== 'dashboard' ? (
-          <div className="mb-3 rounded-xl border border-[rgba(0,201,177,0.22)] bg-[rgba(0,201,177,0.07)] px-3 py-2.5 text-[11px] leading-relaxed text-white/70">
-            <span className="font-semibold text-[#00C9B1]">
+          <div className="mb-3 rounded-xl border border-accent-border bg-accent-subtle px-3 py-2.5 text-[11px] leading-relaxed text-text-secondary">
+            <span className="font-semibold text-accent-text">
               What to fill in
             </span>
             {' — '}
-            <span className="text-white">Full name</span> and{' '}
-            <span className="text-white">email</span> are required to finish.
-            Fill <span className="text-white">experience</span>,{' '}
-            <span className="text-white">education</span>, and{' '}
-            <span className="text-white">skills</span> before using{' '}
-            <span className="text-white">Generate summary</span> (so AI has
-            context). Use the tabs below while you scroll.
+            <span className="text-text-primary">Full name</span> and{' '}
+            <span className="text-text-primary">email</span> are required to
+            finish. Fill <span className="text-text-primary">experience</span>,{' '}
+            <span className="text-text-primary">education</span>, and{' '}
+            <span className="text-text-primary">skills</span> before using{' '}
+            <span className="text-text-primary">Generate summary</span> (so AI
+            has context). Use the tabs below while you scroll.
           </div>
         ) : null}
 
         {mode === 'dashboard' && !showTripleChrome ? (
           <div className="flex min-w-0 flex-col gap-1">
-            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-white/35">
+            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-text-tertiary">
               Jump to section
             </span>
             <div className="flex min-w-0 items-center gap-1">
@@ -3452,8 +3455,8 @@ export function CVBuilder({
                 disabled={!jumpSectionScrollEdges.left}
                 onClick={() => scrollJumpSectionStrip(-1)}
                 className={cn(
-                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/55 shadow-sm transition',
-                  'hover:border-[rgba(0,201,177,0.35)] hover:bg-[rgba(0,201,177,0.08)] hover:text-[#00C9B1]',
+                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border-subtle bg-bg-surface text-text-tertiary shadow-sm transition',
+                  'hover:border-accent-border hover:bg-accent-subtle hover:text-accent-text',
                   'disabled:pointer-events-none disabled:opacity-25',
                 )}
               >
@@ -3479,13 +3482,13 @@ export function CVBuilder({
                       className={cn(
                         'inline-flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition',
                         jumpTabActive(sid)
-                          ? 'bg-[#00C9B1]/25 text-[#00C9B1] ring-1 ring-[rgba(0,201,177,0.45)]'
-                          : 'bg-white/[0.04] text-white/50 hover:bg-white/[0.08] hover:text-white/80',
+                          ? 'bg-accent-subtle text-accent-text ring-1 ring-accent-border'
+                          : 'bg-bg-surface text-text-tertiary hover:bg-bg-hover hover:text-text-secondary',
                       )}
                     >
                       {done ? (
                         <Check
-                          className="h-3 w-3 shrink-0 text-[#22C55E]"
+                          className="h-3 w-3 shrink-0 text-success-text"
                           strokeWidth={3}
                         />
                       ) : null}
@@ -3500,8 +3503,8 @@ export function CVBuilder({
                 disabled={!jumpSectionScrollEdges.right}
                 onClick={() => scrollJumpSectionStrip(1)}
                 className={cn(
-                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/55 shadow-sm transition',
-                  'hover:border-[rgba(0,201,177,0.35)] hover:bg-[rgba(0,201,177,0.08)] hover:text-[#00C9B1]',
+                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border-subtle bg-bg-surface text-text-tertiary shadow-sm transition',
+                  'hover:border-accent-border hover:bg-accent-subtle hover:text-accent-text',
                   'disabled:pointer-events-none disabled:opacity-25',
                 )}
               >
@@ -3581,13 +3584,13 @@ export function CVBuilder({
               />
               <button
                 type="button"
-                className="text-left text-xs font-semibold text-[#00C9B1] hover:underline"
+                className="text-left text-xs font-semibold text-accent-text hover:underline"
                 onClick={() => setOptionalOpen((o) => !o)}
               >
                 {optionalOpen ? 'Hide optional fields' : 'Optional links'}
               </button>
               {optionalOpen ? (
-                <div className="grid gap-3 border-t border-white/10 pt-3">
+                <div className="grid gap-3 border-t border-border-subtle pt-3">
                   <Field
                     label="Website"
                     value={data.personal.website ?? ''}
@@ -3626,8 +3629,8 @@ export function CVBuilder({
                 </div>
               ) : null}
               {showIntlFields ? (
-                <div className="grid gap-3 border-t border-white/10 pt-3">
-                  <p className="mb-2 rounded border border-[#00C9B1]/20 bg-[#00C9B1]/5 px-2 py-1 text-[10px] leading-snug text-[#00C9B1]/70">
+                <div className="grid gap-3 border-t border-border-subtle pt-3">
+                  <p className="mb-2 rounded border border-accent-border bg-accent-subtle px-2 py-1 text-[10px] leading-snug text-accent-text">
                     These fields are used by the{' '}
                     <strong>{TEMPLATE_LABELS[template as CvTemplateId]}</strong>{' '}
                     template. Fill in what applies to your region.
@@ -3662,7 +3665,7 @@ export function CVBuilder({
                     onFocus={() => jumpToSection('personal')}
                   />
                   <div>
-                    <label className="mb-1 block text-xs text-white/45">
+                    <label className="mb-1 block text-xs text-text-tertiary">
                       Gender
                     </label>
                     <select
@@ -3685,7 +3688,7 @@ export function CVBuilder({
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-white/45">
+                    <label className="mb-1 block text-xs text-text-tertiary">
                       Marital Status
                     </label>
                     <select
@@ -3725,8 +3728,8 @@ export function CVBuilder({
                 </div>
               ) : null}
               {showPhotoUpload ? (
-                <div className="space-y-2 border-t border-white/10 pt-3">
-                  <label className="mb-1 block text-xs text-white/45">
+                <div className="space-y-2 border-t border-border-subtle pt-3">
+                  <label className="mb-1 block text-xs text-text-tertiary">
                     Profile Photo
                   </label>
                   {data.personal.photoUrl ? (
@@ -3735,11 +3738,11 @@ export function CVBuilder({
                       <img
                         src={data.personal.photoUrl}
                         alt="Profile"
-                        className="h-20 w-16 rounded border-2 border-[#00C9B1]/40 object-cover object-top"
+                        className="h-20 w-16 rounded border-2 border-accent-border object-cover object-top"
                       />
                       <button
                         type="button"
-                        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500/80 text-[10px] text-white hover:bg-red-500"
+                        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-danger-subtle text-[10px] text-text-primary hover:bg-red-500"
                         onClick={() =>
                           update({
                             personal: { ...data.personal, photoUrl: '' },
@@ -3751,7 +3754,7 @@ export function CVBuilder({
                     </div>
                   ) : null}
                   <label className="flex w-fit cursor-pointer items-center gap-2">
-                    <div className="rounded border border-[#00C9B1]/40 px-3 py-1.5 text-xs font-semibold text-[#00C9B1] transition hover:border-[#00C9B1] hover:bg-[#00C9B1]/5">
+                    <div className="rounded border border-accent-border px-3 py-1.5 text-xs font-semibold text-accent-text transition hover:border-accent-solid hover:bg-accent-subtle">
                       {data.personal.photoUrl ? 'Change photo' : 'Upload photo'}
                     </div>
                     <input
@@ -3785,18 +3788,18 @@ export function CVBuilder({
                       }}
                     />
                   </label>
-                  <p className="text-[10px] leading-snug text-white/30">
+                  <p className="text-[10px] leading-snug text-text-disabled">
                     JPG, PNG or WEBP · Large photos are resized and compressed
                     before save · Used by the Onyx template
                   </p>
                   <details className="mt-1">
-                    <summary className="cursor-pointer select-none text-xs text-white/35 hover:text-white/55">
+                    <summary className="cursor-pointer select-none text-xs text-text-tertiary hover:text-text-tertiary">
                       Or paste an image URL instead
                     </summary>
-                    <p className="mb-1 mt-2 text-[10px] text-white/30">
+                    <p className="mb-1 mt-2 text-[10px] text-text-disabled">
                       Pasting a long{' '}
-                      <code className="text-white/45">data:image/…</code> string
-                      is compressed automatically so save does not fail.
+                      <code className="text-text-tertiary">data:image/…</code>{' '}
+                      string is compressed automatically so save does not fail.
                     </p>
                     <input
                       type="url"
@@ -3832,8 +3835,8 @@ export function CVBuilder({
                 </div>
               ) : null}
               {showHobbies ? (
-                <div className="grid gap-2 border-t border-white/10 pt-3">
-                  <label className="mb-1 block text-xs text-white/45">
+                <div className="grid gap-2 border-t border-border-subtle pt-3">
+                  <label className="mb-1 block text-xs text-text-tertiary">
                     Hobbies &amp; Interests
                   </label>
                   <textarea
@@ -3848,14 +3851,14 @@ export function CVBuilder({
                     }
                     onFocus={() => jumpToSection('personal')}
                   />
-                  <p className="text-[10px] leading-snug text-white/35">
+                  <p className="text-[10px] leading-snug text-text-tertiary">
                     Used by French and German templates.
                   </p>
                 </div>
               ) : null}
               <button
                 type="button"
-                className="text-xs font-semibold text-[#00C9B1] hover:underline"
+                className="text-xs font-semibold text-accent-text hover:underline"
                 onClick={() =>
                   update({
                     personal: {
@@ -3871,7 +3874,7 @@ export function CVBuilder({
                 + Add custom field
               </button>
               {data.personal.extras.length > 0 ? (
-                <p className="text-[10px] leading-snug text-white/35">
+                <p className="text-[10px] leading-snug text-text-tertiary">
                   Use a short name for the link (left), then paste the URL or
                   text (right) — e.g. &quot;Portfolio&quot; and
                   https://yoursite.com
@@ -3903,7 +3906,7 @@ export function CVBuilder({
                   />
                   <button
                     type="button"
-                    className="text-white/40 hover:text-white"
+                    className="text-text-tertiary hover:text-text-primary"
                     onClick={() =>
                       update({
                         personal: {
@@ -3932,7 +3935,7 @@ export function CVBuilder({
             right={
               <button
                 type="button"
-                className="text-xs font-semibold text-[#00C9B1]"
+                className="text-xs font-semibold text-accent-text"
                 onClick={() =>
                   update({
                     experience: {
@@ -3959,20 +3962,20 @@ export function CVBuilder({
           >
             <div className="space-y-3">
               {experienceItems.length === 0 && uploadedCvHint ? (
-                <div className="rounded-[10px] border border-[rgba(245,158,11,0.15)] bg-[rgba(245,158,11,0.06)] p-4">
-                  <p className="mb-1 text-[13px] font-semibold text-[#F59E0B]">
-                    Experience not extracted from your resume
+                <div className="rounded-[10px] border border-warning-border bg-warning-subtle p-4">
+                  <p className="mb-1 text-[13px] font-semibold text-warning-text">
+                    Experience not extracted from your CV
                   </p>
-                  <p className="mb-2.5 text-xs leading-relaxed text-white/50">
+                  <p className="mb-2.5 text-xs leading-relaxed text-text-tertiary">
                     Your uploaded CV may have been too long for our parser to
-                    read completely. Try re-uploading your resume — we have
-                    improved our extraction.
+                    read completely. Try re-uploading your CV — we have improved
+                    our extraction.
                   </p>
                   {onRequestReparse ? (
                     <button
                       type="button"
                       onClick={onRequestReparse}
-                      className="rounded-full border border-[rgba(0,201,177,0.3)] bg-[rgba(0,201,177,0.12)] px-3.5 py-1.5 text-xs font-semibold text-[#00C9B1] transition hover:border-[#00C9B1]/55"
+                      className="rounded-full border border-accent-border bg-accent-subtle px-3.5 py-1.5 text-xs font-semibold text-accent-text transition hover:border-accent-border"
                     >
                       Re-upload CV →
                     </button>
@@ -3982,11 +3985,11 @@ export function CVBuilder({
               {experienceItems.map((job, idx) => (
                 <GlowCard
                   key={job.id}
-                  className="border border-white/10"
+                  className="border border-border-subtle"
                   contentClassName="relative p-4"
                 >
                   <div
-                    className="absolute left-2 top-3 cursor-grab text-white/25"
+                    className="absolute left-2 top-3 cursor-grab text-text-disabled"
                     draggable
                     onDragStart={() => setDragId(job.id)}
                     onDragOver={(e) => e.preventDefault()}
@@ -4006,7 +4009,7 @@ export function CVBuilder({
                   </div>
                   <button
                     type="button"
-                    className="absolute right-2 top-2 text-white/35 hover:text-white"
+                    className="absolute right-2 top-2 text-text-tertiary hover:text-text-primary"
                     onClick={() => setRemoveTarget({ kind: 'exp', id: job.id })}
                   >
                     ✕
@@ -4077,7 +4080,7 @@ export function CVBuilder({
                         onFocus={() => jumpToSection('experience', job.id)}
                       />
                     </div>
-                    <label className="flex items-center gap-2 text-xs text-white/55">
+                    <label className="flex items-center gap-2 text-xs text-text-tertiary">
                       <input
                         type="checkbox"
                         checked={job.current}
@@ -4098,16 +4101,16 @@ export function CVBuilder({
                       Currently working here
                     </label>
                     <div>
-                      <label className="mb-1 block text-xs text-white/45">
+                      <label className="mb-1 block text-xs text-text-tertiary">
                         What you achieved in this role
                       </label>
-                      <p className="mb-1.5 text-[10px] leading-snug text-white/35">
+                      <p className="mb-1.5 text-[10px] leading-snug text-text-tertiary">
                         Put each achievement on its own line. You don&apos;t
-                        need • or dashes — we format those on your resume.
+                        need • or dashes — we format those on your CV.
                       </p>
                       {job.bullets.some(containsCvChangeMarker) ? (
                         <div className="space-y-2">
-                          <ul className="list-disc space-y-1.5 pl-4 text-sm text-white/85 marker:text-[#00C9B1]">
+                          <ul className="list-disc space-y-1.5 pl-4 text-sm text-text-primary marker:text-accent-text">
                             {job.bullets
                               .filter(
                                 (bullet) =>
@@ -4121,7 +4124,7 @@ export function CVBuilder({
                                 </li>
                               ))}
                           </ul>
-                          <p className="text-[10px] leading-relaxed text-white/40">
+                          <p className="text-[10px] leading-relaxed text-text-tertiary">
                             Tailor highlights are shown in the CV preview. Edit
                             those bullets there so underlines stay intact.
                           </p>
@@ -4146,7 +4149,7 @@ export function CVBuilder({
                       <Button
                         type="button"
                         variant="ghost"
-                        className="mt-1 border border-[rgba(0,201,177,0.35)] text-xs text-[#00C9B1]"
+                        className="mt-1 border border-accent-border text-xs text-accent-text"
                         disabled={aiPending === job.id}
                         onClick={async () => {
                           const line =
@@ -4181,7 +4184,7 @@ export function CVBuilder({
             right={
               <button
                 type="button"
-                className="text-xs font-semibold text-[#00C9B1]"
+                className="text-xs font-semibold text-accent-text"
                 onClick={() =>
                   update({
                     education: {
@@ -4207,12 +4210,12 @@ export function CVBuilder({
           >
             <div className="space-y-3">
               {educationItems.length === 0 && uploadedCvHint ? (
-                <div className="rounded-[10px] border border-[rgba(245,158,11,0.15)] bg-[rgba(245,158,11,0.06)] p-4">
-                  <p className="mb-1 text-[13px] font-semibold text-[#F59E0B]">
-                    Education not extracted from your resume
+                <div className="rounded-[10px] border border-warning-border bg-warning-subtle p-4">
+                  <p className="mb-1 text-[13px] font-semibold text-warning-text">
+                    Education not extracted from your CV
                   </p>
-                  <p className="text-xs leading-relaxed text-white/50">
-                    Add your education manually, or re-upload your resume to try
+                  <p className="text-xs leading-relaxed text-text-tertiary">
+                    Add your education manually, or re-upload your CV to try
                     extraction again.
                   </p>
                 </div>
@@ -4220,12 +4223,12 @@ export function CVBuilder({
               {educationItems.map((ed) => (
                 <GlowCard
                   key={ed.id}
-                  className="border border-white/10"
+                  className="border border-border-subtle"
                   contentClassName="relative p-4"
                 >
                   <button
                     type="button"
-                    className="absolute right-2 top-2 text-white/35 hover:text-white"
+                    className="absolute right-2 top-2 text-text-tertiary hover:text-text-primary"
                     onClick={() => setRemoveTarget({ kind: 'edu', id: ed.id })}
                   >
                     ✕
@@ -4321,7 +4324,7 @@ export function CVBuilder({
             right={
               <button
                 type="button"
-                className="text-xs font-semibold text-[#00C9B1]"
+                className="text-xs font-semibold text-accent-text"
                 onClick={() =>
                   update({
                     skills: {
@@ -4341,20 +4344,20 @@ export function CVBuilder({
               {skillCategories.every(
                 (c) => (Array.isArray(c.skills) ? c.skills : []).length === 0,
               ) && uploadedCvHint ? (
-                <div className="rounded-[10px] border border-[rgba(245,158,11,0.15)] bg-[rgba(245,158,11,0.06)] p-4">
-                  <p className="mb-1 text-[13px] font-semibold text-[#F59E0B]">
-                    Skills not extracted from your resume
+                <div className="rounded-[10px] border border-warning-border bg-warning-subtle p-4">
+                  <p className="mb-1 text-[13px] font-semibold text-warning-text">
+                    Skills not extracted from your CV
                   </p>
-                  <p className="text-xs leading-relaxed text-white/50">
+                  <p className="text-xs leading-relaxed text-text-tertiary">
                     Type skills below and press Enter to add them, or re-upload
-                    your resume to try extraction again.
+                    your CV to try extraction again.
                   </p>
                 </div>
               ) : null}
               {skillCategories.map((cat, ci) => (
                 <div
                   key={cat.id}
-                  className="rounded-xl border border-white/10 bg-[#111616] p-3"
+                  className="rounded-xl border border-border-subtle bg-bg-sunken p-3"
                 >
                   <div className="mb-2 flex gap-2">
                     <input
@@ -4371,7 +4374,7 @@ export function CVBuilder({
                     />
                     <button
                       type="button"
-                      className="text-white/35 hover:text-white"
+                      className="text-text-tertiary hover:text-text-primary"
                       onClick={() =>
                         update({
                           skills: {
@@ -4411,13 +4414,13 @@ export function CVBuilder({
             {uploadedCvHint &&
             normalizeText(data.summary?.text as unknown).trim() === '' ? (
               <div
-                className="mb-3 rounded-lg border border-amber-500/20 px-3 py-2.5"
+                className="mb-3 rounded-lg border border-warning-border px-3 py-2.5"
                 style={{ background: 'rgba(245,158,11,0.08)' }}
               >
-                <p className="mb-1 text-xs font-medium text-[#F59E0B]">
+                <p className="mb-1 text-xs font-medium text-warning-text">
                   Your uploaded CV had no summary
                 </p>
-                <p className="mb-3 text-[11px] leading-relaxed text-white/50">
+                <p className="mb-3 text-[11px] leading-relaxed text-text-tertiary">
                   A professional summary is recommended if you have 3+ years of
                   experience. Use the AI button to generate one, or hide this
                   section if you prefer.
@@ -4426,7 +4429,7 @@ export function CVBuilder({
                   type="button"
                   disabled={aiPending === 'summary'}
                   onClick={() => void runAiSummary()}
-                  className="rounded-full border border-[rgba(0,201,177,0.35)] bg-[rgba(0,201,177,0.12)] px-3 py-1.5 text-xs font-semibold text-[#00C9B1] transition hover:border-[#00C9B1]/55 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-full border border-accent-border bg-accent-subtle px-3 py-1.5 text-xs font-semibold text-accent-text transition hover:border-accent-border disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {aiPending === 'summary' ? (
                     <>
@@ -4439,10 +4442,11 @@ export function CVBuilder({
                 </button>
               </div>
             ) : null}
-            <p className="mb-3 text-[11px] leading-relaxed text-white/40">
-              Add this <span className="text-white/55">after</span> your title,
-              jobs, and skills so AI can match your story. Use &quot;Generate
-              with AI&quot; for a first draft, then edit in your own voice.
+            <p className="mb-3 text-[11px] leading-relaxed text-text-tertiary">
+              Add this <span className="text-text-tertiary">after</span> your
+              title, jobs, and skills so AI can match your story. Use
+              &quot;Generate with AI&quot; for a first draft, then edit in your
+              own voice.
             </p>
             <div className="relative">
               {containsCvChangeMarker(
@@ -4467,13 +4471,13 @@ export function CVBuilder({
                   maxLength={500}
                 />
               )}
-              <p className="mt-1 text-right text-[11px] text-white/25">
+              <p className="mt-1 text-right text-[11px] text-text-disabled">
                 {normalizeText(data.summary?.text as unknown).length} / 500
               </p>
               <Button
                 type="button"
                 variant="ghost"
-                className="mt-2 border border-[rgba(0,201,177,0.35)] text-xs text-[#00C9B1]"
+                className="mt-2 border border-accent-border text-xs text-accent-text"
                 disabled={aiPending === 'summary'}
                 onClick={() => void runAiSummary()}
               >
@@ -4499,7 +4503,7 @@ export function CVBuilder({
             right={
               <button
                 type="button"
-                className="text-xs font-semibold text-[#00C9B1]"
+                className="text-xs font-semibold text-accent-text"
                 onClick={() =>
                   update({
                     projects: [
@@ -4520,17 +4524,19 @@ export function CVBuilder({
               </button>
             }
           >
-            <p className="mb-3 text-[11px] leading-relaxed text-white/40">
+            <p className="mb-3 text-[11px] leading-relaxed text-text-tertiary">
               Optional — showcase products, apps, or significant work that
               doesn&apos;t fit under a single employer.
             </p>
             {data.projects.map((p) => (
               <GlowCard
                 key={p.id}
-                className="mb-3 border border-white/10"
+                className="mb-3 border border-border-subtle"
                 contentClassName="p-4"
               >
-                <p className="mb-2 text-sm font-semibold text-white">Project</p>
+                <p className="mb-2 text-sm font-semibold text-text-primary">
+                  Project
+                </p>
                 <Field
                   label="Project name"
                   placeholder="e.g. CareerKite job tracker"
@@ -4544,10 +4550,10 @@ export function CVBuilder({
                   }
                   onFocus={() => jumpToSection('projects')}
                 />
-                <label className="mb-1 mt-2 block text-xs text-white/45">
+                <label className="mb-1 mt-2 block text-xs text-text-tertiary">
                   What you built
                 </label>
-                <p className="mb-1 text-[10px] text-white/30">
+                <p className="mb-1 text-[10px] text-text-disabled">
                   Describe the project in plain language — what problem it
                   solved or who uses it.
                 </p>
@@ -4613,10 +4619,10 @@ export function CVBuilder({
                   }}
                   onFocus={() => jumpToSection('projects')}
                 />
-                <label className="mb-1 mt-2 block text-xs text-white/45">
+                <label className="mb-1 mt-2 block text-xs text-text-tertiary">
                   Highlights (optional)
                 </label>
-                <p className="mb-1 text-[10px] text-white/30">
+                <p className="mb-1 text-[10px] text-text-disabled">
                   One point per line — no bullet symbols needed.
                 </p>
                 <BuilderRichTextField
@@ -4646,7 +4652,7 @@ export function CVBuilder({
             right={
               <button
                 type="button"
-                className="text-xs font-semibold text-[#00C9B1]"
+                className="text-xs font-semibold text-accent-text"
                 onClick={() =>
                   update({
                     achievements: [
@@ -4666,7 +4672,7 @@ export function CVBuilder({
               </button>
             }
           >
-            <p className="mb-3 text-[11px] leading-relaxed text-white/40">
+            <p className="mb-3 text-[11px] leading-relaxed text-text-tertiary">
               Awards, recognitions, or notable credentials (title, issuer, date,
               optional notes).
             </p>
@@ -4676,7 +4682,7 @@ export function CVBuilder({
                 className="mb-3 last:mb-0"
                 contentClassName="p-4"
               >
-                <p className="mb-2 text-sm font-semibold text-white">
+                <p className="mb-2 text-sm font-semibold text-text-primary">
                   Achievement
                 </p>
                 <Field
@@ -4719,7 +4725,7 @@ export function CVBuilder({
                   }
                   onFocus={() => jumpToSection('achievements')}
                 />
-                <label className="mb-1 mt-2 block text-xs text-white/45">
+                <label className="mb-1 mt-2 block text-xs text-text-tertiary">
                   Detail / note (optional)
                 </label>
                 <textarea
@@ -4737,7 +4743,7 @@ export function CVBuilder({
                 />
                 <button
                   type="button"
-                  className="mt-2 text-xs text-white/45 hover:text-[#EF4444]"
+                  className="mt-2 text-xs text-text-tertiary hover:text-danger-text"
                   onClick={() =>
                     update({
                       achievements: data.achievements.filter(
@@ -4762,7 +4768,7 @@ export function CVBuilder({
             right={
               <button
                 type="button"
-                className="text-xs font-semibold text-[#00C9B1]"
+                className="text-xs font-semibold text-accent-text"
                 onClick={() =>
                   update({
                     certifications: [
@@ -4782,7 +4788,7 @@ export function CVBuilder({
               </button>
             }
           >
-            <p className="mb-3 text-[11px] leading-relaxed text-white/40">
+            <p className="mb-3 text-[11px] leading-relaxed text-text-tertiary">
               Professional certificates, licences, or exam passes (name, issuer,
               date).
             </p>
@@ -4792,7 +4798,7 @@ export function CVBuilder({
                 className="mb-3 last:mb-0"
                 contentClassName="p-4"
               >
-                <p className="mb-2 text-sm font-semibold text-white">
+                <p className="mb-2 text-sm font-semibold text-text-primary">
                   Certification
                 </p>
                 <Field
@@ -4861,7 +4867,7 @@ export function CVBuilder({
             right={
               <button
                 type="button"
-                className="text-xs font-semibold text-[#00C9B1]"
+                className="text-xs font-semibold text-accent-text"
                 onClick={() =>
                   update({
                     languages: [
@@ -4875,7 +4881,7 @@ export function CVBuilder({
               </button>
             }
           >
-            <p className="mb-3 text-[11px] leading-relaxed text-white/40">
+            <p className="mb-3 text-[11px] leading-relaxed text-text-tertiary">
               List languages you can use professionally and your level.
             </p>
             {data.languages.map((l) => {
@@ -4912,7 +4918,7 @@ export function CVBuilder({
                       onFocus={() => jumpToSection('languages')}
                     />
                     <div>
-                      <label className="mb-1 block text-xs text-white/45">
+                      <label className="mb-1 block text-xs text-text-tertiary">
                         Proficiency
                       </label>
                       <select
@@ -4954,7 +4960,7 @@ export function CVBuilder({
                     <div>
                       <button
                         type="button"
-                        className="mt-2 text-left text-xs font-semibold text-[#00C9B1] hover:underline"
+                        className="mt-2 text-left text-xs font-semibold text-accent-text hover:underline"
                         onClick={() =>
                           setLangCefrOpen((m) => ({
                             ...m,
@@ -4970,7 +4976,7 @@ export function CVBuilder({
                         <div className="mt-3">
                           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                             <div>
-                              <label className="mb-1 block text-[10px] text-white/45">
+                              <label className="mb-1 block text-[10px] text-text-tertiary">
                                 Listening
                               </label>
                               <select
@@ -4989,7 +4995,7 @@ export function CVBuilder({
                               </select>
                             </div>
                             <div>
-                              <label className="mb-1 block text-[10px] text-white/45">
+                              <label className="mb-1 block text-[10px] text-text-tertiary">
                                 Reading
                               </label>
                               <select
@@ -5008,7 +5014,7 @@ export function CVBuilder({
                               </select>
                             </div>
                             <div>
-                              <label className="mb-1 block text-[10px] text-white/45">
+                              <label className="mb-1 block text-[10px] text-text-tertiary">
                                 Spoken interaction
                               </label>
                               <select
@@ -5030,7 +5036,7 @@ export function CVBuilder({
                               </select>
                             </div>
                             <div>
-                              <label className="mb-1 block text-[10px] text-white/45">
+                              <label className="mb-1 block text-[10px] text-text-tertiary">
                                 Spoken production
                               </label>
                               <select
@@ -5052,7 +5058,7 @@ export function CVBuilder({
                               </select>
                             </div>
                             <div>
-                              <label className="mb-1 block text-[10px] text-white/45">
+                              <label className="mb-1 block text-[10px] text-text-tertiary">
                                 Writing
                               </label>
                               <select
@@ -5071,7 +5077,7 @@ export function CVBuilder({
                               </select>
                             </div>
                           </div>
-                          <p className="mt-2 text-[9px] italic text-white/30">
+                          <p className="mt-2 text-[9px] italic text-text-disabled">
                             A1-A2: Basic · B1-B2: Independent · C1-C2:
                             Proficient
                           </p>
@@ -5081,7 +5087,7 @@ export function CVBuilder({
                   ) : null}
                   <button
                     type="button"
-                    className="mt-2 text-xs text-white/45 hover:text-[#EF4444]"
+                    className="mt-2 text-xs text-text-tertiary hover:text-danger-text"
                     onClick={() => {
                       setLangCefrOpen((m) => {
                         const { [l.id]: _omit, ...rest } = m;
@@ -5110,7 +5116,7 @@ export function CVBuilder({
               right={
                 <button
                   type="button"
-                  className="text-xs font-semibold text-[#00C9B1]"
+                  className="text-xs font-semibold text-accent-text"
                   onClick={() =>
                     update({
                       references: [
@@ -5131,7 +5137,7 @@ export function CVBuilder({
                 </button>
               }
             >
-              <p className="mb-2 text-[10px] leading-snug text-white/40">
+              <p className="mb-2 text-[10px] leading-snug text-text-tertiary">
                 References appear in the Onyx template and as an optional
                 section in other layouts.
               </p>
@@ -5209,7 +5215,7 @@ export function CVBuilder({
                   />
                   <button
                     type="button"
-                    className="mt-2 text-xs text-white/45 hover:text-[#EF4444]"
+                    className="mt-2 text-xs text-text-tertiary hover:text-danger-text"
                     onClick={() =>
                       update((d) => ({
                         ...d,
@@ -5241,7 +5247,7 @@ export function CVBuilder({
                 right={
                   <button
                     type="button"
-                    className="text-xs font-semibold text-[#00C9B1]"
+                    className="text-xs font-semibold text-accent-text"
                     onClick={() =>
                       update({
                         parsedCustomSections: data.parsedCustomSections.map(
@@ -5268,7 +5274,7 @@ export function CVBuilder({
                   </button>
                 }
               >
-                <p className="mb-3 text-[11px] leading-relaxed text-white/40">
+                <p className="mb-3 text-[11px] leading-relaxed text-text-tertiary">
                   From your uploaded CV — edits save with your profile.
                 </p>
                 <Field
@@ -5336,7 +5342,7 @@ export function CVBuilder({
                       }
                       onFocus={() => jumpToSection(sid)}
                     />
-                    <label className="mb-1 mt-2 block text-xs text-white/45">
+                    <label className="mb-1 mt-2 block text-xs text-text-tertiary">
                       Sub-items (optional, one per line)
                     </label>
                     <textarea
@@ -5368,7 +5374,7 @@ export function CVBuilder({
                     />
                     <button
                       type="button"
-                      className="mt-2 text-xs text-white/45 hover:text-[#EF4444]"
+                      className="mt-2 text-xs text-text-tertiary hover:text-danger-text"
                       onClick={() =>
                         update({
                           parsedCustomSections: data.parsedCustomSections.map(
@@ -5403,7 +5409,7 @@ export function CVBuilder({
             right={
               <button
                 type="button"
-                className="text-xs font-semibold text-[#00C9B1]"
+                className="text-xs font-semibold text-accent-text"
                 onClick={() =>
                   update({
                     customSections: [
@@ -5417,7 +5423,7 @@ export function CVBuilder({
               </button>
             }
           >
-            <p className="mb-3 text-[11px] leading-relaxed text-white/40">
+            <p className="mb-3 text-[11px] leading-relaxed text-text-tertiary">
               Extra titled blocks (title + body). Use when you want a simple
               section not tied to upload parsing.
             </p>
@@ -5439,7 +5445,7 @@ export function CVBuilder({
                   }
                   onFocus={() => jumpToSection('custom-legacy')}
                 />
-                <label className="mb-1 mt-2 block text-xs text-white/45">
+                <label className="mb-1 mt-2 block text-xs text-text-tertiary">
                   Content
                 </label>
                 <textarea
@@ -5456,7 +5462,7 @@ export function CVBuilder({
                 />
                 <button
                   type="button"
-                  className="mt-2 text-xs text-white/45 hover:text-[#EF4444]"
+                  className="mt-2 text-xs text-text-tertiary hover:text-danger-text"
                   onClick={() =>
                     update({
                       customSections: data.customSections.filter(
@@ -5526,38 +5532,43 @@ export function CVBuilder({
 
   const previewDocumentFrame = useMemo(
     () => (
-      <div
-        data-cv-document-root
-        className={cn(
-          'mx-auto w-full overflow-visible rounded-sm bg-white shadow-[0_4px_40px_rgba(0,0,0,0.4)]',
-          showTripleShell ? 'max-w-full' : 'max-w-[min(100%,820px)]',
-          'max-lg:max-w-none max-lg:rounded-none max-lg:shadow-[0_2px_24px_rgba(0,0,0,0.35)]',
-        )}
-        style={{ minHeight: '297mm' }}
-        onClick={(e) => {
-          if (mode !== 'dashboard') return;
-          const t = e.target as HTMLElement;
-          if (!t.closest('[data-entry-id]')) {
-            setFocusedEntryId(null);
-            setFocusedEntrySection(null);
-            if (!t.closest('[data-cv-section]')) {
-              setFocusedPreviewSection(null);
-            }
-          }
-        }}
-      >
+      <A4FitFrame>
         <div
-          className={cn(mode === 'dashboard' ? '' : 'origin-top scale-[0.95]')}
-        >
-          {mode === 'dashboard' ? (
-            <CVEditProvider value={cvEditContextValue}>
-              {previewDoc}
-            </CVEditProvider>
-          ) : (
-            previewDoc
+          data-cv-document-root
+          data-tour="cv-document"
+          className={cn(
+            'mx-auto w-full overflow-visible rounded-sm bg-white shadow-[0_4px_40px_rgba(0,0,0,0.4)]',
+            showTripleShell ? 'max-w-full' : 'max-w-[min(100%,820px)]',
+            'max-lg:max-w-none max-lg:rounded-none max-lg:shadow-[0_2px_24px_rgba(0,0,0,0.35)]',
           )}
+          style={{ minHeight: '297mm' }}
+          onClick={(e) => {
+            if (mode !== 'dashboard') return;
+            const t = e.target as HTMLElement;
+            if (!t.closest('[data-entry-id]')) {
+              setFocusedEntryId(null);
+              setFocusedEntrySection(null);
+              if (!t.closest('[data-cv-section]')) {
+                setFocusedPreviewSection(null);
+              }
+            }
+          }}
+        >
+          <div
+            className={cn(
+              mode === 'dashboard' ? '' : 'origin-top scale-[0.95]',
+            )}
+          >
+            {mode === 'dashboard' ? (
+              <CVEditProvider value={cvEditContextValue}>
+                {previewDoc}
+              </CVEditProvider>
+            ) : (
+              previewDoc
+            )}
+          </div>
         </div>
-      </div>
+      </A4FitFrame>
     ),
     [showTripleShell, mode, cvEditContextValue, previewDoc],
   );
@@ -5574,7 +5585,7 @@ export function CVBuilder({
   const previewPanel = (
     <div
       className={cn(
-        'flex min-h-0 flex-col bg-[#080A0A]',
+        'flex min-h-0 flex-col bg-bg-surface',
         mode === 'dashboard'
           ? isTailorView
             ? 'h-full min-h-0 flex-1'
@@ -5583,9 +5594,9 @@ export function CVBuilder({
       )}
     >
       {mode === 'onboarding' ? (
-        <div className="sticky top-0 z-10 shrink-0 border-b border-white/10 bg-[#080A0A]/95 px-4 py-3 backdrop-blur-md lg:px-6">
+        <div className="sticky top-0 z-10 shrink-0 border-b border-border-subtle bg-bg-surface px-4 py-3 backdrop-blur-md lg:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-white/45">
+            <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
               Preview
             </p>
             {tplPills}
@@ -5641,7 +5652,7 @@ export function CVBuilder({
         >
           <div
             className={cn(
-              'flex gap-2 border-b border-white/10 pb-2',
+              'flex gap-2 border-b border-border-subtle pb-2',
               mode === 'dashboard' ? 'hidden' : 'lg:hidden',
             )}
           >
@@ -5650,8 +5661,8 @@ export function CVBuilder({
               className={cn(
                 'flex-1 rounded-lg py-2 text-sm font-semibold',
                 mobileTab === 'edit'
-                  ? 'bg-[#00C9B1]/15 text-[#00C9B1]'
-                  : 'text-white/45',
+                  ? 'bg-accent-subtle text-accent-text'
+                  : 'text-text-tertiary',
               )}
               onClick={() => setMobileTab('edit')}
             >
@@ -5662,8 +5673,8 @@ export function CVBuilder({
               className={cn(
                 'flex-1 rounded-lg py-2 text-sm font-semibold',
                 mobileTab === 'preview'
-                  ? 'bg-[#00C9B1]/15 text-[#00C9B1]'
-                  : 'text-white/45',
+                  ? 'bg-accent-subtle text-accent-text'
+                  : 'text-text-tertiary',
               )}
               onClick={() => setMobileTab('preview')}
             >
@@ -5686,7 +5697,7 @@ export function CVBuilder({
               mode === 'dashboard' &&
                 editorExpanded &&
                 !usePortaledExpandedEditor &&
-                'lg:fixed lg:inset-x-[max(1rem,4vw)] lg:top-16 lg:z-[60] lg:mx-auto lg:ml-0 lg:w-auto lg:max-w-[min(48rem,92vw)] lg:rounded-2xl lg:border lg:border-[rgba(0,201,177,0.22)] lg:bg-[#0C0F0F] lg:shadow-[0_24px_80px_rgba(0,0,0,0.55)]',
+                'lg:fixed lg:inset-x-[max(1rem,4vw)] lg:top-16 lg:z-[60] lg:mx-auto lg:ml-0 lg:w-auto lg:max-w-[min(48rem,92vw)] lg:rounded-2xl lg:border lg:border-accent-border lg:bg-bg-surface lg:shadow-[0_24px_80px_rgba(0,0,0,0.55)]',
             )}
           >
             {!(
@@ -5715,11 +5726,11 @@ export function CVBuilder({
             onDoubleClick={onSplitHandleDoubleClick}
           >
             <div
-              className="pointer-events-none h-full min-h-[10rem] w-px flex-1 rounded-full bg-gradient-to-b from-transparent via-white/[0.18] to-transparent transition-colors duration-150 group-hover:via-[#00C9B1]/50"
+              className="pointer-events-none h-full min-h-[10rem] w-px flex-1 rounded-full bg-gradient-to-b from-transparent via-white/[0.18] to-transparent transition-colors duration-150 group-hover:via-[#17B26A]/50"
               aria-hidden
             />
             <span
-              className="pointer-events-none absolute left-1/2 top-1/2 h-11 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.14] ring-1 ring-white/[0.08] transition-colors hover:bg-[#00C9B1]/35"
+              className="pointer-events-none absolute left-1/2 top-1/2 h-11 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.14] ring-1 ring-white/[0.08] transition-colors hover:bg-accent-subtle"
               aria-hidden
             />
           </div>
@@ -5744,7 +5755,7 @@ export function CVBuilder({
       ) : tripleColumn ? (
         <div
           ref={tripleColumn.containerRef}
-          className="mt-0 flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden rounded-2xl border border-white/[0.06] max-lg:h-full max-lg:min-h-0 max-lg:rounded-none max-lg:border-0"
+          className="mt-0 flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden rounded-2xl border border-border-subtle max-lg:h-full max-lg:min-h-0 max-lg:rounded-none max-lg:border-0"
         >
           <div className="flex min-h-0 min-w-0 w-full flex-1 flex-row overflow-hidden max-lg:flex-col">
             <CvTripleShellPreviewColumn
@@ -5766,7 +5777,7 @@ export function CVBuilder({
                   : tripleColumn.onRightResizePointerDown
               }
               className={cn(
-                'w-1 shrink-0 cursor-col-resize bg-white/[0.04] transition-colors hover:bg-[#00C9B1]/40 max-lg:hidden',
+                'w-1 shrink-0 cursor-col-resize bg-bg-surface transition-colors hover:bg-accent-subtle max-lg:hidden',
                 tripleColumn.rightCollapsed && 'pointer-events-none opacity-40',
               )}
             />
@@ -5777,7 +5788,7 @@ export function CVBuilder({
                   : `0 0 ${tripleColumn.rightPct}%`,
               }}
               className={cn(
-                'flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden border-l border-white/[0.07] bg-[#0C0F0F] transition-opacity duration-300 ease-out max-lg:hidden',
+                'flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden border-l border-border-subtle bg-bg-surface transition-opacity duration-300 ease-out max-lg:hidden',
                 !tripleColumn.rightCollapsed &&
                   'min-w-[300px] xl:min-w-[320px]',
                 tripleColumn.rightCollapsed
@@ -5801,13 +5812,13 @@ export function CVBuilder({
             <>
               <button
                 type="button"
-                className="fixed inset-0 bg-black/65"
+                className="fixed inset-0 bg-bg-overlay"
                 style={{ zIndex: editorOverlayZ }}
                 aria-label="Close expanded editor"
                 onClick={() => setEditorExpanded(false)}
               />
               <div
-                className="fixed left-1/2 top-1/2 flex max-h-[min(85vh,720px)] w-[min(48rem,calc(100%-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-[rgba(0,201,177,0.22)] bg-[#0C0F0F] shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
+                className="fixed left-1/2 top-1/2 flex max-h-[min(85vh,720px)] w-[min(48rem,calc(100%-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-accent-border bg-bg-surface shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
                 style={{ zIndex: editorDialogZ }}
                 role="dialog"
                 aria-modal="true"
@@ -5823,17 +5834,17 @@ export function CVBuilder({
       {mode === 'dashboard' && editorExpanded && !usePortaledExpandedEditor ? (
         <button
           type="button"
-          className="fixed inset-0 z-[55] hidden bg-black/65 lg:block"
+          className="fixed inset-0 z-[55] hidden bg-bg-overlay lg:block"
           aria-label="Close expanded editor"
           onClick={() => setEditorExpanded(false)}
         />
       ) : null}
 
       {mode === 'onboarding' ? (
-        <div className="mt-6 flex w-full flex-col gap-3 border-t border-white/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-6 flex w-full flex-col gap-3 border-t border-border-subtle pt-4 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
-            className="text-sm text-white/45 hover:text-white"
+            className="text-sm text-text-tertiary hover:text-text-primary"
             onClick={() => void onSkip?.()}
           >
             Skip for now →
@@ -5845,7 +5856,7 @@ export function CVBuilder({
           >
             Finish & Continue →
           </Button>
-          <p className="text-[11px] text-white/25">
+          <p className="text-[11px] text-text-disabled">
             {filled} sections with content
           </p>
         </div>
@@ -5930,7 +5941,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-xs text-white/45">{label}</label>
+      <label className="mb-1 block text-xs text-text-tertiary">{label}</label>
       <input
         type={type}
         className={fieldClass}
@@ -5960,18 +5971,20 @@ function TagInput({
   const [draft, setDraft] = useState('');
   return (
     <div>
-      <label className="mb-1 block text-xs text-white/45">{label}</label>
-      <p className="mb-1.5 text-[10px] leading-snug text-white/30">{hint}</p>
-      <div className="flex flex-wrap gap-1 rounded-lg border border-[rgba(255,255,255,0.10)] bg-[#0c1010] p-2">
+      <label className="mb-1 block text-xs text-text-tertiary">{label}</label>
+      <p className="mb-1.5 text-[10px] leading-snug text-text-disabled">
+        {hint}
+      </p>
+      <div className="flex flex-wrap gap-1 rounded-lg border border-border-subtle bg-bg-surface p-2">
         {skills.map((s, i) => (
           <span
             key={`${s}-${i}`}
-            className="inline-flex items-center gap-1 rounded-full bg-[#00C9B1]/15 px-2 py-0.5 text-[11px] text-[#00C9B1]"
+            className="inline-flex items-center gap-1 rounded-full bg-accent-subtle px-2 py-0.5 text-[11px] text-accent-text"
           >
             {s}
             <button
               type="button"
-              className="text-white/50 hover:text-white"
+              className="text-text-tertiary hover:text-text-primary"
               onClick={() => onChange(skills.filter((x) => x !== s))}
             >
               ✕
@@ -5979,7 +5992,7 @@ function TagInput({
           </span>
         ))}
         <input
-          className="min-w-[120px] flex-1 bg-transparent text-sm text-white outline-none"
+          className="min-w-[120px] flex-1 bg-transparent text-sm text-text-primary outline-none"
           value={draft}
           onFocus={onFocus}
           onChange={(e) => {
@@ -6066,7 +6079,7 @@ function AccordionSection({
             />
             <span
               className={cn(
-                'text-sm font-semibold text-white',
+                'text-sm font-semibold text-text-primary',
                 sectionHiddenStyle && 'line-through decoration-white/35',
               )}
             >
@@ -6116,7 +6129,7 @@ function AccordionSection({
         </div>
         {expanded ? (
           <div
-            className="border-t border-white/10 px-4 pb-4 pt-2"
+            className="border-t border-border-subtle px-4 pb-4 pt-2"
             onFocusCapture={onFocusSection}
           >
             {children}

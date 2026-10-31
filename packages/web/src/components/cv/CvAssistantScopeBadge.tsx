@@ -16,10 +16,10 @@ export function CvAssistantScopeBadge({
 }: CvAssistantScopeBadgeProps) {
   const styles =
     variant === 'findings'
-      ? 'border-amber-400/40 bg-amber-500/10 text-amber-200'
+      ? 'border-warning-border bg-warning-subtle text-warning-text'
       : variant === 'global'
         ? 'border-violet-400/40 bg-violet-500/10 text-violet-200'
-        : 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200';
+        : 'border-success-border bg-success-subtle text-success-text';
 
   return (
     <span

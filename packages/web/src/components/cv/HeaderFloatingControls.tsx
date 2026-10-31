@@ -26,7 +26,7 @@ function ToggleRow({
   onToggle: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-1.5 text-[11px] text-white/85">
+    <div className="flex items-center justify-between gap-3 py-1.5 text-[11px] text-text-primary">
       <span>{label}</span>
       <button
         type="button"
@@ -38,7 +38,7 @@ function ToggleRow({
         }}
         className={cn(
           'relative h-5 w-9 shrink-0 rounded-full transition-colors',
-          on ? 'bg-[#00C9B1]' : 'bg-white/15',
+          on ? 'bg-accent-solid' : 'bg-white/15',
         )}
       >
         <span
@@ -138,12 +138,12 @@ export function HeaderFloatingControls({
           toolbarAlign === 'end' ? 'justify-end' : 'mx-auto justify-center',
         )}
       >
-        <div className="flex items-center gap-1 rounded-full border border-white/10 bg-[#0C0F0F]/95 px-1.5 py-1 shadow-lg backdrop-blur-sm">
+        <div className="flex items-center gap-1 rounded-full border border-border-subtle bg-bg-surface px-1.5 py-1 shadow-lg backdrop-blur-sm">
           {photoUploadEnabled ? (
             <button
               type="button"
               title="Photo"
-              className="rounded-full p-1.5 text-white/70 transition hover:bg-white/10 hover:text-[#00C9B1]"
+              className="rounded-full p-1.5 text-text-secondary transition hover:bg-bg-hover hover:text-accent-text"
               onClick={(e) => {
                 e.stopPropagation();
                 onPickPhoto();
@@ -158,7 +158,7 @@ export function HeaderFloatingControls({
             title="Header settings"
             aria-expanded={menuOpen}
             aria-controls={menuId}
-            className="rounded-full p-1.5 text-white/70 transition hover:bg-white/10 hover:text-[#00C9B1]"
+            className="rounded-full p-1.5 text-text-secondary transition hover:bg-bg-hover hover:text-accent-text"
             onClick={(e) => {
               e.stopPropagation();
               setMenuOpen((v) => !v);
@@ -179,7 +179,7 @@ export function HeaderFloatingControls({
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.15 }}
               className={cn(
-                'absolute top-full z-50 mt-2 w-[min(18rem,calc(100vw-2rem))] max-h-[400px] overflow-y-auto overscroll-contain rounded-xl border border-white/[0.12] bg-[#141818] p-3 shadow-2xl',
+                'absolute top-full z-50 mt-2 w-[min(18rem,calc(100vw-2rem))] max-h-[400px] overflow-y-auto overscroll-contain rounded-xl border border-border-default bg-[#141818] p-3 shadow-2xl',
                 toolbarAlign === 'end'
                   ? 'right-0 left-auto'
                   : 'left-1/2 -translate-x-1/2',
@@ -252,8 +252,8 @@ export function HeaderFloatingControls({
                     on={hp.showPhoto}
                     onToggle={() => set({ showPhoto: !hp.showPhoto })}
                   />
-                  <div className="my-2 border-t border-white/10" />
-                  <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-white/35">
+                  <div className="my-2 border-t border-border-subtle" />
+                  <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-text-tertiary">
                     Photo style
                   </p>
                   <div className="flex gap-1">
@@ -265,8 +265,8 @@ export function HeaderFloatingControls({
                         className={cn(
                           'flex-1 rounded-lg border px-2 py-1 text-[10px] font-semibold capitalize transition',
                           hp.photoStyle === s
-                            ? 'border-[#00C9B1] bg-[#00C9B1]/15 text-[#00C9B1]'
-                            : 'border-white/10 text-white/45 hover:border-white/20',
+                            ? 'border-accent-solid bg-accent-subtle text-accent-text'
+                            : 'border-border-subtle text-text-tertiary hover:border-border-default',
                         )}
                       >
                         {s === 'avatar' ? 'Avatar' : s}

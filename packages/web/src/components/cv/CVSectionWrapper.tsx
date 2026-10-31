@@ -81,15 +81,15 @@ export function CVSectionWrapper({
   }, []);
 
   const sectionOutline = isDropTarget
-    ? '2px dashed #00C9B1'
+    ? '2px dashed #17B26A'
     : isDiffTarget
       ? '1.5px solid #10B981'
       : isFocused && thisContainsFocusedEntry
-        ? '1px solid rgba(0,201,177,0.4)'
+        ? '1px solid rgba(23, 178, 106,0.4)'
         : isFocused
-          ? '1.5px solid #00C9B1'
+          ? '1.5px solid #17B26A'
           : isHovered
-            ? '1.5px dashed rgba(0,201,177,0.5)'
+            ? '1.5px dashed rgba(23, 178, 106,0.5)'
             : 'none';
 
   return (
@@ -135,11 +135,11 @@ export function CVSectionWrapper({
         outline: sectionOutline,
         outlineOffset: '4px',
         backgroundColor: isDropTarget
-          ? 'rgba(0,201,177,0.08)'
+          ? 'rgba(23, 178, 106,0.08)'
           : isDiffTarget
             ? 'rgba(16,185,129,0.05)'
             : isHovered || isFocused
-              ? 'rgba(0,201,177,0.03)'
+              ? 'rgba(23, 178, 106,0.03)'
               : 'transparent',
         transition:
           'outline-color 120ms, background-color 120ms, opacity 120ms, box-shadow 120ms',
@@ -173,12 +173,12 @@ export function CVSectionWrapper({
       {(hasIncomplete || spellIssues > 0) && (
         <div className="pointer-events-none absolute -right-1.5 -top-2 z-[5] flex items-center gap-1">
           {hasIncomplete ? (
-            <span className="rounded-full border border-amber-300/50 bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-amber-700">
+            <span className="rounded-full border border-warning-border bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-amber-700">
               Incomplete
             </span>
           ) : null}
           {spellIssues > 0 ? (
-            <span className="rounded-full border border-rose-300/50 bg-rose-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-rose-700">
+            <span className="rounded-full border border-danger-border bg-rose-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-rose-700">
               {spellIssues} issue{spellIssues === 1 ? '' : 's'}
             </span>
           ) : null}

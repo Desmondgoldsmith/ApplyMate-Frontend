@@ -6,11 +6,11 @@ import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 const DEFAULT_STEPS = [
-  'Uploading your resume…',
-  'Scanning your resume…',
+  'Uploading your CV…',
+  'Scanning your CV…',
   'Checking layout…',
   'Extracting sections…',
-  'Scoring your resume…',
+  'Scoring your CV…',
   'Almost done…',
 ] as const;
 
@@ -53,24 +53,24 @@ export function CvUploadProgressSteps({
               className={cn(
                 'flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-colors',
                 current
-                  ? 'border-[#00C9B1]/35 bg-[#00C9B1]/8 text-[#7ee8d8]'
+                  ? 'border-accent-border bg-accent-subtle text-accent-text'
                   : done
-                    ? 'border-white/[0.08] bg-white/[0.03] text-white/55'
-                    : 'border-white/[0.05] bg-transparent text-white/30',
+                    ? 'border-border-subtle bg-bg-surface text-text-tertiary'
+                    : 'border-border-subtle bg-transparent text-text-disabled',
               )}
             >
               {done ? (
                 <Check
-                  className="h-3.5 w-3.5 shrink-0 text-emerald-400"
+                  className="h-3.5 w-3.5 shrink-0 text-success-text"
                   aria-hidden
                 />
               ) : current ? (
                 <Loader2
-                  className="h-3.5 w-3.5 shrink-0 animate-spin text-[#00C9B1]"
+                  className="h-3.5 w-3.5 shrink-0 animate-spin text-accent-text"
                   aria-hidden
                 />
               ) : (
-                <span className="inline-block h-3.5 w-3.5 shrink-0 rounded-full border border-white/15" />
+                <span className="inline-block h-3.5 w-3.5 shrink-0 rounded-full border border-border-default" />
               )}
               <span className="min-w-0 flex-1">{label}</span>
             </li>

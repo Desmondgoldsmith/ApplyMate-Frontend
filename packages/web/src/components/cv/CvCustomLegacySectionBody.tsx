@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 
 function entryFocusStyle(focused: boolean): CSSProperties {
   return {
-    outline: focused ? '1.5px dashed #00C9B1' : 'none',
+    outline: focused ? '1.5px dashed #17B26A' : 'none',
     outlineOffset: '3px',
     borderRadius: '3px',
     position: 'relative',
@@ -40,7 +40,7 @@ export function CvCustomLegacySectionBody({
     return (
       <button
         type="button"
-        className="text-xs italic text-gray-400 hover:text-[#00C9B1] hover:underline"
+        className="text-xs italic text-gray-400 hover:text-[#17B26A] hover:underline"
         onClick={() =>
           ctx.onUpdate({
             customSections: [{ id: newLocalId(), title: '', body: '' }],

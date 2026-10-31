@@ -19,13 +19,7 @@ import {
   findVisibleTourTarget,
   type TourLayout,
 } from '@/components/dashboard/welcome-tour/welcomeTourLayout';
-import { WELCOME_TOUR_STEPS } from '@/components/dashboard/welcome-tour/welcomeTourSteps';
-import {
-  isGlobalTourFinished,
-  markGlobalTourCompleted,
-  markGlobalTourSkipped,
-  shouldShowDashboardTour,
-} from '@/components/onboarding/featureTourStorage';
+import { pageTourForPath } from '@/components/dashboard/welcome-tour/pageTours';
 import { PortalThemeScope } from '@/components/theme/ThemeScope';
 import { Button } from '@/components/ui/Button';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -35,10 +29,10 @@ import { cn } from '@/lib/utils';
 import { WELCOME_TOUR_START_EVENT } from '@/lib/welcomeEvents';
 import { useAuthStore } from '@/store/useAuthStore';
 
+const NO_STEPS: never[] = [];
 const START_DELAY_MS = 700;
 const TARGET_WAIT_MS = 8000;
 const SETTLE_MS = 600;
-const HOME_PATHS = new Set(['/dashboard', '/dashboard/']);
 const TARGET_RETRIES = 3;
 const TARGET_RETRY_MS = 250;
 
@@ -65,7 +59,7 @@ function useTourUser() {
   };
 }
 
-/** First-visit guided tour of Home, on desktop and mobile. */
+/** First-visit guided tour of Home and the CV editor, on desktop and mobile. */
 export function WelcomeTour() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -74,8 +68,10 @@ export function WelcomeTour() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const reducedMotion = useReducedMotion();
   const user = useTourUser();
-  const onHome = HOME_PATHS.has(pathname);
+  const tour = pageTourForPath(pathname);
+  const onTourPage = tour != null;
   const forcedByUrl = searchParams.get('tour') === '1';
+  const openProfileId = searchParams.get('profileId');
 
   const [active, setActive] = useState(false);
   const [index, setIndex] = useState(0);
@@ -85,16 +81,16 @@ export function WelcomeTour() {
   const autoStartedRef = useRef(false);
   const startedRef = useRef(false);
 
-  const steps = WELCOME_TOUR_STEPS;
+  const steps = tour?.steps ?? NO_STEPS;
 
   const persist = useCallback(
     (outcome: 'completed' | 'skipped') => {
-      if (outcome === 'completed') markGlobalTourCompleted(user?.id);
-      else markGlobalTourSkipped();
+      if (!tour) return;
+      tour.markDone(user, outcome);
       void api.users
         .updateMe({
-          tourCompleted: true,
-          uiPrefs: { tourPagesCompleted: { dashboard: true } },
+          ...(tour.id === 'dashboard' ? { tourCompleted: true } : {}),
+          uiPrefs: { tourPagesCompleted: { [tour.prefKey]: true } },
         })
         .then(() =>
           queryClient.invalidateQueries({
@@ -105,7 +101,7 @@ export function WelcomeTour() {
           /* the local flag still stops it showing again on this device */
         });
     },
-    [accessToken, queryClient, user?.id],
+    [accessToken, queryClient, tour, user],
   );
 
   const finish = useCallback(
@@ -166,13 +162,13 @@ export function WelcomeTour() {
   const userId = user?.id ?? null;
   const onboardingDone = user?.onboardingCompleted === true;
 
-  // Auto-start once on Home for users who haven't seen it, or when asked via ?tour=1.
+  // Auto-start once per page for users who haven't seen it, or when asked via ?tour=1.
   useEffect(() => {
     const current = userRef.current;
-    if (!onHome || autoStartedRef.current || !userId || !onboardingDone) return;
+    if (!tour || autoStartedRef.current || !userId || !onboardingDone) return;
+    if (steps.length === 0) return;
     const eligible =
-      forcedByUrl ||
-      (shouldShowDashboardTour(current) && !isGlobalTourFinished(current));
+      forcedByUrl || (current != null && tour.shouldAutoStart(current));
     if (!eligible) return;
     autoStartedRef.current = true;
 
@@ -183,7 +179,14 @@ export function WelcomeTour() {
       if (findVisibleTourTarget(steps[0]!.target)) {
         window.setTimeout(() => {
           if (cancelled) return;
-          if (forcedByUrl) router.replace('/dashboard', { scroll: false });
+          if (forcedByUrl) {
+            const params = new URLSearchParams(window.location.search);
+            params.delete('tour');
+            const qs = params.toString();
+            router.replace(`${window.location.pathname}${qs ? `?${qs}` : ''}`, {
+              scroll: false,
+            });
+          }
           start();
         }, START_DELAY_MS);
         return;
@@ -197,12 +200,18 @@ export function WelcomeTour() {
       // Allow a retry if this run was interrupted before the tour opened.
       if (!startedRef.current) autoStartedRef.current = false;
     };
-  }, [forcedByUrl, onHome, onboardingDone, router, start, steps, userId]);
+  }, [forcedByUrl, tour, onboardingDone, router, start, steps, userId]);
+
+  // A new page means a different tour: allow it to auto-start there once.
+  useEffect(() => {
+    autoStartedRef.current = false;
+    startedRef.current = false;
+  }, [tour?.id, openProfileId]);
 
   // Manual start from the Help menu or Settings.
   useEffect(() => {
     const onStart = () => {
-      if (HOME_PATHS.has(window.location.pathname)) start();
+      if (pageTourForPath(window.location.pathname)) start();
     };
     window.addEventListener(WELCOME_TOUR_START_EVENT, onStart);
     window.addEventListener('applymate:tour-restart', onStart);
@@ -213,11 +222,11 @@ export function WelcomeTour() {
   }, [start]);
 
   useEffect(() => {
-    if (active && !onHome) {
+    if (active && !onTourPage) {
       setActive(false);
       setLayout(null);
     }
-  }, [active, onHome]);
+  }, [active, onTourPage]);
 
   const targetIdRef = useRef<string | null>(null);
   const measure = useCallback(() => {
