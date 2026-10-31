@@ -274,6 +274,30 @@ export function CvClinicToolbar({
               'basis-full justify-start min-[900px]:basis-auto min-[900px]:justify-center',
           )}
         >
+          {onUndo || onRedo ? (
+            <span className="mr-0.5 inline-flex items-center">
+              <button
+                type="button"
+                className={cn(ghostToolClass, 'px-2 sm:px-2')}
+                disabled={!canUndo}
+                onClick={onUndo}
+                title="Undo (Ctrl+Z)"
+                aria-label="Undo"
+              >
+                <Undo2 className="h-4 w-4 shrink-0 text-accent-text" />
+              </button>
+              <button
+                type="button"
+                className={cn(ghostToolClass, 'px-2 sm:px-2')}
+                disabled={!canRedo}
+                onClick={onRedo}
+                title="Redo (Ctrl+Y)"
+                aria-label="Redo"
+              >
+                <Redo2 className="h-4 w-4 shrink-0 text-accent-text" />
+              </button>
+            </span>
+          ) : null}
           <span data-tour="cv-template" className="inline-flex">
             <ToolbarToolButton
               label="Design"
@@ -352,36 +376,6 @@ export function CvClinicToolbar({
                         <FileText className="h-3.5 w-3.5 shrink-0 text-accent-text" />
                       )}
                       Spelling
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!canUndo}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-text-primary hover:bg-bg-hover disabled:opacity-40"
-                      onClick={() => {
-                        setMoreOpen(false);
-                        onUndo?.();
-                      }}
-                    >
-                      <Undo2 className="h-3.5 w-3.5 shrink-0 text-accent-text" />
-                      Undo{' '}
-                      <span className="ml-auto text-[10px] text-text-tertiary">
-                        Ctrl+Z
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!canRedo}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-text-primary hover:bg-bg-hover disabled:opacity-40"
-                      onClick={() => {
-                        setMoreOpen(false);
-                        onRedo?.();
-                      }}
-                    >
-                      <Redo2 className="h-3.5 w-3.5 shrink-0 text-accent-text" />
-                      Redo{' '}
-                      <span className="ml-auto text-[10px] text-text-tertiary">
-                        Ctrl+Y
-                      </span>
                     </button>
                     {onOpenVersionHistory ? (
                       <button
