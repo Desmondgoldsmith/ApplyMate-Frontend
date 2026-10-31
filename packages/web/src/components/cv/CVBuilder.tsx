@@ -1760,17 +1760,29 @@ export function CVBuilder({
         });
         return;
       }
+      const snapFingerprint = computeCvBuilderSaveFingerprint(
+        snap,
+        selectedTemplate,
+        sectionsRef.current,
+      );
+      // A server-side change (e.g. an accepted AI edit) must be one Undo step away.
+      if (
+        preserveHistory &&
+        computeCvBuilderSaveFingerprint(
+          dataRef.current,
+          selectedTemplate,
+          sectionsRef.current,
+        ) !== snapFingerprint
+      ) {
+        pushUndoSnapshotForced(dataRef.current, 'AI change');
+      }
       setData(coerceStructuredTextInCvBuilderData(snap));
       contentVersionRef.current = initialContentVersionRef.current ?? null;
       setDirty(false);
       if (!preserveHistory) {
         resetUndoStack();
       }
-      lastPersistedFingerprintRef.current = computeCvBuilderSaveFingerprint(
-        snap,
-        selectedTemplate,
-        sectionsRef.current,
-      );
+      lastPersistedFingerprintRef.current = snapFingerprint;
       setSaveStatus('idle');
       logCvBuilderSavePerfDev('hydrate.apply', t0, {
         nonce,
@@ -1784,6 +1796,7 @@ export function CVBuilder({
       selectedTemplate,
       sectionsRef,
       resetUndoStack,
+      pushUndoSnapshotForced,
       serverHydratePreserveHistoryRef,
     ],
   );

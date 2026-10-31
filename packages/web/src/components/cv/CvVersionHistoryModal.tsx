@@ -158,7 +158,7 @@ export function CvVersionHistoryModal({
     );
   } else {
     body = (
-      <ul className="divide-y divide-white/[0.06]" aria-label="Saved versions">
+      <ul className="divide-y divide-border-subtle" aria-label="Saved versions">
         {revisions.map((rev) => (
           <li key={rev.id} className="flex items-center gap-3 py-3">
             <History
