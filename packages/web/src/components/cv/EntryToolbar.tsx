@@ -98,6 +98,7 @@ export function EntryToolbar({
   const [showDate, setShowDate] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showTextTools, setShowTextTools] = useState(false);
+  const [toolsNotice, setToolsNotice] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkDraft, setLinkDraft] = useState('https://');
@@ -291,7 +292,7 @@ export function EntryToolbar({
           ? lastSelectionRef.current.end
           : liveEnd;
     if (start === end) {
-      window.alert('Please highlight the text you want to format.');
+      setToolsNotice('Please highlight the text you want to format.');
       return;
     }
     const raw = selectedEl.value;
@@ -323,7 +324,7 @@ export function EntryToolbar({
         ? sel.getRangeAt(0)
         : lastContentEditableRangeRef.current;
     if (!range || range.collapsed) {
-      window.alert('Please highlight the text you want to format.');
+      setToolsNotice('Please highlight the text you want to format.');
       return;
     }
     const container = range.commonAncestorContainer;
@@ -332,7 +333,9 @@ export function EntryToolbar({
         ? (container as Element)
         : container.parentElement;
     if (!element?.closest('[contenteditable="true"]')) {
-      window.alert('Please click into a text field and highlight text first.');
+      setToolsNotice(
+        'Please click into a text field and highlight text first.',
+      );
       return;
     }
     const selection = window.getSelection();
@@ -370,7 +373,7 @@ export function EntryToolbar({
         ? sel.getRangeAt(0)
         : lastContentEditableRangeRef.current;
     if (!range) {
-      window.alert('Highlight the linked text first, then choose Unlink.');
+      setToolsNotice('Highlight the linked text first, then choose Unlink.');
       return;
     }
     const node = range.commonAncestorContainer;
@@ -386,7 +389,7 @@ export function EntryToolbar({
       !(anchor instanceof HTMLAnchorElement) ||
       !(host instanceof HTMLElement)
     ) {
-      window.alert('Highlight the linked text first, then choose Unlink.');
+      setToolsNotice('Highlight the linked text first, then choose Unlink.');
       return;
     }
     const text = anchor.textContent ?? '';
@@ -401,7 +404,7 @@ export function EntryToolbar({
   const applyLink = () => {
     const href = normalizedUrl(linkDraft);
     if (!href) {
-      window.alert('Please enter a valid URL (http/https).');
+      setToolsNotice("That doesn't look like a web address.");
       return;
     }
     // Use the field selection captured when the toolbar was pressed. We must not
@@ -428,7 +431,7 @@ export function EntryToolbar({
     }
     const range = lastContentEditableRangeRef.current;
     if (!range || range.collapsed) {
-      window.alert('Please highlight the text you want to link.');
+      setToolsNotice('Please highlight the text you want to link.');
       return;
     }
     const container = range.commonAncestorContainer;
@@ -438,7 +441,7 @@ export function EntryToolbar({
         : container.parentElement;
     const host = element?.closest('[contenteditable="true"]');
     if (!(host instanceof HTMLElement)) {
-      window.alert('Please highlight text inside an editable field first.');
+      setToolsNotice('Please highlight text inside an editable field first.');
       return;
     }
 
@@ -542,10 +545,14 @@ export function EntryToolbar({
         </button>
         <button
           type="button"
-          title="Text formatting"
+          title="Bold, italic, underline or link"
+          aria-label="Text formatting"
           onMouseDown={onToolbarActionMouseDown}
           onMouseUp={onToolbarActionMouseUp}
-          onClick={() => setShowTextTools((v) => !v)}
+          onClick={() => {
+            setToolsNotice(null);
+            setShowTextTools((v) => !v);
+          }}
           className="px-2 py-1.5 text-black/70"
         >
           <Type className="h-4 w-4" />
@@ -707,11 +714,18 @@ export function EntryToolbar({
                     </button>
                   ) : null}
                 </div>
-              ) : (
-                <p className="mt-2 text-[10px] text-black/55">
-                  Highlight text, then choose a style.
-                </p>
-              )}
+              ) : null}
+              <p
+                role={toolsNotice ? 'alert' : undefined}
+                className={
+                  toolsNotice
+                    ? 'mt-2 text-[12px] font-medium text-[#B54708]'
+                    : 'mt-2 text-[12px] text-black/60'
+                }
+              >
+                {toolsNotice ??
+                  'Tip: highlight any words on your CV and a style bar appears right above them.'}
+              </p>
             </div>,
             document.body,
           )

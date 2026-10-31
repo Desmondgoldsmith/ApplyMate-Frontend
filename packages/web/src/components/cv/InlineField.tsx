@@ -227,10 +227,14 @@ function InlineFieldInner({
     placeholderTone === 'onDark'
       ? 'empty:before:text-white/45'
       : 'empty:before:text-gray-400';
+  const linkClass =
+    placeholderTone === 'onDark'
+      ? '[&_a]:text-[#93C5FD] [&_a]:underline'
+      : '[&_a]:text-[#1D4ED8] [&_a]:underline';
 
   if (!editable) {
     return (
-      <span className={cn(className, '[&_a]:text-[#1D4ED8] [&_a]:underline')}>
+      <span className={cn(className, linkClass)}>
         {empty ? (
           <span className={placeholderDisplayClass}>{placeholder}</span>
         ) : (
@@ -262,7 +266,7 @@ function InlineFieldInner({
               'decoration-rose-500/90 underline decoration-wavy decoration-1 underline-offset-2',
             layout === 'block' && 'block w-full min-w-0 max-w-full',
             layout === 'inline' && 'inline max-w-full align-baseline',
-            '[&_a]:text-[#1D4ED8] [&_a]:underline',
+            linkClass,
             className,
           )}
           onClick={(e) => {
@@ -369,7 +373,8 @@ function InlineFieldInner({
           suppressContentEditableWarning
           className={cn(
             editSurface,
-            'block min-h-[1lh] w-full min-w-0 max-w-full text-inherit whitespace-pre-wrap break-words empty:before:content-[attr(data-placeholder)] empty:before:italic empty:before:pointer-events-none [&_a]:text-[#1D4ED8] [&_a]:underline',
+            'block min-h-[1lh] w-full min-w-0 max-w-full text-inherit whitespace-pre-wrap break-words empty:before:content-[attr(data-placeholder)] empty:before:italic empty:before:pointer-events-none',
+            linkClass,
             placeholderBeforeClass,
           )}
           style={{ boxShadow: EDIT_UNDERLINE, caretColor: '#111111' }}
@@ -413,7 +418,8 @@ function InlineFieldInner({
         suppressContentEditableWarning
         className={cn(
           editSurface,
-          'inline-block min-w-[2ch] max-w-full text-inherit empty:before:content-[attr(data-placeholder)] empty:before:italic empty:before:pointer-events-none [&_a]:text-[#1D4ED8] [&_a]:underline',
+          'inline-block min-w-[2ch] max-w-full text-inherit empty:before:content-[attr(data-placeholder)] empty:before:italic empty:before:pointer-events-none',
+          linkClass,
           placeholderBeforeClass,
         )}
         style={{ boxShadow: EDIT_UNDERLINE, caretColor: '#111111' }}

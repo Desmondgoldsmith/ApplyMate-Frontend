@@ -47,6 +47,7 @@ import {
   DEFAULT_HEADER_PREVIEW,
   type HeaderPreviewSettings,
 } from '@/components/cv/CVEditContext';
+import { CvSelectionFormatBar } from '@/components/cv/CvSelectionFormatBar';
 import {
   readHeaderPreviewStorage,
   writeHeaderPreviewStorage,
@@ -5608,6 +5609,7 @@ export function CVBuilder({
             {mode === 'dashboard' ? (
               <CVEditProvider value={cvEditContextValue}>
                 {previewDoc}
+                <CvSelectionFormatBar />
               </CVEditProvider>
             ) : (
               previewDoc
