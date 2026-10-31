@@ -34,18 +34,6 @@ test.describe('Phase 7 — CV Builder journeys (authenticated)', () => {
     await page
       .getByPlaceholder(/Frontend Engineer CV/i)
       .fill(`E2E Manual ${Date.now()}`);
-    await page.getByRole('button', { name: /Next →/i }).click();
-    await expect(
-      page.getByRole('heading', { name: /Choose a template/i }),
-    ).toBeVisible();
-    await page.getByRole('button', { name: /Next →/i }).click();
-    await expect(
-      page.getByRole('heading', { name: /How do you want to build/i }),
-    ).toBeVisible();
-    await page.getByTestId('cv-create-method-scratch').click();
-    await expect(
-      page.getByRole('heading', { name: /How would you like to build/i }),
-    ).toBeVisible();
     await page.getByTestId('cv-create-manual').click();
     await expect(page).toHaveURL(/\/dashboard\/cv\?profileId=/, {
       timeout: 60_000,
@@ -60,9 +48,6 @@ test.describe('Phase 7 — CV Builder journeys (authenticated)', () => {
     await page
       .getByPlaceholder(/Frontend Engineer CV/i)
       .fill(`E2E AI ${Date.now()}`);
-    await page.getByRole('button', { name: /Next →/i }).click();
-    await page.getByRole('button', { name: /Next →/i }).click();
-    await page.getByTestId('cv-create-method-scratch').click();
     await page.getByTestId('cv-create-ai-chat').click();
     await expect(
       page.getByRole('heading', { name: /Build your CV with AI/i }),
@@ -84,8 +69,6 @@ test.describe('Phase 7 — CV Builder journeys (authenticated)', () => {
     await page
       .getByPlaceholder(/Frontend Engineer CV/i)
       .fill(`E2E Upload ${Date.now()}`);
-    await page.getByRole('button', { name: /Next →/i }).click();
-    await page.getByRole('button', { name: /Next →/i }).click();
     await page.getByTestId('cv-create-method-upload').click();
     await expect(
       page.getByRole('heading', { name: /Upload your CV/i }),
