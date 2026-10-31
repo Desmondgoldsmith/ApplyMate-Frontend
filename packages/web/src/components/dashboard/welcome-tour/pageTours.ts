@@ -100,7 +100,7 @@ const DASHBOARD_TOUR: PageTour = {
     shouldShowDashboardTour(user) && !isGlobalTourFinished(user),
   markDone: (user, outcome) => {
     if (outcome === 'completed') markGlobalTourCompleted(user?.id);
-    else markGlobalTourSkipped();
+    else markGlobalTourSkipped(user?.id);
   },
 };
 
