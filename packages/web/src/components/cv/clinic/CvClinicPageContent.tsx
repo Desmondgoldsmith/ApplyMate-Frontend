@@ -384,6 +384,12 @@ export function CvClinicPageContent() {
   const sectionOrderFlow = useCvSectionOrderFlow(targetId, sections);
 
   const hasCv = profiles.length > 0 || Boolean(legacyCv.data?.id);
+  const profilesLoadFailed = !hasCv && profilesQuery.isError;
+  useEffect(() => {
+    if (!profilesLoadFailed) return;
+    const id = window.setInterval(() => void profilesQuery.refetch(), 10_000);
+    return () => window.clearInterval(id);
+  }, [profilesLoadFailed, profilesQuery]);
   const score = useCVScore(hasCv && Boolean(targetId), targetId);
   const improvements = useCVImprovements(hasCv && Boolean(targetId), targetId);
   const runScan = useRunCvDetailedScore();
@@ -3180,6 +3186,30 @@ export function CvClinicPageContent() {
         <Skeleton height={22} width={140} borderRadius={6} />
         <Skeleton height={88} borderRadius={12} />
         <Skeleton height={420} borderRadius={16} />
+      </div>
+    );
+  }
+
+  if (profilesLoadFailed) {
+    return (
+      <div
+        role="alert"
+        className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center"
+      >
+        <h2 className="font-display text-[24px] font-bold text-text-primary">
+          We can&apos;t load your CVs right now
+        </h2>
+        <p className="mt-2 max-w-md text-[15px] text-text-secondary">
+          Your CVs are safe. We&apos;ll keep trying, or you can try again now.
+        </p>
+        <Button
+          variant="accent"
+          className="mt-6 px-7"
+          disabled={profilesQuery.isFetching}
+          onClick={() => void profilesQuery.refetch()}
+        >
+          {profilesQuery.isFetching ? 'Trying…' : 'Try again'}
+        </Button>
       </div>
     );
   }
