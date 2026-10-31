@@ -85,7 +85,9 @@ export function useCVAutosave(props: UseCVAutosaveParams): UseCVAutosaveResult {
   const dirtyRef = useRef(false);
   const autosaveTimerRef = useRef<number | null>(null);
   const saveInFlightRef = useRef(false);
+  const saveInFlightDoneRef = useRef<Promise<void> | null>(null);
   const saveQueuedRef = useRef(false);
+  const flushSelfRef = useRef<() => Promise<void>>(async () => {});
   const onDashboardSavedRef = useRef(onDashboardSaved);
   onDashboardSavedRef.current = onDashboardSaved;
   const toastRef = useRef(toast);
@@ -110,9 +112,15 @@ export function useCVAutosave(props: UseCVAutosaveParams): UseCVAutosaveResult {
     }
     if (saveInFlightRef.current) {
       saveQueuedRef.current = true;
-      return;
+      // Callers (e.g. before accepting an AI change) need the edit on the server, not queued.
+      await saveInFlightDoneRef.current;
+      return flushSelfRef.current();
     }
     saveInFlightRef.current = true;
+    let markSaveDone = () => {};
+    saveInFlightDoneRef.current = new Promise<void>((resolve) => {
+      markSaveDone = resolve;
+    });
     setSaveStatus('saving');
     const t0 = performance.now();
     try {
@@ -163,6 +171,8 @@ export function useCVAutosave(props: UseCVAutosaveParams): UseCVAutosaveResult {
       }
     } finally {
       saveInFlightRef.current = false;
+      saveInFlightDoneRef.current = null;
+      markSaveDone();
       if (saveQueuedRef.current && dirtyRef.current) {
         saveQueuedRef.current = false;
         queueMicrotask(() => void flushDashboardAutosave());
@@ -171,6 +181,7 @@ export function useCVAutosave(props: UseCVAutosaveParams): UseCVAutosaveResult {
       }
     }
   }, [mode, profileId, setDirty, setSaveStatus, contentVersionRef]);
+  flushSelfRef.current = flushDashboardAutosave;
 
   useEffect(() => {
     if (mode !== 'dashboard') return;

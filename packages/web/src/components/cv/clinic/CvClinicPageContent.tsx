@@ -102,6 +102,7 @@ import { buildCvNamingForExport } from '@/lib/cv-profile-naming';
 import { normalizeCvDiffPreviewParams } from '@/lib/cvAiPatchDisplay';
 import { getFormatRecommendation } from '@/lib/cvFormatRecommendation';
 import { buildCvPrintDocument } from '@/lib/cvPrintDocument';
+import { savePendingCvEdits } from '@/lib/cvPendingEdits';
 import { cvDiffPreviewBuilderSection } from '@/lib/cvDiffPreviewSection';
 import {
   assistantChangedFieldLabel,
@@ -1634,6 +1635,7 @@ export function CvClinicPageContent() {
         setCvImprovementDiffActionsPending(true);
         setAssistantBusyStage('validating');
         try {
+          await savePendingCvEdits();
           let patchToCommit: Record<string, unknown>;
           let highlightSection =
             globalAssistantFullResult?.sectionDiffs[0]?.targetSection;
@@ -1751,6 +1753,7 @@ export function CvClinicPageContent() {
       if (cvImprovementDiffInFlightRef.current) return;
       cvImprovementDiffInFlightRef.current = true;
       setCvImprovementDiffActionsPending(true);
+      await savePendingCvEdits();
       const wasAcceptAll = changeIndex == null;
       const improvementsKey = cvSuggestionsQueryKey(targetId);
       const prevImprovementsPayload = wasAcceptAll
@@ -2217,6 +2220,7 @@ export function CvClinicPageContent() {
       setAssistantBusy(true);
       setAssistantBusyStage('generating');
       try {
+        await savePendingCvEdits();
         const mergedClarifications =
           clarifications && clarifications.length > 0
             ? [
@@ -2311,6 +2315,7 @@ export function CvClinicPageContent() {
           : 'generating',
       );
       try {
+        await savePendingCvEdits();
         const mergedClarifications =
           options?.clarifications && options.clarifications.length > 0
             ? [

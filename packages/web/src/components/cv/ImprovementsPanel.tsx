@@ -20,6 +20,7 @@ import {
   type CvDiffPreviewOpenParams,
   type CvImprovementsPayload,
 } from '@/lib/api';
+import { savePendingCvEdits } from '@/lib/cvPendingEdits';
 import {
   AI_QUOTA_UPGRADE_HINT,
   applyCvAiUsageToAuthCache,
@@ -250,6 +251,7 @@ function ImprovementsPanelInner({
     setBulkBusy('accept');
     const t0 = Date.now();
     try {
+      await savePendingCvEdits();
       const res = await api.cv.acceptAllSuggestions(profileId ?? undefined);
       queryClient.setQueryData<CvImprovementsPayload>(
         qk,
@@ -484,6 +486,7 @@ function ImprovementsPanelInner({
     });
     const applyWithAiPerfT0 = performance.now();
     try {
+      await savePendingCvEdits();
       const pointer = pointerFor(idx);
       const result = await api.cv.applyImprovement(
         pointer,

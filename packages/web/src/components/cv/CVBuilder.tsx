@@ -48,6 +48,7 @@ import {
   type HeaderPreviewSettings,
 } from '@/components/cv/CVEditContext';
 import { CvSelectionFormatBar } from '@/components/cv/CvSelectionFormatBar';
+import { registerCvPendingEditsSaver } from '@/lib/cvPendingEdits';
 import {
   readHeaderPreviewStorage,
   writeHeaderPreviewStorage,
@@ -1109,6 +1110,14 @@ export function CVBuilder({
   });
   flushDashboardAutosaveRef.current = flushDashboardAutosave;
 
+  useEffect(() => {
+    if (mode !== 'dashboard') return;
+    return registerCvPendingEditsSaver(async () => {
+      flushCvInlineEdits();
+      await flushDashboardAutosaveRef.current?.();
+    });
+  }, [mode]);
+
   const prevDiffOverlayOpenRef = useRef(isDiffOverlayOpen);
   useEffect(() => {
     const wasOpen = prevDiffOverlayOpenRef.current;
@@ -1684,6 +1693,8 @@ export function CVBuilder({
         undoCoalesceOpenRef.current = true;
       }
       clearUndoCoalesce();
+      // Undo, autosave flush and back-to-back updates in the same tick must see this edit.
+      dataRef.current = next;
       setDirty(true);
       setData(next);
     },
