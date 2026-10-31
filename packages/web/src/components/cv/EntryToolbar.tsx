@@ -38,12 +38,15 @@ type EntryToolbarProps = {
   addEntryLabel?: string;
   addSecondaryEntryLabel?: string;
   position?: 'above' | 'below';
-  /** Pin toolbar above the section header instead of overlapping the focused entry. */
+  /**
+   * Pin the toolbar into the section header slot. Defaults to on for whole-section toolbars only;
+   * entry toolbars sit right above their entry so it is clear what they act on.
+   */
   pinToSectionHeader?: boolean;
   hideAddButton?: boolean;
   /** When true, the trash/delete button is omitted entirely (used for core sections that can't be deleted). */
   hideDelete?: boolean;
-  /** Ask first (whole sections). Entries are removed at once with an Undo toast. */
+  /** This toolbar acts on the whole section (confirm copy, header placement). */
   confirmBeforeDelete?: boolean;
   settingsOptions?: Array<{
     key: string;
@@ -73,12 +76,14 @@ export function EntryToolbar({
   addEntryLabel = '+ Entry',
   addSecondaryEntryLabel,
   position = 'above',
-  pinToSectionHeader = true,
+  pinToSectionHeader: pinToSectionHeaderProp,
   hideAddButton = false,
   hideDelete = false,
   confirmBeforeDelete = false,
   settingsOptions = [],
 }: EntryToolbarProps) {
+  const isSectionToolbar = confirmBeforeDelete;
+  const pinToSectionHeader = pinToSectionHeaderProp ?? isSectionToolbar;
   const toast = useToast();
   const toolbarAnchorId = anchorSectionId ?? sectionType;
   const overlayZ = useCvOverlayZIndex();
@@ -261,19 +266,9 @@ export function EntryToolbar({
           <button
             type="button"
             title={
-              confirmBeforeDelete ? 'Remove this section' : 'Remove this entry'
+              isSectionToolbar ? 'Remove this section' : 'Remove this entry'
             }
-            onClick={() => {
-              if (confirmBeforeDelete) {
-                setConfirmDelete(true);
-                return;
-              }
-              onDelete();
-              toast.success('Removed', {
-                label: 'Undo',
-                onClick: () => window.dispatchEvent(new Event(CV_UNDO_EVENT)),
-              });
-            }}
+            onClick={() => setConfirmDelete(true)}
             className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2 py-1.5 text-[12px] font-semibold text-[#B42318] hover:bg-[#FEF3F2]"
           >
             <Trash2 className="h-4 w-4" aria-hidden />
@@ -358,11 +353,14 @@ export function EntryToolbar({
               onClick={(e) => e.stopPropagation()}
             >
               <p className="text-[14px] font-semibold text-[#111827]">
-                Remove this whole section?
+                {isSectionToolbar
+                  ? 'Remove this whole section?'
+                  : 'Remove this entry?'}
               </p>
               <p className="mt-1 text-[13px] text-[#4B5563]">
-                Everything in it comes off your CV. You can add it again from
-                Sections.
+                {isSectionToolbar
+                  ? 'Everything in it comes off your CV. You can add it again from Sections.'
+                  : 'It comes off your CV. You can undo this right after.'}
               </p>
               <div className="mt-3 flex justify-end gap-2">
                 <button
@@ -378,6 +376,13 @@ export function EntryToolbar({
                   onClick={() => {
                     onDelete();
                     setConfirmDelete(false);
+                    if (!isSectionToolbar) {
+                      toast.success('Removed', {
+                        label: 'Undo',
+                        onClick: () =>
+                          window.dispatchEvent(new Event(CV_UNDO_EVENT)),
+                      });
+                    }
                   }}
                 >
                   Remove

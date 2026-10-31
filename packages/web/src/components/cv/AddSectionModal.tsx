@@ -103,8 +103,12 @@ function toCustomSectionSlug(name: string): string {
     .replace(/^_+|_+$/g, '');
 }
 
-function optionKeyFromBackendType(type: string): string {
-  const t = type.trim().toLowerCase();
+export function optionKeyFromBackendType(type: string): string {
+  // The API numbers custom rows (`custom_interests_0`).
+  const t = type
+    .trim()
+    .toLowerCase()
+    .replace(/^(custom_[a-z0-9_]+?)_\d+$/, '$1');
   if (t === 'publications' || t === 'custom_publications')
     return 'publications';
   if (t === 'volunteering' || t === 'custom_volunteering')
@@ -114,6 +118,24 @@ function optionKeyFromBackendType(type: string): string {
   if (match) return match[0];
   if (t.startsWith('custom_')) return 'custom';
   return t;
+}
+
+/** A custom section is the same one only when its name matches, not just any custom row. */
+export function rowMatchesSection(
+  row: CVSectionRecord,
+  sectionKey: string,
+  customName: string,
+): boolean {
+  if (sectionKey !== 'custom') {
+    return optionKeyFromBackendType(row.type) === sectionKey;
+  }
+  const type = row.type.trim().toLowerCase();
+  if (!type.startsWith('custom_')) return false;
+  const title = typeof row.data?.title === 'string' ? row.data.title : '';
+  const rowSlug =
+    toCustomSectionSlug(title) ||
+    type.replace(/^custom_/, '').replace(/_\d+$/, '');
+  return rowSlug !== '' && rowSlug === toCustomSectionSlug(customName);
 }
 
 export type AddSectionModalProps = {
@@ -213,11 +235,12 @@ export function AddSectionModal({
     });
   };
 
-  const ensureSectionVisibleForType = async (id: string, type: string) => {
+  const ensureSectionVisible = async (id: string, sectionKey: string) => {
     try {
       const all = await api.cv.getSections(true, id);
-      const want = optionKeyFromBackendType(type);
-      const match = all.find((s) => optionKeyFromBackendType(s.type) === want);
+      const match = all.find((s) =>
+        rowMatchesSection(s, sectionKey, customSectionName),
+      );
       if (match?.id && match.hidden === true) {
         await api.cv.updateSection(match.id, { visible: true }, id);
       }
@@ -252,9 +275,10 @@ export function AddSectionModal({
           ? customSectionName.trim() || 'Custom section'
           : (LABEL_BY_TYPE[sectionKey] ?? sectionKey);
       const allRows = await api.cv.getSections(true, profileId);
-      const want = optionKeyFromBackendType(mappedType);
       const hiddenMatch = allRows.find(
-        (s) => optionKeyFromBackendType(s.type) === want && s.hidden === true,
+        (s) =>
+          s.hidden === true &&
+          rowMatchesSection(s, sectionKey, customSectionName),
       );
       if (hiddenMatch?.id) {
         await api.cv.updateSection(
@@ -293,11 +317,10 @@ export function AddSectionModal({
               profileId,
             )
           : await api.cv.addSection({ type: mappedType }, profileId);
-      const resolvedType = added?.type?.trim() || mappedType;
       if (added?.id?.trim() && added.hidden === true) {
         await api.cv.updateSection(added.id, { visible: true }, profileId);
       } else {
-        await ensureSectionVisibleForType(profileId, resolvedType);
+        await ensureSectionVisible(profileId, sectionKey);
       }
       const rowIdForOrder = added?.id?.trim();
       if (rowIdForOrder) {
@@ -326,7 +349,7 @@ export function AddSectionModal({
           sectionKey === 'custom'
             ? customSectionName.trim() || 'Custom section'
             : (LABEL_BY_TYPE[sectionKey] ?? sectionKey);
-        await ensureSectionVisibleForType(profileId, mappedType);
+        await ensureSectionVisible(profileId, sectionKey);
         setSessionOnCv((prev) => new Set(prev).add(sectionKey));
         invalidateAfterSectionChange(profileId);
         await queryClient.refetchQueries({
