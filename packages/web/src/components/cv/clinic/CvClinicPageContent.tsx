@@ -1216,7 +1216,22 @@ export function CvClinicPageContent() {
         if (entry.fields.length > 0) map.set(key, entry);
       }
     }
-    return [...map.values()];
+    // Custom sections arrive labelled by type ("hobbies 0"); show the name the user gave them.
+    return [...map.values()].map((entry) => {
+      if (!entry.sectionKey.startsWith('custom_')) return entry;
+      const row = sections.find(
+        (s) => s.type.toLowerCase() === entry.sectionKey,
+      );
+      const title =
+        typeof row?.data?.title === 'string' ? row.data.title.trim() : '';
+      const fromType = entry.sectionKey
+        .replace(/^custom_/, '')
+        .replace(/_\d+$/, '')
+        .replace(/_/g, ' ');
+      const label =
+        title || fromType.charAt(0).toUpperCase() + fromType.slice(1);
+      return { ...entry, sectionLabel: label };
+    });
   }, [
     qualitySignals.missingFields,
     qualitySignals.sectionLabels,
@@ -1224,6 +1239,7 @@ export function CvClinicPageContent() {
     visibleSectionTypes,
     cvDataSnapshot,
     initialData,
+    sections,
   ]);
 
   const resolveJumpSectionKey = useCallback(

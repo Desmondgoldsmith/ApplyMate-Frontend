@@ -98,7 +98,8 @@ export function AiUsageBadge({
   }
 
   const limit = u.limit ?? 5;
-  const atLimit = (u.remaining ?? 0) === 0;
+  const remaining = u.remaining ?? Math.max(0, limit - (u.used ?? 0));
+  const atLimit = remaining === 0;
 
   return (
     <Link
@@ -128,8 +129,14 @@ export function AiUsageBadge({
             atLimit ? 'text-warning-text' : 'text-text-primary',
           )}
         >
-          {u.used} / {limit}
-          <span className="font-normal text-text-tertiary"> free AI today</span>
+          {atLimit ? (
+            'No AI left today'
+          ) : (
+            <>
+              {remaining} of {limit}
+              <span className="font-normal text-text-tertiary"> AI left</span>
+            </>
+          )}
         </span>
       ) : (
         <span
@@ -138,10 +145,16 @@ export function AiUsageBadge({
             atLimit ? 'text-warning-text' : 'text-text-primary',
           )}
         >
-          {u.used} / {limit}
-          <span className="ml-1 font-normal text-text-tertiary">
-            free AI today
-          </span>
+          {atLimit ? (
+            'No free AI left today'
+          ) : (
+            <>
+              {remaining} of {limit}
+              <span className="ml-1 font-normal text-text-tertiary">
+                free AI left today
+              </span>
+            </>
+          )}
         </span>
       )}
     </Link>
