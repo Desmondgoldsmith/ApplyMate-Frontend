@@ -795,7 +795,9 @@ input.auth-input:-webkit-autofill:active {
 .cv-change-marker,
 u.cv-change-marker {
   text-decoration: underline;
-  text-decoration-color: rgba(0, 201, 177, 0.7);
-  text-underline-offset: 2px;
-  background-color: rgba(0, 201, 177, 0.08);
+  text-decoration-color: rgba(23, 178, 106, 0.6);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  background-color: rgba(23, 178, 106, 0.1);
+  border-radius: 2px;
 }

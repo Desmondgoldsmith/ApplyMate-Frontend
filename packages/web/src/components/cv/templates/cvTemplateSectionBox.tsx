@@ -1,5 +1,6 @@
 'use client';
 
+import { Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { CvAiPatchDiffView } from '@/components/cv/CvAiPatchDiffView';
@@ -69,6 +70,15 @@ export function cvTemplateSectionBox(
     return base || 'AI suggested update';
   };
 
+  const card =
+    'mx-1 mt-3 overflow-hidden rounded-xl border border-[#D0D5DD] bg-white text-left shadow-[0_4px_16px_rgba(16,24,40,0.08)]';
+  const cardHeader = (label: string) => (
+    <div className="flex items-center gap-2 border-b border-[#EAECF0] bg-[#F6FEF9] px-3.5 py-2">
+      <Sparkles className="h-3.5 w-3.5 text-[#17B26A]" aria-hidden />
+      <p className="text-[12px] font-semibold text-[#101828]">{label}</p>
+    </div>
+  );
+
   return (
     <div
       id={`cv-preview-${id}`}
@@ -78,101 +88,96 @@ export function cvTemplateSectionBox(
         isActive && !isDiff
           ? 'rounded-[4px] ring-1 ring-inset ring-[rgba(23,178,106,0.35)]'
           : '',
-        isDiff ? 'rounded-[4px] pb-1' : '',
+        isDiff
+          ? 'rounded-[4px] pb-1 ring-2 ring-[#17B26A]/40 ring-offset-2 ring-offset-white'
+          : '',
         className,
       )}
     >
-      {isDiff && (
-        <div className="absolute -top-5 right-0 z-10 flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          AI suggested change
-        </div>
-      )}
       {children}
-      {showStructuralSectionFallback && (
-        <div className="mx-1 mt-2 rounded-xl border border-[#10B981]/35 bg-white p-3 text-[10px] leading-relaxed text-[#065F46] shadow-[0_1px_0_rgba(16,185,129,0.08)]">
-          <p className="mb-3 text-[11px] leading-snug">
-            {CV_DIFF_STRUCTURAL_SECTION_MESSAGE}
-          </p>
-          <CvDiffActionPair
-            className="flex items-center justify-end gap-1.5"
-            rejectLabel="✕ Reject all"
-            acceptLabel="✓ Accept all"
-            onReject={() => onReject?.(sectionDiffCallbackIndex)}
-            onAccept={() => onAccept?.(sectionDiffCallbackIndex)}
-          />
+      {showStructuralSectionFallback || showEmptyDiffFallback ? (
+        <div className={card}>
+          {cardHeader('Suggested change')}
+          <div className="px-3.5 py-3">
+            <p className="text-[12px] leading-relaxed text-[#344054]">
+              {showStructuralSectionFallback
+                ? CV_DIFF_STRUCTURAL_SECTION_MESSAGE
+                : CV_DIFF_EMPTY_PREVIEW_MESSAGE}
+            </p>
+            <CvDiffActionPair
+              tone="paper"
+              className="mt-3 flex items-center justify-end gap-2"
+              rejectLabel="Keep mine"
+              acceptLabel="Use this"
+              onReject={() => onReject?.(sectionDiffCallbackIndex)}
+              onAccept={() => onAccept?.(sectionDiffCallbackIndex)}
+            />
+          </div>
         </div>
-      )}
-      {showEmptyDiffFallback && (
-        <div className="mx-1 mt-2 rounded-xl border border-[#10B981]/35 bg-white p-3 text-[10px] leading-relaxed text-[#065F46] shadow-[0_1px_0_rgba(16,185,129,0.08)]">
-          <p className="mb-3 text-[11px] leading-snug">
-            {CV_DIFF_EMPTY_PREVIEW_MESSAGE}
-          </p>
-          <CvDiffActionPair
-            className="flex items-center justify-end gap-1.5"
-            rejectLabel="✕ Reject all"
-            acceptLabel="✓ Accept all"
-            onReject={() => onReject?.(sectionDiffCallbackIndex)}
-            onAccept={() => onAccept?.(sectionDiffCallbackIndex)}
-          />
-        </div>
-      )}
+      ) : null}
       {hasChanges && (
-        <div className="mx-1 mt-2 rounded-xl border border-[#10B981]/35 bg-white p-3 text-[10px] leading-relaxed shadow-[0_1px_0_rgba(16,185,129,0.08)]">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#047857]">
-            AI Suggested Changes
-          </p>
-          {sectionChangedFields!.map((cf, i) => {
-            const sectionHint = id;
-            const beforeDisplay = cvDiffFieldDisplayText(
-              cf.before,
-              sectionHint,
-              cf.fieldPath ?? cf.field ?? '',
-            );
-            const afterDisplay = cvDiffFieldDisplayText(
-              cf.after,
-              sectionHint,
-              cf.fieldPath ?? cf.field ?? '',
-            );
-            const fieldCallbackIndex =
-              sectionDiffCallbackIndex ??
-              cf.sectionDiffIndex ??
-              (sectionChangedFields!.length === 1 ? undefined : i);
-            return (
-              <div
-                key={i}
-                className="mb-2.5 rounded-lg border border-[#22C55E]/35 bg-[#ECFDF5] p-2.5 last:mb-0"
-              >
-                <CvAiPatchDiffView
-                  title={formatDiffTitle(
-                    (cf.fieldLabel ?? cf.fieldPath ?? cf.field ?? '').trim(),
-                  )}
-                  before={beforeDisplay}
-                  after={afterDisplay}
-                  compact
-                />
-                <CvDiffActionPair
-                  className="mt-2 flex items-center justify-end gap-1.5"
-                  rejectLabel="✕ Reject"
-                  acceptLabel="✓ Accept"
-                  onReject={() => onReject?.(fieldCallbackIndex)}
-                  onAccept={() => onAccept?.(fieldCallbackIndex)}
-                />
-              </div>
-            );
-          })}
+        <div className={card}>
+          {cardHeader(
+            sectionChangedFields!.length > 1
+              ? `${sectionChangedFields!.length} suggested changes`
+              : 'Suggested rewrite',
+          )}
+          <div className="divide-y divide-[#EAECF0]">
+            {sectionChangedFields!.map((cf, i) => {
+              const sectionHint = id;
+              const beforeDisplay = cvDiffFieldDisplayText(
+                cf.before,
+                sectionHint,
+                cf.fieldPath ?? cf.field ?? '',
+              );
+              const afterDisplay = cvDiffFieldDisplayText(
+                cf.after,
+                sectionHint,
+                cf.fieldPath ?? cf.field ?? '',
+              );
+              const fieldCallbackIndex =
+                sectionDiffCallbackIndex ??
+                cf.sectionDiffIndex ??
+                (sectionChangedFields!.length === 1 ? undefined : i);
+              return (
+                <div key={i} className="px-3.5 py-3">
+                  <CvAiPatchDiffView
+                    tone="paper"
+                    title={
+                      sectionChangedFields!.length > 1
+                        ? formatDiffTitle(
+                            (
+                              cf.fieldLabel ??
+                              cf.fieldPath ??
+                              cf.field ??
+                              ''
+                            ).trim(),
+                          )
+                        : undefined
+                    }
+                    before={beforeDisplay}
+                    after={afterDisplay}
+                    compact
+                  />
+                  <CvDiffActionPair
+                    tone="paper"
+                    className="mt-2.5 flex items-center justify-end gap-2"
+                    rejectLabel="Keep mine"
+                    acceptLabel="Use this"
+                    onReject={() => onReject?.(fieldCallbackIndex)}
+                    onAccept={() => onAccept?.(fieldCallbackIndex)}
+                  />
+                </div>
+              );
+            })}
+          </div>
           {sectionChangedFields!.length > 1 ? (
             <CvDiffActionPair
-              className="mt-3 flex items-center justify-end gap-1.5"
-              rejectLabel={
-                gCvDocPreviewDiffMultiSection
-                  ? '✕ Reject section'
-                  : '✕ Reject all'
-              }
+              tone="paper"
+              className="flex items-center justify-end gap-2 border-t border-[#EAECF0] bg-[#F9FAFB] px-3.5 py-2.5"
+              rejectLabel="Keep all mine"
               acceptLabel={
-                gCvDocPreviewDiffMultiSection
-                  ? '✓ Accept section'
-                  : '✓ Accept all'
+                gCvDocPreviewDiffMultiSection ? 'Use this section' : 'Use all'
               }
               onReject={() => onReject?.(sectionDiffCallbackIndex)}
               onAccept={() => onAccept?.(sectionDiffCallbackIndex)}

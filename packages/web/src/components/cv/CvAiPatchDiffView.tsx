@@ -4,49 +4,61 @@ import {
   cvDiffAfterTextHasMetricPlaceholders,
   splitCvMetricPlaceholders,
 } from '@/lib/cvAiPatchDisplay';
+import { wordDiff } from '@/lib/cvWordDiff';
 import { cn } from '@/lib/utils';
 
 export type CvAiPatchDiffViewProps = {
   before: string;
   after: string;
-  /** Optional field label above the diff blocks. */
+  /** Optional field label above the change. */
   title?: string;
   className?: string;
   compact?: boolean;
+  /** `paper`: shown on the white CV page; `theme`: on app surfaces (light or dark). */
+  tone?: 'theme' | 'paper';
 };
 
-function AfterTextWithPlaceholders({ text }: { text: string }) {
-  const segments = splitCvMetricPlaceholders(text);
-  const hasPlaceholders = cvDiffAfterTextHasMetricPlaceholders(text);
+const TONES = {
+  paper: {
+    label: 'text-[#475467]',
+    text: 'text-[#101828]',
+    added: 'rounded-[3px] bg-[#DCFAE6] px-0.5 text-[#085D3A]',
+    removed: 'text-[#B42318]/80 line-through decoration-[#F04438]/60',
+    hint: 'text-[#93370D]',
+  },
+  theme: {
+    label: 'text-text-tertiary',
+    text: 'text-text-primary',
+    added: 'rounded-[3px] bg-success-subtle px-0.5 text-success-text',
+    removed: 'text-danger-text/80 line-through decoration-danger-text/60',
+    hint: 'text-warning-text',
+  },
+} as const;
+
+function AddedText({ text, className }: { text: string; className: string }) {
   return (
     <>
-      <p className="max-h-[min(40vh,320px)] overflow-y-auto whitespace-pre-wrap break-words">
-        {segments.map((seg, i) =>
-          seg.isPlaceholder ? (
-            <mark
-              key={`${i}-${seg.text}`}
-              className="rounded bg-amber-200/90 px-0.5 font-semibold text-amber-950 not-italic"
-            >
-              {seg.text}
-            </mark>
-          ) : (
-            <span key={`${i}-t`}>{seg.text}</span>
-          ),
-        )}
-      </p>
-      {hasPlaceholders ? (
-        <p className="mt-1.5 text-[9px] leading-snug text-amber-700/90">
-          Replace bracketed placeholders with your real numbers before
-          submitting your CV.
-        </p>
-      ) : null}
+      {splitCvMetricPlaceholders(text).map((seg, i) =>
+        seg.isPlaceholder ? (
+          <mark
+            key={`${i}-${seg.text}`}
+            className="rounded-[3px] bg-[#FEF0C7] px-0.5 font-semibold text-[#93370D]"
+          >
+            {seg.text}
+          </mark>
+        ) : (
+          <span key={`${i}-t`} className={className}>
+            {seg.text}
+          </span>
+        ),
+      )}
     </>
   );
 }
 
 /**
- * Human-readable before/after for AI patches: muted red strikethrough (old),
- * green (new). Used in CV preview, improvements, assistant, and tailoring.
+ * One readable paragraph of an AI change: unchanged words as they are, removed words struck
+ * through, new words highlighted. Used in the CV, Improvements, the assistant and tailoring.
  */
 export function CvAiPatchDiffView({
   before,
@@ -54,59 +66,47 @@ export function CvAiPatchDiffView({
   title,
   className,
   compact = false,
+  tone = 'theme',
 }: CvAiPatchDiffViewProps) {
   const beforeText = before.trim();
   const afterText = after.trim();
   if (!beforeText && !afterText) return null;
-
-  const pad = compact ? 'px-2 py-1' : 'px-2 py-1.5';
-  const textSize = compact ? 'text-[10px]' : 'text-[10px]';
+  const t = TONES[tone];
+  const parts = wordDiff(beforeText, afterText);
 
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn('min-w-0', className)}>
       {title ? (
-        <p
-          className={cn(
-            'font-semibold uppercase tracking-[0.08em] text-[#065F46]',
-            compact ? 'text-[9px]' : 'text-[10px]',
-          )}
-        >
-          {title}
+        <p className={cn('mb-1 text-[11px] font-medium', t.label)}>{title}</p>
+      ) : null}
+      <p
+        className={cn(
+          'max-h-[min(40vh,320px)] overflow-y-auto whitespace-pre-wrap break-words leading-relaxed',
+          compact ? 'text-[12px]' : 'text-[13px]',
+          t.text,
+        )}
+      >
+        {parts.map((part, i) =>
+          part.kind === 'same' ? (
+            <span key={i}>{part.text}</span>
+          ) : part.kind === 'added' ? (
+            <AddedText key={i} text={part.text} className={t.added} />
+          ) : (
+            <span key={i} className={t.removed}>
+              {part.text}
+            </span>
+          ),
+        )}
+      </p>
+      {afterText && !beforeText ? null : !afterText ? (
+        <p className={cn('mt-1 text-[11px]', t.label)}>
+          This text will be removed.
         </p>
       ) : null}
-      {beforeText ? (
-        <div
-          className={cn(
-            'rounded-md border border-danger-border bg-rose-50 leading-snug text-rose-700',
-            pad,
-            textSize,
-          )}
-        >
-          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-rose-500">
-            Current version
-          </p>
-          <p
-            className={cn(
-              'max-h-[min(40vh,320px)] overflow-y-auto whitespace-pre-wrap break-words line-through decoration-rose-400/70',
-            )}
-          >
-            {beforeText}
-          </p>
-        </div>
-      ) : null}
-      {afterText ? (
-        <div
-          className={cn(
-            'rounded-md border border-success-border bg-emerald-50 leading-snug text-emerald-800',
-            pad,
-            textSize,
-          )}
-        >
-          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-emerald-600">
-            AI suggestion
-          </p>
-          <AfterTextWithPlaceholders text={afterText} />
-        </div>
+      {cvDiffAfterTextHasMetricPlaceholders(afterText) ? (
+        <p className={cn('mt-1.5 text-[11px] leading-snug', t.hint)}>
+          Swap the highlighted placeholders for your real numbers.
+        </p>
       ) : null}
     </div>
   );
