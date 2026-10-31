@@ -9,10 +9,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-[#00C9B1] text-[#080A0A] hover:bg-[#00C9B1]',
+        primary:
+          'bg-accent-solid text-text-on-accent hover:bg-accent-solid-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus',
         ghost:
-          'border border-white/15 bg-white/[0.02] text-white hover:border-[#00C9B1]/40 hover:bg-[#00C9B1]/10',
-        glow: 'bg-[#00C9B1] text-[#080A0A] shadow-[0_0_24px_rgba(0,201,177,0.35)] hover:shadow-[0_0_30px_rgba(0,201,177,0.5)]',
+          'border border-border-default bg-transparent text-text-primary hover:border-accent-border hover:bg-accent-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus',
+        glow: 'bg-accent-solid text-text-on-accent shadow-lg hover:bg-accent-solid-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus',
         /** Theme-aware primary (CareerKite lime). */
         accent:
           'h-12 rounded-xl bg-accent-solid text-[15px] text-text-on-accent shadow-[inset_0_-2px_0_rgb(0_0_0/0.08)] hover:bg-accent-solid-hover active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus',
