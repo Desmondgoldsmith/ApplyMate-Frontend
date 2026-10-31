@@ -233,13 +233,29 @@ function FitToViewport({ children }: { children: ReactNode }) {
 }
 
 /** Real-time 3D CareerKite mark. Load lazily; render only when motion is allowed. */
-export default function Kite3D(props: Kite3DProps) {
+export default function Kite3D({
+  onContextLost,
+  ...props
+}: Kite3DProps & {
+  /** The GPU dropped the WebGL context; the canvas would otherwise stay blank. */
+  onContextLost?: () => void;
+}) {
   return (
     <Canvas
       flat
       dpr={[1, 1.75]}
       camera={{ position: [0, 0, 6.2], fov: 34 }}
       gl={{ antialias: true, alpha: true, powerPreference: 'low-power' }}
+      onCreated={({ gl }) => {
+        gl.domElement.addEventListener(
+          'webglcontextlost',
+          (e) => {
+            e.preventDefault();
+            onContextLost?.();
+          },
+          { once: true },
+        );
+      }}
       aria-hidden
     >
       <ambientLight intensity={0.55} />

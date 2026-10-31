@@ -2,7 +2,7 @@
 
 import { useReducedMotion } from 'framer-motion';
 import dynamic from 'next/dynamic';
-import { useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
 import { CareerKiteMark } from '@/components/brand/CareerKiteMark';
 import { useTheme } from '@/components/theme/ThemeProvider';
@@ -26,6 +26,9 @@ function canRender3d(): boolean {
 }
 
 const STATIC_SIZE = 200;
+/** After a lost WebGL context, retry the 3D kite a couple of times, then stay static. */
+const MAX_CONTEXT_RETRIES = 2;
+const CONTEXT_RETRY_MS = 3000;
 
 function StaticKite() {
   return (
@@ -55,11 +58,27 @@ export function KiteHero({ className }: { className?: string }) {
     canRender3d,
     () => false,
   );
+  const [lostCount, setLostCount] = useState(0);
+  const [contextLost, setContextLost] = useState(false);
+
+  useEffect(() => {
+    if (!contextLost || lostCount > MAX_CONTEXT_RETRIES) return;
+    const id = window.setTimeout(() => setContextLost(false), CONTEXT_RETRY_MS);
+    return () => window.clearTimeout(id);
+  }, [contextLost, lostCount]);
 
   return (
     <div className={cn('relative', className)}>
-      {show3d && !reducedMotion ? (
-        <Kite3D inkColor={INK[resolvedTheme]} dotColor={DOT[resolvedTheme]} />
+      {show3d && !reducedMotion && !contextLost ? (
+        <Kite3D
+          key={lostCount}
+          inkColor={INK[resolvedTheme]}
+          dotColor={DOT[resolvedTheme]}
+          onContextLost={() => {
+            setContextLost(true);
+            setLostCount((n) => n + 1);
+          }}
+        />
       ) : (
         <StaticKite />
       )}
