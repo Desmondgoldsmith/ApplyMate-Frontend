@@ -4,11 +4,7 @@ import { queryKeys } from '@/lib/queryKeys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef } from 'react';
 
-import {
-  api,
-  type CVScorePayload,
-  type CvImprovementsPayload,
-} from '@/lib/api';
+import { api, type CVScorePayload } from '@/lib/api';
 import { cvSuggestionsQueryKey } from '@/lib/cvSuggestionsQuery';
 
 export type RunDetailedScoreVariables =
@@ -70,26 +66,23 @@ export function useRunCvDetailedScore() {
         targetRole,
       });
     },
-    onSuccess: (payload, variables) => {
+    onSuccess: (_payload, variables) => {
       const { ephemeralJobPreview, cvProfileId } =
         normalizeRunDetailedVariables(variables);
       if (ephemeralJobPreview) return;
 
-      const list = payload.improvements ?? [];
-      const next: CvImprovementsPayload = {
-        improvements: list,
-        needsScoring: false,
-        pendingSuggestionsCount: list.length,
-      };
-      queryClient.setQueryData<CvImprovementsPayload>(
-        cvSuggestionsQueryKey(cvProfileId),
-        next,
-      );
+      // Reload both from the server rather than writing this response into them: the scan's
+      // tip list is not the user's queue (earlier tips, previews, dismissals) and its score has
+      // a different shape, which made tips vanish and section scores drop after every edit.
       const id = cvProfileId?.trim();
-      queryClient.setQueryData<CVScorePayload>(
-        queryKeys.cv.score(id ?? 'default'),
-        payload,
-      );
+      void queryClient.invalidateQueries({
+        queryKey: cvSuggestionsQueryKey(cvProfileId),
+        exact: true,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.cv.score(id ?? 'default'),
+        exact: true,
+      });
       if (id) {
         void queryClient.invalidateQueries({
           queryKey: queryKeys.cv.profile(id),
