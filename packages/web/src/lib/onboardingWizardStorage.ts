@@ -14,6 +14,8 @@ export type UploadPhase = 'zone' | 'summary' | 'score' | 'design';
 export type CvEntryPhase = 'template' | 'paths';
 
 export type StoredWizardState = {
+  /** Owner of the saved progress; another account on the same browser never resumes it. */
+  userId: string;
   step: 1 | 2 | 3;
   cvPath: CvPath;
   /** Step 2: template previews first, then chat/paste/upload options. */
@@ -33,14 +35,18 @@ export type StoredWizardState = {
   referralOther?: string;
 };
 
-export function readStoredWizard(): Partial<StoredWizardState> | null {
-  if (typeof window === 'undefined') return null;
+/** Saved progress for `userId`, or null when there is none or it belongs to someone else. */
+export function readStoredWizard(
+  userId: string | null | undefined,
+): Partial<StoredWizardState> | null {
+  if (typeof window === 'undefined' || !userId) return null;
   try {
     const raw =
       window.localStorage.getItem(KEY) ?? window.sessionStorage.getItem(KEY);
     if (!raw) return null;
     const o = JSON.parse(raw) as Record<string, unknown>;
-    const out: Partial<StoredWizardState> = {};
+    if (o.userId !== userId) return null;
+    const out: Partial<StoredWizardState> = { userId };
     if (o.step === 1 || o.step === 2 || o.step === 3) out.step = o.step;
     if (
       o.cvPath === 'upload' ||
@@ -95,7 +101,7 @@ export function readStoredWizard(): Partial<StoredWizardState> | null {
       out.referralSource = o.referralSource;
     if (typeof o.referralOther === 'string')
       out.referralOther = o.referralOther;
-    return Object.keys(out).length ? out : null;
+    return Object.keys(out).length > 1 ? out : null;
   } catch {
     return null;
   }

@@ -193,6 +193,7 @@ export default function OnboardingPage() {
   const setAuth = useAuthStore((s) => s.setAuth);
   const accessToken = useAuthStore((s) => s.accessToken);
   const authUser = useAuthStore((s) => s.user);
+  const wizardOwnerId = authUser?.id ?? me?.id ?? null;
 
   const serverHydratedRef = useRef(false);
   const sessionBootRef = useRef(false);
@@ -315,9 +316,9 @@ export default function OnboardingPage() {
     : [];
 
   useLayoutEffect(() => {
-    if (sessionBootRef.current) return;
+    if (sessionBootRef.current || !wizardOwnerId) return;
     sessionBootRef.current = true;
-    const s = readStoredWizard();
+    const s = readStoredWizard(wizardOwnerId);
     if (!s) return;
     if (s.step === 2 || s.step === 3) setStep(s.step);
     if (
@@ -377,12 +378,14 @@ export default function OnboardingPage() {
       setFocusHired(hired);
       setFocusStudent(stud);
     }
-  }, []);
+  }, [wizardOwnerId]);
 
   useEffect(() => {
     // Do not persist step 3 — otherwise we overwrite `clearStoredWizard()` after onboarding completes.
     if (step === 3) return;
+    if (!wizardOwnerId || !sessionBootRef.current) return;
     writeStoredWizard({
+      userId: wizardOwnerId,
       step,
       cvPath,
       cvEntryPhase,
@@ -412,10 +415,11 @@ export default function OnboardingPage() {
     targetRolesText,
     referralSource,
     referralOther,
+    wizardOwnerId,
   ]);
 
   useEffect(() => {
-    if (!accessToken) return;
+    if (!accessToken || !wizardOwnerId) return;
     if (serverHydratedRef.current) return;
     if (onboardingStatus.isPending) return;
     if (onboardingStatus.isError) {
@@ -437,7 +441,7 @@ export default function OnboardingPage() {
       typeof d.step === 'number' && d.step >= 1 && d.step <= 3
         ? (d.step as OnboardingStep)
         : undefined;
-    const stored = readStoredWizard();
+    const stored = readStoredWizard(wizardOwnerId);
     const storedStep = stored?.step;
     const mergedStep =
       serverStep !== undefined
@@ -485,7 +489,7 @@ export default function OnboardingPage() {
       }
     });
     if (d.step === 2 && d.hasCV === true) {
-      const st = readStoredWizard();
+      const st = readStoredWizard(wizardOwnerId);
       const path = st?.cvPath;
       if (path === 'upload') {
         setCvPath('upload');
@@ -506,7 +510,7 @@ export default function OnboardingPage() {
         })();
       }
     }
-  }, [accessToken, onboardingStatus, router]);
+  }, [accessToken, onboardingStatus, router, wizardOwnerId]);
 
   useEffect(() => {
     if (step !== 1) return;
