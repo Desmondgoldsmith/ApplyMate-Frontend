@@ -19,6 +19,7 @@ import {
   writeSectionOrderBannerDismissed,
   type CvSectionOrderSuggestResult,
 } from '@/lib/cvSectionOrderSuggest';
+import { savePendingCvEdits } from '@/lib/cvPendingEdits';
 import { refreshCvState } from '@/lib/refreshCvState';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
@@ -122,6 +123,7 @@ export function CvSectionOrderSuggestModal({
 
   const applyOrder = useMutation({
     mutationFn: async (sectionIds: string[]) => {
+      await savePendingCvEdits();
       return api.cv.reorderSections(sectionIds, profileId);
     },
     onSuccess: async (result) => {

@@ -2549,6 +2549,9 @@ export function CVBuilder({
       }
       setPreviewSectionOrder(dedupedOrder);
       if (mode !== 'dashboard' || !profileId) return;
+      // The refresh after reordering reloads the CV: store what the user typed first.
+      flushCvInlineEdits();
+      await flushDashboardAutosaveRef.current?.();
 
       let allSections = existingSections;
       try {

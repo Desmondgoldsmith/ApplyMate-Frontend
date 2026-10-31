@@ -1328,6 +1328,7 @@ export function CvClinicPageContent() {
       setTemplate(next);
       if (targetId?.trim()) writeCvDashboardTemplate(targetId, next);
       try {
+        await savePendingCvEdits();
         await api.cv.updateTemplate(next, targetId ?? undefined);
         await refreshCvState(targetId, {
           refreshProfile: true,
