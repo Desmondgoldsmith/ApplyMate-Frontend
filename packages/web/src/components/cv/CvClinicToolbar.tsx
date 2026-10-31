@@ -275,7 +275,10 @@ export function CvClinicToolbar({
           )}
         >
           {onUndo || onRedo ? (
-            <span className="mr-0.5 inline-flex items-center">
+            <span
+              data-tour="cv-undo"
+              className="mr-0.5 inline-flex items-center"
+            >
               <button
                 type="button"
                 className={cn(ghostToolClass, 'px-2 sm:px-2')}
@@ -316,6 +319,7 @@ export function CvClinicToolbar({
           </ToolbarToolButton>
           <ToolbarToolButton
             label="Scan"
+            data-tour="cv-scan"
             compact={compactToolLabels}
             disabled={isAtsScanPending}
             onClick={() => void onAtsCheck()}
@@ -333,6 +337,7 @@ export function CvClinicToolbar({
           <div className="relative" ref={moreRef}>
             <ToolbarToolButton
               label="More"
+              data-tour="cv-more"
               compact={compactToolLabels}
               onClick={() => setMoreOpen((o) => !o)}
               aria-expanded={moreOpen}

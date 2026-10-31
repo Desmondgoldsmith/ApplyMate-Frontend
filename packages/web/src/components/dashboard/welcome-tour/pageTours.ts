@@ -32,7 +32,13 @@ export const CV_TOUR_STEPS: WelcomeTourStep[] = [
     id: 'cv-page',
     target: 'cv-document',
     title: 'This is your CV',
-    body: 'Click any text to change it. Select words to make them bold, italic or a link. Everything saves on its own.',
+    body: 'Click any text to change it. Highlight words to make them bold, italic or a link. Drag a section by its ⠿ handle to move it. Everything saves on its own.',
+  },
+  {
+    id: 'cv-undo',
+    target: 'cv-undo',
+    title: 'Changed your mind?',
+    body: 'Undo and Redo take back any change, including ones made by AI.',
   },
   {
     id: 'cv-design',
@@ -45,6 +51,18 @@ export const CV_TOUR_STEPS: WelcomeTourStep[] = [
     target: 'cv-download',
     title: 'Download it',
     body: 'Get a PDF to send to employers, or a Word file if they ask for one.',
+  },
+  {
+    id: 'cv-scan',
+    target: 'cv-scan',
+    title: 'Get an AI review',
+    body: 'Scan reads your CV like a recruiter would and lists what to fix first.',
+  },
+  {
+    id: 'cv-more',
+    target: 'cv-more',
+    title: 'Spelling, versions and order',
+    body: 'Under More: check spelling, put your sections in the best order, or go back to an earlier version of your CV.',
   },
   {
     id: 'cv-tools-mobile',

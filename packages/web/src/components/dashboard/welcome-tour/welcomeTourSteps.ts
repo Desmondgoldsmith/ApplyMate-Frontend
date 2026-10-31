@@ -36,7 +36,7 @@ export const WELCOME_TOUR_STEPS: WelcomeTourStep[] = [
     id: 'cv',
     target: 'nav-cv',
     title: 'My CV',
-    body: 'Edit your CV, apply the suggested fixes and download it as a PDF.',
+    body: 'Edit your CV right on the page. An AI review tells you what to fix, spell check finds typos, and earlier versions are saved so you can always go back.',
   },
   {
     id: 'practice',
