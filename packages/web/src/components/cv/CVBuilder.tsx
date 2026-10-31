@@ -2036,10 +2036,18 @@ export function CVBuilder({
           t === 'skills'
         )
           return;
+        // Drop the row from the cached list now, so the next autosave does not send it back.
+        const removedId = rowId;
+        sectionsRef.current = sectionsRef.current.filter(
+          (s) => s.id !== removedId,
+        );
+        queryClient.setQueryData<CVSectionRecord[]>(
+          queryKeys.cv.sections(profileId),
+          (rows) => rows?.filter((s) => s.id !== removedId),
+        );
         void api.cv
           .removeSection(rowId, profileId)
           .then(async () => {
-            const row = sectionsRef.current.find((s) => s.id === rowId);
             const d = (row?.data ?? {}) as Record<string, unknown>;
             const label =
               (typeof d.title === 'string' && d.title.trim()) ||
@@ -2062,6 +2070,10 @@ export function CVBuilder({
             } catch {
               /* noop */
             }
+            void refreshCvState(queryClient, profileId, {
+              refreshProfile: true,
+              refreshSections: true,
+            });
           });
       }
     };
