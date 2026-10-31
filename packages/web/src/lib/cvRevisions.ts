@@ -17,6 +17,22 @@ export function cvRevisionReasonLabel(reason: CvRevisionReason): string {
   return CV_REVISION_REASON_LABELS[reason] ?? CV_REVISION_FALLBACK_LABEL;
 }
 
+/** What happened right after a version was saved (the change Restore undoes). */
+const CV_REVISION_EVENT_LABELS: Record<string, string> = {
+  cv_upload: 'Uploaded a new CV file',
+  cv_text_import: 'Imported CV text',
+  accept_all: 'Accepted all suggestions',
+  tailor_accept: 'Tailored for a job',
+  tailor_revert: 'Undid a tailored change',
+  before_restore: 'Restored an earlier version',
+  editing: 'Your edits',
+  ai_change: 'AI change',
+};
+
+export function cvRevisionEventLabel(reason: CvRevisionReason): string {
+  return CV_REVISION_EVENT_LABELS[reason] ?? 'Changes';
+}
+
 export const CV_VERSIONS_EMPTY_MESSAGE =
   'No saved versions yet. CareerKite saves one automatically while you edit and before big or AI changes.';
 

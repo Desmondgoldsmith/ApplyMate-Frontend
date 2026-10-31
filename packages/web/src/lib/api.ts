@@ -3331,11 +3331,21 @@ export type CvRevisionReason =
   | (string & {});
 
 /** GET /cv/profiles/:id/revisions — newest first, max 20. */
+/** One thing that changed after a saved version ("Job title · …", before → after). */
+export type CvRevisionChange = {
+  label: string;
+  before?: string;
+  after?: string;
+};
+
 export type CvRevisionSummary = {
   id: string;
   reason: CvRevisionReason;
   createdAt: string;
   sectionCount: number;
+  /** What changed after this version (what restoring it undoes); first few only. */
+  changes?: CvRevisionChange[];
+  changeCount?: number;
 };
 
 /** POST /cv/profiles/:id/revisions/:revisionId/restore */
@@ -4601,11 +4611,33 @@ function normalizeCvRevisionSummary(raw: unknown): CvRevisionSummary | null {
   const id = typeof o.id === 'string' ? o.id.trim() : '';
   if (!id) return null;
   const sectionCount = Number(o.sectionCount);
+  const text = (v: unknown) =>
+    typeof v === 'string' && v.trim() ? v.trim() : undefined;
+  const changes: CvRevisionChange[] = Array.isArray(o.changes)
+    ? o.changes.flatMap((c): CvRevisionChange[] => {
+        if (c === null || typeof c !== 'object') return [];
+        const r = c as Record<string, unknown>;
+        const label = text(r.label);
+        if (!label) return [];
+        const before = text(r.before);
+        const after = text(r.after);
+        return [
+          {
+            label,
+            ...(before ? { before } : {}),
+            ...(after ? { after } : {}),
+          },
+        ];
+      })
+    : [];
+  const changeCount = Number(o.changeCount);
   return {
     id,
     reason: typeof o.reason === 'string' ? o.reason : '',
     createdAt: typeof o.createdAt === 'string' ? o.createdAt : '',
     sectionCount: Number.isFinite(sectionCount) ? sectionCount : 0,
+    changes,
+    changeCount: Number.isFinite(changeCount) ? changeCount : changes.length,
   };
 }
 

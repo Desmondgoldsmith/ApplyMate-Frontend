@@ -19,6 +19,7 @@ import {
   CV_VERSION_NOT_AVAILABLE_MESSAGE,
   CV_VERSION_RESTORED_MESSAGE,
   CV_VERSIONS_EMPTY_MESSAGE,
+  cvRevisionEventLabel,
   cvRevisionReasonLabel,
 } from '@/lib/cvRevisions';
 import { formatRelativeEdited } from '@/lib/format-relative-edited';
@@ -159,40 +160,76 @@ export function CvVersionHistoryModal({
   } else {
     body = (
       <ul className="divide-y divide-border-subtle" aria-label="Saved versions">
-        {revisions.map((rev) => (
-          <li key={rev.id} className="flex items-center gap-3 py-3">
-            <History
-              className="h-4 w-4 shrink-0 text-accent-text"
-              aria-hidden
-            />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-text-primary">
-                {cvRevisionReasonLabel(rev.reason)}
-              </p>
-              <p
-                className="text-xs text-text-tertiary"
-                title={formatFullDate(rev.createdAt)}
+        {revisions.map((rev) => {
+          const changes = rev.changes ?? [];
+          const more = (rev.changeCount ?? changes.length) - changes.length;
+          return (
+            <li key={rev.id} className="flex items-start gap-3 py-3">
+              <History
+                className="mt-0.5 h-4 w-4 shrink-0 text-accent-text"
+                aria-hidden
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-text-primary">
+                  {changes.length > 0
+                    ? cvRevisionEventLabel(rev.reason)
+                    : cvRevisionReasonLabel(rev.reason)}
+                  <span
+                    className="font-normal text-text-tertiary"
+                    title={formatFullDate(rev.createdAt)}
+                  >
+                    {' · '}
+                    {formatRelativeEdited(rev.createdAt)}
+                  </span>
+                </p>
+                {changes.length > 0 ? (
+                  <ul className="mt-1.5 space-y-1.5">
+                    {changes.map((c, i) => (
+                      <li key={i} className="text-[13px] leading-snug">
+                        <span className="text-text-secondary">{c.label}</span>
+                        {c.before || c.after ? (
+                          <span className="mt-0.5 block text-xs">
+                            {c.before ? (
+                              <span className="text-danger-text line-through decoration-1">
+                                {c.before}
+                              </span>
+                            ) : null}
+                            {c.before && c.after ? (
+                              <span className="mx-1 text-text-tertiary">→</span>
+                            ) : null}
+                            {c.after ? (
+                              <span className="text-success-text">
+                                {c.after}
+                              </span>
+                            ) : null}
+                          </span>
+                        ) : null}
+                      </li>
+                    ))}
+                    {more > 0 ? (
+                      <li className="text-xs text-text-tertiary">
+                        +{more} more change{more === 1 ? '' : 's'}
+                      </li>
+                    ) : null}
+                  </ul>
+                ) : null}
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                className="shrink-0 border border-border-subtle text-xs"
+                title="Take your CV back to before these changes"
+                disabled={restoreDisabled}
+                onClick={() => setConfirmTarget(rev)}
               >
-                {formatRelativeEdited(rev.createdAt)}
-                {rev.sectionCount > 0
-                  ? ` · ${rev.sectionCount} section${rev.sectionCount === 1 ? '' : 's'}`
-                  : null}
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              className="shrink-0 border border-border-subtle text-xs"
-              disabled={restoreDisabled}
-              onClick={() => setConfirmTarget(rev)}
-            >
-              {restore.isPending && restore.variables === rev.id ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-              ) : null}
-              Restore
-            </Button>
-          </li>
-        ))}
+                {restore.isPending && restore.variables === rev.id ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                ) : null}
+                Restore
+              </Button>
+            </li>
+          );
+        })}
       </ul>
     );
   }
@@ -203,7 +240,7 @@ export function CvVersionHistoryModal({
         open={open}
         onOpenChange={onOpenChange}
         title="Version history"
-        description="Saved automatically while you edit and before big or AI changes. Restoring keeps your current CV as a version too, so you can switch back."
+        description="Each version shows what changed after it. Restore takes your CV back to before those changes, and your current CV is saved too, so you can switch back."
         className="max-w-lg"
         scrollBody
       >

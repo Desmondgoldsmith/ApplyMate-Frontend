@@ -132,8 +132,34 @@ describe('CvVersionHistoryModal', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Saved version')).toBeInTheDocument();
     expect(screen.getAllByText(/2 hours ago/)).toHaveLength(6);
-    expect(screen.getByText(/2 hours ago · 1 section$/)).toBeInTheDocument();
     expect(listRevisions).toHaveBeenCalledWith(PROFILE_ID);
+  });
+
+  it('shows what changed after each version', async () => {
+    listRevisions.mockResolvedValueOnce([
+      {
+        ...revision('r1', 'ai_change'),
+        changes: [
+          {
+            label: 'Bullet 4 · Frontend Developer at Google',
+            before: 'Fixed bugs',
+            after: 'Cut critical bugs by 25%',
+          },
+          { label: 'Added Hobbies section' },
+        ],
+        changeCount: 5,
+      },
+    ]);
+    renderModal();
+
+    expect(await screen.findByText('AI change')).toBeInTheDocument();
+    expect(
+      screen.getByText('Bullet 4 · Frontend Developer at Google'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Fixed bugs')).toBeInTheDocument();
+    expect(screen.getByText('Cut critical bugs by 25%')).toBeInTheDocument();
+    expect(screen.getByText('Added Hobbies section')).toBeInTheDocument();
+    expect(screen.getByText('+3 more changes')).toBeInTheDocument();
   });
 
   it('shows the empty state when no versions exist', async () => {
