@@ -7812,6 +7812,37 @@ async function cvExportDownload(
   }
 }
 
+/**
+ * POST /cv/profiles/:id/export/pdf-from-html — prints the CV page the editor rendered, so the PDF
+ * matches the screen exactly. Callers fall back to {@link cvExport.downloadPdf} on failure.
+ */
+async function downloadCvPdfFromHtml(opts: {
+  cvProfileId: string;
+  html: string;
+  jobAnalysisId?: string;
+}): Promise<CvExportDownload> {
+  try {
+    const res = await axiosClient.post<Blob>(
+      `/cv/profiles/${encodeURIComponent(opts.cvProfileId)}/export/pdf-from-html`,
+      { html: opts.html },
+      {
+        params: opts.jobAnalysisId?.trim()
+          ? { jobAnalysisId: opts.jobAnalysisId.trim() }
+          : undefined,
+        responseType: 'blob',
+        timeout: CV_EXPORT_TIMEOUT_MS,
+      },
+    );
+    return {
+      blob: res.data,
+      filename: resolveExportFilename(res.headers, 'CV.pdf'),
+    };
+  } catch (e) {
+    await parseJsonBlobErrorResponse(e);
+    throw e;
+  }
+}
+
 /** 404/405 from the profile-scoped route means the server predates it. */
 function isMissingCvExportRoute(e: unknown): boolean {
   if (!axios.isAxiosError(e)) return false;
@@ -7867,6 +7898,7 @@ async function downloadCvExportOnce(
 const cvExport = {
   downloadPdf: (opts: CvExportRequestOpts): Promise<CvExportDownload> =>
     downloadCvExport('pdf', opts),
+  downloadPdfFromHtml: downloadCvPdfFromHtml,
   downloadDocx: (opts: CvExportRequestOpts): Promise<CvExportDownload> =>
     downloadCvExport('docx', opts),
 };

@@ -26,6 +26,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactElement,
   type ReactNode,
 } from 'react';
 import type { CvAssistantRunResult } from '@/components/cv/CVEditContext';
@@ -100,6 +101,7 @@ import { inferCvProfileNameFromProfile } from '@/lib/infer-cv-profile-name';
 import { buildCvNamingForExport } from '@/lib/cv-profile-naming';
 import { normalizeCvDiffPreviewParams } from '@/lib/cvAiPatchDisplay';
 import { getFormatRecommendation } from '@/lib/cvFormatRecommendation';
+import { buildCvPrintDocument } from '@/lib/cvPrintDocument';
 import { cvDiffPreviewBuilderSection } from '@/lib/cvDiffPreviewSection';
 import {
   assistantChangedFieldLabel,
@@ -386,6 +388,7 @@ export function CvClinicPageContent() {
   const improvements = useCVImprovements(hasCv && Boolean(targetId), targetId);
   const runScan = useRunCvDetailedScore();
   const exportCv = useExportCV();
+  const printDocumentRef = useRef<(() => ReactElement) | null>(null);
   /** Covers the reorder / refetch / template steps that run before the export mutation starts. */
   const [exportInFlight, setExportInFlight] = useState(false);
   const isExportPending = exportInFlight || exportCv.isPending;
@@ -1507,6 +1510,12 @@ export function CvClinicPageContent() {
         await exportCv.mutateAsync({
           format,
           template,
+          printDocument: () => {
+            const render = printDocumentRef.current;
+            return render
+              ? buildCvPrintDocument(render())
+              : Promise.resolve(null);
+          },
           cvProfileId: targetId ?? undefined,
           jobAnalysisId: isTailorMode
             ? jobAnalysisIdParam || undefined
@@ -4208,6 +4217,7 @@ export function CvClinicPageContent() {
                 setCvServerHydrateNonce((n) => n + 1)
               }
               onDataSnapshotChange={setCvDataSnapshot}
+              printDocumentRef={printDocumentRef}
               cvAssistantCommand={runAssistantCommand}
               cvAssistantBusy={assistantBusy}
               cvAssistantBusyMessage={assistantBusyMessage}

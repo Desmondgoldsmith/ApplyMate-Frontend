@@ -14,7 +14,12 @@ import {
   Minimize2,
   TriangleAlert,
 } from 'lucide-react';
-import type { CSSProperties, ReactNode } from 'react';
+import type {
+  CSSProperties,
+  MutableRefObject,
+  ReactElement,
+  ReactNode,
+} from 'react';
 import {
   useCallback,
   useContext,
@@ -30,6 +35,7 @@ import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { A4FitFrame } from '@/components/cv/A4FitFrame';
+import { cvDataForPrint, printSectionVisibility } from '@/lib/cvPrintData';
 import { DashboardMainContext } from '@/components/dashboard/DashboardMainContext';
 import { Button } from '@/components/ui/Button';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -623,6 +629,8 @@ export type CVBuilderProps = {
   externalPatch?: Partial<CVBuilderData> | null;
   externalPatchNonce?: number;
   onDataSnapshotChange?: (data: CVBuilderData) => void;
+  /** Filled with a read-only copy of the page as drawn, used to print the PDF exactly as shown. */
+  printDocumentRef?: MutableRefObject<(() => ReactElement) | null>;
   /** CV Clinic: preview teardrop assistant uses the same command API as the floating panel. */
   cvAssistantCommand?: (
     command: string,
@@ -730,6 +738,7 @@ export function CVBuilder({
   externalPatch = null,
   externalPatchNonce = 0,
   onDataSnapshotChange,
+  printDocumentRef,
   cvAssistantCommand,
   cvAssistantBusy,
   cvAssistantBusyMessage,
@@ -5529,6 +5538,43 @@ export function CVBuilder({
       handlePreviewReorderSections,
     ],
   );
+
+  useEffect(() => {
+    if (!printDocumentRef) return;
+    printDocumentRef.current = () => {
+      const printData = cvDataForPrint(data);
+      return (
+        <CVEditProvider
+          value={{
+            ...cvEditContextValue,
+            isEditing: false,
+            activeSection: null,
+            focusedSection: null,
+            focusedEntryId: null,
+            focusedEntrySection: null,
+            diffSection: null,
+            incompleteSectionIds: new Set<string>(),
+            spellIssuesBySection: {},
+            spellIssueEntriesBySection: {},
+            spellIssuesByField: {},
+            recruiterScanHeatmap: null,
+          }}
+        >
+          <CVDocumentPreview
+            data={ensureCvPreviewData(printData)}
+            template={template}
+            activeSection={null}
+            existingSections={existingSections}
+            sectionVisibility={printSectionVisibility(
+              printData,
+              sectionVisibility,
+            )}
+            sectionOrder={previewSectionOrder}
+          />
+        </CVEditProvider>
+      );
+    };
+  });
 
   const previewDocumentFrame = useMemo(
     () => (

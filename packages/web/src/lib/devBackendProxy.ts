@@ -33,7 +33,8 @@ export const DEV_BACKEND_PROXY_TIMEOUT_MS = 90_000;
 /** CV export routes may take up to 120s on the API (headless Chromium cold start). */
 export const DEV_BACKEND_PROXY_EXPORT_TIMEOUT_MS = 130_000;
 
-const CV_EXPORT_API_PATH = /^cv\/(profiles\/[^/]+\/)?export\/(pdf|docx)$/;
+const CV_EXPORT_API_PATH =
+  /^cv\/(profiles\/[^/]+\/)?export\/(pdf|docx|pdf-from-html)$/;
 
 /** Upstream timeout for a proxied path such as `cv/profiles/:id/export/pdf` (no `/api` prefix). */
 export function devBackendProxyTimeoutMs(apiPath: string): number {

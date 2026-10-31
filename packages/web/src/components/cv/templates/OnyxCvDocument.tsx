@@ -293,6 +293,7 @@ function flattenSkillList(data: CVBuilderData, inline: boolean): string[] {
 function CvPreviewWatermarkFooter() {
   return (
     <div
+      data-cv-watermark
       className="mt-8 border-t border-solid border-[#f0f0f0] pt-2 text-center text-[8px] leading-normal text-[#cccccc]"
       style={{ fontFamily: 'Arial, sans-serif' }}
       aria-hidden
@@ -2651,12 +2652,13 @@ export function OnyxCvDocument({
 
   return (
     <div
+      data-cv-page-fill=""
       className={cn(
         'box-border mx-auto min-h-[1123px] min-w-0 w-full max-w-[794px] bg-white text-[9.5pt] leading-normal antialiased',
         montserrat.className,
       )}
     >
-      <div className="flex min-h-[1123px] w-full">
+      <div data-cv-page-fill="" className="flex min-h-[1123px] w-full">
         <aside
           className="w-[35%] shrink-0 px-5 py-6 text-white"
           style={{ backgroundColor: ONYX_SIDEBAR }}

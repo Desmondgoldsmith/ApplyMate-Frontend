@@ -41,7 +41,13 @@ export function useExportCV() {
       namingFallback,
       profileForNaming,
       profileDisplayName,
+      printDocument,
     }: {
+      /**
+       * Builds the editor-rendered page for the PDF. When it (or the request) fails, the server's
+       * own template is used instead, so a download always succeeds.
+       */
+      printDocument?: () => Promise<string | null>;
       format: 'pdf' | 'docx';
       template?: string;
       cvProfileId?: string;
@@ -62,9 +68,27 @@ export function useExportCV() {
         jobAnalysisId: jobAnalysisId?.trim() || undefined,
         hide: headerPreviewToHideList(readHeaderPreviewStorage(cvProfileId)),
       };
+      const downloadPdf = async () => {
+        const id = cvProfileId?.trim();
+        if (id && printDocument) {
+          try {
+            const html = await printDocument();
+            if (html) {
+              return await api.cvExport.downloadPdfFromHtml({
+                cvProfileId: id,
+                html,
+                jobAnalysisId: exportOpts.jobAnalysisId,
+              });
+            }
+          } catch {
+            /* fall back to the server-built PDF below */
+          }
+        }
+        return api.cvExport.downloadPdf(exportOpts);
+      };
       const { blob, filename: headerFilename } =
         format === 'pdf'
-          ? await api.cvExport.downloadPdf(exportOpts)
+          ? await downloadPdf()
           : await api.cvExport.downloadDocx(exportOpts);
       const mime =
         format === 'pdf'

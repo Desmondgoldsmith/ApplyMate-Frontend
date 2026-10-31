@@ -114,6 +114,7 @@ const dmSans = DM_Sans({
 function CvPreviewWatermarkFooter() {
   return (
     <div
+      data-cv-watermark
       className="mt-8 border-t border-solid border-[#f0f0f0] pt-2 text-center text-[8px] leading-normal text-[#cccccc]"
       style={{ fontFamily: 'Arial, sans-serif' }}
       aria-hidden
@@ -8014,7 +8015,7 @@ function ModernDoc({
         inter.className,
       )}
     >
-      <div className="flex min-h-[720px] w-full">
+      <div data-cv-page-fill="" className="flex min-h-[720px] w-full">
         <aside
           className="relative z-30 w-[28%] shrink-0 px-[14px] py-5"
           style={{ backgroundColor: sidebarBg }}
@@ -8818,7 +8819,10 @@ function CreativeDoc({
         : null}
 
       <div className="flex w-full flex-col gap-6 text-left">
-        <div style={{ order: creativeOrd('summary', 0) }} className="min-w-0">
+        <div
+          style={{ order: creativeOrd('summary', 0) }}
+          className="min-w-0 empty:hidden"
+        >
           {vis('summary') && (inline || data.summary.text.trim().length > 0)
             ? sectionBox(
                 'summary',
@@ -8894,7 +8898,7 @@ function CreativeDoc({
 
         <div
           style={{ order: creativeOrd('experience', 1) }}
-          className="min-w-0"
+          className="min-w-0 empty:hidden"
         >
           {vis('experience')
             ? sectionBox(
@@ -9415,7 +9419,10 @@ function CreativeDoc({
             : null}
         </div>
 
-        <div style={{ order: creativeOrd('education', 2) }} className="min-w-0">
+        <div
+          style={{ order: creativeOrd('education', 2) }}
+          className="min-w-0 empty:hidden"
+        >
           {vis('education')
             ? sectionBox(
                 'education',
@@ -9851,7 +9858,10 @@ function CreativeDoc({
             : null}
         </div>
 
-        <div style={{ order: creativeOrd('skills', 3) }} className="min-w-0">
+        <div
+          style={{ order: creativeOrd('skills', 3) }}
+          className="min-w-0 empty:hidden"
+        >
           {vis('skills')
             ? sectionBox(
                 'skills',
@@ -10072,7 +10082,10 @@ function CreativeDoc({
             : null}
         </div>
 
-        <div style={{ order: creativeOrd('projects', 4) }} className="min-w-0">
+        <div
+          style={{ order: creativeOrd('projects', 4) }}
+          className="min-w-0 empty:hidden"
+        >
           {optionalSectionShown(
             optionalSectionPresence,
             'projects',
@@ -10575,7 +10588,7 @@ function CreativeDoc({
 
         <div
           style={{ order: creativeOrd('certifications', 5) }}
-          className="min-w-0"
+          className="min-w-0 empty:hidden"
         >
           {optionalSectionShown(
             optionalSectionPresence,
@@ -10825,7 +10838,10 @@ function CreativeDoc({
             : null}
         </div>
 
-        <div style={{ order: creativeOrd('languages', 6) }} className="min-w-0">
+        <div
+          style={{ order: creativeOrd('languages', 6) }}
+          className="min-w-0 empty:hidden"
+        >
           {optionalSectionShown(
             optionalSectionPresence,
             'languages',
@@ -11002,7 +11018,7 @@ function CreativeDoc({
 
         <div
           style={{ order: creativeOrd('achievements', 7) }}
-          className="min-w-0"
+          className="min-w-0 empty:hidden"
         >
           {optionalSectionShown(
             optionalSectionPresence,
@@ -11211,7 +11227,7 @@ function CreativeDoc({
 
         <div
           style={{ order: creativeOrd('references', 8) }}
-          className="min-w-0"
+          className="min-w-0 empty:hidden"
         >
           {optionalSectionShown(
             optionalSectionPresence,
@@ -11246,7 +11262,7 @@ function CreativeDoc({
 
         <div
           style={{ order: creativeOrd('custom-legacy', 9) }}
-          className="min-w-0"
+          className="min-w-0 empty:hidden"
         >
           {shouldRenderCustomLegacySection(data, inline) &&
           vis('custom-legacy') ? (
@@ -11395,7 +11411,7 @@ function CreativeDoc({
                     50 + blockIdx,
                   ),
                 }}
-                className="min-w-0"
+                className="min-w-0 empty:hidden"
               >
                 <Fragment key={block.sectionId}>
                   {vis(`parsed-${block.sectionId}`) ? (
