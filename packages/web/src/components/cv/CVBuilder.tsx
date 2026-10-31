@@ -634,6 +634,8 @@ export type CVBuilderProps = {
   onDataSnapshotChange?: (data: CVBuilderData) => void;
   /** Filled with a read-only copy of the page as drawn, used to print the PDF exactly as shown. */
   printDocumentRef?: MutableRefObject<(() => ReactElement) | null>;
+  /** After a spell check the user asked for, with the number of issues found. */
+  onSpellCheckDone?: (issueCount: number) => void;
   /** CV Clinic: preview teardrop assistant uses the same command API as the floating panel. */
   cvAssistantCommand?: (
     command: string,
@@ -742,6 +744,7 @@ export function CVBuilder({
   externalPatchNonce = 0,
   onDataSnapshotChange,
   printDocumentRef,
+  onSpellCheckDone,
   cvAssistantCommand,
   cvAssistantBusy,
   cvAssistantBusyMessage,
@@ -850,6 +853,8 @@ export function CVBuilder({
   } = undoRedo;
   const onUndoRedoReadyRef = useRef(onUndoRedoReady);
   onUndoRedoReadyRef.current = onUndoRedoReady;
+  const onSpellCheckDoneRef = useRef(onSpellCheckDone);
+  onSpellCheckDoneRef.current = onSpellCheckDone;
   const onHistoryAppliedRef = useRef(onHistoryApplied);
   onHistoryAppliedRef.current = onHistoryApplied;
   const flushDashboardAutosaveRef = useRef<(() => Promise<void>) | null>(null);
@@ -3029,6 +3034,7 @@ export function CVBuilder({
             toast.success(
               `Found ${total} potential issue${total === 1 ? '' : 's'}`,
             );
+          onSpellCheckDoneRef.current?.(total);
         }
       } catch (e) {
         const msg = getApiErrorMessage(e) || 'Spell check failed';

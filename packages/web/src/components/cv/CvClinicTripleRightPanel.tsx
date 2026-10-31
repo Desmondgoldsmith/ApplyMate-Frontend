@@ -1,6 +1,7 @@
 'use client';
 
 import { Loader2, ScanEye, Sparkles } from 'lucide-react';
+import { revealSpellIssue } from '@/lib/cvSpellMark';
 import type { MutableRefObject, ReactNode } from 'react';
 import { memo, startTransition } from 'react';
 
@@ -436,21 +437,6 @@ function CvClinicTripleRightPanelInner({
                               <p className="text-[13px] font-semibold text-text-primary">
                                 {sectionLabel}
                               </p>
-                              <button
-                                type="button"
-                                className="rounded-md border border-border-default bg-bg-surface px-1.5 py-0.5 text-[11px] font-semibold text-text-secondary transition hover:border-border-default"
-                                onClick={() =>
-                                  jumpToSectionRef.current?.(
-                                    resolveJumpSectionKey(sectionKey),
-                                    undefined,
-                                    {
-                                      scrollForm: false,
-                                    },
-                                  )
-                                }
-                              >
-                                Open
-                              </button>
                             </div>
                             <ul className="mt-1 space-y-1.5">
                               {issues.map((issue, idx) => {
@@ -499,6 +485,25 @@ function CvClinicTripleRightPanelInner({
                                         ) : null}
                                       </div>
                                       <div className="flex shrink-0 items-center gap-1.5">
+                                        <button
+                                          type="button"
+                                          title="Scroll to this word on your CV"
+                                          className="rounded-md border border-border-default bg-bg-surface px-2 py-0.5 text-[12px] font-semibold text-text-secondary hover:bg-bg-hover hover:text-text-primary"
+                                          onClick={() => {
+                                            if (revealSpellIssue(issue)) return;
+                                            jumpToSectionRef.current?.(
+                                              resolveJumpSectionKey(sectionKey),
+                                              undefined,
+                                              { scrollForm: false },
+                                            );
+                                            window.setTimeout(
+                                              () => revealSpellIssue(issue),
+                                              600,
+                                            );
+                                          }}
+                                        >
+                                          Show me
+                                        </button>
                                         {suggestion ? (
                                           <button
                                             type="button"

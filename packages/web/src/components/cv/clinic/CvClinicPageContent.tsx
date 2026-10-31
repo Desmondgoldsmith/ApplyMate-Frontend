@@ -103,6 +103,7 @@ import { normalizeCvDiffPreviewParams } from '@/lib/cvAiPatchDisplay';
 import { getFormatRecommendation } from '@/lib/cvFormatRecommendation';
 import { buildCvPrintDocument } from '@/lib/cvPrintDocument';
 import { savePendingCvEdits } from '@/lib/cvPendingEdits';
+import { revealSpellIssue } from '@/lib/cvSpellMark';
 import { cvDiffPreviewBuilderSection } from '@/lib/cvDiffPreviewSection';
 import {
   assistantChangedFieldLabel,
@@ -4063,21 +4064,6 @@ export function CvClinicPageContent() {
                                         <p className="text-[11px] font-semibold text-text-primary">
                                           {sectionLabel}
                                         </p>
-                                        <button
-                                          type="button"
-                                          className="rounded-md border border-border-default bg-bg-surface px-1.5 py-0.5 text-[9px] font-semibold text-text-secondary transition hover:border-border-default"
-                                          onClick={() =>
-                                            jumpToSectionRef.current?.(
-                                              resolveJumpSectionKey(sectionKey),
-                                              undefined,
-                                              {
-                                                scrollForm: false,
-                                              },
-                                            )
-                                          }
-                                        >
-                                          Open
-                                        </button>
                                       </div>
                                       <ul className="mt-1 space-y-1.5">
                                         {issues.map((issue, idx) => {
@@ -4128,6 +4114,33 @@ export function CvClinicPageContent() {
                                                   ) : null}
                                                 </div>
                                                 <div className="flex shrink-0 items-center gap-1.5">
+                                                  <button
+                                                    type="button"
+                                                    title="Scroll to this word on your CV"
+                                                    className="rounded-md border border-border-default bg-bg-surface px-2 py-0.5 text-[10px] font-semibold text-text-secondary"
+                                                    onClick={() => {
+                                                      if (
+                                                        revealSpellIssue(issue)
+                                                      )
+                                                        return;
+                                                      jumpToSectionRef.current?.(
+                                                        resolveJumpSectionKey(
+                                                          sectionKey,
+                                                        ),
+                                                        undefined,
+                                                        { scrollForm: false },
+                                                      );
+                                                      window.setTimeout(
+                                                        () =>
+                                                          revealSpellIssue(
+                                                            issue,
+                                                          ),
+                                                        600,
+                                                      );
+                                                    }}
+                                                  >
+                                                    Show me
+                                                  </button>
                                                   {suggestion ? (
                                                     <button
                                                       type="button"

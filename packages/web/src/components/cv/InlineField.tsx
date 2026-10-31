@@ -4,6 +4,8 @@ import {
   memo,
   useCallback,
   useEffect,
+  useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type KeyboardEvent,
@@ -12,7 +14,16 @@ import type { FocusEvent } from 'react';
 
 import { useCVEdit } from '@/components/cv/CVEditContext';
 import type { CvSpellIssue } from '@/lib/api';
-import { normalizeEditableHtml, toDisplayRichHtml } from '@/lib/cvRichTextCore';
+import {
+  normalizeEditableHtml,
+  richTextPlainText,
+  toDisplayRichHtml,
+} from '@/lib/cvRichTextCore';
+import {
+  markSpellIssues,
+  spellIssueMarkKey,
+  spellIssueWord,
+} from '@/lib/cvSpellMark';
 import { cn } from '@/lib/utils';
 
 const toFormattedHtml = toDisplayRichHtml;
@@ -48,11 +59,14 @@ function spellIssueMatchesFieldText(
     issue.end <= fieldValue.length
   ) {
     const slice = fieldValue.slice(issue.start, issue.end);
-    if (expected !== undefined && expected !== '') return slice === expected;
-    return slice.length > 0;
+    if (expected === undefined || expected === '') return slice.length > 0;
+    if (slice === expected) return true;
   }
-  const needle = expected?.trim();
-  return needle ? fieldValue.includes(needle) : false;
+  // Offsets count plain text while the value may hold formatting tags.
+  const needle = expected?.trim().toLowerCase();
+  return needle
+    ? richTextPlainText(fieldValue).toLowerCase().includes(needle)
+    : false;
 }
 
 export type InlineFieldProps = {
@@ -94,10 +108,11 @@ function InlineFieldInner({
   entryId,
   dataBulletEntry,
   dataBulletIdx,
-  fieldPath = 'text',
+  fieldPath: fieldPathProp,
   startEditingWhenEmpty = false,
   placeholderTone = 'default',
 }: InlineFieldProps) {
+  const fieldPath = fieldPathProp ?? 'text';
   const ctx = useCVEdit();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -211,13 +226,47 @@ function InlineFieldInner({
         (x.fieldPath ?? 'text') === fieldPath &&
         spellIssueMatchesFieldText(x, displayText),
     );
-  const showSpellUnderline =
-    fieldIssues.some((x) => spellIssueMatchesFieldText(x, displayText)) ||
-    sectionSpellIssues.some(
-      (x) =>
-        (x.fieldPath ?? 'text') === fieldPath &&
-        spellIssueMatchesFieldText(x, displayText),
-    );
+  const spellMarks = useMemo(() => {
+    const seen = new Set<string>();
+    // Checker offsets count plain text, but the stored value is HTML: match on the word.
+    const plain = richTextPlainText(displayText).toLowerCase();
+    // Fields that don't say which path they are (e.g. bullets in some designs) match their
+    // section's issues by the word itself.
+    const anyPathInSection =
+      fieldPathProp === undefined && sectionId !== 'summary';
+    return [
+      ...fieldIssues,
+      ...sectionSpellIssues.filter(
+        (x) => anyPathInSection || (x.fieldPath ?? 'text') === fieldPath,
+      ),
+    ]
+      .filter((x) => {
+        const word = spellIssueWord(x).toLowerCase();
+        return word.length > 0 && plain.includes(word);
+      })
+      .map((x) => ({ key: spellIssueMarkKey(x), word: spellIssueWord(x) }))
+      .filter((m) => m.word && !seen.has(m.key) && Boolean(seen.add(m.key)));
+  }, [
+    displayText,
+    fieldIssues,
+    fieldPath,
+    fieldPathProp,
+    sectionId,
+    sectionSpellIssues,
+  ]);
+  const displayHtml = toFormattedHtml(displayText);
+  // A new {__html} object on every render makes React rewrite the HTML, which wipes the
+  // underlines: keep it stable so it only changes with the text.
+  const displayInnerHtml = useMemo(
+    () => ({ __html: displayHtml }),
+    [displayHtml],
+  );
+  const displayRef = useRef<HTMLSpanElement | null>(null);
+  useLayoutEffect(() => {
+    const root = displayRef.current;
+    if (!root) return;
+    markSpellIssues(root, spellMarks);
+  }, [displayInnerHtml, spellMarks, editing]);
 
   const placeholderDisplayClass =
     placeholderTone === 'onDark'
@@ -262,8 +311,6 @@ function InlineFieldInner({
           className={cn(
             'cursor-text rounded-sm outline-none transition-colors',
             'hover:bg-[rgba(23,178,106,0.08)] focus-visible:ring-1 focus-visible:ring-[rgba(23,178,106,0.6)]',
-            showSpellUnderline &&
-              'decoration-rose-500/90 underline decoration-wavy decoration-1 underline-offset-2',
             layout === 'block' && 'block w-full min-w-0 max-w-full',
             layout === 'inline' && 'inline max-w-full align-baseline',
             linkClass,
@@ -292,9 +339,7 @@ function InlineFieldInner({
           {showPlaceholder ? (
             <span className={placeholderDisplayClass}>{placeholder}</span>
           ) : (
-            <span
-              dangerouslySetInnerHTML={{ __html: toFormattedHtml(displayText) }}
-            />
+            <span ref={displayRef} dangerouslySetInnerHTML={displayInnerHtml} />
           )}
         </span>
         {matchedIssue && ctx?.isEditing ? (
