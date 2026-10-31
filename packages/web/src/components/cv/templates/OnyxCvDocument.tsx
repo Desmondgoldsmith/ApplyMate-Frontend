@@ -693,6 +693,7 @@ export function OnyxCvDocument({
             showMoveDown={false}
             hideAddButton
             hideDelete={isCoreSectionId(sectionId)}
+            confirmBeforeDelete
           />
         ) : null}
         <h2 className={cn('flex items-center gap-1.5', titleClass)}>
@@ -1833,7 +1834,7 @@ export function OnyxCvDocument({
                       </div>
                       {x.company?.trim() ? (
                         <p className="mt-0.5" style={{ color: ONYX_TEXT }}>
-                          {x.company.trim()}
+                          <RichText text={x.company.trim()} />
                         </p>
                       ) : null}
                       <OnyxBulletList
@@ -2176,7 +2177,10 @@ export function OnyxCvDocument({
                         c.name.trim() || 'Certification'
                       )}
                       {!inline && c.issuer.trim() ? (
-                        <span> · {c.issuer.trim()}</span>
+                        <span>
+                          {' '}
+                          · <RichText text={c.issuer.trim()} />
+                        </span>
                       ) : null}
                       {!inline && c.date.trim() ? (
                         <span> · {c.date.trim()}</span>

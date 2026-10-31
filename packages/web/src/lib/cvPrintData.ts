@@ -26,22 +26,29 @@ function withoutBlank<T>(items: T[]): T[] {
   return items.filter((item) => !isBlankValue(item));
 }
 
-/** Optional sections with nothing left to show are hidden, so no empty heading is printed. */
+const hasText = (value: unknown) => !isBlankValue(value);
+
+/** Sections with nothing left to show are hidden, so no empty heading is printed. */
 export function printSectionVisibility(
   printData: CVBuilderData,
   visibility: Record<string, boolean> | undefined,
 ): Record<string, boolean> {
   const out: Record<string, boolean> = { ...(visibility ?? {}) };
   const lists: Record<string, unknown[]> = {
+    experience: printData.experience.items,
+    education: printData.education.items,
+    skills: printData.skills.categories,
     projects: printData.projects,
     certifications: printData.certifications,
     languages: printData.languages,
     achievements: printData.achievements,
     references: printData.references,
+    'custom-legacy': printData.customSections,
   };
   for (const [key, items] of Object.entries(lists)) {
     if (items.length === 0) out[key] = false;
   }
+  if (!hasText(printData.summary.text)) out.summary = false;
   return out;
 }
 
@@ -62,6 +69,21 @@ export function cvDataForPrint(data: CVBuilderData): CVBuilderData {
     languages: withoutBlank(data.languages),
     achievements: withoutBlank(data.achievements),
     references: withoutBlank(data.references),
-    customSections: withoutBlank(data.customSections),
+    skills: {
+      ...data.skills,
+      categories: data.skills.categories.filter((c) =>
+        (Array.isArray(c.skills) ? c.skills : [c.skills]).some(hasText),
+      ),
+    },
+    // A heading alone is not content: print custom sections only once they have text.
+    customSections: data.customSections.filter((c) => hasText(c.body)),
+    parsedCustomSections: data.parsedCustomSections
+      .map((block) => ({
+        ...block,
+        items: block.items.filter(
+          (item) => hasText(item.text) || item.subItems.some(hasText),
+        ),
+      }))
+      .filter((block) => block.items.length > 0),
   };
 }

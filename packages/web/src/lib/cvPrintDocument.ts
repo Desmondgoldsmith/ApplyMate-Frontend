@@ -2,6 +2,8 @@ import type { ReactElement } from 'react';
 import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
 
+import { toDisplayRichHtml } from '@/lib/cvRichTextCore';
+
 /** A4 width at 96 dpi, the width the editor lays the page out at. */
 const PAGE_WIDTH_PX = 794;
 /** Bottom margin on every page and top margin after page one, so text never touches the edge. */
@@ -141,6 +143,22 @@ async function embeddedFontFaces(
   return blocks.join('');
 }
 
+const STRAY_TAG = /<\/?(strong|em|u|b|i|a)(\s[^>]*)?>/i;
+
+/** Fields a template prints as plain text must never show raw tags: turn them into formatting. */
+function formatStrayTags(root: HTMLElement): void {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const hits: Text[] = [];
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    if (STRAY_TAG.test(n.nodeValue ?? '')) hits.push(n as Text);
+  }
+  for (const text of hits) {
+    const holder = document.createElement('span');
+    holder.innerHTML = toDisplayRichHtml(text.nodeValue ?? '');
+    text.replaceWith(...Array.from(holder.childNodes));
+  }
+}
+
 const PX_PER_MM = 96 / 25.4;
 /** Shrink at most this much (9.5pt text stays above 8.5pt) to avoid a near-empty last page. */
 const MAX_FIT_SHRINK = 0.1;
@@ -233,6 +251,7 @@ export async function buildCvPrintDocument(
       }
       css += collectRules(rules, page, fontFaces);
     }
+    formatStrayTags(page);
     fitToPages(page);
     const fonts = await embeddedFontFaces(fontFaces, usedFontFamilies(page));
     // AI-change highlights help while editing; they must never print.

@@ -979,6 +979,7 @@ function ClassicDoc({
             showMoveDown={false}
             hideAddButton
             hideDelete={isCoreSectionId(sectionId)}
+            confirmBeforeDelete
           />
         ) : null}
         <div className="border-b border-t border-black py-[5px]">
@@ -1061,7 +1062,11 @@ function ClassicDoc({
     );
   }
   if (hp.showLocation && p.location?.trim())
-    classicPrimaryReadonly.push(<span key="loc">{p.location.trim()}</span>);
+    classicPrimaryReadonly.push(
+      <span key="loc">
+        <RichText text={p.location.trim()} />
+      </span>,
+    );
 
   const classicLinksReadonly: ReactNode[] = [];
   if (hp.showLinkedIn && p.linkedin?.trim()) {
@@ -1676,7 +1681,9 @@ function ClassicDoc({
                     className="font-bold text-black"
                   />
                 ) : cat.name.trim() && cat.name.trim() !== 'Group Title' ? (
-                  <span className="font-bold">{cat.name.trim()}: </span>
+                  <span className="font-bold">
+                    <RichText text={cat.name.trim()} />:{' '}
+                  </span>
                 ) : null}
                 <span>
                   {inline && ctx ? (
@@ -2198,7 +2205,7 @@ function ClassicDoc({
                         <>
                           <span className="font-normal">{' \u2013 '}</span>
                           <span className="font-normal italic text-[#111111]">
-                            {x.location.trim()}
+                            <RichText text={x.location.trim()} />
                           </span>
                         </>
                       ) : null}
@@ -2965,7 +2972,10 @@ function ClassicDoc({
                       {!inline || !ctx ? (
                         <>
                           {c.issuer.trim() ? (
-                            <span> · {c.issuer.trim()}</span>
+                            <span>
+                              {' '}
+                              · <RichText text={c.issuer.trim()} />
+                            </span>
                           ) : null}
                           {c.date.trim() ? (
                             <span> · {c.date.trim()}</span>
@@ -3143,7 +3153,9 @@ function ClassicDoc({
                       />
                     </p>
                   ) : a.issuer.trim() ? (
-                    <p className="mt-0.5 text-black">{a.issuer.trim()}</p>
+                    <p className="mt-0.5 text-black">
+                      <RichText text={a.issuer.trim()} />
+                    </p>
                   ) : null}
                   {inline && ctx ? (
                     <p className="mt-1 whitespace-pre-wrap leading-relaxed text-black">
@@ -4256,7 +4268,9 @@ function ClassicDoc({
                   className="mt-1 text-[9pt] leading-[1.2] text-black"
                 >
                   {x.label.trim() ? (
-                    <span className="font-semibold">{x.label.trim()}: </span>
+                    <span className="font-semibold">
+                      <RichText text={x.label.trim()} />:{' '}
+                    </span>
                   ) : null}
                   {isUrl ? (
                     <a
@@ -4626,6 +4640,7 @@ function ModernDoc({
             showMoveDown={false}
             hideAddButton
             hideDelete={isCoreSectionId(sectionId)}
+            confirmBeforeDelete
           />
         ) : null}
         <h3
@@ -4834,7 +4849,9 @@ function ModernDoc({
         ) : !inline && hp.showLocation && p.location?.trim() ? (
           <div className="text-[10.5px] leading-[1.28] text-[#374151]">
             <span className="font-semibold text-[#111827]">Location: </span>
-            <span className="break-words">{p.location.trim()}</span>
+            <span className="break-words">
+              <RichText text={p.location.trim()} />
+            </span>
           </div>
         ) : null}
         {inline && ctx && hp.showLinkedIn ? (
@@ -4942,7 +4959,9 @@ function ModernDoc({
               </span>
               <span className="min-w-0 break-words">
                 {x.label.trim() ? (
-                  <span className="font-semibold">{x.label.trim()}: </span>
+                  <span className="font-semibold">
+                    <RichText text={x.label.trim()} />:{' '}
+                  </span>
                 ) : null}
                 {x.value.trim() ? (
                   <span>{x.value.trim()}</span>
@@ -4971,7 +4990,11 @@ function ModernDoc({
                 style={{ borderColor: accent }}
               >
                 <p className="font-bold text-[#111827]">
-                  {c.name?.trim() ? `${c.name.trim()}: ` : null}
+                  {c.name?.trim() ? (
+                    <>
+                      <RichText text={c.name.trim()} />:{' '}
+                    </>
+                  ) : null}
                 </p>
                 <p className="mt-0.5 font-normal">
                   {c.skills.length ? skillsCommaList(c.skills) : ''}
@@ -5151,7 +5174,9 @@ function ModernDoc({
                     className="font-bold text-[#111827]"
                   />
                 ) : cat.name.trim() && cat.name.trim() !== 'Group Title' ? (
-                  <span className="font-bold">{cat.name.trim()}: </span>
+                  <span className="font-bold">
+                    <RichText text={cat.name.trim()} />:{' '}
+                  </span>
                 ) : null}
                 <span className="font-normal">
                   <InlineSkillsCommaField
@@ -5590,7 +5615,10 @@ function ModernDoc({
                   {!inline || !ctx ? (
                     <>
                       {c.issuer.trim() ? (
-                        <span> · {c.issuer.trim()}</span>
+                        <span>
+                          {' '}
+                          · <RichText text={c.issuer.trim()} />
+                        </span>
                       ) : null}
                       {c.date.trim() ? (
                         <span className="ml-1 inline-block whitespace-pre-line align-top leading-tight">
@@ -5990,7 +6018,7 @@ function ModernDoc({
                           {x.location?.trim() ? (
                             <span className="not-italic text-black/55">
                               {' '}
-                              · {x.location.trim()}
+                              · <RichText text={x.location.trim()} />
                             </span>
                           ) : null}
                         </>
@@ -6005,7 +6033,7 @@ function ModernDoc({
                       {x.location?.trim() ? (
                         <span className="not-italic text-[#1a1a1a]/65">
                           {' '}
-                          · {x.location.trim()}
+                          · <RichText text={x.location.trim()} />
                         </span>
                       ) : null}
                     </p>
@@ -6476,7 +6504,7 @@ function ModernDoc({
                         {e.grade?.trim() ? (
                           <span className="not-italic text-black/55">
                             {' '}
-                            · {e.grade.trim()}
+                            · <RichText text={e.grade.trim()} />
                           </span>
                         ) : null}
                       </p>
@@ -7244,7 +7272,7 @@ function ModernDoc({
                             <>
                               <span className="font-normal">, </span>
                               <span className="font-normal">
-                                {a.issuer.trim()}
+                                <RichText text={a.issuer.trim()} />
                               </span>
                             </>
                           ) : null}
@@ -8391,6 +8419,7 @@ function CreativeDoc({
             showMoveDown={false}
             hideAddButton
             hideDelete={isCoreSectionId(sectionId)}
+            confirmBeforeDelete
           />
         ) : null}
         <h2
@@ -8462,7 +8491,9 @@ function CreativeDoc({
   const creativeContactBitsReadOnly: ReactNode[] = [];
   if (hp.showLocation && p.location?.trim())
     creativeContactBitsReadOnly.push(
-      <span key="loc">{p.location.trim()}</span>,
+      <span key="loc">
+        <RichText text={p.location.trim()} />
+      </span>,
     );
   if (hp.showEmail && p.email?.trim())
     creativeContactBitsReadOnly.push(<span key="em">{p.email.trim()}</span>);
@@ -9244,7 +9275,7 @@ function CreativeDoc({
                                   {x.location?.trim() ? (
                                     <span className="not-italic text-black/55">
                                       {' '}
-                                      · {x.location.trim()}
+                                      · <RichText text={x.location.trim()} />
                                     </span>
                                   ) : null}
                                 </>
@@ -9259,7 +9290,7 @@ function CreativeDoc({
                               {x.location?.trim() ? (
                                 <span className="not-italic text-[#1a1a1a]/65">
                                   {' '}
-                                  · {x.location.trim()}
+                                  · <RichText text={x.location.trim()} />
                                 </span>
                               ) : null}
                             </p>
@@ -9809,7 +9840,7 @@ function CreativeDoc({
                                 {e.grade?.trim() ? (
                                   <span className="not-italic text-black/55">
                                     {' '}
-                                    · {e.grade.trim()}
+                                    · <RichText text={e.grade.trim()} />
                                   </span>
                                 ) : null}
                               </p>
@@ -10028,7 +10059,7 @@ function CreativeDoc({
                             ) : cat.name.trim() &&
                               cat.name.trim() !== 'Group Title' ? (
                               <span className="mb-1.5 block text-[11px] font-bold text-[#007A7B]">
-                                {cat.name.trim()}
+                                <RichText text={cat.name.trim()} />
                               </span>
                             ) : null}
                             {inline && ctx ? (
@@ -10817,7 +10848,10 @@ function CreativeDoc({
                             {!inline || !ctx ? (
                               <>
                                 {c.issuer.trim() ? (
-                                  <span> · {c.issuer.trim()}</span>
+                                  <span>
+                                    {' '}
+                                    · <RichText text={c.issuer.trim()} />
+                                  </span>
                                 ) : null}
                                 {c.date.trim() ? (
                                   <span> · {c.date.trim()}</span>
@@ -11185,7 +11219,7 @@ function CreativeDoc({
                           </div>
                         ) : a.issuer.trim() ? (
                           <p className="mt-0.5 text-[#1a1a1a]/75">
-                            {a.issuer.trim()}
+                            <RichText text={a.issuer.trim()} />
                           </p>
                         ) : null}
                         {inline && ctx ? (
@@ -12323,6 +12357,7 @@ function ProfessionalDoc({
             showMoveDown={false}
             hideAddButton
             hideDelete={isCoreSectionId(sectionId)}
+            confirmBeforeDelete
           />
         ) : null}
         <h2 className="relative flex items-center justify-center gap-1 text-center text-[8.5pt] font-extrabold uppercase tracking-[0.04em] text-black antialiased">
@@ -13049,7 +13084,9 @@ function ProfessionalDoc({
                           {a.issuer.trim() ? (
                             <>
                               {a.title.trim() ? ', ' : null}
-                              <span>{a.issuer.trim()}</span>
+                              <span>
+                                <RichText text={a.issuer.trim()} />
+                              </span>
                             </>
                           ) : null}
                         </p>
@@ -13293,7 +13330,7 @@ function ProfessionalDoc({
                       />
                     ) : cat.name.trim() && cat.name.trim() !== 'Group Title' ? (
                       <span className="font-extrabold">
-                        {cat.name.trim()}:{' '}
+                        <RichText text={cat.name.trim()} />:{' '}
                       </span>
                     ) : null}
                     <span className="font-normal">
@@ -13853,7 +13890,7 @@ function ProfessionalDoc({
                             <>
                               <span className="font-normal">{' \u2013 '}</span>
                               <span className="font-normal italic">
-                                {x.location.trim()}
+                                <RichText text={x.location.trim()} />
                               </span>
                             </>
                           ) : null}
@@ -14668,7 +14705,10 @@ function ProfessionalDoc({
                             </span>
                           )}
                           {c.issuer.trim() ? (
-                            <span> · {c.issuer.trim()}</span>
+                            <span>
+                              {' '}
+                              · <RichText text={c.issuer.trim()} />
+                            </span>
                           ) : null}
                           {c.date.trim() ? (
                             <span> · {c.date.trim()}</span>
@@ -15817,7 +15857,9 @@ function ProfessionalDoc({
             .map((x, i) => (
               <p key={`pex-${i}`} className="mt-0.5 text-[8.5pt] leading-tight">
                 {x.label.trim() ? (
-                  <span className="font-extrabold">{x.label.trim()}: </span>
+                  <span className="font-extrabold">
+                    <RichText text={x.label.trim()} />:{' '}
+                  </span>
                 ) : null}
                 <span className="text-black">{x.value.trim() || '—'}</span>
               </p>
