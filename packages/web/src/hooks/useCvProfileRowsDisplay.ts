@@ -53,11 +53,24 @@ export function useCvProfileRowsDisplay() {
   const isBootstrapping =
     listQ.isPending || (apiRows.length === 0 && legacy.isPending);
 
+  /**
+   * Nothing to show because the list failed to load — not the same as having no CVs. (The
+   * single-profile endpoint 404s for new users, so only the list counts.)
+   */
+  const loadFailed = displayRows.length === 0 && listQ.isError;
+  const retry = () => {
+    void listQ.refetch();
+    void legacy.refetch();
+  };
+
   return {
     apiRows,
     displayRows,
     listInconsistent,
     isBootstrapping,
+    loadFailed,
+    isRetrying: listQ.isFetching || legacy.isFetching,
+    retry,
     legacyCv: legacy.data,
   };
 }
