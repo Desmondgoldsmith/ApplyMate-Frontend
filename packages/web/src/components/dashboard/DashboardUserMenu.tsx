@@ -22,13 +22,14 @@ export function DashboardUserMenu({ className }: { className?: string }) {
   const queryClient = useQueryClient();
   const storeUser = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
-  const { data: me, isLoading: meLoading } = useCurrentUser();
+  const { data: me, isError: meError } = useCurrentUser();
   const user = me ?? storeUser ?? undefined;
   const initials = getDisplayInitials(user);
   const name = getDisplayName(user);
+  // Same on the server and the first client render, so hydration matches.
   const showUserSkeleton =
-    meLoading &&
     !me &&
+    !meError &&
     (!storeUser?.email || getDisplayInitials(storeUser) === 'U');
   const marketingPaused = isMarketingPauseActive(user?.nudgePausedUntil);
   const [open, setOpen] = useState(false);
