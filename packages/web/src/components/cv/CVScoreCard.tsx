@@ -978,7 +978,7 @@ export function CVScoreCard({
                   ) : null}
                   <p
                     className={cn(
-                      'leading-relaxed text-white/62',
+                      'leading-relaxed text-text-secondary',
                       compactLayout ? 'text-[12px]' : 'text-xs',
                     )}
                   >
@@ -1058,7 +1058,7 @@ export function CVScoreCard({
                   cy={RING_CY}
                   r={RING_R}
                   fill="none"
-                  stroke="rgba(255,255,255,0.08)"
+                  stroke="var(--ck-border-default)"
                   strokeWidth={RING_STROKE}
                 />
                 <circle
@@ -1081,7 +1081,7 @@ export function CVScoreCard({
                   y={RING_CY}
                   textAnchor="middle"
                   dominantBaseline="central"
-                  fill="white"
+                  fill="var(--ck-text-primary)"
                   fontSize="24"
                   fontWeight="700"
                 >
