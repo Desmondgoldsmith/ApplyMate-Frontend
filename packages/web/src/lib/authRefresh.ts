@@ -153,7 +153,9 @@ export async function tryRestoreSessionFromApiCookie(): Promise<boolean> {
               token,
               state.refreshToken ?? readApplymateRefreshTokenFromCookie(),
             );
-        } catch {
+        } catch (error) {
+          // A restarting or unreachable API must not sign the user out; the token is still valid.
+          if (isTransientRefreshFailure(error)) return true;
           useAuthStore.getState().clearAuth({ skipBroadcast: true });
           return false;
         }
