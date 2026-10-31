@@ -245,12 +245,25 @@ export function CvSelectionFormatBar() {
     const coarse = window.matchMedia('(pointer: coarse)').matches;
     const above = selected.rect.top - BAR_GAP_PX - height;
     const below = selected.rect.bottom + BAR_GAP_PX;
-    const top = !coarse && above >= 8 ? above : below;
     const centre = selected.rect.left + selected.rect.width / 2;
     const left = Math.max(
       8,
       Math.min(centre - width / 2, window.innerWidth - width - 8),
     );
+    // Never cover the entry toolbar (its Remove and Settings buttons sit right above the text).
+    const coversToolbar = Array.from(
+      document.querySelectorAll('[data-cv-entry-toolbar]'),
+    ).some((el) => {
+      const r = el.getBoundingClientRect();
+      return (
+        r.width > 0 &&
+        above < r.bottom &&
+        above + height > r.top &&
+        left < r.right &&
+        left + width > r.left
+      );
+    });
+    const top = !coarse && above >= 8 && !coversToolbar ? above : below;
     setPlacement({ top, left });
   }, [selected, linkOpen]);
 

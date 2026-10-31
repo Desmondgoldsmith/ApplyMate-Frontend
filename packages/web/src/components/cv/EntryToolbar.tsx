@@ -1,16 +1,11 @@
 'use client';
 
 import {
-  Bold,
   Calendar,
   ChevronDown,
   ChevronUp,
-  Italic,
-  Link2,
   Settings,
   Trash2,
-  Type,
-  Underline,
 } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -18,12 +13,8 @@ import { createPortal } from 'react-dom';
 
 import { useCvOverlayZIndex } from '@/components/cv/CvOverlayLayerContext';
 import { CvEntryDateRangePopover } from '@/components/cv/CvEntryDateRangePopover';
-const TOOLBAR_INTERACTING_FLAG = '__cvToolbarInteracting';
-
-function setToolbarInteracting(value: boolean) {
-  (window as unknown as Record<string, unknown>)[TOOLBAR_INTERACTING_FLAG] =
-    value;
-}
+import { useToast } from '@/components/ui/Toast';
+import { CV_UNDO_EVENT } from '@/lib/cvUndoRedo';
 
 type EntryToolbarProps = {
   sectionType: string;
@@ -52,6 +43,8 @@ type EntryToolbarProps = {
   hideAddButton?: boolean;
   /** When true, the trash/delete button is omitted entirely (used for core sections that can't be deleted). */
   hideDelete?: boolean;
+  /** Ask first (whole sections). Entries are removed at once with an Undo toast. */
+  confirmBeforeDelete?: boolean;
   settingsOptions?: Array<{
     key: string;
     label: string;
@@ -83,8 +76,10 @@ export function EntryToolbar({
   pinToSectionHeader = true,
   hideAddButton = false,
   hideDelete = false,
+  confirmBeforeDelete = false,
   settingsOptions = [],
 }: EntryToolbarProps) {
+  const toast = useToast();
   const toolbarAnchorId = anchorSectionId ?? sectionType;
   const overlayZ = useCvOverlayZIndex();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -97,19 +92,8 @@ export function EntryToolbar({
   }>({ left: 0, top: 0, bottom: 0 });
   const [showDate, setShowDate] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showTextTools, setShowTextTools] = useState(false);
-  const [toolsNotice, setToolsNotice] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [showLinkInput, setShowLinkInput] = useState(false);
-  const [linkDraft, setLinkDraft] = useState('https://');
-  const [anchorHref, setAnchorHref] = useState<string | null>(null);
   const [forceBelow, setForceBelow] = useState(false);
-  const lastSelectionRef = useRef<{
-    el: HTMLInputElement | HTMLTextAreaElement | null;
-    start: number;
-    end: number;
-  }>({ el: null, start: 0, end: 0 });
-  const lastContentEditableRangeRef = useRef<Range | null>(null);
   const hasDatePickerByType =
     [
       'experience',
@@ -144,28 +128,6 @@ export function EntryToolbar({
   }, [pinToSectionHeader, toolbarAnchorId, mounted]);
 
   useEffect(() => {
-    const onSelectionChange = () => {
-      const sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0) return;
-      const range = sel.getRangeAt(0);
-      const container = range.commonAncestorContainer;
-      const element =
-        container.nodeType === Node.ELEMENT_NODE
-          ? (container as Element)
-          : container.parentElement;
-      // Only remember real highlights; a collapsed caret must not clobber the saved range.
-      if (element?.closest('[contenteditable="true"]') && !range.collapsed) {
-        lastContentEditableRangeRef.current = range.cloneRange();
-      }
-      const anchor = element?.closest('a[href]');
-      setAnchorHref(anchor?.getAttribute('href')?.trim() || null);
-    };
-    document.addEventListener('selectionchange', onSelectionChange);
-    return () =>
-      document.removeEventListener('selectionchange', onSelectionChange);
-  }, []);
-
-  useEffect(() => {
     if (position !== 'above') {
       setForceBelow(false);
       return;
@@ -186,7 +148,7 @@ export function EntryToolbar({
 
   useEffect(() => {
     if (!mounted) return;
-    if (!showTextTools && !showDate && !showSettings && !confirmDelete) return;
+    if (!showDate && !showSettings && !confirmDelete) return;
     const sync = () => {
       const rect = rootRef.current?.getBoundingClientRect();
       if (!rect) return;
@@ -199,7 +161,7 @@ export function EntryToolbar({
       window.removeEventListener('resize', sync);
       window.removeEventListener('scroll', sync, true);
     };
-  }, [confirmDelete, mounted, showDate, showSettings, showTextTools]);
+  }, [confirmDelete, mounted, showDate, showSettings]);
 
   const panelStyle = (width: number): CSSProperties => ({
     zIndex: overlayZ,
@@ -212,278 +174,10 @@ export function EntryToolbar({
       effectivePanelPosition === 'above' ? 'translateY(-100%)' : undefined,
   });
 
-  const captureSelection = () => {
-    const active = document.activeElement;
-    // Ignore the toolbar's own URL input so it never becomes the format target.
-    if (
-      (active instanceof HTMLInputElement ||
-        active instanceof HTMLTextAreaElement) &&
-      active.dataset.cvToolbarLinkInput !== 'true'
-    ) {
-      lastSelectionRef.current = {
-        el: active,
-        start: active.selectionStart ?? 0,
-        end: active.selectionEnd ?? 0,
-      };
-      // An input/textarea is now the target — drop any stale contentEditable range.
-      lastContentEditableRangeRef.current = null;
-      return;
-    }
-    const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0) {
-      const range = sel.getRangeAt(0);
-      // Never overwrite a good saved highlight with a collapsed (caret-only) range —
-      // doing so caused the false "please highlight the text" alert.
-      if (range.collapsed) return;
-      const container = range.commonAncestorContainer;
-      const element =
-        container.nodeType === Node.ELEMENT_NODE
-          ? (container as Element)
-          : container.parentElement;
-      if (element?.closest('[contenteditable="true"]')) {
-        lastContentEditableRangeRef.current = range.cloneRange();
-        // A contentEditable field is now the target — drop any stale input selection.
-        lastSelectionRef.current = { el: null, start: 0, end: 0 };
-      }
-    }
-  };
-
-  const onToolbarActionMouseDown = () => {
-    setToolbarInteracting(true);
-    captureSelection();
-  };
-
-  const onToolbarActionMouseUp = () => {
-    setTimeout(() => setToolbarInteracting(false), 0);
-  };
-
-  const applyTextFormat = (kind: 'bold' | 'italic' | 'underline') => {
-    captureSelection();
-    const active = document.activeElement;
-    const selectedEl =
-      active instanceof HTMLInputElement ||
-      active instanceof HTMLTextAreaElement
-        ? active
-        : lastSelectionRef.current.el;
-    if (
-      !(
-        selectedEl instanceof HTMLInputElement ||
-        selectedEl instanceof HTMLTextAreaElement
-      )
-    ) {
-      applyContentEditableFormat(kind);
-      return;
-    }
-    const liveStart = selectedEl.selectionStart ?? 0;
-    const liveEnd = selectedEl.selectionEnd ?? 0;
-    const canUseSavedRange =
-      lastSelectionRef.current.el === selectedEl &&
-      lastSelectionRef.current.end > lastSelectionRef.current.start;
-    const start =
-      liveEnd > liveStart
-        ? liveStart
-        : canUseSavedRange
-          ? lastSelectionRef.current.start
-          : liveStart;
-    const end =
-      liveEnd > liveStart
-        ? liveEnd
-        : canUseSavedRange
-          ? lastSelectionRef.current.end
-          : liveEnd;
-    if (start === end) {
-      setToolsNotice('Please highlight the text you want to format.');
-      return;
-    }
-    const raw = selectedEl.value;
-    const selected = raw.slice(start, end);
-    const wrapped =
-      kind === 'bold'
-        ? `<strong>${selected}</strong>`
-        : kind === 'italic'
-          ? `<em>${selected}</em>`
-          : `<u>${selected}</u>`;
-    const next = `${raw.slice(0, start)}${wrapped}${raw.slice(end)}`;
-    selectedEl.value = next;
-    selectedEl.dispatchEvent(new Event('input', { bubbles: true }));
-    lastSelectionRef.current = {
-      el: selectedEl,
-      start: start + wrapped.length,
-      end: start + wrapped.length,
-    };
-    setShowTextTools(false);
-    return;
-  };
-
-  const applyContentEditableFormat = (
-    kind: 'bold' | 'italic' | 'underline',
-  ) => {
-    const sel = window.getSelection();
-    const range =
-      sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed
-        ? sel.getRangeAt(0)
-        : lastContentEditableRangeRef.current;
-    if (!range || range.collapsed) {
-      setToolsNotice('Please highlight the text you want to format.');
-      return;
-    }
-    const container = range.commonAncestorContainer;
-    const element =
-      container.nodeType === Node.ELEMENT_NODE
-        ? (container as Element)
-        : container.parentElement;
-    if (!element?.closest('[contenteditable="true"]')) {
-      setToolsNotice(
-        'Please click into a text field and highlight text first.',
-      );
-      return;
-    }
-    const selection = window.getSelection();
-    if (!selection) return;
-    selection.removeAllRanges();
-    selection.addRange(range.cloneRange());
-    document.execCommand(kind);
-    const host = element.closest('[contenteditable="true"]');
-    if (host instanceof HTMLElement) {
-      host.dispatchEvent(new Event('input', { bubbles: true }));
-      host.focus();
-    }
-    setShowTextTools(false);
-  };
-
-  const normalizedUrl = (raw: string): string | null => {
-    const v = raw.trim();
-    if (!v) return null;
-    const withScheme = /^https?:\/\//i.test(v) ? v : `https://${v}`;
-    try {
-      const url = new URL(withScheme);
-      if (!/^https?:$/i.test(url.protocol)) return null;
-      return url.toString();
-    } catch {
-      return null;
-    }
-  };
-
-  const removeLink = () => {
-    const sel = window.getSelection();
-    // Prefer the saved highlight; a live caret may have collapsed off the link
-    // after the toolbar button took focus.
-    const range =
-      sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed
-        ? sel.getRangeAt(0)
-        : lastContentEditableRangeRef.current;
-    if (!range) {
-      setToolsNotice('Highlight the linked text first, then choose Unlink.');
-      return;
-    }
-    const node = range.commonAncestorContainer;
-    const element =
-      node.nodeType === Node.ELEMENT_NODE
-        ? (node as Element)
-        : node.parentElement;
-    // The selection may wrap (not be inside) the anchor — search descendants too.
-    const anchor =
-      element?.closest('a[href]') ?? element?.querySelector('a[href]') ?? null;
-    const host = anchor?.closest('[contenteditable="true"]');
-    if (
-      !(anchor instanceof HTMLAnchorElement) ||
-      !(host instanceof HTMLElement)
-    ) {
-      setToolsNotice('Highlight the linked text first, then choose Unlink.');
-      return;
-    }
-    const text = anchor.textContent ?? '';
-    const replacement = document.createTextNode(text);
-    anchor.replaceWith(replacement);
-    host.dispatchEvent(new Event('input', { bubbles: true }));
-    host.focus();
-    setShowLinkInput(false);
-    setLinkDraft('https://');
-  };
-
-  const applyLink = () => {
-    const href = normalizedUrl(linkDraft);
-    if (!href) {
-      setToolsNotice("That doesn't look like a web address.");
-      return;
-    }
-    // Use the field selection captured when the toolbar was pressed. We must not
-    // read document.activeElement here: focus is on the toolbar's own URL input
-    // or the OK button, which would otherwise hijack the link target.
-    const savedInput = lastSelectionRef.current;
-    if (
-      (savedInput.el instanceof HTMLInputElement ||
-        savedInput.el instanceof HTMLTextAreaElement) &&
-      savedInput.end > savedInput.start &&
-      document.body.contains(savedInput.el)
-    ) {
-      const el = savedInput.el;
-      const { start, end } = savedInput;
-      const raw = el.value;
-      const selected = raw.slice(start, end);
-      const wrapped = `<a href="${href}" target="_blank" rel="noreferrer">${selected}</a>`;
-      el.value = `${raw.slice(0, start)}${wrapped}${raw.slice(end)}`;
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-      setShowLinkInput(false);
-      setShowTextTools(false);
-      setLinkDraft('https://');
-      return;
-    }
-    const range = lastContentEditableRangeRef.current;
-    if (!range || range.collapsed) {
-      setToolsNotice('Please highlight the text you want to link.');
-      return;
-    }
-    const container = range.commonAncestorContainer;
-    const element =
-      container.nodeType === Node.ELEMENT_NODE
-        ? (container as Element)
-        : container.parentElement;
-    const host = element?.closest('[contenteditable="true"]');
-    if (!(host instanceof HTMLElement)) {
-      setToolsNotice('Please highlight text inside an editable field first.');
-      return;
-    }
-
-    const selection = window.getSelection();
-    if (!selection) return;
-    selection.removeAllRanges();
-    selection.addRange(range.cloneRange());
-    const safeRange = selection.getRangeAt(0);
-    const anchor = document.createElement('a');
-    anchor.href = href;
-    anchor.target = '_blank';
-    anchor.rel = 'noreferrer';
-    anchor.style.color = '#1D4ED8';
-    anchor.style.textDecoration = 'underline';
-    anchor.appendChild(safeRange.extractContents());
-    safeRange.insertNode(anchor);
-    host.dispatchEvent(new Event('input', { bubbles: true }));
-    host.focus();
-    setShowLinkInput(false);
-    setShowTextTools(false);
-    setLinkDraft('https://');
-  };
-
-  const selectedAnchorHref = (): string | null => {
-    const sel = window.getSelection();
-    const range =
-      sel && sel.rangeCount > 0
-        ? sel.getRangeAt(0)
-        : lastContentEditableRangeRef.current;
-    if (!range) return null;
-    const node = range.commonAncestorContainer;
-    const element =
-      node.nodeType === Node.ELEMENT_NODE
-        ? (node as Element)
-        : node.parentElement;
-    const anchor = element?.closest('a[href]');
-    return anchor?.getAttribute('href')?.trim() || null;
-  };
-
   const toolbarBar = (
     <div
       ref={rootRef}
+      data-cv-entry-toolbar=""
       className={
         headerSlot
           ? 'flex w-full max-w-full items-center'
@@ -543,20 +237,6 @@ export function EntryToolbar({
         >
           <ChevronDown className="h-4 w-4" />
         </button>
-        <button
-          type="button"
-          title="Bold, italic, underline or link"
-          aria-label="Text formatting"
-          onMouseDown={onToolbarActionMouseDown}
-          onMouseUp={onToolbarActionMouseUp}
-          onClick={() => {
-            setToolsNotice(null);
-            setShowTextTools((v) => !v);
-          }}
-          className="px-2 py-1.5 text-black/70"
-        >
-          <Type className="h-4 w-4" />
-        </button>
         {showAddBullet ? (
           <button
             type="button"
@@ -580,11 +260,24 @@ export function EntryToolbar({
         {!hideDelete ? (
           <button
             type="button"
-            title="Delete"
-            onClick={() => setConfirmDelete(true)}
-            className="px-2 py-1.5 text-black/70"
+            title={
+              confirmBeforeDelete ? 'Remove this section' : 'Remove this entry'
+            }
+            onClick={() => {
+              if (confirmBeforeDelete) {
+                setConfirmDelete(true);
+                return;
+              }
+              onDelete();
+              toast.success('Removed', {
+                label: 'Undo',
+                onClick: () => window.dispatchEvent(new Event(CV_UNDO_EVENT)),
+              });
+            }}
+            className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2 py-1.5 text-[12px] font-semibold text-[#B42318] hover:bg-[#FEF3F2]"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-4 w-4" aria-hidden />
+            Remove
           </button>
         ) : null}
         <button
@@ -605,131 +298,6 @@ export function EntryToolbar({
       {headerSlot && mounted
         ? createPortal(toolbarBar, headerSlot)
         : toolbarBar}
-      {showTextTools && mounted
-        ? createPortal(
-            <div
-              className={`${panelPositionClass} w-[340px] rounded-xl border border-border-subtle bg-white p-3 shadow-xl`}
-              style={panelStyle(340)}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  title="Bold"
-                  className="rounded-md border border-black/10 p-1.5 text-black hover:bg-black/5"
-                  onMouseDown={onToolbarActionMouseDown}
-                  onMouseUp={onToolbarActionMouseUp}
-                  onClick={() => applyTextFormat('bold')}
-                >
-                  <Bold className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  title="Underline"
-                  className="rounded-md border border-black/10 p-1.5 text-black hover:bg-black/5"
-                  onMouseDown={onToolbarActionMouseDown}
-                  onMouseUp={onToolbarActionMouseUp}
-                  onClick={() => applyTextFormat('underline')}
-                >
-                  <Underline className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  title="Italic"
-                  className="rounded-md border border-black/10 p-1.5 text-black hover:bg-black/5"
-                  onMouseDown={onToolbarActionMouseDown}
-                  onMouseUp={onToolbarActionMouseUp}
-                  onClick={() => applyTextFormat('italic')}
-                >
-                  <Italic className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  title="Insert link"
-                  className="rounded-md border border-black/10 p-1.5 text-black hover:bg-black/5"
-                  onMouseDown={onToolbarActionMouseDown}
-                  onMouseUp={onToolbarActionMouseUp}
-                  onClick={() => {
-                    setLinkDraft(anchorHref || 'https://');
-                    setShowLinkInput((v) => !v);
-                  }}
-                >
-                  <Link2 className="h-4 w-4" />
-                </button>
-                {anchorHref ? (
-                  <button
-                    type="button"
-                    title="Remove link"
-                    className="rounded-md border border-black/10 px-2 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50"
-                    onMouseDown={onToolbarActionMouseDown}
-                    onMouseUp={onToolbarActionMouseUp}
-                    onClick={removeLink}
-                  >
-                    Unlink
-                  </button>
-                ) : null}
-              </div>
-              {showLinkInput ? (
-                <div className="mt-2 flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      data-cv-toolbar-link-input="true"
-                      value={linkDraft}
-                      onChange={(e) => setLinkDraft(e.target.value)}
-                      placeholder="https://example.com"
-                      className="h-9 flex-1 rounded-md border border-black/15 bg-white px-2 text-sm text-[#111111] outline-none placeholder:text-black/40 focus:border-accent-solid"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          applyLink();
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="h-9 rounded-md border border-black/15 px-3 text-xs font-semibold text-black/70"
-                      onClick={() => setShowLinkInput(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      className="h-9 rounded-md bg-[#10B981] px-3 text-xs font-semibold text-text-primary"
-                      onClick={applyLink}
-                    >
-                      OK
-                    </button>
-                  </div>
-                  {anchorHref ? (
-                    <button
-                      type="button"
-                      className="self-start text-xs font-semibold text-rose-700 hover:underline"
-                      onClick={() => {
-                        setLinkDraft('');
-                        removeLink();
-                      }}
-                    >
-                      Remove hyperlink
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
-              <p
-                role={toolsNotice ? 'alert' : undefined}
-                className={
-                  toolsNotice
-                    ? 'mt-2 text-[12px] font-medium text-[#B54708]'
-                    : 'mt-2 text-[12px] text-black/60'
-                }
-              >
-                {toolsNotice ??
-                  'Tip: highlight any words on your CV and a style bar appears right above them.'}
-              </p>
-            </div>,
-            document.body,
-          )
-        : null}
       {showDate && onDatePick && mounted
         ? createPortal(
             <div
@@ -785,33 +353,34 @@ export function EntryToolbar({
       {confirmDelete && mounted
         ? createPortal(
             <div
-              className={`${panelPositionClass} w-[260px] rounded-xl border border-rose-200 bg-white p-3 shadow-xl`}
-              style={panelStyle(260)}
+              className={`${panelPositionClass} w-[280px] rounded-xl border border-black/10 bg-white p-4 shadow-xl`}
+              style={panelStyle(280)}
               onClick={(e) => e.stopPropagation()}
             >
-              <p className="text-xs font-semibold text-black">
-                Delete confirmation
+              <p className="text-[14px] font-semibold text-[#111827]">
+                Remove this whole section?
               </p>
-              <p className="mt-1 text-[11px] text-black/70">
-                Are you sure you want to delete this item?
+              <p className="mt-1 text-[13px] text-[#4B5563]">
+                Everything in it comes off your CV. You can add it again from
+                Sections.
               </p>
-              <div className="mt-2 flex justify-end gap-2">
+              <div className="mt-3 flex justify-end gap-2">
                 <button
                   type="button"
-                  className="rounded-md border border-black/10 px-2 py-1 text-xs text-black/70"
+                  className="rounded-lg border border-black/10 px-3 py-1.5 text-[13px] font-medium text-[#374151] hover:bg-black/5"
                   onClick={() => setConfirmDelete(false)}
                 >
-                  Cancel
+                  Keep it
                 </button>
                 <button
                   type="button"
-                  className="rounded-md bg-rose-500 px-2 py-1 text-xs font-semibold text-text-primary"
+                  className="rounded-lg bg-[#D92D20] px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-[#B42318]"
                   onClick={() => {
                     onDelete();
                     setConfirmDelete(false);
                   }}
                 >
-                  Delete
+                  Remove
                 </button>
               </div>
             </div>,

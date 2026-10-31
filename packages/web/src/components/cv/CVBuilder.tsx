@@ -135,6 +135,7 @@ import { useCvUndoRedo } from '@/hooks/useCvUndoRedo';
 import {
   computeCvUndoFingerprint,
   CV_UNDO_COALESCE_MS,
+  CV_UNDO_EVENT,
   flushCvInlineEdits,
 } from '@/lib/cvUndoRedo';
 import {
@@ -1025,9 +1026,16 @@ export function CVBuilder({
         applyHistoryRestore(redoEdit(dataRef.current), 'redo');
       }
     };
+    const onUndoRequest = () => {
+      flushCvInlineEdits();
+      applyHistoryRestore(undoEdit(dataRef.current), 'undo');
+    };
     window.addEventListener('keydown', onKey, { capture: true });
-    return () =>
+    window.addEventListener(CV_UNDO_EVENT, onUndoRequest);
+    return () => {
       window.removeEventListener('keydown', onKey, { capture: true });
+      window.removeEventListener(CV_UNDO_EVENT, onUndoRequest);
+    };
   }, [mode, undoEdit, redoEdit, applyHistoryRestore]);
 
   useEffect(() => {

@@ -28,6 +28,9 @@ export const CV_UNDO_COALESCE_MS = 450;
 
 export const MAX_UNDO_STEPS = 40;
 
+/** Window event the CV editor answers with one undo step (e.g. the Undo button on a toast). */
+export const CV_UNDO_EVENT = 'careerkite:cv-undo';
+
 export function computeCvUndoFingerprint(data: CVBuilderData): string {
   return stableStringify(data);
 }
