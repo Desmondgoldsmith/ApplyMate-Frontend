@@ -29,6 +29,43 @@ describe('cvUndoRedo', () => {
     expect(redo1?.state.future.length).toBe(0);
   });
 
+  it('undo twice then redo twice walks back the same way', () => {
+    const s = (t: string) => ({ ...base, summary: { text: t } });
+    let state = createUndoHistoryState();
+    state = pushUndoHistorySnapshot(state, s('A'), 'Edit');
+    state = pushUndoHistorySnapshot(state, s('B'), 'Edit');
+    const u1 = undoHistoryState(state, s('C'))!;
+    const u2 = undoHistoryState(u1.state, u1.restored)!;
+    expect([u1.restored.summary.text, u2.restored.summary.text]).toEqual([
+      'B',
+      'A',
+    ]);
+    const r1 = redoHistoryState(u2.state, u2.restored)!;
+    const r2 = redoHistoryState(r1.state, r1.restored)!;
+    expect([r1.restored.summary.text, r2.restored.summary.text]).toEqual([
+      'B',
+      'C',
+    ]);
+  });
+
+  it('skips a step that matches what is already on screen', () => {
+    const s = (t: string) => ({ ...base, summary: { text: t } });
+    let state = pushUndoHistorySnapshot(
+      createUndoHistoryState(),
+      s('A'),
+      'Edit',
+    );
+    state = {
+      ...state,
+      past: [
+        ...state.past,
+        ...pushUndoHistorySnapshot(createUndoHistoryState(), s('B'), 'AI').past,
+      ],
+    };
+    const undone = undoHistoryState(state, s('B'));
+    expect(undone?.restored.summary.text).toBe('A');
+  });
+
   it('new edit clears redo future', () => {
     const s0 = { ...base, summary: { text: '' } };
     const s1 = { ...base, summary: { text: 'AAA' } };

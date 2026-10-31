@@ -1704,7 +1704,8 @@ export function CvClinicPageContent() {
             commandId: assistantCommandIdRef.current.trim() || undefined,
             operation: globalAssistantFullResult?.operation,
             onRehydrated: () => {
-              setCvServerHydrateNonce((n) => n + 1);
+              // Keep undo history so the user can take the AI change back.
+              bumpCvServerHydrateNonce({ preserveHistory: true });
               setAssistantPatchNonce((n) => n + 1);
             },
           });
@@ -4288,10 +4289,15 @@ export function CvClinicPageContent() {
                 immediateSectionPatchRef.current = patch;
               }}
               onAiStructuredPersisted={() =>
-                setCvServerHydrateNonce((n) => n + 1)
+                bumpCvServerHydrateNonce({ preserveHistory: true })
               }
               onDataSnapshotChange={setCvDataSnapshot}
               printDocumentRef={printDocumentRef}
+              onSpellCheckDone={(issueCount) => {
+                if (issueCount <= 0) return;
+                setRightPanelCollapsed(false);
+                setTripleRightTab('improvements');
+              }}
               cvAssistantCommand={runAssistantCommand}
               cvAssistantBusy={assistantBusy}
               cvAssistantBusyMessage={assistantBusyMessage}

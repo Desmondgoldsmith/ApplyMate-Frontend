@@ -7,6 +7,8 @@ const CV_REVISION_REASON_LABELS: Record<string, string> = {
   tailor_accept: 'Before applying tailored changes',
   tailor_revert: 'Before undoing a tailored change',
   before_restore: 'Before restoring an earlier version',
+  editing: 'While you were editing',
+  ai_change: 'Before an AI change',
 };
 
 export const CV_REVISION_FALLBACK_LABEL = 'Saved version';
@@ -16,7 +18,7 @@ export function cvRevisionReasonLabel(reason: CvRevisionReason): string {
 }
 
 export const CV_VERSIONS_EMPTY_MESSAGE =
-  'No saved versions yet. CareerKite saves one automatically before big changes like uploading a new CV.';
+  'No saved versions yet. CareerKite saves one automatically while you edit and before big or AI changes.';
 
 export const CV_VERSION_NOT_AVAILABLE_MESSAGE = 'Version not available';
 

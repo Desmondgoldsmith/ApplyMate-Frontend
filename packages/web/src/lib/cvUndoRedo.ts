@@ -130,11 +130,17 @@ export function undoHistoryState(
 ): { state: UndoHistoryState; restored: CVBuilderData } | null {
   if (state.past.length === 0) return null;
   const past = [...state.past];
-  const entry = past.pop();
+  // Steps identical to what is on screen would make Undo look like it did nothing.
+  const currentFp = computeCvUndoFingerprint(current);
+  let entry = past.pop();
+  while (entry && computeCvUndoFingerprint(entry.data) === currentFp) {
+    entry = past.pop();
+  }
   if (!entry) return null;
+  // Newest redo point goes last: redo takes from the end.
   const future = [
-    cloneHistoryEntry(current, 'Redo point'),
     ...state.future,
+    cloneHistoryEntry(current, 'Redo point'),
   ].slice(-MAX_UNDO_STEPS);
   return {
     state: { past, future },

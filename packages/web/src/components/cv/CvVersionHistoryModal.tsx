@@ -203,7 +203,7 @@ export function CvVersionHistoryModal({
         open={open}
         onOpenChange={onOpenChange}
         title="Version history"
-        description="Saved automatically before big changes. Restoring keeps your current CV as a version too."
+        description="Saved automatically while you edit and before big or AI changes. Restoring keeps your current CV as a version too, so you can switch back."
         className="max-w-lg"
         scrollBody
       >
