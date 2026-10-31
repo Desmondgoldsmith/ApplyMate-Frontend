@@ -25,15 +25,19 @@ function canRender3d(): boolean {
   }
 }
 
-const STATIC_SIZE = 200;
 /** After a lost WebGL context, retry the 3D kite a couple of times, then stay static. */
 const MAX_CONTEXT_RETRIES = 2;
 const CONTEXT_RETRY_MS = 3000;
 
+/** Scales with its box so the flat logo takes the same space as the 3D kite. */
 function StaticKite() {
   return (
-    <div className="flex h-full items-center justify-center text-text-primary">
-      <CareerKiteMark size={STATIC_SIZE} variant="full" />
+    <div className="flex h-full min-h-0 items-center justify-center text-text-primary">
+      <CareerKiteMark
+        size={400}
+        variant="full"
+        className="aspect-square h-auto max-h-[78%] w-[min(70%,26rem)]"
+      />
     </div>
   );
 }
