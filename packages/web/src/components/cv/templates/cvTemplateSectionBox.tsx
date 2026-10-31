@@ -2,6 +2,8 @@
 
 import { Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { CvAiPatchDiffView } from '@/components/cv/CvAiPatchDiffView';
 import { CvDiffActionPair } from '@/components/cv/cvDiffImprovementActions';
@@ -21,6 +23,103 @@ import {
 import { cn } from '@/lib/utils';
 
 export type CvTemplateSectionChangedField = CvPreviewChangedField;
+
+/** Sections whose changes belong to one entry (a job, a school…), addressed as `section[i]…`. */
+const ENTRY_LIST_SECTIONS = new Set([
+  'experience',
+  'education',
+  'projects',
+  'certifications',
+  'achievements',
+  'volunteerwork',
+]);
+
+/** Index of the entry a change targets (`experience[1].bullets[3]` → 1), or null. */
+export function cvChangeEntryIndex(path: string): number | null {
+  const m = /^([a-z_]+)(?:\.items)?(?:\[(\d+)\]|\.(\d+)(?=\.|$))/i.exec(
+    path.trim(),
+  );
+  if (!m || !ENTRY_LIST_SECTIONS.has(m[1].toLowerCase())) return null;
+  return Number(m[2] ?? m[3]);
+}
+
+let lastScrolledSuggestionKey = '';
+
+function scrollSuggestionIntoView(el: HTMLElement, key: string) {
+  if (!key || key === lastScrolledSuggestionKey) return;
+  lastScrolledSuggestionKey = key;
+  requestAnimationFrame(() =>
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' }),
+  );
+}
+
+/** Entry elements of a section box, in data order (section title rows excluded). */
+function sectionEntryElements(box: HTMLElement): HTMLElement[] {
+  const isTitle = (el: HTMLElement) =>
+    el.dataset.entryId?.startsWith('__section-title__') === true;
+  return Array.from(
+    box.querySelectorAll<HTMLElement>('[data-entry-id]'),
+  ).filter((el) => {
+    if (isTitle(el)) return false;
+    const outer = el.parentElement?.closest<HTMLElement>('[data-entry-id]');
+    return !outer || !box.contains(outer) || isTitle(outer);
+  });
+}
+
+/** Renders its card right under entry `entryIndex` of the surrounding section box. */
+function EntrySuggestionSlot({
+  entryIndex,
+  scrollKey,
+  children,
+}: {
+  entryIndex: number;
+  scrollKey: string;
+  children: ReactNode;
+}) {
+  const markerRef = useRef<HTMLSpanElement>(null);
+  const [target, setTarget] = useState<HTMLElement | 'inline' | null>(null);
+
+  useLayoutEffect(() => {
+    const box = markerRef.current?.parentElement;
+    const entry = box ? sectionEntryElements(box)[entryIndex] : undefined;
+    if (!entry) {
+      setTarget('inline');
+      return;
+    }
+    const host = document.createElement('div');
+    host.setAttribute('data-cv-ai-entry-suggestion', '');
+    entry.appendChild(host);
+    setTarget(host);
+    return () => {
+      host.remove();
+    };
+  }, [entryIndex]);
+
+  useEffect(() => {
+    if (target instanceof HTMLElement)
+      scrollSuggestionIntoView(target, scrollKey);
+  }, [target, scrollKey]);
+
+  return (
+    <>
+      <span ref={markerRef} hidden />
+      {target === 'inline'
+        ? children
+        : target
+          ? createPortal(children, target)
+          : null}
+    </>
+  );
+}
+
+function ScrollIntoViewOnce({ scrollKey }: { scrollKey: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const card = ref.current?.parentElement;
+    if (card) scrollSuggestionIntoView(card, scrollKey);
+  }, [scrollKey]);
+  return <span ref={ref} hidden />;
+}
 
 export function cvTemplateSectionBox(
   id: string,
@@ -115,76 +214,105 @@ export function cvTemplateSectionBox(
           </div>
         </div>
       ) : null}
-      {hasChanges && (
-        <div className={card}>
-          {cardHeader(
-            sectionChangedFields!.length > 1
-              ? `${sectionChangedFields!.length} suggested changes`
-              : 'Suggested rewrite',
-          )}
-          <div className="divide-y divide-[#EAECF0]">
-            {sectionChangedFields!.map((cf, i) => {
-              const sectionHint = id;
-              const beforeDisplay = cvDiffFieldDisplayText(
-                cf.before,
-                sectionHint,
-                cf.fieldPath ?? cf.field ?? '',
-              );
-              const afterDisplay = cvDiffFieldDisplayText(
-                cf.after,
-                sectionHint,
-                cf.fieldPath ?? cf.field ?? '',
-              );
-              const fieldCallbackIndex =
-                sectionDiffCallbackIndex ??
-                cf.sectionDiffIndex ??
-                (sectionChangedFields!.length === 1 ? undefined : i);
-              return (
-                <div key={i} className="px-3.5 py-3">
-                  <CvAiPatchDiffView
-                    tone="paper"
-                    title={
-                      sectionChangedFields!.length > 1
-                        ? formatDiffTitle(
-                            (
-                              cf.fieldLabel ??
-                              cf.fieldPath ??
-                              cf.field ??
-                              ''
-                            ).trim(),
-                          )
-                        : undefined
-                    }
-                    before={beforeDisplay}
-                    after={afterDisplay}
-                    compact
-                  />
-                  <CvDiffActionPair
-                    tone="paper"
-                    className="mt-2.5 flex items-center justify-end gap-2"
-                    rejectLabel="Keep mine"
-                    acceptLabel="Use this"
-                    onReject={() => onReject?.(fieldCallbackIndex)}
-                    onAccept={() => onAccept?.(fieldCallbackIndex)}
-                  />
-                </div>
-              );
-            })}
-          </div>
-          {sectionChangedFields!.length > 1 ? (
-            <CvDiffActionPair
-              tone="paper"
-              className="flex items-center justify-end gap-2 border-t border-[#EAECF0] bg-[#F9FAFB] px-3.5 py-2.5"
-              rejectLabel="Keep all mine"
-              acceptLabel={
-                gCvDocPreviewDiffMultiSection ? 'Use this section' : 'Use all'
-              }
-              onReject={() => onReject?.(sectionDiffCallbackIndex)}
-              onAccept={() => onAccept?.(sectionDiffCallbackIndex)}
-            />
-          ) : null}
-        </div>
-      )}
+      {hasChanges ? changeCards() : null}
     </div>
   );
+
+  function changeCards() {
+    const fields = sectionChangedFields!;
+    const many = fields.length > 1;
+    const scrollKey = `${id}:${fields
+      .map((cf) => cf.fieldPath ?? cf.field ?? '')
+      .join('|')}`;
+    const renderField = (cf: CvTemplateSectionChangedField, i: number) => {
+      const path = cf.fieldPath ?? cf.field ?? '';
+      const fieldCallbackIndex =
+        sectionDiffCallbackIndex ??
+        cf.sectionDiffIndex ??
+        (fields.length === 1 ? undefined : i);
+      return (
+        <div key={i} className="px-3.5 py-3">
+          <CvAiPatchDiffView
+            tone="paper"
+            title={
+              many ? formatDiffTitle((cf.fieldLabel ?? path).trim()) : undefined
+            }
+            before={cvDiffFieldDisplayText(cf.before, id, path)}
+            after={cvDiffFieldDisplayText(cf.after, id, path)}
+            compact
+          />
+          <CvDiffActionPair
+            tone="paper"
+            className="mt-2.5 flex items-center justify-end gap-2"
+            rejectLabel="Keep mine"
+            acceptLabel="Use this"
+            onReject={() => onReject?.(fieldCallbackIndex)}
+            onAccept={() => onAccept?.(fieldCallbackIndex)}
+          />
+        </div>
+      );
+    };
+
+    const byEntry = new Map<number, number[]>();
+    const sectionLevel: number[] = [];
+    fields.forEach((cf, i) => {
+      const entry = cvChangeEntryIndex(cf.fieldPath ?? cf.field ?? '');
+      if (entry == null) sectionLevel.push(i);
+      else byEntry.set(entry, [...(byEntry.get(entry) ?? []), i]);
+    });
+    const entryGroups = Array.from(byEntry.entries()).sort(([a], [b]) => a - b);
+    const footer = many ? (
+      <CvDiffActionPair
+        tone="paper"
+        className="flex items-center justify-end gap-2 border-t border-[#EAECF0] bg-[#F9FAFB] px-3.5 py-2.5"
+        rejectLabel="Keep all mine"
+        acceptLabel={
+          gCvDocPreviewDiffMultiSection ? 'Use this section' : 'Use all'
+        }
+        onReject={() => onReject?.(sectionDiffCallbackIndex)}
+        onAccept={() => onAccept?.(sectionDiffCallbackIndex)}
+      />
+    ) : null;
+
+    return (
+      <>
+        {entryGroups.map(([entryIndex, indexes], g) => (
+          <EntrySuggestionSlot
+            key={`entry-${entryIndex}`}
+            entryIndex={entryIndex}
+            scrollKey={g === 0 ? scrollKey : ''}
+          >
+            <div className={card} onClick={(e) => e.stopPropagation()}>
+              {cardHeader(
+                indexes.length > 1
+                  ? `${indexes.length} suggested changes here`
+                  : 'Suggested rewrite',
+              )}
+              <div className="divide-y divide-[#EAECF0]">
+                {indexes.map((i) => renderField(fields[i], i))}
+              </div>
+            </div>
+          </EntrySuggestionSlot>
+        ))}
+        {sectionLevel.length > 0 ? (
+          <div className={card}>
+            {entryGroups.length === 0 ? (
+              <ScrollIntoViewOnce scrollKey={scrollKey} />
+            ) : null}
+            {cardHeader(
+              sectionLevel.length > 1
+                ? `${sectionLevel.length} suggested changes`
+                : 'Suggested rewrite',
+            )}
+            <div className="divide-y divide-[#EAECF0]">
+              {sectionLevel.map((i) => renderField(fields[i], i))}
+            </div>
+            {footer}
+          </div>
+        ) : footer ? (
+          <div className={card}>{footer}</div>
+        ) : null}
+      </>
+    );
+  }
 }
