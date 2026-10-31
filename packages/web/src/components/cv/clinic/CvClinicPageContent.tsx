@@ -1587,6 +1587,31 @@ export function CvClinicPageContent() {
     ],
   );
 
+  // `?download=pdf` (from the CV list) downloads once the editor has drawn the CV, so the file
+  // matches what the user sees here.
+  const downloadParam = searchParams.get('download');
+  const autoDownloadDoneRef = useRef(false);
+  useEffect(() => {
+    if (downloadParam !== 'pdf' || autoDownloadDoneRef.current) return;
+    if (!targetId || !cvDataSnapshot || !printDocumentRef.current) return;
+    const id = window.setTimeout(() => {
+      if (autoDownloadDoneRef.current) return;
+      autoDownloadDoneRef.current = true;
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('download');
+      router.replace(`/dashboard/cv?${params.toString()}`, { scroll: false });
+      void handleExport('pdf');
+    }, 1200);
+    return () => window.clearTimeout(id);
+  }, [
+    downloadParam,
+    targetId,
+    cvDataSnapshot,
+    handleExport,
+    router,
+    searchParams,
+  ]);
+
   const handleRestoreOriginal = useCallback(async () => {
     try {
       const result = await restoreMutation.mutateAsync();
