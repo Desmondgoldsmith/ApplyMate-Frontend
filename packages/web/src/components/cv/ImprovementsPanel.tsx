@@ -717,6 +717,7 @@ function ImprovementsPanelInner({
         <div className="flex items-center justify-center gap-3 px-3 py-1.5">
           <button
             type="button"
+            aria-label="Previous suggestion"
             onClick={() => setNavIndex((v) => Math.max(0, v - 1))}
             disabled={clampedNav === 0}
             className="flex h-7 w-7 items-center justify-center rounded-md border border-border-subtle bg-transparent text-text-tertiary transition hover:border-border-strong hover:text-text-primary disabled:opacity-30"
@@ -728,6 +729,7 @@ function ImprovementsPanelInner({
           </span>
           <button
             type="button"
+            aria-label="Next suggestion"
             onClick={() =>
               setNavIndex((v) => Math.min(unresolvedItems.length - 1, v + 1))
             }
