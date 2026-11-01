@@ -58,10 +58,13 @@ import {
   archivePayloadForTrackedJob,
   clearStageOverride,
   hubStageToApplicationStatus,
+  hubFilterFromQuery,
   hubStageToHubPipelineStage,
   loadStageOverrides,
   mergeTrackedJobs,
   saveStageOverride,
+  stageMatchesFilter,
+  type HubFilter,
   type HubStage,
   type TrackedJob,
 } from './jobHubMerge';
@@ -212,7 +215,13 @@ export function JobHub() {
   const [overrides, setOverrides] = useState<Record<string, HubStage>>({});
   const [dueUiTick, setDueUiTick] = useState(0);
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<HubStage | 'all'>('all');
+  const stageParam = searchParams.get('stage');
+  const [filter, setFilter] = useState<HubFilter>(() =>
+    hubFilterFromQuery(stageParam),
+  );
+  useEffect(() => {
+    if (stageParam !== null) setFilter(hubFilterFromQuery(stageParam));
+  }, [stageParam]);
   const [shareModal, setShareModal] = useState<{
     badge: CareerBadge | null;
     title: string;
@@ -440,7 +449,7 @@ export function JobHub() {
 
   const visibleForBoard = useMemo(() => {
     if (filter === 'all') return afterSearch;
-    return afterSearch.filter((j) => j.stage === filter);
+    return afterSearch.filter((j) => stageMatchesFilter(j.stage, filter));
   }, [afterSearch, filter]);
 
   const visibleForTable = visibleForBoard;

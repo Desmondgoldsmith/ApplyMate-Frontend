@@ -30,6 +30,32 @@ export const HUB_STAGES: HubStage[] = [
   'rejected',
 ];
 
+/** Board filter: one stage, everything, or a group matching the Home numbers ("Saved", "Offers"). */
+export type HubFilter = HubStage | 'all' | 'saved' | 'offers';
+
+const HUB_FILTER_GROUPS: Record<'saved' | 'offers', HubStage[]> = {
+  saved: ['bookmarked', 'analyzed'],
+  offers: ['offered', 'negotiating', 'accepted'],
+};
+
+export function stageMatchesFilter(
+  stage: HubStage,
+  filter: HubFilter,
+): boolean {
+  if (filter === 'all') return true;
+  if (filter === 'saved' || filter === 'offers') {
+    return HUB_FILTER_GROUPS[filter].includes(stage);
+  }
+  return stage === filter;
+}
+
+/** `?stage=` from a link (e.g. Home's application numbers); anything unknown shows all jobs. */
+export function hubFilterFromQuery(raw: string | null | undefined): HubFilter {
+  const v = (raw ?? '').trim().toLowerCase();
+  if (v === 'saved' || v === 'offers') return v;
+  return (HUB_STAGES as string[]).includes(v) ? (v as HubStage) : 'all';
+}
+
 export const HUB_STAGE_LABELS: Record<HubStage, string> = {
   bookmarked: 'Bookmarked',
   analyzed: 'Analyzed',

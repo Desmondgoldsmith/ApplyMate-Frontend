@@ -3,14 +3,16 @@
 import {
   HUB_STAGE_LABELS,
   HUB_STAGES,
+  stageMatchesFilter,
+  type HubFilter,
   type HubStage,
 } from '@/app/(dashboard)/dashboard/jobs/jobHubMerge';
 import { cn } from '@/lib/utils';
 
 type Props = {
   counts: Partial<Record<HubStage, number>>;
-  filter: HubStage | 'all';
-  onFilterChange: (stage: HubStage | 'all') => void;
+  filter: HubFilter;
+  onFilterChange: (stage: HubFilter) => void;
 };
 
 export function HubPipelineStrip({ counts, filter, onFilterChange }: Props) {
@@ -38,11 +40,12 @@ export function HubPipelineStrip({ counts, filter, onFilterChange }: Props) {
         </button>
         {stages.map((stage) => {
           const n = counts[stage] ?? 0;
-          const active = filter === stage;
+          const active = filter !== 'all' && stageMatchesFilter(stage, filter);
           return (
             <button
               key={stage}
               type="button"
+              aria-pressed={active}
               onClick={() => onFilterChange(stage)}
               className={cn(
                 'pipeline-chevron flex-1 shrink-0 items-center justify-center px-1 py-2 text-center transition-colors',
