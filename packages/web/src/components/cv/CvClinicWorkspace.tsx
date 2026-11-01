@@ -1743,7 +1743,10 @@ export function CvClinicWorkspace({
 
   const runToolbarAtsCheck = useCallback(async () => {
     try {
-      await runScan.mutateAsync(profileId);
+      await runScan.mutateAsync({
+        cvProfileId: profileId,
+        discoverNewTips: true,
+      });
       const impr = await queryClient.fetchQuery({
         queryKey: cvSuggestionsQueryKey(profileId),
         queryFn: () => api.cv.getSuggestions(profileId, false),
@@ -1757,7 +1760,10 @@ export function CvClinicWorkspace({
 
   const runRightPanelAnalyzeScan = useCallback(async () => {
     try {
-      await runScan.mutateAsync(profileId);
+      await runScan.mutateAsync({
+        cvProfileId: profileId,
+        discoverNewTips: true,
+      });
       const impr = await queryClient.fetchQuery({
         queryKey: cvSuggestionsQueryKey(profileId),
         queryFn: () => api.cv.getSuggestions(profileId, false),

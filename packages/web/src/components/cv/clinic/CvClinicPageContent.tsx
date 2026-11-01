@@ -2904,7 +2904,10 @@ export function CvClinicPageContent() {
               disabled={runScan.isPending}
               onClick={async () => {
                 try {
-                  await runScan.mutateAsync(targetId);
+                  await runScan.mutateAsync({
+                    cvProfileId: targetId,
+                    discoverNewTips: true,
+                  });
                   const impr = await queryClient.fetchQuery({
                     queryKey: cvSuggestionsQueryKey(targetId),
                     queryFn: () =>
@@ -3037,7 +3040,10 @@ export function CvClinicPageContent() {
   const runToolbarAtsCheck = useCallback(async () => {
     if (!targetId) return;
     try {
-      await runScan.mutateAsync(targetId);
+      await runScan.mutateAsync({
+        cvProfileId: targetId,
+        discoverNewTips: true,
+      });
       const impr = await queryClient.fetchQuery({
         queryKey: cvSuggestionsQueryKey(targetId),
         queryFn: () => api.cv.getSuggestions(targetId ?? undefined, false),
@@ -3052,7 +3058,10 @@ export function CvClinicPageContent() {
   const runRightPanelAnalyzeScan = useCallback(async () => {
     if (!targetId) return;
     try {
-      await runScan.mutateAsync(targetId);
+      await runScan.mutateAsync({
+        cvProfileId: targetId,
+        discoverNewTips: true,
+      });
       const impr = await queryClient.fetchQuery({
         queryKey: cvSuggestionsQueryKey(targetId),
         queryFn: () => api.cv.getSuggestions(targetId ?? undefined, false),
@@ -3951,7 +3960,10 @@ export function CvClinicPageContent() {
                               disabled={runScan.isPending}
                               onClick={async () => {
                                 try {
-                                  await runScan.mutateAsync(targetId);
+                                  await runScan.mutateAsync({
+                                    cvProfileId: targetId,
+                                    discoverNewTips: true,
+                                  });
                                   const impr = await queryClient.fetchQuery({
                                     queryKey: cvSuggestionsQueryKey(targetId),
                                     queryFn: () =>

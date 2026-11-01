@@ -226,7 +226,10 @@ export function CvTopChromeMoreMenu({
         onClick={async () => {
           setOpen(false);
           try {
-            await runScan.mutateAsync(targetId);
+            await runScan.mutateAsync({
+              cvProfileId: targetId,
+              discoverNewTips: true,
+            });
             const impr = await queryClient.fetchQuery({
               queryKey: cvSuggestionsQueryKey(targetId),
               queryFn: () =>

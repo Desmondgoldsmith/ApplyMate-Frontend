@@ -6966,9 +6966,11 @@ const cv = {
       signal?: AbortSignal;
       jobDescription?: string;
       targetRole?: string;
+      discoverNewTips?: boolean;
     },
   ) => {
     const body: Record<string, unknown> = { ...aiWaitForResultBody };
+    if (config?.discoverNewTips) body.discoverNewTips = true;
     if (config?.jobDescription?.trim())
       body.jobDescription = prepareJobDescriptionForAi(config.jobDescription);
     if (config?.targetRole?.trim()) body.targetRole = config.targetRole.trim();
@@ -6988,9 +6990,12 @@ const cv = {
       signal?: AbortSignal;
       jobDescription?: string;
       targetRole?: string;
+      /** The user asked for this scan: new AI tips may be added (automatic re-scores omit it). */
+      discoverNewTips?: boolean;
     },
   ) => {
     const body: Record<string, unknown> = { ...aiWaitForResultBody };
+    if (config?.discoverNewTips) body.discoverNewTips = true;
     if (config?.jobDescription?.trim())
       body.jobDescription = prepareJobDescriptionForAi(config.jobDescription);
     if (config?.targetRole?.trim()) body.targetRole = config.targetRole.trim();

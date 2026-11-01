@@ -20,6 +20,11 @@ export type RunDetailedScoreVariables =
        * Skip React Query suggestion/score cache writes so stored suggestions stay stable.
        */
       ephemeralJobPreview?: boolean;
+      /**
+       * The user pressed a scan button: the review may add new AI tips. Automatic re-scores
+       * after edits leave it off, so tips do not keep appearing while the user fixes others.
+       */
+      discoverNewTips?: boolean;
     };
 
 function normalizeRunDetailedVariables(v: RunDetailedScoreVariables): {
@@ -27,6 +32,7 @@ function normalizeRunDetailedVariables(v: RunDetailedScoreVariables): {
   jobDescription?: string;
   targetRole?: string;
   ephemeralJobPreview: boolean;
+  discoverNewTips: boolean;
 } {
   if (v !== null && typeof v === 'object') {
     return {
@@ -34,9 +40,14 @@ function normalizeRunDetailedVariables(v: RunDetailedScoreVariables): {
       jobDescription: v.jobDescription,
       targetRole: v.targetRole,
       ephemeralJobPreview: v.ephemeralJobPreview === true,
+      discoverNewTips: v.discoverNewTips === true,
     };
   }
-  return { cvProfileId: v ?? undefined, ephemeralJobPreview: false };
+  return {
+    cvProfileId: v ?? undefined,
+    ephemeralJobPreview: false,
+    discoverNewTips: false,
+  };
 }
 
 export function useRunCvDetailedScore() {
@@ -50,7 +61,7 @@ export function useRunCvDetailedScore() {
       scoreAbortRef.current?.abort();
       const ac = new AbortController();
       scoreAbortRef.current = ac;
-      const { cvProfileId, jobDescription, targetRole } =
+      const { cvProfileId, jobDescription, targetRole, discoverNewTips } =
         normalizeRunDetailedVariables(variables);
       const id = cvProfileId?.trim();
       if (id) {
@@ -58,12 +69,14 @@ export function useRunCvDetailedScore() {
           signal: ac.signal,
           jobDescription,
           targetRole,
+          discoverNewTips,
         });
       }
       return api.cv.getScoreDetailed(undefined, {
         signal: ac.signal,
         jobDescription,
         targetRole,
+        discoverNewTips,
       });
     },
     onSuccess: (_payload, variables) => {
