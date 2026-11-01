@@ -7705,6 +7705,37 @@ const cv = {
     if (typeof body.text === 'string') return [body.text];
     return [];
   },
+  /**
+   * POST /cv/improve/bullet for the editor's bullet helper: up to 3 wordings (none with a number the
+   * user did not give) and, when the bullet has no number, one question asking for it.
+   */
+  suggestBulletWordings: async (payload: {
+    bullet: string;
+    context?: string;
+    fact?: string;
+  }): Promise<{ suggestions: string[]; question: string | null }> => {
+    const res = await axiosClient.post<unknown>('/cv/improve/bullet', {
+      bullet: payload.bullet.trim().slice(0, 500),
+      ...(payload.context?.trim()
+        ? { context: payload.context.trim().slice(0, 100) }
+        : {}),
+      ...(payload.fact?.trim()
+        ? { fact: payload.fact.trim().slice(0, 200) }
+        : {}),
+    });
+    throwIfApiFailureResponse(res.data, res.status);
+    const body = unwrapApiDataEnvelope(res.data);
+    const list = Array.isArray(body.suggestions) ? body.suggestions : [];
+    return {
+      suggestions: list.filter(
+        (x): x is string => typeof x === 'string' && x.trim() !== '',
+      ),
+      question:
+        typeof body.question === 'string' && body.question.trim()
+          ? body.question.trim()
+          : null,
+    };
+  },
   /** POST /cv/improve/summary — `summary` 20–2000 chars; `context` optional, max 100. */
   improveSummary: async (payload: { summary: string; context?: string }) => {
     const summary = prepareCvSectionTextForAi(payload.summary).trim();

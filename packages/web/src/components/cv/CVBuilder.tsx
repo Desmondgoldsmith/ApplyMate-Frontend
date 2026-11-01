@@ -47,6 +47,7 @@ import {
   DEFAULT_HEADER_PREVIEW,
   type HeaderPreviewSettings,
 } from '@/components/cv/CVEditContext';
+import { CvBulletHelper } from '@/components/cv/CvBulletHelper';
 import { CvSelectionFormatBar } from '@/components/cv/CvSelectionFormatBar';
 import { registerCvPendingEditsSaver } from '@/lib/cvPendingEdits';
 import {
@@ -5663,6 +5664,7 @@ export function CVBuilder({
               <CVEditProvider value={cvEditContextValue}>
                 {previewDoc}
                 <CvSelectionFormatBar />
+                <CvBulletHelper />
               </CVEditProvider>
             ) : (
               previewDoc
