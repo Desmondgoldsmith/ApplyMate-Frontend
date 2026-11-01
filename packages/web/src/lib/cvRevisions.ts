@@ -9,6 +9,7 @@ const CV_REVISION_REASON_LABELS: Record<string, string> = {
   before_restore: 'Before restoring an earlier version',
   editing: 'While you were editing',
   ai_change: 'Before an AI change',
+  autopilot: 'Before Autopilot',
 };
 
 export const CV_REVISION_FALLBACK_LABEL = 'Saved version';
@@ -27,6 +28,7 @@ const CV_REVISION_EVENT_LABELS: Record<string, string> = {
   before_restore: 'Restored an earlier version',
   editing: 'Your edits',
   ai_change: 'AI change',
+  autopilot: 'Autopilot',
 };
 
 export function cvRevisionEventLabel(reason: CvRevisionReason): string {

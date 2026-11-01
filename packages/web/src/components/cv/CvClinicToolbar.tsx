@@ -14,6 +14,7 @@ import {
   Redo2,
   Rows3,
   Undo2,
+  Wand2,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
@@ -79,6 +80,10 @@ export type CvClinicToolbarProps = {
   onRedo?: () => void;
   /** Opens saved CV versions (automatic snapshots before uploads, accept-all, etc.). */
   onOpenVersionHistory?: () => void;
+  /** Opens CV Autopilot. */
+  onOpenAutopilot?: () => void;
+  /** False shows a "Pro" tag on the Autopilot button. */
+  autopilotAllowed?: boolean;
   leftTitle?: string;
   leftSlot?: ReactNode;
   rightAddon?: ReactNode;
@@ -152,6 +157,8 @@ export function CvClinicToolbar({
   onUndo,
   onRedo,
   onOpenVersionHistory,
+  onOpenAutopilot,
+  autopilotAllowed = true,
   leftTitle,
   leftSlot,
   rightAddon,
@@ -300,6 +307,24 @@ export function CvClinicToolbar({
                 <Redo2 className="h-4 w-4 shrink-0 text-accent-text" />
               </button>
             </span>
+          ) : null}
+          {onOpenAutopilot ? (
+            <button
+              type="button"
+              data-tour="cv-autopilot"
+              onClick={onOpenAutopilot}
+              title="Autopilot: tell it the job, it does the work"
+              aria-label="Autopilot"
+              className="mr-1 inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-accent-border bg-accent-subtle px-2.5 text-[12px] font-semibold text-accent-text transition hover:bg-accent-solid hover:text-text-on-accent"
+            >
+              <Wand2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              {compactToolLabels ? null : <span>Autopilot</span>}
+              {autopilotAllowed ? null : (
+                <span className="rounded bg-bg-surface px-1 text-[9px] font-bold uppercase tracking-wide text-accent-text">
+                  Pro
+                </span>
+              )}
+            </button>
           ) : null}
           <span data-tour="cv-template" className="inline-flex">
             <ToolbarToolButton

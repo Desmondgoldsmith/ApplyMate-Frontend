@@ -3330,7 +3330,59 @@ export type CvRevisionReason =
   | 'before_restore'
   | (string & {});
 
-/** GET /cv/profiles/:id/revisions — newest first, max 20. */
+export type CvAutopilotStepStatus =
+  | 'planned'
+  | 'skipped_by_you'
+  | 'needs_input'
+  | 'running'
+  | 'applied'
+  | 'no_change'
+  | 'unsafe'
+  | 'failed'
+  | 'not_started';
+
+export type CvAutopilotStep = {
+  id: string;
+  section: string;
+  title: string;
+  detail: string;
+  status: CvAutopilotStepStatus;
+  question?: string;
+};
+
+/** POST /cv/profiles/:id/autopilot/plan */
+export type CvAutopilotPlan = {
+  mode: 'fix_all';
+  steps: CvAutopilotStep[];
+  skippedSections: string[];
+  onlySections: string[];
+  scoreBefore: number | null;
+  issuesBefore: number;
+};
+
+/** GET /cv/profiles/:id/autopilot/runs/:runId */
+export type CvAutopilotRun = {
+  id: string;
+  profileId: string;
+  mode: 'fix_all';
+  status: 'running' | 'completed' | 'stopped' | 'failed';
+  steps: CvAutopilotStep[];
+  revisionId: string | null;
+  scoreBefore: number | null;
+  scoreAfter: number | null;
+  issuesBefore: number;
+  issuesAfter: number | null;
+  startedAt: string;
+  finishedAt: string | null;
+  stopping: boolean;
+  undone: boolean;
+};
+
+export type CvAutopilotAccess = {
+  allowed: boolean;
+  reason: 'pro' | 'dev_unlock' | 'pro_required';
+};
+
 /** One thing that changed after a saved version ("Job title · …", before → after). */
 export type CvRevisionChange = {
   label: string;
@@ -3338,6 +3390,7 @@ export type CvRevisionChange = {
   after?: string;
 };
 
+/** GET /cv/profiles/:id/revisions — newest first, max 20. */
 export type CvRevisionSummary = {
   id: string;
   reason: CvRevisionReason;
@@ -6833,6 +6886,77 @@ const cv = {
   },
 
   /** GET /cv/profiles/:id/revisions — automatic snapshots taken before content-replacing changes. */
+  /** GET /cv/autopilot/access — Pro feature, unlocked in development. */
+  getAutopilotAccess: async (): Promise<CvAutopilotAccess> => {
+    const res = await axiosClient.get<unknown>('/cv/autopilot/access');
+    throwIfApiFailureResponse(res.data, res.status);
+    return unwrapApiDataEnvelope(res.data) as unknown as CvAutopilotAccess;
+  },
+
+  planAutopilot: async (
+    profileId: string,
+    body: { mode: 'fix_all'; instructions?: string },
+  ): Promise<CvAutopilotPlan> => {
+    const res = await axiosClient.post<unknown>(
+      `/cv/profiles/${encodeURIComponent(profileId)}/autopilot/plan`,
+      body,
+      { timeout: 60_000 },
+    );
+    throwIfApiFailureResponse(res.data, res.status);
+    return unwrapApiDataEnvelope(res.data) as unknown as CvAutopilotPlan;
+  },
+
+  startAutopilot: async (
+    profileId: string,
+    body: {
+      mode: 'fix_all';
+      instructions?: string;
+      excludeStepIds?: string[];
+      facts?: Record<string, string>;
+    },
+  ): Promise<CvAutopilotRun> => {
+    const res = await axiosClient.post<unknown>(
+      `/cv/profiles/${encodeURIComponent(profileId)}/autopilot/runs`,
+      body,
+      { timeout: 60_000 },
+    );
+    throwIfApiFailureResponse(res.data, res.status);
+    return unwrapApiDataEnvelope(res.data) as unknown as CvAutopilotRun;
+  },
+
+  getAutopilotRun: async (
+    profileId: string,
+    runId: string,
+  ): Promise<CvAutopilotRun> => {
+    const res = await axiosClient.get<unknown>(
+      `/cv/profiles/${encodeURIComponent(profileId)}/autopilot/runs/${encodeURIComponent(runId)}`,
+    );
+    throwIfApiFailureResponse(res.data, res.status);
+    return unwrapApiDataEnvelope(res.data) as unknown as CvAutopilotRun;
+  },
+
+  stopAutopilotRun: async (
+    profileId: string,
+    runId: string,
+  ): Promise<CvAutopilotRun> => {
+    const res = await axiosClient.post<unknown>(
+      `/cv/profiles/${encodeURIComponent(profileId)}/autopilot/runs/${encodeURIComponent(runId)}/stop`,
+    );
+    throwIfApiFailureResponse(res.data, res.status);
+    return unwrapApiDataEnvelope(res.data) as unknown as CvAutopilotRun;
+  },
+
+  undoAutopilotRun: async (
+    profileId: string,
+    runId: string,
+  ): Promise<CvAutopilotRun> => {
+    const res = await axiosClient.post<unknown>(
+      `/cv/profiles/${encodeURIComponent(profileId)}/autopilot/runs/${encodeURIComponent(runId)}/undo`,
+    );
+    throwIfApiFailureResponse(res.data, res.status);
+    return unwrapApiDataEnvelope(res.data) as unknown as CvAutopilotRun;
+  },
+
   listRevisions: async (profileId: string): Promise<CvRevisionSummary[]> => {
     const res = await axiosClient.get<unknown>(
       `/cv/profiles/${encodeURIComponent(profileId)}/revisions`,

@@ -44,6 +44,7 @@ import {
   type CVBuilderQualitySignals,
   type CVBuilderTripleColumnConfig,
 } from '@/components/cv/CVBuilder';
+import { CvAutopilotModal } from '@/components/cv/autopilot/CvAutopilotModal';
 import { CvVersionHistoryModal } from '@/components/cv/CvVersionHistoryModal';
 import { TailorChangePanel } from '@/components/cv/TailorChangePanel';
 import { CvClinicToolbar } from '@/components/cv/CvClinicToolbar';
@@ -461,6 +462,13 @@ export function CvClinicPageContent() {
     undoRedoControlsRef.current?.clearHistory();
   }, []);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
+  const [autopilotOpen, setAutopilotOpen] = useState(false);
+  const autopilotAccess = useQuery({
+    queryKey: ['cv', 'autopilot', 'access'],
+    queryFn: () => api.cv.getAutopilotAccess(),
+    staleTime: 5 * 60_000,
+  });
+  const autopilotAllowed = autopilotAccess.data?.allowed ?? false;
   const openVersionHistory = useCallback(() => setVersionHistoryOpen(true), []);
   /** Undo/redo restores content — debounced refetch keeps score breakdown aligned with editor state. */
   const handleHistoryApplied = useCallback(
@@ -1421,6 +1429,15 @@ export function CvClinicPageContent() {
     },
     [queryClient, refreshCvState, router, targetId, toast, openVersionHistory],
   );
+
+  const reloadCvFromServer = useCallback(async () => {
+    if (!targetId?.trim()) return;
+    await refreshCvState(targetId, {
+      refreshSuggestions: true,
+      invalidateScore: true,
+    });
+    await syncCvBuilderFromServer();
+  }, [targetId, refreshCvState, syncCvBuilderFromServer]);
 
   const handleCvVersionRestored = useCallback(() => {
     const id = targetId?.trim();
@@ -3114,11 +3131,14 @@ export function CvClinicPageContent() {
         onUndo={() => undoRedoControlsRef.current?.undo()}
         onRedo={() => undoRedoControlsRef.current?.redo()}
         onOpenVersionHistory={targetId ? openVersionHistory : undefined}
+        onOpenAutopilot={targetId ? () => setAutopilotOpen(true) : undefined}
+        autopilotAllowed={autopilotAllowed}
       />
     ),
     [
       targetId,
       openVersionHistory,
+      autopilotAllowed,
       profileOptions,
       router,
       setCreateCvOpen,
@@ -3675,6 +3695,19 @@ export function CvClinicPageContent() {
         clearUndoHistory={clearUndoHistory}
         onRestored={handleCvVersionRestored}
         restoreBlockedReason={versionRestoreBlockedReason}
+      />
+
+      <CvAutopilotModal
+        open={autopilotOpen}
+        onOpenChange={setAutopilotOpen}
+        profileId={targetId}
+        allowed={autopilotAllowed}
+        beforeStart={savePendingCvEdits}
+        onCvChanged={reloadCvFromServer}
+        onUndone={async () => {
+          clearUndoHistory();
+          await reloadCvFromServer();
+        }}
       />
 
       <div className="hidden">{cvTopChrome}</div>
