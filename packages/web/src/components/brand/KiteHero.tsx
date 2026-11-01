@@ -2,7 +2,7 @@
 
 import { useReducedMotion } from 'framer-motion';
 import dynamic from 'next/dynamic';
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
 import { CareerKiteMark } from '@/components/brand/CareerKiteMark';
 import { useTheme } from '@/components/theme/ThemeProvider';
@@ -16,13 +16,26 @@ function subscribeLargeScreen(onChange: () => void) {
   return () => media.removeEventListener('change', onChange);
 }
 
-function canRender3d(): boolean {
-  if (!window.matchMedia(LARGE_SCREEN).matches) return false;
+let webgl2Supported: boolean | null = null;
+
+/**
+ * Probed once: this runs on every render, and each probe would open a WebGL context. Browsers
+ * cap live contexts and drop the oldest (the kite's), so re-probing made the kite blink.
+ */
+function hasWebgl2(): boolean {
+  if (webgl2Supported !== null) return webgl2Supported;
   try {
-    return Boolean(document.createElement('canvas').getContext('webgl2'));
+    const gl = document.createElement('canvas').getContext('webgl2');
+    webgl2Supported = Boolean(gl);
+    gl?.getExtension('WEBGL_lose_context')?.loseContext();
   } catch {
-    return false;
+    webgl2Supported = false;
   }
+  return webgl2Supported;
+}
+
+function canRender3d(): boolean {
+  return window.matchMedia(LARGE_SCREEN).matches && hasWebgl2();
 }
 
 /** After a lost WebGL context, retry the 3D kite a couple of times, then stay static. */
@@ -64,6 +77,10 @@ export function KiteHero({ className }: { className?: string }) {
   );
   const [lostCount, setLostCount] = useState(0);
   const [contextLost, setContextLost] = useState(false);
+  const handleContextLost = useCallback(() => {
+    setContextLost(true);
+    setLostCount((n) => n + 1);
+  }, []);
 
   useEffect(() => {
     if (!contextLost || lostCount > MAX_CONTEXT_RETRIES) return;
@@ -78,10 +95,7 @@ export function KiteHero({ className }: { className?: string }) {
           key={lostCount}
           inkColor={INK[resolvedTheme]}
           dotColor={DOT[resolvedTheme]}
-          onContextLost={() => {
-            setContextLost(true);
-            setLostCount((n) => n + 1);
-          }}
+          onContextLost={handleContextLost}
         />
       ) : (
         <StaticKite />

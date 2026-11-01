@@ -1,7 +1,7 @@
 'use client';
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { memo, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import * as THREE from 'three';
 
 import {
@@ -232,8 +232,20 @@ function FitToViewport({ children }: { children: ReactNode }) {
   );
 }
 
+/** Fixed objects: new ones on each render make the canvas re-apply its camera. */
+const CANVAS_DPR: [number, number] = [1, 1.75];
+const CANVAS_CAMERA = {
+  position: [0, 0, 6.2] as [number, number, number],
+  fov: 34,
+};
+const CANVAS_GL = {
+  antialias: true,
+  alpha: true,
+  powerPreference: 'low-power' as const,
+};
+
 /** Real-time 3D CareerKite mark. Load lazily; render only when motion is allowed. */
-export default function Kite3D({
+function Kite3D({
   onContextLost,
   ...props
 }: Kite3DProps & {
@@ -243,9 +255,9 @@ export default function Kite3D({
   return (
     <Canvas
       flat
-      dpr={[1, 1.75]}
-      camera={{ position: [0, 0, 6.2], fov: 34 }}
-      gl={{ antialias: true, alpha: true, powerPreference: 'low-power' }}
+      dpr={CANVAS_DPR}
+      camera={CANVAS_CAMERA}
+      gl={CANVAS_GL}
       onCreated={({ gl }) => {
         gl.domElement.addEventListener(
           'webglcontextlost',
@@ -268,3 +280,5 @@ export default function Kite3D({
     </Canvas>
   );
 }
+
+export default memo(Kite3D);
