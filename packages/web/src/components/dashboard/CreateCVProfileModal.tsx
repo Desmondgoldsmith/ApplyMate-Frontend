@@ -93,7 +93,7 @@ export function CreateCVProfileModal({
         const { profileId } = await api.cv.chatCreateCV({
           ...extractedData,
           template,
-          ...(name.trim() ? { name: name.trim() } : {}),
+          ...(name.trim() ? { profileName: name.trim() } : {}),
         });
         await openProfileInBuilder(profileId, {
           successToast: RESUME_READY_TOAST,
