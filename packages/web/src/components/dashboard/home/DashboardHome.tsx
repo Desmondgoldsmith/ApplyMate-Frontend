@@ -8,19 +8,24 @@ import {
   CvCard,
   NextStepCard,
   PracticeCard,
+  RecentJobsCard,
   SetupCard,
   TodayCard,
 } from '@/components/dashboard/home/HomeCards';
 import {
+  buildRecap,
+  buildRecentJobs,
   buildSetupSteps,
   buildTodayActions,
   chooseNextStep,
   countPipeline,
   greetingFor,
   pickDefaultProfile,
+  pickUpcomingInterview,
   ROUTES,
   trackedCount,
 } from '@/components/dashboard/home/homeModel';
+import { useHiddenTodayTasks } from '@/hooks/useHiddenTodayTasks';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useCvProfileRowsDisplay } from '@/hooks/useCvProfileRowsDisplay';
@@ -113,17 +118,33 @@ export function DashboardHome() {
     historyItems.filter((j) => j.matchScore != null).length,
   );
   const plan = todayPlan.data ?? null;
-  const today = useMemo(() => buildTodayActions(plan), [plan]);
+  const { hidden, hide } = useHiddenTodayTasks();
+  const today = useMemo(
+    () => buildTodayActions(plan, { limit: 4, hidden }),
+    [plan, hidden],
+  );
+  const interview = useMemo(
+    () => (hasCv ? pickUpcomingInterview(plan) : null),
+    [hasCv, plan],
+  );
   const nextStep = useMemo(
-    () => chooseNextStep({ hasCv, jobsChecked, today, plan }),
-    [hasCv, jobsChecked, today, plan],
+    () => chooseNextStep({ hasCv, jobsChecked, today, plan, interview }),
+    [hasCv, jobsChecked, today, plan, interview],
   );
   // The hero already shows the first to-do; don't repeat it in the list.
-  const todayRest = today.filter((a) => `next-${a.id}` !== nextStep.id);
+  const todayRest = today
+    .filter((a) => `next-${a.id}` !== nextStep.id)
+    .slice(0, 3);
+  const recap = useMemo(() => buildRecap(plan), [plan]);
+  const recentJobs = useMemo(
+    () => buildRecentJobs(historyItems),
+    [historyItems],
+  );
   const setup = buildSetupSteps({
     hasCv,
     jobsChecked,
     tracked: trackedCount(pipeline),
+    tourDone: user?.uiPrefs?.tourCompleted === true,
   });
   const setupDone = setup.every((s) => s.done);
 
@@ -166,6 +187,14 @@ export function DashboardHome() {
               ? 'Here is what needs your attention today.'
               : 'You are up to date. Here is a good next move.'}
         </p>
+        {hasCv && recap ? (
+          <p
+            data-tour="home-recap"
+            className="mt-2 inline-flex rounded-full bg-bg-sunken px-3 py-1 text-[13px] font-medium text-text-secondary"
+          >
+            {recap}
+          </p>
+        ) : null}
       </header>
 
       {loading ? (
@@ -186,8 +215,16 @@ export function DashboardHome() {
               </motion.div>
             ) : null}
             <motion.div {...fade(2)}>
-              <TodayCard actions={todayRest} />
+              <TodayCard
+                actions={todayRest}
+                onHide={(id, kind) => void hide(id, kind)}
+              />
             </motion.div>
+            {hasCv && (features.includes('jobs') || recentJobs.length > 0) ? (
+              <motion.div {...fade(3)}>
+                <RecentJobsCard jobs={recentJobs} />
+              </motion.div>
+            ) : null}
           </div>
 
           <div className="space-y-5">

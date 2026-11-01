@@ -139,6 +139,8 @@ export type UserUiPrefs = {
   jobSearchLocation?: string;
   /** Signed-in app colour theme; absent until the user picks one. */
   theme?: ThemePreference;
+  /** Home Today tasks marked Done or Not today: task id → ISO time it may show again. */
+  dashboardHiddenTasks?: Record<string, string>;
   [key: string]: unknown;
 };
 
@@ -10052,6 +10054,24 @@ const dashboard = {
   markSeen: async () => {
     const res = await axiosClient.post<unknown>('/dashboard/mark-seen', {});
     throwIfApiFailureResponse(res.data, res.status);
+  },
+  /** Done / Not today on Home: hides a Today task until `until`; returns the stored map. */
+  hideTodayTask: async (
+    taskId: string,
+    until: string,
+  ): Promise<Record<string, string>> => {
+    const res = await axiosClient.post<unknown>('/dashboard/today-tasks/hide', {
+      taskId,
+      until,
+    });
+    throwIfApiFailureResponse(res.data, res.status);
+    const raw = unwrapApiDataEnvelope(res.data).hiddenTasks;
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+    return Object.fromEntries(
+      Object.entries(raw as Record<string, unknown>).filter(
+        (e): e is [string, string] => typeof e[1] === 'string',
+      ),
+    );
   },
   behaviorEvent: async (body: {
     eventName: string;

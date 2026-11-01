@@ -3,7 +3,7 @@ import type {
   HubPipelineStage,
   JobHistoryItem,
 } from '@/lib/api';
-import type { TodayPlanPayload } from '@/lib/today-plan';
+import type { TodayPlanPayload, UpcomingInterviewItem } from '@/lib/today-plan';
 
 export type HomeAction = {
   id: string;
@@ -19,10 +19,31 @@ export type NextStep = HomeAction & {
 };
 
 export type SetupStep = {
-  id: 'account' | 'cv' | 'check' | 'track';
+  id: 'account' | 'cv' | 'check' | 'track' | 'tour';
   label: string;
   done: boolean;
   href: string;
+  /** Steps that start something on the page instead of navigating. */
+  action?: 'start-tour';
+};
+
+export type RecentJobStatus =
+  | 'Saved'
+  | 'Tailored'
+  | 'Applied'
+  | 'Interviewing'
+  | 'Offer'
+  | 'Closed';
+
+export type RecentJob = {
+  id: string;
+  title: string;
+  company: string;
+  logoUrl: string | null;
+  status: RecentJobStatus;
+  /** ISO time of the last activity on this job. */
+  at: string;
+  action: { label: string; href: string; external?: boolean };
 };
 
 export type PipelineCounts = {
@@ -39,6 +60,42 @@ export const ROUTES = {
   applications: '/dashboard/jobs',
   interview: '/dashboard/interview',
 } as const;
+
+/** Job Hub filtered to one group of the Home application numbers. */
+export function applicationsHref(
+  stage: 'saved' | 'applied' | 'interviewing' | 'offers',
+): string {
+  return `${ROUTES.applications}?stage=${stage}`;
+}
+
+const NOT_TODAY_FALLBACK_MS = 12 * 60 * 60_000;
+const DONE_HIDE_DAYS = 30;
+
+/** "Not today": back at the next local midnight. */
+export function notTodayUntil(now: Date): Date {
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+  return midnight.getTime() > now.getTime()
+    ? midnight
+    : new Date(now.getTime() + NOT_TODAY_FALLBACK_MS);
+}
+
+/** "Done": the planner does not know the user did it, so keep it away for a month. */
+export function doneUntil(now: Date): Date {
+  return new Date(now.getTime() + DONE_HIDE_DAYS * 24 * 60 * 60_000);
+}
+
+/** Task ids from `uiPrefs.dashboardHiddenTasks` that are still hidden at `now`. */
+export function hiddenTaskIds(raw: unknown, now: Date): Set<string> {
+  const out = new Set<string>();
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+  for (const [id, until] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof until === 'string' && Date.parse(until) > now.getTime()) {
+      out.add(id);
+    }
+  }
+  return out;
+}
 
 export function pickDefaultProfile(
   rows: CvProfileSummary[],
@@ -76,6 +133,7 @@ export function buildSetupSteps(input: {
   hasCv: boolean;
   jobsChecked: number;
   tracked: number;
+  tourDone: boolean;
 }): SetupStep[] {
   return [
     {
@@ -97,6 +155,13 @@ export function buildSetupSteps(input: {
       done: input.tracked > 0,
       href: ROUTES.findJobs,
     },
+    {
+      id: 'tour',
+      label: 'Take the 1-minute tour',
+      done: input.tourDone,
+      href: '/dashboard',
+      action: 'start-tour',
+    },
   ];
 }
 
@@ -105,29 +170,47 @@ function clean(value: string | null | undefined): string | null {
   return v ? v : null;
 }
 
-/** Up to `limit` things worth doing today, from follow-ups first, then urgent and focus items. */
+export const TIDY_SAVED_TASK_ID = 'tidy-old-saved';
+
+/**
+ * Up to `limit` things worth doing today: follow-ups first, then urgent and focus items. Tasks the
+ * user marked Done or Not today are left out, and old saved jobs collapse into one tidy-up task.
+ */
 export function buildTodayActions(
   plan: TodayPlanPayload | null | undefined,
-  limit = 3,
+  opts: { limit?: number; hidden?: ReadonlySet<string> } = {},
 ): HomeAction[] {
   if (!plan) return [];
+  const limit = opts.limit ?? 3;
+  const hidden = opts.hidden ?? new Set<string>();
   const out: HomeAction[] = [];
   const seen = new Set<string>();
   const push = (a: HomeAction | null) => {
-    if (!a || out.length >= limit) return;
+    if (!a || out.length >= limit || hidden.has(a.id)) return;
     const key = `${a.href}|${a.title.toLowerCase()}`;
     if (seen.has(key)) return;
     seen.add(key);
     out.push(a);
   };
 
-  for (const row of plan.followUpJobs ?? []) {
+  const followUps = plan.followUpJobs ?? [];
+  const stale = followUps.filter(
+    (row) => row.reason === 'bookmark_stale' || row.reason === 'analysis_stale',
+  );
+  const groupStale = stale.length >= 2;
+  for (const row of followUps) {
+    if (groupStale && stale.includes(row)) continue;
     const title = clean(row.headline);
     const href = clean(row.ctaHref);
     if (!title || !href) continue;
+    const company = clean(row.companyName);
     push({
       id: `follow-${row.id}`,
-      title,
+      // "Saved for 40 days" alone does not say which job; name it.
+      title:
+        company && /^saved for \d+ days?$/i.test(title)
+          ? `${company}: ${title.toLowerCase()}`
+          : title,
       detail: clean(row.supporting),
       href,
       ctaLabel: clean(row.ctaLabel) ?? 'Open',
@@ -149,7 +232,124 @@ export function buildTodayActions(
       ctaLabel: clean(item.cta?.label) ?? 'Open',
     });
   }
+
+  if (groupStale) {
+    push({
+      id: TIDY_SAVED_TASK_ID,
+      title: `Tidy up ${stale.length} old saved jobs`,
+      detail:
+        'They have sat in Saved for weeks. Move the ones you still want forward and archive the rest.',
+      href: applicationsHref('saved'),
+      ctaLabel: 'Review',
+    });
+  }
   return out;
+}
+
+/** The soonest interview in the next two weeks, if any. */
+export function pickUpcomingInterview(
+  plan: TodayPlanPayload | null | undefined,
+): UpcomingInterviewItem | null {
+  const soon = (plan?.upcomingInterviews ?? []).filter(
+    (i) =>
+      i.daysUntilInterview != null &&
+      i.daysUntilInterview >= 0 &&
+      i.daysUntilInterview <= 14,
+  );
+  soon.sort(
+    (a, b) => (a.daysUntilInterview ?? 0) - (b.daysUntilInterview ?? 0),
+  );
+  return soon[0] ?? null;
+}
+
+function whenText(days: number): string {
+  if (days === 0) return 'today';
+  if (days === 1) return 'tomorrow';
+  return `in ${days} days`;
+}
+
+function plural(n: number, one: string, many = `${one}s`): string {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+/** One line on what changed since the last visit, or this week's progress; null when there is nothing. */
+export function buildRecap(
+  plan: TodayPlanPayload | null | undefined,
+): string | null {
+  if (!plan) return null;
+  const since = plan.sinceLastVisit;
+  const sinceParts = since?.lastSeenAt
+    ? [
+        since.newJobsCount > 0
+          ? `${plural(since.newJobsCount, 'job')} saved`
+          : null,
+        since.newHighMatchCount > 0
+          ? `${plural(since.newHighMatchCount, 'strong match', 'strong matches')} found`
+          : null,
+        since.statusChangedCount > 0
+          ? `${plural(since.statusChangedCount, 'application')} updated`
+          : null,
+      ].filter((p): p is string => Boolean(p))
+    : [];
+  if (sinceParts.length > 0) {
+    return `Since your last visit: ${sinceParts.join(' · ')}.`;
+  }
+  const week = plan.progress;
+  const weekParts = [
+    week?.applicationsSubmittedWeek > 0
+      ? `${plural(week.applicationsSubmittedWeek, 'application')} sent`
+      : null,
+    week?.followUpsSentWeek > 0
+      ? `${plural(week.followUpsSentWeek, 'follow-up')} sent`
+      : null,
+  ].filter((p): p is string => Boolean(p));
+  return weekParts.length > 0 ? `This week: ${weekParts.join(' · ')}.` : null;
+}
+
+function recentStatus(item: JobHistoryItem): RecentJobStatus {
+  const stage = item.pipelineStatus;
+  if (stage === 'interviewing') return 'Interviewing';
+  if (stage === 'offered' || stage === 'negotiating' || stage === 'accepted')
+    return 'Offer';
+  if (stage === 'rejected') return 'Closed';
+  if (stage === 'applied' || item.isApplied) return 'Applied';
+  if (item.isTailored || item.applicationAssist?.hasTailoredCv)
+    return 'Tailored';
+  return 'Saved';
+}
+
+/** The last `limit` jobs the user touched, each with the one action that moves it forward. */
+export function buildRecentJobs(
+  items: JobHistoryItem[],
+  limit = 3,
+): RecentJob[] {
+  const at = (j: JobHistoryItem) => j.lastActivityAt ?? j.createdAt;
+  return [...items]
+    .filter((j) => Number.isFinite(Date.parse(at(j))))
+    .sort((a, b) => Date.parse(at(b)) - Date.parse(at(a)))
+    .slice(0, limit)
+    .map((j) => {
+      const status = recentStatus(j);
+      const hub = `${ROUTES.applications}?jobAnalysisId=${encodeURIComponent(j.id)}`;
+      const applyUrl = clean(j.applyUrl);
+      const action: RecentJob['action'] =
+        status === 'Saved'
+          ? { label: 'Tailor CV', href: `${hub}&tab=resume` }
+          : status === 'Tailored' && applyUrl
+            ? { label: 'Apply', href: applyUrl, external: true }
+            : status === 'Tailored'
+              ? { label: 'Continue', href: hub }
+              : { label: 'Open', href: hub };
+      return {
+        id: j.id,
+        title: clean(j.jobTitle) ?? clean(j.title) ?? 'Untitled role',
+        company: clean(j.company) ?? '',
+        logoUrl: j.companyLogoUrl ?? null,
+        status,
+        at: at(j),
+        action,
+      };
+    });
 }
 
 /** The single most useful thing to do next, in plain words. */
@@ -158,7 +358,23 @@ export function chooseNextStep(input: {
   jobsChecked: number;
   today: HomeAction[];
   plan: TodayPlanPayload | null | undefined;
+  interview?: UpcomingInterviewItem | null;
 }): NextStep {
+  const interview = input.interview;
+  if (interview && interview.daysUntilInterview != null) {
+    const company = clean(interview.company);
+    const role = clean(interview.jobTitle);
+    return {
+      id: `interview-${interview.id}`,
+      title: company
+        ? `Get ready for your ${company} interview`
+        : 'Get ready for your interview',
+      detail: `${role ? `${role} interview` : 'Your interview'} is ${whenText(interview.daysUntilInterview)}. Practise the questions you are likely to get and review the job.`,
+      href: clean(interview.ctaHref) ?? ROUTES.interview,
+      ctaLabel: clean(interview.ctaLabel) ?? 'Prepare',
+      secondary: { label: 'Practise an interview', href: ROUTES.interview },
+    };
+  }
   if (!input.hasCv) {
     return {
       id: 'add-cv',

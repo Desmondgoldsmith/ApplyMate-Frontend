@@ -5,6 +5,7 @@ import {
   ArrowRight,
   BrainCircuit,
   Check,
+  Clock,
   FileText,
   PlayCircle,
   Sparkles,
@@ -16,11 +17,18 @@ import type {
   HomeAction,
   NextStep,
   PipelineCounts,
+  RecentJob,
+  RecentJobStatus,
   SetupStep,
 } from '@/components/dashboard/home/homeModel';
-import { ROUTES } from '@/components/dashboard/home/homeModel';
+import {
+  applicationsHref,
+  ROUTES,
+} from '@/components/dashboard/home/homeModel';
 import { Button } from '@/components/ui/Button';
-import { openWalkthroughVideo } from '@/lib/welcomeEvents';
+import { CompanyLogo } from '@/components/ui/CompanyLogo';
+import { formatRelativeEdited } from '@/lib/format-relative-edited';
+import { openWalkthroughVideo, startWelcomeTour } from '@/lib/welcomeEvents';
 import { cn } from '@/lib/utils';
 
 export function Card({
@@ -115,6 +123,25 @@ export function NextStepCard({ step }: { step: NextStep }) {
   );
 }
 
+const SETUP_ROW =
+  'group -mx-2 flex min-h-[44px] items-center gap-3 rounded-xl px-2 text-[14px] font-semibold text-text-primary transition-colors hover:bg-bg-hover focus-visible:outline-2 focus-visible:outline-border-focus';
+
+function SetupRowBody({ label }: { label: string }) {
+  return (
+    <>
+      <span
+        className="h-6 w-6 shrink-0 rounded-full border-2 border-border-strong"
+        aria-hidden
+      />
+      <span className="flex-1">{label}</span>
+      <ArrowRight
+        className="h-4 w-4 text-text-tertiary transition-transform group-hover:translate-x-0.5 group-hover:text-text-primary"
+        aria-hidden
+      />
+    </>
+  );
+}
+
 export function SetupCard({
   steps,
   showVideo,
@@ -167,20 +194,17 @@ export function SetupCard({
                 </span>
                 <span className="sr-only">(done)</span>
               </span>
-            ) : (
-              <Link
-                href={s.href}
-                className="group -mx-2 flex min-h-[44px] items-center gap-3 rounded-xl px-2 text-[14px] font-semibold text-text-primary transition-colors hover:bg-bg-hover focus-visible:outline-2 focus-visible:outline-border-focus"
+            ) : s.action === 'start-tour' ? (
+              <button
+                type="button"
+                onClick={startWelcomeTour}
+                className={cn(SETUP_ROW, 'w-full text-left')}
               >
-                <span
-                  className="h-6 w-6 shrink-0 rounded-full border-2 border-border-strong"
-                  aria-hidden
-                />
-                <span className="flex-1">{s.label}</span>
-                <ArrowRight
-                  className="h-4 w-4 text-text-tertiary transition-transform group-hover:translate-x-0.5 group-hover:text-text-primary"
-                  aria-hidden
-                />
+                <SetupRowBody label={s.label} />
+              </button>
+            ) : (
+              <Link href={s.href} className={SETUP_ROW}>
+                <SetupRowBody label={s.label} />
               </Link>
             )}
           </li>
@@ -218,29 +242,34 @@ export function SetupCard({
   );
 }
 
-export function TodayCard({ actions }: { actions: HomeAction[] }) {
+export function TodayCard({
+  actions,
+  onHide,
+}: {
+  actions: HomeAction[];
+  onHide: (taskId: string, kind: 'done' | 'not_today') => void;
+}) {
   return (
     <Card tour="home-today">
       <CardTitle>Today</CardTitle>
       {actions.length === 0 ? (
         <p className="text-[15px] leading-relaxed text-text-secondary">
-          Nothing urgent right now. When you save or apply for jobs, reminders
-          and follow-ups will show up here.
+          You are all caught up. New reminders and follow-ups will show up here.
         </p>
       ) : (
         <ul className="divide-y divide-border-subtle">
           {actions.map((a) => (
-            <li key={a.id}>
+            <li key={a.id} className="py-2">
               <Link
                 href={a.href}
-                className="group -mx-2 flex items-center gap-3 rounded-xl px-2 py-3.5 transition-colors hover:bg-bg-hover focus-visible:outline-2 focus-visible:outline-border-focus"
+                className="group -mx-2 flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-bg-hover focus-visible:outline-2 focus-visible:outline-border-focus"
               >
                 <span className="min-w-0 flex-1">
                   <span className="block text-[15px] font-semibold text-text-primary">
                     {a.title}
                   </span>
                   {a.detail ? (
-                    <span className="mt-0.5 line-clamp-2 block text-[13px] text-text-secondary">
+                    <span className="mt-0.5 line-clamp-1 block text-[13px] text-text-secondary">
                       {a.detail}
                     </span>
                   ) : null}
@@ -253,6 +282,112 @@ export function TodayCard({ actions }: { actions: HomeAction[] }) {
                   aria-hidden
                 />
               </Link>
+              <div className="mt-1 flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => onHide(a.id, 'done')}
+                  aria-label={`Done: ${a.title}`}
+                  className="inline-flex min-h-[32px] items-center gap-1 rounded-lg px-2 text-[13px] font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary focus-visible:outline-2 focus-visible:outline-border-focus"
+                >
+                  <Check className="h-3.5 w-3.5" aria-hidden />
+                  Done
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onHide(a.id, 'not_today')}
+                  aria-label={`Not today: ${a.title}`}
+                  className="inline-flex min-h-[32px] items-center gap-1 rounded-lg px-2 text-[13px] font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary focus-visible:outline-2 focus-visible:outline-border-focus"
+                >
+                  <Clock className="h-3.5 w-3.5" aria-hidden />
+                  Not today
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+const STATUS_STYLE: Record<RecentJobStatus, string> = {
+  Saved: 'bg-bg-sunken text-text-secondary',
+  Tailored: 'bg-accent-subtle text-accent-text',
+  Applied: 'bg-bg-hover text-text-primary',
+  Interviewing: 'bg-warning-subtle text-warning-text',
+  Offer: 'bg-success-subtle text-success-text',
+  Closed: 'bg-bg-sunken text-text-tertiary',
+};
+
+export function RecentJobsCard({ jobs }: { jobs: RecentJob[] }) {
+  return (
+    <Card tour="home-recent-jobs">
+      <CardTitle
+        action={
+          jobs.length > 0 ? (
+            <TextLink href={ROUTES.applications}>View all</TextLink>
+          ) : undefined
+        }
+      >
+        Recent jobs
+      </CardTitle>
+      {jobs.length === 0 ? (
+        <>
+          <p className="text-[15px] leading-relaxed text-text-secondary">
+            Jobs you save, tailor or apply to will show up here.
+          </p>
+          <Button asChild variant="outline" fullWidth className="mt-4">
+            <Link href={ROUTES.findJobs}>Find jobs</Link>
+          </Button>
+        </>
+      ) : (
+        <ul className="divide-y divide-border-subtle">
+          {jobs.map((j) => (
+            <li key={j.id} className="flex items-center gap-3 py-3">
+              <CompanyLogo
+                company={j.company}
+                logoUrl={j.logoUrl}
+                size="md"
+                shape="rounded"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px] font-semibold text-text-primary">
+                  {j.title}
+                </p>
+                <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-text-secondary">
+                  {j.company ? (
+                    <span className="truncate">{j.company}</span>
+                  ) : null}
+                  <span
+                    className={cn(
+                      'rounded-full px-2 py-0.5 text-[12px] font-semibold',
+                      STATUS_STYLE[j.status],
+                    )}
+                  >
+                    {j.status}
+                  </span>
+                  <span className="text-text-tertiary">
+                    {formatRelativeEdited(j.at)}
+                  </span>
+                </p>
+              </div>
+              <Button
+                asChild
+                variant="outline"
+                className="h-9 shrink-0 px-3 text-[13px]"
+              >
+                {j.action.external ? (
+                  <a
+                    href={j.action.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {j.action.label}
+                  </a>
+                ) : (
+                  <Link href={j.action.href}>{j.action.label}</Link>
+                )}
+              </Button>
             </li>
           ))}
         </ul>
@@ -374,11 +509,19 @@ export function CvCard({
 export function ApplicationsCard({ counts }: { counts: PipelineCounts }) {
   const total =
     counts.saved + counts.applied + counts.interviewing + counts.offers;
-  const stages: { label: string; value: number }[] = [
-    { label: 'Saved', value: counts.saved },
-    { label: 'Applied', value: counts.applied },
-    { label: 'Interviews', value: counts.interviewing },
-    { label: 'Offers', value: counts.offers },
+  const stages: { label: string; value: number; href: string }[] = [
+    { label: 'Saved', value: counts.saved, href: applicationsHref('saved') },
+    {
+      label: 'Applied',
+      value: counts.applied,
+      href: applicationsHref('applied'),
+    },
+    {
+      label: 'Interviews',
+      value: counts.interviewing,
+      href: applicationsHref('interviewing'),
+    },
+    { label: 'Offers', value: counts.offers, href: applicationsHref('offers') },
   ];
   return (
     <Card tour="home-applications">
@@ -402,21 +545,24 @@ export function ApplicationsCard({ counts }: { counts: PipelineCounts }) {
           </Button>
         </>
       ) : (
-        <dl className="grid grid-cols-4 gap-2">
+        <ul className="grid grid-cols-4 gap-2">
           {stages.map((s) => (
-            <div
-              key={s.label}
-              className="rounded-2xl bg-bg-sunken px-2 py-3 text-center"
-            >
-              <dt className="text-[12px] font-medium text-text-secondary">
-                {s.label}
-              </dt>
-              <dd className="mt-0.5 font-display text-[22px] font-bold text-text-primary">
-                {s.value}
-              </dd>
-            </div>
+            <li key={s.label}>
+              <Link
+                href={s.href}
+                aria-label={`${s.value} ${s.label}: show them in Job Hub`}
+                className="block rounded-2xl bg-bg-sunken px-2 py-3 text-center transition-colors hover:bg-bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
+              >
+                <span className="block text-[12px] font-medium text-text-secondary">
+                  {s.label}
+                </span>
+                <span className="mt-0.5 block font-display text-[22px] font-bold text-text-primary">
+                  {s.value}
+                </span>
+              </Link>
+            </li>
           ))}
-        </dl>
+        </ul>
       )}
     </Card>
   );

@@ -4,11 +4,18 @@ import type { JobHistoryItem } from '@/lib/api';
 import type { TodayPlanPayload } from '@/lib/today-plan';
 
 import {
+  buildRecap,
+  buildRecentJobs,
   buildSetupSteps,
   buildTodayActions,
   chooseNextStep,
   countPipeline,
+  doneUntil,
   greetingFor,
+  hiddenTaskIds,
+  notTodayUntil,
+  pickUpcomingInterview,
+  TIDY_SAVED_TASK_ID,
 } from './homeModel';
 
 const plan = (over: Partial<TodayPlanPayload>) => over as TodayPlanPayload;
@@ -148,8 +155,217 @@ describe('countPipeline and setup steps', () => {
   });
 
   it('marks setup steps done from real progress', () => {
-    const steps = buildSetupSteps({ hasCv: true, jobsChecked: 0, tracked: 2 });
-    expect(steps.map((s) => s.done)).toEqual([true, true, false, true]);
+    const steps = buildSetupSteps({
+      hasCv: true,
+      jobsChecked: 0,
+      tracked: 2,
+      tourDone: false,
+    });
+    expect(steps.map((s) => s.done)).toEqual([true, true, false, true, false]);
+    expect(steps[4]).toEqual(
+      expect.objectContaining({ id: 'tour', action: 'start-tour' }),
+    );
+  });
+});
+
+describe('Today: hidden tasks and old saved jobs', () => {
+  const stale = (id: string, company: string) => ({
+    id,
+    headline: 'Saved for 40 days',
+    supporting: null,
+    ctaHref: `/dashboard/jobs?bookmarkId=${id}`,
+    ctaLabel: 'Open in Job Hub',
+    reason: 'bookmark_stale',
+    companyName: company,
+  });
+
+  it('leaves out tasks marked Done or Not today', () => {
+    const actions = buildTodayActions(
+      plan({
+        followUpJobs: [
+          { id: 'a', headline: 'Follow up with Hubtel', ctaHref: '/f/a' },
+          { id: 'b', headline: 'Follow up with MTN', ctaHref: '/f/b' },
+        ] as TodayPlanPayload['followUpJobs'],
+      }),
+      { hidden: new Set(['follow-a']) },
+    );
+    expect(actions.map((a) => a.id)).toEqual(['follow-b']);
+  });
+
+  it('turns several old saved jobs into one tidy-up task, after the real ones', () => {
+    const actions = buildTodayActions(
+      plan({
+        followUpJobs: [
+          stale('s1', 'Hubtel'),
+          { id: 'a', headline: 'Follow up with MTN', ctaHref: '/f/a' },
+          stale('s2', 'Paystack'),
+          stale('s3', 'Kudi'),
+        ] as TodayPlanPayload['followUpJobs'],
+      }),
+    );
+    expect(actions.map((a) => a.title)).toEqual([
+      'Follow up with MTN',
+      'Tidy up 3 old saved jobs',
+    ]);
+    expect(actions[1]).toEqual(
+      expect.objectContaining({
+        id: TIDY_SAVED_TASK_ID,
+        href: '/dashboard/jobs?stage=saved',
+      }),
+    );
+  });
+
+  it('names the company on a single old saved job', () => {
+    const [only] = buildTodayActions(
+      plan({
+        followUpJobs: [
+          stale('s1', 'Hubtel'),
+        ] as TodayPlanPayload['followUpJobs'],
+      }),
+    );
+    expect(only?.title).toBe('Hubtel: saved for 40 days');
+  });
+
+  it('reads still-hidden ids and works out when they come back', () => {
+    const now = new Date(2026, 10, 1, 15, 30);
+    expect([
+      ...hiddenTaskIds(
+        {
+          'follow-a': new Date(2026, 10, 2).toISOString(),
+          'follow-b': new Date(2026, 10, 1, 9).toISOString(),
+          junk: 4,
+        },
+        now,
+      ),
+    ]).toEqual(['follow-a']);
+    expect(notTodayUntil(now)).toEqual(new Date(2026, 10, 2, 0, 0, 0, 0));
+    expect(doneUntil(now).getTime() - now.getTime()).toBe(30 * 86_400_000);
+  });
+});
+
+describe('interview first', () => {
+  it('leads with an interview in the next two weeks', () => {
+    const interviewPlan = plan({
+      upcomingInterviews: [
+        { id: 'far', daysUntilInterview: 20, company: 'MTN' },
+        {
+          id: 'soon',
+          daysUntilInterview: 2,
+          company: 'Hubtel',
+          jobTitle: 'Frontend Engineer',
+          ctaHref: '/prep/soon',
+          ctaLabel: 'Prepare',
+        },
+      ] as TodayPlanPayload['upcomingInterviews'],
+    });
+    const interview = pickUpcomingInterview(interviewPlan);
+    expect(interview?.id).toBe('soon');
+    const step = chooseNextStep({
+      hasCv: true,
+      jobsChecked: 3,
+      today: [
+        {
+          id: 'follow-1',
+          title: 'Follow up',
+          detail: null,
+          href: '/x',
+          ctaLabel: 'Go',
+        },
+      ],
+      plan: interviewPlan,
+      interview,
+    });
+    expect(step).toEqual(
+      expect.objectContaining({
+        id: 'interview-soon',
+        title: 'Get ready for your Hubtel interview',
+        href: '/prep/soon',
+      }),
+    );
+    expect(step.detail).toContain('Frontend Engineer interview is in 2 days');
+  });
+});
+
+describe('buildRecap', () => {
+  const base = {
+    lastSeenAt: '2026-10-30T10:00:00.000Z',
+    newJobsCount: 0,
+    newHighMatchCount: 0,
+    newStalledCount: 0,
+    statusChangedCount: 0,
+    newRecommendationsCount: 0,
+  };
+  const week = {
+    actionsCompletedToday: 0,
+    actionsCompletedWeek: 0,
+    applicationsSubmittedWeek: 0,
+    followUpsSentWeek: 0,
+    pipelineAdvancedWeek: 0,
+  };
+
+  it('says what changed since the last visit', () => {
+    expect(
+      buildRecap(
+        plan({
+          sinceLastVisit: { ...base, newJobsCount: 2, statusChangedCount: 1 },
+          progress: week,
+        }),
+      ),
+    ).toBe('Since your last visit: 2 jobs saved · 1 application updated.');
+  });
+
+  it("falls back to this week's progress, then to nothing", () => {
+    expect(
+      buildRecap(
+        plan({
+          sinceLastVisit: base,
+          progress: { ...week, applicationsSubmittedWeek: 1 },
+        }),
+      ),
+    ).toBe('This week: 1 application sent.');
+    expect(
+      buildRecap(plan({ sinceLastVisit: base, progress: week })),
+    ).toBeNull();
+  });
+});
+
+describe('buildRecentJobs', () => {
+  const job = (over: Partial<JobHistoryItem>) =>
+    ({
+      id: 'j',
+      jobTitle: 'Engineer',
+      company: 'Hubtel',
+      createdAt: '2026-10-01T00:00:00.000Z',
+      isTailored: false,
+      companyLogoUrl: null,
+      ...over,
+    }) as JobHistoryItem;
+
+  it('shows the last three jobs with the action that moves each forward', () => {
+    const recent = buildRecentJobs([
+      job({ id: 'old', createdAt: '2026-09-01T00:00:00.000Z' }),
+      job({ id: 'saved', lastActivityAt: '2026-10-30T00:00:00.000Z' }),
+      job({
+        id: 'tailored',
+        isTailored: true,
+        applyUrl: 'https://jobs.example.com/1',
+        lastActivityAt: '2026-10-29T00:00:00.000Z',
+      }),
+      job({
+        id: 'applied',
+        pipelineStatus: 'applied',
+        lastActivityAt: '2026-10-28T00:00:00.000Z',
+      }),
+    ]);
+    expect(recent.map((r) => [r.id, r.status, r.action.label])).toEqual([
+      ['saved', 'Saved', 'Tailor CV'],
+      ['tailored', 'Tailored', 'Apply'],
+      ['applied', 'Applied', 'Open'],
+    ]);
+    expect(recent[0]?.action.href).toBe(
+      '/dashboard/jobs?jobAnalysisId=saved&tab=resume',
+    );
+    expect(recent[1]?.action.external).toBe(true);
   });
 });
 
