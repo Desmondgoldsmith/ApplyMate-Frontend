@@ -3350,9 +3350,29 @@ export type CvAutopilotStep = {
   question?: string;
 };
 
+export type CvAutopilotMode = 'fix_all' | 'change';
+
+export type CvAutopilotChangeGoal =
+  | 'tailor_job'
+  | 'change_role'
+  | 'one_page'
+  | 'more_senior'
+  | 'custom';
+
+/** Body for plan/start: the mode plus, for "change", the goal and what it needs. */
+export type CvAutopilotRequest = {
+  mode: CvAutopilotMode;
+  instructions?: string;
+  goal?: CvAutopilotChangeGoal;
+  jobDescription?: string;
+  targetRole?: string;
+  customGoal?: string;
+};
+
 /** POST /cv/profiles/:id/autopilot/plan */
 export type CvAutopilotPlan = {
-  mode: 'fix_all';
+  mode: CvAutopilotMode;
+  goal?: CvAutopilotChangeGoal;
   steps: CvAutopilotStep[];
   skippedSections: string[];
   onlySections: string[];
@@ -3363,8 +3383,13 @@ export type CvAutopilotPlan = {
 /** GET /cv/profiles/:id/autopilot/runs/:runId */
 export type CvAutopilotRun = {
   id: string;
+  /** The CV that was changed: the copy when the user kept the original. */
   profileId: string;
-  mode: 'fix_all';
+  /** The CV the run was started from. */
+  sourceProfileId: string;
+  mode: CvAutopilotMode;
+  /** Set when the run worked on a new copy. */
+  copy: { name: string } | null;
   status: 'running' | 'completed' | 'stopped' | 'failed';
   steps: CvAutopilotStep[];
   revisionId: string | null;
@@ -6895,7 +6920,7 @@ const cv = {
 
   planAutopilot: async (
     profileId: string,
-    body: { mode: 'fix_all'; instructions?: string },
+    body: CvAutopilotRequest,
   ): Promise<CvAutopilotPlan> => {
     const res = await axiosClient.post<unknown>(
       `/cv/profiles/${encodeURIComponent(profileId)}/autopilot/plan`,
@@ -6908,11 +6933,10 @@ const cv = {
 
   startAutopilot: async (
     profileId: string,
-    body: {
-      mode: 'fix_all';
-      instructions?: string;
+    body: CvAutopilotRequest & {
       excludeStepIds?: string[];
       facts?: Record<string, string>;
+      keepOriginal?: boolean;
     },
   ): Promise<CvAutopilotRun> => {
     const res = await axiosClient.post<unknown>(

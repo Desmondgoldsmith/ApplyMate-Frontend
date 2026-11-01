@@ -3708,6 +3708,12 @@ export function CvClinicPageContent() {
           clearUndoHistory();
           await reloadCvFromServer();
         }}
+        onOpenProfile={(id) => {
+          void queryClient.invalidateQueries({
+            queryKey: queryKeys.cv.profiles(),
+          });
+          router.push(`/dashboard/cv?profileId=${encodeURIComponent(id)}`);
+        }}
       />
 
       <div className="hidden">{cvTopChrome}</div>

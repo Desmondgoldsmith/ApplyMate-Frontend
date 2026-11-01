@@ -6,6 +6,7 @@ import {
   Circle,
   Loader2,
   MinusCircle,
+  PenLine,
   Sparkles,
   Wand2,
   XCircle,
@@ -18,7 +19,9 @@ import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import {
   api,
+  type CvAutopilotChangeGoal,
   type CvAutopilotPlan,
+  type CvAutopilotRequest,
   type CvAutopilotRun,
   type CvAutopilotStep,
   type CvAutopilotStepStatus,
@@ -26,21 +29,59 @@ import {
 import { getApiErrorMessage } from '@/lib/axios';
 import { cn } from '@/lib/utils';
 
-type Stage = 'choose' | 'planning' | 'plan' | 'running' | 'done';
+type Stage = 'choose' | 'goal' | 'planning' | 'plan' | 'running' | 'done';
 
 const POLL_MS = 1500;
 
 const STATUS_TEXT: Record<CvAutopilotStepStatus, string> = {
   planned: 'Waiting',
   running: 'Working on it…',
-  applied: 'Fixed',
+  applied: 'Done',
   needs_input: 'Needs a detail from you',
   skipped_by_you: 'Skipped, as you asked',
-  no_change: 'Left as is: fixing it would mean inventing facts',
+  no_change: 'Left as is: nothing to change without inventing facts',
   unsafe: 'Left as is: the rewrite changed your facts',
-  failed: 'Could not fix this one',
+  failed: 'Could not do this one',
   not_started: 'Not started (stopped)',
 };
+
+const GOALS: Array<{
+  id: CvAutopilotChangeGoal;
+  label: string;
+  hint: string;
+  keepOriginalByDefault: boolean;
+}> = [
+  {
+    id: 'tailor_job',
+    label: 'Tailor it to a job',
+    hint: 'Paste the job; it brings out what the job asks for.',
+    keepOriginalByDefault: true,
+  },
+  {
+    id: 'change_role',
+    label: 'Target a different role',
+    hint: 'Repositions your CV for the role you name.',
+    keepOriginalByDefault: true,
+  },
+  {
+    id: 'one_page',
+    label: 'Fit it on one page',
+    hint: 'Tighter summary and shorter bullets, same facts.',
+    keepOriginalByDefault: false,
+  },
+  {
+    id: 'more_senior',
+    label: 'Sound more senior',
+    hint: 'Leads with scope and ownership you already show.',
+    keepOriginalByDefault: false,
+  },
+  {
+    id: 'custom',
+    label: 'Something else',
+    hint: 'Tell it in your own words.',
+    keepOriginalByDefault: false,
+  },
+];
 
 function StepIcon({ status }: { status: CvAutopilotStepStatus }) {
   const cls = 'h-4 w-4 shrink-0';
@@ -62,6 +103,32 @@ function sectionLabel(section: string): string {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : 'CV';
 }
 
+/** Why the goal form cannot continue yet, or null. Mirrors the server's checks. */
+function goalProblem(request: CvAutopilotRequest): string | null {
+  if (
+    request.goal === 'tailor_job' &&
+    (request.jobDescription?.trim().length ?? 0) < 80
+  ) {
+    return 'Paste the job description (a few lines at least).';
+  }
+  if (
+    request.goal === 'change_role' &&
+    (request.targetRole?.trim().length ?? 0) < 2
+  ) {
+    return 'Name the role to target.';
+  }
+  if (
+    request.goal === 'custom' &&
+    (request.customGoal?.trim().length ?? 0) < 5
+  ) {
+    return 'Tell Autopilot what to change.';
+  }
+  return null;
+}
+
+const fieldClass =
+  'w-full rounded-lg border border-border-default bg-bg-sunken px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:border-accent-solid focus:ring-2 focus:ring-accent-border';
+
 export type CvAutopilotModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -73,6 +140,8 @@ export type CvAutopilotModalProps = {
   onCvChanged: () => Promise<void>;
   /** "Undo all" restored the CV: reload it and reset local undo history. */
   onUndone: () => Promise<void>;
+  /** Switch the editor to another CV (the copy a run created). */
+  onOpenProfile: (profileId: string) => void;
 };
 
 export function CvAutopilotModal({
@@ -83,9 +152,14 @@ export function CvAutopilotModal({
   beforeStart,
   onCvChanged,
   onUndone,
+  onOpenProfile,
 }: CvAutopilotModalProps) {
   const toast = useToast();
   const [stage, setStage] = useState<Stage>('choose');
+  const [request, setRequest] = useState<CvAutopilotRequest>({
+    mode: 'fix_all',
+  });
+  const [keepOriginal, setKeepOriginal] = useState(false);
   const [plan, setPlan] = useState<CvAutopilotPlan | null>(null);
   const [instructions, setInstructions] = useState('');
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
@@ -97,6 +171,8 @@ export function CvAutopilotModal({
   useEffect(() => {
     if (!open) return;
     setStage('choose');
+    setRequest({ mode: 'fix_all' });
+    setKeepOriginal(false);
     setPlan(null);
     setInstructions('');
     setExcluded(new Set());
@@ -106,23 +182,24 @@ export function CvAutopilotModal({
   }, [open]);
 
   const loadPlan = useCallback(
-    async (text: string) => {
+    async (next: CvAutopilotRequest, text: string) => {
       if (!profileId) return;
+      const previous = stage;
       setStage('planning');
       try {
         await beforeStart();
-        const next = await api.cv.planAutopilot(profileId, {
-          mode: 'fix_all',
+        const result = await api.cv.planAutopilot(profileId, {
+          ...next,
           ...(text.trim() ? { instructions: text.trim() } : {}),
         });
-        setPlan(next);
+        setPlan(result);
         setStage('plan');
       } catch (e) {
         toast.error(getApiErrorMessage(e));
-        setStage('choose');
+        setStage(previous === 'planning' ? 'choose' : previous);
       }
     },
-    [beforeStart, profileId, toast],
+    [beforeStart, profileId, stage, toast],
   );
 
   const runnableSteps = (plan?.steps ?? []).filter(
@@ -141,10 +218,12 @@ export function CvAutopilotModal({
         Object.entries(facts).filter(([, v]) => v.trim()),
       );
       const started = await api.cv.startAutopilot(profileId, {
-        mode: 'fix_all',
+        ...request,
         ...(instructions.trim() ? { instructions: instructions.trim() } : {}),
         excludeStepIds: [...excluded],
-        facts: filledFacts,
+        ...(request.mode === 'fix_all'
+          ? { facts: filledFacts }
+          : { keepOriginal }),
       });
       appliedSeen.current = 0;
       setRun(started);
@@ -166,7 +245,8 @@ export function CvAutopilotModal({
         setRun(next);
         const applied = next.steps.filter((s) => s.status === 'applied').length;
         const finished = next.status !== 'running';
-        if (applied > appliedSeen.current || finished) {
+        // A copy is changed off-screen; only the CV open in the editor needs reloading.
+        if (!next.copy && (applied > appliedSeen.current || finished)) {
           appliedSeen.current = applied;
           await onCvChanged();
         }
@@ -195,8 +275,12 @@ export function CvAutopilotModal({
     setBusy(true);
     try {
       setRun(await api.cv.undoAutopilotRun(profileId, run.id));
-      await onUndone();
-      toast.success('Done. Your CV is back to how it was before Autopilot.');
+      if (run.copy) {
+        toast.success('Copy deleted. Your original CV was never changed.');
+      } else {
+        await onUndone();
+        toast.success('Done. Your CV is back to how it was before Autopilot.');
+      }
     } catch (e) {
       toast.error(getApiErrorMessage(e));
     } finally {
@@ -208,19 +292,25 @@ export function CvAutopilotModal({
   const title =
     stage === 'done'
       ? run?.undone
-        ? 'Changes undone'
+        ? run.copy
+          ? 'Copy deleted'
+          : 'Changes undone'
         : run?.status === 'stopped'
           ? 'Autopilot stopped'
           : 'Autopilot finished'
-      : 'Autopilot';
+      : stage === 'goal'
+        ? 'Change my CV'
+        : 'Autopilot';
   const description =
     stage === 'choose'
       ? 'Tell it what you want. It plans the work, you approve it, it does the rest.'
-      : stage === 'plan'
-        ? 'Here is what Autopilot will do. Untick anything you want to keep, or tell it what to change.'
-        : stage === 'running'
-          ? 'Fixing your CV. You can watch it change, or stop at any time.'
-          : undefined;
+      : stage === 'goal'
+        ? 'What should Autopilot change?'
+        : stage === 'plan'
+          ? 'Here is what Autopilot will do. Untick anything you want to keep, or tell it what to change.'
+          : stage === 'running'
+            ? 'Working on your CV. You can watch it change, or stop at any time.'
+            : undefined;
 
   return (
     <Modal
@@ -238,34 +328,66 @@ export function CvAutopilotModal({
     >
       {stage === 'choose' ? (
         allowed ? (
-          <ChooseMode onFixAll={() => void loadPlan('')} />
+          <ChooseMode
+            onFixAll={() => {
+              const next: CvAutopilotRequest = { mode: 'fix_all' };
+              setRequest(next);
+              void loadPlan(next, '');
+            }}
+            onChange={() => {
+              setRequest({ mode: 'change', goal: 'tailor_job' });
+              setKeepOriginal(true);
+              setStage('goal');
+            }}
+          />
         ) : (
           <ProPanel />
         )
+      ) : null}
+
+      {stage === 'goal' ? (
+        <GoalForm
+          request={request}
+          onRequest={setRequest}
+          keepOriginal={keepOriginal}
+          onKeepOriginal={setKeepOriginal}
+          onBack={() => setStage('choose')}
+          onNext={() => void loadPlan(request, '')}
+        />
       ) : null}
 
       {stage === 'planning' ? (
         <div className="flex flex-col items-center justify-center py-10 text-center">
           <Loader2 className="h-7 w-7 animate-spin text-accent-text" />
           <p className="mt-3 text-sm font-medium text-text-secondary">
-            Reading your CV and planning the fixes…
+            Reading your CV and planning the work…
           </p>
         </div>
       ) : null}
 
       {stage === 'plan' && plan ? (
         <div className="space-y-4">
-          <p className="text-[13px] text-text-secondary">
-            Score{' '}
-            <span className="font-semibold text-text-primary">
-              {plan.scoreBefore ?? '—'}
-            </span>{' '}
-            · {plan.issuesBefore} issue{plan.issuesBefore === 1 ? '' : 's'}{' '}
-            found
-          </p>
+          {plan.mode === 'fix_all' ? (
+            <p className="text-[13px] text-text-secondary">
+              Score{' '}
+              <span className="font-semibold text-text-primary">
+                {plan.scoreBefore ?? '—'}
+              </span>{' '}
+              · {plan.issuesBefore} issue{plan.issuesBefore === 1 ? '' : 's'}{' '}
+              found
+            </p>
+          ) : (
+            <p className="text-[13px] text-text-secondary">
+              {keepOriginal
+                ? 'Works on a new copy; your current CV stays as it is.'
+                : 'Changes this CV. You can undo it all at once.'}
+            </p>
+          )}
           {plan.steps.length === 0 ? (
             <p className="rounded-xl border border-border-subtle bg-bg-sunken p-4 text-sm text-text-secondary">
-              Nothing to fix right now. Your CV has no open issues.
+              {plan.mode === 'fix_all'
+                ? 'Nothing to fix right now. Your CV has no open issues.'
+                : 'Your CV has no sections this goal can work on yet.'}
             </p>
           ) : (
             <ul className="divide-y divide-border-subtle rounded-xl border border-border-subtle">
@@ -307,7 +429,7 @@ export function CvAutopilotModal({
                 maxLength={1000}
                 rows={2}
                 onChange={(e) => setInstructions(e.target.value)}
-                className="min-h-[44px] flex-1 resize-y rounded-lg border border-border-default bg-bg-sunken px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:border-accent-solid focus:ring-2 focus:ring-accent-border"
+                className={cn(fieldClass, 'min-h-[44px] flex-1 resize-y')}
                 placeholder="Type a correction and update the plan"
               />
               <Button
@@ -315,7 +437,7 @@ export function CvAutopilotModal({
                 variant="ghost"
                 className="h-auto shrink-0 border border-border-subtle px-3 text-xs"
                 disabled={!instructions.trim()}
-                onClick={() => void loadPlan(instructions)}
+                onClick={() => void loadPlan(request, instructions)}
               >
                 Update plan
               </Button>
@@ -330,7 +452,9 @@ export function CvAutopilotModal({
                 type="button"
                 variant="ghost"
                 className="border border-border-subtle"
-                onClick={() => setStage('choose')}
+                onClick={() =>
+                  setStage(request.mode === 'change' ? 'goal' : 'choose')
+                }
               >
                 Back
               </Button>
@@ -345,8 +469,9 @@ export function CvAutopilotModal({
                 ) : (
                   <Wand2 className="mr-1.5 h-4 w-4" />
                 )}
-                Fix {runnableSteps.length} issue
-                {runnableSteps.length === 1 ? '' : 's'}
+                {request.mode === 'fix_all'
+                  ? `Fix ${runnableSteps.length} issue${runnableSteps.length === 1 ? '' : 's'}`
+                  : `Start (${runnableSteps.length} step${runnableSteps.length === 1 ? '' : 's'})`}
               </Button>
             </div>
           </div>
@@ -361,13 +486,23 @@ export function CvAutopilotModal({
           onStop={() => void stop()}
           onUndo={() => void undoAll()}
           onKeep={() => onOpenChange(false)}
+          onOpenCopy={() => {
+            onOpenProfile(run.profileId);
+            onOpenChange(false);
+          }}
         />
       ) : null}
     </Modal>
   );
 }
 
-function ChooseMode({ onFixAll }: { onFixAll: () => void }) {
+function ChooseMode({
+  onFixAll,
+  onChange,
+}: {
+  onFixAll: () => void;
+  onChange: () => void;
+}) {
   const card =
     'flex w-full items-start gap-3 rounded-xl border p-4 text-left transition';
   return (
@@ -391,29 +526,166 @@ function ChooseMode({ onFixAll }: { onFixAll: () => void }) {
           </span>
         </span>
       </button>
-      {[
-        ['Change my CV', 'Tailor it to a job, a new role, or one page.'],
-        ['Quick create a CV', 'From an old CV, LinkedIn, or a few questions.'],
-      ].map(([name, hint]) => (
-        <div
-          key={name}
-          className={cn(card, 'cursor-default border-border-subtle opacity-60')}
-          aria-disabled
-        >
-          <Wand2 className="mt-0.5 h-5 w-5 shrink-0 text-text-tertiary" />
-          <span>
-            <span className="block text-sm font-semibold text-text-primary">
-              {name}{' '}
-              <span className="ml-1 rounded bg-bg-hover px-1.5 py-0.5 text-[10px] font-semibold uppercase text-text-tertiary">
-                Coming soon
-              </span>
-            </span>
-            <span className="mt-0.5 block text-xs text-text-tertiary">
-              {hint}
+      <button
+        type="button"
+        onClick={onChange}
+        className={cn(
+          card,
+          'border-accent-border bg-bg-sunken hover:bg-accent-subtle',
+        )}
+      >
+        <PenLine className="mt-0.5 h-5 w-5 shrink-0 text-accent-text" />
+        <span>
+          <span className="block text-sm font-semibold text-text-primary">
+            Change my CV
+          </span>
+          <span className="mt-0.5 block text-xs text-text-tertiary">
+            Tailor it to a job, a new role, one page, or a more senior voice.
+          </span>
+        </span>
+      </button>
+      <div
+        className={cn(card, 'cursor-default border-border-subtle opacity-60')}
+        aria-disabled
+      >
+        <Wand2 className="mt-0.5 h-5 w-5 shrink-0 text-text-tertiary" />
+        <span>
+          <span className="block text-sm font-semibold text-text-primary">
+            Quick create a CV{' '}
+            <span className="ml-1 rounded bg-bg-hover px-1.5 py-0.5 text-[10px] font-semibold uppercase text-text-tertiary">
+              Coming soon
             </span>
           </span>
+          <span className="mt-0.5 block text-xs text-text-tertiary">
+            From an old CV, LinkedIn, or a few questions.
+          </span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function GoalForm({
+  request,
+  onRequest,
+  keepOriginal,
+  onKeepOriginal,
+  onBack,
+  onNext,
+}: {
+  request: CvAutopilotRequest;
+  onRequest: (next: CvAutopilotRequest) => void;
+  keepOriginal: boolean;
+  onKeepOriginal: (keep: boolean) => void;
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  const problem = goalProblem(request);
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-2 sm:grid-cols-2">
+        {GOALS.map((g) => {
+          const active = request.goal === g.id;
+          return (
+            <button
+              key={g.id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => {
+                onRequest({ ...request, goal: g.id });
+                onKeepOriginal(g.keepOriginalByDefault);
+              }}
+              className={cn(
+                'rounded-xl border p-3 text-left transition',
+                active
+                  ? 'border-accent-solid bg-accent-subtle'
+                  : 'border-border-subtle bg-bg-sunken hover:border-border-default',
+              )}
+            >
+              <span className="block text-[13px] font-semibold text-text-primary">
+                {g.label}
+              </span>
+              <span className="mt-0.5 block text-xs text-text-tertiary">
+                {g.hint}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {request.goal === 'tailor_job' ? (
+        <textarea
+          aria-label="Job description"
+          value={request.jobDescription ?? ''}
+          maxLength={8000}
+          rows={6}
+          onChange={(e) =>
+            onRequest({ ...request, jobDescription: e.target.value })
+          }
+          placeholder="Paste the job description here"
+          className={cn(fieldClass, 'resize-y')}
+        />
+      ) : null}
+      {request.goal === 'change_role' ? (
+        <input
+          aria-label="Role to target"
+          type="text"
+          value={request.targetRole ?? ''}
+          maxLength={120}
+          onChange={(e) =>
+            onRequest({ ...request, targetRole: e.target.value })
+          }
+          placeholder="e.g. Product Manager"
+          className={cn(fieldClass, 'h-10')}
+        />
+      ) : null}
+      {request.goal === 'custom' ? (
+        <textarea
+          aria-label="What to change"
+          value={request.customGoal ?? ''}
+          maxLength={1000}
+          rows={3}
+          onChange={(e) =>
+            onRequest({ ...request, customGoal: e.target.value })
+          }
+          placeholder="e.g. Make it sound friendlier and less formal"
+          className={cn(fieldClass, 'resize-y')}
+        />
+      ) : null}
+
+      <label className="flex items-start gap-2.5 text-[13px] text-text-secondary">
+        <input
+          type="checkbox"
+          className="mt-0.5 h-4 w-4 accent-[#17B26A]"
+          checked={keepOriginal}
+          onChange={(e) => onKeepOriginal(e.target.checked)}
+        />
+        <span>Keep my original CV and save this as a new copy</span>
+      </label>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-4">
+        <p className="text-xs text-text-tertiary">
+          {problem ?? 'Uses only facts already in your CV.'}
+        </p>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            className="border border-border-subtle"
+            onClick={onBack}
+          >
+            Back
+          </Button>
+          <Button
+            type="button"
+            variant="accent"
+            disabled={problem !== null}
+            onClick={onNext}
+          >
+            See the plan
+          </Button>
         </div>
-      ))}
+      </div>
     </div>
   );
 }
@@ -484,7 +756,7 @@ function PlanStepRow({
             maxLength={300}
             onChange={(e) => onFact(e.target.value)}
             placeholder="e.g. 40% faster, 12k users"
-            className="mt-1.5 h-9 w-full rounded-lg border border-border-default bg-bg-sunken px-3 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:border-accent-solid"
+            className={cn(fieldClass, 'mt-1.5 h-9')}
           />
         </div>
       ) : null}
@@ -499,6 +771,7 @@ function RunView({
   onStop,
   onUndo,
   onKeep,
+  onOpenCopy,
 }: {
   run: CvAutopilotRun;
   stage: Stage;
@@ -506,6 +779,7 @@ function RunView({
   onStop: () => void;
   onUndo: () => void;
   onKeep: () => void;
+  onOpenCopy: () => void;
 }) {
   const active = run.steps.filter(
     (s) => s.status !== 'skipped_by_you' && s.status !== 'needs_input',
@@ -535,7 +809,7 @@ function RunView({
             />
           </div>
         </div>
-      ) : (
+      ) : run.mode === 'fix_all' ? (
         <div className="grid grid-cols-2 gap-3">
           <Metric
             label="Score"
@@ -549,7 +823,13 @@ function RunView({
             lowerIsBetter
           />
         </div>
-      )}
+      ) : run.copy && !run.undone ? (
+        <p className="rounded-xl border border-accent-border bg-accent-subtle px-3.5 py-3 text-[13px] text-text-primary">
+          Saved as a new CV:{' '}
+          <span className="font-semibold">{run.copy.name}</span>. Your original
+          CV was not changed.
+        </p>
+      ) : null}
 
       <ul className="max-h-[42vh] divide-y divide-border-subtle overflow-y-auto rounded-xl border border-border-subtle">
         {run.steps.map((step) => (
@@ -595,7 +875,7 @@ function RunView({
           </Button>
         ) : (
           <>
-            {applied > 0 ? (
+            {applied > 0 || run.copy ? (
               <Button
                 type="button"
                 variant="ghost"
@@ -606,12 +886,18 @@ function RunView({
                 {busy ? (
                   <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                 ) : null}
-                Undo all
+                {run.copy ? 'Delete the copy' : 'Undo all'}
               </Button>
             ) : null}
-            <Button type="button" variant="accent" onClick={onKeep}>
-              {applied > 0 ? 'Keep changes' : 'Close'}
-            </Button>
+            {run.copy ? (
+              <Button type="button" variant="accent" onClick={onOpenCopy}>
+                Open the new CV
+              </Button>
+            ) : (
+              <Button type="button" variant="accent" onClick={onKeep}>
+                {applied > 0 ? 'Keep changes' : 'Close'}
+              </Button>
+            )}
           </>
         )}
       </div>

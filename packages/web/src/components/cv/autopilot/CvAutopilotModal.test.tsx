@@ -64,6 +64,8 @@ const plan: CvAutopilotPlan = {
 const finishedRun: CvAutopilotRun = {
   id: 'run-1',
   profileId: 'p1',
+  sourceProfileId: 'p1',
+  copy: null,
   mode: 'fix_all',
   status: 'completed',
   steps: [
@@ -85,6 +87,7 @@ const finishedRun: CvAutopilotRun = {
 function renderModal(allowed = true) {
   const onCvChanged = vi.fn().mockResolvedValue(undefined);
   const onUndone = vi.fn().mockResolvedValue(undefined);
+  const onOpenProfile = vi.fn();
   render(
     <CvAutopilotModal
       open
@@ -94,9 +97,10 @@ function renderModal(allowed = true) {
       beforeStart={vi.fn().mockResolvedValue(undefined)}
       onCvChanged={onCvChanged}
       onUndone={onUndone}
+      onOpenProfile={onOpenProfile}
     />,
   );
-  return { onCvChanged, onUndone };
+  return { onCvChanged, onUndone, onOpenProfile };
 }
 
 describe('CvAutopilotModal', () => {
@@ -140,6 +144,81 @@ describe('CvAutopilotModal', () => {
       await user.click(screen.getByRole('button', { name: 'Undo all' }));
       await waitFor(() => expect(onUndone).toHaveBeenCalled());
       expect(undoAutopilotRun).toHaveBeenCalledWith('p1', 'run-1');
+    },
+  );
+
+  it(
+    'tailors a copy to a job and opens the new CV',
+    { timeout: 30000 },
+    async () => {
+      const user = userEvent.setup();
+      const job =
+        'We are hiring a frontend engineer to own our React design system, accessibility and performance.';
+      const changePlan: CvAutopilotPlan = {
+        mode: 'change',
+        goal: 'tailor_job',
+        scoreBefore: 80,
+        issuesBefore: 0,
+        skippedSections: [],
+        onlySections: [],
+        steps: [
+          {
+            id: 'tailor_job:summary',
+            section: 'summary',
+            title: 'Rewrite your summary for this job',
+            detail: 'Leads with what matters most.',
+            status: 'planned',
+          },
+        ],
+      };
+      planAutopilot.mockResolvedValue(changePlan);
+      const copyRun: CvAutopilotRun = {
+        ...finishedRun,
+        mode: 'change',
+        profileId: 'copy-1',
+        copy: { name: 'My CV · Tailored' },
+        steps: [{ ...changePlan.steps[0], status: 'applied' }],
+      };
+      startAutopilot.mockResolvedValue({ ...copyRun, status: 'running' });
+      getAutopilotRun.mockResolvedValue(copyRun);
+      const { onOpenProfile, onCvChanged } = renderModal();
+
+      await user.click(screen.getByText('Change my CV'));
+      const next = screen.getByRole('button', { name: 'See the plan' });
+      expect(next).toBeDisabled();
+      expect(
+        screen.getByRole('checkbox', {
+          name: 'Keep my original CV and save this as a new copy',
+        }),
+      ).toBeChecked();
+
+      await user.click(screen.getByLabelText('Job description'));
+      await user.paste(job);
+      await user.click(next);
+      expect(planAutopilot).toHaveBeenCalledWith('p1', {
+        mode: 'change',
+        goal: 'tailor_job',
+        jobDescription: job,
+      });
+
+      await user.click(
+        await screen.findByRole('button', { name: /Start \(1 step\)/ }),
+      );
+      expect(startAutopilot).toHaveBeenCalledWith(
+        'p1',
+        expect.objectContaining({
+          mode: 'change',
+          goal: 'tailor_job',
+          keepOriginal: true,
+        }),
+      );
+      expect(
+        await screen.findByText('My CV · Tailored', {}, { timeout: 15000 }),
+      ).toBeInTheDocument();
+      expect(onCvChanged).not.toHaveBeenCalled();
+
+      await user.click(screen.getByRole('button', { name: 'Open the new CV' }));
+      expect(onOpenProfile).toHaveBeenCalledWith('copy-1');
     },
   );
 });
