@@ -3350,7 +3350,25 @@ export type CvAutopilotStep = {
   question?: string;
 };
 
-export type CvAutopilotMode = 'fix_all' | 'change';
+export type CvAutopilotMode = 'fix_all' | 'change' | 'create';
+
+/** The short form behind Autopilot's "Answer a few questions". */
+export type CvAutopilotCreateAnswers = {
+  fullName: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  jobTitle: string;
+  company: string;
+  startDate?: string;
+  endDate?: string;
+  current?: boolean;
+  achievements: string[];
+  skills: string[];
+  degree?: string;
+  school?: string;
+  graduationYear?: string;
+};
 
 export type CvAutopilotChangeGoal =
   | 'tailor_job'
@@ -3367,6 +3385,7 @@ export type CvAutopilotRequest = {
   jobDescription?: string;
   targetRole?: string;
   customGoal?: string;
+  createSource?: 'upload' | 'answers';
 };
 
 /** POST /cv/profiles/:id/autopilot/plan */
@@ -6937,6 +6956,8 @@ const cv = {
       excludeStepIds?: string[];
       facts?: Record<string, string>;
       keepOriginal?: boolean;
+      createdProfileId?: string;
+      answers?: CvAutopilotCreateAnswers;
     },
   ): Promise<CvAutopilotRun> => {
     const res = await axiosClient.post<unknown>(

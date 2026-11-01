@@ -5,13 +5,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CvAutopilotModal } from '@/components/cv/autopilot/CvAutopilotModal';
 import type { CvAutopilotPlan, CvAutopilotRun } from '@/lib/api';
 
-const { planAutopilot, startAutopilot, getAutopilotRun, undoAutopilotRun } =
-  vi.hoisted(() => ({
-    planAutopilot: vi.fn(),
-    startAutopilot: vi.fn(),
-    getAutopilotRun: vi.fn(),
-    undoAutopilotRun: vi.fn(),
-  }));
+const {
+  planAutopilot,
+  startAutopilot,
+  getAutopilotRun,
+  undoAutopilotRun,
+  createProfile,
+  parse,
+  deleteCvProfileById,
+} = vi.hoisted(() => ({
+  planAutopilot: vi.fn(),
+  startAutopilot: vi.fn(),
+  getAutopilotRun: vi.fn(),
+  undoAutopilotRun: vi.fn(),
+  createProfile: vi.fn(),
+  parse: vi.fn(),
+  deleteCvProfileById: vi.fn(),
+}));
 
 vi.mock('@/lib/api', () => ({
   api: {
@@ -21,6 +31,9 @@ vi.mock('@/lib/api', () => ({
       getAutopilotRun,
       stopAutopilotRun: vi.fn(),
       undoAutopilotRun,
+      createProfile,
+      parse,
+      deleteCvProfileById,
     },
   },
 }));
@@ -219,6 +232,148 @@ describe('CvAutopilotModal', () => {
 
       await user.click(screen.getByRole('button', { name: 'Open the new CV' }));
       expect(onOpenProfile).toHaveBeenCalledWith('copy-1');
+    },
+  );
+
+  it('quick-creates a CV from a few answers', { timeout: 30000 }, async () => {
+    const user = userEvent.setup();
+    const createPlan: CvAutopilotPlan = {
+      mode: 'create',
+      scoreBefore: null,
+      issuesBefore: 0,
+      skippedSections: [],
+      onlySections: [],
+      steps: [
+        {
+          id: 'create:build',
+          section: 'CV',
+          title: 'Build the CV from your answers',
+          detail: '',
+          status: 'planned',
+        },
+      ],
+    };
+    planAutopilot.mockResolvedValue(createPlan);
+    const createRun: CvAutopilotRun = {
+      ...finishedRun,
+      mode: 'create',
+      profileId: 'new-1',
+      copy: { name: 'Ama Owusu · Frontend Engineer' },
+      steps: [{ ...createPlan.steps[0], status: 'applied' }],
+      scoreBefore: 70,
+      scoreAfter: 84,
+    };
+    startAutopilot.mockResolvedValue({ ...createRun, status: 'running' });
+    getAutopilotRun.mockResolvedValue(createRun);
+    const { onOpenProfile } = renderModal();
+
+    await user.click(screen.getByText('Quick create a CV'));
+    await user.type(
+      screen.getByLabelText('Which role is this CV for?'),
+      'Frontend Engineer',
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Answer a few questions' }),
+    );
+    const next = screen.getByRole('button', { name: 'See the plan' });
+    expect(next).toBeDisabled();
+
+    await user.type(screen.getByLabelText('Full name'), 'Ama Owusu');
+    await user.type(
+      screen.getByLabelText('Current or latest job title'),
+      'Frontend Developer',
+    );
+    await user.type(screen.getByLabelText('Company'), 'Hubtel');
+    await user.type(
+      screen.getByLabelText('Achievements'),
+      '- Built the merchant dashboard{enter}Cut load time by 40%',
+    );
+    await user.type(screen.getByLabelText('Skills'), 'React, TypeScript, CSS');
+    await user.click(next);
+
+    expect(planAutopilot).toHaveBeenCalledWith('p1', {
+      mode: 'create',
+      createSource: 'answers',
+      targetRole: 'Frontend Engineer',
+    });
+    await user.click(
+      await screen.findByRole('button', { name: 'Create my CV' }),
+    );
+    expect(startAutopilot).toHaveBeenCalledWith(
+      'p1',
+      expect.objectContaining({
+        mode: 'create',
+        createSource: 'answers',
+        answers: expect.objectContaining({
+          fullName: 'Ama Owusu',
+          company: 'Hubtel',
+          achievements: [
+            'Built the merchant dashboard',
+            'Cut load time by 40%',
+          ],
+          skills: ['React', 'TypeScript', 'CSS'],
+        }),
+      }),
+    );
+    expect(
+      await screen.findByText(
+        'Ama Owusu · Frontend Engineer',
+        {},
+        { timeout: 15000 },
+      ),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Open the new CV' }));
+    expect(onOpenProfile).toHaveBeenCalledWith('new-1');
+  });
+
+  it(
+    'removes the empty CV and keeps the error on screen when the file cannot be read',
+    { timeout: 30000 },
+    async () => {
+      const user = userEvent.setup();
+      planAutopilot.mockResolvedValue({
+        mode: 'create',
+        scoreBefore: null,
+        issuesBefore: 0,
+        skippedSections: [],
+        onlySections: [],
+        steps: [
+          {
+            id: 'create:build',
+            section: 'CV',
+            title: 'Read your file and build the CV',
+            detail: '',
+            status: 'planned',
+          },
+        ],
+      } satisfies CvAutopilotPlan);
+      createProfile.mockResolvedValue({
+        id: 'new-9',
+        name: 'Frontend Engineer CV',
+      });
+      parse.mockRejectedValue(new Error('Daily AI limit reached'));
+      deleteCvProfileById.mockResolvedValue(undefined);
+      renderModal();
+
+      await user.click(screen.getByText('Quick create a CV'));
+      await user.type(
+        screen.getByLabelText('Which role is this CV for?'),
+        'Frontend Engineer',
+      );
+      await user.upload(
+        screen.getByLabelText('CV file'),
+        new File(['Efua Mensah'], 'cv.txt', { type: 'text/plain' }),
+      );
+      await user.click(screen.getByRole('button', { name: 'See the plan' }));
+      await user.click(
+        await screen.findByRole('button', { name: 'Create my CV' }),
+      );
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'Daily AI limit reached',
+      );
+      expect(deleteCvProfileById).toHaveBeenCalledWith('new-9');
+      expect(startAutopilot).not.toHaveBeenCalled();
     },
   );
 });

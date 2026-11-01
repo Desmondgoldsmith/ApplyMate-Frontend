@@ -4,6 +4,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Circle,
+  FilePlus2,
   Loader2,
   MinusCircle,
   PenLine,
@@ -20,6 +21,7 @@ import { useToast } from '@/components/ui/Toast';
 import {
   api,
   type CvAutopilotChangeGoal,
+  type CvAutopilotCreateAnswers,
   type CvAutopilotPlan,
   type CvAutopilotRequest,
   type CvAutopilotRun,
@@ -29,7 +31,73 @@ import {
 import { getApiErrorMessage } from '@/lib/axios';
 import { cn } from '@/lib/utils';
 
-type Stage = 'choose' | 'goal' | 'planning' | 'plan' | 'running' | 'done';
+type Stage =
+  | 'choose'
+  | 'goal'
+  | 'create'
+  | 'planning'
+  | 'plan'
+  | 'running'
+  | 'done';
+
+/** The answers form as typed: list fields are free text until submitted. */
+type AnswersDraft = Omit<
+  CvAutopilotCreateAnswers,
+  'achievements' | 'skills'
+> & {
+  achievementsText: string;
+  skillsText: string;
+};
+
+const EMPTY_ANSWERS: AnswersDraft = {
+  fullName: '',
+  email: '',
+  jobTitle: '',
+  company: '',
+  startDate: '',
+  current: true,
+  achievementsText: '',
+  skillsText: '',
+  degree: '',
+  school: '',
+  graduationYear: '',
+};
+
+function answersFromDraft(draft: AnswersDraft): CvAutopilotCreateAnswers {
+  const { achievementsText, skillsText, ...rest } = draft;
+  return {
+    ...rest,
+    achievements: achievementsText
+      .split(/\n+/)
+      .map((s) => s.replace(/^[-•*]\s*/, '').trim())
+      .filter(Boolean),
+    skills: skillsText
+      .split(/[,\n]+/)
+      .map((s) => s.trim())
+      .filter(Boolean),
+  };
+}
+
+/** Why the quick-create form cannot continue yet, or null. Mirrors the server's checks. */
+function createProblem(
+  request: CvAutopilotRequest,
+  file: File | null,
+  draft: AnswersDraft,
+): string | null {
+  if ((request.targetRole?.trim().length ?? 0) < 2) {
+    return 'Name the role this CV is for.';
+  }
+  if (request.createSource === 'upload') {
+    return file ? null : 'Choose your CV or LinkedIn PDF.';
+  }
+  const answers = answersFromDraft(draft);
+  if (!answers.fullName.trim()) return 'Add your full name.';
+  if (!answers.jobTitle.trim() || !answers.company.trim()) {
+    return 'Add your current or latest job title and company.';
+  }
+  if (answers.skills.length < 3) return 'Add at least three skills.';
+  return null;
+}
 
 const POLL_MS = 1500;
 
@@ -166,12 +234,28 @@ export function CvAutopilotModal({
   const [facts, setFacts] = useState<Record<string, string>>({});
   const [run, setRun] = useState<CvAutopilotRun | null>(null);
   const [busy, setBusy] = useState(false);
+  const [busyText, setBusyText] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const showError = useCallback(
+    (e: unknown) => {
+      const message = getApiErrorMessage(e);
+      setError(message);
+      toast.error(message);
+    },
+    [toast],
+  );
+  const [createFile, setCreateFile] = useState<File | null>(null);
+  const [answersDraft, setAnswersDraft] = useState<AnswersDraft>(EMPTY_ANSWERS);
   const appliedSeen = useRef(0);
 
   useEffect(() => {
     if (!open) return;
     setStage('choose');
     setRequest({ mode: 'fix_all' });
+    setCreateFile(null);
+    setAnswersDraft(EMPTY_ANSWERS);
+    setBusyText(null);
+    setError(null);
     setKeepOriginal(false);
     setPlan(null);
     setInstructions('');
@@ -186,6 +270,7 @@ export function CvAutopilotModal({
       if (!profileId) return;
       const previous = stage;
       setStage('planning');
+      setError(null);
       try {
         await beforeStart();
         const result = await api.cv.planAutopilot(profileId, {
@@ -195,11 +280,11 @@ export function CvAutopilotModal({
         setPlan(result);
         setStage('plan');
       } catch (e) {
-        toast.error(getApiErrorMessage(e));
+        showError(e);
         setStage(previous === 'planning' ? 'choose' : previous);
       }
     },
-    [beforeStart, profileId, stage, toast],
+    [beforeStart, profileId, stage, showError],
   );
 
   const runnableSteps = (plan?.steps ?? []).filter(
@@ -209,29 +294,74 @@ export function CvAutopilotModal({
         (s.status === 'needs_input' && facts[s.id]?.trim())),
   );
 
+  /** Quick create from a file: upload it into a new CV before the run starts. */
+  const uploadIntoNewCv = async (file: File): Promise<string> => {
+    setBusyText('Reading your file…');
+    const created = await api.cv.createProfile({
+      name: `${request.targetRole?.trim() || 'New'} CV`,
+    });
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      await api.cv.parse(formData, {
+        rebuildSections: true,
+        cvProfileId: created.id,
+      });
+    } catch (e) {
+      // Do not leave an empty CV in the user's list when the file could not be read.
+      await api.cv.deleteCvProfileById(created.id).catch(() => undefined);
+      throw e;
+    }
+    return created.id;
+  };
+
   const start = async () => {
     if (!profileId || !plan) return;
     setBusy(true);
+    setError(null);
+    let uploadedId: string | null = null;
     try {
       await beforeStart();
       const filledFacts = Object.fromEntries(
         Object.entries(facts).filter(([, v]) => v.trim()),
       );
-      const started = await api.cv.startAutopilot(profileId, {
+      const common = {
         ...request,
         ...(instructions.trim() ? { instructions: instructions.trim() } : {}),
         excludeStepIds: [...excluded],
-        ...(request.mode === 'fix_all'
-          ? { facts: filledFacts }
-          : { keepOriginal }),
-      });
+      };
+      if (
+        request.mode === 'create' &&
+        request.createSource === 'upload' &&
+        createFile
+      ) {
+        uploadedId = await uploadIntoNewCv(createFile);
+      }
+      const started =
+        request.mode === 'create'
+          ? await api.cv.startAutopilot(profileId, {
+              ...common,
+              ...(uploadedId
+                ? { createdProfileId: uploadedId }
+                : { answers: answersFromDraft(answersDraft) }),
+            })
+          : await api.cv.startAutopilot(profileId, {
+              ...common,
+              ...(request.mode === 'fix_all'
+                ? { facts: filledFacts }
+                : { keepOriginal }),
+            });
       appliedSeen.current = 0;
       setRun(started);
       setStage('running');
     } catch (e) {
-      toast.error(getApiErrorMessage(e));
+      if (uploadedId) {
+        await api.cv.deleteCvProfileById(uploadedId).catch(() => undefined);
+      }
+      showError(e);
     } finally {
       setBusy(false);
+      setBusyText(null);
     }
   };
 
@@ -275,7 +405,9 @@ export function CvAutopilotModal({
     setBusy(true);
     try {
       setRun(await api.cv.undoAutopilotRun(profileId, run.id));
-      if (run.copy) {
+      if (run.mode === 'create') {
+        toast.success('New CV deleted.');
+      } else if (run.copy) {
         toast.success('Copy deleted. Your original CV was never changed.');
       } else {
         await onUndone();
@@ -292,25 +424,31 @@ export function CvAutopilotModal({
   const title =
     stage === 'done'
       ? run?.undone
-        ? run.copy
-          ? 'Copy deleted'
-          : 'Changes undone'
+        ? run.mode === 'create'
+          ? 'New CV deleted'
+          : run.copy
+            ? 'Copy deleted'
+            : 'Changes undone'
         : run?.status === 'stopped'
           ? 'Autopilot stopped'
           : 'Autopilot finished'
       : stage === 'goal'
         ? 'Change my CV'
-        : 'Autopilot';
+        : stage === 'create'
+          ? 'Quick create a CV'
+          : 'Autopilot';
   const description =
     stage === 'choose'
       ? 'Tell it what you want. It plans the work, you approve it, it does the rest.'
       : stage === 'goal'
         ? 'What should Autopilot change?'
-        : stage === 'plan'
-          ? 'Here is what Autopilot will do. Untick anything you want to keep, or tell it what to change.'
-          : stage === 'running'
-            ? 'Working on your CV. You can watch it change, or stop at any time.'
-            : undefined;
+        : stage === 'create'
+          ? 'A finished CV in a few minutes. The CV you have open stays as it is.'
+          : stage === 'plan'
+            ? 'Here is what Autopilot will do. Untick anything you want to keep, or tell it what to change.'
+            : stage === 'running'
+              ? 'Working on your CV. You can watch it change, or stop at any time.'
+              : undefined;
 
   return (
     <Modal
@@ -326,6 +464,18 @@ export function CvAutopilotModal({
       closeOnOverlayClick={!running && !busy}
       showCloseButton={!running}
     >
+      {error &&
+      (stage === 'choose' ||
+        stage === 'goal' ||
+        stage === 'create' ||
+        stage === 'plan') ? (
+        <p
+          role="alert"
+          className="mb-3 rounded-lg border border-danger-border bg-danger-subtle px-3 py-2 text-xs text-danger-text"
+        >
+          {error}
+        </p>
+      ) : null}
       {stage === 'choose' ? (
         allowed ? (
           <ChooseMode
@@ -339,10 +489,31 @@ export function CvAutopilotModal({
               setKeepOriginal(true);
               setStage('goal');
             }}
+            onCreate={() => {
+              setRequest({
+                mode: 'create',
+                createSource: 'upload',
+                targetRole: '',
+              });
+              setStage('create');
+            }}
           />
         ) : (
           <ProPanel />
         )
+      ) : null}
+
+      {stage === 'create' ? (
+        <CreateForm
+          request={request}
+          onRequest={setRequest}
+          file={createFile}
+          onFile={setCreateFile}
+          draft={answersDraft}
+          onDraft={setAnswersDraft}
+          onBack={() => setStage('choose')}
+          onNext={() => void loadPlan(request, '')}
+        />
       ) : null}
 
       {stage === 'goal' ? (
@@ -378,9 +549,11 @@ export function CvAutopilotModal({
             </p>
           ) : (
             <p className="text-[13px] text-text-secondary">
-              {keepOriginal
-                ? 'Works on a new copy; your current CV stays as it is.'
-                : 'Changes this CV. You can undo it all at once.'}
+              {plan.mode === 'create'
+                ? 'Creates a new CV; the one you have open stays as it is.'
+                : keepOriginal
+                  ? 'Works on a new copy; your current CV stays as it is.'
+                  : 'Changes this CV. You can undo it all at once.'}
             </p>
           )}
           {plan.steps.length === 0 ? (
@@ -453,7 +626,13 @@ export function CvAutopilotModal({
                 variant="ghost"
                 className="border border-border-subtle"
                 onClick={() =>
-                  setStage(request.mode === 'change' ? 'goal' : 'choose')
+                  setStage(
+                    request.mode === 'change'
+                      ? 'goal'
+                      : request.mode === 'create'
+                        ? 'create'
+                        : 'choose',
+                  )
                 }
               >
                 Back
@@ -469,9 +648,13 @@ export function CvAutopilotModal({
                 ) : (
                   <Wand2 className="mr-1.5 h-4 w-4" />
                 )}
-                {request.mode === 'fix_all'
-                  ? `Fix ${runnableSteps.length} issue${runnableSteps.length === 1 ? '' : 's'}`
-                  : `Start (${runnableSteps.length} step${runnableSteps.length === 1 ? '' : 's'})`}
+                {busy && busyText
+                  ? busyText
+                  : request.mode === 'fix_all'
+                    ? `Fix ${runnableSteps.length} issue${runnableSteps.length === 1 ? '' : 's'}`
+                    : request.mode === 'create'
+                      ? 'Create my CV'
+                      : `Start (${runnableSteps.length} step${runnableSteps.length === 1 ? '' : 's'})`}
               </Button>
             </div>
           </div>
@@ -499,9 +682,11 @@ export function CvAutopilotModal({
 function ChooseMode({
   onFixAll,
   onChange,
+  onCreate,
 }: {
   onFixAll: () => void;
   onChange: () => void;
+  onCreate: () => void;
 }) {
   const card =
     'flex w-full items-start gap-3 rounded-xl border p-4 text-left transition';
@@ -544,22 +729,218 @@ function ChooseMode({
           </span>
         </span>
       </button>
-      <div
-        className={cn(card, 'cursor-default border-border-subtle opacity-60')}
-        aria-disabled
+      <button
+        type="button"
+        onClick={onCreate}
+        className={cn(
+          card,
+          'border-accent-border bg-bg-sunken hover:bg-accent-subtle',
+        )}
       >
-        <Wand2 className="mt-0.5 h-5 w-5 shrink-0 text-text-tertiary" />
+        <FilePlus2 className="mt-0.5 h-5 w-5 shrink-0 text-accent-text" />
         <span>
           <span className="block text-sm font-semibold text-text-primary">
-            Quick create a CV{' '}
-            <span className="ml-1 rounded bg-bg-hover px-1.5 py-0.5 text-[10px] font-semibold uppercase text-text-tertiary">
-              Coming soon
-            </span>
+            Quick create a CV
           </span>
           <span className="mt-0.5 block text-xs text-text-tertiary">
-            From an old CV, LinkedIn, or a few questions.
+            From an old CV, a LinkedIn PDF, or a few questions.
           </span>
         </span>
+      </button>
+    </div>
+  );
+}
+
+function CreateForm({
+  request,
+  onRequest,
+  file,
+  onFile,
+  draft,
+  onDraft,
+  onBack,
+  onNext,
+}: {
+  request: CvAutopilotRequest;
+  onRequest: (next: CvAutopilotRequest) => void;
+  file: File | null;
+  onFile: (file: File | null) => void;
+  draft: AnswersDraft;
+  onDraft: (next: AnswersDraft) => void;
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  const problem = createProblem(request, file, draft);
+  const set = (patch: Partial<AnswersDraft>) => onDraft({ ...draft, ...patch });
+  const source = request.createSource ?? 'upload';
+  const tab = (id: 'upload' | 'answers', label: string) => (
+    <button
+      type="button"
+      aria-pressed={source === id}
+      onClick={() => onRequest({ ...request, createSource: id })}
+      className={cn(
+        'flex-1 rounded-lg px-3 py-2 text-[13px] font-semibold transition',
+        source === id
+          ? 'bg-accent-solid text-text-on-accent'
+          : 'text-text-secondary hover:text-text-primary',
+      )}
+    >
+      {label}
+    </button>
+  );
+  return (
+    <div className="space-y-4">
+      <div>
+        <label
+          htmlFor="autopilot-target-role"
+          className="mb-1.5 block text-[13px] font-medium text-text-secondary"
+        >
+          Which role is this CV for?
+        </label>
+        <input
+          id="autopilot-target-role"
+          type="text"
+          value={request.targetRole ?? ''}
+          maxLength={120}
+          onChange={(e) =>
+            onRequest({ ...request, targetRole: e.target.value })
+          }
+          placeholder="e.g. Frontend Engineer"
+          className={cn(fieldClass, 'h-10')}
+        />
+      </div>
+
+      <div className="flex gap-1 rounded-xl border border-border-subtle bg-bg-sunken p-1">
+        {tab('upload', 'Upload my CV or LinkedIn PDF')}
+        {tab('answers', 'Answer a few questions')}
+      </div>
+
+      {source === 'upload' ? (
+        <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-border-default bg-bg-sunken px-4 py-6 text-center hover:border-accent-border">
+          <FilePlus2 className="h-6 w-6 text-accent-text" aria-hidden />
+          <span className="mt-2 text-[13px] font-medium text-text-primary">
+            {file ? file.name : 'Choose a PDF, Word or text file'}
+          </span>
+          <span className="mt-0.5 text-xs text-text-tertiary">
+            On LinkedIn: your profile → More → Save to PDF.
+          </span>
+          <input
+            type="file"
+            aria-label="CV file"
+            accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+            className="sr-only"
+            onChange={(e) => onFile(e.target.files?.[0] ?? null)}
+          />
+        </label>
+      ) : (
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          <input
+            aria-label="Full name"
+            value={draft.fullName}
+            maxLength={120}
+            onChange={(e) => set({ fullName: e.target.value })}
+            placeholder="Full name"
+            className={cn(fieldClass, 'h-10')}
+          />
+          <input
+            aria-label="Email"
+            value={draft.email ?? ''}
+            maxLength={200}
+            onChange={(e) => set({ email: e.target.value })}
+            placeholder="Email (optional)"
+            className={cn(fieldClass, 'h-10')}
+          />
+          <input
+            aria-label="Current or latest job title"
+            value={draft.jobTitle}
+            maxLength={120}
+            onChange={(e) => set({ jobTitle: e.target.value })}
+            placeholder="Current or latest job title"
+            className={cn(fieldClass, 'h-10')}
+          />
+          <input
+            aria-label="Company"
+            value={draft.company}
+            maxLength={120}
+            onChange={(e) => set({ company: e.target.value })}
+            placeholder="Company"
+            className={cn(fieldClass, 'h-10')}
+          />
+          <input
+            aria-label="Start date"
+            value={draft.startDate ?? ''}
+            maxLength={40}
+            onChange={(e) => set({ startDate: e.target.value })}
+            placeholder="Started (e.g. Jan 2023)"
+            className={cn(fieldClass, 'h-10')}
+          />
+          <label className="flex h-10 items-center gap-2 text-[13px] text-text-secondary">
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-[#17B26A]"
+              checked={draft.current ?? false}
+              onChange={(e) => set({ current: e.target.checked })}
+            />
+            I still work here
+          </label>
+          <textarea
+            aria-label="Achievements"
+            value={draft.achievementsText}
+            rows={3}
+            maxLength={1600}
+            onChange={(e) => set({ achievementsText: e.target.value })}
+            placeholder="2–3 things you achieved there, one per line (numbers help: 'Cut load time by 40%')"
+            className={cn(fieldClass, 'resize-y sm:col-span-2')}
+          />
+          <input
+            aria-label="Skills"
+            value={draft.skillsText}
+            maxLength={1200}
+            onChange={(e) => set({ skillsText: e.target.value })}
+            placeholder="Skills, separated by commas"
+            className={cn(fieldClass, 'h-10 sm:col-span-2')}
+          />
+          <input
+            aria-label="Degree"
+            value={draft.degree ?? ''}
+            maxLength={160}
+            onChange={(e) => set({ degree: e.target.value })}
+            placeholder="Degree (optional)"
+            className={cn(fieldClass, 'h-10')}
+          />
+          <input
+            aria-label="School"
+            value={draft.school ?? ''}
+            maxLength={160}
+            onChange={(e) => set({ school: e.target.value })}
+            placeholder="School (optional)"
+            className={cn(fieldClass, 'h-10')}
+          />
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-4">
+        <p className="text-xs text-text-tertiary">
+          {problem ?? 'Uses only what you give it. Nothing is made up.'}
+        </p>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            className="border border-border-subtle"
+            onClick={onBack}
+          >
+            Back
+          </Button>
+          <Button
+            type="button"
+            variant="accent"
+            disabled={problem !== null}
+            onClick={onNext}
+          >
+            See the plan
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -809,27 +1190,34 @@ function RunView({
             />
           </div>
         </div>
-      ) : run.mode === 'fix_all' ? (
-        <div className="grid grid-cols-2 gap-3">
-          <Metric
-            label="Score"
-            before={run.scoreBefore}
-            after={run.undone ? run.scoreBefore : run.scoreAfter}
-          />
-          <Metric
-            label="Issues"
-            before={run.issuesBefore}
-            after={run.undone ? run.issuesBefore : run.issuesAfter}
-            lowerIsBetter
-          />
-        </div>
-      ) : run.copy && !run.undone ? (
-        <p className="rounded-xl border border-accent-border bg-accent-subtle px-3.5 py-3 text-[13px] text-text-primary">
-          Saved as a new CV:{' '}
-          <span className="font-semibold">{run.copy.name}</span>. Your original
-          CV was not changed.
-        </p>
-      ) : null}
+      ) : (
+        <>
+          {run.mode === 'fix_all' || (run.mode === 'create' && !run.undone) ? (
+            <div className="grid grid-cols-2 gap-3">
+              <Metric
+                label="Score"
+                before={run.scoreBefore}
+                after={run.undone ? run.scoreBefore : run.scoreAfter}
+              />
+              <Metric
+                label="Issues"
+                before={run.issuesBefore}
+                after={run.undone ? run.issuesBefore : run.issuesAfter}
+                lowerIsBetter
+              />
+            </div>
+          ) : null}
+          {run.copy && !run.undone ? (
+            <p className="rounded-xl border border-accent-border bg-accent-subtle px-3.5 py-3 text-[13px] text-text-primary">
+              {run.mode === 'create' ? 'Your new CV: ' : 'Saved as a new CV: '}
+              <span className="font-semibold">{run.copy.name}</span>.{' '}
+              {run.mode === 'create'
+                ? 'The CV you had open was not changed.'
+                : 'Your original CV was not changed.'}
+            </p>
+          ) : null}
+        </>
+      )}
 
       <ul className="max-h-[42vh] divide-y divide-border-subtle overflow-y-auto rounded-xl border border-border-subtle">
         {run.steps.map((step) => (
@@ -852,9 +1240,9 @@ function RunView({
 
       {stage === 'done' && !run.undone && needsInput.length > 0 ? (
         <p className="rounded-lg border border-warning-border bg-warning-subtle px-3 py-2 text-xs text-warning-text">
-          {needsInput.length} issue{needsInput.length === 1 ? '' : 's'} need a
-          detail only you know (like a real number). They are still in your
-          Improvements list.
+          {needsInput.length === 1
+            ? '1 issue needs a detail only you know (like a real number). It is still in your Improvements list.'
+            : `${needsInput.length} issues need a detail only you know (like a real number). They are still in your Improvements list.`}
         </p>
       ) : null}
 
@@ -886,7 +1274,11 @@ function RunView({
                 {busy ? (
                   <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                 ) : null}
-                {run.copy ? 'Delete the copy' : 'Undo all'}
+                {run.mode === 'create'
+                  ? 'Delete this new CV'
+                  : run.copy
+                    ? 'Delete the copy'
+                    : 'Undo all'}
               </Button>
             ) : null}
             {run.copy ? (
@@ -920,15 +1312,22 @@ function Metric({
     before != null &&
     after != null &&
     (lowerIsBetter ? after < before : after > before);
+  const unchanged = after != null && (before == null || before === after);
   return (
     <div className="rounded-xl border border-border-subtle bg-bg-sunken p-3">
       <p className="text-xs text-text-tertiary">{label}</p>
       <p className="mt-1 text-lg font-semibold text-text-primary">
-        {before ?? '—'}
-        <span className="mx-1.5 text-text-tertiary">→</span>
-        <span className={better ? 'text-success-text' : undefined}>
-          {after ?? '…'}
-        </span>
+        {unchanged ? (
+          after
+        ) : (
+          <>
+            {before ?? '—'}
+            <span className="mx-1.5 text-text-tertiary">→</span>
+            <span className={better ? 'text-success-text' : undefined}>
+              {after ?? '…'}
+            </span>
+          </>
+        )}
       </p>
     </div>
   );
