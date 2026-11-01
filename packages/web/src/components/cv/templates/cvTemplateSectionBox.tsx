@@ -2,7 +2,13 @@
 
 import { Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 
 import { CvAiPatchDiffView } from '@/components/cv/CvAiPatchDiffView';
@@ -77,23 +83,46 @@ function EntrySuggestionSlot({
   children: ReactNode;
 }) {
   const markerRef = useRef<HTMLSpanElement>(null);
+  const hostRef = useRef<HTMLDivElement | null>(null);
   const [target, setTarget] = useState<HTMLElement | 'inline' | null>(null);
 
-  useLayoutEffect(() => {
+  /** Puts the card host at the end of the entry; entries re-render and can be replaced. */
+  const attach = useCallback(() => {
     const box = markerRef.current?.parentElement;
     const entry = box ? sectionEntryElements(box)[entryIndex] : undefined;
     if (!entry) {
+      hostRef.current?.remove();
       setTarget('inline');
       return;
     }
-    const host = document.createElement('div');
-    host.setAttribute('data-cv-ai-entry-suggestion', '');
-    entry.appendChild(host);
+    if (!hostRef.current) {
+      hostRef.current = document.createElement('div');
+      hostRef.current.setAttribute('data-cv-ai-entry-suggestion', '');
+    }
+    const host = hostRef.current;
+    if (host.parentElement !== entry || entry.lastElementChild !== host) {
+      entry.appendChild(host);
+    }
     setTarget(host);
-    return () => {
-      host.remove();
-    };
   }, [entryIndex]);
+
+  useLayoutEffect(() => {
+    attach();
+  });
+
+  useEffect(() => {
+    const box = markerRef.current?.parentElement;
+    if (!box) return;
+    const observer = new MutationObserver(() => {
+      const host = hostRef.current;
+      if (!host || !host.isConnected || !box.contains(host)) attach();
+    });
+    observer.observe(box, { childList: true, subtree: true });
+    return () => {
+      observer.disconnect();
+      hostRef.current?.remove();
+    };
+  }, [attach]);
 
   useEffect(() => {
     if (target instanceof HTMLElement)
@@ -224,12 +253,25 @@ export function cvTemplateSectionBox(
     const scrollKey = `${id}:${fields
       .map((cf) => cf.fieldPath ?? cf.field ?? '')
       .join('|')}`;
+    // Handlers index into the whole preview's list, not this section's slice of it; "no index"
+    // means accept everything, which is only right when the preview has a single change.
+    const allFields = changedFields ?? fields;
+    // Ask AI changes are accepted a section at a time: per-change buttons would apply them all.
+    const wholeSectionOnly =
+      many &&
+      (sectionDiffCallbackIndex != null ||
+        fields.some((cf) => cf.sectionDiffIndex != null));
     const renderField = (cf: CvTemplateSectionChangedField, i: number) => {
       const path = cf.fieldPath ?? cf.field ?? '';
+      const previewIndex = allFields.indexOf(cf);
       const fieldCallbackIndex =
         sectionDiffCallbackIndex ??
         cf.sectionDiffIndex ??
-        (fields.length === 1 ? undefined : i);
+        (allFields.length === 1
+          ? undefined
+          : previewIndex >= 0
+            ? previewIndex
+            : i);
       return (
         <div key={i} className="px-3.5 py-3">
           <CvAiPatchDiffView
@@ -241,14 +283,16 @@ export function cvTemplateSectionBox(
             after={cvDiffFieldDisplayText(cf.after, id, path)}
             compact
           />
-          <CvDiffActionPair
-            tone="paper"
-            className="mt-2.5 flex items-center justify-end gap-2"
-            rejectLabel="Keep mine"
-            acceptLabel="Use this"
-            onReject={() => onReject?.(fieldCallbackIndex)}
-            onAccept={() => onAccept?.(fieldCallbackIndex)}
-          />
+          {wholeSectionOnly ? null : (
+            <CvDiffActionPair
+              tone="paper"
+              className="mt-2.5 flex items-center justify-end gap-2"
+              rejectLabel="Keep mine"
+              acceptLabel="Use this"
+              onReject={() => onReject?.(fieldCallbackIndex)}
+              onAccept={() => onAccept?.(fieldCallbackIndex)}
+            />
+          )}
         </div>
       );
     };
@@ -265,12 +309,20 @@ export function cvTemplateSectionBox(
       <CvDiffActionPair
         tone="paper"
         className="flex items-center justify-end gap-2 border-t border-[#EAECF0] bg-[#F9FAFB] px-3.5 py-2.5"
-        rejectLabel="Keep all mine"
+        rejectLabel={wholeSectionOnly ? 'Keep mine' : 'Keep all mine'}
         acceptLabel={
-          gCvDocPreviewDiffMultiSection ? 'Use this section' : 'Use all'
+          wholeSectionOnly
+            ? `Use these ${fields.length} changes`
+            : gCvDocPreviewDiffMultiSection
+              ? 'Use this section'
+              : 'Use all'
         }
-        onReject={() => onReject?.(sectionDiffCallbackIndex)}
-        onAccept={() => onAccept?.(sectionDiffCallbackIndex)}
+        onReject={() =>
+          onReject?.(sectionDiffCallbackIndex ?? fields[0]?.sectionDiffIndex)
+        }
+        onAccept={() =>
+          onAccept?.(sectionDiffCallbackIndex ?? fields[0]?.sectionDiffIndex)
+        }
       />
     ) : null;
 
@@ -310,7 +362,10 @@ export function cvTemplateSectionBox(
             {footer}
           </div>
         ) : footer ? (
-          <div className={card}>{footer}</div>
+          <div className={card}>
+            {cardHeader(`${fields.length} suggested changes in this section`)}
+            {footer}
+          </div>
         ) : null}
       </>
     );

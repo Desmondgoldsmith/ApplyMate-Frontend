@@ -1917,33 +1917,59 @@ export function CvClinicPageContent() {
             }
           }
           const nextPointer = result.improvementId ?? diffPreview.pointer;
-          const freshNext = await api.cv.applyImprovement(
-            nextPointer,
-            targetId ?? undefined,
-          );
-          logCvMaterializePerformanceDev(
-            'cvPage.commitAcceptDiff.partialContinue',
-            freshNext,
-          );
-          const nextHash = result.draftHash ?? freshNext.draftHash;
-          setDiffPreviews((prev) => {
-            if (!opKey) return prev;
-            const cur = prev[opKey];
-            if (!cur) return prev;
-            return {
-              ...prev,
-              [opKey]: {
-                ...cur,
-                pointer: nextPointer,
-                draftHash: nextHash,
-                before: freshNext.before ?? cur.before,
-                after: freshNext.after ?? cur.after,
-                changedFields: freshNext.changedFields ?? cur.changedFields,
-                ...truthfulnessFieldsFromResponse(freshNext),
-                performance: compactDiffPreviewPerformance(freshNext),
-              },
-            };
-          });
+          const acceptedSet = new Set(acceptFields ?? []);
+          if (result.draftHash && acceptedSet.size > 0) {
+            // Keep the other suggested changes exactly as shown; asking for a new preview would
+            // replace them with a different answer and spend another AI use.
+            setDiffPreviews((prev) => {
+              if (!opKey) return prev;
+              const cur = prev[opKey];
+              if (!cur) return prev;
+              return {
+                ...prev,
+                [opKey]: {
+                  ...cur,
+                  pointer: nextPointer,
+                  draftHash: result.draftHash,
+                  changedFields: (cur.changedFields ?? []).filter(
+                    (cf) =>
+                      !acceptedSet.has((cf.fieldPath ?? cf.field ?? '').trim()),
+                  ),
+                  selectableFieldPaths: cur.selectableFieldPaths?.filter(
+                    (p) => !acceptedSet.has(p),
+                  ),
+                },
+              };
+            });
+          } else {
+            const freshNext = await api.cv.applyImprovement(
+              nextPointer,
+              targetId ?? undefined,
+            );
+            logCvMaterializePerformanceDev(
+              'cvPage.commitAcceptDiff.partialContinue',
+              freshNext,
+            );
+            const nextHash = result.draftHash ?? freshNext.draftHash;
+            setDiffPreviews((prev) => {
+              if (!opKey) return prev;
+              const cur = prev[opKey];
+              if (!cur) return prev;
+              return {
+                ...prev,
+                [opKey]: {
+                  ...cur,
+                  pointer: nextPointer,
+                  draftHash: nextHash,
+                  before: freshNext.before ?? cur.before,
+                  after: freshNext.after ?? cur.after,
+                  changedFields: freshNext.changedFields ?? cur.changedFields,
+                  ...truthfulnessFieldsFromResponse(freshNext),
+                  performance: compactDiffPreviewPerformance(freshNext),
+                },
+              };
+            });
+          }
           reconcileAfterMutation(targetId, 'structuralAccept', {
             scoringTriggered: result.scoringTriggered,
           });
@@ -2171,32 +2197,56 @@ export function CvClinicPageContent() {
         );
         if (result.partial) {
           const nextPointer = result.improvementId ?? diffPreview.pointer;
-          const freshNext = await api.cv.applyImprovement(
-            nextPointer,
-            targetId ?? undefined,
-          );
-          logCvMaterializePerformanceDev(
-            'cvPage.commitRejectDiff.partialContinue',
-            freshNext,
-          );
-          setDiffPreviews((prev) => {
-            if (!opKey) return prev;
-            const cur = prev[opKey];
-            if (!cur) return prev;
-            return {
-              ...prev,
-              [opKey]: {
-                ...cur,
-                pointer: nextPointer,
-                draftHash: result.draftHash ?? freshNext.draftHash,
-                before: freshNext.before ?? cur.before,
-                after: freshNext.after ?? cur.after,
-                changedFields: freshNext.changedFields ?? cur.changedFields,
-                ...truthfulnessFieldsFromResponse(freshNext),
-                performance: compactDiffPreviewPerformance(freshNext),
-              },
-            };
-          });
+          if (result.draftHash && selectedField) {
+            // Keep the other suggested changes exactly as shown (no new AI preview).
+            setDiffPreviews((prev) => {
+              if (!opKey) return prev;
+              const cur = prev[opKey];
+              if (!cur) return prev;
+              return {
+                ...prev,
+                [opKey]: {
+                  ...cur,
+                  pointer: nextPointer,
+                  draftHash: result.draftHash,
+                  changedFields: (cur.changedFields ?? []).filter(
+                    (cf) =>
+                      (cf.fieldPath ?? cf.field ?? '').trim() !== selectedField,
+                  ),
+                  selectableFieldPaths: cur.selectableFieldPaths?.filter(
+                    (p) => p !== selectedField,
+                  ),
+                },
+              };
+            });
+          } else {
+            const freshNext = await api.cv.applyImprovement(
+              nextPointer,
+              targetId ?? undefined,
+            );
+            logCvMaterializePerformanceDev(
+              'cvPage.commitRejectDiff.partialContinue',
+              freshNext,
+            );
+            setDiffPreviews((prev) => {
+              if (!opKey) return prev;
+              const cur = prev[opKey];
+              if (!cur) return prev;
+              return {
+                ...prev,
+                [opKey]: {
+                  ...cur,
+                  pointer: nextPointer,
+                  draftHash: result.draftHash ?? freshNext.draftHash,
+                  before: freshNext.before ?? cur.before,
+                  after: freshNext.after ?? cur.after,
+                  changedFields: freshNext.changedFields ?? cur.changedFields,
+                  ...truthfulnessFieldsFromResponse(freshNext),
+                  performance: compactDiffPreviewPerformance(freshNext),
+                },
+              };
+            });
+          }
           void queryClient.invalidateQueries({
             queryKey: cvSuggestionsQueryKey(targetId),
           });
