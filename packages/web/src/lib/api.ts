@@ -2035,6 +2035,15 @@ export type JobAnalysisSummary = {
 };
 
 /** Full analyzed job from GET /jobs/:jobId (form + analysis). */
+/** A job read from a pasted link (POST /jobs/import-link). */
+export type ImportedJobLink = {
+  title: string;
+  company: string;
+  location: string | null;
+  description: string;
+  applyUrl: string;
+};
+
 export type JobDetailForForm = {
   title: string;
   company: string;
@@ -7593,6 +7602,8 @@ const cv = {
     cvProfileId: string;
     jobAnalysisId: string;
     selectedSkills: string[];
+    /** Apply every safe change right away; each can be undone with `revertPatch`. */
+    autoApply?: boolean;
   }): Promise<TailorMutationResponse> => {
     const res = await axiosClient.post<unknown>('/cv/tailor-draft', payload, {
       timeout: AI_LONG_REQUEST_TIMEOUT_MS,
@@ -8757,6 +8768,25 @@ const jobs = {
     throwIfApiFailureResponse(res.data, res.status);
     const resolved = await resolveMaybeQueuedAiResponse(res.data);
     return normalizeJobAnalysis(resolved);
+  },
+  /**
+   * POST /jobs/import-link — reads a job from a pasted link (hiring-system APIs or the page's
+   * JobPosting data). No AI. Throws with the server's plain message (e.g. "paste the text").
+   */
+  importLink: async (url: string): Promise<ImportedJobLink> => {
+    const res = await axiosClient.post<unknown>('/jobs/import-link', {
+      url: url.trim(),
+    });
+    throwIfApiFailureResponse(res.data, res.status);
+    const b = unwrapApiDataEnvelope(res.data);
+    const text = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+    return {
+      title: text(b.title),
+      company: text(b.company),
+      location: text(b.location) || null,
+      description: text(b.description),
+      applyUrl: text(b.applyUrl) || url.trim(),
+    };
   },
   /**
    * POST /jobs/match-score — heuristic fit 0–100, no Gemini, no AI quota, no JobAnalysis row.

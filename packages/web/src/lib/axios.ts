@@ -763,6 +763,10 @@ function getApiErrorMessageBase(error: unknown): string {
         return CV_ASSISTANT_COMMIT_FACTUALITY_USER_MESSAGE;
       }
       const detail = nested.message?.trim();
+      // Job link problems already say what to do ("paste the text instead").
+      if (detail && nested.code?.startsWith('LINK_')) {
+        return scrubVendorNamesFromUserMessage(detail);
+      }
       if (detail)
         return scrubVendorNamesFromUserMessage(
           `We could not validate that: ${detail}`,

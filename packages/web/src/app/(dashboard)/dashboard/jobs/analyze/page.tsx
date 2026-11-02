@@ -1,20 +1,17 @@
 import { Suspense } from 'react';
 
-import { JobsAnalyzeContent } from '@/components/jobs/analyze/JobsAnalyzeContent';
+import { CheckJobRoute } from '@/components/jobs/check/CheckJobRoute';
 
-export const metadata = { title: 'Analyze Job — CareerKite' };
+export const metadata = { title: 'Check a job · CareerKite' };
 
 export default function JobsAnalyzePage() {
   return (
     <Suspense
       fallback={
-        <div className="grid min-h-[480px] gap-4 lg:grid-cols-[40%_1fr]">
-          <div className="h-96 animate-pulse rounded-2xl bg-white/[0.04]" />
-          <div className="h-96 animate-pulse rounded-2xl bg-white/[0.04]" />
-        </div>
+        <div className="mx-auto h-96 w-full max-w-[820px] animate-pulse rounded-3xl bg-bg-surface" />
       }
     >
-      <JobsAnalyzeContent />
+      <CheckJobRoute />
     </Suspense>
   );
 }
