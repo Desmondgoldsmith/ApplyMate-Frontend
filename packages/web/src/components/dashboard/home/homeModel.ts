@@ -217,6 +217,31 @@ export function buildTodayActions(
     });
   }
 
+  // The server moves its main tasks into unifiedPriorities and prunes them from the older lists.
+  for (const item of plan.unifiedPriorities?.items ?? []) {
+    if (item.suppressedBy) continue;
+    const title = clean(item.title);
+    const job = /^prio-(apply|tailor)-(.+)$/.exec(item.id);
+    const href = job
+      ? `/dashboard/jobs/analyze?jobId=${encodeURIComponent(job[2])}`
+      : (clean(item.executionContext?.deepLink) ??
+        clean(item.journey?.nextRoute) ??
+        clean(item.nextActionPreview?.route));
+    if (!title || !href) continue;
+    push({
+      id: item.id,
+      title,
+      detail: clean(item.subtitle) ?? clean(item.reasonText),
+      href,
+      ctaLabel:
+        job?.[1] === 'apply'
+          ? 'Apply now'
+          : job?.[1] === 'tailor'
+            ? 'Tailor CV'
+            : (clean(item.compactDisplay?.actionLabel) ?? 'Open'),
+    });
+  }
+
   for (const item of [
     ...(plan.needsAttention ?? []),
     ...(plan.todaysFocus ?? []),

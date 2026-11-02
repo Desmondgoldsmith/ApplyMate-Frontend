@@ -168,6 +168,54 @@ describe('countPipeline and setup steps', () => {
   });
 });
 
+describe("Today: the server's priority list", () => {
+  it('lists its tasks, opening apply / tailor tasks on the job itself', () => {
+    const actions = buildTodayActions(
+      plan({
+        unifiedPriorities: {
+          summary: {},
+          items: [
+            {
+              id: 'prio-apply-job-1',
+              title: 'Apply to GitLab',
+              subtitle: 'Senior Frontend Engineer · your tailored CV is ready',
+              suppressedBy: null,
+              executionContext: {
+                deepLink: '/dashboard/job-hub?jobAnalysisId=job-1',
+              },
+            },
+            {
+              id: 'prio-tailor-job-2',
+              title: 'Tailor your CV for Stripe',
+              subtitle: 'Frontend Engineer · 72% match',
+              suppressedBy: null,
+            },
+            {
+              id: 'prio-cvnudge-1',
+              title: 'CV clinic',
+              subtitle: 'Lacks specific achievements',
+              suppressedBy: null,
+              executionContext: { deepLink: '/dashboard/cv?profileId=cv-1' },
+              compactDisplay: { actionLabel: 'Open CV clinic' },
+            },
+            { id: 'prio-old', title: 'Hidden duplicate', suppressedBy: 'hero' },
+          ],
+        },
+      } as unknown as Partial<TodayPlanPayload>),
+      { limit: 4 },
+    );
+    expect(actions.map((a) => [a.title, a.href, a.ctaLabel])).toEqual([
+      ['Apply to GitLab', '/dashboard/jobs/analyze?jobId=job-1', 'Apply now'],
+      [
+        'Tailor your CV for Stripe',
+        '/dashboard/jobs/analyze?jobId=job-2',
+        'Tailor CV',
+      ],
+      ['CV clinic', '/dashboard/cv?profileId=cv-1', 'Open CV clinic'],
+    ]);
+  });
+});
+
 describe('Today: hidden tasks and old saved jobs', () => {
   const stale = (id: string, company: string) => ({
     id,
