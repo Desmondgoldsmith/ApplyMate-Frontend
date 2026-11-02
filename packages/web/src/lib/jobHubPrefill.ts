@@ -63,6 +63,52 @@ type NextActionPrefetchCacheEntry = {
   } | null;
 };
 
+/**
+ * The job another page (Job Hub, Find jobs) left for Check a job, or null. Cleared shortly after
+ * reading rather than at once, so a React Strict Mode second mount still sees it.
+ */
+export function takeJobAnalyzerPrefill(): FreshAnalyzePrefillPayload | null {
+  if (typeof window === 'undefined') return null;
+  let payload: FreshAnalyzePrefillPayload | null = null;
+  try {
+    const raw = window.sessionStorage.getItem(FRESH_ANALYZE_PREFILL_SESSION);
+    if (raw) {
+      const p = JSON.parse(raw) as Record<string, unknown>;
+      const str = (v: unknown) => (typeof v === 'string' ? v : '');
+      payload = {
+        title: str(p.title),
+        company: str(p.company),
+        description: str(p.description),
+        ...(str(p.hubBookmarkId).trim()
+          ? { hubBookmarkId: str(p.hubBookmarkId).trim() }
+          : {}),
+        ...(str(p.selectedCvId).trim()
+          ? { selectedCvId: str(p.selectedCvId).trim() }
+          : {}),
+      };
+    } else {
+      payload = {
+        title: window.localStorage.getItem(PREFILL_TITLE) ?? '',
+        company: window.localStorage.getItem(PREFILL_COMPANY) ?? '',
+        description: window.localStorage.getItem(PREFILL_JD) ?? '',
+      };
+    }
+    window.setTimeout(() => {
+      try {
+        window.sessionStorage.removeItem(FRESH_ANALYZE_PREFILL_SESSION);
+        window.localStorage.removeItem(PREFILL_JD);
+        window.localStorage.removeItem(PREFILL_TITLE);
+        window.localStorage.removeItem(PREFILL_COMPANY);
+      } catch {
+        /* storage unavailable */
+      }
+    }, 600);
+  } catch {
+    return null;
+  }
+  return payload.description.trim() ? payload : null;
+}
+
 export function prefillJobAnalyzerInStorage(
   title: string,
   company: string,

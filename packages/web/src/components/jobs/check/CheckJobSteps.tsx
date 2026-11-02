@@ -33,6 +33,7 @@ import type {
 import { cn } from '@/lib/utils';
 
 import {
+  blockedJobSite,
   changeHeadline,
   changeLines,
   looksLikeLink,
@@ -218,6 +219,8 @@ export function AddJobStep({
   error,
   onSubmit,
   recent,
+  loadedJob,
+  onClearLoaded,
 }: {
   text: string;
   onText: (v: string) => void;
@@ -233,27 +236,73 @@ export function AddJobStep({
     score: number | null;
     logoUrl: string | null;
   }>;
+  /** A job brought in from Find jobs or the Job Hub, already filled in. */
+  loadedJob: { title: string; company: string; from: string } | null;
+  onClearLoaded: () => void;
 }) {
   const isLink = looksLikeLink(text);
+  const blockedSite = blockedJobSite(text);
   const trimmed = text.trim();
   const tooShort =
     !isLink && trimmed.length > 0 && trimmed.length < MIN_JOB_TEXT_CHARS;
   const canSubmit =
-    Boolean(cvId) && (isLink || trimmed.length >= MIN_JOB_TEXT_CHARS);
+    Boolean(cvId) &&
+    !blockedSite &&
+    (isLink || trimmed.length >= MIN_JOB_TEXT_CHARS);
   const cv = cvRows.find((r) => r.id === cvId) ?? null;
 
   return (
     <>
       <Panel tour="check-add">
+        {loadedJob ? (
+          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-accent-border bg-accent-subtle px-4 py-3">
+            <CompanyLogo
+              company={loadedJob.company}
+              logoUrl={null}
+              size="md"
+              shape="rounded"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-semibold text-accent-text">
+                From {loadedJob.from}
+              </p>
+              <p className="truncate text-[15px] font-semibold text-text-primary">
+                {loadedJob.title || 'This job'}
+                {loadedJob.company ? (
+                  <span className="font-normal text-text-secondary">
+                    {' '}
+                    · {loadedJob.company}
+                  </span>
+                ) : null}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClearLoaded}
+              className="text-[13px] font-semibold text-text-secondary hover:text-text-primary"
+            >
+              Use a different job
+            </button>
+          </div>
+        ) : null}
         <label
           htmlFor="check-job-input"
           className="block font-display text-[18px] font-bold text-text-primary"
         >
-          Paste the job
+          {loadedJob ? 'Job description' : 'Paste the job'}
         </label>
         <p className="mt-1 text-[14px] text-text-secondary">
-          A link to the job, or the whole job description. Either works.
+          {loadedJob
+            ? 'We filled this in for you. Check it looks right, then tap Check my match.'
+            : 'A link to the job, or the whole job description.'}
         </p>
+        {!loadedJob ? (
+          <p className="mt-1 text-[13px] text-text-tertiary">
+            Links from company career pages and most hiring sites work. For
+            LinkedIn, Indeed or Glassdoor jobs, copy the description and paste
+            it instead.
+          </p>
+        ) : null}
         <textarea
           id="check-job-input"
           value={text}
@@ -271,7 +320,14 @@ export function AddJobStep({
           className="mt-2 min-h-[20px] text-[13px] text-text-tertiary"
           aria-live="polite"
         >
-          {isLink ? (
+          {blockedSite ? (
+            <span
+              role="status"
+              className="block rounded-xl border border-warning-border bg-warning-subtle px-3 py-2 text-[14px] text-warning-text"
+            >
+              {`${blockedSite} doesn't let other apps read its job pages, so this link can't be used. Open the job on ${blockedSite}, copy the whole description and paste it here instead.`}
+            </span>
+          ) : isLink ? (
             <span className="inline-flex items-center gap-1.5 text-accent-text">
               <Link2 className="h-3.5 w-3.5" aria-hidden />
               We&apos;ll read the job from this link.

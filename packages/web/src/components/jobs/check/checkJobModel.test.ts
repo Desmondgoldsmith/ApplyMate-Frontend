@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { CvTailorDraftEntry, JobAnalysis } from '@/lib/api';
 
 import {
+  blockedJobSite,
   changeHeadline,
   changeLines,
   isSkillLike,
@@ -20,6 +21,20 @@ describe('looksLikeLink', () => {
     expect(looksLikeLink('boards.greenhouse.io/stripe/jobs/1')).toBe(true);
     expect(looksLikeLink('We are hiring a frontend engineer')).toBe(false);
     expect(looksLikeLink('React')).toBe(false);
+  });
+});
+
+describe('blockedJobSite', () => {
+  it('spots links from sites that do not let apps read their job pages', () => {
+    expect(blockedJobSite('https://www.linkedin.com/jobs/view/123')).toBe(
+      'LinkedIn',
+    );
+    expect(blockedJobSite('uk.indeed.com/viewjob?jk=1')).toBe('Indeed');
+    expect(blockedJobSite('https://www.glassdoor.co.uk/job-listing/x')).toBe(
+      'Glassdoor',
+    );
+    expect(blockedJobSite('https://jobs.lever.co/acme/1')).toBeNull();
+    expect(blockedJobSite('We are hiring on LinkedIn')).toBeNull();
   });
 });
 

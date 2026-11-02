@@ -19,6 +19,25 @@ export function looksLikeLink(text: string): boolean {
 
 export const MIN_JOB_TEXT_CHARS = 200;
 
+const BLOCKING_SITES: Array<[RegExp, string]> = [
+  [/(^|\.)linkedin\.com$/i, 'LinkedIn'],
+  [/(^|\.)indeed\.[a-z.]+$/i, 'Indeed'],
+  [/(^|\.)glassdoor\.[a-z.]+$/i, 'Glassdoor'],
+];
+
+/** "LinkedIn" when the pasted link is from a site that blocks apps from reading its job pages. */
+export function blockedJobSite(text: string): string | null {
+  if (!looksLikeLink(text)) return null;
+  const raw = text.trim();
+  try {
+    const host = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`)
+      .hostname;
+    return BLOCKING_SITES.find(([rx]) => rx.test(host))?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export type Verdict = {
   label: 'Strong match' | 'Good match' | 'Fair match' | 'Long shot';
   tone: 'success' | 'accent' | 'warning' | 'danger';

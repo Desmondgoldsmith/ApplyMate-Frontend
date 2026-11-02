@@ -18,6 +18,7 @@ import type {
 } from '@/lib/api';
 import { api } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/axios';
+import { takeJobAnalyzerPrefill } from '@/lib/jobHubPrefill';
 import { queryKeys } from '@/lib/queryKeys';
 
 import {
@@ -88,8 +89,14 @@ export function CheckJobPage() {
   const [coverLetter, setCoverLetter] = useState<string | null>(null);
   const [coverBusy, setCoverBusy] = useState(false);
   const [coverError, setCoverError] = useState<string | null>(null);
+  /** A job brought in from Find jobs or the Job Hub; its description is in the text box. */
+  const [loaded, setLoaded] = useState<
+    (JobInfo & { from: string; hubBookmarkId: string | null }) | null
+  >(null);
   /** The jobId already on screen, so writing it into the URL does not load it again. */
   const shownJobIdRef = useRef<string | null>(null);
+  /** The Find jobs listing already filled in, so a re-render does not reload it over edits. */
+  const loadedListingRef = useRef<string | null>(null);
 
   const jobIdParam = searchParams.get('jobId')?.trim() || null;
   const listingParam = searchParams.get('jobListingId')?.trim() || null;
@@ -188,9 +195,34 @@ export function CheckJobPage() {
     [analyzeJob, cvId, openJobInUrl],
   );
 
+  const linkBookmark = useCallback(
+    async (bookmarkId: string, jobAnalysisId: string) => {
+      try {
+        await api.jobDiscovery.patchBookmark(bookmarkId, { jobAnalysisId });
+      } catch {
+        try {
+          await api.users.patchHubBookmark(bookmarkId, { jobAnalysisId });
+        } catch {
+          /* already linked, or the bookmark is gone */
+        }
+      }
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.hub.bookmarks(),
+      });
+    },
+    [queryClient],
+  );
+
   const submit = useCallback(async () => {
     const value = text.trim();
     if (!value) return;
+    if (loaded && !looksLikeLink(value)) {
+      const bookmarkId = loaded.hubBookmarkId;
+      await runAnalysis({ ...loaded, description: value });
+      const saved = shownJobIdRef.current;
+      if (bookmarkId && saved) void linkBookmark(bookmarkId, saved);
+      return;
+    }
     if (!looksLikeLink(value)) {
       await runAnalysis({ ...EMPTY_JOB, description: value });
       return;
@@ -210,7 +242,26 @@ export function CheckJobPage() {
       setAddError(getApiErrorMessage(e));
       setStage('add');
     }
-  }, [runAnalysis, text]);
+  }, [linkBookmark, loaded, runAnalysis, text]);
+
+  // A job left by the Job Hub (or an older page) in browser storage: fill it in, ready to check.
+  useEffect(() => {
+    if (jobIdParam || listingParam) return;
+    const prefill = takeJobAnalyzerPrefill();
+    if (!prefill) return;
+    setText(prefill.description);
+    setLoaded({
+      ...EMPTY_JOB,
+      title: prefill.title.trim(),
+      company: prefill.company.trim(),
+      description: prefill.description,
+      from: 'your Job Hub',
+      hubBookmarkId: prefill.hubBookmarkId ?? null,
+    });
+    if (prefill.selectedCvId) setCvId(prefill.selectedCvId);
+    // Read once when the page opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // A saved job (?jobId=) or a job board listing (?jobListingId=) opened from elsewhere.
   useEffect(() => {
@@ -243,20 +294,30 @@ export function CheckJobPage() {
         cancelled = true;
       };
     }
-    if (listingParam && !jobIdParam && stage === 'add' && cvId) {
+    if (
+      listingParam &&
+      !jobIdParam &&
+      loadedListingRef.current !== listingParam
+    ) {
+      loadedListingRef.current = listingParam;
       let cancelled = false;
       setStage('loading');
       api.jobDiscovery
         .getDetail(listingParam)
         .then((listing) => {
           if (cancelled) return;
-          void runAnalysis({
+          // Find jobs → Analyze: the job is filled in and the user taps Check my match.
+          setText(listing.description);
+          setLoaded({
             title: listing.title,
             company: listing.company,
             description: listing.description,
             applyUrl: listing.url ?? null,
             jobListingId: listing.id || listingParam,
+            from: 'Find jobs',
+            hubBookmarkId: null,
           });
+          setStage('add');
         })
         .catch((e: unknown) => {
           if (cancelled) return;
@@ -270,7 +331,7 @@ export function CheckJobPage() {
     return undefined;
     // runAnalysis/showSavedJob are stable enough; re-running on stage changes would loop.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobIdParam, listingParam, cvId]);
+  }, [jobIdParam, listingParam]);
 
   const tailor = useCallback(async () => {
     if (!analysis?.id) return;
@@ -357,6 +418,7 @@ export function CheckJobPage() {
     setTailorError(null);
     setCoverLetter(null);
     setCoverError(null);
+    setLoaded(null);
     router.replace(pathname, { scroll: false });
   }, [pathname, router]);
 
@@ -419,6 +481,20 @@ export function CheckJobPage() {
           error={addError}
           onSubmit={() => void submit()}
           recent={recent}
+          loadedJob={
+            loaded
+              ? {
+                  title: loaded.title,
+                  company: loaded.company,
+                  from: loaded.from,
+                }
+              : null
+          }
+          onClearLoaded={() => {
+            setLoaded(null);
+            setText('');
+            if (listingParam) router.replace(pathname, { scroll: false });
+          }}
         />
       ) : stage === 'loading' ? (
         <WorkingPanel

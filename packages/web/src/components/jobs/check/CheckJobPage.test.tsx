@@ -14,12 +14,15 @@ const mocks = vi.hoisted(() => ({
   createTailorDraft: vi.fn(),
   revertPatch: vi.fn(),
   acceptTailorSection: vi.fn(),
+  getDetail: vi.fn(),
+  patchBookmark: vi.fn(),
 }));
 
+let searchParams = new URLSearchParams();
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mocks.replace }),
   usePathname: () => '/dashboard/jobs/analyze',
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => searchParams,
 }));
 vi.mock('@/hooks/useAnalyzeJob', () => ({
   useAnalyzeJob: () => ({ mutateAsync: mocks.analyze }),
@@ -58,7 +61,10 @@ vi.mock('@/lib/api', () => ({
       revertPatch: mocks.revertPatch,
       acceptTailorSection: mocks.acceptTailorSection,
     },
-    jobDiscovery: { getDetail: vi.fn() },
+    jobDiscovery: {
+      getDetail: mocks.getDetail,
+      patchBookmark: mocks.patchBookmark,
+    },
   },
 }));
 
@@ -114,7 +120,104 @@ function renderPage() {
 }
 
 describe('CheckJobPage', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    searchParams = new URLSearchParams();
+    window.sessionStorage.clear();
+  });
+
+  it('says plainly that a LinkedIn link cannot be read, before anything is sent', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    expect(
+      screen.getByText(
+        /For LinkedIn, Indeed or Glassdoor jobs, copy the description/,
+      ),
+    ).toBeInTheDocument();
+    await user.type(
+      screen.getByLabelText('Paste the job'),
+      'https://www.linkedin.com/jobs/view/1',
+    );
+    expect(screen.getByRole('status')).toHaveTextContent(
+      "LinkedIn doesn't let other apps read its job pages",
+    );
+    expect(
+      screen.getByRole('button', { name: /Check my match/ }),
+    ).toBeDisabled();
+    expect(mocks.importLink).not.toHaveBeenCalled();
+  });
+
+  it('fills in a Find jobs listing and waits for the user to check it', async () => {
+    const user = userEvent.setup();
+    searchParams = new URLSearchParams('jobListingId=listing-9');
+    mocks.getDetail.mockResolvedValue({
+      id: 'listing-9',
+      title: 'Frontend Engineer',
+      company: 'Paystack',
+      description: 'Build checkout experiences in React. '.repeat(10),
+      url: 'https://paystack.com/careers/1',
+    });
+    mocks.analyze.mockResolvedValue(analysis);
+    mocks.getJob.mockResolvedValue({
+      title: 'Frontend Engineer',
+      company: 'Paystack',
+      description: 'x',
+      analysis,
+    });
+    renderPage();
+
+    expect(await screen.findByText('From Find jobs')).toBeInTheDocument();
+    expect(screen.getByLabelText('Job description')).toHaveValue(
+      'Build checkout experiences in React. '.repeat(10),
+    );
+    expect(mocks.analyze).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: /Check my match/ }));
+    await waitFor(() =>
+      expect(mocks.analyze).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Frontend Engineer',
+          company: 'Paystack',
+          jobListingId: 'listing-9',
+          applyUrl: 'https://paystack.com/careers/1',
+        }),
+      ),
+    );
+  });
+
+  it('fills in a job sent from the Job Hub and links the bookmark after checking', async () => {
+    const user = userEvent.setup();
+    window.sessionStorage.setItem(
+      'applymate:fresh-analyze:prefill',
+      JSON.stringify({
+        title: 'Product Designer',
+        company: 'Hubtel',
+        description:
+          'Design merchant tools used by thousands of businesses. '.repeat(6),
+        hubBookmarkId: 'bm-1',
+      }),
+    );
+    mocks.analyze.mockResolvedValue(analysis);
+    mocks.getJob.mockResolvedValue({
+      title: 'Product Designer',
+      company: 'Hubtel',
+      description: 'x',
+      analysis,
+    });
+    mocks.patchBookmark.mockResolvedValue({});
+    renderPage();
+
+    expect(await screen.findByText('From your Job Hub')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Check my match/ }));
+    await waitFor(() =>
+      expect(mocks.patchBookmark).toHaveBeenCalledWith('bm-1', {
+        jobAnalysisId: 'job-1',
+      }),
+    );
+    expect(mocks.analyze).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Product Designer', company: 'Hubtel' }),
+    );
+  });
 
   it(
     'goes from a pasted link to a tailored CV in three steps, with Undo',
@@ -209,19 +312,19 @@ describe('CheckJobPage', () => {
   it('shows a plain message and keeps the text when a link cannot be read', async () => {
     const user = userEvent.setup();
     mocks.importLink.mockRejectedValue(
-      new Error("LinkedIn doesn't let other apps read its job pages."),
+      new Error("We couldn't read the job from this link."),
     );
     renderPage();
 
     await user.type(
       screen.getByLabelText('Paste the job'),
-      'https://www.linkedin.com/jobs/view/1',
+      'https://careers.example.com/jobs/1',
     );
     await user.click(screen.getByRole('button', { name: /Check my match/ }));
 
     expect(await screen.findByRole('alert')).toBeInTheDocument();
     expect(screen.getByLabelText('Paste the job')).toHaveValue(
-      'https://www.linkedin.com/jobs/view/1',
+      'https://careers.example.com/jobs/1',
     );
     expect(mocks.analyze).not.toHaveBeenCalled();
   });
