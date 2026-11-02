@@ -460,12 +460,15 @@ export function OnboardingComplete({
           Or jump straight in
         </p>
         <div className="space-y-2.5">
-          <NextStep
-            icon={<Search className="h-[18px] w-[18px]" />}
-            title="Analyze your first job"
-            body="Paste a job description and see your match score in about a minute."
-            href="/dashboard/jobs/analyze?clean=1"
-          />
+          {/* Checking a job compares it with the CV, so it is only offered once there is one. */}
+          {hasCv ? (
+            <NextStep
+              icon={<Search className="h-[18px] w-[18px]" />}
+              title="Check your first job"
+              body="Paste a job link or description. See your match and get a CV made for it."
+              href="/dashboard/jobs/analyze?clean=1"
+            />
+          ) : null}
           {hasCv && profileId ? (
             <NextStep
               icon={<PenLine className="h-[18px] w-[18px]" />}

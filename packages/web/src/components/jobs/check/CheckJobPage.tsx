@@ -334,6 +334,7 @@ export function CheckJobPage() {
         title: job.title,
         company: job.company,
         description: job.description,
+        questions: [],
         jobAnalysisId: analysis.id,
       });
       setCoverLetter(out.coverLetter?.trim() || null);
